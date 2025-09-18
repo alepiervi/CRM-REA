@@ -39,7 +39,10 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Menu
+  Menu,
+  Power,
+  PowerOff,
+  ChevronDown
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -221,46 +224,130 @@ const Login = () => {
   );
 };
 
+// Unit Selector Component
+const UnitSelector = ({ selectedUnit, onUnitChange, units, loading }) => {
+  const { user } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="animate-pulse">
+        <div className="h-10 bg-slate-200 rounded-lg w-48"></div>
+      </div>
+    );
+  }
+
+  // Non-admin users should automatically use their unit
+  if (user.role !== "admin" && user.unit_id) {
+    const userUnit = units.find(u => u.id === user.unit_id);
+    return (
+      <div className="flex items-center space-x-2">
+        <Building2 className="w-5 h-5 text-blue-600" />
+        <span className="font-semibold text-slate-800">
+          {userUnit?.name || "Unit Assegnata"}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center space-x-2">
+      <Building2 className="w-5 h-5 text-blue-600" />
+      <Select value={selectedUnit} onValueChange={onUnitChange}>
+        <SelectTrigger className="w-64">
+          <SelectValue placeholder="Seleziona Unit" />
+        </SelectTrigger>
+        <SelectContent>
+          {user.role === "admin" && (
+            <SelectItem value="">Tutte le Unit</SelectItem>
+          )}
+          {units.map((unit) => (
+            <SelectItem key={unit.id} value={unit.id}>
+              {unit.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
+
 // Dashboard Stats Component
-const DashboardStats = () => {
+const DashboardStats = ({ selectedUnit }) => {
   const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [selectedUnit]);
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API}/dashboard/stats`);
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (selectedUnit) {
+        params.append('unit_id', selectedUnit);
+      }
+      
+      const response = await axios.get(`${API}/dashboard/stats?${params}`);
       setStats(response.data);
     } catch (error) {
       console.error("Error fetching stats:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const getStatsCards = () => {
     if (user.role === "admin") {
-      return [
-        { title: "Totale Lead", value: stats.total_leads || 0, icon: Users, color: "from-blue-500 to-blue-600" },
-        { title: "Utenti", value: stats.total_users || 0, icon: UserPlus, color: "from-green-500 to-green-600" },
-        { title: "Unit", value: stats.total_units || 0, icon: Building2, color: "from-purple-500 to-purple-600" },
-        { title: "Lead Oggi", value: stats.leads_today || 0, icon: Calendar, color: "from-orange-500 to-orange-600" },
-      ];
+      if (selectedUnit) {
+        return [
+          { title: "Lead Unit", value: stats.total_leads || 0, icon: Phone, color: "from-blue-500 to-blue-600" },
+          { title: "Utenti Unit", value: stats.total_users || 0, icon: Users, color: "from-green-500 to-green-600" },
+          { title: "Lead Oggi", value: stats.leads_today || 0, icon: Calendar, color: "from-orange-500 to-orange-600" },
+          { title: "Unit", value: stats.unit_name || "N/A", icon: Building2, color: "from-purple-500 to-purple-600", isText: true },
+        ];
+      } else {
+        return [
+          { title: "Totale Lead", value: stats.total_leads || 0, icon: Phone, color: "from-blue-500 to-blue-600" },
+          { title: "Totale Utenti", value: stats.total_users || 0, icon: Users, color: "from-green-500 to-green-600" },
+          { title: "Totale Unit", value: stats.total_units || 0, icon: Building2, color: "from-purple-500 to-purple-600" },
+          { title: "Lead Oggi", value: stats.leads_today || 0, icon: Calendar, color: "from-orange-500 to-orange-600" },
+        ];
+      }
     } else if (user.role === "referente") {
       return [
         { title: "Miei Agenti", value: stats.my_agents || 0, icon: Users, color: "from-blue-500 to-blue-600" },
         { title: "Totale Lead", value: stats.total_leads || 0, icon: Phone, color: "from-green-500 to-green-600" },
         { title: "Lead Oggi", value: stats.leads_today || 0, icon: Calendar, color: "from-orange-500 to-orange-600" },
+        { title: "Unit", value: stats.unit_name || "N/A", icon: Building2, color: "from-purple-500 to-purple-600", isText: true },
       ];
     } else {
       return [
         { title: "I Miei Lead", value: stats.my_leads || 0, icon: Phone, color: "from-blue-500 to-blue-600" },
         { title: "Lead Oggi", value: stats.leads_today || 0, icon: Calendar, color: "from-green-500 to-green-600" },
         { title: "Contattati", value: stats.contacted_leads || 0, icon: CheckCircle, color: "from-orange-500 to-orange-600" },
+        { title: "Unit", value: stats.unit_name || "N/A", icon: Building2, color: "from-purple-500 to-purple-600", isText: true },
       ];
     }
   };
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="border-0 shadow-lg bg-white">
+            <CardContent className="p-6">
+              <div className="animate-pulse space-y-4">
+                <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                <div className="h-8 bg-slate-200 rounded w-1/2"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -270,7 +357,9 @@ const DashboardStats = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600 mb-1">{stat.title}</p>
-                <p className="text-3xl font-bold text-slate-800">{stat.value}</p>
+                <p className={`${stat.isText ? 'text-lg' : 'text-3xl'} font-bold text-slate-800`}>
+                  {stat.value}
+                </p>
               </div>
               <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
                 <stat.icon className="w-6 h-6 text-white" />
@@ -284,7 +373,7 @@ const DashboardStats = () => {
 };
 
 // Navigation Component
-const Navigation = ({ activeTab, setActiveTab }) => {
+const Navigation = ({ activeTab, setActiveTab, selectedUnit, onUnitChange, units, unitsLoading }) => {
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -297,7 +386,6 @@ const Navigation = ({ activeTab, setActiveTab }) => {
     if (user.role === "admin") {
       items.push(
         { id: "users", label: "Utenti", icon: Users },
-        { id: "units", label: "Unit", icon: Building2 },
         { id: "containers", label: "Contenitori", icon: Home }
       );
     }
@@ -310,15 +398,27 @@ const Navigation = ({ activeTab, setActiveTab }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-white" />
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-700 to-indigo-800 bg-clip-text text-transparent">
+                  CRM
+                </h1>
+                <p className="text-xs text-slate-500">Lead Manager</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-700 to-indigo-800 bg-clip-text text-transparent">
-                CRM
-              </h1>
-              <p className="text-xs text-slate-500">Lead Manager</p>
+            
+            {/* Unit Selector */}
+            <div className="hidden md:block border-l border-slate-200 pl-4">
+              <UnitSelector 
+                selectedUnit={selectedUnit}
+                onUnitChange={onUnitChange}
+                units={units}
+                loading={unitsLoading}
+              />
             </div>
           </div>
 
@@ -369,7 +469,20 @@ const Navigation = ({ activeTab, setActiveTab }) => {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-slate-200">
+          <div className="md:hidden py-4 border-t border-slate-200 space-y-4">
+            {/* Mobile Unit Selector */}
+            <div className="px-3">
+              <UnitSelector 
+                selectedUnit={selectedUnit}
+                onUnitChange={(value) => {
+                  onUnitChange(value);
+                  setIsMobileMenuOpen(false);
+                }}
+                units={units}
+                loading={unitsLoading}
+              />
+            </div>
+            
             <div className="space-y-1">
               {getNavItems().map((item) => (
                 <button
@@ -399,28 +512,62 @@ const Navigation = ({ activeTab, setActiveTab }) => {
 // Main Dashboard Component
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [selectedUnit, setSelectedUnit] = useState("");
+  const [units, setUnits] = useState([]);
+  const [unitsLoading, setUnitsLoading] = useState(true);
   const { user } = useAuth();
+
+  useEffect(() => {
+    fetchUnits();
+  }, []);
+
+  useEffect(() => {
+    // Auto-select unit for non-admin users
+    if (user.role !== "admin" && user.unit_id && !selectedUnit) {
+      setSelectedUnit(user.unit_id);
+    }
+  }, [user, units]);
+
+  const fetchUnits = async () => {
+    try {
+      const response = await axios.get(`${API}/units`);
+      setUnits(response.data);
+    } catch (error) {
+      console.error("Error fetching units:", error);
+    } finally {
+      setUnitsLoading(false);
+    }
+  };
+
+  const handleUnitChange = (unitId) => {
+    setSelectedUnit(unitId);
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <DashboardStats />;
+        return <DashboardStats selectedUnit={selectedUnit} />;
       case "leads":
-        return <LeadsManagement />;
+        return <LeadsManagement selectedUnit={selectedUnit} />;
       case "users":
-        return user.role === "admin" ? <UsersManagement /> : <div>Non autorizzato</div>;
-      case "units":
-        return user.role === "admin" ? <UnitsManagement /> : <div>Non autorizzato</div>;
+        return user.role === "admin" ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
       case "containers":
-        return user.role === "admin" ? <ContainersManagement /> : <div>Non autorizzato</div>;
+        return user.role === "admin" ? <ContainersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
       default:
-        return <DashboardStats />;
+        return <DashboardStats selectedUnit={selectedUnit} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Navigation 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        selectedUnit={selectedUnit}
+        onUnitChange={handleUnitChange}
+        units={units}
+        unitsLoading={unitsLoading}
+      />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderTabContent()}
@@ -430,7 +577,7 @@ const Dashboard = () => {
 };
 
 // Leads Management Component
-const LeadsManagement = () => {
+const LeadsManagement = ({ selectedUnit }) => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState(null);
@@ -444,7 +591,7 @@ const LeadsManagement = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, [filters]);
+  }, [selectedUnit, filters]);
 
   const fetchLeads = async () => {
     try {
@@ -453,6 +600,9 @@ const LeadsManagement = () => {
       Object.entries(filters).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });
+      if (selectedUnit) {
+        params.append('unit_id', selectedUnit);
+      }
       
       const response = await axios.get(`${API}/leads?${params}`);
       setLeads(response.data);
@@ -586,7 +736,7 @@ const LeadsManagement = () => {
                     <TableCell>
                       <div className="flex items-center space-x-1">
                         <MapPin className="w-3 h-3 text-slate-400" />
-                        <span>{lead.provincia}</span>
+                        <span>{lead.provincia}</span> 
                       </div>
                     </TableCell>
                     <TableCell>{lead.campagna}</TableCell>
@@ -753,23 +903,27 @@ const LeadDetailModal = ({ lead, onClose, onUpdate }) => {
 };
 
 // Users Management Component (Admin only)
-const UsersManagement = () => {
+const UsersManagement = ({ selectedUnit, units }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [provinces, setProvinces] = useState([]);
-  const [units, setUnits] = useState([]);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
     fetchProvinces();
-    fetchUnits();
-  }, []);
+  }, [selectedUnit]);
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${API}/users`);
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (selectedUnit) {
+        params.append('unit_id', selectedUnit);
+      }
+      
+      const response = await axios.get(`${API}/users?${params}`);
       setUsers(response.data);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -787,12 +941,21 @@ const UsersManagement = () => {
     }
   };
 
-  const fetchUnits = async () => {
+  const toggleUserStatus = async (userId, currentStatus) => {
     try {
-      const response = await axios.get(`${API}/units`);
-      setUnits(response.data);
+      await axios.put(`${API}/users/${userId}/toggle-status`);
+      toast({
+        title: "Successo",
+        description: `Utente ${currentStatus ? 'disattivato' : 'attivato'} con successo`,
+      });
+      fetchUsers();
     } catch (error) {
-      console.error("Error fetching units:", error);
+      console.error("Error toggling user status:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'aggiornamento dello stato utente",
+        variant: "destructive",
+      });
     }
   };
 
@@ -813,7 +976,9 @@ const UsersManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800">Gestione Utenti</h2>
+        <h2 className="text-3xl font-bold text-slate-800">
+          Gestione Utenti {selectedUnit && `- ${units.find(u => u.id === selectedUnit)?.name}`}
+        </h2>
         <Button onClick={() => setShowCreateModal(true)}>
           <UserPlus className="w-4 h-4 mr-2" />
           Nuovo Utente
@@ -835,6 +1000,7 @@ const UsersManagement = () => {
                   <TableHead>Province</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead>Ultimo Accesso</TableHead>
+                  <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -865,6 +1031,26 @@ const UsersManagement = () => {
                         "Mai"
                       }
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        onClick={() => toggleUserStatus(user.id, user.is_active)}
+                        variant={user.is_active ? "destructive" : "default"}
+                        size="sm"
+                        className="mr-2"
+                      >
+                        {user.is_active ? (
+                          <>
+                            <PowerOff className="w-3 h-3 mr-1" />
+                            Disattiva
+                          </>
+                        ) : (
+                          <>
+                            <Power className="w-3 h-3 mr-1" />
+                            Attiva
+                          </>
+                        )}
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -882,6 +1068,7 @@ const UsersManagement = () => {
           }}
           provinces={provinces}
           units={units}
+          selectedUnit={selectedUnit}
         />
       )}
     </div>
@@ -889,13 +1076,13 @@ const UsersManagement = () => {
 };
 
 // Create User Modal Component
-const CreateUserModal = ({ onClose, onSuccess, provinces, units }) => {
+const CreateUserModal = ({ onClose, onSuccess, provinces, units, selectedUnit }) => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     role: "",
-    unit_id: "",
+    unit_id: selectedUnit || "",
     referente_id: "",
     provinces: [],
   });
@@ -1052,202 +1239,33 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units }) => {
   );
 };
 
-// Units Management Component (Admin only)
-const UnitsManagement = () => {
-  const [units, setUnits] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    fetchUnits();
-  }, []);
-
-  const fetchUnits = async () => {
-    try {
-      const response = await axios.get(`${API}/units`);
-      setUnits(response.data);
-    } catch (error) {
-      console.error("Error fetching units:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createUnit = async (unitData) => {
-    try {
-      await axios.post(`${API}/units`, unitData);
-      toast({
-        title: "Successo",
-        description: "Unit creata con successo",
-      });
-      fetchUnits();
-      setShowCreateModal(false);
-    } catch (error) {
-      console.error("Error creating unit:", error);
-      toast({
-        title: "Errore",
-        description: "Errore nella creazione della unit",
-        variant: "destructive",
-      });
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800">Gestione Unit</h2>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nuova Unit
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading ? (
-          <div className="col-span-3 text-center py-8">Caricamento...</div>
-        ) : (
-          units.map((unit) => (
-            <Card key={unit.id} className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Building2 className="w-5 h-5 text-blue-600" />
-                  <span>{unit.name}</span>
-                </CardTitle>
-                <CardDescription>{unit.description || "Nessuna descrizione"}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-xs font-medium text-slate-600">Webhook URL</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <code className="text-xs bg-slate-100 px-2 py-1 rounded flex-1 truncate">
-                        {BACKEND_URL}{unit.webhook_url}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          navigator.clipboard.writeText(`${BACKEND_URL}${unit.webhook_url}`);
-                          toast({ title: "Copiato negli appunti!" });
-                        }}
-                      >
-                        Copia
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Badge variant={unit.is_active ? "default" : "secondary"}>
-                        {unit.is_active ? "Attiva" : "Disattiva"}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {new Date(unit.created_at).toLocaleDateString("it-IT")}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {showCreateModal && (
-        <CreateUnitModal
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={createUnit}
-        />
-      )}
-    </div>
-  );
-};
-
-// Create Unit Modal Component
-const CreateUnitModal = ({ onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Crea Nueva Unit</DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nome Unit *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Es. Unit Nord Italia"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Descrizione</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Descrizione della unit"
-              rows={3}
-            />
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Annulla
-            </Button>
-            <Button type="submit">Crea Unit</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
 // Containers Management Component (Admin only)
-const ContainersManagement = () => {
+const ContainersManagement = ({ selectedUnit, units }) => {
   const [containers, setContainers] = useState([]);
-  const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchContainers();
-    fetchUnits();
-  }, []);
+  }, [selectedUnit]);
 
   const fetchContainers = async () => {
     try {
+      setLoading(true);
       const response = await axios.get(`${API}/containers`);
-      setContainers(response.data);
+      let allContainers = response.data;
+      
+      // Filter by selected unit if specified
+      if (selectedUnit) {
+        allContainers = allContainers.filter(c => c.unit_id === selectedUnit);
+      }
+      
+      setContainers(allContainers);
     } catch (error) {
       console.error("Error fetching containers:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchUnits = async () => {
-    try {
-      const response = await axios.get(`${API}/units`);
-      setUnits(response.data);
-    } catch (error) {
-      console.error("Error fetching units:", error);
     }
   };
 
@@ -1273,7 +1291,9 @@ const ContainersManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800">Gestione Contenitori</h2>
+        <h2 className="text-3xl font-bold text-slate-800">
+          Gestione Contenitori {selectedUnit && `- ${units.find(u => u.id === selectedUnit)?.name}`}
+        </h2>
         <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Nuovo Contenitore
@@ -1318,6 +1338,7 @@ const ContainersManagement = () => {
           onClose={() => setShowCreateModal(false)}
           onSubmit={createContainer}
           units={units}
+          selectedUnit={selectedUnit}
         />
       )}
     </div>
@@ -1325,10 +1346,10 @@ const ContainersManagement = () => {
 };
 
 // Create Container Modal Component
-const CreateContainerModal = ({ onClose, onSubmit, units }) => {
+const CreateContainerModal = ({ onClose, onSubmit, units, selectedUnit }) => {
   const [formData, setFormData] = useState({
     name: "",
-    unit_id: "",
+    unit_id: selectedUnit || "",
   });
 
   const handleSubmit = (e) => {
