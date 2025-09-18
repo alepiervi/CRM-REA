@@ -600,7 +600,7 @@ const LeadsManagement = ({ selectedUnit }) => {
       Object.entries(filters).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });
-      if (selectedUnit) {
+      if (selectedUnit && selectedUnit !== "all") {
         params.append('unit_id', selectedUnit);
       }
       
