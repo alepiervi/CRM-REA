@@ -390,12 +390,12 @@ class CRMAPITester:
                 self.log_test("Webhook lead creation", True, f"Lead ID: {lead_id}")
                 
                 # Verify the lead was assigned to the correct unit
-                if response.get('gruppo') == unit_id:
+                if response.get('grupo') == unit_id:
                     self.log_test("Webhook unit assignment", True, f"Correctly assigned to unit: {unit_id}")
                 else:
-                    self.log_test("Webhook unit assignment", False, f"Expected {unit_id}, got {response.get('gruppo')}")
+                    self.log_test("Webhook unit assignment", False, f"Expected {unit_id}, got {response.get('grupo')}")
             else:
-                self.log_test("Webhook lead creation", False, f"Status: {status}")
+                self.log_test("Webhook lead creation", False, f"Status: {status}, Response: {response}")
 
         # Test webhook with invalid unit
         success, response, status = self.make_request(
