@@ -1257,7 +1257,7 @@ const ContainersManagement = ({ selectedUnit, units }) => {
       let allContainers = response.data;
       
       // Filter by selected unit if specified
-      if (selectedUnit) {
+      if (selectedUnit && selectedUnit !== "all") {
         allContainers = allContainers.filter(c => c.unit_id === selectedUnit);
       }
       
