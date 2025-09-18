@@ -13,9 +13,7 @@ from datetime import datetime, timezone, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from enum import Enum
-import smtplib
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
+# Email imports removed - not used in current implementation
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
