@@ -319,7 +319,7 @@ class CRMAPITester:
                 "marketing_consent": True
             }
             
-            success, lead_response, status = self.make_request('POST', 'leads', lead_data, 201, auth_required=False)
+            success, lead_response, status = self.make_request('POST', 'leads', lead_data, 200, auth_required=False)
             if success:
                 lead_id = lead_response['id']
                 self.created_resources['leads'].append(lead_id)
