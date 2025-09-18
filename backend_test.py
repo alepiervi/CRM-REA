@@ -111,7 +111,7 @@ class CRMAPITester:
             if len(provinces) >= 109:
                 self.log_test("Province count validation", True, f"Found {len(provinces)} Italian provinces")
             else:
-                self.log_test("Province count validation", False, f"Expected 110, got {len(provinces)}")
+                self.log_test("Province count validation", False, f"Expected ~110, got {len(provinces)}")
                 
             # Check for some key Italian provinces
             key_provinces = ["Roma", "Milano", "Napoli", "Torino", "Palermo"]
