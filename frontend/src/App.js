@@ -258,7 +258,7 @@ const UnitSelector = ({ selectedUnit, onUnitChange, units, loading }) => {
         </SelectTrigger>
         <SelectContent>
           {user.role === "admin" && (
-            <SelectItem value="">Tutte le Unit</SelectItem>
+            <SelectItem value="all">Tutte le Unit</SelectItem>
           )}
           {units.map((unit) => (
             <SelectItem key={unit.id} value={unit.id}>
