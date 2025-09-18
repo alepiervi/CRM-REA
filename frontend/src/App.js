@@ -919,7 +919,7 @@ const UsersManagement = ({ selectedUnit, units }) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (selectedUnit) {
+      if (selectedUnit && selectedUnit !== "all") {
         params.append('unit_id', selectedUnit);
       }
       
