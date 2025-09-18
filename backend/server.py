@@ -498,35 +498,72 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
 
 # Dashboard stats
 @api_router.get("/dashboard/stats")
-async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
+async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
     stats = {}
     
+    # Base query for unit filtering
+    unit_filter = {}
+    if unit_id:
+        unit_filter["gruppo"] = unit_id
+    elif current_user.role != UserRole.ADMIN and current_user.unit_id:
+        unit_filter["gruppo"] = current_user.unit_id
+    
     if current_user.role == UserRole.ADMIN:
-        stats["total_leads"] = await db.leads.count_documents({})
-        stats["total_users"] = await db.users.count_documents({})
-        stats["total_units"] = await db.units.count_documents({})
-        stats["leads_today"] = await db.leads.count_documents({
-            "created_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
-        })
+        # Admin stats - optionally filtered by unit
+        if unit_id:
+            stats["total_leads"] = await db.leads.count_documents(unit_filter)
+            stats["leads_today"] = await db.leads.count_documents({
+                **unit_filter,
+                "created_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
+            })
+            stats["total_users"] = await db.users.count_documents({"unit_id": unit_id})
+            unit_info = await db.units.find_one({"id": unit_id})
+            stats["unit_name"] = unit_info["name"] if unit_info else "Unknown Unit"
+        else:
+            stats["total_leads"] = await db.leads.count_documents({})
+            stats["total_users"] = await db.users.count_documents({})
+            stats["total_units"] = await db.units.count_documents({})
+            stats["leads_today"] = await db.leads.count_documents({
+                "created_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
+            })
+            
     elif current_user.role == UserRole.REFERENTE:
         agents = await db.users.find({"referente_id": current_user.id}).to_list(length=None)
         agent_ids = [agent["id"] for agent in agents]
+        
+        lead_query = {"assigned_agent_id": {"$in": agent_ids}}
+        if unit_filter:
+            lead_query.update(unit_filter)
+            
         stats["my_agents"] = len(agent_ids)
-        stats["total_leads"] = await db.leads.count_documents({"assigned_agent_id": {"$in": agent_ids}})
+        stats["total_leads"] = await db.leads.count_documents(lead_query)
         stats["leads_today"] = await db.leads.count_documents({
-            "assigned_agent_id": {"$in": agent_ids},
+            **lead_query,
             "created_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
         })
+        
+        if current_user.unit_id:
+            unit_info = await db.units.find_one({"id": current_user.unit_id})
+            stats["unit_name"] = unit_info["name"] if unit_info else "Unknown Unit"
+            
     else:  # Agent
-        stats["my_leads"] = await db.leads.count_documents({"assigned_agent_id": current_user.id})
+        lead_query = {"assigned_agent_id": current_user.id}
+        if unit_filter:
+            lead_query.update(unit_filter)
+            
+        stats["my_leads"] = await db.leads.count_documents(lead_query)
         stats["leads_today"] = await db.leads.count_documents({
-            "assigned_agent_id": current_user.id,
+            **lead_query,
             "created_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
         })
         stats["contacted_leads"] = await db.leads.count_documents({
-            "assigned_agent_id": current_user.id,
+            **lead_query,
             "esito": {"$ne": None}
         })
+        
+        if current_user.unit_id:
+            unit_info = await db.units.find_one({"id": current_user.unit_id})
+            stats["unit_name"] = unit_info["name"] if unit_info else "Unknown Unit"
     
     return stats
 
