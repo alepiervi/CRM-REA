@@ -306,22 +306,52 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
     return user_obj
 
 @api_router.get("/users", response_model=List[User])
-async def get_users(current_user: User = Depends(get_current_user)):
+async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    query = {}
+    
     if current_user.role == UserRole.ADMIN:
-        users = await db.users.find().to_list(length=None)
+        # Admin can see all users, optionally filtered by unit
+        if unit_id:
+            query["unit_id"] = unit_id
     elif current_user.role == UserRole.REFERENTE:
-        # Referente can see their agents
-        users = await db.users.find({
+        # Referente can see their agents in their unit
+        query = {
             "$or": [
                 {"id": current_user.id},
                 {"referente_id": current_user.id}
             ]
-        }).to_list(length=None)
+        }
+        if unit_id:
+            query["unit_id"] = unit_id
     else:
         # Agents can only see themselves
-        users = await db.users.find({"id": current_user.id}).to_list(length=None)
+        query["id"] = current_user.id
     
+    users = await db.users.find(query).to_list(length=None)
     return [User(**user) for user in users]
+
+@api_router.put("/users/{user_id}/toggle-status")
+async def toggle_user_status(user_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can toggle user status")
+    
+    # Find the user
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Don't allow disabling the current admin
+    if user["id"] == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot disable your own account")
+    
+    # Toggle the status
+    new_status = not user["is_active"]
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"is_active": new_status}}
+    )
+    
+    return {"message": f"User {'activated' if new_status else 'deactivated'} successfully", "is_active": new_status}
 
 @api_router.get("/provinces")
 async def get_provinces():
