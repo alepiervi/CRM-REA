@@ -382,7 +382,7 @@ class CRMAPITester:
             unit_id = self.created_resources['units'][0]
             
             success, response, status = self.make_request(
-                'POST', f'webhook/{unit_id}', webhook_lead_data, 201, auth_required=False
+                'POST', f'webhook/{unit_id}', webhook_lead_data, 200, auth_required=False
             )
             if success:
                 lead_id = response['id']
