@@ -542,6 +542,8 @@ class CRMAPITester:
         self.test_provinces_endpoint()
         self.test_dashboard_stats()
         self.test_user_management()
+        self.test_user_toggle_status()  # NEW FEATURE TEST
+        self.test_unit_filtering()      # NEW FEATURE TEST
         self.test_units_management()
         self.test_containers_management()
         self.test_leads_management()
