@@ -374,6 +374,7 @@ class CRMAPITester:
             "provincia": "Milano",
             "tipologia_abitazione": "villa",
             "campagna": "Webhook Campaign",
+            "gruppo": "placeholder",  # Will be overridden by webhook endpoint
             "contenitore": "Webhook Container",
             "privacy_consent": True
         }
