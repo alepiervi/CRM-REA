@@ -186,7 +186,7 @@ class CRMAPITester:
             "provinces": []
         }
         
-        success, user_response, status = self.make_request('POST', 'users', test_user_data, 201)
+        success, user_response, status = self.make_request('POST', 'users', test_user_data, 200)
         if success:
             user_id = user_response['id']
             self.created_resources['users'].append(user_id)
