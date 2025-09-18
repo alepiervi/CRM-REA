@@ -228,6 +228,97 @@ class CRMAPITester:
         success, response, status = self.make_request('POST', 'users', invalid_agent_data, 400)
         self.log_test("Invalid province rejection", success, "Correctly rejected invalid provinces")
 
+    def test_user_toggle_status(self):
+        """Test user status toggle functionality (NEW FEATURE)"""
+        print("\n🔄 Testing User Status Toggle (NEW FEATURE)...")
+        
+        # First create a test user to toggle
+        unit_id = self.created_resources['units'][0] if self.created_resources['units'] else None
+        test_user_data = {
+            "username": f"toggle_test_{datetime.now().strftime('%H%M%S')}",
+            "email": f"toggle_test_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "testpass123",
+            "role": "referente",
+            "unit_id": unit_id,
+            "provinces": []
+        }
+        
+        success, user_response, status = self.make_request('POST', 'users', test_user_data, 200)
+        if success:
+            user_id = user_response['id']
+            self.created_resources['users'].append(user_id)
+            self.log_test("Create user for toggle test", True, f"User ID: {user_id}")
+            
+            # Test toggling user status (should deactivate)
+            success, toggle_response, status = self.make_request('PUT', f'users/{user_id}/toggle-status', {}, 200)
+            if success:
+                is_active = toggle_response.get('is_active')
+                message = toggle_response.get('message', '')
+                self.log_test("Toggle user status (deactivate)", True, f"Status: {is_active}, Message: {message}")
+                
+                # Test toggling again (should reactivate)
+                success, toggle_response2, status = self.make_request('PUT', f'users/{user_id}/toggle-status', {}, 200)
+                if success:
+                    is_active2 = toggle_response2.get('is_active')
+                    message2 = toggle_response2.get('message', '')
+                    self.log_test("Toggle user status (reactivate)", True, f"Status: {is_active2}, Message: {message2}")
+                else:
+                    self.log_test("Toggle user status (reactivate)", False, f"Status: {status}")
+            else:
+                self.log_test("Toggle user status (deactivate)", False, f"Status: {status}")
+                
+            # Test admin cannot disable themselves
+            admin_user_id = self.user_data['id']  # Current admin user
+            success, response, status = self.make_request('PUT', f'users/{admin_user_id}/toggle-status', {}, 400)
+            self.log_test("Admin self-disable prevention", success, "Correctly prevented admin from disabling themselves")
+            
+        else:
+            self.log_test("Create user for toggle test", False, f"Status: {status}")
+            
+        # Test toggle with non-existent user
+        success, response, status = self.make_request('PUT', 'users/non-existent-id/toggle-status', {}, 404)
+        self.log_test("Toggle non-existent user", success, "Correctly returned 404 for non-existent user")
+
+    def test_unit_filtering(self):
+        """Test unit filtering functionality (NEW FEATURE)"""
+        print("\n🏢 Testing Unit Filtering (NEW FEATURE)...")
+        
+        if not self.created_resources['units']:
+            self.log_test("Unit filtering test", False, "No units available for filtering test")
+            return
+            
+        unit_id = self.created_resources['units'][0]
+        
+        # Test dashboard stats with unit filtering
+        success, response, status = self.make_request('GET', f'dashboard/stats?unit_id={unit_id}', expected_status=200)
+        if success:
+            expected_keys = ['total_leads', 'total_users', 'leads_today', 'unit_name']
+            missing_keys = [key for key in expected_keys if key not in response]
+            
+            if not missing_keys:
+                self.log_test("Dashboard stats with unit filter", True, 
+                    f"Unit: {response.get('unit_name')}, Users: {response.get('total_users', 0)}, Leads: {response.get('total_leads', 0)}")
+            else:
+                self.log_test("Dashboard stats with unit filter", False, f"Missing keys: {missing_keys}")
+        else:
+            self.log_test("Dashboard stats with unit filter", False, f"Status: {status}")
+            
+        # Test users filtering by unit
+        success, response, status = self.make_request('GET', f'users?unit_id={unit_id}', expected_status=200)
+        if success:
+            filtered_users = response
+            self.log_test("Users filtering by unit", True, f"Found {len(filtered_users)} users in unit")
+        else:
+            self.log_test("Users filtering by unit", False, f"Status: {status}")
+            
+        # Test leads filtering by unit
+        success, response, status = self.make_request('GET', f'leads?unit_id={unit_id}', expected_status=200)
+        if success:
+            filtered_leads = response
+            self.log_test("Leads filtering by unit", True, f"Found {len(filtered_leads)} leads in unit")
+        else:
+            self.log_test("Leads filtering by unit", False, f"Status: {status}")
+
     def test_units_management(self):
         """Test units management"""
         print("\n🏢 Testing Units Management...")
