@@ -366,20 +366,20 @@ class CRMAPITester:
         """Test webhook endpoint"""
         print("\n🔗 Testing Webhook Endpoint...")
         
+        webhook_lead_data = {
+            "nome": "Webhook",
+            "cognome": "Test",
+            "telefono": "+39 987 654 3210",
+            "email": "webhook.test@test.com",
+            "provincia": "Milano",
+            "tipologia_abitazione": "villa",
+            "campagna": "Webhook Campaign",
+            "contenitore": "Webhook Container",
+            "privacy_consent": True
+        }
+        
         if self.created_resources['units']:
             unit_id = self.created_resources['units'][0]
-            
-            webhook_lead_data = {
-                "nome": "Webhook",
-                "cognome": "Test",
-                "telefono": "+39 987 654 3210",
-                "email": "webhook.test@test.com",
-                "provincia": "Milano",
-                "tipologia_abitazione": "villa",
-                "campagna": "Webhook Campaign",
-                "contenitore": "Webhook Container",
-                "privacy_consent": True
-            }
             
             success, response, status = self.make_request(
                 'POST', f'webhook/{unit_id}', webhook_lead_data, 201, auth_required=False
