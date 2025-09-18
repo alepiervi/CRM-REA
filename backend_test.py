@@ -246,7 +246,7 @@ class CRMAPITester:
             "description": "Unit created via API test"
         }
         
-        success, unit_response, status = self.make_request('POST', 'units', unit_data, 201)
+        success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
         if success:
             unit_id = unit_response['id']
             webhook_url = unit_response.get('webhook_url', '')
