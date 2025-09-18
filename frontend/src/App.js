@@ -300,7 +300,7 @@ const DashboardStats = ({ selectedUnit }) => {
 
   const getStatsCards = () => {
     if (user.role === "admin") {
-      if (selectedUnit) {
+      if (selectedUnit && selectedUnit !== "all") {
         return [
           { title: "Lead Unit", value: stats.total_leads || 0, icon: Phone, color: "from-blue-500 to-blue-600" },
           { title: "Utenti Unit", value: stats.total_users || 0, icon: Users, color: "from-green-500 to-green-600" },
