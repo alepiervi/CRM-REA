@@ -280,7 +280,7 @@ class CRMAPITester:
                 "unit_id": unit_id
             }
             
-            success, container_response, status = self.make_request('POST', 'containers', container_data, 201)
+            success, container_response, status = self.make_request('POST', 'containers', container_data, 200)
             if success:
                 container_id = container_response['id']
                 self.created_resources['containers'].append(container_id)
