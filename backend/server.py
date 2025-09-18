@@ -519,7 +519,7 @@ async def startup_event():
         admin_data = {
             "id": str(uuid.uuid4()),
             "username": "admin",
-            "email": "admin@crm.local",
+            "email": "admin@example.com",
             "password_hash": get_password_hash("admin123"),
             "role": "admin",
             "is_active": True,
