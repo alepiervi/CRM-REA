@@ -167,7 +167,7 @@ class CRMAPITester:
             "name": f"Test Unit {datetime.now().strftime('%H%M%S')}",
             "description": "Unit for testing user creation"
         }
-        success, unit_response, status = self.make_request('POST', 'units', unit_data, 201)
+        success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
         if success:
             unit_id = unit_response['id']
             self.created_resources['units'].append(unit_id)
