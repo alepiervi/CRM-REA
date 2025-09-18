@@ -512,7 +512,7 @@ const Navigation = ({ activeTab, setActiveTab, selectedUnit, onUnitChange, units
 // Main Dashboard Component
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [selectedUnit, setSelectedUnit] = useState("");
+  const [selectedUnit, setSelectedUnit] = useState("all");
   const [units, setUnits] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
   const { user } = useAuth();
