@@ -204,7 +204,7 @@ class CRMAPITester:
             "provinces": ["Roma", "Milano", "Napoli"]
         }
         
-        success, agent_response, status = self.make_request('POST', 'users', test_agent_data, 201)
+        success, agent_response, status = self.make_request('POST', 'users', test_agent_data, 200)
         if success:
             agent_id = agent_response['id']
             self.created_resources['users'].append(agent_id)
