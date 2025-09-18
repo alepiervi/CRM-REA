@@ -415,6 +415,7 @@ async def create_lead(lead_data: LeadCreate):
 
 @api_router.get("/leads", response_model=List[Lead])
 async def get_leads(
+    unit_id: Optional[str] = None,
     campagna: Optional[str] = None,
     provincia: Optional[str] = None,
     date_from: Optional[str] = None,
@@ -434,7 +435,14 @@ async def get_leads(
         query["assigned_agent_id"] = {"$in": agent_ids}
     # Admin can see all leads
     
-    # Apply filters
+    # Unit filtering
+    if unit_id:
+        query["gruppo"] = unit_id
+    elif current_user.role != UserRole.ADMIN and current_user.unit_id:
+        # Non-admin users can only see leads from their unit
+        query["gruppo"] = current_user.unit_id
+    
+    # Apply additional filters
     if campagna:
         query["campagna"] = campagna
     if provincia:
