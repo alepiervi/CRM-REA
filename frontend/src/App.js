@@ -4414,7 +4414,7 @@ const WhatsAppManagement = () => {
         <WhatsAppConfigModal
           onClose={() => setShowConfigModal(false)}
           onSuccess={() => {
-            fetchWhatsAppConfig();
+            fetchWhatsAppConfig(false); // Non mostrare loading
             setShowConfigModal(false);
           }}
           existingConfig={config}
