@@ -4220,9 +4220,8 @@ const WhatsAppManagement = () => {
   useEffect(() => {
     fetchWhatsAppConfig();
     
-    // Polling per aggiornare lo stato di connessione
-    const interval = setInterval(fetchWhatsAppConfig, 5000);
-    return () => clearInterval(interval);
+    // Rimuoviamo il polling aggressivo che causa lag
+    // Il polling sarà attivato solo quando necessario (es. durante connessione)
   }, []);
 
   const fetchWhatsAppConfig = async () => {
