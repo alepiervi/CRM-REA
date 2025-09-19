@@ -124,6 +124,7 @@ class UnitCreate(BaseModel):
 
 class Lead(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    lead_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])  # Short ID for reference
     nome: str
     cognome: str
     telefono: str
@@ -140,6 +141,7 @@ class Lead(BaseModel):
     esito: Optional[CallOutcome] = None
     note: Optional[str] = None
     custom_fields: Dict[str, Any] = {}
+    documents: List[str] = []  # URLs to stored documents
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     assigned_at: Optional[datetime] = None
     contacted_at: Optional[datetime] = None
@@ -162,6 +164,21 @@ class LeadCreate(BaseModel):
 class LeadUpdate(BaseModel):
     esito: Optional[CallOutcome] = None
     note: Optional[str] = None
+    custom_fields: Optional[Dict[str, Any]] = None
+
+class CustomField(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    field_type: str  # text, number, date, boolean, select
+    options: List[str] = []  # For select type
+    required: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CustomFieldCreate(BaseModel):
+    name: str
+    field_type: str
+    options: List[str] = []
+    required: bool = False
 
 class Container(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
