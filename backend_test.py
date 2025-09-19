@@ -228,9 +228,387 @@ class CRMAPITester:
         success, response, status = self.make_request('POST', 'users', invalid_agent_data, 400)
         self.log_test("Invalid province rejection", success, "Correctly rejected invalid provinces")
 
+    def test_user_crud_new_features(self):
+        """Test NEW User CRUD features: Referenti endpoint, Edit/Delete"""
+        print("\n👥 Testing NEW User CRUD Features...")
+        
+        # First create a unit for testing
+        unit_data = {
+            "name": f"CRUD Test Unit {datetime.now().strftime('%H%M%S')}",
+            "description": "Unit for testing new CRUD features"
+        }
+        success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
+        if success:
+            unit_id = unit_response['id']
+            self.created_resources['units'].append(unit_id)
+            self.log_test("Create test unit for CRUD", True, f"Unit ID: {unit_id}")
+        else:
+            self.log_test("Create test unit for CRUD", False, f"Status: {status}")
+            return
+        
+        # Create a referente user
+        referente_data = {
+            "username": f"test_referente_{datetime.now().strftime('%H%M%S')}",
+            "email": f"referente_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "TestPass123!",
+            "role": "referente",
+            "unit_id": unit_id,
+            "provinces": []
+        }
+        
+        success, referente_response, status = self.make_request('POST', 'users', referente_data, 200)
+        if success:
+            referente_id = referente_response['id']
+            self.created_resources['users'].append(referente_id)
+            self.log_test("Create referente for CRUD test", True, f"Referente ID: {referente_id}")
+        else:
+            self.log_test("Create referente for CRUD test", False, f"Status: {status}")
+            return
+        
+        # TEST NEW ENDPOINT: GET referenti by unit
+        success, referenti_response, status = self.make_request('GET', f'users/referenti/{unit_id}', expected_status=200)
+        if success:
+            referenti_list = referenti_response
+            self.log_test("GET referenti by unit (NEW)", True, f"Found {len(referenti_list)} referenti in unit")
+            
+            # Verify our referente is in the list
+            found_referente = any(ref['id'] == referente_id for ref in referenti_list)
+            self.log_test("Referente in unit list", found_referente, f"Referente {'found' if found_referente else 'not found'} in unit")
+        else:
+            self.log_test("GET referenti by unit (NEW)", False, f"Status: {status}")
+        
+        # Create an agent with referente
+        agent_data = {
+            "username": f"test_agent_{datetime.now().strftime('%H%M%S')}",
+            "email": f"agent_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "TestPass123!",
+            "role": "agente",
+            "unit_id": unit_id,
+            "referente_id": referente_id,
+            "provinces": ["Milano", "Roma"]
+        }
+        
+        success, agent_response, status = self.make_request('POST', 'users', agent_data, 200)
+        if success:
+            agent_id = agent_response['id']
+            self.created_resources['users'].append(agent_id)
+            self.log_test("Create agent with referente", True, f"Agent ID: {agent_id}, Referente: {referente_id}")
+        else:
+            self.log_test("Create agent with referente", False, f"Status: {status}")
+            return
+        
+        # TEST NEW ENDPOINT: PUT user (edit)
+        updated_agent_data = {
+            "username": agent_response['username'],
+            "email": agent_response['email'],
+            "password": "NewPassword123!",
+            "role": "agente",
+            "unit_id": unit_id,
+            "referente_id": referente_id,
+            "provinces": ["Milano", "Roma", "Napoli"]  # Added province
+        }
+        
+        success, update_response, status = self.make_request('PUT', f'users/{agent_id}', updated_agent_data, 200)
+        if success:
+            updated_provinces = update_response.get('provinces', [])
+            self.log_test("PUT user edit (NEW)", True, f"Updated provinces: {updated_provinces}")
+        else:
+            self.log_test("PUT user edit (NEW)", False, f"Status: {status}")
+        
+        # TEST NEW ENDPOINT: DELETE user
+        success, delete_response, status = self.make_request('DELETE', f'users/{agent_id}', expected_status=200)
+        if success:
+            message = delete_response.get('message', '')
+            self.log_test("DELETE user (NEW)", True, f"Message: {message}")
+            self.created_resources['users'].remove(agent_id)
+        else:
+            self.log_test("DELETE user (NEW)", False, f"Status: {status}")
+        
+        # Test delete non-existent user
+        success, response, status = self.make_request('DELETE', 'users/non-existent-id', expected_status=404)
+        self.log_test("DELETE non-existent user", success, "Correctly returned 404")
+        
+        # Test admin cannot delete themselves
+        admin_user_id = self.user_data['id']
+        success, response, status = self.make_request('DELETE', f'users/{admin_user_id}', expected_status=400)
+        self.log_test("Admin self-delete prevention", success, "Correctly prevented admin from deleting themselves")
+
+    def test_container_crud_new_features(self):
+        """Test NEW Container CRUD features: Edit/Delete"""
+        print("\n📦 Testing NEW Container CRUD Features...")
+        
+        # Use existing unit or create one
+        if not self.created_resources['units']:
+            unit_data = {
+                "name": f"Container CRUD Unit {datetime.now().strftime('%H%M%S')}",
+                "description": "Unit for container CRUD testing"
+            }
+            success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
+            if success:
+                unit_id = unit_response['id']
+                self.created_resources['units'].append(unit_id)
+            else:
+                self.log_test("Create unit for container CRUD", False, f"Status: {status}")
+                return
+        else:
+            unit_id = self.created_resources['units'][0]
+        
+        # Create a container for testing
+        container_data = {
+            "name": f"CRUD Test Container {datetime.now().strftime('%H%M%S')}",
+            "unit_id": unit_id
+        }
+        
+        success, container_response, status = self.make_request('POST', 'containers', container_data, 200)
+        if success:
+            container_id = container_response['id']
+            self.created_resources['containers'].append(container_id)
+            self.log_test("Create container for CRUD test", True, f"Container ID: {container_id}")
+        else:
+            self.log_test("Create container for CRUD test", False, f"Status: {status}")
+            return
+        
+        # TEST NEW ENDPOINT: PUT container (edit)
+        updated_container_data = {
+            "name": "Updated Container Name",
+            "unit_id": unit_id
+        }
+        
+        success, update_response, status = self.make_request('PUT', f'containers/{container_id}', updated_container_data, 200)
+        if success:
+            updated_name = update_response.get('name', '')
+            self.log_test("PUT container edit (NEW)", True, f"Updated name: {updated_name}")
+        else:
+            self.log_test("PUT container edit (NEW)", False, f"Status: {status}")
+        
+        # TEST NEW ENDPOINT: DELETE container
+        success, delete_response, status = self.make_request('DELETE', f'containers/{container_id}', expected_status=200)
+        if success:
+            message = delete_response.get('message', '')
+            self.log_test("DELETE container (NEW)", True, f"Message: {message}")
+            self.created_resources['containers'].remove(container_id)
+        else:
+            self.log_test("DELETE container (NEW)", False, f"Status: {status}")
+        
+        # Test delete non-existent container
+        success, response, status = self.make_request('DELETE', 'containers/non-existent-id', expected_status=404)
+        self.log_test("DELETE non-existent container", success, "Correctly returned 404")
+
+    def test_custom_fields_crud(self):
+        """Test Custom Fields CRUD operations (NEW FEATURE)"""
+        print("\n🔧 Testing Custom Fields CRUD (NEW FEATURE)...")
+        
+        # TEST: GET custom fields
+        success, get_response, status = self.make_request('GET', 'custom-fields', expected_status=200)
+        if success:
+            fields_list = get_response
+            self.log_test("GET custom fields", True, f"Found {len(fields_list)} custom fields")
+        else:
+            self.log_test("GET custom fields", False, f"Status: {status}")
+        
+        # TEST: POST custom field (create)
+        field_data = {
+            "name": f"Test Field {datetime.now().strftime('%H%M%S')}",
+            "field_type": "text",
+            "options": [],
+            "required": False
+        }
+        
+        success, create_response, status = self.make_request('POST', 'custom-fields', field_data, 200)
+        if success:
+            field_id = create_response['id']
+            field_name = create_response.get('name', '')
+            self.log_test("POST custom field create", True, f"Field ID: {field_id}, Name: {field_name}")
+        else:
+            self.log_test("POST custom field create", False, f"Status: {status}")
+            return
+        
+        # TEST: Create select type field
+        select_field_data = {
+            "name": f"Select Field {datetime.now().strftime('%H%M%S')}",
+            "field_type": "select",
+            "options": ["Option 1", "Option 2", "Option 3"],
+            "required": True
+        }
+        
+        success, select_response, status = self.make_request('POST', 'custom-fields', select_field_data, 200)
+        if success:
+            select_field_id = select_response['id']
+            options = select_response.get('options', [])
+            self.log_test("POST select custom field", True, f"Field ID: {select_field_id}, Options: {options}")
+        else:
+            self.log_test("POST select custom field", False, f"Status: {status}")
+            select_field_id = None
+        
+        # TEST: Duplicate field name rejection
+        success, response, status = self.make_request('POST', 'custom-fields', field_data, 400)
+        self.log_test("Duplicate field name rejection", success, "Correctly rejected duplicate field name")
+        
+        # TEST: DELETE custom field
+        success, delete_response, status = self.make_request('DELETE', f'custom-fields/{field_id}', expected_status=200)
+        if success:
+            message = delete_response.get('message', '')
+            self.log_test("DELETE custom field", True, f"Message: {message}")
+        else:
+            self.log_test("DELETE custom field", False, f"Status: {status}")
+        
+        # Clean up select field if created
+        if select_field_id:
+            success, response, status = self.make_request('DELETE', f'custom-fields/{select_field_id}', expected_status=200)
+            self.log_test("DELETE select custom field", success, "Select field deleted")
+        
+        # Test delete non-existent field
+        success, response, status = self.make_request('DELETE', 'custom-fields/non-existent-id', expected_status=404)
+        self.log_test("DELETE non-existent custom field", success, "Correctly returned 404")
+
+    def test_analytics_endpoints(self):
+        """Test Analytics endpoints (NEW FEATURE)"""
+        print("\n📊 Testing Analytics Endpoints (NEW FEATURE)...")
+        
+        # We need users to test analytics
+        if not self.created_resources['users']:
+            self.log_test("Analytics test setup", False, "No users available for analytics testing")
+            return
+        
+        # Get the first user (should be referente)
+        referente_id = self.created_resources['users'][0] if self.created_resources['users'] else None
+        agent_id = self.created_resources['users'][1] if len(self.created_resources['users']) > 1 else None
+        
+        # TEST: GET agent analytics
+        if agent_id:
+            success, agent_response, status = self.make_request('GET', f'analytics/agent/{agent_id}', expected_status=200)
+            if success:
+                agent_info = agent_response.get('agent', {})
+                stats = agent_response.get('stats', {})
+                self.log_test("GET agent analytics (NEW)", True, 
+                    f"Agent: {agent_info.get('username')}, Total leads: {stats.get('total_leads', 0)}, Contact rate: {stats.get('contact_rate', 0)}%")
+            else:
+                self.log_test("GET agent analytics (NEW)", False, f"Status: {status}")
+        else:
+            # Try with admin user as agent
+            admin_id = self.user_data['id']
+            success, agent_response, status = self.make_request('GET', f'analytics/agent/{admin_id}', expected_status=200)
+            if success:
+                agent_info = agent_response.get('agent', {})
+                stats = agent_response.get('stats', {})
+                self.log_test("GET agent analytics (NEW)", True, 
+                    f"Agent: {agent_info.get('username')}, Total leads: {stats.get('total_leads', 0)}")
+            else:
+                self.log_test("GET agent analytics (NEW)", False, f"Status: {status}")
+        
+        # TEST: GET referente analytics
+        if referente_id:
+            success, referente_response, status = self.make_request('GET', f'analytics/referente/{referente_id}', expected_status=200)
+            if success:
+                referente_info = referente_response.get('referente', {})
+                total_stats = referente_response.get('total_stats', {})
+                agent_breakdown = referente_response.get('agent_breakdown', [])
+                self.log_test("GET referente analytics (NEW)", True, 
+                    f"Referente: {referente_info.get('username')}, Total agents: {referente_response.get('total_agents', 0)}, Total leads: {total_stats.get('total_leads', 0)}")
+            else:
+                self.log_test("GET referente analytics (NEW)", False, f"Status: {status}")
+        else:
+            # Try with admin user as referente
+            admin_id = self.user_data['id']
+            success, referente_response, status = self.make_request('GET', f'analytics/referente/{admin_id}', expected_status=200)
+            if success:
+                referente_info = referente_response.get('referente', {})
+                total_stats = referente_response.get('total_stats', {})
+                self.log_test("GET referente analytics (NEW)", True, 
+                    f"Referente: {referente_info.get('username')}, Total leads: {total_stats.get('total_leads', 0)}")
+            else:
+                self.log_test("GET referente analytics (NEW)", False, f"Status: {status}")
+        
+        # Test analytics with non-existent user
+        success, response, status = self.make_request('GET', 'analytics/agent/non-existent-id', expected_status=404)
+        self.log_test("Analytics non-existent agent", success, "Correctly returned 404")
+        
+        success, response, status = self.make_request('GET', 'analytics/referente/non-existent-id', expected_status=404)
+        self.log_test("Analytics non-existent referente", success, "Correctly returned 404")
+
+    def test_lead_new_fields(self):
+        """Test Lead creation with NEW fields (IP, Privacy, Marketing, Lead ID)"""
+        print("\n📋 Testing Lead NEW Fields...")
+        
+        # Use existing unit or create one
+        if not self.created_resources['units']:
+            unit_data = {
+                "name": f"Lead Fields Unit {datetime.now().strftime('%H%M%S')}",
+                "description": "Unit for lead fields testing"
+            }
+            success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
+            if success:
+                unit_id = unit_response['id']
+                self.created_resources['units'].append(unit_id)
+            else:
+                self.log_test("Create unit for lead fields", False, f"Status: {status}")
+                return
+        else:
+            unit_id = self.created_resources['units'][0]
+        
+        # Create container if needed
+        if not self.created_resources['containers']:
+            container_data = {
+                "name": f"Lead Fields Container {datetime.now().strftime('%H%M%S')}",
+                "unit_id": unit_id
+            }
+            success, container_response, status = self.make_request('POST', 'containers', container_data, 200)
+            if success:
+                container_id = container_response['id']
+                self.created_resources['containers'].append(container_id)
+            else:
+                container_id = "test-container"
+        else:
+            container_id = self.created_resources['containers'][0]
+        
+        # TEST: Create lead with NEW fields
+        lead_data = {
+            "nome": "Mario",
+            "cognome": "Rossi",
+            "telefono": "+39 123 456 7890",
+            "email": "mario.rossi@test.com",
+            "provincia": "Milano",
+            "tipologia_abitazione": "appartamento",
+            "ip_address": "192.168.1.100",  # NEW FIELD
+            "campagna": "Test Campaign with New Fields",
+            "gruppo": unit_id,
+            "contenitore": container_id,
+            "privacy_consent": True,  # NEW FIELD
+            "marketing_consent": False,  # NEW FIELD
+            "custom_fields": {"test_field": "test_value"}  # NEW FIELD
+        }
+        
+        success, lead_response, status = self.make_request('POST', 'leads', lead_data, 200, auth_required=False)
+        if success:
+            lead_id = lead_response['id']
+            lead_short_id = lead_response.get('lead_id', 'N/A')
+            ip_address = lead_response.get('ip_address', 'N/A')
+            privacy_consent = lead_response.get('privacy_consent', False)
+            marketing_consent = lead_response.get('marketing_consent', False)
+            custom_fields = lead_response.get('custom_fields', {})
+            
+            self.created_resources['leads'].append(lead_id)
+            self.log_test("Create lead with NEW fields", True, 
+                f"Lead ID: {lead_short_id}, IP: {ip_address}, Privacy: {privacy_consent}, Marketing: {marketing_consent}")
+            
+            # Verify lead_id is 8 characters
+            if len(lead_short_id) == 8:
+                self.log_test("Lead ID format (8 chars)", True, f"Lead ID: {lead_short_id}")
+            else:
+                self.log_test("Lead ID format (8 chars)", False, f"Expected 8 chars, got {len(lead_short_id)}")
+            
+            # Verify custom fields
+            if custom_fields.get('test_field') == 'test_value':
+                self.log_test("Custom fields in lead", True, f"Custom fields: {custom_fields}")
+            else:
+                self.log_test("Custom fields in lead", False, f"Expected test_field=test_value, got {custom_fields}")
+                
+        else:
+            self.log_test("Create lead with NEW fields", False, f"Status: {status}, Response: {lead_response}")
+
     def test_user_toggle_status(self):
-        """Test user status toggle functionality (NEW FEATURE)"""
-        print("\n🔄 Testing User Status Toggle (NEW FEATURE)...")
+        """Test user status toggle functionality"""
+        print("\n🔄 Testing User Status Toggle...")
         
         # First create a test user to toggle
         unit_id = self.created_resources['units'][0] if self.created_resources['units'] else None
