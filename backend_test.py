@@ -1256,6 +1256,9 @@ class CRMAPITester:
         self.test_analytics_endpoints()     # NEW FEATURE TEST
         self.test_leads_management()
         self.test_lead_new_fields()         # NEW FEATURE TEST
+        self.test_document_management()     # NEW FEATURE TEST - Document endpoints
+        self.test_excel_export()            # NEW FEATURE TEST - Excel export
+        self.test_role_based_access_documents()  # NEW FEATURE TEST - Role-based access
         self.test_webhook_endpoint()
         self.test_unauthorized_access()
         
