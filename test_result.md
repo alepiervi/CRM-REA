@@ -105,7 +105,7 @@
 user_problem_statement: "Testa specificatamente l'endpoint DELETE per i lead che ho appena implementato: 1. Verifica endpoint DELETE /api/leads/{lead_id} - controlla che funzioni correttamente, 2. Testa controlli di accesso - verifica che solo admin possa eliminare lead, 3. Testa controlli di integrità - verifica che non elimini lead con documenti associati, 4. Verifica messaggi di errore - testa i vari scenari (lead non trovato, documenti associati, etc.), 5. Testa eliminazione effettiva - verifica che il lead venga davvero eliminato dal database. Focus sui controlli di sicurezza e integrità referenziale per i lead."
 
 backend:
-  - task: "Document Management API - GET /api/documents endpoint"
+  - task: "DELETE /api/leads/{lead_id} endpoint functionality"
     implemented: true
     working: true
     file: "/app/backend/server.py"
@@ -115,9 +115,9 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "✅ GET /api/documents endpoint is fully functional. Found 3 documents in database. All filter parameters (nome, cognome, lead_id, uploaded_by) are working correctly with proper case-insensitive matching."
+          comment: "✅ DELETE endpoint is fully functional. Successfully deletes leads without documents. Tested with real lead data (Giuseppe Verdi, Luigi Bianchi). Endpoint returns proper success response with lead info including nome, cognome, email, telefono."
         
-  - task: "Document Database Verification"
+  - task: "DELETE endpoint access control - admin only"
     implemented: true
     working: true
     file: "/app/backend/server.py"
@@ -127,9 +127,9 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "✅ Documents exist in database. Found 3 documents with proper structure including lead associations. Database queries are working correctly."
+          comment: "✅ Access control working correctly. Only admin users can delete leads. Non-admin users (referente, agente) are correctly denied with 403 Forbidden. Unauthenticated requests properly rejected. Security controls are properly implemented."
         
-  - task: "Document Search Filters - Nome and Cognome"
+  - task: "DELETE endpoint referential integrity controls"
     implemented: true
     working: true
     file: "/app/backend/server.py"
@@ -139,9 +139,9 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "✅ Nome and Cognome filters working perfectly. Case-insensitive search implemented. Filter accuracy: 100% - all returned documents match the specified filters. Tested with real data: Giuseppe, Luigi, Mario for names and Bianchi, Rossi, Verdi for surnames."
+          comment: "✅ Referential integrity controls working perfectly. Cannot delete leads with associated documents - correctly returns 400 error with message 'Cannot delete lead. 1 documents are still associated with this lead'. Lead with documents remains in database (correct behavior)."
         
-  - task: "Document Lead ID Filter"
+  - task: "DELETE endpoint error handling and messages"
     implemented: true
     working: true
     file: "/app/backend/server.py"
@@ -151,9 +151,9 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "✅ Lead_id filter working correctly. Successfully filtered documents by lead_id with 100% accuracy. Tested with actual lead IDs: 563c93df, 444911a5, c8234a52."
+          comment: "✅ Error handling is comprehensive and accurate. Returns 404 for non-existent leads with 'Lead not found' message. Returns 400 for leads with documents with specific count message. Error messages are clear and informative."
         
-  - task: "Document Uploaded By Filter"
+  - task: "DELETE endpoint database deletion verification"
     implemented: true
     working: true
     file: "/app/backend/server.py"
@@ -163,107 +163,17 @@ backend:
     status_history:
         - working: true
           agent: "testing"
-          comment: "✅ Uploaded_by filter working correctly. Successfully filters by user ID. Note: Filter works with user ID (found 3 documents) but not with username (found 0 documents), which suggests the filter searches by user ID rather than username."
-        
-  - task: "Document Combined Filters"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ Combined filters working correctly. Successfully tested nome+cognome combination. Filter logic properly applies AND conditions between multiple parameters."
-        
-  - task: "Lead-Document Relationships"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ Lead-document relationships working perfectly. Documents are correctly associated with leads. GET /api/documents/lead/{lead_id} endpoint returns proper lead information and associated documents. All documents maintain correct lead associations."
-        
-  - task: "Document Role-Based Access Control"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ Role-based access control working. Admin has full access to documents endpoint. Unauthorized access properly blocked (returns 403/401). Invalid tokens correctly rejected (401). Authentication is required for all document endpoints."
-
-  - task: "ChatBot API - Session Creation Endpoint"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: false
-          agent: "testing"
-          comment: "❌ CRITICAL ISSUE CONFIRMED: /api/chat/session endpoint returns 400 error 'User must belong to a unit' for admin user. Admin user has unit_id: null but endpoint requires current_user.unit_id at line 1835-1836. Found 30 units in database but admin is not assigned to any. This blocks ChatBot functionality for admin users."
-        - working: true
-          agent: "testing"
-          comment: "✅ RESOLVED: /api/chat/session endpoint now works correctly for admin users. Admin can create sessions without unit_id assignment. Tested successfully: session created with ID format 'unit-{uuid}', no more 400 'User must belong to a unit' errors. The code was updated to allow admin users to bypass unit_id requirement."
-        
-  - task: "ChatBot API - Admin Unit Assignment Issue"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: false
-          agent: "testing"
-          comment: "❌ CRITICAL DESIGN ISSUE: Admin user lacks unit_id assignment, preventing ChatBot access. Two solutions possible: 1) Assign admin to a unit, or 2) Modify ChatBot endpoints to allow admin users without unit_id (lines 1835-1836 and 1876-1877 in server.py). Current logic assumes all users belong to a unit, but admin users may need system-wide access."
-        - working: true
-          agent: "testing"
-          comment: "✅ RESOLVED: ChatBot endpoints now properly handle admin users without unit_id. Solution implemented: Modified ChatBot logic to allow admin users system-wide access. All endpoints (/api/chat/session, /api/chat/sessions, /api/chat/message) work correctly for admin users. Admin can access ChatBot functionality without being assigned to a specific unit."
-
-  - task: "ChatBot API - Sessions List Endpoint"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ VERIFIED: /api/chat/sessions endpoint works correctly for admin users. Admin can view all chat sessions without unit_id requirement. Found 3 sessions accessible to admin user. No 400 errors encountered."
-
-  - task: "ChatBot API - Message Sending Endpoint"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-          agent: "testing"
-          comment: "✅ VERIFIED: /api/chat/message endpoint works correctly for admin users. Successfully sent test message and received bot response. ChatBot integration with Emergent LLM is functioning properly. Message history is properly stored and retrievable."
+          comment: "✅ Actual database deletion verified. Lead is completely removed from database after successful DELETE operation. Subsequent queries confirm lead no longer exists. Database integrity maintained."
 
 metadata:
   created_by: "testing_agent"
   version: "1.0"
-  test_sequence: 1
+  test_sequence: 2
   run_ui: false
 
 test_plan:
   current_focus:
-    - "All ChatBot functionality verified and working"
+    - "All DELETE endpoint functionality verified and working"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
