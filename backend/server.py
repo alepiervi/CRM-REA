@@ -2459,6 +2459,630 @@ async def validate_lead_whatsapp(
         logging.error(f"WhatsApp validation error: {e}")
         raise HTTPException(status_code=500, detail=f"Validation failed: {str(e)}")
 
+# Workflow Builder endpoints (FASE 3)
+@api_router.get("/workflows", response_model=List[Workflow])
+async def get_workflows(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    unit_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Get workflows with filtering and pagination"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can access workflow builder")
+    
+    try:
+        # Admin users can access workflows, filter by unit if specified
+        query = {}
+        if unit_id:
+            query["unit_id"] = unit_id
+        elif current_user.role != UserRole.ADMIN:
+            query["unit_id"] = current_user.unit_id
+        
+        workflows = await db.workflows.find(query).skip(skip).limit(limit).to_list(length=None)
+        return workflows
+        
+    except Exception as e:
+        logging.error(f"Get workflows error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve workflows")
+
+@api_router.post("/workflows", response_model=Workflow)
+async def create_workflow(
+    workflow_in: WorkflowCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new workflow (admin only)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can create workflows")
+    
+    try:
+        workflow_data = workflow_in.dict()
+        workflow_data.update({
+            "id": str(uuid.uuid4()),
+            "created_by": current_user.id,
+            "unit_id": current_user.unit_id,
+            "created_at": datetime.now(timezone.utc),
+            "is_active": True,
+            "is_published": False
+        })
+        
+        workflow = Workflow(**workflow_data)
+        await db.workflows.insert_one(workflow.dict())
+        return workflow
+        
+    except Exception as e:
+        logging.error(f"Create workflow error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create workflow")
+
+@api_router.get("/workflows/{workflow_id}", response_model=Workflow)
+async def get_workflow(
+    workflow_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get workflow by ID"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can access workflows")
+    
+    try:
+        workflow = await db.workflows.find_one({"id": workflow_id})
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        # Check unit access
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        return Workflow(**workflow)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Get workflow error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve workflow")
+
+@api_router.put("/workflows/{workflow_id}", response_model=Workflow)
+async def update_workflow(
+    workflow_id: str,
+    workflow_in: WorkflowUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update workflow (admin only)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can update workflows")
+    
+    try:
+        workflow = await db.workflows.find_one({"id": workflow_id})
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        # Check unit access
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        # Prepare update data
+        update_data = {k: v for k, v in workflow_in.dict().items() if v is not None}
+        update_data["updated_at"] = datetime.now(timezone.utc)
+        
+        # Basic validation for publishing
+        if update_data.get("is_published") and not workflow.get("is_published"):
+            # Check if workflow has at least one trigger node
+            trigger_nodes = await db.workflow_nodes.find({
+                "workflow_id": workflow_id,
+                "node_type": "trigger"
+            }).to_list(length=None)
+            
+            if not trigger_nodes:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Workflow must have at least one trigger node before publishing")
+        
+        await db.workflows.update_one(
+            {"id": workflow_id},
+            {"$set": update_data}
+        )
+        
+        updated_workflow = await db.workflows.find_one({"id": workflow_id})
+        return Workflow(**updated_workflow)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Update workflow error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update workflow")
+
+@api_router.delete("/workflows/{workflow_id}")
+async def delete_workflow(
+    workflow_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete workflow (admin only)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete workflows")
+    
+    try:
+        workflow = await db.workflows.find_one({"id": workflow_id})
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        # Check unit access
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        # Check if workflow has active executions
+        active_executions = await db.workflow_executions.find({
+            "workflow_id": workflow_id,
+            "status": {"$in": ["pending", "running"]}
+        }).to_list(length=None)
+        
+        if active_executions:
+            raise HTTPException(
+                status_code=400, 
+                detail="Cannot delete workflow with active executions")
+        
+        # Delete workflow and related data
+        await db.workflows.delete_one({"id": workflow_id})
+        await db.workflow_nodes.delete_many({"workflow_id": workflow_id})
+        await db.node_connections.delete_many({"workflow_id": workflow_id})
+        
+        return {"detail": "Workflow deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Delete workflow error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete workflow")
+
+# Workflow Nodes endpoints
+@api_router.post("/workflows/{workflow_id}/nodes", response_model=WorkflowNode)
+async def create_node(
+    workflow_id: str,
+    node_in: WorkflowNodeCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new workflow node"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can create workflow nodes")
+    
+    try:
+        # Verify workflow exists and user has access
+        workflow = await db.workflows.find_one({"id": workflow_id})
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        # Create the node
+        node_data = node_in.dict()
+        node_data.update({
+            "id": str(uuid.uuid4()),
+            "workflow_id": workflow_id,
+            "created_at": datetime.now(timezone.utc)
+        })
+        
+        node = WorkflowNode(**node_data)
+        await db.workflow_nodes.insert_one(node.dict())
+        return node
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Create node error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create node")
+
+@api_router.get("/workflows/{workflow_id}/nodes", response_model=List[WorkflowNode])
+async def get_workflow_nodes(
+    workflow_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all nodes for a workflow"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can access workflow nodes")
+    
+    try:
+        # Verify workflow exists and user has access
+        workflow = await db.workflows.find_one({"id": workflow_id})
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        nodes = await db.workflow_nodes.find({"workflow_id": workflow_id}).to_list(length=None)
+        return [WorkflowNode(**node) for node in nodes]
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Get workflow nodes error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve workflow nodes")
+
+@api_router.put("/nodes/{node_id}", response_model=WorkflowNode)
+async def update_node(
+    node_id: str,
+    node_in: WorkflowNodeUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update a workflow node"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can update workflow nodes")
+    
+    try:
+        node = await db.workflow_nodes.find_one({"id": node_id})
+        if not node:
+            raise HTTPException(status_code=404, detail="Node not found")
+        
+        # Check workflow access
+        workflow = await db.workflows.find_one({"id": node["workflow_id"]})
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        # Prepare update data
+        update_data = {k: v for k, v in node_in.dict().items() if v is not None}
+        
+        await db.workflow_nodes.update_one(
+            {"id": node_id},
+            {"$set": update_data}
+        )
+        
+        updated_node = await db.workflow_nodes.find_one({"id": node_id})
+        return WorkflowNode(**updated_node)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Update node error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update node")
+
+@api_router.delete("/nodes/{node_id}")
+async def delete_node(
+    node_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a workflow node"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete workflow nodes")
+    
+    try:
+        node = await db.workflow_nodes.find_one({"id": node_id})
+        if not node:
+            raise HTTPException(status_code=404, detail="Node not found")
+        
+        # Check workflow access
+        workflow = await db.workflows.find_one({"id": node["workflow_id"]})
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        # Remove all connections involving this node
+        await db.node_connections.delete_many({
+            "$or": [
+                {"source_node_id": node_id},
+                {"target_node_id": node_id}
+            ]
+        })
+        
+        # Remove the node
+        await db.workflow_nodes.delete_one({"id": node_id})
+        return {"detail": "Node deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Delete node error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete node")
+
+# Node Connections endpoints
+@api_router.post("/workflows/{workflow_id}/connections", response_model=NodeConnection)
+async def create_connection(
+    workflow_id: str,
+    connection_in: NodeConnectionCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new node connection"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can create node connections")
+    
+    try:
+        # Verify workflow exists and user has access
+        workflow = await db.workflows.find_one({"id": workflow_id})
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        # Verify both nodes exist and belong to this workflow
+        source_node = await db.workflow_nodes.find_one({
+            "id": connection_in.source_node_id,
+            "workflow_id": workflow_id
+        })
+        target_node = await db.workflow_nodes.find_one({
+            "id": connection_in.target_node_id,
+            "workflow_id": workflow_id
+        })
+        
+        if not source_node or not target_node:
+            raise HTTPException(status_code=400, detail="Invalid source or target node")
+        
+        # Create the connection
+        connection_data = connection_in.dict()
+        connection_data.update({
+            "id": str(uuid.uuid4()),
+            "workflow_id": workflow_id,
+            "created_at": datetime.now(timezone.utc)
+        })
+        
+        connection = NodeConnection(**connection_data)
+        await db.node_connections.insert_one(connection.dict())
+        return connection
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Create connection error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create connection")
+
+@api_router.get("/workflows/{workflow_id}/connections", response_model=List[NodeConnection])
+async def get_workflow_connections(
+    workflow_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all connections for a workflow"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can access workflow connections")
+    
+    try:
+        # Verify workflow exists and user has access
+        workflow = await db.workflows.find_one({"id": workflow_id})
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        connections = await db.node_connections.find({"workflow_id": workflow_id}).to_list(length=None)
+        return [NodeConnection(**conn) for conn in connections]
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Get workflow connections error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve workflow connections")
+
+@api_router.delete("/connections/{connection_id}")
+async def delete_connection(
+    connection_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a node connection"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete node connections")
+    
+    try:
+        connection = await db.node_connections.find_one({"id": connection_id})
+        if not connection:
+            raise HTTPException(status_code=404, detail="Connection not found")
+        
+        # Check workflow access
+        workflow = await db.workflows.find_one({"id": connection["workflow_id"]})
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        await db.node_connections.delete_one({"id": connection_id})
+        return {"detail": "Connection deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Delete connection error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete connection")
+
+# Workflow execution endpoints
+@api_router.post("/workflows/{workflow_id}/execute")
+async def execute_workflow(
+    workflow_id: str,
+    execution_in: WorkflowExecutionCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Execute workflow for testing purposes"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can execute workflows")
+    
+    try:
+        workflow = await db.workflows.find_one({"id": workflow_id})
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        # Check unit access
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        if not workflow.get("is_published"):
+            raise HTTPException(status_code=400, detail="Cannot execute unpublished workflow")
+        
+        # Create execution record
+        execution_data = {
+            "id": str(uuid.uuid4()),
+            "workflow_id": workflow_id,
+            "contact_id": execution_in.contact_id,
+            "status": "pending",
+            "started_at": datetime.now(timezone.utc),
+            "execution_data": execution_in.trigger_data or {},
+            "retry_count": 0
+        }
+        
+        execution = WorkflowExecution(**execution_data)
+        await db.workflow_executions.insert_one(execution.dict())
+        
+        # For now, we'll just mark it as completed for testing
+        # In a real implementation, this would trigger background processing
+        await db.workflow_executions.update_one(
+            {"id": execution.id},
+            {"$set": {
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        return {
+            "detail": "Workflow execution started",
+            "execution_id": execution.id,
+            "workflow_id": workflow_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Execute workflow error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to execute workflow")
+
+@api_router.get("/workflows/{workflow_id}/executions", response_model=List[WorkflowExecution])
+async def get_workflow_executions(
+    workflow_id: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    current_user: User = Depends(get_current_user)
+):
+    """Get workflow execution history"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can access workflow executions")
+    
+    try:
+        workflow = await db.workflows.find_one({"id": workflow_id})
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        # Check unit access
+        if current_user.role != UserRole.ADMIN and workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this workflow")
+        
+        executions = await db.workflow_executions.find(
+            {"workflow_id": workflow_id}
+        ).sort("started_at", -1).skip(skip).limit(limit).to_list(length=None)
+        
+        return [WorkflowExecution(**exec) for exec in executions]
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Get workflow executions error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve workflow executions")
+
+# Get available node types for the workflow builder
+@api_router.get("/workflow-node-types")
+async def get_workflow_node_types(current_user: User = Depends(get_current_user)):
+    """Get available workflow node types and subtypes"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can access workflow node types")
+    
+    # Return GoHighLevel-style node types
+    node_types = {
+        "trigger": {
+            "name": "Triggers",
+            "description": "Events that start a workflow",
+            "subtypes": {
+                "contact_created": {
+                    "name": "Contact Created",
+                    "description": "Triggers when a new contact is created",
+                    "icon": "user-plus",
+                    "color": "green"
+                },
+                "form_submitted": {
+                    "name": "Form Submitted", 
+                    "description": "Triggers when a form is submitted",
+                    "icon": "form-input",
+                    "color": "blue"
+                },
+                "lead_assigned": {
+                    "name": "Lead Assigned",
+                    "description": "Triggers when a lead is assigned to an agent",
+                    "icon": "user-check",
+                    "color": "purple"
+                }
+            }
+        },
+        "action": {
+            "name": "Actions",
+            "description": "Actions to perform in the workflow",
+            "subtypes": {
+                "send_email": {
+                    "name": "Send Email",
+                    "description": "Send an email to a contact",
+                    "icon": "mail",
+                    "color": "blue"
+                },
+                "send_sms": {
+                    "name": "Send SMS",
+                    "description": "Send an SMS to a contact",
+                    "icon": "message-square",
+                    "color": "green"
+                },
+                "update_contact": {
+                    "name": "Update Contact",
+                    "description": "Update contact information",
+                    "icon": "edit",
+                    "color": "orange"
+                },
+                "assign_to_user": {
+                    "name": "Assign to User",
+                    "description": "Assign contact to a specific user",
+                    "icon": "user",
+                    "color": "purple"
+                },
+                "add_tag": {
+                    "name": "Add Tag",
+                    "description": "Add a tag to the contact",
+                    "icon": "tag",
+                    "color": "yellow"
+                },
+                "create_task": {
+                    "name": "Create Task",
+                    "description": "Create a task for a user",
+                    "icon": "check-square",
+                    "color": "red"
+                }
+            }
+        },
+        "condition": {
+            "name": "Conditions",
+            "description": "Decision points in the workflow",
+            "subtypes": {
+                "if_else": {
+                    "name": "If/Else",
+                    "description": "Branch workflow based on conditions",
+                    "icon": "git-branch",
+                    "color": "purple"
+                },
+                "contact_filter": {
+                    "name": "Contact Filter",
+                    "description": "Filter contacts based on criteria",
+                    "icon": "filter",
+                    "color": "blue"
+                }
+            }
+        },
+        "delay": {
+            "name": "Delays",
+            "description": "Wait periods in the workflow",
+            "subtypes": {
+                "wait": {
+                    "name": "Wait",
+                    "description": "Wait for a specified amount of time",
+                    "icon": "clock",
+                    "color": "gray"
+                },
+                "wait_until": {
+                    "name": "Wait Until",
+                    "description": "Wait until a specific date/time",
+                    "icon": "calendar",
+                    "color": "blue"
+                }
+            }
+        }
+    }
+    
+    return node_types
+
 # Include the router in the main app
 app.include_router(api_router)
 
