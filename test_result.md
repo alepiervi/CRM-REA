@@ -180,80 +180,77 @@ test_plan:
   test_priority: "high_first"
 
 frontend:
-  - task: "AI Configuration Section - Admin Navigation Visibility"
+  - task: "WhatsApp Section - Admin Navigation Visibility"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "New AI Configuration section added to navigation. Need to verify it's visible only to admin users in sidebar navigation."
-        - working: true
-          agent: "testing"
-          comment: "✅ 'Configurazione AI' navigation item is correctly visible in the sidebar for admin users. Found with proper Settings icon. All 9 expected admin navigation items are present: Dashboard, Lead, Documenti, Chat AI, Utenti, Unit, Contenitori, Configurazione AI, Analytics."
+          comment: "New WhatsApp section added to navigation. Need to verify it's visible only to admin users in sidebar navigation."
         
-  - task: "AI Configuration Interface - Non-configured Status Display"
+  - task: "WhatsApp Interface - Non-configured Status Display"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "AIConfigurationManagement component implemented. Need to verify it shows 'non configurato' status when OpenAI is not configured."
-        - working: true
-          agent: "testing"
-          comment: "✅ Non-configured status displayed perfectly. Shows 'OpenAI non configurato' with amber warning icon (AlertCircle). Configuration description text is present: 'Configura la tua API key OpenAI per abilitare gli assistenti AI personalizzati per le Unit.'"
+          comment: "WhatsAppManagement component implemented. Need to verify it shows 'non configurato' status when WhatsApp is not configured."
         
-  - task: "AI Configuration Modal - OpenAI Setup Form"
+  - task: "WhatsApp Configuration Modal - Number Setup Form"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "AIConfigModal component implemented with form for OpenAI API key input. Need to test modal opening and form functionality."
-        - working: true
-          agent: "testing"
-          comment: "✅ Configuration modal works perfectly. Opens when clicking 'Configura OpenAI' button. Contains proper form with: API key input (password type for security), placeholder 'sk-...', security note about encryption, and proper form validation that prevents empty submission."
+          comment: "WhatsAppConfigModal component implemented with form for WhatsApp Business number input. Need to test modal opening and form functionality."
         
-  - task: "AI Configuration Instructions - API Key Guidance"
+  - task: "WhatsApp Connection Simulation - QR Code and Connect Button"
     implemented: true
-    working: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "WhatsAppQRModal component implemented with QR code simulation and connect button. Need to test connection simulation functionality."
+        
+  - task: "WhatsApp Lead Validation - Number Validation System"
+    implemented: true
+    working: "NA"
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Instructions for obtaining OpenAI API key implemented in modal. Need to verify instructions are clear and complete."
-        - working: true
-          agent: "testing"
-          comment: "✅ API key instructions are comprehensive and clear. Found all 5 instruction steps: 1) Vai su platform.openai.com, 2) Accedi al tuo account OpenAI, 3) Vai su 'API keys' nel menu, 4) Clicca 'Create new secret key', 5) Copia la chiave qui. Instructions are in a blue info box with proper formatting."
+          comment: "LeadWhatsAppValidator component implemented for validating lead WhatsApp numbers. Need to verify validation functionality."
         
-  - task: "AI Configuration Access Control - Admin Only"
+  - task: "WhatsApp Access Control - Admin Only"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "AI Configuration section should only be accessible to admin users. Need to verify access control is working correctly."
-        - working: true
-          agent: "testing"
-          comment: "✅ Access control working correctly. AI Configuration section is visible and accessible to admin users. Non-admin user login test failed (401 error), but this confirms proper authentication. All admin navigation items are properly displayed for admin role."
+          comment: "WhatsApp section should only be accessible to admin users. Need to verify access control is working correctly."
 
   - task: "Lead Delete Button UI - Admin Only Visibility"
     implemented: true
