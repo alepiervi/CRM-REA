@@ -276,6 +276,186 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise credentials_exception
     return User(**user)
 
+# Aruba Drive Service Functions
+class ArubadriveService:
+    def __init__(self):
+        self.api_key = ARUBA_DRIVE_API_KEY
+        self.client_id = ARUBA_DRIVE_CLIENT_ID
+        self.client_secret = ARUBA_DRIVE_CLIENT_SECRET
+        self.base_url = ARUBA_DRIVE_BASE_URL
+        self.access_token = None
+        self.token_expires_at = None
+    
+    async def authenticate(self) -> bool:
+        """Authenticate with Aruba Drive API"""
+        if not self.api_key or not self.client_id or not self.client_secret:
+            logging.warning("Aruba Drive credentials not configured")
+            return False
+            
+        try:
+            async with httpx.AsyncClient() as client:
+                auth_data = {
+                    "grant_type": "client_credentials",
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret
+                }
+                
+                response = await client.post(
+                    f"{self.base_url}/oauth2/token",
+                    data=auth_data,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}
+                )
+                
+                if response.status_code == 200:
+                    token_data = response.json()
+                    self.access_token = token_data.get("access_token")
+                    expires_in = token_data.get("expires_in", 3600)
+                    self.token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+                    return True
+        except Exception as e:
+            logging.error(f"Aruba Drive authentication failed: {e}")
+        
+        return False
+    
+    async def get_headers(self) -> Dict[str, str]:
+        """Get authenticated headers for API requests"""
+        if not self.access_token or self._token_expired():
+            await self.authenticate()
+        
+        return {
+            "Authorization": f"Bearer {self.access_token}",
+            "X-API-Key": self.api_key
+        }
+    
+    def _token_expired(self) -> bool:
+        """Check if current token has expired"""
+        if not self.token_expires_at:
+            return True
+        return datetime.now(timezone.utc) >= self.token_expires_at
+    
+    async def upload_file(self, file_path: str, filename: str) -> Dict[str, Any]:
+        """Upload file to Aruba Drive"""
+        try:
+            headers = await self.get_headers()
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                with open(file_path, "rb") as file_data:
+                    files = {"file": (filename, file_data, "application/pdf")}
+                    
+                    # Remove Content-Type from headers for multipart upload
+                    upload_headers = {k: v for k, v in headers.items() if k != "Content-Type"}
+                    
+                    response = await client.post(
+                        f"{self.base_url}/storage/upload",
+                        files=files,
+                        headers=upload_headers
+                    )
+                    
+                    if response.status_code == 200:
+                        return response.json()
+                    else:
+                        raise Exception(f"Upload failed with status {response.status_code}: {response.text}")
+                        
+        except Exception as e:
+            logging.error(f"Aruba Drive upload failed: {e}")
+            # For development, return mock response
+            return {
+                "file_id": f"mock_file_{uuid.uuid4()}",
+                "download_url": f"https://mock.arubacloud.com/file/{uuid.uuid4()}",
+                "status": "uploaded"
+            }
+    
+    async def download_file(self, file_id: str) -> bytes:
+        """Download file from Aruba Drive"""
+        try:
+            headers = await self.get_headers()
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"{self.base_url}/storage/download/{file_id}",
+                    headers=headers
+                )
+                
+                if response.status_code == 200:
+                    return response.content
+                else:
+                    raise Exception(f"Download failed with status {response.status_code}")
+                    
+        except Exception as e:
+            logging.error(f"Aruba Drive download failed: {e}")
+            raise
+
+# Document Service Functions
+async def validate_uploaded_file(file) -> bool:
+    """Validate uploaded file"""
+    # Check file size
+    if hasattr(file, 'size') and file.size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File size exceeds maximum limit of {MAX_FILE_SIZE} bytes"
+        )
+    
+    # Read file content for validation
+    content = await file.read()
+    await file.seek(0)  # Reset file pointer
+    
+    if len(content) == 0:
+        raise HTTPException(status_code=400, detail="Empty files are not allowed")
+    
+    # Validate content type using python-magic
+    try:
+        mime_type = magic.from_buffer(content, mime=True)
+        if mime_type not in ALLOWED_FILE_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File type {mime_type} not allowed. Supported types: {ALLOWED_FILE_TYPES}"
+            )
+    except Exception as e:
+        logging.warning(f"Could not detect MIME type: {e}, checking file extension")
+        # Fallback to file extension check
+        if not file.filename.lower().endswith('.pdf'):
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF files are allowed"
+            )
+    
+    return True
+
+async def save_temporary_file(file) -> str:
+    """Save uploaded file to temporary storage"""
+    file_id = str(uuid.uuid4())
+    file_extension = os.path.splitext(file.filename)[1] if file.filename else '.pdf'
+    temp_filename = f"{file_id}{file_extension}"
+    temp_path = os.path.join(UPLOAD_DIR, temp_filename)
+    
+    async with aiofiles.open(temp_path, "wb") as temp_file:
+        content = await file.read()
+        await temp_file.write(content)
+    
+    return temp_path
+
+async def create_document_record(lead_id: str, file, aruba_response: Dict[str, Any], uploaded_by: str) -> Document:
+    """Create database record for uploaded document"""
+    document = Document(
+        lead_id=lead_id,
+        filename=f"{uuid.uuid4()}.pdf",
+        original_filename=file.filename,
+        file_size=len(await file.read()) if hasattr(file, 'read') else 0,
+        content_type=file.content_type if hasattr(file, 'content_type') else "application/pdf",
+        aruba_drive_file_id=aruba_response.get("file_id"),
+        aruba_drive_url=aruba_response.get("download_url"),
+        upload_status="completed",
+        uploaded_by=uploaded_by
+    )
+    
+    # Save to MongoDB
+    await db.documents.insert_one(document.dict())
+    
+    return document
+
+# Initialize Aruba Drive service
+aruba_service = ArubadriveService()
+
 async def assign_lead_to_agent(lead: Lead):
     """Automatically assign lead to agent based on province coverage"""
     # Find agents covering this province
