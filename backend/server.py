@@ -2170,6 +2170,201 @@ async def list_openai_assistants(current_user: User = Depends(get_current_user))
         logging.error(f"List assistants error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to list assistants: {str(e)}")
 
+# WhatsApp Configuration endpoints
+@api_router.post("/whatsapp-config")
+async def configure_whatsapp(
+    config_data: WhatsAppConfigurationCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Configure WhatsApp Business connection (admin only)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can configure WhatsApp")
+    
+    try:
+        # Validate phone number format
+        import re
+        phone_pattern = r'^\+\d{1,3}\d{4,14}$'
+        if not re.match(phone_pattern, config_data.phone_number):
+            raise HTTPException(status_code=400, detail="Invalid phone number format. Use international format: +1234567890")
+        
+        # Generate QR code data (simulated)
+        import base64
+        import json
+        qr_data = {
+            "phone": config_data.phone_number,
+            "timestamp": datetime.now(timezone.utc).timestamp(),
+            "session": str(uuid.uuid4()),
+            "client": "crm_whatsapp_web"
+        }
+        qr_code = base64.b64encode(json.dumps(qr_data).encode()).decode()
+        
+        # Check if configuration already exists
+        existing_config = await db.whatsapp_configurations.find_one({"is_active": True})
+        
+        if existing_config:
+            # Update existing configuration
+            await db.whatsapp_configurations.update_one(
+                {"id": existing_config["id"]},
+                {
+                    "$set": {
+                        "phone_number": config_data.phone_number,
+                        "qr_code": qr_code,
+                        "connection_status": "connecting",
+                        "is_connected": False,
+                        "updated_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            config_id = existing_config["id"]
+        else:
+            # Create new configuration
+            whatsapp_config = WhatsAppConfiguration(
+                phone_number=config_data.phone_number,
+                qr_code=qr_code,
+                connection_status="connecting"
+            )
+            await db.whatsapp_configurations.insert_one(whatsapp_config.dict())
+            config_id = whatsapp_config.id
+        
+        return {
+            "success": True,
+            "message": "WhatsApp configuration saved. Scan QR code to connect.",
+            "config_id": config_id,
+            "qr_code": qr_code,
+            "phone_number": config_data.phone_number,
+            "connection_status": "connecting"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"WhatsApp configuration error: {e}")
+        raise HTTPException(status_code=500, detail=f"Configuration failed: {str(e)}")
+
+@api_router.get("/whatsapp-config")
+async def get_whatsapp_configuration(current_user: User = Depends(get_current_user)):
+    """Get current WhatsApp configuration (admin only)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can view WhatsApp settings")
+    
+    try:
+        config = await db.whatsapp_configurations.find_one({"is_active": True})
+        
+        if not config:
+            return {
+                "configured": False,
+                "message": "No WhatsApp configuration found"
+            }
+        
+        return {
+            "configured": True,
+            "config_id": config["id"],
+            "phone_number": config["phone_number"],
+            "connection_status": config["connection_status"],
+            "is_connected": config["is_connected"],
+            "qr_code": config.get("qr_code"),
+            "last_seen": config.get("last_seen").isoformat() if config.get("last_seen") else None,
+            "created_at": config["created_at"].isoformat(),
+            "updated_at": config.get("updated_at", config["created_at"]).isoformat()
+        }
+        
+    except Exception as e:
+        logging.error(f"Get WhatsApp configuration error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get WhatsApp configuration")
+
+@api_router.post("/whatsapp-connect")
+async def simulate_whatsapp_connection(current_user: User = Depends(get_current_user)):
+    """Simulate WhatsApp connection (for demo purposes)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can connect WhatsApp")
+    
+    try:
+        config = await db.whatsapp_configurations.find_one({"is_active": True})
+        
+        if not config:
+            raise HTTPException(status_code=400, detail="No WhatsApp configuration found")
+        
+        # Simulate successful connection
+        await db.whatsapp_configurations.update_one(
+            {"id": config["id"]},
+            {
+                "$set": {
+                    "connection_status": "connected",
+                    "is_connected": True,
+                    "last_seen": datetime.now(timezone.utc),
+                    "device_info": "CRM WhatsApp Web Client",
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": "WhatsApp connected successfully",
+            "connection_status": "connected",
+            "phone_number": config["phone_number"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"WhatsApp connection error: {e}")
+        raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
+
+@api_router.post("/whatsapp-validate-lead")
+async def validate_lead_whatsapp(
+    lead_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Validate if lead's phone number is on WhatsApp"""
+    
+    try:
+        # Get lead
+        lead = await db.leads.find_one({"id": lead_id})
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        
+        phone_number = lead.get("telefono")
+        if not phone_number:
+            raise HTTPException(status_code=400, detail="Lead has no phone number")
+        
+        # Simulate WhatsApp validation (in real implementation, this would use WhatsApp API)
+        import random
+        is_whatsapp = random.choice([True, True, True, False])  # 75% chance of being WhatsApp
+        
+        # Save validation result
+        validation = LeadWhatsAppValidation(
+            lead_id=lead_id,
+            phone_number=phone_number,
+            is_whatsapp=is_whatsapp,
+            validation_status="valid" if is_whatsapp else "invalid",
+            validation_date=datetime.now(timezone.utc)
+        )
+        
+        # Update lead with WhatsApp status
+        await db.leads.update_one(
+            {"id": lead_id},
+            {"$set": {"is_whatsapp": is_whatsapp, "whatsapp_validated": True}}
+        )
+        
+        return {
+            "success": True,
+            "lead_id": lead_id,
+            "phone_number": phone_number,
+            "is_whatsapp": is_whatsapp,
+            "validation_status": validation.validation_status,
+            "message": f"Phone number {'is' if is_whatsapp else 'is not'} on WhatsApp"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"WhatsApp validation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Validation failed: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
