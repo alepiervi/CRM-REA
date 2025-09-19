@@ -437,12 +437,18 @@ async def save_temporary_file(file) -> str:
 
 async def create_document_record(lead_id: str, file, aruba_response: Dict[str, Any], uploaded_by: str) -> Document:
     """Create database record for uploaded document"""
+    # Reset file to get accurate size
+    await file.seek(0)
+    content = await file.read()
+    file_size = len(content)
+    await file.seek(0)  # Reset again
+    
     document = Document(
         lead_id=lead_id,
         filename=f"{uuid.uuid4()}.pdf",
-        original_filename=file.filename,
-        file_size=len(await file.read()) if hasattr(file, 'read') else 0,
-        content_type=file.content_type if hasattr(file, 'content_type') else "application/pdf",
+        original_filename=file.filename or "document.pdf",
+        file_size=file_size,
+        content_type=getattr(file, 'content_type', "application/pdf"),
         aruba_drive_file_id=aruba_response.get("file_id"),
         aruba_drive_url=aruba_response.get("download_url"),
         upload_status="completed",
