@@ -471,6 +471,40 @@ async def get_containers(current_user: User = Depends(get_current_user)):
     
     return [Container(**container) for container in containers]
 
+@api_router.put("/containers/{container_id}", response_model=Container)
+async def update_container(container_id: str, container_data: ContainerCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can update containers")
+    
+    # Find the container
+    container = await db.containers.find_one({"id": container_id})
+    if not container:
+        raise HTTPException(status_code=404, detail="Container not found")
+    
+    # Update container
+    await db.containers.update_one(
+        {"id": container_id},
+        {"$set": container_data.dict()}
+    )
+    
+    updated_container = await db.containers.find_one({"id": container_id})
+    return Container(**updated_container)
+
+@api_router.delete("/containers/{container_id}")
+async def delete_container(container_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete containers")
+    
+    # Find the container
+    container = await db.containers.find_one({"id": container_id})
+    if not container:
+        raise HTTPException(status_code=404, detail="Container not found")
+    
+    # Delete container
+    await db.containers.delete_one({"id": container_id})
+    
+    return {"message": "Container deleted successfully"}
+
 # Lead management
 @api_router.post("/leads", response_model=Lead)
 async def create_lead(lead_data: LeadCreate):
