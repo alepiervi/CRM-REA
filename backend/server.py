@@ -147,6 +147,7 @@ class Unit(BaseModel):
     webhook_url: str = Field(default_factory=lambda: f"/api/webhook/{str(uuid.uuid4())}")
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
 
 class UnitCreate(BaseModel):
     name: str
