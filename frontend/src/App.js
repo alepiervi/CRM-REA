@@ -4540,6 +4540,40 @@ const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig }) => {
 
 // WhatsApp QR Code Modal Component
 const WhatsAppQRModal = ({ qrCode, phoneNumber, onClose, onConnect, connecting }) => {
+  const [qrImageUrl, setQrImageUrl] = useState(null);
+  
+  useEffect(() => {
+    const generateQRCode = async () => {
+      try {
+        // Importa QRCode dinamicamente
+        const QRCode = (await import('qrcode')).default;
+        
+        // Decodifica il QR code base64 dal backend
+        const qrData = atob(qrCode);
+        
+        // Genera il QR code come URL immagine
+        const qrUrl = await QRCode.toDataURL(qrData, {
+          width: 256,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF',
+          },
+        });
+        
+        setQrImageUrl(qrUrl);
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+        // Fallback: usa il qrCode direttamente
+        setQrImageUrl(null);
+      }
+    };
+    
+    if (qrCode) {
+      generateQRCode();
+    }
+  }, [qrCode]);
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -4553,13 +4587,19 @@ const WhatsAppQRModal = ({ qrCode, phoneNumber, onClose, onConnect, connecting }
         <div className="space-y-4">
           <div className="flex justify-center">
             <div className="w-64 h-64 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-                <p className="text-sm text-slate-500">QR Code WhatsApp</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  In produzione: QR code reale
-                </p>
-              </div>
+              {qrImageUrl ? (
+                <img 
+                  src={qrImageUrl} 
+                  alt="WhatsApp QR Code" 
+                  className="w-full h-full object-contain p-4"
+                />
+              ) : (
+                <div className="text-center">
+                  <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                  <p className="text-sm text-slate-500">Generazione QR Code...</p>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mt-2"></div>
+                </div>
+              )}
             </div>
           </div>
 
