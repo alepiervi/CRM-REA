@@ -5170,19 +5170,51 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
             <div key={categoryKey} className="mb-4">
               <h4 className="text-sm font-medium text-slate-600 mb-2">{category.name}</h4>
               <div className="space-y-2">
-                {Object.entries(category.subtypes).map(([subtypeKey, subtype]) => (
-                  <div
-                    key={subtypeKey}
-                    className={`p-3 bg-${subtype.color}-50 border border-${subtype.color}-200 rounded-lg cursor-pointer hover:bg-${subtype.color}-100 transition-colors`}
-                    onClick={() => addNode(categoryKey, subtypeKey, subtype.name, subtype.color)}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-3 h-3 bg-${subtype.color}-500 rounded-full`}></div>
-                      <span className="text-sm font-medium">{subtype.name}</span>
+                {Object.entries(category.subtypes).map(([subtypeKey, subtype]) => {
+                  const bgColorClass = `bg-${subtype.color}-50`;
+                  const borderColorClass = `border-${subtype.color}-200`;
+                  const hoverColorClass = `hover:bg-${subtype.color}-100`;
+                  const dotColorClass = `bg-${subtype.color}-500`;
+                  const textColorClass = `text-${subtype.color}-600`;
+                  
+                  return (
+                    <div
+                      key={subtypeKey}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                        subtype.color === 'green' ? 'bg-green-50 border-green-200 hover:bg-green-100' :
+                        subtype.color === 'blue' ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' :
+                        subtype.color === 'purple' ? 'bg-purple-50 border-purple-200 hover:bg-purple-100' :
+                        subtype.color === 'orange' ? 'bg-orange-50 border-orange-200 hover:bg-orange-100' :
+                        subtype.color === 'yellow' ? 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100' :
+                        subtype.color === 'red' ? 'bg-red-50 border-red-200 hover:bg-red-100' :
+                        'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                      }`}
+                      onClick={() => addNode(categoryKey, subtypeKey, subtype.name, subtype.color)}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full ${
+                          subtype.color === 'green' ? 'bg-green-500' :
+                          subtype.color === 'blue' ? 'bg-blue-500' :
+                          subtype.color === 'purple' ? 'bg-purple-500' :
+                          subtype.color === 'orange' ? 'bg-orange-500' :
+                          subtype.color === 'yellow' ? 'bg-yellow-500' :
+                          subtype.color === 'red' ? 'bg-red-500' :
+                          'bg-gray-500'
+                        }`}></div>
+                        <span className="text-sm font-medium">{subtype.name}</span>
+                      </div>
+                      <p className={`text-xs mt-1 ${
+                        subtype.color === 'green' ? 'text-green-600' :
+                        subtype.color === 'blue' ? 'text-blue-600' :
+                        subtype.color === 'purple' ? 'text-purple-600' :
+                        subtype.color === 'orange' ? 'text-orange-600' :
+                        subtype.color === 'yellow' ? 'text-yellow-600' :
+                        subtype.color === 'red' ? 'text-red-600' :
+                        'text-gray-600'
+                      }`}>{subtype.description}</p>
                     </div>
-                    <p className={`text-xs text-${subtype.color}-600 mt-1`}>{subtype.description}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
