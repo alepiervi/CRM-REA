@@ -1616,9 +1616,334 @@ class CRMAPITester:
             # Add to cleanup list for later
             self.created_resources['leads'].append(lead_with_docs_id)
 
+    def test_workflow_builder_fase3(self):
+        """Test Workflow Builder FASE 3 - Complete Backend Testing"""
+        print("\n🔄 Testing Workflow Builder FASE 3 - Backend Implementation...")
+        
+        # Ensure we have a unit for testing
+        if not self.created_resources['units']:
+            unit_data = {
+                "name": f"Workflow Test Unit {datetime.now().strftime('%H%M%S')}",
+                "description": "Unit for workflow testing"
+            }
+            success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
+            if success:
+                unit_id = unit_response['id']
+                self.created_resources['units'].append(unit_id)
+                self.log_test("Create unit for workflow testing", True, f"Unit ID: {unit_id}")
+            else:
+                self.log_test("Create unit for workflow testing", False, f"Status: {status}")
+                return
+        else:
+            unit_id = self.created_resources['units'][0]
+        
+        # Test 1: GET /api/workflow-node-types
+        success, node_types_response, status = self.make_request('GET', 'workflow-node-types', expected_status=200)
+        if success:
+            node_types = node_types_response.get('node_types', [])
+            expected_types = ['trigger', 'action', 'condition', 'delay']
+            expected_subtypes = ['set_status', 'send_whatsapp', 'add_tag', 'remove_tag', 'update_contact_field']
+            
+            self.log_test("GET workflow node types", True, f"Found {len(node_types)} node type categories")
+            
+            # Check for specific node types mentioned in the review
+            found_subtypes = []
+            for category in node_types:
+                if 'subtypes' in category:
+                    for subtype in category['subtypes']:
+                        found_subtypes.append(subtype.get('id', ''))
+            
+            missing_subtypes = [st for st in expected_subtypes if st not in found_subtypes]
+            if not missing_subtypes:
+                self.log_test("Workflow node subtypes (GoHighLevel style)", True, f"All expected subtypes found: {expected_subtypes}")
+            else:
+                self.log_test("Workflow node subtypes (GoHighLevel style)", False, f"Missing subtypes: {missing_subtypes}")
+        else:
+            self.log_test("GET workflow node types", False, f"Status: {status}")
+        
+        # Test 2: POST /api/workflows (Create workflow)
+        workflow_data = {
+            "name": "Test Workflow - Benvenuto Nuovo Cliente",
+            "description": "Workflow di test per accogliere nuovi clienti con automazione completa"
+        }
+        
+        success, workflow_response, status = self.make_request('POST', 'workflows', workflow_data, 200)
+        if success:
+            workflow_id = workflow_response['id']
+            workflow_name = workflow_response.get('name', '')
+            self.log_test("POST create workflow", True, f"Workflow created: {workflow_name} (ID: {workflow_id[:8]})")
+            
+            # Test 3: GET /api/workflows (List workflows with unit filtering)
+            success, workflows_list, status = self.make_request('GET', f'workflows?unit_id={unit_id}', expected_status=200)
+            if success:
+                workflows = workflows_list if isinstance(workflows_list, list) else []
+                self.log_test("GET workflows with unit filter", True, f"Found {len(workflows)} workflows in unit")
+                
+                # Verify our workflow is in the list
+                found_workflow = any(w['id'] == workflow_id for w in workflows)
+                self.log_test("Created workflow in list", found_workflow, f"Workflow {'found' if found_workflow else 'not found'} in unit list")
+            else:
+                self.log_test("GET workflows with unit filter", False, f"Status: {status}")
+            
+            # Test 4: GET /api/workflows/{id} (Get specific workflow)
+            success, single_workflow, status = self.make_request('GET', f'workflows/{workflow_id}', expected_status=200)
+            if success:
+                retrieved_name = single_workflow.get('name', '')
+                is_published = single_workflow.get('is_published', False)
+                self.log_test("GET single workflow", True, f"Retrieved: {retrieved_name}, Published: {is_published}")
+            else:
+                self.log_test("GET single workflow", False, f"Status: {status}")
+            
+            # Test 5: POST /api/workflows/{id}/nodes (Create workflow nodes)
+            test_nodes = [
+                {
+                    "node_type": "trigger",
+                    "node_subtype": "form_submitted",
+                    "name": "Nuovo Lead Ricevuto",
+                    "position_x": 100,
+                    "position_y": 100,
+                    "configuration": {"form_id": "contact_form", "trigger_conditions": ["new_lead"]}
+                },
+                {
+                    "node_type": "action",
+                    "node_subtype": "set_status",
+                    "name": "Imposta Status Nuovo",
+                    "position_x": 300,
+                    "position_y": 100,
+                    "configuration": {"status": "nuovo", "priority": "high"}
+                },
+                {
+                    "node_type": "action",
+                    "node_subtype": "send_whatsapp",
+                    "name": "Invia Messaggio WhatsApp",
+                    "position_x": 500,
+                    "position_y": 100,
+                    "configuration": {"template": "welcome_message", "delay_minutes": 5}
+                },
+                {
+                    "node_type": "action",
+                    "node_subtype": "add_tag",
+                    "name": "Aggiungi Tag Cliente",
+                    "position_x": 700,
+                    "position_y": 100,
+                    "configuration": {"tags": ["nuovo_cliente", "da_contattare"]}
+                }
+            ]
+            
+            created_nodes = []
+            for i, node_data in enumerate(test_nodes):
+                success, node_response, status = self.make_request('POST', f'workflows/{workflow_id}/nodes', node_data, 200)
+                if success:
+                    node_id = node_response['id']
+                    node_name = node_response.get('name', '')
+                    node_subtype = node_response.get('node_subtype', '')
+                    created_nodes.append(node_id)
+                    self.log_test(f"POST create node {i+1} ({node_subtype})", True, f"Node: {node_name} (ID: {node_id[:8]})")
+                else:
+                    self.log_test(f"POST create node {i+1}", False, f"Status: {status}")
+            
+            # Test 6: GET /api/workflows/{id}/nodes (List workflow nodes)
+            success, nodes_list, status = self.make_request('GET', f'workflows/{workflow_id}/nodes', expected_status=200)
+            if success:
+                nodes = nodes_list if isinstance(nodes_list, list) else []
+                self.log_test("GET workflow nodes", True, f"Found {len(nodes)} nodes in workflow")
+                
+                # Verify all created nodes are present
+                found_nodes = [n['id'] for n in nodes]
+                missing_nodes = [n for n in created_nodes if n not in found_nodes]
+                if not missing_nodes:
+                    self.log_test("All created nodes in list", True, f"All {len(created_nodes)} nodes found")
+                else:
+                    self.log_test("All created nodes in list", False, f"Missing {len(missing_nodes)} nodes")
+            else:
+                self.log_test("GET workflow nodes", False, f"Status: {status}")
+            
+            # Test 7: PUT /api/nodes/{id} (Update node)
+            if created_nodes:
+                first_node_id = created_nodes[0]
+                update_data = {
+                    "name": "Trigger Aggiornato - Nuovo Lead",
+                    "position_x": 150,
+                    "position_y": 120,
+                    "configuration": {"form_id": "updated_contact_form", "trigger_conditions": ["new_lead", "updated_lead"]}
+                }
+                
+                success, updated_node, status = self.make_request('PUT', f'nodes/{first_node_id}', update_data, 200)
+                if success:
+                    updated_name = updated_node.get('name', '')
+                    updated_config = updated_node.get('configuration', {})
+                    self.log_test("PUT update node", True, f"Updated: {updated_name}, Config: {len(updated_config)} fields")
+                else:
+                    self.log_test("PUT update node", False, f"Status: {status}")
+            
+            # Test 8: POST /api/workflows/{id}/connections (Create node connections)
+            if len(created_nodes) >= 2:
+                connection_data = {
+                    "source_node_id": created_nodes[0],
+                    "target_node_id": created_nodes[1],
+                    "source_handle": "success",
+                    "target_handle": "input",
+                    "condition_data": {"condition": "always"}
+                }
+                
+                success, connection_response, status = self.make_request('POST', f'workflows/{workflow_id}/connections', connection_data, 200)
+                if success:
+                    connection_id = connection_response['id']
+                    self.log_test("POST create connection", True, f"Connection created (ID: {connection_id[:8]})")
+                    
+                    # Test 9: GET /api/workflows/{id}/connections (List connections)
+                    success, connections_list, status = self.make_request('GET', f'workflows/{workflow_id}/connections', expected_status=200)
+                    if success:
+                        connections = connections_list if isinstance(connections_list, list) else []
+                        self.log_test("GET workflow connections", True, f"Found {len(connections)} connections")
+                    else:
+                        self.log_test("GET workflow connections", False, f"Status: {status}")
+                    
+                    # Test 10: DELETE /api/connections/{id} (Delete connection)
+                    success, delete_response, status = self.make_request('DELETE', f'connections/{connection_id}', expected_status=200)
+                    if success:
+                        self.log_test("DELETE connection", True, "Connection deleted successfully")
+                    else:
+                        self.log_test("DELETE connection", False, f"Status: {status}")
+                else:
+                    self.log_test("POST create connection", False, f"Status: {status}")
+            
+            # Test 11: PUT /api/workflows/{id} (Update workflow and publish)
+            workflow_update_data = {
+                "name": "Workflow Aggiornato - Benvenuto Cliente VIP",
+                "description": "Workflow aggiornato con funzionalità avanzate per clienti VIP",
+                "is_published": True,
+                "workflow_data": {
+                    "canvas": {
+                        "nodes": len(created_nodes),
+                        "connections": 1,
+                        "layout": "horizontal"
+                    },
+                    "settings": {
+                        "auto_start": True,
+                        "max_executions": 1000
+                    }
+                }
+            }
+            
+            success, updated_workflow, status = self.make_request('PUT', f'workflows/{workflow_id}', workflow_update_data, 200)
+            if success:
+                updated_name = updated_workflow.get('name', '')
+                is_published = updated_workflow.get('is_published', False)
+                workflow_data = updated_workflow.get('workflow_data', {})
+                self.log_test("PUT update workflow (publish)", True, f"Updated: {updated_name}, Published: {is_published}, Data: {len(workflow_data)} sections")
+            else:
+                self.log_test("PUT update workflow (publish)", False, f"Status: {status}")
+            
+            # Test 12: POST /api/workflows/{id}/execute (Execute workflow)
+            execution_data = {
+                "contact_id": "test-contact-123",
+                "trigger_data": {
+                    "source": "contact_form",
+                    "lead_data": {
+                        "nome": "Mario",
+                        "cognome": "Rossi",
+                        "email": "mario.rossi@test.com"
+                    }
+                }
+            }
+            
+            success, execution_response, status = self.make_request('POST', f'workflows/{workflow_id}/execute', execution_data, 200)
+            if success:
+                execution_id = execution_response.get('execution_id', '')
+                execution_status = execution_response.get('status', '')
+                self.log_test("POST execute workflow", True, f"Execution started: {execution_status} (ID: {execution_id[:8] if execution_id else 'N/A'})")
+            else:
+                self.log_test("POST execute workflow", False, f"Status: {status}")
+            
+            # Test 13: GET /api/workflows/{id}/executions (Get execution history)
+            success, executions_list, status = self.make_request('GET', f'workflows/{workflow_id}/executions', expected_status=200)
+            if success:
+                executions = executions_list if isinstance(executions_list, list) else []
+                self.log_test("GET workflow executions", True, f"Found {len(executions)} executions in history")
+            else:
+                self.log_test("GET workflow executions", False, f"Status: {status}")
+            
+            # Test 14: DELETE /api/nodes/{id} (Delete node with cleanup)
+            if created_nodes:
+                last_node_id = created_nodes[-1]
+                success, delete_response, status = self.make_request('DELETE', f'nodes/{last_node_id}', expected_status=200)
+                if success:
+                    message = delete_response.get('message', '')
+                    self.log_test("DELETE node with cleanup", True, f"Node deleted: {message}")
+                else:
+                    self.log_test("DELETE node with cleanup", False, f"Status: {status}")
+            
+            # Test 15: DELETE /api/workflows/{id} (Delete workflow with integrity checks)
+            success, delete_workflow_response, status = self.make_request('DELETE', f'workflows/{workflow_id}', expected_status=200)
+            if success:
+                message = delete_workflow_response.get('message', '')
+                self.log_test("DELETE workflow with integrity checks", True, f"Workflow deleted: {message}")
+            else:
+                self.log_test("DELETE workflow with integrity checks", False, f"Status: {status}")
+        else:
+            self.log_test("POST create workflow", False, f"Status: {status}")
+        
+        # Test 16: Authorization Testing - Non-admin access
+        if self.created_resources['users']:
+            # Create a referente user for testing
+            referente_data = {
+                "username": f"workflow_referente_{datetime.now().strftime('%H%M%S')}",
+                "email": f"workflow_referente_{datetime.now().strftime('%H%M%S')}@test.com",
+                "password": "TestPass123!",
+                "role": "referente",
+                "unit_id": unit_id,
+                "provinces": []
+            }
+            
+            success, referente_response, status = self.make_request('POST', 'users', referente_data, 200)
+            if success:
+                referente_id = referente_response['id']
+                self.created_resources['users'].append(referente_id)
+                
+                # Login as referente
+                success, referente_login, status = self.make_request(
+                    'POST', 'auth/login', 
+                    {'username': referente_data['username'], 'password': referente_data['password']}, 
+                    200, auth_required=False
+                )
+                
+                if success:
+                    referente_token = referente_login['access_token']
+                    original_token = self.token
+                    self.token = referente_token
+                    
+                    # Test non-admin access to workflow endpoints
+                    success, response, status = self.make_request('GET', 'workflows', expected_status=403)
+                    if success:
+                        self.log_test("Referente workflow access denied", True, "Correctly denied non-admin access to workflows")
+                    else:
+                        self.log_test("Referente workflow access denied", False, f"Expected 403, got {status}")
+                    
+                    success, response, status = self.make_request('POST', 'workflows', {"name": "Test"}, expected_status=403)
+                    if success:
+                        self.log_test("Referente workflow creation denied", True, "Correctly denied non-admin workflow creation")
+                    else:
+                        self.log_test("Referente workflow creation denied", False, f"Expected 403, got {status}")
+                    
+                    self.token = original_token
+                else:
+                    self.log_test("Referente login for workflow auth test", False, f"Status: {status}")
+            else:
+                self.log_test("Create referente for workflow auth test", False, f"Status: {status}")
+        
+        # Test 17: Unit-based access control for admin users without unit_id
+        # This tests the fix mentioned in the review for admin users without unit_id
+        success, workflows_no_unit, status = self.make_request('GET', 'workflows', expected_status=200)
+        if success:
+            workflows = workflows_no_unit if isinstance(workflows_no_unit, list) else []
+            self.log_test("Admin without unit_id access", True, f"Admin can access workflows without unit_id restriction ({len(workflows)} workflows)")
+        else:
+            self.log_test("Admin without unit_id access", False, f"Status: {status}")
+
     def run_all_tests(self):
-        """Run focused DELETE endpoint test"""
-        print("🚀 Starting CRM API Testing - FOCUSED DELETE ENDPOINT TEST...")
+        """Run Workflow Builder FASE 3 Backend Tests"""
+        print("🚀 Starting CRM API Testing - WORKFLOW BUILDER FASE 3 BACKEND...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
@@ -1627,8 +1952,8 @@ class CRMAPITester:
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # Run focused DELETE endpoint test
-        self.test_lead_delete_endpoint()
+        # Run Workflow Builder FASE 3 tests
+        self.test_workflow_builder_fase3()
         
         # Print summary
         print("\n" + "=" * 60)
