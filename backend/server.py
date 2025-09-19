@@ -3028,10 +3028,22 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
                     "icon": "message-square",
                     "color": "green"
                 },
+                "send_whatsapp": {
+                    "name": "Send WhatsApp",
+                    "description": "Invia un messaggio WhatsApp al contatto",
+                    "icon": "message-circle",
+                    "color": "green"
+                },
                 "update_contact": {
                     "name": "Update Contact",
                     "description": "Update contact information",
                     "icon": "edit",
+                    "color": "orange"
+                },
+                "update_contact_field": {
+                    "name": "Update Contact Field",
+                    "description": "Aggiorna un campo nel record del contatto",
+                    "icon": "edit-3",
                     "color": "orange"
                 },
                 "assign_to_user": {
@@ -3045,6 +3057,18 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
                     "description": "Add a tag to the contact",
                     "icon": "tag",
                     "color": "yellow"
+                },
+                "remove_tag": {
+                    "name": "Remove Tag",
+                    "description": "Remove a tag from the contact",
+                    "icon": "tag",
+                    "color": "red"
+                },
+                "set_status": {
+                    "name": "Set Status", 
+                    "description": "Imposta lo stato del contatto",
+                    "icon": "circle",
+                    "color": "blue"
                 },
                 "create_task": {
                     "name": "Create Task",
