@@ -870,6 +870,281 @@ async def delete_custom_field(field_id: str, current_user: User = Depends(get_cu
     await db.custom_fields.delete_one({"id": field_id})
     return {"message": "Custom field deleted successfully"}
 
+# Document management endpoints
+@api_router.post("/documents/upload/{lead_id}")
+async def upload_document(
+    lead_id: str,
+    file: UploadFile = File(...),
+    uploaded_by: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload a PDF document for a specific lead"""
+    
+    # Check if lead exists
+    lead = await db.leads.find_one({"id": lead_id})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    try:
+        # Validate file
+        await validate_uploaded_file(file)
+        
+        # Save to temporary storage
+        temp_path = await save_temporary_file(file)
+        
+        try:
+            # Upload to Aruba Drive
+            aruba_response = await aruba_service.upload_file(temp_path, file.filename)
+            
+            # Create database record
+            document = await create_document_record(lead_id, file, aruba_response, uploaded_by)
+            
+            return {
+                "success": True,
+                "message": "Document uploaded successfully",
+                "document": {
+                    "id": document.id,
+                    "document_id": document.document_id,
+                    "filename": document.original_filename,
+                    "size": document.file_size,
+                    "upload_status": document.upload_status,
+                    "created_at": document.created_at.isoformat()
+                },
+                "lead": {
+                    "id": lead["id"],
+                    "nome": lead["nome"],
+                    "cognome": lead["cognome"]
+                }
+            }
+            
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+                
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Clean up temporary file on error
+        if 'temp_path' in locals() and os.path.exists(temp_path):
+            os.remove(temp_path)
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Upload failed: {str(e)}"
+        )
+
+@api_router.get("/documents/lead/{lead_id}")
+async def list_lead_documents(
+    lead_id: str,
+    current_user: User = Depends(get_current_user),
+    skip: int = 0,
+    limit: int = 100
+):
+    """List all documents for a specific lead"""
+    
+    # Check if lead exists
+    lead = await db.leads.find_one({"id": lead_id})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Query documents with pagination
+    documents = await db.documents.find({
+        "lead_id": lead_id,
+        "is_active": True
+    }).skip(skip).limit(limit).to_list(length=None)
+    
+    # Get total count for pagination
+    total_count = await db.documents.count_documents({
+        "lead_id": lead_id,
+        "is_active": True
+    })
+    
+    document_list = []
+    for doc in documents:
+        document_list.append({
+            "id": doc["id"],
+            "document_id": doc["document_id"],
+            "filename": doc["original_filename"],
+            "size": doc["file_size"],
+            "content_type": doc["content_type"],
+            "upload_status": doc["upload_status"],
+            "uploaded_by": doc["uploaded_by"],
+            "download_count": doc.get("download_count", 0),
+            "created_at": doc["created_at"].isoformat(),
+            "download_url": f"/api/documents/download/{doc['document_id']}"
+        })
+    
+    return {
+        "lead": {
+            "id": lead["id"],
+            "nome": lead["nome"],
+            "cognome": lead["cognome"],
+            "lead_id": lead.get("lead_id", lead["id"][:8])
+        },
+        "documents": document_list,
+        "pagination": {
+            "total": total_count,
+            "skip": skip,
+            "limit": limit,
+            "has_more": (skip + limit) < total_count
+        }
+    }
+
+@api_router.get("/documents/download/{document_id}")
+async def download_document(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Download a specific document by document ID"""
+    
+    # Find document in database
+    document = await db.documents.find_one({
+        "document_id": document_id,
+        "is_active": True
+    })
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    try:
+        # Download from Aruba Drive
+        file_content = await aruba_service.download_file(document["aruba_drive_file_id"])
+        
+        # Update download count
+        await db.documents.update_one(
+            {"document_id": document_id},
+            {
+                "$set": {"last_downloaded_at": datetime.now(timezone.utc)},
+                "$inc": {"download_count": 1}
+            }
+        )
+        
+        return StreamingResponse(
+            io.BytesIO(file_content),
+            media_type=document["content_type"],
+            headers={
+                "Content-Disposition": f"attachment; filename={document['original_filename']}"
+            }
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Download failed: {str(e)}"
+        )
+
+@api_router.delete("/documents/{document_id}")
+async def delete_document(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Soft delete a document (marks as inactive)"""
+    
+    # Only admin can delete documents
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete documents")
+    
+    document = await db.documents.find_one({
+        "document_id": document_id,
+        "is_active": True
+    })
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    try:
+        # Soft delete in database
+        await db.documents.update_one(
+            {"document_id": document_id},
+            {"$set": {"is_active": False}}
+        )
+        
+        return {
+            "success": True,
+            "message": "Document deleted successfully",
+            "document_id": document_id
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Deletion failed: {str(e)}"
+        )
+
+@api_router.get("/documents")
+async def list_all_documents(
+    current_user: User = Depends(get_current_user),
+    unit_id: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 100
+):
+    """List all documents with optional filtering by unit"""
+    
+    # Build query based on user role
+    query = {"is_active": True}
+    
+    if current_user.role == UserRole.AGENTE:
+        # Agents can only see documents for their assigned leads
+        agent_leads = await db.leads.find({"assigned_agent_id": current_user.id}).to_list(length=None)
+        lead_ids = [lead["id"] for lead in agent_leads]
+        query["lead_id"] = {"$in": lead_ids}
+    elif current_user.role == UserRole.REFERENTE:
+        # Referenti can see documents for leads assigned to their agents
+        agents = await db.users.find({"referente_id": current_user.id}).to_list(length=None)
+        agent_ids = [agent["id"] for agent in agents] + [current_user.id]
+        agent_leads = await db.leads.find({"assigned_agent_id": {"$in": agent_ids}}).to_list(length=None)
+        lead_ids = [lead["id"] for lead in agent_leads]
+        query["lead_id"] = {"$in": lead_ids}
+    # Admin can see all documents
+    
+    # Apply unit filter if specified
+    if unit_id and current_user.role == UserRole.ADMIN:
+        unit_leads = await db.leads.find({"gruppo": unit_id}).to_list(length=None)
+        unit_lead_ids = [lead["id"] for lead in unit_leads]
+        query["lead_id"] = {"$in": unit_lead_ids}
+    
+    # Get documents with pagination
+    documents = await db.documents.find(query).skip(skip).limit(limit).to_list(length=None)
+    total_count = await db.documents.count_documents(query)
+    
+    # Enrich with lead information
+    document_list = []
+    for doc in documents:
+        # Get lead info
+        lead = await db.leads.find_one({"id": doc["lead_id"]})
+        lead_info = {}
+        if lead:
+            lead_info = {
+                "id": lead["id"],
+                "nome": lead["nome"],
+                "cognome": lead["cognome"],
+                "lead_id": lead.get("lead_id", lead["id"][:8])
+            }
+        
+        document_list.append({
+            "id": doc["id"],
+            "document_id": doc["document_id"],
+            "filename": doc["original_filename"],
+            "size": doc["file_size"],
+            "content_type": doc["content_type"],
+            "upload_status": doc["upload_status"],
+            "uploaded_by": doc["uploaded_by"],
+            "download_count": doc.get("download_count", 0),
+            "created_at": doc["created_at"].isoformat(),
+            "lead": lead_info
+        })
+    
+    return {
+        "documents": document_list,
+        "pagination": {
+            "total": total_count,
+            "skip": skip,
+            "limit": limit,
+            "has_more": (skip + limit) < total_count
+        }
+    }
+
 # Analytics endpoints
 @api_router.get("/analytics/agent/{agent_id}")
 async def get_agent_analytics(agent_id: str, current_user: User = Depends(get_current_user)):
