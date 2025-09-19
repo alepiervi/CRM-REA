@@ -538,7 +538,7 @@ const Dashboard = () => {
   const [units, setUnits] = useState([]);
   const [assistants, setAssistants] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     fetchUnits();
