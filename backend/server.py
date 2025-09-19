@@ -772,6 +772,240 @@ async def get_referente_analytics(referente_id: str, current_user: User = Depend
         "agent_breakdown": agent_stats
     }
 
+# Excel Export System
+async def create_excel_report(leads_data, filename="leads_export"):
+    """Create Excel file with leads data"""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Lead Report"
+    
+    # Headers
+    headers = [
+        "Lead ID", "Nome", "Cognome", "Telefono", "Email", "Provincia", 
+        "Tipologia Abitazione", "IP Address", "Campagna", "Contenitore",
+        "Privacy Consent", "Marketing Consent", "Esito", "Note", 
+        "Data Creazione", "Data Assegnazione", "Data Contatto"
+    ]
+    
+    # Header styling
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+    
+    # Data rows
+    for row, lead in enumerate(leads_data, 2):
+        ws.cell(row=row, column=1, value=lead.get("lead_id", lead.get("id", "")[:8]))
+        ws.cell(row=row, column=2, value=lead.get("nome", ""))
+        ws.cell(row=row, column=3, value=lead.get("cognome", ""))
+        ws.cell(row=row, column=4, value=lead.get("telefono", ""))
+        ws.cell(row=row, column=5, value=lead.get("email", ""))
+        ws.cell(row=row, column=6, value=lead.get("provincia", ""))
+        ws.cell(row=row, column=7, value=lead.get("tipologia_abitazione", "").replace("_", " ").title())
+        ws.cell(row=row, column=8, value=lead.get("ip_address", ""))
+        ws.cell(row=row, column=9, value=lead.get("campagna", ""))
+        ws.cell(row=row, column=10, value=lead.get("contenitore", ""))
+        ws.cell(row=row, column=11, value="Sì" if lead.get("privacy_consent") else "No")
+        ws.cell(row=row, column=12, value="Sì" if lead.get("marketing_consent") else "No")
+        ws.cell(row=row, column=13, value=lead.get("esito", ""))
+        ws.cell(row=row, column=14, value=lead.get("note", ""))
+        
+        # Format dates
+        if lead.get("created_at"):
+            try:
+                date_obj = datetime.fromisoformat(lead["created_at"].replace("Z", "+00:00"))
+                ws.cell(row=row, column=15, value=date_obj.strftime("%d/%m/%Y %H:%M"))
+            except:
+                ws.cell(row=row, column=15, value=lead.get("created_at", ""))
+        
+        if lead.get("assigned_at"):
+            try:
+                date_obj = datetime.fromisoformat(lead["assigned_at"].replace("Z", "+00:00"))
+                ws.cell(row=row, column=16, value=date_obj.strftime("%d/%m/%Y %H:%M"))
+            except:
+                ws.cell(row=row, column=16, value=lead.get("assigned_at", ""))
+        
+        if lead.get("contacted_at"):
+            try:
+                date_obj = datetime.fromisoformat(lead["contacted_at"].replace("Z", "+00:00"))
+                ws.cell(row=row, column=17, value=date_obj.strftime("%d/%m/%Y %H:%M"))
+            except:
+                ws.cell(row=row, column=17, value=lead.get("contacted_at", ""))
+    
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Save to temporary file
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
+    wb.save(temp_file.name)
+    return temp_file.name
+
+@api_router.get("/leads/export")
+async def export_leads_excel(
+    unit_id: Optional[str] = None,
+    campagna: Optional[str] = None,
+    provincia: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Export leads to Excel file"""
+    query = {}
+    
+    # Role-based filtering (same as get_leads)
+    if current_user.role == UserRole.AGENTE:
+        query["assigned_agent_id"] = current_user.id
+    elif current_user.role == UserRole.REFERENTE:
+        agents = await db.users.find({"referente_id": current_user.id}).to_list(length=None)
+        agent_ids = [agent["id"] for agent in agents]
+        agent_ids.append(current_user.id)
+        query["assigned_agent_id"] = {"$in": agent_ids}
+    
+    # Unit filtering
+    if unit_id:
+        query["gruppo"] = unit_id
+    elif current_user.role != UserRole.ADMIN and current_user.unit_id:
+        query["gruppo"] = current_user.unit_id
+    
+    # Apply additional filters
+    if campagna:
+        query["campagna"] = campagna
+    if provincia:
+        query["provincia"] = provincia
+    if date_from:
+        query["created_at"] = {"$gte": datetime.fromisoformat(date_from)}
+    if date_to:
+        if "created_at" in query:
+            query["created_at"]["$lte"] = datetime.fromisoformat(date_to)
+        else:
+            query["created_at"] = {"$lte": datetime.fromisoformat(date_to)}
+    
+    # Get leads data
+    leads = await db.leads.find(query).to_list(length=None)
+    
+    if not leads:
+        raise HTTPException(status_code=404, detail="Nessun lead trovato con i filtri specificati")
+    
+    # Create Excel file
+    excel_file_path = await create_excel_report(leads, f"leads_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+    
+    # Return file
+    return FileResponse(
+        path=excel_file_path,
+        filename=f"leads_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+# Email System
+async def send_email_notification(to_email: str, subject: str, body: str):
+    """Send email notification"""
+    try:
+        # Email configuration (use environment variables in production)
+        smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+        smtp_username = os.environ.get("SMTP_USERNAME", "")
+        smtp_password = os.environ.get("SMTP_PASSWORD", "")
+        
+        if not smtp_username or not smtp_password:
+            logger.warning("SMTP credentials not configured. Email not sent.")
+            return False
+        
+        msg = MimeMultipart()
+        msg['From'] = smtp_username
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        
+        msg.attach(MimeText(body, 'html'))
+        
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        text = msg.as_string()
+        server.sendmail(smtp_username, to_email, text)
+        server.quit()
+        
+        logger.info(f"Email sent successfully to {to_email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email to {to_email}: {str(e)}")
+        return False
+
+async def notify_agent_new_lead(agent_id: str, lead_data: dict):
+    """Send email notification to agent about new lead assignment"""
+    try:
+        # Get agent details
+        agent = await db.users.find_one({"id": agent_id})
+        if not agent:
+            return False
+        
+        # Create email content
+        subject = f"Nuovo Lead Assegnato - {lead_data.get('nome', '')} {lead_data.get('cognome', '')}"
+        
+        body = f"""
+        <html>
+        <body>
+            <h2>Nuovo Lead Assegnato</h2>
+            <p>Ciao <strong>{agent['username']}</strong>,</p>
+            <p>Ti è stato assegnato un nuovo lead:</p>
+            
+            <table border="1" style="border-collapse: collapse; width: 100%; margin: 20px 0;">
+                <tr>
+                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Nome</strong></td>
+                    <td style="padding: 8px;">{lead_data.get('nome', '')} {lead_data.get('cognome', '')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Telefono</strong></td>
+                    <td style="padding: 8px;">{lead_data.get('telefono', '')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Email</strong></td>
+                    <td style="padding: 8px;">{lead_data.get('email', 'Non fornita')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Provincia</strong></td>
+                    <td style="padding: 8px;">{lead_data.get('provincia', '')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Campagna</strong></td>
+                    <td style="padding: 8px;">{lead_data.get('campagna', '')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Data Assegnazione</strong></td>
+                    <td style="padding: 8px;">{datetime.now().strftime('%d/%m/%Y %H:%M')}</td>
+                </tr>
+            </table>
+            
+            <p>Accedi al CRM per vedere tutti i dettagli e contattare il cliente.</p>
+            <p><strong>Buona fortuna!</strong></p>
+            
+            <hr>
+            <p style="font-size: 12px; color: #666;">
+                Questo è un messaggio automatico del sistema CRM Lead Manager.
+            </p>
+        </body>
+        </html>
+        """
+        
+        return await send_email_notification(agent['email'], subject, body)
+    except Exception as e:
+        logger.error(f"Failed to notify agent {agent_id}: {str(e)}")
+        return False
+
 # Webhook endpoint for external integrations (Zapier)
 @api_router.post("/webhook/{unit_id}")
 async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
