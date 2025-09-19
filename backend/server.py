@@ -2284,22 +2284,39 @@ async def configure_whatsapp(
         if not re.match(phone_pattern, config_data.phone_number):
             raise HTTPException(status_code=400, detail="Invalid phone number format. Use international format: +1234567890")
         
+        # Determina unit_id da utilizzare
+        target_unit_id = config_data.unit_id
+        if not target_unit_id:
+            # Se non specificato, usa unit dell'utente corrente o la prima unit disponibile
+            if current_user.unit_id:
+                target_unit_id = current_user.unit_id
+            else:
+                # Per admin senza unit, usa la prima unit disponibile
+                first_unit = await db.units.find_one({})
+                if not first_unit:
+                    raise HTTPException(status_code=400, detail="No units available. Create a unit first.")
+                target_unit_id = first_unit["id"]
+        
         # Generate QR code data (simulated)
         import base64
         import json
         qr_data = {
             "phone": config_data.phone_number,
+            "unit_id": target_unit_id,
             "timestamp": datetime.now(timezone.utc).timestamp(),
             "session": str(uuid.uuid4()),
             "client": "crm_whatsapp_web"
         }
         qr_code = base64.b64encode(json.dumps(qr_data).encode()).decode()
         
-        # Check if configuration already exists
-        existing_config = await db.whatsapp_configurations.find_one({"is_active": True})
+        # Check if configuration already exists for this unit
+        existing_config = await db.whatsapp_configurations.find_one({
+            "unit_id": target_unit_id,
+            "is_active": True
+        })
         
         if existing_config:
-            # Update existing configuration
+            # Update existing configuration for this unit
             await db.whatsapp_configurations.update_one(
                 {"id": existing_config["id"]},
                 {
@@ -2314,8 +2331,9 @@ async def configure_whatsapp(
             )
             config_id = existing_config["id"]
         else:
-            # Create new configuration
+            # Create new configuration for this unit
             whatsapp_config = WhatsAppConfiguration(
+                unit_id=target_unit_id,
                 phone_number=config_data.phone_number,
                 qr_code=qr_code,
                 connection_status="connecting"
