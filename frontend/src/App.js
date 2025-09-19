@@ -972,12 +972,12 @@ const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
               <p className="capitalize">{lead.tipologia_abitazione?.replace("_", " ")}</p>
             </div>
 
-            {lead.ip_address && (
-              <div>
-                <Label className="text-sm font-medium text-slate-600">IP Address</Label>
-                <p className="font-mono text-sm bg-slate-100 px-2 py-1 rounded">{lead.ip_address}</p>
-              </div>
-            )}
+            <div>
+              <Label className="text-sm font-medium text-slate-600">IP Address</Label>
+              <p className="font-mono text-sm bg-slate-100 px-2 py-1 rounded">
+                {lead.ip_address || "Non disponibile"}
+              </p>
+            </div>
 
             <div>
               <Label className="text-sm font-medium text-slate-600">Lead ID</Label>
