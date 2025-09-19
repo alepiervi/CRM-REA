@@ -4912,7 +4912,14 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
 };
 
 // Workflow List Component
-const WorkflowsList = ({ workflows, onEdit, onDelete }) => {
+const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCopy }) => {
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [workflowToCopy, setWorkflowToCopy] = useState(null);
+
+  const handleCopyClick = (workflow) => {
+    setWorkflowToCopy(workflow);
+    setShowCopyModal(true);
+  };
   return (
     <div className="bg-white rounded-lg border border-slate-200">
       <div className="p-6">
