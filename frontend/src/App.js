@@ -4883,8 +4883,11 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
       {activeView === "list" ? (
         <WorkflowsList 
           workflows={workflows}
+          units={units}
+          selectedUnit={selectedUnit}
           onEdit={handleEditWorkflow}
           onDelete={handleDeleteWorkflow}
+          onCopy={handleCopyWorkflow}
         />
       ) : (
         <WorkflowCanvas 
