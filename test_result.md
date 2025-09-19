@@ -179,6 +179,54 @@ test_plan:
   test_priority: "high_first"
 
 frontend:
+  - task: "Lead Delete Button UI - Admin Only Visibility"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Delete buttons (Trash2 icons) are correctly visible in the Actions column for admin users. Found 29 delete buttons in the lead table, each with proper 'Elimina lead' title attribute. Buttons are properly positioned in the Actions column next to the View (Eye) buttons. UI implementation follows the requirement perfectly."
+        
+  - task: "Lead Delete Confirmation Dialog"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Confirmation dialog appears correctly when delete button is clicked. Dialog shows proper warning message: 'Sei sicuro di voler eliminare il lead [Nome]? Questa azione non può essere annullata e eliminerà tutti i dati associati al lead.' The confirmation uses window.confirm() and includes lead name and appropriate warning text."
+        
+  - task: "Lead Delete Functionality Integration"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Lead deletion functionality working perfectly. Successfully tested with admin user (admin/admin123). Delete buttons trigger confirmation dialog, and upon acceptance, the lead is removed from the table. Integration with backend DELETE API is working correctly. Toast notifications appear for success/error feedback."
+        
+  - task: "Lead Delete Access Control - Admin Only"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Access control implemented correctly. Delete buttons are only rendered when user.role === 'admin' (line 884-893 in App.js). The conditional rendering ensures that only admin users can see and interact with the delete functionality. Non-admin users will not see the delete buttons in the Actions column."
+        
   - task: "Documents Section UI - Navigation and Display"
     implemented: true
     working: true
