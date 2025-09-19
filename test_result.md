@@ -233,10 +233,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Documents Section UI - Navigation and Display"
-    - "Document Upload Modal - SelectItem Error Fix"
-    - "Document Filters - Nome and Cognome"
-  stuck_tasks: []
+    - "ChatBot API - Session Creation Endpoint"
+    - "ChatBot API - Admin Unit Assignment Issue"
+  stuck_tasks:
+    - "ChatBot API - Session Creation Endpoint"
+    - "ChatBot API - Admin Unit Assignment Issue"
   test_all: false
   test_priority: "high_first"
 
