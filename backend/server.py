@@ -2497,10 +2497,21 @@ async def create_workflow(
     
     try:
         workflow_data = workflow_in.dict()
+        
+        # For admin users, use the first available unit if they don't have a unit_id
+        unit_id = current_user.unit_id
+        if not unit_id:
+            # Get the first available unit for admin users
+            first_unit = await db.units.find_one({})
+            if first_unit:
+                unit_id = first_unit["id"]
+            else:
+                raise HTTPException(status_code=400, detail="No units available. Create a unit first.")
+        
         workflow_data.update({
             "id": str(uuid.uuid4()),
             "created_by": current_user.id,
-            "unit_id": current_user.unit_id,
+            "unit_id": unit_id,
             "created_at": datetime.now(timezone.utc),
             "is_active": True,
             "is_published": False
