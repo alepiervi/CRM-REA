@@ -577,6 +577,32 @@ const Dashboard = () => {
     setSelectedUnit(unitId);
   };
 
+  const getNavItems = () => {
+    const items = [
+      { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+      { id: "leads", label: "Lead", icon: Phone },
+      { id: "documents", label: "Documenti", icon: FileText },
+      { id: "chat", label: "Chat AI", icon: MessageCircle },
+    ];
+
+    if (user.role === "admin") {
+      items.push(
+        { id: "users", label: "Utenti", icon: Users },
+        { id: "units", label: "Unit", icon: Building2 },
+        { id: "containers", label: "Contenitori", icon: Home },
+        { id: "ai-config", label: "Configurazione AI", icon: Settings },
+        { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+        { id: "analytics", label: "Analytics", icon: TrendingUp }
+      );
+    } else if (user.role === "referente") {
+      items.push(
+        { id: "analytics", label: "Analytics", icon: TrendingUp }
+      );
+    }
+
+    return items;
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
