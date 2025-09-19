@@ -334,6 +334,100 @@ class LeadWhatsAppValidation(BaseModel):
     validation_status: str = "pending"  # pending, valid, invalid, error
     validation_date: Optional[datetime] = None
 
+# Workflow Builder Models (FASE 3)
+class Workflow(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = None
+    unit_id: str
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+    is_active: bool = True
+    is_published: bool = False
+    workflow_data: Optional[dict] = None  # Canvas layout and configuration
+
+class WorkflowCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class WorkflowUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_published: Optional[bool] = None
+    workflow_data: Optional[dict] = None
+
+class WorkflowNode(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    workflow_id: str
+    node_type: str  # trigger, action, condition, delay
+    node_subtype: str  # specific type like "form_submitted", "send_email"
+    name: str
+    position_x: int
+    position_y: int
+    configuration: Optional[dict] = None  # Node-specific settings
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class WorkflowNodeCreate(BaseModel):
+    node_type: str
+    node_subtype: str
+    name: str
+    position_x: int
+    position_y: int
+    configuration: Optional[dict] = None
+
+class WorkflowNodeUpdate(BaseModel):
+    name: Optional[str] = None
+    position_x: Optional[int] = None
+    position_y: Optional[int] = None
+    configuration: Optional[dict] = None
+
+class NodeConnection(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    workflow_id: str
+    source_node_id: str
+    target_node_id: str
+    source_handle: Optional[str] = None  # For conditional branches
+    target_handle: Optional[str] = None
+    condition_data: Optional[dict] = None  # For conditional connections
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class NodeConnectionCreate(BaseModel):
+    source_node_id: str
+    target_node_id: str
+    source_handle: Optional[str] = None
+    target_handle: Optional[str] = None
+    condition_data: Optional[dict] = None
+
+class WorkflowExecution(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    workflow_id: str
+    contact_id: Optional[str] = None
+    status: str = "pending"  # pending, running, completed, failed, cancelled, paused
+    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    completed_at: Optional[datetime] = None
+    current_node_id: Optional[str] = None
+    execution_data: Optional[dict] = None  # Runtime variables and context
+    error_message: Optional[str] = None
+    retry_count: int = 0
+
+class ExecutionStep(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    execution_id: str
+    node_id: str
+    step_order: int
+    status: str  # pending, running, completed, failed
+    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    completed_at: Optional[datetime] = None
+    input_data: Optional[dict] = None
+    output_data: Optional[dict] = None
+    error_message: Optional[str] = None
+
+class WorkflowExecutionCreate(BaseModel):
+    contact_id: Optional[str] = None
+    trigger_data: Optional[dict] = None
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
