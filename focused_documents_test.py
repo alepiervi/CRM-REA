@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_documents_with_real_data():
-    base_url = "https://agentflow-crm.preview.emergentagent.com/api"
+    base_url = "https://crmassist.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     
