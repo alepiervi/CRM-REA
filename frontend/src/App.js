@@ -564,10 +564,11 @@ const Dashboard = () => {
 
   const fetchAssistants = async () => {
     try {
-      const response = await axios.get(`${API}/assistants`);
-      setAssistants(response.data);
+      const response = await axios.get(`${API}/ai-assistants`);
+      setAssistants(response.data.assistants || []);
     } catch (error) {
       console.error("Error fetching assistants:", error);
+      setAssistants([]); // Set empty array on error
     }
   };
 
