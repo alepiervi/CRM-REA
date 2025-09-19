@@ -487,6 +487,100 @@ async def create_document_record(lead_id: str, file, aruba_response: Dict[str, A
 # Initialize Aruba Drive service
 aruba_service = ArubadriveService()
 
+# ChatBot Service
+class ChatBotService:
+    def __init__(self):
+        self.api_key = EMERGENT_LLM_KEY
+        self.active_chats = {}  # session_id -> LlmChat instance
+    
+    async def get_or_create_chat(self, session_id: str, unit_id: str) -> LlmChat:
+        """Get existing chat or create new one for session"""
+        if session_id not in self.active_chats:
+            # Get unit info for context
+            unit = await db.units.find_one({"id": unit_id})
+            unit_name = unit["name"] if unit else "CRM Unit"
+            
+            system_message = f"""Sei un assistente AI per il sistema CRM di {unit_name}. 
+            Il tuo ruolo è aiutare gli agenti e referenti con:
+            - Analisi dei lead e suggerimenti per il follow-up
+            - Strategie di comunicazione con i clienti  
+            - Organizzazione del lavoro e priorità
+            - Risposte a domande sui processi aziendali
+            
+            Rispoudi sempre in italiano e mantieni un tono professionale ma amichevole.
+            Concentrati su consigli pratici e azionabili per migliorare le performance di vendita."""
+            
+            chat = LlmChat(
+                api_key=self.api_key,
+                session_id=session_id,
+                system_message=system_message
+            ).with_model("openai", "gpt-4o-mini")
+            
+            self.active_chats[session_id] = chat
+        
+        return self.active_chats[session_id]
+    
+    async def send_message(self, session_id: str, unit_id: str, message: str, user_id: str) -> str:
+        """Send message to ChatBot and get response"""
+        try:
+            chat = await self.get_or_create_chat(session_id, unit_id)
+            
+            user_message = UserMessage(text=message)
+            response = await chat.send_message(user_message)
+            
+            # Save user message to database
+            user_msg = ChatMessage(
+                unit_id=unit_id,
+                session_id=session_id,
+                user_id=user_id,
+                message=message,
+                message_type="user"
+            )
+            await db.chat_messages.insert_one(user_msg.dict())
+            
+            # Save assistant response to database
+            assistant_msg = ChatMessage(
+                unit_id=unit_id,
+                session_id=session_id,
+                user_id="assistant",
+                message=response,
+                message_type="assistant"
+            )
+            await db.chat_messages.insert_one(assistant_msg.dict())
+            
+            return response
+            
+        except Exception as e:
+            logging.error(f"ChatBot error: {e}")
+            return "Mi dispiace, ho riscontrato un errore. Riprova tra poco."
+    
+    async def get_chat_history(self, session_id: str, limit: int = 50) -> List[ChatMessage]:
+        """Get chat history for session"""
+        messages = await db.chat_messages.find({
+            "session_id": session_id
+        }).sort("created_at", -1).limit(limit).to_list(length=None)
+        
+        # Reverse to get chronological order
+        messages.reverse()
+        return [ChatMessage(**msg) for msg in messages]
+    
+    async def create_session(self, unit_id: str, session_type: str = "unit", participants: List[str] = None) -> ChatSession:
+        """Create new chat session"""
+        session_id = f"{unit_id}-{session_type}-{str(uuid.uuid4())[:8]}"
+        
+        session = ChatSession(
+            session_id=session_id,
+            unit_id=unit_id,
+            participants=participants or [],
+            session_type=session_type
+        )
+        
+        await db.chat_sessions.insert_one(session.dict())
+        return session
+
+# Initialize ChatBot service
+chatbot_service = ChatBotService()
+
 async def assign_lead_to_agent(lead: Lead):
     """Automatically assign lead to agent based on province coverage"""
     # Find agents covering this province
