@@ -4302,7 +4302,14 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800">Gestione WhatsApp</h2>
+        <div>
+          <h2 className="text-3xl font-bold text-slate-800">Gestione WhatsApp</h2>
+          {selectedUnit && selectedUnit !== "all" && (
+            <p className="text-sm text-slate-600 mt-1">
+              Unit: {units?.find(u => u.id === selectedUnit)?.name || selectedUnit}
+            </p>
+          )}
+        </div>
         <div className="flex space-x-2">
           {config?.configured && !config.is_connected && (
             <Button onClick={() => setShowQRModal(true)} className="bg-green-600 hover:bg-green-700">
