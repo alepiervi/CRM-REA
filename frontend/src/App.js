@@ -4645,6 +4645,392 @@ const LeadWhatsAppValidator = () => {
   );
 };
 
+// Workflow Builder Management Component (FASE 3)
+const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
+  const [workflows, setWorkflows] = useState([]);
+  const [selectedWorkflow, setSelectedWorkflow] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [activeView, setActiveView] = useState("list"); // list, builder
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchWorkflows();
+  }, [selectedUnit]);
+
+  const fetchWorkflows = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      
+      const response = await axios.get(`${API}/workflows?${params}`);
+      setWorkflows(response.data);
+    } catch (error) {
+      console.error("Error fetching workflows:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei workflow",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateWorkflow = async (workflowData) => {
+    try {
+      const response = await axios.post(`${API}/workflows`, workflowData);
+      setWorkflows([...workflows, response.data]);
+      toast({
+        title: "Successo",
+        description: "Workflow creato con successo",
+      });
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error("Error creating workflow:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nella creazione del workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditWorkflow = (workflow) => {
+    setSelectedWorkflow(workflow);
+    setActiveView("builder");
+  };
+
+  const handleDeleteWorkflow = async (workflowId) => {
+    if (!window.confirm("Sei sicuro di voler eliminare questo workflow?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/workflows/${workflowId}`);
+      setWorkflows(workflows.filter(w => w.id !== workflowId));
+      toast({
+        title: "Successo",
+        description: "Workflow eliminato con successo",
+      });
+    } catch (error) {
+      console.error("Error deleting workflow:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione del workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-slate-600">Caricamento workflow...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Workflow Builder</h1>
+          <p className="text-slate-600">Crea e gestisci workflow automatizzati per il tuo CRM</p>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          {activeView === "builder" && (
+            <Button
+              onClick={() => {
+                setActiveView("list");
+                setSelectedWorkflow(null);
+              }}
+              variant="outline"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Torna alla Lista
+            </Button>
+          )}
+          
+          {activeView === "list" && (
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nuovo Workflow
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Content */}
+      {activeView === "list" ? (
+        <WorkflowsList 
+          workflows={workflows}
+          onEdit={handleEditWorkflow}
+          onDelete={handleDeleteWorkflow}
+        />
+      ) : (
+        <WorkflowCanvas 
+          workflow={selectedWorkflow}
+          onBack={() => {
+            setActiveView("list");
+            setSelectedWorkflow(null);
+          }}
+          onSave={fetchWorkflows}
+        />
+      )}
+
+      {/* Create Workflow Modal */}
+      {showCreateModal && (
+        <CreateWorkflowModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={handleCreateWorkflow}
+        />
+      )}
+    </div>
+  );
+};
+
+// Workflow List Component
+const WorkflowsList = ({ workflows, onEdit, onDelete }) => {
+  return (
+    <div className="bg-white rounded-lg border border-slate-200">
+      <div className="p-6">
+        <h2 className="text-lg font-semibold text-slate-800 mb-4">I Tuoi Workflow</h2>
+        
+        {workflows.length === 0 ? (
+          <div className="text-center py-12">
+            <Workflow className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600 mb-2">Nessun workflow trovato</p>
+            <p className="text-slate-500 text-sm">Crea il tuo primo workflow per automatizzare i processi del CRM</p>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {workflows.map((workflow) => (
+              <div key={workflow.id} className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Workflow className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-slate-800">{workflow.name}</h3>
+                        <p className="text-sm text-slate-600">{workflow.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={workflow.is_published ? "default" : "outline"}>
+                      {workflow.is_published ? "Pubblicato" : "Bozza"}
+                    </Badge>
+                    
+                    <Badge variant={workflow.is_active ? "default" : "secondary"}>
+                      {workflow.is_active ? "Attivo" : "Inattivo"}
+                    </Badge>
+                    
+                    <div className="flex items-center space-x-1">
+                      <Button
+                        onClick={() => onEdit(workflow)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      
+                      <Button
+                        onClick={() => onDelete(workflow.id)}
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-3 flex items-center text-xs text-slate-500">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  Creato il {new Date(workflow.created_at).toLocaleDateString('it-IT')}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Create Workflow Modal
+const CreateWorkflowModal = ({ onClose, onSuccess }) => {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!name.trim()) {
+      toast({
+        title: "Errore",
+        description: "Il nome del workflow è obbligatorio",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await onSuccess({
+        name: name.trim(),
+        description: description.trim()
+      });
+    } catch (error) {
+      // Error is handled in parent component
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Crea Nuovo Workflow</DialogTitle>
+          <DialogDescription>
+            Crea un nuovo workflow per automatizzare i processi del tuo CRM
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Nome Workflow</Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="es. Benvenuto Nuovo Cliente"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="description">Descrizione (opzionale)</Label>
+            <Textarea
+              id="description"
+              placeholder="Descrivi cosa fa questo workflow..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Creazione..." : "Crea Workflow"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Workflow Canvas Component (Simplified for now)
+const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
+  return (
+    <div className="bg-white rounded-lg border border-slate-200 h-[600px]">
+      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">{workflow?.name || "Nuovo Workflow"}</h2>
+          <p className="text-sm text-slate-600">Editor Workflow Drag & Drop</p>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm">
+            <Save className="w-4 h-4 mr-2" />
+            Salva
+          </Button>
+          <Button size="sm" className="bg-green-600 hover:bg-green-700">
+            <Target className="w-4 h-4 mr-2" />
+            Pubblica
+          </Button>
+        </div>
+      </div>
+      
+      <div className="flex h-full">
+        {/* Sidebar con nodi disponibili */}
+        <div className="w-64 border-r border-slate-200 p-4">
+          <h3 className="font-medium text-slate-700 mb-3">Nodi Disponibili</h3>
+          <div className="space-y-2">
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:bg-green-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm font-medium">Trigger</span>
+              </div>
+              <p className="text-xs text-green-600 mt-1">Avvia il workflow</p>
+            </div>
+            
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm font-medium">Azione</span>
+              </div>
+              <p className="text-xs text-blue-600 mt-1">Esegui un'azione</p>
+            </div>
+            
+            <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg cursor-pointer hover:bg-purple-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-sm font-medium">Condizione</span>
+              </div>
+              <p className="text-xs text-purple-600 mt-1">Decisione if/else</p>
+            </div>
+            
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                <span className="text-sm font-medium">Attesa</span>
+              </div>
+              <p className="text-xs text-gray-600 mt-1">Pausa temporizzata</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Canvas area */}
+        <div className="flex-1 bg-slate-50 relative">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <Workflow className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+              <p className="text-slate-600">Canvas del Workflow</p>
+              <p className="text-slate-500 text-sm">Trascina i nodi dalla sidebar per costruire il tuo workflow</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main App Component
 const App = () => {
   const { user, loading } = useAuth();
