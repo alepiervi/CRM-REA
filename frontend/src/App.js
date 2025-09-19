@@ -388,6 +388,7 @@ const Navigation = ({ activeTab, setActiveTab, selectedUnit, onUnitChange, units
     const items = [
       { id: "dashboard", label: "Dashboard", icon: BarChart3 },
       { id: "leads", label: "Lead", icon: Phone },
+      { id: "documents", label: "Documenti", icon: FileText },
     ];
 
     if (user.role === "admin") {
