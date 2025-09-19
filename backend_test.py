@@ -920,11 +920,16 @@ class CRMAPITester:
         self.test_provinces_endpoint()
         self.test_dashboard_stats()
         self.test_user_management()
-        self.test_user_toggle_status()  # NEW FEATURE TEST
-        self.test_unit_filtering()      # NEW FEATURE TEST
+        self.test_user_crud_new_features()  # NEW FEATURE TEST
+        self.test_user_toggle_status()      # EXISTING FEATURE TEST
+        self.test_unit_filtering()          # EXISTING FEATURE TEST
         self.test_units_management()
         self.test_containers_management()
+        self.test_container_crud_new_features()  # NEW FEATURE TEST
+        self.test_custom_fields_crud()      # NEW FEATURE TEST
+        self.test_analytics_endpoints()     # NEW FEATURE TEST
         self.test_leads_management()
+        self.test_lead_new_fields()         # NEW FEATURE TEST
         self.test_webhook_endpoint()
         self.test_unauthorized_access()
         
