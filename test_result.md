@@ -173,8 +173,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Lead deletion functionality fully tested and working"
-    - "All DELETE endpoint functionality verified and working"
+    - "AI Configuration Section - Admin Navigation Visibility"
+    - "AI Configuration Interface - Non-configured Status Display"
+    - "AI Configuration Modal - OpenAI Setup Form"
+    - "AI Configuration Instructions - API Key Guidance"
+    - "AI Configuration Access Control - Admin Only"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
