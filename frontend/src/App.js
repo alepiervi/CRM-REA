@@ -42,7 +42,14 @@ import {
   Menu,
   Power,
   PowerOff,
-  ChevronDown
+  ChevronDown,
+  Edit,
+  Trash2,
+  Save,
+  Upload,
+  FileText,
+  TrendingUp,
+  Target
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -386,7 +393,13 @@ const Navigation = ({ activeTab, setActiveTab, selectedUnit, onUnitChange, units
     if (user.role === "admin") {
       items.push(
         { id: "users", label: "Utenti", icon: Users },
-        { id: "containers", label: "Contenitori", icon: Home }
+        { id: "units", label: "Unit", icon: Building2 },
+        { id: "containers", label: "Contenitori", icon: Home },
+        { id: "analytics", label: "Analytics", icon: TrendingUp }
+      );
+    } else if (user.role === "referente") {
+      items.push(
+        { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
     }
 
@@ -548,11 +561,15 @@ const Dashboard = () => {
       case "dashboard":
         return <DashboardStats selectedUnit={selectedUnit} />;
       case "leads":
-        return <LeadsManagement selectedUnit={selectedUnit} />;
+        return <LeadsManagement selectedUnit={selectedUnit} units={units} />;
       case "users":
         return user.role === "admin" ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+      case "units":
+        return user.role === "admin" ? <UnitsManagement selectedUnit={selectedUnit} /> : <div>Non autorizzato</div>;
       case "containers":
         return user.role === "admin" ? <ContainersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+      case "analytics":
+        return <AnalyticsManagement selectedUnit={selectedUnit} units={units} />;
       default:
         return <DashboardStats selectedUnit={selectedUnit} />;
     }
@@ -576,11 +593,13 @@ const Dashboard = () => {
   );
 };
 
-// Leads Management Component
-const LeadsManagement = ({ selectedUnit }) => {
+// Enhanced Leads Management Component
+const LeadsManagement = ({ selectedUnit, units }) => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [customFields, setCustomFields] = useState([]);
   const [filters, setFilters] = useState({
     campagna: "",
     provincia: "",
@@ -591,6 +610,7 @@ const LeadsManagement = ({ selectedUnit }) => {
 
   useEffect(() => {
     fetchLeads();
+    fetchCustomFields();
   }, [selectedUnit, filters]);
 
   const fetchLeads = async () => {
@@ -618,9 +638,18 @@ const LeadsManagement = ({ selectedUnit }) => {
     }
   };
 
-  const updateLead = async (leadId, esito, note) => {
+  const fetchCustomFields = async () => {
     try {
-      await axios.put(`${API}/leads/${leadId}`, { esito, note });
+      const response = await axios.get(`${API}/custom-fields`);
+      setCustomFields(response.data);
+    } catch (error) {
+      console.error("Error fetching custom fields:", error);
+    }
+  };
+
+  const updateLead = async (leadId, esito, note, customFields) => {
+    try {
+      await axios.put(`${API}/leads/${leadId}`, { esito, note, custom_fields: customFields });
       toast({
         title: "Successo",
         description: "Lead aggiornato con successo",
@@ -659,10 +688,16 @@ const LeadsManagement = ({ selectedUnit }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-slate-800">Gestione Lead</h2>
-        <Button onClick={fetchLeads} variant="outline" size="sm">
-          <Search className="w-4 h-4 mr-2" />
-          Aggiorna
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuovo Lead
+          </Button>
+          <Button onClick={fetchLeads} variant="outline" size="sm">
+            <Search className="w-4 h-4 mr-2" />
+            Aggiorna
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -717,6 +752,7 @@ const LeadsManagement = ({ selectedUnit }) => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>ID Lead</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Telefono</TableHead>
                   <TableHead>Provincia</TableHead>
@@ -729,6 +765,9 @@ const LeadsManagement = ({ selectedUnit }) => {
               <TableBody>
                 {leads.map((lead) => (
                   <TableRow key={lead.id}>
+                    <TableCell className="font-mono text-sm">
+                      {lead.lead_id || lead.id.slice(0, 8)}
+                    </TableCell>
                     <TableCell className="font-medium">
                       {lead.nome} {lead.cognome}
                     </TableCell>
@@ -770,19 +809,34 @@ const LeadsManagement = ({ selectedUnit }) => {
           lead={selectedLead}
           onClose={() => setSelectedLead(null)}
           onUpdate={updateLead}
+          customFields={customFields}
+        />
+      )}
+
+      {/* Create Lead Modal */}
+      {showCreateModal && (
+        <CreateLeadModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            fetchLeads();
+            setShowCreateModal(false);
+          }}
+          units={units}
+          customFields={customFields}
         />
       )}
     </div>
   );
 };
 
-// Lead Detail Modal Component
-const LeadDetailModal = ({ lead, onClose, onUpdate }) => {
+// Enhanced Lead Detail Modal Component with Custom Fields
+const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
   const [esito, setEsito] = useState(lead.esito || "");
   const [note, setNote] = useState(lead.note || "");
+  const [customFieldValues, setCustomFieldValues] = useState(lead.custom_fields || {});
 
   const handleSave = () => {
-    onUpdate(lead.id, esito, note);
+    onUpdate(lead.id, esito, note, customFieldValues);
   };
 
   const esitoOptions = [
@@ -793,13 +847,87 @@ const LeadDetailModal = ({ lead, onClose, onUpdate }) => {
     "CONTRATTUALIZATO"
   ];
 
+  const renderCustomField = (field) => {
+    const value = customFieldValues[field.id] || "";
+    
+    switch (field.field_type) {
+      case "text":
+        return (
+          <Input
+            value={value}
+            onChange={(e) => setCustomFieldValues({
+              ...customFieldValues,
+              [field.id]: e.target.value
+            })}
+            placeholder={`Inserisci ${field.name}`}
+          />
+        );
+      case "number":
+        return (
+          <Input
+            type="number"
+            value={value}
+            onChange={(e) => setCustomFieldValues({
+              ...customFieldValues,
+              [field.id]: e.target.value
+            })}
+            placeholder={`Inserisci ${field.name}`}
+          />
+        );
+      case "date":
+        return (
+          <Input
+            type="date"
+            value={value}
+            onChange={(e) => setCustomFieldValues({
+              ...customFieldValues,
+              [field.id]: e.target.value
+            })}
+          />
+        );
+      case "boolean":
+        return (
+          <Checkbox
+            checked={value === "true"}
+            onCheckedChange={(checked) => setCustomFieldValues({
+              ...customFieldValues,
+              [field.id]: checked.toString()
+            })}
+          />
+        );
+      case "select":
+        return (
+          <Select 
+            value={value} 
+            onValueChange={(newValue) => setCustomFieldValues({
+              ...customFieldValues,
+              [field.id]: newValue
+            })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={`Seleziona ${field.name}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {field.options.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <Dialog open={!!lead} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Users className="w-5 h-5" />
-            <span>Dettagli Lead</span>
+            <span>Dettagli Lead #{lead.lead_id || lead.id.slice(0, 8)}</span>
           </DialogTitle>
           <DialogDescription>
             Visualizza e modifica le informazioni del lead
@@ -843,6 +971,28 @@ const LeadDetailModal = ({ lead, onClose, onUpdate }) => {
               <Label className="text-sm font-medium text-slate-600">Tipologia Abitazione</Label>
               <p className="capitalize">{lead.tipologia_abitazione?.replace("_", " ")}</p>
             </div>
+
+            {lead.ip_address && (
+              <div>
+                <Label className="text-sm font-medium text-slate-600">IP Address</Label>
+                <p className="font-mono text-sm">{lead.ip_address}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Privacy Consent</Label>
+                <Badge variant={lead.privacy_consent ? "default" : "secondary"}>
+                  {lead.privacy_consent ? "Accettato" : "Non Accettato"}
+                </Badge>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Marketing Consent</Label>
+                <Badge variant={lead.marketing_consent ? "default" : "secondary"}>
+                  {lead.marketing_consent ? "Accettato" : "Non Accettato"}
+                </Badge>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -885,6 +1035,19 @@ const LeadDetailModal = ({ lead, onClose, onUpdate }) => {
                 rows={4}
               />
             </div>
+
+            {/* Custom Fields */}
+            {customFields.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-slate-600">Campi Personalizzati</Label>
+                {customFields.map((field) => (
+                  <div key={field.id}>
+                    <Label className="text-sm">{field.name}</Label>
+                    {renderCustomField(field)}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -893,7 +1056,7 @@ const LeadDetailModal = ({ lead, onClose, onUpdate }) => {
             Annulla
           </Button>
           <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
-            <CheckCircle className="w-4 h-4 mr-2" />
+            <Save className="w-4 h-4 mr-2" />
             Salva Modifiche
           </Button>
         </DialogFooter>
@@ -902,17 +1065,374 @@ const LeadDetailModal = ({ lead, onClose, onUpdate }) => {
   );
 };
 
-// Users Management Component (Admin only)
+// Create Lead Modal Component
+const CreateLeadModal = ({ onClose, onSuccess, units, customFields }) => {
+  const [formData, setFormData] = useState({
+    nome: "",
+    cognome: "",
+    telefono: "",
+    email: "",
+    provincia: "",
+    tipologia_abitazione: "",
+    ip_address: "",
+    campagna: "",
+    gruppo: "",
+    contenitore: "",
+    privacy_consent: false,
+    marketing_consent: false,
+    custom_fields: {}
+  });
+  const [containers, setContainers] = useState([]);
+  const [provinces, setProvinces] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchProvinces();
+    fetchContainers();
+  }, []);
+
+  const fetchProvinces = async () => {
+    try {
+      const response = await axios.get(`${API}/provinces`);
+      setProvinces(response.data.provinces);
+    } catch (error) {
+      console.error("Error fetching provinces:", error);
+    }
+  };
+
+  const fetchContainers = async () => {
+    try {
+      const response = await axios.get(`${API}/containers`);
+      setContainers(response.data);
+    } catch (error) {
+      console.error("Error fetching containers:", error);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      await axios.post(`${API}/leads`, formData);
+      toast({
+        title: "Successo",
+        description: "Lead creato con successo",
+      });
+      onSuccess();
+    } catch (error) {
+      console.error("Error creating lead:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nella creazione del lead",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const renderCustomField = (field) => {
+    const value = formData.custom_fields[field.id] || "";
+    
+    switch (field.field_type) {
+      case "text":
+        return (
+          <Input
+            value={value}
+            onChange={(e) => setFormData({
+              ...formData,
+              custom_fields: {
+                ...formData.custom_fields,
+                [field.id]: e.target.value
+              }
+            })}
+            placeholder={`Inserisci ${field.name}`}
+            required={field.required}
+          />
+        );
+      case "number":
+        return (
+          <Input
+            type="number"
+            value={value}
+            onChange={(e) => setFormData({
+              ...formData,
+              custom_fields: {
+                ...formData.custom_fields,
+                [field.id]: e.target.value
+              }
+            })}
+            placeholder={`Inserisci ${field.name}`}
+            required={field.required}
+          />
+        );
+      case "date":
+        return (
+          <Input
+            type="date"
+            value={value}
+            onChange={(e) => setFormData({
+              ...formData,
+              custom_fields: {
+                ...formData.custom_fields,
+                [field.id]: e.target.value
+              }
+            })}
+            required={field.required}
+          />
+        );
+      case "boolean":
+        return (
+          <Checkbox
+            checked={value === "true"}
+            onCheckedChange={(checked) => setFormData({
+              ...formData,
+              custom_fields: {
+                ...formData.custom_fields,
+                [field.id]: checked.toString()
+              }
+            })}
+          />
+        );
+      case "select":
+        return (
+          <Select 
+            value={value} 
+            onValueChange={(newValue) => setFormData({
+              ...formData,
+              custom_fields: {
+                ...formData.custom_fields,
+                [field.id]: newValue
+              }
+            })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={`Seleziona ${field.name}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {field.options.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Crea Nuovo Lead</DialogTitle>
+          <DialogDescription>
+            Inserisci tutte le informazioni del nuovo lead
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nome">Nome *</Label>
+                  <Input
+                    id="nome"
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cognome">Cognome *</Label>
+                  <Input
+                    id="cognome"
+                    value={formData.cognome}
+                    onChange={(e) => setFormData({ ...formData, cognome: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="telefono">Telefono *</Label>
+                  <Input
+                    id="telefono"
+                    value={formData.telefono}
+                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="provincia">Provincia *</Label>
+                  <Select value={formData.provincia} onValueChange={(value) => setFormData({ ...formData, provincia: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona provincia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {provinces.map((provincia) => (
+                        <SelectItem key={provincia} value={provincia}>
+                          {provincia}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="tipologia_abitazione">Tipologia Abitazione *</Label>
+                  <Select value={formData.tipologia_abitazione} onValueChange={(value) => setFormData({ ...formData, tipologia_abitazione: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona tipologia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="appartamento">Appartamento</SelectItem>
+                      <SelectItem value="villa">Villa</SelectItem>
+                      <SelectItem value="casa_indipendente">Casa Indipendente</SelectItem>
+                      <SelectItem value="altro">Altro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="ip_address">IP Address</Label>
+                <Input
+                  id="ip_address"
+                  value={formData.ip_address}
+                  onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })}
+                  placeholder="es. 192.168.1.1"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="campagna">Campagna *</Label>
+                <Input
+                  id="campagna"
+                  value={formData.campagna}
+                  onChange={(e) => setFormData({ ...formData, campagna: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="gruppo">Unit *</Label>
+                <Select value={formData.gruppo} onValueChange={(value) => setFormData({ ...formData, gruppo: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {units.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="contenitore">Contenitore *</Label>
+                <Select value={formData.contenitore} onValueChange={(value) => setFormData({ ...formData, contenitore: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona contenitore" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {containers.map((container) => (
+                      <SelectItem key={container.id} value={container.id}>
+                        {container.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="privacy_consent"
+                    checked={formData.privacy_consent}
+                    onCheckedChange={(checked) => setFormData({ ...formData, privacy_consent: checked })}
+                  />
+                  <Label htmlFor="privacy_consent">Consenso Privacy</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="marketing_consent"
+                    checked={formData.marketing_consent}
+                    onCheckedChange={(checked) => setFormData({ ...formData, marketing_consent: checked })}
+                  />
+                  <Label htmlFor="marketing_consent">Consenso Marketing</Label>
+                </div>
+              </div>
+
+              {/* Custom Fields */}
+              {customFields.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-slate-600">Campi Personalizzati</Label>
+                  {customFields.map((field) => (
+                    <div key={field.id}>
+                      <Label className="text-sm">
+                        {field.name} {field.required && "*"}
+                      </Label>
+                      {renderCustomField(field)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Creazione..." : "Crea Lead"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Enhanced Users Management Component with Edit/Delete
 const UsersManagement = ({ selectedUnit, units }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [provinces, setProvinces] = useState([]);
+  const [referenti, setReferenti] = useState([]);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
     fetchProvinces();
+    if (selectedUnit && selectedUnit !== "all") {
+      fetchReferenti(selectedUnit);
+    }
   }, [selectedUnit]);
 
   const fetchUsers = async () => {
@@ -941,6 +1461,15 @@ const UsersManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  const fetchReferenti = async (unitId) => {
+    try {
+      const response = await axios.get(`${API}/users/referenti/${unitId}`);
+      setReferenti(response.data);
+    } catch (error) {
+      console.error("Error fetching referenti:", error);
+    }
+  };
+
   const toggleUserStatus = async (userId, currentStatus) => {
     try {
       await axios.put(`${API}/users/${userId}/toggle-status`);
@@ -954,6 +1483,28 @@ const UsersManagement = ({ selectedUnit, units }) => {
       toast({
         title: "Errore",
         description: error.response?.data?.detail || "Errore nell'aggiornamento dello stato utente",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    if (!window.confirm("Sei sicuro di voler eliminare questo utente?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/users/${userId}`);
+      toast({
+        title: "Successo",
+        description: "Utente eliminato con successo",
+      });
+      fetchUsers();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione dell'utente",
         variant: "destructive",
       });
     }
@@ -977,7 +1528,7 @@ const UsersManagement = ({ selectedUnit, units }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-slate-800">
-          Gestione Utenti {selectedUnit && `- ${units.find(u => u.id === selectedUnit)?.name}`}
+          Gestione Utenti {selectedUnit && selectedUnit !== "all" && `- ${units.find(u => u.id === selectedUnit)?.name}`}
         </h2>
         <Button onClick={() => setShowCreateModal(true)}>
           <UserPlus className="w-4 h-4 mr-2" />
@@ -1032,24 +1583,33 @@ const UsersManagement = ({ selectedUnit, units }) => {
                       }
                     </TableCell>
                     <TableCell>
-                      <Button
-                        onClick={() => toggleUserStatus(user.id, user.is_active)}
-                        variant={user.is_active ? "destructive" : "default"}
-                        size="sm"
-                        className="mr-2"
-                      >
-                        {user.is_active ? (
-                          <>
-                            <PowerOff className="w-3 h-3 mr-1" />
-                            Disattiva
-                          </>
-                        ) : (
-                          <>
-                            <Power className="w-3 h-3 mr-1" />
-                            Attiva
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex space-x-1">
+                        <Button
+                          onClick={() => setEditingUser(user)}
+                          variant="ghost"
+                          size="sm"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          onClick={() => toggleUserStatus(user.id, user.is_active)}
+                          variant={user.is_active ? "destructive" : "default"}
+                          size="sm"
+                        >
+                          {user.is_active ? (
+                            <PowerOff className="w-3 h-3" />
+                          ) : (
+                            <Power className="w-3 h-3" />
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => deleteUser(user.id)}
+                          variant="destructive"
+                          size="sm"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1068,21 +1628,36 @@ const UsersManagement = ({ selectedUnit, units }) => {
           }}
           provinces={provinces}
           units={units}
+          referenti={referenti}
           selectedUnit={selectedUnit}
+        />
+      )}
+
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSuccess={() => {
+            fetchUsers();
+            setEditingUser(null);
+          }}
+          provinces={provinces}
+          units={units}
+          referenti={referenti}
         />
       )}
     </div>
   );
 };
 
-// Create User Modal Component
-const CreateUserModal = ({ onClose, onSuccess, provinces, units, selectedUnit }) => {
+// Enhanced Create User Modal Component with Referenti
+const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, selectedUnit }) => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     role: "",
-    unit_id: selectedUnit || "",
+    unit_id: selectedUnit && selectedUnit !== "all" ? selectedUnit : "",
     referente_id: "",
     provinces: [],
   });
@@ -1201,28 +1776,48 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, selectedUnit })
           </div>
 
           {formData.role === "agente" && (
-            <div>
-              <Label>Province di Copertura *</Label>
-              <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
-                <div className="grid grid-cols-3 gap-2">
-                  {provinces.map((province) => (
-                    <div key={province} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={province}
-                        checked={formData.provinces.includes(province)}
-                        onCheckedChange={(checked) => handleProvinceChange(province, checked)}
-                      />
-                      <Label htmlFor={province} className="text-sm">
-                        {province}
-                      </Label>
-                    </div>
-                  ))}
+            <>
+              {referenti.length > 0 && (
+                <div>
+                  <Label htmlFor="referente_id">Referente *</Label>
+                  <Select value={formData.referente_id} onValueChange={(value) => setFormData({ ...formData, referente_id: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona referente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {referenti.map((referente) => (
+                        <SelectItem key={referente.id} value={referente.id}>
+                          {referente.username} ({referente.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+              )}
+
+              <div>
+                <Label>Province di Copertura *</Label>
+                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
+                  <div className="grid grid-cols-3 gap-2">
+                    {provinces.map((province) => (
+                      <div key={province} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={province}
+                          checked={formData.provinces.includes(province)}
+                          onCheckedChange={(checked) => handleProvinceChange(province, checked)}
+                        />
+                        <Label htmlFor={province} className="text-sm">
+                          {province}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Selezionate: {formData.provinces.length} province
+                </p>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Selezionate: {formData.provinces.length} province
-              </p>
-            </div>
+            </>
           )}
 
           <DialogFooter>
@@ -1239,11 +1834,361 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, selectedUnit })
   );
 };
 
-// Containers Management Component (Admin only)
+// Edit User Modal Component
+const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti }) => {
+  const [formData, setFormData] = useState({
+    username: user.username,
+    email: user.email,
+    password: "",
+    role: user.role,
+    unit_id: user.unit_id || "",
+    referente_id: user.referente_id || "",
+    provinces: user.provinces || [],
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      await axios.put(`${API}/users/${user.id}`, formData);
+      toast({
+        title: "Successo",
+        description: "Utente aggiornato con successo",
+      });
+      onSuccess();
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'aggiornamento dell'utente",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleProvinceChange = (province, checked) => {
+    if (checked) {
+      setFormData({
+        ...formData,
+        provinces: [...formData.provinces, province],
+      });
+    } else {
+      setFormData({
+        ...formData,
+        provinces: formData.provinces.filter((p) => p !== province),
+      });
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Modifica Utente</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="username">Username *</Label>
+              <Input
+                id="username"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="password">Nuova Password (lascia vuoto per non modificare)</Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="role">Ruolo *</Label>
+              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona ruolo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="referente">Referente</SelectItem>
+                  <SelectItem value="agente">Agente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="unit_id">Unit</Label>
+            <Select value={formData.unit_id} onValueChange={(value) => setFormData({ ...formData, unit_id: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona unit" />
+              </SelectTrigger>
+              <SelectContent>
+                {units.map((unit) => (
+                  <SelectItem key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {formData.role === "agente" && (
+            <>
+              {referenti.length > 0 && (
+                <div>
+                  <Label htmlFor="referente_id">Referente</Label>
+                  <Select value={formData.referente_id} onValueChange={(value) => setFormData({ ...formData, referente_id: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona referente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {referenti.map((referente) => (
+                        <SelectItem key={referente.id} value={referente.id}>
+                          {referente.username} ({referente.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div>
+                <Label>Province di Copertura</Label>
+                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
+                  <div className="grid grid-cols-3 gap-2">
+                    {provinces.map((province) => (
+                      <div key={province} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={province}
+                          checked={formData.provinces.includes(province)}
+                          onCheckedChange={(checked) => handleProvinceChange(province, checked)}
+                        />
+                        <Label htmlFor={province} className="text-sm">
+                          {province}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Selezionate: {formData.provinces.length} province
+                </p>
+              </div>
+            </>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Aggiornamento..." : "Aggiorna Utente"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Enhanced Units Management Component
+const UnitsManagement = ({ selectedUnit }) => {
+  const [units, setUnits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchUnits();
+  }, []);
+
+  const fetchUnits = async () => {
+    try {
+      const response = await axios.get(`${API}/units`);
+      setUnits(response.data);
+    } catch (error) {
+      console.error("Error fetching units:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createUnit = async (unitData) => {
+    try {
+      await axios.post(`${API}/units`, unitData);
+      toast({
+        title: "Successo",
+        description: "Unit creata con successo",
+      });
+      fetchUnits();
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error("Error creating unit:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione della unit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800">Gestione Unit</h2>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nuova Unit
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading ? (
+          <div className="col-span-3 text-center py-8">Caricamento...</div>
+        ) : (
+          units.map((unit) => (
+            <Card key={unit.id} className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                  <span>{unit.name}</span>
+                </CardTitle>
+                <CardDescription>{unit.description || "Nessuna descrizione"}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs font-medium text-slate-600">Webhook URL</Label>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <code className="text-xs bg-slate-100 px-2 py-1 rounded flex-1 truncate">
+                        {BACKEND_URL}{unit.webhook_url}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${BACKEND_URL}${unit.webhook_url}`);
+                          toast({ title: "Copiato negli appunti!" });
+                        }}
+                      >
+                        Copia
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Badge variant={unit.is_active ? "default" : "secondary"}>
+                        {unit.is_active ? "Attiva" : "Disattiva"}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {new Date(unit.created_at).toLocaleDateString("it-IT")}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {showCreateModal && (
+        <CreateUnitModal
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={createUnit}
+        />
+      )}
+    </div>
+  );
+};
+
+// Create Unit Modal Component
+const CreateUnitModal = ({ onClose, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Crea Nueva Unit</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Nome Unit *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Es. Unit Nord Italia"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Descrizione</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Descrizione della unit"
+              rows={3}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">Crea Unit</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Enhanced Containers Management Component with Edit/Delete
 const ContainersManagement = ({ selectedUnit, units }) => {
   const [containers, setContainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingContainer, setEditingContainer] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -1288,11 +2233,52 @@ const ContainersManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  const updateContainer = async (containerId, containerData) => {
+    try {
+      await axios.put(`${API}/containers/${containerId}`, containerData);
+      toast({
+        title: "Successo",
+        description: "Contenitore aggiornato con successo",
+      });
+      fetchContainers();
+      setEditingContainer(null);
+    } catch (error) {
+      console.error("Error updating container:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'aggiornamento del contenitore",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteContainer = async (containerId) => {
+    if (!window.confirm("Sei sicuro di voler eliminare questo contenitore?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/containers/${containerId}`);
+      toast({
+        title: "Successo",
+        description: "Contenitore eliminato con successo",
+      });
+      fetchContainers();
+    } catch (error) {
+      console.error("Error deleting container:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'eliminazione del contenitore",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-slate-800">
-          Gestione Contenitori {selectedUnit && `- ${units.find(u => u.id === selectedUnit)?.name}`}
+          Gestione Contenitori {selectedUnit && selectedUnit !== "all" && `- ${units.find(u => u.id === selectedUnit)?.name}`}
         </h2>
         <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
@@ -1309,9 +2295,28 @@ const ContainersManagement = ({ selectedUnit, units }) => {
             return (
               <Card key={container.id} className="border-0 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Home className="w-5 h-5 text-green-600" />
-                    <span>{container.name}</span>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Home className="w-5 h-5 text-green-600" />
+                      <span>{container.name}</span>
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button
+                        onClick={() => setEditingContainer(container)}
+                        variant="ghost"
+                        size="sm"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        onClick={() => deleteContainer(container.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </CardTitle>
                   <CardDescription>
                     Unit: {unit?.name || "Sconosciuta"}
@@ -1341,6 +2346,15 @@ const ContainersManagement = ({ selectedUnit, units }) => {
           selectedUnit={selectedUnit}
         />
       )}
+
+      {editingContainer && (
+        <EditContainerModal
+          container={editingContainer}
+          onClose={() => setEditingContainer(null)}
+          onSubmit={(data) => updateContainer(editingContainer.id, data)}
+          units={units}
+        />
+      )}
     </div>
   );
 };
@@ -1349,7 +2363,7 @@ const ContainersManagement = ({ selectedUnit, units }) => {
 const CreateContainerModal = ({ onClose, onSubmit, units, selectedUnit }) => {
   const [formData, setFormData] = useState({
     name: "",
-    unit_id: selectedUnit || "",
+    unit_id: selectedUnit && selectedUnit !== "all" ? selectedUnit : "",
   });
 
   const handleSubmit = (e) => {
@@ -1404,6 +2418,339 @@ const CreateContainerModal = ({ onClose, onSubmit, units, selectedUnit }) => {
         </form>
       </DialogContent>
     </Dialog>
+  );
+};
+
+// Edit Container Modal Component
+const EditContainerModal = ({ container, onClose, onSubmit, units }) => {
+  const [formData, setFormData] = useState({
+    name: container.name,
+    unit_id: container.unit_id,
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Modifica Contenitore</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Nome Contenitore *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="unit_id">Unit *</Label>
+            <Select 
+              value={formData.unit_id} 
+              onValueChange={(value) => setFormData({ ...formData, unit_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona unit" />
+              </SelectTrigger>
+              <SelectContent>
+                {units.map((unit) => (
+                  <SelectItem key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">Aggiorna Contenitore</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Analytics Management Component
+const AnalyticsManagement = ({ selectedUnit, units }) => {
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState("");
+  const [selectedReferente, setSelectedReferente] = useState("");
+  const [agents, setAgents] = useState([]);
+  const [referenti, setReferenti] = useState([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user.role === "admin" || user.role === "referente") {
+      fetchUsers();
+    }
+  }, [selectedUnit]);
+
+  const fetchUsers = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      
+      const response = await axios.get(`${API}/users?${params}`);
+      const users = response.data;
+      
+      setAgents(users.filter(u => u.role === "agente"));
+      setReferenti(users.filter(u => u.role === "referente"));
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  const fetchAgentAnalytics = async (agentId) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/analytics/agent/${agentId}`);
+      setAnalyticsData(response.data);
+    } catch (error) {
+      console.error("Error fetching agent analytics:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReferenteAnalytics = async (referenteId) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/analytics/referente/${referenteId}`);
+      setAnalyticsData(response.data);
+    } catch (error) {
+      console.error("Error fetching referente analytics:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderAgentAnalytics = () => {
+    if (!analyticsData || !analyticsData.stats) return null;
+
+    const { agent, stats } = analyticsData;
+
+    return (
+      <div className="space-y-6">
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Target className="w-5 h-5 text-blue-600" />
+              <span>Analytics per {agent.username}</span>
+            </CardTitle>
+            <CardDescription>{agent.email}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600">{stats.total_leads}</p>
+                <p className="text-sm text-slate-600">Totale Lead</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">{stats.contacted_leads}</p>
+                <p className="text-sm text-slate-600">Contattati</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-orange-600">{stats.contact_rate}%</p>
+                <p className="text-sm text-slate-600">Tasso Contatti</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-purple-600">{stats.leads_this_week}</p>
+                <p className="text-sm text-slate-600">Questa Settimana</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-indigo-600">{stats.leads_this_month}</p>
+                <p className="text-sm text-slate-600">Questo Mese</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle>Distribuzione Esiti</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {Object.entries(stats.outcomes).map(([outcome, count]) => (
+                <div key={outcome} className="text-center p-4 bg-slate-50 rounded-lg">
+                  <p className="text-xl font-bold">{count}</p>
+                  <p className="text-xs text-slate-600">{outcome}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const renderReferenteAnalytics = () => {
+    if (!analyticsData || !analyticsData.total_stats) return null;
+
+    const { referente, total_stats, agent_breakdown } = analyticsData;
+
+    return (
+      <div className="space-y-6">
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              <span>Analytics per Referente {referente.username}</span>
+            </CardTitle>
+            <CardDescription>{referente.email}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-blue-600">{total_stats.total_leads}</p>
+                <p className="text-sm text-slate-600">Totale Lead</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-green-600">{total_stats.contacted_leads}</p>
+                <p className="text-sm text-slate-600">Contattati</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-orange-600">{total_stats.contact_rate}%</p>
+                <p className="text-sm text-slate-600">Tasso Contatti</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle>Performance Agenti</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Agente</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Totale Lead</TableHead>
+                  <TableHead>Contattati</TableHead>
+                  <TableHead>Tasso Contatti</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {agent_breakdown.map((agentData) => (
+                  <TableRow key={agentData.agent.id}>
+                    <TableCell className="font-medium">{agentData.agent.username}</TableCell>
+                    <TableCell>{agentData.agent.email}</TableCell>
+                    <TableCell>{agentData.total_leads}</TableCell>
+                    <TableCell>{agentData.contacted_leads}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={agentData.contact_rate >= 50 ? "default" : "secondary"}
+                        className={agentData.contact_rate >= 50 ? "bg-green-100 text-green-800" : ""}
+                      >
+                        {agentData.contact_rate}%
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800">Analytics e Statistiche</h2>
+      </div>
+
+      {/* Selection Controls */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle>Seleziona Vista Analytics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(user.role === "admin" || user.role === "referente") && (
+              <div>
+                <Label>Analytics per Agente</Label>
+                <Select value={selectedAgent} onValueChange={(value) => {
+                  setSelectedAgent(value);
+                  setSelectedReferente("");
+                  if (value) fetchAgentAnalytics(value);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona agente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agents.map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.username} ({agent.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {user.role === "admin" && (
+              <div>
+                <Label>Analytics per Referente</Label>
+                <Select value={selectedReferente} onValueChange={(value) => {
+                  setSelectedReferente(value);
+                  setSelectedAgent("");
+                  if (value) fetchReferenteAnalytics(value);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona referente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {referenti.map((referente) => (
+                      <SelectItem key={referente.id} value={referente.id}>
+                        {referente.username} ({referente.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Analytics Results */}
+      {loading ? (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-slate-600">Caricamento analytics...</p>
+          </CardContent>
+        </Card>
+      ) : analyticsData ? (
+        selectedAgent ? renderAgentAnalytics() : renderReferenteAnalytics()
+      ) : (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-8 text-center">
+            <BarChart3 className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600">Seleziona un agente o referente per visualizzare le analytics</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 
