@@ -1672,19 +1672,29 @@ class CRMAPITester:
         if success:
             workflow_id = workflow_response['id']
             workflow_name = workflow_response.get('name', '')
-            self.log_test("POST create workflow", True, f"Workflow created: {workflow_name} (ID: {workflow_id[:8]})")
+            workflow_unit_id = workflow_response.get('unit_id', '')
+            self.log_test("POST create workflow", True, f"Workflow created: {workflow_name} (ID: {workflow_id[:8]}, Unit: {workflow_unit_id[:8]})")
             
             # Test 3: GET /api/workflows (List workflows with unit filtering)
-            success, workflows_list, status = self.make_request('GET', f'workflows?unit_id={unit_id}', expected_status=200)
+            # Use the actual unit_id from the created workflow
+            success, workflows_list, status = self.make_request('GET', f'workflows?unit_id={workflow_unit_id}', expected_status=200)
             if success:
                 workflows = workflows_list if isinstance(workflows_list, list) else []
-                self.log_test("GET workflows with unit filter", True, f"Found {len(workflows)} workflows in unit")
+                self.log_test("GET workflows with unit filter", True, f"Found {len(workflows)} workflows in unit {workflow_unit_id[:8]}")
                 
                 # Verify our workflow is in the list
                 found_workflow = any(w['id'] == workflow_id for w in workflows)
                 self.log_test("Created workflow in list", found_workflow, f"Workflow {'found' if found_workflow else 'not found'} in unit list")
             else:
                 self.log_test("GET workflows with unit filter", False, f"Status: {status}")
+            
+            # Also test GET all workflows (no filter)
+            success, all_workflows_list, status = self.make_request('GET', 'workflows', expected_status=200)
+            if success:
+                all_workflows = all_workflows_list if isinstance(all_workflows_list, list) else []
+                self.log_test("GET all workflows (no filter)", True, f"Found {len(all_workflows)} total workflows")
+            else:
+                self.log_test("GET all workflows (no filter)", False, f"Status: {status}")
             
             # Test 4: GET /api/workflows/{id} (Get specific workflow)
             success, single_workflow, status = self.make_request('GET', f'workflows/{workflow_id}', expected_status=200)
