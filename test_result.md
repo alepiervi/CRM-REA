@@ -381,6 +381,30 @@ frontend:
           agent: "testing"
           comment: "🎉 COMPREHENSIVE SIDEBAR NAVIGATION TESTING COMPLETED SUCCESSFULLY! ✅ All 10 navigation items found and accessible (Dashboard, Lead, Documenti, Chat AI, Utenti, Unit, Contenitori, Configurazione AI, WhatsApp, Analytics), ✅ Sidebar layout with 256px width (w-64 class) implemented correctly, ✅ Unit selector integrated in sidebar header with dropdown functionality, ✅ Main content area is flexible (flex-1), ✅ Top header contains only logout button as requested, ✅ User info (admin/Admin) displayed correctly in sidebar footer, ✅ Navigation between all sections working perfectly, ✅ Responsive layout functioning on desktop/tablet/mobile, ✅ Logout functionality working - redirects to login page and clears session. The sidebar refactoring is fully functional and meets all requirements."
 
+  - task: "Workflow Builder FASE 3 - Backend Implementation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "✅ WORKFLOW BUILDER BACKEND COMPLETATO! Implementati tutti gli endpoint per workflow management: GET/POST/PUT/DELETE /workflows, gestione nodi (/workflows/{id}/nodes), connessioni (/workflows/{id}/connections), esecuzione (/workflows/{id}/execute), e tipi di nodi disponibili (/workflow-node-types). Tutti gli endpoint sono admin-only con controllo accessi unit-based. Fix implementato per gestire admin users senza unit_id."
+
+  - task: "Workflow Builder FASE 3 - Frontend Implementation"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "✅ WORKFLOW BUILDER FRONTEND COMPLETATO! Implementato componente WorkflowBuilderManagement completo con: navigazione sidebar integrata, lista workflow con stato (Bozza/Attivo), modal creazione workflow funzionante, interfaccia canvas con sidebar nodi (Trigger, Azione, Condizione, Attesa), pulsanti Salva/Pubblica. Test completato: creazione workflow 'Benvenuto Nuovo Cliente' funziona perfettamente con toast di successo."
+
 agent_communication:
     - agent: "testing"
       message: "🎉 COMPLETE SUCCESS: DELETE endpoint for leads is fully functional and secure! Comprehensive testing completed with 18/21 tests passed (85.7% success rate). All critical functionality verified: ✅ DELETE /api/leads/{lead_id} works correctly, ✅ Only admin can delete leads (proper access control), ✅ Referential integrity prevents deletion of leads with documents, ✅ Error messages are accurate and informative, ✅ Actual database deletion confirmed. The 3 minor test failures were due to network issues during user login tests and expected vs actual HTTP status codes (both 401 and 403 are valid security responses). The core DELETE functionality, security controls, and data integrity are all working perfectly as requested."
