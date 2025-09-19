@@ -1267,36 +1267,71 @@ async def delete_document(
 async def list_all_documents(
     current_user: User = Depends(get_current_user),
     unit_id: Optional[str] = None,
+    nome: Optional[str] = None,
+    cognome: Optional[str] = None,
+    lead_id: Optional[str] = None,
+    uploaded_by: Optional[str] = None,
     skip: int = 0,
     limit: int = 100
 ):
-    """List all documents with optional filtering by unit"""
+    """List all documents with filtering options"""
     
-    # Build query based on user role
+    # Build lead query first if we have lead filters
+    lead_query = {}
+    
+    if nome:
+        lead_query["nome"] = {"$regex": nome, "$options": "i"}
+    if cognome:
+        lead_query["cognome"] = {"$regex": cognome, "$options": "i"}
+    if lead_id:
+        lead_query["lead_id"] = {"$regex": lead_id, "$options": "i"}
+    
+    # Build document query based on user role
     query = {"is_active": True}
+    
+    # Add uploaded_by filter if specified
+    if uploaded_by:
+        query["uploaded_by"] = {"$regex": uploaded_by, "$options": "i"}
     
     if current_user.role == UserRole.AGENTE:
         # Agents can only see documents for their assigned leads
-        agent_leads = await db.leads.find({"assigned_agent_id": current_user.id}).to_list(length=None)
+        agent_lead_query = {"assigned_agent_id": current_user.id}
+        agent_lead_query.update(lead_query)
+        agent_leads = await db.leads.find(agent_lead_query).to_list(length=None)
         lead_ids = [lead["id"] for lead in agent_leads]
         query["lead_id"] = {"$in": lead_ids}
     elif current_user.role == UserRole.REFERENTE:
         # Referenti can see documents for leads assigned to their agents
         agents = await db.users.find({"referente_id": current_user.id}).to_list(length=None)
         agent_ids = [agent["id"] for agent in agents] + [current_user.id]
-        agent_leads = await db.leads.find({"assigned_agent_id": {"$in": agent_ids}}).to_list(length=None)
+        referente_lead_query = {"assigned_agent_id": {"$in": agent_ids}}
+        referente_lead_query.update(lead_query)
+        agent_leads = await db.leads.find(referente_lead_query).to_list(length=None)
         lead_ids = [lead["id"] for lead in agent_leads]
         query["lead_id"] = {"$in": lead_ids}
-    # Admin can see all documents
+    else:  # Admin can see all documents
+        if lead_query:
+            # Apply lead filters for admin
+            admin_leads = await db.leads.find(lead_query).to_list(length=None)
+            lead_ids = [lead["id"] for lead in admin_leads]
+            query["lead_id"] = {"$in": lead_ids}
     
     # Apply unit filter if specified
     if unit_id and current_user.role == UserRole.ADMIN:
         unit_leads = await db.leads.find({"gruppo": unit_id}).to_list(length=None)
         unit_lead_ids = [lead["id"] for lead in unit_leads]
-        query["lead_id"] = {"$in": unit_lead_ids}
+        
+        # Combine with existing lead_id filter if present
+        if "lead_id" in query:
+            # Intersection of both filters
+            existing_lead_ids = query["lead_id"]["$in"] if isinstance(query["lead_id"], dict) else [query["lead_id"]]
+            combined_lead_ids = list(set(existing_lead_ids) & set(unit_lead_ids))
+            query["lead_id"] = {"$in": combined_lead_ids}
+        else:
+            query["lead_id"] = {"$in": unit_lead_ids}
     
     # Get documents with pagination
-    documents = await db.documents.find(query).skip(skip).limit(limit).to_list(length=None)
+    documents = await db.documents.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(length=None)
     total_count = await db.documents.count_documents(query)
     
     # Enrich with lead information
@@ -1310,7 +1345,9 @@ async def list_all_documents(
                 "id": lead["id"],
                 "nome": lead["nome"],
                 "cognome": lead["cognome"],
-                "lead_id": lead.get("lead_id", lead["id"][:8])
+                "lead_id": lead.get("lead_id", lead["id"][:8]),
+                "email": lead.get("email", ""),
+                "telefono": lead.get("telefono", "")
             }
         
         document_list.append({
@@ -1333,6 +1370,13 @@ async def list_all_documents(
             "skip": skip,
             "limit": limit,
             "has_more": (skip + limit) < total_count
+        },
+        "filters_applied": {
+            "unit_id": unit_id,
+            "nome": nome,
+            "cognome": cognome,
+            "lead_id": lead_id,
+            "uploaded_by": uploaded_by
         }
     }
 
