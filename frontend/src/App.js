@@ -2773,6 +2773,502 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   );
 };
 
+// Documents Management Component
+const DocumentsManagement = ({ selectedUnit, units }) => {
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [filters, setFilters] = useState({
+    lead_id: "",
+    uploaded_by: "",
+    date_from: "",
+    date_to: "",
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [selectedUnit, filters]);
+
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      
+      const response = await axios.get(`${API}/documents?${params}`);
+      setDocuments(response.data.documents || []);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei documenti",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = async (documentId, filename) => {
+    try {
+      const response = await axios.get(`${API}/documents/download/${documentId}`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob URL and trigger download
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Successo",
+        description: "Download completato",
+      });
+      
+      // Refresh documents to update download count
+      fetchDocuments();
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel download del documento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (documentId) => {
+    if (!window.confirm("Sei sicuro di voler eliminare questo documento?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/documents/${documentId}`);
+      toast({
+        title: "Successo",
+        description: "Documento eliminato con successo",
+      });
+      fetchDocuments();
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione del documento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800">
+          Gestione Documenti {selectedUnit && selectedUnit !== "all" && `- ${units.find(u => u.id === selectedUnit)?.name}`}
+        </h2>
+        <Button onClick={() => setShowUploadModal(true)}>
+          <Upload className="w-4 h-4 mr-2" />
+          Carica Documento
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label>Lead ID</Label>
+              <Input
+                placeholder="Filtra per Lead ID"
+                value={filters.lead_id}
+                onChange={(e) => setFilters({ ...filters, lead_id: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Caricato da</Label>
+              <Input
+                placeholder="Filtra per utente"
+                value={filters.uploaded_by}
+                onChange={(e) => setFilters({ ...filters, uploaded_by: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Data da</Label>
+              <Input
+                type="date"
+                value={filters.date_from}
+                onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Data a</Label>
+              <Input
+                type="date"
+                value={filters.date_to}
+                onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Documents Table */}
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="p-8 text-center">Caricamento...</div>
+          ) : documents.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">Nessun documento trovato</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome File</TableHead>
+                  <TableHead>Lead</TableHead>
+                  <TableHead>Dimensione</TableHead>
+                  <TableHead>Caricato da</TableHead>
+                  <TableHead>Data Caricamento</TableHead>
+                  <TableHead>Download</TableHead>
+                  <TableHead>Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {documents.map((doc) => (
+                  <TableRow key={doc.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-4 h-4 text-slate-400" />
+                        <span>{doc.filename}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {doc.lead ? (
+                        <div>
+                          <div className="font-medium">{doc.lead.nome} {doc.lead.cognome}</div>
+                          <div className="text-xs text-slate-500">ID: {doc.lead.lead_id}</div>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">Lead non trovato</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{formatFileSize(doc.size)}</TableCell>
+                    <TableCell>{doc.uploaded_by}</TableCell>
+                    <TableCell>
+                      {new Date(doc.created_at).toLocaleDateString("it-IT")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {doc.download_count} volte
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
+                        <Button
+                          onClick={() => handleDownload(doc.document_id, doc.filename)}
+                          variant="ghost"
+                          size="sm"
+                          title="Download"
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          onClick={() => setSelectedDocument(doc)}
+                          variant="ghost"
+                          size="sm"
+                          title="Dettagli"
+                        >
+                          <Eye className="w-3 h-3" />
+                        </Button>
+                        {user.role === "admin" && (
+                          <Button
+                            onClick={() => handleDelete(doc.document_id)}
+                            variant="destructive"
+                            size="sm"
+                            title="Elimina"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <DocumentUploadModal
+          onClose={() => setShowUploadModal(false)}
+          onSuccess={() => {
+            fetchDocuments();
+            setShowUploadModal(false);
+          }}
+          units={units}
+          selectedUnit={selectedUnit}
+        />
+      )}
+
+      {/* Document Details Modal */}
+      {selectedDocument && (
+        <DocumentDetailsModal
+          document={selectedDocument}
+          onClose={() => setSelectedDocument(null)}
+          onDownload={handleDownload}
+        />
+      )}
+    </div>
+  );
+};
+
+// Document Upload Modal Component
+const DocumentUploadModal = ({ onClose, onSuccess, units, selectedUnit }) => {
+  const [selectedLead, setSelectedLead] = useState("");
+  const [leads, setLeads] = useState([]);
+  const [file, setFile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchLeads();
+  }, [selectedUnit]);
+
+  const fetchLeads = async () => {
+    try {
+      setLeadsLoading(true);
+      const params = new URLSearchParams();
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      
+      const response = await axios.get(`${API}/leads?${params}`);
+      setLeads(response.data);
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+    } finally {
+      setLeadsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!selectedLead || !file) {
+      toast({
+        title: "Errore",
+        description: "Seleziona un lead e un file PDF",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('uploaded_by', user.username);
+
+      await axios.post(`${API}/documents/upload/${selectedLead}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      toast({
+        title: "Successo",
+        description: "Documento caricato con successo",
+      });
+      onSuccess();
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nel caricamento del documento",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      if (selectedFile.type !== 'application/pdf') {
+        toast({
+          title: "Errore",
+          description: "Solo file PDF sono consentiti",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (selectedFile.size > 10 * 1024 * 1024) { // 10MB limit
+        toast({
+          title: "Errore",
+          description: "Il file non può essere più grande di 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setFile(selectedFile);
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Carica Documento</DialogTitle>
+          <DialogDescription>
+            Carica un documento PDF per un lead specifico
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="lead">Lead *</Label>
+            <Select value={selectedLead} onValueChange={setSelectedLead}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona lead" />
+              </SelectTrigger>
+              <SelectContent>
+                {leadsLoading ? (
+                  <SelectItem value="" disabled>Caricamento...</SelectItem>
+                ) : (
+                  leads.map((lead) => (
+                    <SelectItem key={lead.id} value={lead.id}>
+                      {lead.nome} {lead.cognome} - {lead.email}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="file">File PDF *</Label>
+            <Input
+              id="file"
+              type="file"
+              accept=".pdf"
+              onChange={handleFileChange}
+              required
+            />
+            {file && (
+              <p className="text-sm text-slate-600 mt-1">
+                File selezionato: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit" disabled={isLoading || !selectedLead || !file}>
+              {isLoading ? "Caricamento..." : "Carica Documento"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Document Details Modal Component
+const DocumentDetailsModal = ({ document, onClose, onDownload }) => {
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Dettagli Documento</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div>
+            <Label className="text-sm font-medium text-slate-600">Nome File</Label>
+            <p className="text-lg font-semibold">{document.filename}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-slate-600">Dimensione</Label>
+              <p>{(document.size / 1024 / 1024).toFixed(2)} MB</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-slate-600">Tipo</Label>
+              <p>{document.content_type}</p>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm font-medium text-slate-600">Lead Associato</Label>
+            {document.lead ? (
+              <p>{document.lead.nome} {document.lead.cognome}</p>
+            ) : (
+              <p className="text-slate-400">Lead non trovato</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-slate-600">Caricato da</Label>
+              <p>{document.uploaded_by}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-slate-600">Download</Label>
+              <p>{document.download_count} volte</p>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm font-medium text-slate-600">Data Caricamento</Label>
+            <p>{new Date(document.created_at).toLocaleString("it-IT")}</p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Chiudi
+          </Button>
+          <Button onClick={() => onDownload(document.document_id, document.filename)}>
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Main App Component
 const App = () => {
   const { user, loading } = useAuth();
