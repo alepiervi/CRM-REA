@@ -3452,7 +3452,7 @@ const DocumentUploadModal = ({ onClose, onSuccess, units, selectedUnit }) => {
               </SelectTrigger>
               <SelectContent>
                 {leadsLoading ? (
-                  <SelectItem value="" disabled>Caricamento...</SelectItem>
+                  <SelectItem value="loading" disabled>Caricamento...</SelectItem>
                 ) : (
                   leads.map((lead) => (
                     <SelectItem key={lead.id} value={lead.id}>
