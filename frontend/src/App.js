@@ -1333,15 +1333,7 @@ const CreateLeadModal = ({ onClose, onSuccess, units, customFields }) => {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="ip_address">IP Address</Label>
-                <Input
-                  id="ip_address"
-                  value={formData.ip_address}
-                  onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })}
-                  placeholder="es. 192.168.1.1"
-                />
-              </div>
+              {/* Rimuovo il campo IP dalla creazione manuale */}
             </div>
 
             <div className="space-y-4">
