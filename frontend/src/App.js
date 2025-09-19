@@ -975,22 +975,43 @@ const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
             {lead.ip_address && (
               <div>
                 <Label className="text-sm font-medium text-slate-600">IP Address</Label>
-                <p className="font-mono text-sm">{lead.ip_address}</p>
+                <p className="font-mono text-sm bg-slate-100 px-2 py-1 rounded">{lead.ip_address}</p>
               </div>
             )}
+
+            <div>
+              <Label className="text-sm font-medium text-slate-600">Lead ID</Label>
+              <p className="font-mono text-sm bg-blue-50 px-2 py-1 rounded text-blue-700">
+                #{lead.lead_id || lead.id.slice(0, 8)}
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium text-slate-600">Privacy Consent</Label>
-                <Badge variant={lead.privacy_consent ? "default" : "secondary"}>
-                  {lead.privacy_consent ? "Accettato" : "Non Accettato"}
-                </Badge>
+                <div className="flex items-center space-x-2 mt-1">
+                  <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
+                    lead.privacy_consent ? 'bg-green-500 border-green-500' : 'border-slate-300'
+                  }`}>
+                    {lead.privacy_consent && (
+                      <CheckCircle className="w-3 h-3 text-white" />
+                    )}
+                  </div>
+                  <span className="text-sm">{lead.privacy_consent ? 'Accettato' : 'Non accettato'}</span>
+                </div>
               </div>
               <div>
                 <Label className="text-sm font-medium text-slate-600">Marketing Consent</Label>
-                <Badge variant={lead.marketing_consent ? "default" : "secondary"}>
-                  {lead.marketing_consent ? "Accettato" : "Non Accettato"}
-                </Badge>
+                <div className="flex items-center space-x-2 mt-1">
+                  <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
+                    lead.marketing_consent ? 'bg-green-500 border-green-500' : 'border-slate-300'
+                  }`}>
+                    {lead.marketing_consent && (
+                      <CheckCircle className="w-3 h-3 text-white" />
+                    )}
+                  </div>
+                  <span className="text-sm">{lead.marketing_consent ? 'Accettato' : 'Non accettato'}</span>
+                </div>
               </div>
             </div>
           </div>
