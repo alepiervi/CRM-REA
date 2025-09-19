@@ -4429,6 +4429,7 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
             setShowConfigModal(false);
           }}
           existingConfig={config}
+          selectedUnit={selectedUnit}
         />
       )}
 
