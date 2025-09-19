@@ -180,6 +180,66 @@ test_plan:
   test_priority: "high_first"
 
 frontend:
+  - task: "AI Configuration Section - Admin Navigation Visibility"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "New AI Configuration section added to navigation. Need to verify it's visible only to admin users in sidebar navigation."
+        
+  - task: "AI Configuration Interface - Non-configured Status Display"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "AIConfigurationManagement component implemented. Need to verify it shows 'non configurato' status when OpenAI is not configured."
+        
+  - task: "AI Configuration Modal - OpenAI Setup Form"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "AIConfigModal component implemented with form for OpenAI API key input. Need to test modal opening and form functionality."
+        
+  - task: "AI Configuration Instructions - API Key Guidance"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Instructions for obtaining OpenAI API key implemented in modal. Need to verify instructions are clear and complete."
+        
+  - task: "AI Configuration Access Control - Admin Only"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "AI Configuration section should only be accessible to admin users. Need to verify access control is working correctly."
+
   - task: "Lead Delete Button UI - Admin Only Visibility"
     implemented: true
     working: true
