@@ -2389,12 +2389,14 @@ async def get_whatsapp_configuration(
         if not config:
             return {
                 "configured": False,
-                "message": "No WhatsApp configuration found"
+                "unit_id": target_unit_id,
+                "message": f"No WhatsApp configuration found for unit {target_unit_id}"
             }
         
         return {
             "configured": True,
             "config_id": config["id"],
+            "unit_id": config["unit_id"],
             "phone_number": config["phone_number"],
             "connection_status": config["connection_status"],
             "is_connected": config["is_connected"],
