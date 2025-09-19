@@ -873,6 +873,329 @@ class CRMAPITester:
         )
         self.log_test("Webhook invalid unit rejection", success, "Correctly rejected invalid unit")
 
+    def test_document_management(self):
+        """Test document management endpoints (NEW FEATURE)"""
+        print("\n📄 Testing Document Management (NEW FEATURE)...")
+        
+        # First ensure we have a lead to associate documents with
+        if not self.created_resources['leads']:
+            # Create a test lead first
+            if self.created_resources['units']:
+                unit_id = self.created_resources['units'][0]
+                lead_data = {
+                    "nome": "Document",
+                    "cognome": "Test",
+                    "telefono": "+39 123 456 7890",
+                    "email": "document.test@test.com",
+                    "provincia": "Roma",
+                    "tipologia_abitazione": "appartamento",
+                    "campagna": "Document Test Campaign",
+                    "gruppo": unit_id,
+                    "contenitore": "Document Test Container",
+                    "privacy_consent": True,
+                    "marketing_consent": True
+                }
+                
+                success, lead_response, status = self.make_request('POST', 'leads', lead_data, 200, auth_required=False)
+                if success:
+                    lead_id = lead_response['id']
+                    self.created_resources['leads'].append(lead_id)
+                    self.log_test("Create lead for document test", True, f"Lead ID: {lead_id}")
+                else:
+                    self.log_test("Create lead for document test", False, f"Status: {status}")
+                    return
+            else:
+                self.log_test("Document management test", False, "No units available for lead creation")
+                return
+        
+        lead_id = self.created_resources['leads'][0]
+        
+        # Test document upload endpoint (multipart/form-data)
+        # Note: This is a simplified test - in real scenario we'd use proper file upload
+        import tempfile
+        import os
+        
+        # Create a temporary PDF-like file for testing
+        with tempfile.NamedTemporaryFile(mode='w+b', suffix='.pdf', delete=False) as temp_file:
+            # Write PDF header to make it look like a PDF
+            temp_file.write(b'%PDF-1.4\n%Test PDF content for document upload testing\n')
+            temp_file.flush()
+            temp_file_path = temp_file.name
+        
+        try:
+            # Test document upload using requests with files
+            import requests
+            url = f"{self.base_url}/documents/upload/{lead_id}"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('test_document.pdf', f, 'application/pdf')}
+                data = {'uploaded_by': self.user_data['id']}
+                
+                try:
+                    response = requests.post(url, files=files, data=data, headers=headers, timeout=30)
+                    
+                    if response.status_code == 200:
+                        upload_response = response.json()
+                        if upload_response.get('success'):
+                            document_id = upload_response['document']['document_id']
+                            self.log_test("Document upload", True, f"Document ID: {document_id}")
+                            
+                            # Test list documents for lead
+                            success, list_response, status = self.make_request('GET', f'documents/lead/{lead_id}', expected_status=200)
+                            if success:
+                                documents = list_response.get('documents', [])
+                                self.log_test("List lead documents", True, f"Found {len(documents)} documents")
+                                
+                                # Verify our uploaded document is in the list
+                                found_doc = any(doc['document_id'] == document_id for doc in documents)
+                                self.log_test("Uploaded document in list", found_doc, f"Document {'found' if found_doc else 'not found'} in list")
+                            else:
+                                self.log_test("List lead documents", False, f"Status: {status}")
+                            
+                            # Test document download
+                            success, download_response, status = self.make_request('GET', f'documents/download/{document_id}', expected_status=200)
+                            if success:
+                                self.log_test("Document download", True, "Document downloaded successfully")
+                            else:
+                                self.log_test("Document download", False, f"Status: {status}")
+                            
+                            # Test list all documents
+                            success, all_docs_response, status = self.make_request('GET', 'documents', expected_status=200)
+                            if success:
+                                all_documents = all_docs_response.get('documents', [])
+                                self.log_test("List all documents", True, f"Found {len(all_documents)} total documents")
+                            else:
+                                self.log_test("List all documents", False, f"Status: {status}")
+                            
+                            # Test document deletion (admin only)
+                            success, delete_response, status = self.make_request('DELETE', f'documents/{document_id}', expected_status=200)
+                            if success:
+                                self.log_test("Document deletion (admin)", True, "Document deleted successfully")
+                            else:
+                                self.log_test("Document deletion (admin)", False, f"Status: {status}")
+                        else:
+                            self.log_test("Document upload", False, f"Upload failed: {upload_response}")
+                    else:
+                        self.log_test("Document upload", False, f"Status: {response.status_code}, Response: {response.text}")
+                        
+                except requests.exceptions.RequestException as e:
+                    self.log_test("Document upload", False, f"Request error: {str(e)}")
+                    
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+        
+        # Test file validation - upload non-PDF file
+        with tempfile.NamedTemporaryFile(mode='w+', suffix='.txt', delete=False) as temp_file:
+            temp_file.write('This is not a PDF file')
+            temp_file.flush()
+            temp_file_path = temp_file.name
+        
+        try:
+            url = f"{self.base_url}/documents/upload/{lead_id}"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('test_document.txt', f, 'text/plain')}
+                data = {'uploaded_by': self.user_data['id']}
+                
+                try:
+                    response = requests.post(url, files=files, data=data, headers=headers, timeout=30)
+                    
+                    if response.status_code == 400:
+                        self.log_test("File validation (non-PDF rejection)", True, "Correctly rejected non-PDF file")
+                    else:
+                        self.log_test("File validation (non-PDF rejection)", False, f"Expected 400, got {response.status_code}")
+                        
+                except requests.exceptions.RequestException as e:
+                    self.log_test("File validation test", False, f"Request error: {str(e)}")
+                    
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+        
+        # Test document upload with non-existent lead
+        with tempfile.NamedTemporaryFile(mode='w+b', suffix='.pdf', delete=False) as temp_file:
+            temp_file.write(b'%PDF-1.4\n%Test PDF content\n')
+            temp_file.flush()
+            temp_file_path = temp_file.name
+        
+        try:
+            url = f"{self.base_url}/documents/upload/non-existent-lead-id"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('test_document.pdf', f, 'application/pdf')}
+                data = {'uploaded_by': self.user_data['id']}
+                
+                try:
+                    response = requests.post(url, files=files, data=data, headers=headers, timeout=30)
+                    
+                    if response.status_code == 404:
+                        self.log_test("Document upload non-existent lead", True, "Correctly rejected non-existent lead")
+                    else:
+                        self.log_test("Document upload non-existent lead", False, f"Expected 404, got {response.status_code}")
+                        
+                except requests.exceptions.RequestException as e:
+                    self.log_test("Document upload non-existent lead test", False, f"Request error: {str(e)}")
+                    
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+
+    def test_excel_export(self):
+        """Test Excel export functionality (NEW FEATURE)"""
+        print("\n📊 Testing Excel Export (NEW FEATURE)...")
+        
+        # Test leads export
+        success, response, status = self.make_request('GET', 'leads/export', expected_status=200)
+        if success:
+            self.log_test("Excel export leads", True, "Export endpoint accessible")
+        else:
+            # If no leads exist, we might get 404
+            if status == 404:
+                self.log_test("Excel export leads", True, "No leads to export (expected)")
+            else:
+                self.log_test("Excel export leads", False, f"Status: {status}")
+        
+        # Test export with filters
+        if self.created_resources['units']:
+            unit_id = self.created_resources['units'][0]
+            success, response, status = self.make_request('GET', f'leads/export?unit_id={unit_id}', expected_status=200)
+            if success:
+                self.log_test("Excel export with unit filter", True, "Export with filter works")
+            else:
+                if status == 404:
+                    self.log_test("Excel export with unit filter", True, "No leads in unit to export (expected)")
+                else:
+                    self.log_test("Excel export with unit filter", False, f"Status: {status}")
+        
+        # Test export with date filters
+        from datetime import datetime, timedelta
+        today = datetime.now().strftime('%Y-%m-%d')
+        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        success, response, status = self.make_request('GET', f'leads/export?date_from={yesterday}&date_to={today}', expected_status=200)
+        if success:
+            self.log_test("Excel export with date filter", True, "Export with date filter works")
+        else:
+            if status == 404:
+                self.log_test("Excel export with date filter", True, "No leads in date range to export (expected)")
+            else:
+                self.log_test("Excel export with date filter", False, f"Status: {status}")
+
+    def test_role_based_access_documents(self):
+        """Test role-based access control for document endpoints"""
+        print("\n🔐 Testing Role-Based Access for Documents...")
+        
+        # Create different user roles for testing
+        if not self.created_resources['units']:
+            self.log_test("Role-based document access test", False, "No units available for user creation")
+            return
+            
+        unit_id = self.created_resources['units'][0]
+        
+        # Create referente user
+        referente_data = {
+            "username": f"doc_referente_{datetime.now().strftime('%H%M%S')}",
+            "email": f"doc_referente_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "TestPass123!",
+            "role": "referente",
+            "unit_id": unit_id,
+            "provinces": []
+        }
+        
+        success, referente_response, status = self.make_request('POST', 'users', referente_data, 200)
+        if success:
+            referente_id = referente_response['id']
+            self.created_resources['users'].append(referente_id)
+            self.log_test("Create referente for document access test", True, f"Referente ID: {referente_id}")
+        else:
+            self.log_test("Create referente for document access test", False, f"Status: {status}")
+            return
+        
+        # Create agent user
+        agent_data = {
+            "username": f"doc_agent_{datetime.now().strftime('%H%M%S')}",
+            "email": f"doc_agent_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "TestPass123!",
+            "role": "agente",
+            "unit_id": unit_id,
+            "referente_id": referente_id,
+            "provinces": ["Roma", "Milano"]
+        }
+        
+        success, agent_response, status = self.make_request('POST', 'users', agent_data, 200)
+        if success:
+            agent_id = agent_response['id']
+            self.created_resources['users'].append(agent_id)
+            self.log_test("Create agent for document access test", True, f"Agent ID: {agent_id}")
+        else:
+            self.log_test("Create agent for document access test", False, f"Status: {status}")
+            return
+        
+        # Test login as referente
+        success, referente_login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': referente_data['username'], 'password': referente_data['password']}, 
+            200, auth_required=False
+        )
+        
+        if success:
+            referente_token = referente_login_response['access_token']
+            self.log_test("Referente login for document test", True, "Referente logged in successfully")
+            
+            # Test referente access to documents
+            original_token = self.token
+            self.token = referente_token
+            
+            success, response, status = self.make_request('GET', 'documents', expected_status=200)
+            if success:
+                self.log_test("Referente access to documents list", True, f"Found {len(response.get('documents', []))} documents")
+            else:
+                self.log_test("Referente access to documents list", False, f"Status: {status}")
+            
+            # Restore admin token
+            self.token = original_token
+        else:
+            self.log_test("Referente login for document test", False, f"Status: {status}")
+        
+        # Test login as agent
+        success, agent_login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': agent_data['username'], 'password': agent_data['password']}, 
+            200, auth_required=False
+        )
+        
+        if success:
+            agent_token = agent_login_response['access_token']
+            self.log_test("Agent login for document test", True, "Agent logged in successfully")
+            
+            # Test agent access to documents
+            original_token = self.token
+            self.token = agent_token
+            
+            success, response, status = self.make_request('GET', 'documents', expected_status=200)
+            if success:
+                self.log_test("Agent access to documents list", True, f"Found {len(response.get('documents', []))} documents")
+            else:
+                self.log_test("Agent access to documents list", False, f"Status: {status}")
+            
+            # Test agent cannot delete documents (should be admin only)
+            if self.created_resources['leads']:
+                lead_id = self.created_resources['leads'][0]
+                success, response, status = self.make_request('DELETE', 'documents/test-doc-id', expected_status=403)
+                self.log_test("Agent document deletion restriction", success, "Correctly prevented agent from deleting documents")
+            
+            # Restore admin token
+            self.token = original_token
+        else:
+            self.log_test("Agent login for document test", False, f"Status: {status}")
+
     def test_unauthorized_access(self):
         """Test unauthorized access to protected endpoints"""
         print("\n🚫 Testing Unauthorized Access...")
@@ -890,7 +1213,10 @@ class CRMAPITester:
             ('GET', 'containers', 401),
             ('POST', 'containers', 401),
             ('GET', 'dashboard/stats', 401),
-            ('GET', 'auth/me', 401)
+            ('GET', 'auth/me', 401),
+            ('GET', 'documents', 401),  # NEW: Document endpoints should be protected
+            ('GET', 'documents/lead/test-id', 401),
+            ('GET', 'leads/export', 401)  # NEW: Export should be protected
         ]
         
         for method, endpoint, expected_status in protected_endpoints:
