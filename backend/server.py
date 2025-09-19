@@ -263,7 +263,9 @@ async def assign_lead_to_agent(lead: Lead):
         }
     )
     
-    # TODO: Send email notification to agent
+    # Send email notification to agent (async task)
+    asyncio.create_task(notify_agent_new_lead(selected_agent["id"], lead.dict()))
+    
     return selected_agent["id"]
 
 # Auth endpoints
