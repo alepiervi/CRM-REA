@@ -3177,6 +3177,97 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
     
     return node_types
 
+# Copy workflow between units endpoint
+@api_router.post("/workflows/{workflow_id}/copy")
+async def copy_workflow_to_unit(
+    workflow_id: str,
+    target_unit_id: str = Query(..., description="ID of target unit"),
+    current_user: User = Depends(get_current_user)
+):
+    """Copy workflow to another unit (admin only)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can copy workflows between units")
+    
+    try:
+        # Get source workflow
+        source_workflow = await db.workflows.find_one({"id": workflow_id})
+        if not source_workflow:
+            raise HTTPException(status_code=404, detail="Source workflow not found")
+        
+        # Check access to source workflow
+        if current_user.role != UserRole.ADMIN and source_workflow["unit_id"] != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to source workflow")
+        
+        # Verify target unit exists
+        target_unit = await db.units.find_one({"id": target_unit_id})
+        if not target_unit:
+            raise HTTPException(status_code=404, detail="Target unit not found")
+        
+        # Create new workflow copy
+        new_workflow = Workflow(
+            name=f"{source_workflow['name']} (Copia)",
+            description=f"Copia da Unit {source_workflow['unit_id']}: {source_workflow.get('description', '')}",
+            unit_id=target_unit_id,
+            created_by=current_user.id,
+            is_active=source_workflow["is_active"],
+            is_published=False,  # Copied workflows start as unpublished
+            workflow_data=source_workflow.get("workflow_data")
+        )
+        
+        await db.workflows.insert_one(new_workflow.dict())
+        
+        # Copy workflow nodes
+        source_nodes = await db.workflow_nodes.find({"workflow_id": workflow_id}).to_list(length=None)
+        node_id_mapping = {}  # Map old node IDs to new ones
+        
+        for source_node in source_nodes:
+            new_node_id = str(uuid.uuid4())
+            node_id_mapping[source_node["id"]] = new_node_id
+            
+            new_node = WorkflowNode(
+                id=new_node_id,
+                workflow_id=new_workflow.id,
+                node_type=source_node["node_type"],
+                node_subtype=source_node["node_subtype"],
+                name=source_node["name"],
+                position_x=source_node["position_x"],
+                position_y=source_node["position_y"],
+                configuration=source_node.get("configuration")
+            )
+            
+            await db.workflow_nodes.insert_one(new_node.dict())
+        
+        # Copy workflow connections with updated node IDs
+        source_connections = await db.node_connections.find({"workflow_id": workflow_id}).to_list(length=None)
+        
+        for source_connection in source_connections:
+            new_connection = NodeConnection(
+                workflow_id=new_workflow.id,
+                source_node_id=node_id_mapping.get(source_connection["source_node_id"]),
+                target_node_id=node_id_mapping.get(source_connection["target_node_id"]),
+                source_handle=source_connection.get("source_handle"),
+                target_handle=source_connection.get("target_handle"),
+                condition_data=source_connection.get("condition_data")
+            )
+            
+            await db.node_connections.insert_one(new_connection.dict())
+        
+        return {
+            "success": True,
+            "message": f"Workflow copied successfully to unit {target_unit['name']}",
+            "new_workflow_id": new_workflow.id,
+            "source_workflow_id": workflow_id,
+            "target_unit_id": target_unit_id,
+            "nodes_copied": len(source_nodes),
+            "connections_copied": len(source_connections)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Copy workflow error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to copy workflow")
+
 # Include the router in the main app
 app.include_router(api_router)
 
