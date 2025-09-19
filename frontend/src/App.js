@@ -738,14 +738,16 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-slate-800">Gestione Lead</h2>
         <div className="flex space-x-2">
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nuovo Lead  
-          </Button>
-          <Button onClick={exportToExcel} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Esporta Excel
-          </Button>
+          <div className="flex space-x-2">
+            <Button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700">
+              <Download className="w-4 h-4 mr-2" />
+              Esporta Excel
+            </Button>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nuovo Lead  
+            </Button>
+          </div>
           <Button onClick={fetchLeads} variant="outline" size="sm">
             <Search className="w-4 h-4 mr-2" />
             Aggiorna
