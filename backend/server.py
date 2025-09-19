@@ -264,6 +264,24 @@ class ChatSession(BaseModel):
     last_activity: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class AIConfiguration(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    openai_api_key: str
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+class AIConfigurationCreate(BaseModel):
+    openai_api_key: str
+
+class OpenAIAssistant(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+    model: str
+    instructions: Optional[str] = None
+    created_at: int
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
