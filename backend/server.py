@@ -2411,17 +2411,34 @@ async def get_whatsapp_configuration(
         raise HTTPException(status_code=500, detail="Failed to get WhatsApp configuration")
 
 @api_router.post("/whatsapp-connect")
-async def simulate_whatsapp_connection(current_user: User = Depends(get_current_user)):
-    """Simulate WhatsApp connection (for demo purposes)"""
+async def simulate_whatsapp_connection(
+    unit_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Simulate WhatsApp connection for specific unit (for demo purposes)"""
     
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Only admin can connect WhatsApp")
     
     try:
-        config = await db.whatsapp_configurations.find_one({"is_active": True})
+        # Determina unit_id da utilizzare
+        target_unit_id = unit_id
+        if not target_unit_id:
+            if current_user.unit_id:
+                target_unit_id = current_user.unit_id
+            else:
+                first_unit = await db.units.find_one({})
+                if not first_unit:
+                    raise HTTPException(status_code=400, detail="No units available")
+                target_unit_id = first_unit["id"]
+        
+        config = await db.whatsapp_configurations.find_one({
+            "unit_id": target_unit_id,
+            "is_active": True
+        })
         
         if not config:
-            raise HTTPException(status_code=400, detail="No WhatsApp configuration found")
+            raise HTTPException(status_code=400, detail=f"No WhatsApp configuration found for unit {target_unit_id}")
         
         # Simulate successful connection
         await db.whatsapp_configurations.update_one(
