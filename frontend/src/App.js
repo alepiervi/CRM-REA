@@ -4264,6 +4264,457 @@ const AIConfigModal = ({ onClose, onSuccess, existingConfig }) => {
   );
 };
 
+// WhatsApp Management Component
+const WhatsAppManagement = () => {
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchWhatsAppConfig();
+    
+    // Polling per aggiornare lo stato di connessione
+    const interval = setInterval(fetchWhatsAppConfig, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchWhatsAppConfig = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/whatsapp-config`);
+      setConfig(response.data);
+    } catch (error) {
+      console.error("Error fetching WhatsApp config:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConnect = async () => {
+    try {
+      setConnecting(true);
+      const response = await axios.post(`${API}/whatsapp-connect`);
+      
+      if (response.data.success) {
+        toast({
+          title: "Successo",
+          description: "WhatsApp connesso con successo",
+        });
+        await fetchWhatsAppConfig();
+        setShowQRModal(false);
+      }
+    } catch (error) {
+      console.error("Error connecting WhatsApp:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella connessione WhatsApp",
+        variant: "destructive",
+      });
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const getStatusBadge = (status, isConnected) => {
+    if (isConnected) {
+      return <Badge className="bg-green-500">Connesso</Badge>;
+    }
+    
+    switch (status) {
+      case "connecting":
+        return <Badge className="bg-yellow-500">Connessione in corso</Badge>;
+      case "connected":
+        return <Badge className="bg-green-500">Connesso</Badge>;
+      default:
+        return <Badge variant="destructive">Disconnesso</Badge>;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-lg">Caricamento configurazione WhatsApp...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800">Gestione WhatsApp</h2>
+        <div className="flex space-x-2">
+          {config?.configured && !config.is_connected && (
+            <Button onClick={() => setShowQRModal(true)} className="bg-green-600 hover:bg-green-700">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Connetti WhatsApp
+            </Button>
+          )}
+          <Button onClick={() => setShowConfigModal(true)}>
+            <Settings className="w-4 h-4 mr-2" />
+            {config?.configured ? "Modifica Configurazione" : "Configura Numero"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Connection Status */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <MessageCircle className="w-5 h-5" />
+            <span>Stato WhatsApp Business</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {config?.configured ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <MessageCircle className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-800">{config.phone_number}</h3>
+                    <p className="text-sm text-slate-500">Numero WhatsApp Business</p>
+                  </div>
+                </div>
+                {getStatusBadge(config.connection_status, config.is_connected)}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Stato Connessione</Label>
+                  <p className="text-sm">{config.connection_status}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Ultima Attività</Label>
+                  <p className="text-sm">
+                    {config.last_seen ? new Date(config.last_seen).toLocaleString("it-IT") : "Mai connesso"}
+                  </p>
+                </div>
+              </div>
+
+              {config.is_connected && (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-green-800 font-medium">WhatsApp Business Connesso</span>
+                  </div>
+                  <p className="text-sm text-green-700 mt-1">
+                    Il sistema può ora inviare e ricevere messaggi WhatsApp per i lead
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+                <span className="text-amber-700 font-medium">WhatsApp non configurato</span>
+              </div>
+              <p className="text-slate-600">
+                Configura il tuo numero WhatsApp Business per abilitare la comunicazione automatica con i lead.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* WhatsApp Features */}
+      {config?.configured && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Lead Validation */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <CheckCircle className="w-5 h-5" />
+                <span>Validazione Lead</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-slate-600 mb-4">
+                Valida automaticamente se i numeri dei lead sono su WhatsApp
+              </p>
+              <LeadWhatsAppValidator />
+            </CardContent>
+          </Card>
+
+          {/* Chat Overview */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <MessageCircle className="w-5 h-5" />
+                <span>Conversazioni Attive</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <MessageCircle className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                <p className="text-slate-500">Nessuna conversazione attiva</p>
+                <p className="text-sm text-slate-400 mt-1">
+                  Le conversazioni WhatsApp appariranno qui
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Configuration Modal */}
+      {showConfigModal && (
+        <WhatsAppConfigModal
+          onClose={() => setShowConfigModal(false)}
+          onSuccess={() => {
+            fetchWhatsAppConfig();
+            setShowConfigModal(false);
+          }}
+          existingConfig={config}
+        />
+      )}
+
+      {/* QR Code Modal */}
+      {showQRModal && config?.qr_code && (
+        <WhatsAppQRModal
+          qrCode={config.qr_code}
+          phoneNumber={config.phone_number}
+          onClose={() => setShowQRModal(false)}
+          onConnect={handleConnect}
+          connecting={connecting}
+        />
+      )}
+    </div>
+  );
+};
+
+// WhatsApp Configuration Modal Component
+const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig }) => {
+  const [phoneNumber, setPhoneNumber] = useState(existingConfig?.phone_number || "");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!phoneNumber.trim()) {
+      toast({
+        title: "Errore",
+        description: "Inserisci un numero di telefono valido",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(`${API}/whatsapp-config`, {
+        phone_number: phoneNumber.trim()
+      });
+
+      if (response.data.success) {
+        toast({
+          title: "Successo",
+          description: "Configurazione WhatsApp salvata con successo",
+        });
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Error saving WhatsApp config:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nel salvataggio della configurazione",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {existingConfig?.configured ? "Modifica" : "Configura"} WhatsApp Business
+          </DialogTitle>
+          <DialogDescription>
+            Inserisci il numero di telefono WhatsApp Business
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="phone-number">Numero WhatsApp Business *</Label>
+            <Input
+              id="phone-number"
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+39 123 456 7890"
+              required
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              Usa il formato internazionale (es: +39 per Italia)
+            </p>
+          </div>
+
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">Requisiti:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>Numero WhatsApp Business verificato</li>
+                  <li>Formato internazionale (+prefisso numero)</li>
+                  <li>Disponibile per connessione Web</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Salvataggio..." : "Salva Configurazione"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// WhatsApp QR Code Modal Component
+const WhatsAppQRModal = ({ qrCode, phoneNumber, onClose, onConnect, connecting }) => {
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Connetti WhatsApp Web</DialogTitle>
+          <DialogDescription>
+            Scansiona il QR code con WhatsApp per connettere il numero {phoneNumber}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex justify-center">
+            <div className="w-64 h-64 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center">
+              <div className="text-center">
+                <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                <p className="text-sm text-slate-500">QR Code WhatsApp</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  In produzione: QR code reale
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-green-50 p-3 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <MessageCircle className="w-4 h-4 text-green-600 mt-0.5" />
+              <div className="text-sm text-green-800">
+                <p className="font-medium mb-1">Come connettere:</p>
+                <ol className="list-decimal list-inside space-y-1 text-xs">
+                  <li>Apri WhatsApp sul telefono</li>
+                  <li>Vai su Menu → WhatsApp Web</li>
+                  <li>Scansiona questo QR code</li>
+                  <li>Click "Connetti" quando pronto</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Annulla
+          </Button>
+          <Button onClick={onConnect} disabled={connecting} className="bg-green-600 hover:bg-green-700">
+            {connecting ? "Connessione..." : "Connetti"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Lead WhatsApp Validator Component
+const LeadWhatsAppValidator = () => {
+  const [leads, setLeads] = useState([]);
+  const [validating, setValidating] = useState(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchRecentLeads();
+  }, []);
+
+  const fetchRecentLeads = async () => {
+    try {
+      const response = await axios.get(`${API}/leads?limit=5`);
+      setLeads(response.data);
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+    }
+  };
+
+  const validateLead = async (leadId) => {
+    try {
+      setValidating(leadId);
+      const response = await axios.post(`${API}/whatsapp-validate-lead?lead_id=${leadId}`);
+      
+      if (response.data.success) {
+        toast({
+          title: response.data.message,
+          description: `Lead: ${response.data.phone_number}`,
+        });
+        fetchRecentLeads(); // Refresh leads to show updated status
+      }
+    } catch (error) {
+      console.error("Error validating lead:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella validazione del lead",
+        variant: "destructive",
+      });
+    } finally {
+      setValidating(null);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {leads.slice(0, 3).map((lead) => (
+        <div key={lead.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+          <div>
+            <p className="font-medium text-sm">{lead.nome} {lead.cognome}</p>
+            <p className="text-xs text-slate-500">{lead.telefono}</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            {lead.whatsapp_validated ? (
+              <Badge variant={lead.is_whatsapp ? "default" : "destructive"}>
+                {lead.is_whatsapp ? "WhatsApp" : "No WhatsApp"}
+              </Badge>
+            ) : (
+              <Button
+                onClick={() => validateLead(lead.id)}
+                disabled={validating === lead.id}
+                size="sm"
+                variant="outline"
+              >
+                {validating === lead.id ? "..." : "Valida"}
+              </Button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 // Main App Component
 const App = () => {
   const { user, loading } = useAuth();
