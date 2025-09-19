@@ -607,6 +607,163 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     updated_lead = await db.leads.find_one({"id": lead_id})
     return Lead(**updated_lead)
 
+# Custom Fields Management
+@api_router.get("/custom-fields", response_model=List[CustomField])
+async def get_custom_fields(current_user: User = Depends(get_current_user)):
+    fields = await db.custom_fields.find().to_list(length=None)
+    return [CustomField(**field) for field in fields]
+
+@api_router.post("/custom-fields", response_model=CustomField)
+async def create_custom_field(field_data: CustomFieldCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can create custom fields")
+    
+    # Check if field name already exists
+    existing_field = await db.custom_fields.find_one({"name": field_data.name})
+    if existing_field:
+        raise HTTPException(status_code=400, detail="Field name already exists")
+    
+    field_obj = CustomField(**field_data.dict())
+    await db.custom_fields.insert_one(field_obj.dict())
+    return field_obj
+
+@api_router.delete("/custom-fields/{field_id}")
+async def delete_custom_field(field_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete custom fields")
+    
+    field = await db.custom_fields.find_one({"id": field_id})
+    if not field:
+        raise HTTPException(status_code=404, detail="Custom field not found")
+    
+    await db.custom_fields.delete_one({"id": field_id})
+    return {"message": "Custom field deleted successfully"}
+
+# Analytics endpoints
+@api_router.get("/analytics/agent/{agent_id}")
+async def get_agent_analytics(agent_id: str, current_user: User = Depends(get_current_user)):
+    # Permission check
+    if current_user.role == UserRole.AGENTE and current_user.id != agent_id:
+        raise HTTPException(status_code=403, detail="Can only view your own analytics")
+    elif current_user.role == UserRole.REFERENTE:
+        # Check if agent is under this referente
+        agent = await db.users.find_one({"id": agent_id})
+        if not agent or agent["referente_id"] != current_user.id:
+            raise HTTPException(status_code=403, detail="Can only view analytics for your agents")
+    elif current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    # Get agent info
+    agent = await db.users.find_one({"id": agent_id})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Get agent's leads statistics
+    total_leads = await db.leads.count_documents({"assigned_agent_id": agent_id})
+    contacted_leads = await db.leads.count_documents({
+        "assigned_agent_id": agent_id,
+        "esito": {"$ne": None}
+    })
+    
+    # Leads by outcome
+    outcomes = {}
+    for outcome in CallOutcome:
+        count = await db.leads.count_documents({
+            "assigned_agent_id": agent_id,
+            "esito": outcome.value
+        })
+        outcomes[outcome.value] = count
+    
+    # Leads this week/month
+    now = datetime.now(timezone.utc)
+    week_start = now.replace(hour=0, minute=0, second=0) - timedelta(days=7)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0)
+    
+    leads_this_week = await db.leads.count_documents({
+        "assigned_agent_id": agent_id,
+        "created_at": {"$gte": week_start}
+    })
+    
+    leads_this_month = await db.leads.count_documents({
+        "assigned_agent_id": agent_id,
+        "created_at": {"$gte": month_start}
+    })
+    
+    return {
+        "agent": {
+            "id": agent["id"],
+            "username": agent["username"],
+            "email": agent["email"]
+        },
+        "stats": {
+            "total_leads": total_leads,
+            "contacted_leads": contacted_leads,
+            "contact_rate": round((contacted_leads / total_leads * 100) if total_leads > 0 else 0, 2),
+            "leads_this_week": leads_this_week,
+            "leads_this_month": leads_this_month,
+            "outcomes": outcomes
+        }
+    }
+
+@api_router.get("/analytics/referente/{referente_id}")
+async def get_referente_analytics(referente_id: str, current_user: User = Depends(get_current_user)):
+    # Permission check
+    if current_user.role == UserRole.REFERENTE and current_user.id != referente_id:
+        raise HTTPException(status_code=403, detail="Can only view your own analytics")
+    elif current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    # Get referente info
+    referente = await db.users.find_one({"id": referente_id})
+    if not referente:
+        raise HTTPException(status_code=404, detail="Referente not found")
+    
+    # Get all agents under this referente
+    agents = await db.users.find({"referente_id": referente_id}).to_list(length=None)
+    agent_ids = [agent["id"] for agent in agents]
+    
+    # Aggregate statistics for all agents under referente
+    total_leads = await db.leads.count_documents({"assigned_agent_id": {"$in": agent_ids}})
+    contacted_leads = await db.leads.count_documents({
+        "assigned_agent_id": {"$in": agent_ids},
+        "esito": {"$ne": None}
+    })
+    
+    # Per-agent breakdown
+    agent_stats = []
+    for agent in agents:
+        agent_leads = await db.leads.count_documents({"assigned_agent_id": agent["id"]})
+        agent_contacted = await db.leads.count_documents({
+            "assigned_agent_id": agent["id"], 
+            "esito": {"$ne": None}
+        })
+        
+        agent_stats.append({
+            "agent": {
+                "id": agent["id"],
+                "username": agent["username"],
+                "email": agent["email"]
+            },
+            "total_leads": agent_leads,
+            "contacted_leads": agent_contacted,
+            "contact_rate": round((agent_contacted / agent_leads * 100) if agent_leads > 0 else 0, 2)
+        })
+    
+    return {
+        "referente": {
+            "id": referente["id"],
+            "username": referente["username"],
+            "email": referente["email"]
+        },
+        "total_agents": len(agents),
+        "total_stats": {
+            "total_leads": total_leads,
+            "contacted_leads": contacted_leads,
+            "contact_rate": round((contacted_leads / total_leads * 100) if total_leads > 0 else 0, 2)
+        },
+        "agent_breakdown": agent_stats
+    }
+
 # Webhook endpoint for external integrations (Zapier)
 @api_router.post("/webhook/{unit_id}")
 async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
