@@ -1995,6 +1995,131 @@ async def get_chat_sessions(
         logging.error(f"Get chat sessions error: {e}")
         raise HTTPException(status_code=500, detail="Failed to get chat sessions")
 
+# AI Configuration endpoints
+@api_router.post("/ai-config")
+async def create_ai_configuration(
+    config_data: AIConfigurationCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create or update AI configuration (admin only)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can configure AI settings")
+    
+    try:
+        # Test the OpenAI API key
+        import openai
+        client = openai.OpenAI(api_key=config_data.openai_api_key)
+        
+        # Test API key by listing assistants
+        assistants = client.beta.assistants.list(limit=1)
+        
+        # Check if configuration already exists
+        existing_config = await db.ai_configurations.find_one({"is_active": True})
+        
+        if existing_config:
+            # Update existing configuration
+            await db.ai_configurations.update_one(
+                {"id": existing_config["id"]},
+                {
+                    "$set": {
+                        "openai_api_key": config_data.openai_api_key,
+                        "updated_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            config_id = existing_config["id"]
+        else:
+            # Create new configuration
+            ai_config = AIConfiguration(openai_api_key=config_data.openai_api_key)
+            await db.ai_configurations.insert_one(ai_config.dict())
+            config_id = ai_config.id
+        
+        return {
+            "success": True,
+            "message": "AI configuration saved successfully",
+            "config_id": config_id,
+            "api_key_valid": True
+        }
+        
+    except Exception as e:
+        logging.error(f"AI configuration error: {e}")
+        return {
+            "success": False,
+            "message": "Invalid OpenAI API key or configuration error",
+            "api_key_valid": False,
+            "error": str(e)
+        }
+
+@api_router.get("/ai-config")
+async def get_ai_configuration(current_user: User = Depends(get_current_user)):
+    """Get current AI configuration (admin only)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can view AI settings")
+    
+    try:
+        config = await db.ai_configurations.find_one({"is_active": True})
+        
+        if not config:
+            return {
+                "configured": False,
+                "message": "No AI configuration found"
+            }
+        
+        # Don't return the actual API key for security
+        return {
+            "configured": True,
+            "config_id": config["id"],
+            "api_key_preview": config["openai_api_key"][:8] + "..." if config["openai_api_key"] else "",
+            "created_at": config["created_at"].isoformat(),
+            "updated_at": config.get("updated_at", config["created_at"]).isoformat()
+        }
+        
+    except Exception as e:
+        logging.error(f"Get AI configuration error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get AI configuration")
+
+@api_router.get("/ai-assistants")
+async def list_openai_assistants(current_user: User = Depends(get_current_user)):
+    """List available OpenAI assistants (admin only)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can view assistants")
+    
+    try:
+        # Get AI configuration
+        config = await db.ai_configurations.find_one({"is_active": True})
+        
+        if not config:
+            raise HTTPException(status_code=400, detail="No AI configuration found. Please configure OpenAI API key first.")
+        
+        # List assistants from OpenAI
+        import openai
+        client = openai.OpenAI(api_key=config["openai_api_key"])
+        
+        assistants_response = client.beta.assistants.list(limit=50, order="desc")
+        
+        assistants = []
+        for assistant in assistants_response.data:
+            assistants.append({
+                "id": assistant.id,
+                "name": assistant.name or "Unnamed Assistant",
+                "description": assistant.description or "",
+                "model": assistant.model,
+                "instructions": assistant.instructions or "",
+                "created_at": assistant.created_at
+            })
+        
+        return {
+            "assistants": assistants,
+            "total": len(assistants)
+        }
+        
+    except Exception as e:
+        logging.error(f"List assistants error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list assistants: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
