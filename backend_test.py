@@ -1640,18 +1640,19 @@ class CRMAPITester:
         # Test 1: GET /api/workflow-node-types
         success, node_types_response, status = self.make_request('GET', 'workflow-node-types', expected_status=200)
         if success:
-            node_types = node_types_response.get('node_types', [])
+            # The response is a dictionary with node type categories as keys
             expected_types = ['trigger', 'action', 'condition', 'delay']
             expected_subtypes = ['set_status', 'send_whatsapp', 'add_tag', 'remove_tag', 'update_contact_field']
             
-            self.log_test("GET workflow node types", True, f"Found {len(node_types)} node type categories")
+            found_types = list(node_types_response.keys())
+            self.log_test("GET workflow node types", True, f"Found {len(found_types)} node type categories: {found_types}")
             
             # Check for specific node types mentioned in the review
             found_subtypes = []
-            for category in node_types:
-                if 'subtypes' in category:
-                    for subtype in category['subtypes']:
-                        found_subtypes.append(subtype.get('id', ''))
+            for category_key, category_data in node_types_response.items():
+                if 'subtypes' in category_data:
+                    for subtype_key, subtype_data in category_data['subtypes'].items():
+                        found_subtypes.append(subtype_key)
             
             missing_subtypes = [st for st in expected_subtypes if st not in found_subtypes]
             if not missing_subtypes:
