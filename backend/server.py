@@ -55,6 +55,9 @@ ALLOWED_FILE_TYPES = ["application/pdf"]
 # Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# OpenAI ChatBot Configuration
+EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
