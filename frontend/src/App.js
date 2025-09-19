@@ -5163,8 +5163,8 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
       
       <div className="flex h-[calc(100%-73px)]">
         {/* Sidebar con nodi disponibili */}
-        <div className="w-64 border-r border-slate-200 p-4 bg-slate-50 overflow-y-auto">
-          <h3 className="font-medium text-slate-700 mb-3">Nodi Disponibili</h3>
+        <div className="w-64 border-r border-slate-200 p-4 bg-slate-50 overflow-y-auto max-h-full">
+          <h3 className="font-medium text-slate-700 mb-3 sticky top-0 bg-slate-50 pb-2">Nodi Disponibili</h3>
           
           {Object.entries(nodeTypes).map(([categoryKey, category]) => (
             <div key={categoryKey} className="mb-4">
