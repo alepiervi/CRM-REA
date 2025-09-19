@@ -173,8 +173,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "AI Configuration testing completed successfully"
-    - "All AI Configuration tasks verified and working"
+    - "WhatsApp Section - Admin Navigation Visibility"
+    - "WhatsApp Interface - Non-configured Status Display"
+    - "WhatsApp Configuration Modal - Number Setup Form"
+    - "WhatsApp Connection Simulation - QR Code and Connect Button"
+    - "WhatsApp Lead Validation - Number Validation System"
+    - "WhatsApp Access Control - Admin Only"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
