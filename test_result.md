@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Testa specificatamente l'endpoint DELETE per i lead che ho appena implementato: 1. Verifica endpoint DELETE /api/leads/{lead_id} - controlla che funzioni correttamente, 2. Testa controlli di accesso - verifica che solo admin possa eliminare lead, 3. Testa controlli di integrità - verifica che non elimini lead con documenti associati, 4. Verifica messaggi di errore - testa i vari scenari (lead non trovato, documenti associati, etc.), 5. Testa eliminazione effettiva - verifica che il lead venga davvero eliminato dal database. Focus sui controlli di sicurezza e integrità referenziale per i lead."
+user_problem_statement: "Testa la nuova sezione 'Configurazione AI' nel CRM: 1. Login come admin (admin/admin123), 2. Verifica presenza della voce 'Configurazione AI' nella sidebar navigation, 3. Naviga alla sezione Configurazione AI, 4. Verifica interfaccia configurazione OpenAI - deve mostrare stato 'non configurato', 5. Testa modal configurazione - click su 'Configura OpenAI', 6. Verifica form per inserire API key OpenAI, 7. Controlla istruzioni per ottenere API key. La sezione 'Configurazione AI' è stata appena aggiunta e dovrebbe essere visibile solo agli admin. Deve mostrare un'interfaccia per configurare OpenAI API key e visualizzare assistenti disponibili. Focus sul testing della nuova UI per la configurazione AI - non serve testare con una vera API key, solo l'interfaccia."
 
 backend:
   - task: "DELETE /api/leads/{lead_id} endpoint functionality"
