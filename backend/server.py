@@ -217,6 +217,28 @@ class ContainerCreate(BaseModel):
     name: str
     unit_id: str
 
+class Document(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    document_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
+    lead_id: str  # Lead ID this document belongs to
+    filename: str
+    original_filename: str
+    file_size: int
+    content_type: str
+    aruba_drive_file_id: Optional[str] = None
+    aruba_drive_url: Optional[str] = None
+    upload_status: str = "pending"  # pending, uploading, completed, failed
+    download_count: int = 0
+    last_downloaded_at: Optional[datetime] = None
+    uploaded_by: str
+    tags: List[str] = []
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class DocumentUpload(BaseModel):
+    lead_id: str
+    uploaded_by: str
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
