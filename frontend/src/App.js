@@ -237,52 +237,6 @@ const Login = () => {
 };
 
 // Unit Selector Component
-const UnitSelector = ({ selectedUnit, onUnitChange, units, loading }) => {
-  const { user } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="animate-pulse">
-        <div className="h-10 bg-slate-200 rounded-lg w-48"></div>
-      </div>
-    );
-  }
-
-  // Non-admin users should automatically use their unit
-  if (user.role !== "admin" && user.unit_id) {
-    const userUnit = units.find(u => u.id === user.unit_id);
-    return (
-      <div className="flex items-center space-x-2">
-        <Building2 className="w-5 h-5 text-blue-600" />
-        <span className="font-semibold text-slate-800">
-          {userUnit?.name || "Unit Assegnata"}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center space-x-2">
-      <Building2 className="w-5 h-5 text-blue-600" />
-      <Select value={selectedUnit} onValueChange={onUnitChange}>
-        <SelectTrigger className="w-64">
-          <SelectValue placeholder="Seleziona Unit" />
-        </SelectTrigger>
-        <SelectContent>
-          {user.role === "admin" && (
-            <SelectItem value="all">Tutte le Unit</SelectItem>
-          )}
-          {units.map((unit) => (
-            <SelectItem key={unit.id} value={unit.id}>
-              {unit.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-};
-
 // Dashboard Stats Component
 const DashboardStats = ({ selectedUnit }) => {
   const [stats, setStats] = useState({});
