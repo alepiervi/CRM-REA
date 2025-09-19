@@ -2336,6 +2336,7 @@ const CreateUnitModal = ({ onClose, onSubmit }) => {
 
 // Edit Unit Modal Component  
 const EditUnitModal = ({ unit, onClose, onSubmit }) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: unit.name || "",
     description: unit.description || "",
