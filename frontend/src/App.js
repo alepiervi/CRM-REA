@@ -561,6 +561,15 @@ const Dashboard = () => {
     }
   };
 
+  const fetchAssistants = async () => {
+    try {
+      const response = await axios.get(`${API}/assistants`);
+      setAssistants(response.data);
+    } catch (error) {
+      console.error("Error fetching assistants:", error);
+    }
+  };
+
   const handleUnitChange = (unitId) => {
     setSelectedUnit(unitId);
   };
