@@ -4247,7 +4247,14 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
   const handleConnect = async () => {
     try {
       setConnecting(true);
-      const response = await axios.post(`${API}/whatsapp-connect`);
+      
+      // Passa unit_id come parametro
+      const params = new URLSearchParams();
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      
+      const response = await axios.post(`${API}/whatsapp-connect?${params}`);
       
       if (response.data.success) {
         toast({
