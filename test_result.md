@@ -173,12 +173,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "WhatsApp Section - Admin Navigation Visibility"
-    - "WhatsApp Interface - Non-configured Status Display"
-    - "WhatsApp Configuration Modal - Number Setup Form"
-    - "WhatsApp Connection Simulation - QR Code and Connect Button"
-    - "WhatsApp Lead Validation - Number Validation System"
-    - "WhatsApp Access Control - Admin Only"
+    - "WhatsApp testing completed - 4/6 tasks working"
+    - "Backend integration needed for full WhatsApp functionality"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
