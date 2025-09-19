@@ -4962,8 +4962,18 @@ const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCop
                         onClick={() => onEdit(workflow)}
                         size="sm"
                         variant="outline"
+                        title="Modifica workflow"
                       >
                         <Edit className="w-4 h-4" />
+                      </Button>
+                      
+                      <Button
+                        onClick={() => handleCopyClick(workflow)}
+                        size="sm"
+                        variant="outline"
+                        title="Copia in altra Unit"
+                      >
+                        <Copy className="w-4 h-4" />
                       </Button>
                       
                       <Button
