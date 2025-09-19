@@ -15,8 +15,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from enum import Enum
 import smtplib
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
+# Email imports temporarily disabled
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 import tempfile
