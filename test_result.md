@@ -201,6 +201,30 @@ backend:
           agent: "testing"
           comment: "✅ Role-based access control working. Admin has full access to documents endpoint. Unauthorized access properly blocked (returns 403/401). Invalid tokens correctly rejected (401). Authentication is required for all document endpoints."
 
+  - task: "ChatBot API - Session Creation Endpoint"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL ISSUE CONFIRMED: /api/chat/session endpoint returns 400 error 'User must belong to a unit' for admin user. Admin user has unit_id: null but endpoint requires current_user.unit_id at line 1835-1836. Found 30 units in database but admin is not assigned to any. This blocks ChatBot functionality for admin users."
+        
+  - task: "ChatBot API - Admin Unit Assignment Issue"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL DESIGN ISSUE: Admin user lacks unit_id assignment, preventing ChatBot access. Two solutions possible: 1) Assign admin to a unit, or 2) Modify ChatBot endpoints to allow admin users without unit_id (lines 1835-1836 and 1876-1877 in server.py). Current logic assumes all users belong to a unit, but admin users may need system-wide access."
+
 metadata:
   created_by: "testing_agent"
   version: "1.0"
