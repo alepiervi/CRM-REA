@@ -2417,11 +2417,12 @@ const CreateUnitModal = ({ onClose, onSubmit, assistants = [] }) => {
 };
 
 // Edit Unit Modal Component  
-const EditUnitModal = ({ unit, onClose, onSubmit }) => {
+const EditUnitModal = ({ unit, assistants = [], onClose, onSubmit }) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: unit.name || "",
     description: unit.description || "",
+    assistant_id: unit.assistant_id || "",
   });
 
   const handleSubmit = (e) => {
