@@ -173,6 +173,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Lead deletion functionality fully tested and working"
     - "All DELETE endpoint functionality verified and working"
   stuck_tasks: []
   test_all: false
