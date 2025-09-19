@@ -1029,6 +1029,49 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     updated_lead = await db.leads.find_one({"id": lead_id})
     return Lead(**updated_lead)
 
+@api_router.delete("/leads/{lead_id}")
+async def delete_lead(lead_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a lead"""
+    
+    # Find the lead
+    lead = await db.leads.find_one({"id": lead_id})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Check permissions - only admin can delete leads
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete leads")
+    
+    try:
+        # Check if lead has associated documents
+        documents_count = await db.documents.count_documents({"lead_id": lead_id, "is_active": True})
+        if documents_count > 0:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot delete lead. {documents_count} documents are still associated with this lead"
+            )
+        
+        # Delete the lead
+        await db.leads.delete_one({"id": lead_id})
+        
+        return {
+            "success": True,
+            "message": "Lead deleted successfully",
+            "lead_id": lead_id,
+            "lead_info": {
+                "nome": lead["nome"],
+                "cognome": lead["cognome"],
+                "email": lead.get("email", ""),
+                "telefono": lead.get("telefono", "")
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting lead {lead_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete lead")
+
 # Custom Fields Management
 @api_router.get("/custom-fields", response_model=List[CustomField])
 async def get_custom_fields(current_user: User = Depends(get_current_user)):
