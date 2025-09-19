@@ -284,6 +284,56 @@ class OpenAIAssistant(BaseModel):
     instructions: Optional[str] = None
     created_at: int
 
+class WhatsAppConfiguration(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    phone_number: str  # Numero di telefono WhatsApp Business
+    qr_code: Optional[str] = None  # QR Code data per connessione
+    is_connected: bool = False
+    connection_status: str = "disconnected"  # disconnected, connecting, connected
+    last_seen: Optional[datetime] = None
+    device_info: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+class WhatsAppConfigurationCreate(BaseModel):
+    phone_number: str
+
+class WhatsAppMessage(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    message_id: str = Field(default_factory=lambda: f"msg_{str(uuid.uuid4())[:12]}")
+    lead_id: str  # Lead associato alla conversazione
+    phone_number: str  # Numero WhatsApp del lead
+    message: str
+    message_type: str = "text"  # text, image, document, voice
+    direction: str  # incoming, outgoing
+    sender: str  # lead_phone, bot, agent_id
+    status: str = "sent"  # sent, delivered, read, failed
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    metadata: Dict[str, Any] = {}
+
+class WhatsAppConversation(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    lead_id: str
+    phone_number: str
+    contact_name: Optional[str] = None
+    last_message: Optional[str] = None
+    last_message_time: Optional[datetime] = None
+    unread_count: int = 0
+    status: str = "active"  # active, archived, blocked
+    assigned_agent: Optional[str] = None
+    bot_stage: Optional[str] = None  # bot conversation stage
+    is_bot_active: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class LeadWhatsAppValidation(BaseModel):
+    lead_id: str
+    phone_number: str
+    is_whatsapp: Optional[bool] = None
+    validation_status: str = "pending"  # pending, valid, invalid, error
+    validation_date: Optional[datetime] = None
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
