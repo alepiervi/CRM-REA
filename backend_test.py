@@ -1196,6 +1196,102 @@ class CRMAPITester:
         else:
             self.log_test("Agent login for document test", False, f"Status: {status}")
 
+    def test_chatbot_functionality(self):
+        """Test ChatBot functionality and unit_id requirement issue"""
+        print("\n🤖 Testing ChatBot Functionality...")
+        
+        # First, check if admin user has unit_id assigned
+        success, user_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+        if success:
+            admin_unit_id = user_response.get('unit_id')
+            if admin_unit_id:
+                self.log_test("Admin user has unit_id", True, f"Unit ID: {admin_unit_id}")
+            else:
+                self.log_test("Admin user has unit_id", False, "Admin user has no unit_id assigned")
+        else:
+            self.log_test("Get admin user info", False, f"Status: {status}")
+            return
+        
+        # Test /api/chat/session endpoint
+        import requests
+        url = f"{self.base_url}/chat/session"
+        headers = {
+            'Authorization': f'Bearer {self.token}',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        data = {
+            'session_type': 'unit'
+        }
+        
+        try:
+            response = requests.post(url, data=data, headers=headers, timeout=30)
+            
+            if response.status_code == 400:
+                response_data = response.json()
+                error_detail = response_data.get('detail', '')
+                
+                if error_detail == "User must belong to a unit":
+                    self.log_test("ChatBot session creation - unit_id error", True, 
+                        f"CONFIRMED: Error 400 with message '{error_detail}' - Admin user lacks unit_id")
+                else:
+                    self.log_test("ChatBot session creation - unexpected 400", False, 
+                        f"Got 400 but different error: {error_detail}")
+            elif response.status_code == 200:
+                response_data = response.json()
+                if response_data.get('success'):
+                    session_id = response_data['session']['session_id']
+                    self.log_test("ChatBot session creation", True, f"Session created: {session_id}")
+                    
+                    # Test sending a message to the session
+                    message_url = f"{self.base_url}/chat/message"
+                    message_data = {
+                        'session_id': session_id,
+                        'message': 'Ciao, questo è un test del chatbot'
+                    }
+                    
+                    message_response = requests.post(message_url, data=message_data, headers=headers, timeout=30)
+                    if message_response.status_code == 200:
+                        message_result = message_response.json()
+                        if message_result.get('success'):
+                            bot_response = message_result.get('response', '')
+                            self.log_test("ChatBot message sending", True, f"Bot responded: {bot_response[:100]}...")
+                        else:
+                            self.log_test("ChatBot message sending", False, "Message failed")
+                    else:
+                        self.log_test("ChatBot message sending", False, f"Status: {message_response.status_code}")
+                    
+                    # Test getting chat history
+                    history_url = f"{self.base_url}/chat/history/{session_id}"
+                    history_response = requests.get(history_url, headers=headers, timeout=30)
+                    if history_response.status_code == 200:
+                        history_data = history_response.json()
+                        messages = history_data.get('messages', [])
+                        self.log_test("ChatBot history retrieval", True, f"Found {len(messages)} messages in history")
+                    else:
+                        self.log_test("ChatBot history retrieval", False, f"Status: {history_response.status_code}")
+                        
+                else:
+                    self.log_test("ChatBot session creation", False, "Session creation failed")
+            else:
+                self.log_test("ChatBot session creation", False, f"Unexpected status: {response.status_code}")
+                
+        except requests.exceptions.RequestException as e:
+            self.log_test("ChatBot session creation", False, f"Request error: {str(e)}")
+        
+        # Test chat sessions list endpoint
+        success, sessions_response, status = self.make_request('GET', 'chat/sessions', expected_status=200 if admin_unit_id else 400)
+        if admin_unit_id:
+            if success:
+                sessions = sessions_response.get('sessions', [])
+                self.log_test("ChatBot sessions list", True, f"Found {len(sessions)} sessions")
+            else:
+                self.log_test("ChatBot sessions list", False, f"Status: {status}")
+        else:
+            if status == 400:
+                self.log_test("ChatBot sessions list - unit_id error", True, "Correctly returned 400 for user without unit_id")
+            else:
+                self.log_test("ChatBot sessions list - unit_id error", False, f"Expected 400, got {status}")
+
     def test_unauthorized_access(self):
         """Test unauthorized access to protected endpoints"""
         print("\n🚫 Testing Unauthorized Access...")
@@ -1216,7 +1312,10 @@ class CRMAPITester:
             ('GET', 'auth/me', 401),
             ('GET', 'documents', 401),  # NEW: Document endpoints should be protected
             ('GET', 'documents/lead/test-id', 401),
-            ('GET', 'leads/export', 401)  # NEW: Export should be protected
+            ('GET', 'leads/export', 401),  # NEW: Export should be protected
+            ('GET', 'chat/sessions', 401),  # NEW: ChatBot endpoints should be protected
+            ('POST', 'chat/session', 401),
+            ('POST', 'chat/message', 401)
         ]
         
         for method, endpoint, expected_status in protected_endpoints:
