@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -13,6 +14,13 @@ from datetime import datetime, timezone, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from enum import Enum
+import smtplib
+from email.mime.text import MimeText
+from email.mime.multipart import MimeMultipart
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+import tempfile
+import asyncio
 # Email imports removed - not used in current implementation
 
 ROOT_DIR = Path(__file__).parent
