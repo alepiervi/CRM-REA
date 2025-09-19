@@ -2827,6 +2827,7 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
     date_to: "",
   });
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchDocuments();
