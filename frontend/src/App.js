@@ -4224,15 +4224,19 @@ const WhatsAppManagement = () => {
     // Il polling sarà attivato solo quando necessario (es. durante connessione)
   }, []);
 
-  const fetchWhatsAppConfig = async () => {
+  const fetchWhatsAppConfig = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const response = await axios.get(`${API}/whatsapp-config`);
       setConfig(response.data);
     } catch (error) {
       console.error("Error fetching WhatsApp config:", error);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
