@@ -4453,8 +4453,11 @@ const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig }) => {
     setIsLoading(true);
 
     try {
+      // Remove all spaces and non-digit characters except + from phone number
+      const cleanPhoneNumber = phoneNumber.trim().replace(/\s+/g, '').replace(/[^\d+]/g, '');
+      
       const response = await axios.post(`${API}/whatsapp-config`, {
-        phone_number: phoneNumber.trim()
+        phone_number: cleanPhoneNumber
       });
 
       if (response.data.success) {
