@@ -3316,6 +3316,326 @@ const DocumentDetailsModal = ({ document, onClose, onDownload }) => {
   );
 };
 
+// Chat Management Component  
+const ChatManagement = ({ selectedUnit, units }) => {
+  const [sessions, setSessions] = useState([]);
+  const [activeSession, setActiveSession] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (selectedUnit && selectedUnit !== "all") {
+      fetchSessions();
+    }
+  }, [selectedUnit]);
+
+  useEffect(() => {
+    if (activeSession) {
+      fetchMessages(activeSession.session_id);
+    }
+  }, [activeSession]);
+
+  const fetchSessions = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/chat/sessions`);
+      setSessions(response.data.sessions || []);
+      
+      // Auto-select first session or create new one if none exist
+      if (response.data.sessions.length > 0) {
+        setActiveSession(response.data.sessions[0]);
+      } else {
+        await createNewSession();
+      }
+    } catch (error) {
+      console.error("Error fetching chat sessions:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento delle sessioni chat",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createNewSession = async () => {
+    try {
+      const formData = new FormData();
+      formData.append('session_type', 'unit');
+      
+      const response = await axios.post(`${API}/chat/session`, formData);
+      
+      if (response.data.success) {
+        const newSession = response.data.session;
+        setSessions(prev => [newSession, ...prev]);
+        setActiveSession(newSession);
+        toast({
+          title: "Successo",
+          description: "Nuova sessione chat creata",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating chat session:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione della sessione chat",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchMessages = async (sessionId) => {
+    try {
+      const response = await axios.get(`${API}/chat/history/${sessionId}`);
+      setMessages(response.data.messages || []);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei messaggi",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !activeSession || sending) return;
+
+    try {
+      setSending(true);
+      const formData = new FormData();
+      formData.append('session_id', activeSession.session_id);
+      formData.append('message', newMessage.trim());
+
+      const response = await axios.post(`${API}/chat/message`, formData);
+      
+      if (response.data.success) {
+        // Refresh messages to show both user message and AI response
+        await fetchMessages(activeSession.session_id);
+        setNewMessage("");
+        
+        // Update session in the list
+        setSessions(prev => prev.map(s => 
+          s.session_id === activeSession.session_id 
+            ? { ...s, last_activity: new Date().toISOString() }
+            : s
+        ));
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'invio del messaggio",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const formatTimestamp = (timestamp) => {
+    return new Date(timestamp).toLocaleString("it-IT", {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-lg">Caricamento chat...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800">
+          Chat AI Assistant {selectedUnit && selectedUnit !== "all" && `- ${units.find(u => u.id === selectedUnit)?.name}`}
+        </h2>
+        <Button onClick={createNewSession}>
+          <MessageCircle className="w-4 h-4 mr-2" />
+          Nuova Sessione
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-12 gap-6 h-[600px]">
+        {/* Sessions Sidebar */}
+        <div className="col-span-3">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="text-lg">Sessioni Chat</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="space-y-1 max-h-[500px] overflow-y-auto">
+                {sessions.map((session) => (
+                  <div
+                    key={session.session_id}
+                    onClick={() => setActiveSession(session)}
+                    className={`p-3 cursor-pointer hover:bg-slate-50 border-b ${
+                      activeSession?.session_id === session.session_id 
+                        ? 'bg-blue-50 border-l-4 border-l-blue-500' 
+                        : ''
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <MessageCircle className="w-4 h-4 text-slate-400" />
+                      <span className="font-medium text-sm">
+                        Sessione {session.session_type}
+                      </span>
+                    </div>
+                    {session.last_message && (
+                      <div className="text-xs text-slate-500 mt-1 truncate">
+                        {session.last_message.message.slice(0, 50)}...
+                      </div>
+                    )}
+                    <div className="text-xs text-slate-400 mt-1">
+                      {formatTimestamp(session.last_activity)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Chat Interface */}
+        <div className="col-span-9">
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center space-x-2">
+                <MessageCircle className="w-5 h-5" />
+                {activeSession ? (
+                  <span>Chat Assistant - Sessione {activeSession.session_type}</span>
+                ) : (
+                  <span>Seleziona una sessione</span>
+                )}
+              </CardTitle>
+            </CardHeader>
+
+            {activeSession ? (
+              <>
+                {/* Messages Area */}
+                <CardContent className="flex-1 overflow-y-auto max-h-[400px]">
+                  <div className="space-y-4">
+                    {messages.length === 0 ? (
+                      <div className="text-center text-slate-500 py-8">
+                        <MessageCircle className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                        <p>Inizia una conversazione con l'assistente AI!</p>
+                        <p className="text-sm mt-1">Chiedi consigli sui lead, strategie di vendita o organizzazione del lavoro.</p>
+                      </div>
+                    ) : (
+                      messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.message_type === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[70%] p-3 rounded-lg ${
+                              message.message_type === 'user'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-slate-100 text-slate-800'
+                            }`}
+                          >
+                            <div className="break-words">{message.message}</div>
+                            <div
+                              className={`text-xs mt-1 ${
+                                message.message_type === 'user' ? 'text-blue-100' : 'text-slate-500'
+                              }`}
+                            >
+                              {formatTimestamp(message.created_at)}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {sending && (
+                      <div className="flex justify-start">
+                        <div className="bg-slate-100 text-slate-800 p-3 rounded-lg">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                            <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+
+                {/* Message Input */}
+                <div className="p-4 border-t">
+                  <div className="flex space-x-2">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Scrivi il tuo messaggio..."
+                      disabled={sending}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={sendMessage}
+                      disabled={!newMessage.trim() || sending}
+                      className="px-4"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    Premi Invio per inviare, Shift+Invio per andare a capo
+                  </div>
+                </div>
+              </>
+            ) : (
+              <CardContent className="flex-1 flex items-center justify-center">
+                <div className="text-center text-slate-500">
+                  <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                  <p className="text-lg">Nessuna sessione selezionata</p>
+                  <p className="text-sm">Crea una nuova sessione per iniziare</p>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        </div>
+      </div>
+
+      {/* Help Info */}
+      <Card className="border-0 shadow-sm bg-blue-50">
+        <CardContent className="p-4">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-blue-900 mb-2">Come usare l'assistente AI</h4>
+              <div className="text-sm text-blue-800 space-y-1">
+                <p>• <strong>Analisi Lead:</strong> "Analizza questo lead: [nome cliente] interessato a [prodotto]"</p>
+                <p>• <strong>Strategie:</strong> "Come posso ricontattare un cliente che non risponde?"</p>
+                <p>• <strong>Organizzazione:</strong> "Come posso organizzare meglio i miei follow-up?"</p>
+                <p>• <strong>Performance:</strong> "Suggerimenti per migliorare il mio tasso di conversione"</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 // Main App Component
 const App = () => {
   const { user, loading } = useAuth();
