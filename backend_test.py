@@ -1330,6 +1330,292 @@ class CRMAPITester:
         # Restore original token
         self.token = original_token
 
+    def test_lead_delete_endpoint(self):
+        """Test DELETE /api/leads/{lead_id} endpoint with security and integrity controls"""
+        print("\n🗑️  Testing Lead DELETE Endpoint (FOCUSED TEST)...")
+        
+        # First, create test resources needed for comprehensive testing
+        
+        # 1. Create a unit for testing
+        unit_data = {
+            "name": f"Delete Test Unit {datetime.now().strftime('%H%M%S')}",
+            "description": "Unit for testing lead deletion"
+        }
+        success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
+        if success:
+            unit_id = unit_response['id']
+            self.created_resources['units'].append(unit_id)
+            self.log_test("Create unit for delete test", True, f"Unit ID: {unit_id}")
+        else:
+            self.log_test("Create unit for delete test", False, f"Status: {status}")
+            return
+        
+        # 2. Create a test lead for deletion
+        lead_data = {
+            "nome": "Giuseppe",
+            "cognome": "Verdi",
+            "telefono": "+39 333 123 4567",
+            "email": "giuseppe.verdi@test.com",
+            "provincia": "Milano",
+            "tipologia_abitazione": "villa",
+            "ip_address": "192.168.1.50",
+            "campagna": "Delete Test Campaign",
+            "gruppo": unit_id,
+            "contenitore": "Delete Test Container",
+            "privacy_consent": True,
+            "marketing_consent": True,
+            "custom_fields": {"test_field": "delete_test"}
+        }
+        
+        success, lead_response, status = self.make_request('POST', 'leads', lead_data, 200, auth_required=False)
+        if success:
+            lead_id = lead_response['id']
+            lead_short_id = lead_response.get('lead_id', 'N/A')
+            self.log_test("Create lead for delete test", True, f"Lead ID: {lead_short_id} ({lead_id})")
+        else:
+            self.log_test("Create lead for delete test", False, f"Status: {status}")
+            return
+        
+        # 3. Create another lead with documents to test referential integrity
+        lead_with_docs_data = {
+            "nome": "Luigi",
+            "cognome": "Bianchi",
+            "telefono": "+39 333 987 6543",
+            "email": "luigi.bianchi@test.com",
+            "provincia": "Roma",
+            "tipologia_abitazione": "appartamento",
+            "campagna": "Delete Test Campaign",
+            "gruppo": unit_id,
+            "contenitore": "Delete Test Container",
+            "privacy_consent": True,
+            "marketing_consent": False
+        }
+        
+        success, lead_with_docs_response, status = self.make_request('POST', 'leads', lead_with_docs_data, 200, auth_required=False)
+        if success:
+            lead_with_docs_id = lead_with_docs_response['id']
+            lead_with_docs_short_id = lead_with_docs_response.get('lead_id', 'N/A')
+            self.log_test("Create lead with docs for integrity test", True, f"Lead ID: {lead_with_docs_short_id} ({lead_with_docs_id})")
+        else:
+            self.log_test("Create lead with docs for integrity test", False, f"Status: {status}")
+            return
+        
+        # 4. Upload a document to the second lead to test referential integrity
+        import tempfile
+        import os
+        import requests
+        
+        with tempfile.NamedTemporaryFile(mode='w+b', suffix='.pdf', delete=False) as temp_file:
+            temp_file.write(b'%PDF-1.4\n%Test PDF for referential integrity testing\n')
+            temp_file.flush()
+            temp_file_path = temp_file.name
+        
+        try:
+            url = f"{self.base_url}/documents/upload/{lead_with_docs_id}"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('integrity_test.pdf', f, 'application/pdf')}
+                data = {'uploaded_by': self.user_data['id']}
+                
+                response = requests.post(url, files=files, data=data, headers=headers, timeout=30)
+                
+                if response.status_code == 200:
+                    upload_response = response.json()
+                    if upload_response.get('success'):
+                        document_id = upload_response['document']['document_id']
+                        self.log_test("Upload document for integrity test", True, f"Document ID: {document_id}")
+                    else:
+                        self.log_test("Upload document for integrity test", False, f"Upload failed: {upload_response}")
+                        return
+                else:
+                    self.log_test("Upload document for integrity test", False, f"Status: {response.status_code}")
+                    return
+                    
+        finally:
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+        
+        # 5. Create non-admin users for access control testing
+        referente_data = {
+            "username": f"delete_referente_{datetime.now().strftime('%H%M%S')}",
+            "email": f"delete_referente_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "TestPass123!",
+            "role": "referente",
+            "unit_id": unit_id,
+            "provinces": []
+        }
+        
+        success, referente_response, status = self.make_request('POST', 'users', referente_data, 200)
+        if success:
+            referente_id = referente_response['id']
+            self.created_resources['users'].append(referente_id)
+            self.log_test("Create referente for access test", True, f"Referente ID: {referente_id}")
+        else:
+            self.log_test("Create referente for access test", False, f"Status: {status}")
+            return
+        
+        agent_data = {
+            "username": f"delete_agent_{datetime.now().strftime('%H%M%S')}",
+            "email": f"delete_agent_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "TestPass123!",
+            "role": "agente",
+            "unit_id": unit_id,
+            "referente_id": referente_id,
+            "provinces": ["Milano", "Roma"]
+        }
+        
+        success, agent_response, status = self.make_request('POST', 'users', agent_data, 200)
+        if success:
+            agent_id = agent_response['id']
+            self.created_resources['users'].append(agent_id)
+            self.log_test("Create agent for access test", True, f"Agent ID: {agent_id}")
+        else:
+            self.log_test("Create agent for access test", False, f"Status: {status}")
+            return
+        
+        # NOW START THE ACTUAL DELETE ENDPOINT TESTS
+        
+        # TEST 1: Verify only admin can delete leads (referente should be denied)
+        success, referente_login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': referente_data['username'], 'password': referente_data['password']}, 
+            200, auth_required=False
+        )
+        
+        if success:
+            referente_token = referente_login_response['access_token']
+            original_token = self.token
+            self.token = referente_token
+            
+            # Try to delete lead as referente (should fail with 403)
+            success, response, status = self.make_request('DELETE', f'leads/{lead_id}', expected_status=403)
+            if success:
+                self.log_test("DELETE access control - referente denied", True, "✅ Referente correctly denied access")
+            else:
+                self.log_test("DELETE access control - referente denied", False, f"Expected 403, got {status}")
+            
+            self.token = original_token
+        else:
+            self.log_test("Referente login for access test", False, f"Status: {status}")
+        
+        # TEST 2: Verify only admin can delete leads (agent should be denied)
+        success, agent_login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': agent_data['username'], 'password': agent_data['password']}, 
+            200, auth_required=False
+        )
+        
+        if success:
+            agent_token = agent_login_response['access_token']
+            original_token = self.token
+            self.token = agent_token
+            
+            # Try to delete lead as agent (should fail with 403)
+            success, response, status = self.make_request('DELETE', f'leads/{lead_id}', expected_status=403)
+            if success:
+                self.log_test("DELETE access control - agent denied", True, "✅ Agent correctly denied access")
+            else:
+                self.log_test("DELETE access control - agent denied", False, f"Expected 403, got {status}")
+            
+            self.token = original_token
+        else:
+            self.log_test("Agent login for access test", False, f"Status: {status}")
+        
+        # TEST 3: Test deletion of non-existent lead (should return 404)
+        success, response, status = self.make_request('DELETE', 'leads/non-existent-lead-id', expected_status=404)
+        if success:
+            error_detail = response.get('detail', '')
+            self.log_test("DELETE non-existent lead", True, f"✅ Correctly returned 404: {error_detail}")
+        else:
+            self.log_test("DELETE non-existent lead", False, f"Expected 404, got {status}")
+        
+        # TEST 4: Test referential integrity - try to delete lead with associated documents (should fail with 400)
+        success, response, status = self.make_request('DELETE', f'leads/{lead_with_docs_id}', expected_status=400)
+        if success:
+            error_detail = response.get('detail', '')
+            self.log_test("DELETE lead with documents - integrity check", True, f"✅ Correctly prevented deletion: {error_detail}")
+            
+            # Verify the error message mentions documents
+            if "documents" in error_detail.lower():
+                self.log_test("DELETE error message accuracy", True, "✅ Error message correctly mentions associated documents")
+            else:
+                self.log_test("DELETE error message accuracy", False, f"Error message doesn't mention documents: {error_detail}")
+        else:
+            self.log_test("DELETE lead with documents - integrity check", False, f"Expected 400, got {status}")
+        
+        # TEST 5: Verify lead with documents still exists in database
+        success, response, status = self.make_request('GET', 'leads', expected_status=200)
+        if success:
+            leads = response
+            lead_still_exists = any(l['id'] == lead_with_docs_id for l in leads)
+            if lead_still_exists:
+                self.log_test("Lead with documents still exists", True, "✅ Lead with documents was not deleted (correct)")
+            else:
+                self.log_test("Lead with documents still exists", False, "❌ Lead with documents was incorrectly deleted")
+        else:
+            self.log_test("Verify lead still exists", False, f"Status: {status}")
+        
+        # TEST 6: Test successful deletion of lead without documents (admin access)
+        success, response, status = self.make_request('DELETE', f'leads/{lead_id}', expected_status=200)
+        if success:
+            success_response = response.get('success', False)
+            message = response.get('message', '')
+            lead_info = response.get('lead_info', {})
+            
+            if success_response:
+                self.log_test("DELETE lead without documents - success", True, f"✅ Successfully deleted: {message}")
+                
+                # Verify response contains lead info
+                if lead_info.get('nome') == 'Giuseppe' and lead_info.get('cognome') == 'Verdi':
+                    self.log_test("DELETE response contains lead info", True, f"✅ Response includes: {lead_info}")
+                else:
+                    self.log_test("DELETE response contains lead info", False, f"Missing or incorrect lead info: {lead_info}")
+            else:
+                self.log_test("DELETE lead without documents - success", False, f"Success flag not set: {response}")
+        else:
+            self.log_test("DELETE lead without documents - success", False, f"Expected 200, got {status}: {response}")
+        
+        # TEST 7: Verify lead was actually deleted from database
+        success, response, status = self.make_request('GET', 'leads', expected_status=200)
+        if success:
+            leads = response
+            lead_deleted = not any(l['id'] == lead_id for l in leads)
+            if lead_deleted:
+                self.log_test("Lead actually deleted from database", True, "✅ Lead no longer exists in database")
+            else:
+                self.log_test("Lead actually deleted from database", False, "❌ Lead still exists in database")
+        else:
+            self.log_test("Verify lead deletion from database", False, f"Status: {status}")
+        
+        # TEST 8: Test unauthorized access (no token)
+        original_token = self.token
+        self.token = None
+        
+        success, response, status = self.make_request('DELETE', f'leads/{lead_with_docs_id}', expected_status=401)
+        if success:
+            self.log_test("DELETE without authentication", True, "✅ Correctly requires authentication")
+        else:
+            self.log_test("DELETE without authentication", False, f"Expected 401, got {status}")
+        
+        self.token = original_token
+        
+        # Clean up: Remove the document so we can delete the lead with documents
+        success, response, status = self.make_request('DELETE', f'documents/{document_id}', expected_status=200)
+        if success:
+            self.log_test("Cleanup: Delete document", True, "Document deleted for cleanup")
+            
+            # Now we can delete the lead
+            success, response, status = self.make_request('DELETE', f'leads/{lead_with_docs_id}', expected_status=200)
+            if success:
+                self.log_test("Cleanup: Delete lead after document removal", True, "Lead deleted after document cleanup")
+            else:
+                self.log_test("Cleanup: Delete lead after document removal", False, f"Status: {status}")
+        else:
+            self.log_test("Cleanup: Delete document", False, f"Status: {status}")
+            # Add to cleanup list for later
+            self.created_resources['leads'].append(lead_with_docs_id)
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM API Testing...")
