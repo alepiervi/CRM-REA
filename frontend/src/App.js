@@ -4471,9 +4471,16 @@ const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig, selectedUnit 
       // Remove all spaces and non-digit characters except + from phone number
       const cleanPhoneNumber = phoneNumber.trim().replace(/\s+/g, '').replace(/[^\d+]/g, '');
       
-      const response = await axios.post(`${API}/whatsapp-config`, {
+      const requestData = {
         phone_number: cleanPhoneNumber
-      });
+      };
+      
+      // Aggiungi unit_id se specificato
+      if (selectedUnit && selectedUnit !== "all") {
+        requestData.unit_id = selectedUnit;
+      }
+      
+      const response = await axios.post(`${API}/whatsapp-config`, requestData);
 
       if (response.data.success) {
         toast({
