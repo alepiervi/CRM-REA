@@ -2091,6 +2091,8 @@ const UnitsManagement = ({ selectedUnit }) => {
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUnitForEdit, setSelectedUnitForEdit] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -2125,6 +2127,53 @@ const UnitsManagement = ({ selectedUnit }) => {
         variant: "destructive",
       });
     }
+  };
+
+  const updateUnit = async (unitId, unitData) => {
+    try {
+      await axios.put(`${API}/units/${unitId}`, unitData);
+      toast({
+        title: "Successo",
+        description: "Unit aggiornata con successo",
+      });
+      fetchUnits();
+      setShowEditModal(false);
+      setSelectedUnitForEdit(null);
+    } catch (error) {
+      console.error("Error updating unit:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'aggiornamento della unit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteUnit = async (unitId, unitName) => {
+    if (!window.confirm(`Sei sicuro di voler eliminare la unit "${unitName}"?\n\nQuesta azione non può essere annullata.`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/units/${unitId}`);
+      toast({
+        title: "Successo",
+        description: "Unit eliminata con successo",
+      });
+      fetchUnits();
+    } catch (error) {
+      console.error("Error deleting unit:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione della unit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditUnit = (unit) => {
+    setSelectedUnitForEdit(unit);
+    setShowEditModal(true);
   };
 
   return (
