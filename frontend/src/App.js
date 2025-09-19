@@ -4250,7 +4250,7 @@ const WhatsAppManagement = () => {
           title: "Successo",
           description: "WhatsApp connesso con successo",
         });
-        await fetchWhatsAppConfig();
+        await fetchWhatsAppConfig(false); // Non mostrare loading
         setShowQRModal(false);
       }
     } catch (error) {
