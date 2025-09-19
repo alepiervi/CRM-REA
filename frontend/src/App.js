@@ -447,7 +447,7 @@ const Dashboard = () => {
       case "ai-config":
         return user.role === "admin" ? <AIConfigurationManagement /> : <div>Non autorizzato</div>;
       case "whatsapp":
-        return user.role === "admin" ? <WhatsAppManagement /> : <div>Non autorizzato</div>;
+        return user.role === "admin" ? <WhatsAppManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
       case "analytics":
         return <AnalyticsManagement selectedUnit={selectedUnit} units={units} />;
       default:
