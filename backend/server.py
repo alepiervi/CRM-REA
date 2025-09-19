@@ -243,6 +243,26 @@ class DocumentUpload(BaseModel):
     lead_id: str
     uploaded_by: str
 
+class ChatMessage(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    unit_id: str
+    session_id: str  # Può essere unit_id o unit_id-user_id per chat private
+    user_id: str
+    message: str
+    message_type: str = "user"  # user, assistant, system
+    metadata: Dict[str, Any] = {}
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ChatSession(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: str  # Unique identifier per sessione
+    unit_id: str
+    participants: List[str] = []  # User IDs dei partecipanti
+    session_type: str = "unit"  # unit, private, lead
+    is_active: bool = True
+    last_activity: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
