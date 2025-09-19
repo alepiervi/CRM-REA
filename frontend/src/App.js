@@ -2230,6 +2230,28 @@ const UnitsManagement = ({ selectedUnit }) => {
                       {new Date(unit.created_at).toLocaleDateString("it-IT")}
                     </div>
                   </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex space-x-2 pt-3 border-t">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditUnit(unit)}
+                      className="flex-1"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Modifica
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteUnit(unit.id, unit.name)}
+                      className="flex-1"
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Elimina
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
