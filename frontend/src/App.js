@@ -631,18 +631,111 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Navigation 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab}
-        selectedUnit={selectedUnit}
-        onUnitChange={handleUnitChange}
-        units={units}
-        unitsLoading={unitsLoading}
-      />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderTabContent()}
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-r border-slate-200 shadow-sm">
+        {/* Sidebar Header with Unit Selector */}
+        <div className="p-4 border-b border-slate-200">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-slate-800">CRM System</h1>
+              <p className="text-xs text-slate-500">Gestione Lead Avanzata</p>
+            </div>
+          </div>
+          
+          {/* Unit Selector */}
+          <div>
+            <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">Unit Attiva</Label>
+            <Select value={selectedUnit} onValueChange={handleUnitChange}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Seleziona unit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le Unit</SelectItem>
+                {units.map((unit) => (
+                  <SelectItem key={unit.id} value={unit.id}>
+                    <div className="flex items-center space-x-2">
+                      <Building2 className="w-3 h-3" />
+                      <span>{unit.name}</span>
+                      {!unit.is_active && (
+                        <Badge variant="secondary" className="text-xs">Inattiva</Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className="p-4 space-y-1">
+          {getNavItems().map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === item.id
+                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              <item.icon className="w-4 h-4" />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="absolute bottom-0 left-0 right-0 w-64 p-4 border-t border-slate-200 bg-white">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+              <Users className="w-4 h-4 text-slate-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-800 truncate">{user.username}</p>
+              <p className="text-xs text-slate-500 capitalize">{user.role}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Header - Only Logout */}
+        <header className="bg-white border-b border-slate-200 px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h2 className="text-xl font-semibold text-slate-800 capitalize">
+                {getNavItems().find(item => item.id === activeTab)?.label || "Dashboard"}
+              </h2>
+              {selectedUnit && selectedUnit !== "all" && (
+                <Badge variant="outline" className="text-xs">
+                  <Building2 className="w-3 h-3 mr-1" />
+                  {units.find(u => u.id === selectedUnit)?.name}
+                </Badge>
+              )}
+            </div>
+            
+            <Button
+              onClick={logout}
+              variant="outline"
+              size="sm"
+              className="text-slate-600 hover:text-red-600 hover:border-red-300"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Esci
+            </Button>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 p-6 overflow-y-auto">
+          {renderTabContent()}
+        </main>
       </div>
     </div>
   );
