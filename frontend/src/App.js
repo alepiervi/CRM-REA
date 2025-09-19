@@ -4209,7 +4209,7 @@ const AIConfigModal = ({ onClose, onSuccess, existingConfig }) => {
 };
 
 // WhatsApp Management Component
-const WhatsAppManagement = () => {
+const WhatsAppManagement = ({ selectedUnit, units }) => {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -4219,23 +4219,27 @@ const WhatsAppManagement = () => {
 
   useEffect(() => {
     fetchWhatsAppConfig();
-    
-    // Rimuoviamo il polling aggressivo che causa lag
-    // Il polling sarà attivato solo quando necessario (es. durante connessione)
-  }, []);
+  }, [selectedUnit]); // Ricarica quando cambia l'unit
 
   const fetchWhatsAppConfig = async (showLoading = true) => {
     try {
       if (showLoading) {
         setLoading(true);
       }
-      const response = await axios.get(`${API}/whatsapp-config`);
+      
+      // Passa unit_id come parametro
+      const params = new URLSearchParams();
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      
+      const response = await axios.get(`${API}/whatsapp-config?${params}`);
       setConfig(response.data);
     } catch (error) {
       console.error("Error fetching WhatsApp config:", error);
     } finally {
       if (showLoading) {
-        setLoading(false);
+        setLoading(false);  
       }
     }
   };
