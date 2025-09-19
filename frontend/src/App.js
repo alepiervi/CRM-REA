@@ -4790,6 +4790,27 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
     setActiveView("builder");
   };
 
+  const handleCopyWorkflow = async (workflowId, targetUnitId) => {
+    try {
+      const response = await axios.post(`${API}/workflows/${workflowId}/copy?target_unit_id=${targetUnitId}`);
+      
+      toast({
+        title: "Successo",
+        description: response.data.message,
+      });
+      
+      // Refresh workflows list
+      fetchWorkflows();
+    } catch (error) {
+      console.error("Error copying workflow:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nella copia del workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteWorkflow = async (workflowId) => {
     if (!window.confirm("Sei sicuro di voler eliminare questo workflow?")) {
       return;
