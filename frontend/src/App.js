@@ -677,6 +677,32 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  const deleteLead = async (leadId, leadName) => {
+    if (!window.confirm(`Sei sicuro di voler eliminare il lead "${leadName}"?\n\nQuesta azione non può essere annullata e eliminerà tutti i dati associati al lead.`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/leads/${leadId}`);
+      toast({
+        title: "Successo",
+        description: "Lead eliminato con successo",
+      });
+      fetchLeads();
+      // Close modal if the deleted lead was selected
+      if (selectedLead && selectedLead.id === leadId) {
+        setSelectedLead(null);
+      }
+    } catch (error) {
+      console.error("Error deleting lead:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione del lead",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (esito) => {
     if (!esito) return <Badge variant="secondary">Nuovo</Badge>;
     
