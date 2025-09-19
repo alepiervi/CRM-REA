@@ -1617,8 +1617,8 @@ class CRMAPITester:
             self.created_resources['leads'].append(lead_with_docs_id)
 
     def run_all_tests(self):
-        """Run all test suites"""
-        print("🚀 Starting CRM API Testing...")
+        """Run focused DELETE endpoint test"""
+        print("🚀 Starting CRM API Testing - FOCUSED DELETE ENDPOINT TEST...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
@@ -1627,26 +1627,8 @@ class CRMAPITester:
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # Run all test suites
-        self.test_provinces_endpoint()
-        self.test_dashboard_stats()
-        self.test_user_management()
-        self.test_user_crud_new_features()  # NEW FEATURE TEST
-        self.test_user_toggle_status()      # EXISTING FEATURE TEST
-        self.test_unit_filtering()          # EXISTING FEATURE TEST
-        self.test_units_management()
-        self.test_containers_management()
-        self.test_container_crud_new_features()  # NEW FEATURE TEST
-        self.test_custom_fields_crud()      # NEW FEATURE TEST
-        self.test_analytics_endpoints()     # NEW FEATURE TEST
-        self.test_leads_management()
-        self.test_lead_new_fields()         # NEW FEATURE TEST
-        self.test_document_management()     # NEW FEATURE TEST - Document endpoints
-        self.test_excel_export()            # NEW FEATURE TEST - Excel export
-        self.test_role_based_access_documents()  # NEW FEATURE TEST - Role-based access
-        self.test_chatbot_functionality()   # NEW FEATURE TEST - ChatBot functionality
-        self.test_webhook_endpoint()
-        self.test_unauthorized_access()
+        # Run focused DELETE endpoint test
+        self.test_lead_delete_endpoint()
         
         # Print summary
         print("\n" + "=" * 60)
