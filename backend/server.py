@@ -21,6 +21,10 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 import tempfile
 import asyncio
+import aiofiles
+import magic
+import httpx
+from typing import BinaryIO
 # Email imports removed - not used in current implementation
 
 ROOT_DIR = Path(__file__).parent
