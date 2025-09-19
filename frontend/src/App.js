@@ -3012,6 +3012,8 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [filters, setFilters] = useState({
     lead_id: "",
+    nome: "",
+    cognome: "",
     uploaded_by: "",
     date_from: "",
     date_to: "",
