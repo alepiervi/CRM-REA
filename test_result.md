@@ -209,9 +209,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Document Management API - GET /api/documents endpoint"
-    - "Document Search Filters - Nome and Cognome"
-    - "Lead-Document Relationships"
+    - "Documents Section UI - Navigation and Display"
+    - "Document Upload Modal - SelectItem Error Fix"
+    - "Document Filters - Nome and Cognome"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
