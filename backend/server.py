@@ -286,6 +286,7 @@ class OpenAIAssistant(BaseModel):
 
 class WhatsAppConfiguration(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    unit_id: str  # AGGIUNTO: Ogni Unit ha la sua configurazione WhatsApp
     phone_number: str  # Numero di telefono WhatsApp Business
     qr_code: Optional[str] = None  # QR Code data per connessione
     is_connected: bool = False
@@ -298,6 +299,7 @@ class WhatsAppConfiguration(BaseModel):
 
 class WhatsAppConfigurationCreate(BaseModel):
     phone_number: str
+    unit_id: Optional[str] = None  # Opzionale, se None usa unit corrente
 
 class WhatsAppMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
