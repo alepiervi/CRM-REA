@@ -330,6 +330,80 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
     users = await db.users.find(query).to_list(length=None)
     return [User(**user) for user in users]
 
+@api_router.get("/users/referenti/{unit_id}")
+async def get_referenti_by_unit(unit_id: str, current_user: User = Depends(get_current_user)):
+    """Get all referenti for a specific unit"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can access this endpoint")
+    
+    referenti = await db.users.find({
+        "role": "referente",
+        "unit_id": unit_id,
+        "is_active": True
+    }).to_list(length=None)
+    
+    return [{"id": ref["id"], "username": ref["username"], "email": ref["email"]} for ref in referenti]
+
+@api_router.put("/users/{user_id}", response_model=User)
+async def update_user(user_id: str, user_update: UserCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can update users")
+    
+    # Find the user
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if username or email conflicts with other users
+    existing_user = await db.users.find_one({
+        "$and": [
+            {"id": {"$ne": user_id}},
+            {"$or": [{"username": user_update.username}, {"email": user_update.email}]}
+        ]
+    })
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username or email already exists")
+    
+    # Validate provinces for agents
+    if user_update.role == UserRole.AGENTE:
+        invalid_provinces = [p for p in user_update.provinces if p not in ITALIAN_PROVINCES]
+        if invalid_provinces:
+            raise HTTPException(status_code=400, detail=f"Invalid provinces: {invalid_provinces}")
+    
+    # Prepare update data
+    update_data = user_update.dict()
+    if user_update.password:
+        update_data["password_hash"] = get_password_hash(user_update.password)
+    del update_data["password"]
+    
+    # Update user
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": update_data}
+    )
+    
+    updated_user = await db.users.find_one({"id": user_id})
+    return User(**updated_user)
+
+@api_router.delete("/users/{user_id}")
+async def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete users")
+    
+    # Don't allow deleting the current admin
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # Find the user
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Delete user
+    await db.users.delete_one({"id": user_id})
+    
+    return {"message": "User deleted successfully"}
+
 @api_router.put("/users/{user_id}/toggle-status")
 async def toggle_user_status(user_id: str, current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:
