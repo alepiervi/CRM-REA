@@ -1832,8 +1832,19 @@ async def create_chat_session(
 ):
     """Create new chat session"""
     
-    if not current_user.unit_id:
+    # Admin can create sessions without unit_id, others need unit_id
+    if current_user.role != UserRole.ADMIN and not current_user.unit_id:
         raise HTTPException(status_code=400, detail="User must belong to a unit")
+    
+    # For admin without unit_id, use first available unit or create system session
+    unit_id = current_user.unit_id
+    if not unit_id and current_user.role == UserRole.ADMIN:
+        # Get first available unit for admin or use system identifier
+        first_unit = await db.units.find_one({"is_active": True})
+        if first_unit:
+            unit_id = first_unit["id"]
+        else:
+            unit_id = "system"  # Fallback for system-wide admin chat
     
     try:
         participant_list = []
@@ -1846,7 +1857,7 @@ async def create_chat_session(
             participant_list.append(current_user.id)
         
         session = await chatbot_service.create_session(
-            current_user.unit_id,
+            unit_id,
             session_type,
             participant_list
         )
