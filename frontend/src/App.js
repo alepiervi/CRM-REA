@@ -2265,6 +2265,17 @@ const UnitsManagement = ({ selectedUnit }) => {
           onSubmit={createUnit}
         />
       )}
+
+      {showEditModal && selectedUnitForEdit && (
+        <EditUnitModal
+          unit={selectedUnitForEdit}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedUnitForEdit(null);
+          }}
+          onSubmit={(unitData) => updateUnit(selectedUnitForEdit.id, unitData)}
+        />
+      )}
     </div>
   );
 };
