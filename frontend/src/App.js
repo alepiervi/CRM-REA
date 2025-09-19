@@ -3190,21 +3190,31 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
             </div>
           </div>
           <div className="flex justify-between items-center mt-4">
-            <Button
-              onClick={() => setFilters({
-                lead_id: "",
-                nome: "",
-                cognome: "",
-                uploaded_by: "",
-                date_from: "",
-                date_to: "",
-              })}
-              variant="outline"
-              size="sm"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Pulisci Filtri
-            </Button>
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => setFilters({
+                  lead_id: "",
+                  nome: "",
+                  cognome: "",
+                  uploaded_by: "",
+                  date_from: "",
+                  date_to: "",
+                })}
+                variant="outline"
+                size="sm"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Pulisci Filtri
+              </Button>
+              <Button
+                onClick={fetchDocuments}
+                variant="default"
+                size="sm"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Cerca
+              </Button>
+            </div>
             <div className="text-sm text-slate-500">
               {documents.length} documenti trovati
             </div>
