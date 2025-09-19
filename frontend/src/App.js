@@ -3129,13 +3129,29 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
       {/* Filters */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div>
               <Label>Lead ID</Label>
               <Input
                 placeholder="Filtra per Lead ID"
                 value={filters.lead_id}
                 onChange={(e) => setFilters({ ...filters, lead_id: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Nome</Label>
+              <Input
+                placeholder="Filtra per nome"
+                value={filters.nome}
+                onChange={(e) => setFilters({ ...filters, nome: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Cognome</Label>
+              <Input
+                placeholder="Filtra per cognome"
+                value={filters.cognome}
+                onChange={(e) => setFilters({ ...filters, cognome: e.target.value })}
               />
             </div>
             <div>
@@ -3161,6 +3177,26 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
                 value={filters.date_to}
                 onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
               />
+            </div>
+          </div>
+          <div className="flex justify-between items-center mt-4">
+            <Button
+              onClick={() => setFilters({
+                lead_id: "",
+                nome: "",
+                cognome: "",
+                uploaded_by: "",
+                date_from: "",
+                date_to: "",
+              })}
+              variant="outline"
+              size="sm"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Pulisci Filtri
+            </Button>
+            <div className="text-sm text-slate-500">
+              {documents.length} documenti trovati
             </div>
           </div>
         </CardContent>
