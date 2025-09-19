@@ -1409,100 +1409,16 @@ async def export_leads_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-# Email System
+# Email System - Temporarily disabled due to import issues
 async def send_email_notification(to_email: str, subject: str, body: str):
     """Send email notification"""
-    try:
-        # Email configuration (use environment variables in production)
-        smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
-        smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-        smtp_username = os.environ.get("SMTP_USERNAME", "")
-        smtp_password = os.environ.get("SMTP_PASSWORD", "")
-        
-        if not smtp_username or not smtp_password:
-            logger.warning("SMTP credentials not configured. Email not sent.")
-            return False
-        
-        msg = MimeMultipart()
-        msg['From'] = smtp_username
-        msg['To'] = to_email
-        msg['Subject'] = subject
-        
-        msg.attach(MimeText(body, 'html'))
-        
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(smtp_username, smtp_password)
-        text = msg.as_string()
-        server.sendmail(smtp_username, to_email, text)
-        server.quit()
-        
-        logger.info(f"Email sent successfully to {to_email}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send email to {to_email}: {str(e)}")
-        return False
+    # Temporarily disabled
+    return False
 
 async def notify_agent_new_lead(agent_id: str, lead_data: dict):
     """Send email notification to agent about new lead assignment"""
-    try:
-        # Get agent details
-        agent = await db.users.find_one({"id": agent_id})
-        if not agent:
-            return False
-        
-        # Create email content
-        subject = f"Nuovo Lead Assegnato - {lead_data.get('nome', '')} {lead_data.get('cognome', '')}"
-        
-        body = f"""
-        <html>
-        <body>
-            <h2>Nuovo Lead Assegnato</h2>
-            <p>Ciao <strong>{agent['username']}</strong>,</p>
-            <p>Ti è stato assegnato un nuovo lead:</p>
-            
-            <table border="1" style="border-collapse: collapse; width: 100%; margin: 20px 0;">
-                <tr>
-                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Nome</strong></td>
-                    <td style="padding: 8px;">{lead_data.get('nome', '')} {lead_data.get('cognome', '')}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Telefono</strong></td>
-                    <td style="padding: 8px;">{lead_data.get('telefono', '')}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Email</strong></td>
-                    <td style="padding: 8px;">{lead_data.get('email', 'Non fornita')}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Provincia</strong></td>
-                    <td style="padding: 8px;">{lead_data.get('provincia', '')}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Campagna</strong></td>
-                    <td style="padding: 8px;">{lead_data.get('campagna', '')}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; background-color: #f0f0f0;"><strong>Data Assegnazione</strong></td>
-                    <td style="padding: 8px;">{datetime.now().strftime('%d/%m/%Y %H:%M')}</td>
-                </tr>
-            </table>
-            
-            <p>Accedi al CRM per vedere tutti i dettagli e contattare il cliente.</p>
-            <p><strong>Buona fortuna!</strong></p>
-            
-            <hr>
-            <p style="font-size: 12px; color: #666;">
-                Questo è un messaggio automatico del sistema CRM Lead Manager.
-            </p>
-        </body>
-        </html>
-        """
-        
-        return await send_email_notification(agent['email'], subject, body)
-    except Exception as e:
-        logger.error(f"Failed to notify agent {agent_id}: {str(e)}")
-        return False
+    # Temporarily disabled
+    return False
 
 # Webhook endpoint for external integrations (Zapier)
 @api_router.post("/webhook/{unit_id}")
