@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Testa specificatamente l'endpoint dei documenti nel CRM: GET /api/documents con tutti i nuovi parametri di filtro (nome, cognome, lead_id, uploaded_by), verifica se ci sono documenti nel database, testa filtri di ricerca nome e cognome, relazioni lead-documenti, e role-based access con diverse tipologie utente."
+user_problem_statement: "Testa specificatamente l'endpoint DELETE per i lead che ho appena implementato: 1. Verifica endpoint DELETE /api/leads/{lead_id} - controlla che funzioni correttamente, 2. Testa controlli di accesso - verifica che solo admin possa eliminare lead, 3. Testa controlli di integrità - verifica che non elimini lead con documenti associati, 4. Verifica messaggi di errore - testa i vari scenari (lead non trovato, documenti associati, etc.), 5. Testa eliminazione effettiva - verifica che il lead venga davvero eliminato dal database. Focus sui controlli di sicurezza e integrità referenziale per i lead."
 
 backend:
   - task: "Document Management API - GET /api/documents endpoint"
