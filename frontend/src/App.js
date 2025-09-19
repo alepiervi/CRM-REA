@@ -2334,6 +2334,104 @@ const CreateUnitModal = ({ onClose, onSubmit }) => {
   );
 };
 
+// Edit Unit Modal Component  
+const EditUnitModal = ({ unit, onClose, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    name: unit.name || "",
+    description: unit.description || "",
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Modifica Unit</DialogTitle>
+          <DialogDescription>
+            Modifica i dati della unit "{unit.name}"
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="edit-name">Nome Unit *</Label>
+            <Input
+              id="edit-name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Es. Unit Nord Italia"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="edit-description">Descrizione</Label>
+            <Textarea
+              id="edit-description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Descrizione della unit"
+              rows={3}
+            />
+          </div>
+
+          {/* Unit Info Display */}
+          <div className="bg-slate-50 p-3 rounded-lg space-y-2">
+            <div>
+              <Label className="text-xs font-medium text-slate-600">Webhook URL (Read-only)</Label>
+              <div className="flex items-center space-x-2 mt-1">
+                <code className="text-xs bg-white px-2 py-1 rounded flex-1 border">
+                  {BACKEND_URL}{unit.webhook_url}
+                </code>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${BACKEND_URL}${unit.webhook_url}`);
+                    toast({ title: "URL copiato negli appunti!" });
+                  }}
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <Label className="text-slate-600">Stato</Label>
+                <div className="mt-1">
+                  <Badge variant={unit.is_active ? "default" : "secondary"}>
+                    {unit.is_active ? "Attiva" : "Disattiva"}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <Label className="text-slate-600">Creata il</Label>
+                <div className="mt-1">{new Date(unit.created_at).toLocaleDateString("it-IT")}</div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">
+              <Save className="w-4 h-4 mr-2" />
+              Salva Modifiche
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Enhanced Containers Management Component with Edit/Delete
 const ContainersManagement = ({ selectedUnit, units }) => {
   const [containers, setContainers] = useState([]);
