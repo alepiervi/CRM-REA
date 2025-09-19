@@ -40,6 +40,20 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-here-change-in-produc
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
 
+# Aruba Drive Configuration
+ARUBA_DRIVE_API_KEY = os.environ.get("ARUBA_DRIVE_API_KEY", "")
+ARUBA_DRIVE_CLIENT_ID = os.environ.get("ARUBA_DRIVE_CLIENT_ID", "")
+ARUBA_DRIVE_CLIENT_SECRET = os.environ.get("ARUBA_DRIVE_CLIENT_SECRET", "")
+ARUBA_DRIVE_BASE_URL = os.environ.get("ARUBA_DRIVE_BASE_URL", "https://api.arubacloud.com")
+
+# File Upload Configuration
+UPLOAD_DIR = "./uploads"
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_FILE_TYPES = ["application/pdf"]
+
+# Ensure upload directory exists
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
