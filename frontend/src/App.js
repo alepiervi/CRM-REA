@@ -403,6 +403,7 @@ const Navigation = ({ activeTab, setActiveTab, selectedUnit, onUnitChange, units
         { id: "units", label: "Unit", icon: Building2 },
         { id: "containers", label: "Contenitori", icon: Home },
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
+        { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
     } else if (user.role === "referente") {
