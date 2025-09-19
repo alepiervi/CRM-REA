@@ -691,7 +691,11 @@ const LeadsManagement = ({ selectedUnit, units }) => {
         <div className="flex space-x-2">
           <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Nuovo Lead
+            Nuovo Lead  
+          </Button>
+          <Button onClick={exportToExcel} variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Esporta Excel
           </Button>
           <Button onClick={fetchLeads} variant="outline" size="sm">
             <Search className="w-4 h-4 mr-2" />
