@@ -1884,15 +1884,24 @@ async def get_chat_sessions(
 ):
     """Get chat sessions for current user's unit"""
     
-    if not current_user.unit_id:
+    # Admin can access sessions without unit_id, others need unit_id
+    if current_user.role != UserRole.ADMIN and not current_user.unit_id:
         raise HTTPException(status_code=400, detail="User must belong to a unit")
     
     try:
-        # Get sessions for user's unit
-        sessions = await db.chat_sessions.find({
-            "unit_id": current_user.unit_id,
-            "is_active": True
-        }).sort("last_activity", -1).limit(limit).to_list(length=None)
+        # For admin, get sessions from all units or specific unit filter
+        if current_user.role == UserRole.ADMIN:
+            if current_user.unit_id:
+                # Admin has specific unit assigned
+                query = {"unit_id": current_user.unit_id, "is_active": True}
+            else:
+                # Admin without unit - get all sessions or system sessions
+                query = {"is_active": True}
+        else:
+            # Regular users - only their unit sessions
+            query = {"unit_id": current_user.unit_id, "is_active": True}
+        
+        sessions = await db.chat_sessions.find(query).sort("last_activity", -1).limit(limit).to_list(length=None)
         
         session_list = []
         for session in sessions:
