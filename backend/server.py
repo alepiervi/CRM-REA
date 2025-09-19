@@ -2357,14 +2357,34 @@ async def configure_whatsapp(
         raise HTTPException(status_code=500, detail=f"Configuration failed: {str(e)}")
 
 @api_router.get("/whatsapp-config")
-async def get_whatsapp_configuration(current_user: User = Depends(get_current_user)):
-    """Get current WhatsApp configuration (admin only)"""
+async def get_whatsapp_configuration(
+    unit_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Get WhatsApp configuration for specific unit (admin only)"""
     
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Only admin can view WhatsApp settings")
     
     try:
-        config = await db.whatsapp_configurations.find_one({"is_active": True})
+        # Determina unit_id da utilizzare
+        target_unit_id = unit_id
+        if not target_unit_id:
+            # Se non specificato, usa unit dell'utente corrente o la prima unit disponibile
+            if current_user.unit_id:
+                target_unit_id = current_user.unit_id
+            else:
+                # Per admin senza unit, usa la prima unit disponibile
+                first_unit = await db.units.find_one({})
+                if not first_unit:
+                    raise HTTPException(status_code=400, detail="No units available")
+                target_unit_id = first_unit["id"]
+        
+        # Cerca configurazione per questa unit specifica
+        config = await db.whatsapp_configurations.find_one({
+            "unit_id": target_unit_id,
+            "is_active": True
+        })
         
         if not config:
             return {
