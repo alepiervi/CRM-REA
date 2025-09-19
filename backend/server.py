@@ -25,6 +25,7 @@ import aiofiles
 import magic
 import httpx
 from typing import BinaryIO
+import io
 # Email imports removed - not used in current implementation
 
 ROOT_DIR = Path(__file__).parent
