@@ -1629,6 +1629,178 @@ async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User 
     
     return stats
 
+# ChatBot endpoints
+@api_router.post("/chat/message")
+async def send_chat_message(
+    session_id: str = Form(...),
+    message: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Send message to chatbot"""
+    
+    if not message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+    
+    # Get session to determine unit_id
+    session = await db.chat_sessions.find_one({"session_id": session_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    
+    # Check if user has access to this unit
+    if current_user.role != UserRole.ADMIN and current_user.unit_id != session["unit_id"]:
+        raise HTTPException(status_code=403, detail="Access denied to this chat session")
+    
+    try:
+        response = await chatbot_service.send_message(
+            session_id, 
+            session["unit_id"], 
+            message, 
+            current_user.id
+        )
+        
+        # Update session last activity
+        await db.chat_sessions.update_one(
+            {"session_id": session_id},
+            {"$set": {"last_activity": datetime.now(timezone.utc)}}
+        )
+        
+        return {
+            "success": True,
+            "response": response,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        logging.error(f"Chat message error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send message")
+
+@api_router.get("/chat/history/{session_id}")
+async def get_chat_history(
+    session_id: str,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """Get chat history for session"""
+    
+    # Get session to check access
+    session = await db.chat_sessions.find_one({"session_id": session_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    
+    # Check access
+    if current_user.role != UserRole.ADMIN and current_user.unit_id != session["unit_id"]:
+        raise HTTPException(status_code=403, detail="Access denied to this chat session")
+    
+    try:
+        messages = await chatbot_service.get_chat_history(session_id, limit)
+        
+        return {
+            "session_id": session_id,
+            "messages": [
+                {
+                    "id": msg.id,
+                    "user_id": msg.user_id,
+                    "message": msg.message,
+                    "message_type": msg.message_type,
+                    "created_at": msg.created_at.isoformat()
+                }
+                for msg in messages
+            ],
+            "total_messages": len(messages)
+        }
+        
+    except Exception as e:
+        logging.error(f"Get chat history error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get chat history")
+
+@api_router.post("/chat/session")
+async def create_chat_session(
+    session_type: str = Form("unit"),
+    participants: Optional[str] = Form(None),  # JSON string of participant IDs
+    current_user: User = Depends(get_current_user)
+):
+    """Create new chat session"""
+    
+    if not current_user.unit_id:
+        raise HTTPException(status_code=400, detail="User must belong to a unit")
+    
+    try:
+        participant_list = []
+        if participants:
+            import json
+            participant_list = json.loads(participants)
+        
+        # Add current user to participants
+        if current_user.id not in participant_list:
+            participant_list.append(current_user.id)
+        
+        session = await chatbot_service.create_session(
+            current_user.unit_id,
+            session_type,
+            participant_list
+        )
+        
+        return {
+            "success": True,
+            "session": {
+                "session_id": session.session_id,
+                "unit_id": session.unit_id,
+                "session_type": session.session_type,
+                "participants": session.participants,
+                "created_at": session.created_at.isoformat()
+            }
+        }
+        
+    except Exception as e:
+        logging.error(f"Create chat session error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create chat session")
+
+@api_router.get("/chat/sessions")
+async def get_chat_sessions(
+    current_user: User = Depends(get_current_user),
+    limit: int = 20
+):
+    """Get chat sessions for current user's unit"""
+    
+    if not current_user.unit_id:
+        raise HTTPException(status_code=400, detail="User must belong to a unit")
+    
+    try:
+        # Get sessions for user's unit
+        sessions = await db.chat_sessions.find({
+            "unit_id": current_user.unit_id,
+            "is_active": True
+        }).sort("last_activity", -1).limit(limit).to_list(length=None)
+        
+        session_list = []
+        for session in sessions:
+            # Get last message for preview
+            last_message = await db.chat_messages.find_one(
+                {"session_id": session["session_id"]},
+                sort=[("created_at", -1)]
+            )
+            
+            session_list.append({
+                "session_id": session["session_id"],
+                "session_type": session["session_type"],
+                "participants": session["participants"],
+                "last_activity": session["last_activity"].isoformat(),
+                "last_message": {
+                    "message": last_message["message"] if last_message else "",
+                    "message_type": last_message["message_type"] if last_message else "",
+                    "created_at": last_message["created_at"].isoformat() if last_message else ""
+                } if last_message else None
+            })
+        
+        return {
+            "sessions": session_list,
+            "total": len(session_list)
+        }
+        
+    except Exception as e:
+        logging.error(f"Get chat sessions error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get chat sessions")
+
 # Include the router in the main app
 app.include_router(api_router)
 
