@@ -3029,14 +3029,24 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      
+      // Add all filter parameters
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
+        if (value && value.trim()) {
+          params.append(key, value.trim());
+        }
       });
+      
+      // Add unit filter if selected
       if (selectedUnit && selectedUnit !== "all") {
         params.append('unit_id', selectedUnit);
       }
       
+      console.log("Fetching documents with params:", params.toString());
+      
       const response = await axios.get(`${API}/documents?${params}`);
+      console.log("Documents response:", response.data);
+      
       setDocuments(response.data.documents || []);
     } catch (error) {
       console.error("Error fetching documents:", error);
