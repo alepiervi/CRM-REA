@@ -541,6 +541,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchUnits();
+    fetchAssistants();
   }, []);
 
   useEffect(() => {
