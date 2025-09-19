@@ -1,7 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import axios from "axios";
 import "./App.css";
+
+// React Flow imports for drag-and-drop workflow builder
+import {
+  ReactFlow,
+  MiniMap,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  Panel,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 
 // Shadcn components
 import { Button } from "./components/ui/button";
