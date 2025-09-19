@@ -2319,12 +2319,14 @@ const UnitsManagement = ({ selectedUnit, assistants }) => {
         <CreateUnitModal
           onClose={() => setShowCreateModal(false)}
           onSubmit={createUnit}
+          assistants={assistants}
         />
       )}
 
       {showEditModal && selectedUnitForEdit && (
         <EditUnitModal
           unit={selectedUnitForEdit}
+          assistants={assistants}
           onClose={() => {
             setShowEditModal(false);
             setSelectedUnitForEdit(null);
