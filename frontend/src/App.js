@@ -4969,76 +4969,250 @@ const CreateWorkflowModal = ({ onClose, onSuccess }) => {
   );
 };
 
-// Workflow Canvas Component (Simplified for now)
+// Workflow Canvas Component with React Flow
 const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodeTypes, setNodeTypes] = useState({});
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  // Fetch available node types from backend
+  useEffect(() => {
+    fetchNodeTypes();
+  }, []);
+
+  const fetchNodeTypes = async () => {
+    try {
+      const response = await axios.get(`${API}/workflow-node-types`);
+      setNodeTypes(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching node types:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei tipi di nodi",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
+
+  // Handle connecting nodes
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges],
+  );
+
+  // Add new node to canvas
+  const addNode = (nodeType, nodeSubtype, nodeName, color) => {
+    const id = `${nodeType}_${Date.now()}`;
+    const newNode = {
+      id,
+      type: 'default',
+      position: { 
+        x: Math.random() * 400 + 100, 
+        y: Math.random() * 400 + 100 
+      },
+      data: { 
+        label: nodeName,
+        nodeType: nodeType,
+        nodeSubtype: nodeSubtype
+      },
+      style: {
+        background: getNodeColor(color),
+        color: 'white',
+        border: `2px solid ${getNodeColorDark(color)}`,
+        borderRadius: '8px',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        width: 180,
+        height: 40
+      }
+    };
+    
+    setNodes((nds) => nds.concat(newNode));
+  };
+
+  // Get node background color
+  const getNodeColor = (color) => {
+    const colors = {
+      green: '#10b981',
+      blue: '#3b82f6',
+      purple: '#8b5cf6',
+      orange: '#f59e0b',
+      yellow: '#eab308',
+      red: '#ef4444',
+      gray: '#6b7280'
+    };
+    return colors[color] || '#6b7280';
+  };
+
+  // Get node border color (darker)
+  const getNodeColorDark = (color) => {
+    const colors = {
+      green: '#059669',
+      blue: '#2563eb',
+      purple: '#7c3aed',
+      orange: '#d97706',
+      yellow: '#ca8a04',
+      red: '#dc2626',
+      gray: '#4b5563'
+    };
+    return colors[color] || '#4b5563';
+  };
+
+  // Save workflow
+  const handleSave = async () => {
+    try {
+      const workflowData = {
+        workflow_data: {
+          nodes: nodes,
+          edges: edges,
+          viewport: { x: 0, y: 0, zoom: 1 }
+        }
+      };
+
+      await axios.put(`${API}/workflows/${workflow.id}`, workflowData);
+      
+      toast({
+        title: "Successo",
+        description: "Workflow salvato con successo",
+      });
+      
+      onSave();
+    } catch (error) {
+      console.error("Error saving workflow:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel salvataggio del workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Publish workflow
+  const handlePublish = async () => {
+    try {
+      // Check if workflow has at least one trigger node
+      const triggerNodes = nodes.filter(node => node.data.nodeType === 'trigger');
+      if (triggerNodes.length === 0) {
+        toast({
+          title: "Errore",
+          description: "Il workflow deve avere almeno un nodo Trigger per essere pubblicato",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await axios.put(`${API}/workflows/${workflow.id}`, {
+        is_published: true,
+        workflow_data: {
+          nodes: nodes,
+          edges: edges,
+          viewport: { x: 0, y: 0, zoom: 1 }
+        }
+      });
+      
+      toast({
+        title: "Successo",
+        description: "Workflow pubblicato con successo",
+      });
+      
+      onSave();
+    } catch (error) {
+      console.error("Error publishing workflow:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nella pubblicazione del workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border border-slate-200 h-[600px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-slate-600">Caricamento editor...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg border border-slate-200 h-[600px]">
-      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+      <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
         <div>
           <h2 className="text-lg font-semibold">{workflow?.name || "Nuovo Workflow"}</h2>
-          <p className="text-sm text-slate-600">Editor Workflow Drag & Drop</p>
+          <p className="text-sm text-slate-600">Trascina i nodi dalla sidebar nel canvas</p>
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" />
             Salva
           </Button>
-          <Button size="sm" className="bg-green-600 hover:bg-green-700">
+          <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={handlePublish}>
             <Target className="w-4 h-4 mr-2" />
             Pubblica
           </Button>
         </div>
       </div>
       
-      <div className="flex h-full">
+      <div className="flex h-[calc(100%-73px)]">
         {/* Sidebar con nodi disponibili */}
-        <div className="w-64 border-r border-slate-200 p-4">
+        <div className="w-64 border-r border-slate-200 p-4 bg-slate-50 overflow-y-auto">
           <h3 className="font-medium text-slate-700 mb-3">Nodi Disponibili</h3>
-          <div className="space-y-2">
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:bg-green-100">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium">Trigger</span>
+          
+          {Object.entries(nodeTypes).map(([categoryKey, category]) => (
+            <div key={categoryKey} className="mb-4">
+              <h4 className="text-sm font-medium text-slate-600 mb-2">{category.name}</h4>
+              <div className="space-y-2">
+                {Object.entries(category.subtypes).map(([subtypeKey, subtype]) => (
+                  <div
+                    key={subtypeKey}
+                    className={`p-3 bg-${subtype.color}-50 border border-${subtype.color}-200 rounded-lg cursor-pointer hover:bg-${subtype.color}-100 transition-colors`}
+                    onClick={() => addNode(categoryKey, subtypeKey, subtype.name, subtype.color)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-3 h-3 bg-${subtype.color}-500 rounded-full`}></div>
+                      <span className="text-sm font-medium">{subtype.name}</span>
+                    </div>
+                    <p className={`text-xs text-${subtype.color}-600 mt-1`}>{subtype.description}</p>
+                  </div>
+                ))}
               </div>
-              <p className="text-xs text-green-600 mt-1">Avvia il workflow</p>
             </div>
-            
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm font-medium">Azione</span>
-              </div>
-              <p className="text-xs text-blue-600 mt-1">Esegui un'azione</p>
-            </div>
-            
-            <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg cursor-pointer hover:bg-purple-100">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-sm font-medium">Condizione</span>
-              </div>
-              <p className="text-xs text-purple-600 mt-1">Decisione if/else</p>
-            </div>
-            
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
-                <span className="text-sm font-medium">Attesa</span>
-              </div>
-              <p className="text-xs text-gray-600 mt-1">Pausa temporizzata</p>
-            </div>
-          </div>
+          ))}
         </div>
         
-        {/* Canvas area */}
-        <div className="flex-1 bg-slate-50 relative">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <Workflow className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600">Canvas del Workflow</p>
-              <p className="text-slate-500 text-sm">Trascina i nodi dalla sidebar per costruire il tuo workflow</p>
-            </div>
-          </div>
+        {/* Canvas area with React Flow */}
+        <div className="flex-1 relative">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            fitView
+            style={{ width: '100%', height: '100%' }}
+          >
+            <Controls />
+            <MiniMap />
+            <Background variant="dots" gap={20} size={1} />
+            
+            {nodes.length === 0 && (
+              <Panel position="center" className="bg-white p-4 rounded-lg shadow-lg border border-slate-200">
+                <div className="text-center">
+                  <Workflow className="w-12 h-12 text-slate-400 mx-auto mb-2" />
+                  <p className="text-slate-600 font-medium">Canvas Vuoto</p>
+                  <p className="text-slate-500 text-sm">Clicca sui nodi nella sidebar per aggiungerli</p>
+                </div>
+              </Panel>
+            )}
+          </ReactFlow>
         </div>
       </div>
     </div>
