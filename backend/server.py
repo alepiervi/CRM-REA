@@ -153,6 +153,7 @@ class Unit(BaseModel):
 class UnitCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    assistant_id: Optional[str] = None
 
 class Lead(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
