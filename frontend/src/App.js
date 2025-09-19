@@ -872,13 +872,26 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        onClick={() => setSelectedLead(lead)}
-                        variant="ghost"
-                        size="sm"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <div className="flex space-x-1">
+                        <Button
+                          onClick={() => setSelectedLead(lead)}
+                          variant="ghost"
+                          size="sm"
+                          title="Visualizza dettagli"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        {user.role === "admin" && (
+                          <Button
+                            onClick={() => deleteLead(lead.id, `${lead.nome} ${lead.cognome}`)}
+                            variant="destructive"
+                            size="sm"
+                            title="Elimina lead"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
