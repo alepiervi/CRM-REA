@@ -3935,6 +3935,282 @@ const ChatManagement = ({ selectedUnit, units }) => {
   );
 };
 
+// AI Configuration Management Component
+const AIConfigurationManagement = () => {
+  const [config, setConfig] = useState(null);
+  const [assistants, setAssistants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchAIConfig();
+  }, []);
+
+  const fetchAIConfig = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/ai-config`);
+      setConfig(response.data);
+      
+      // If configured, fetch assistants
+      if (response.data.configured) {
+        await fetchAssistants();
+      }
+    } catch (error) {
+      console.error("Error fetching AI config:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAssistants = async () => {
+    try {
+      const response = await axios.get(`${API}/ai-assistants`);
+      setAssistants(response.data.assistants || []);
+    } catch (error) {
+      console.error("Error fetching assistants:", error);
+      setAssistants([]);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-lg">Caricamento configurazione AI...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800">Configurazione AI</h2>
+        <Button onClick={() => setShowConfigModal(true)}>
+          <Settings className="w-4 h-4 mr-2" />
+          {config?.configured ? "Modifica Configurazione" : "Configura OpenAI"}
+        </Button>
+      </div>
+
+      {/* Configuration Status */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Settings className="w-5 h-5" />
+            <span>Stato Configurazione</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {config?.configured ? (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                <span className="text-green-700 font-medium">OpenAI configurato correttamente</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">API Key</Label>
+                  <p className="font-mono text-sm bg-slate-50 p-2 rounded">
+                    {config.api_key_preview}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Configurato il</Label>
+                  <p className="text-sm">
+                    {new Date(config.created_at).toLocaleDateString("it-IT")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+                <span className="text-amber-700 font-medium">OpenAI non configurato</span>
+              </div>
+              <p className="text-slate-600">
+                Configura la tua API key OpenAI per abilitare gli assistenti AI personalizzati per le Unit.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Assistants List */}
+      {config?.configured && (
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <MessageCircle className="w-5 h-5" />
+              <span>Assistenti Disponibili ({assistants.length})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {assistants.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageCircle className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                <p className="text-slate-500">Nessun assistente trovato</p>
+                <p className="text-sm text-slate-400 mt-1">
+                  Crea degli assistenti nel tuo account OpenAI per vederli qui
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {assistants.map((assistant) => (
+                  <Card key={assistant.id} className="border border-slate-200">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="font-semibold text-slate-800">{assistant.name}</h4>
+                          <p className="text-xs text-slate-500 font-mono">{assistant.id}</p>
+                        </div>
+                        
+                        {assistant.description && (
+                          <p className="text-sm text-slate-600 line-clamp-2">
+                            {assistant.description}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center justify-between text-xs">
+                          <Badge variant="outline">{assistant.model}</Badge>
+                          <span className="text-slate-400">
+                            {new Date(assistant.created_at * 1000).toLocaleDateString("it-IT")}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Configuration Modal */}
+      {showConfigModal && (
+        <AIConfigModal
+          onClose={() => setShowConfigModal(false)}
+          onSuccess={() => {
+            fetchAIConfig();
+            setShowConfigModal(false);
+          }}
+          existingConfig={config}
+        />
+      )}
+    </div>
+  );
+};
+
+// AI Configuration Modal Component
+const AIConfigModal = ({ onClose, onSuccess, existingConfig }) => {
+  const [apiKey, setApiKey] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!apiKey.trim()) {
+      toast({
+        title: "Errore",
+        description: "Inserisci una API key OpenAI valida",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(`${API}/ai-config`, {
+        openai_api_key: apiKey.trim()
+      });
+
+      if (response.data.success) {
+        toast({
+          title: "Successo",
+          description: "Configurazione AI salvata con successo",
+        });
+        onSuccess();
+      } else {
+        toast({
+          title: "Errore",
+          description: response.data.message || "Configurazione fallida",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving AI config:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nel salvataggio della configurazione",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {existingConfig?.configured ? "Modifica" : "Configura"} OpenAI
+          </DialogTitle>
+          <DialogDescription>
+            Inserisci la tua API key OpenAI per abilitare gli assistenti AI
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="api-key">API Key OpenAI *</Label>
+            <Input
+              id="api-key"
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="sk-..."
+              required
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              La tua API key sarà crittografata e utilizzata solo per recuperare i tuoi assistenti OpenAI
+            </p>
+          </div>
+
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">Come ottenere la API Key:</p>
+                <ol className="list-decimal list-inside space-y-1 text-xs">
+                  <li>Vai su platform.openai.com</li>
+                  <li>Accedi al tuo account OpenAI</li>
+                  <li>Vai su "API keys" nel menu</li>
+                  <li>Clicca "Create new secret key"</li>
+                  <li>Copia la chiave qui</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Validazione..." : "Salva Configurazione"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Main App Component
 const App = () => {
   const { user, loading } = useAuth();
