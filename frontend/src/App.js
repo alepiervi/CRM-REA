@@ -1095,7 +1095,6 @@ const CreateLeadModal = ({ onClose, onSuccess, units, customFields }) => {
     email: "",
     provincia: "",
     tipologia_abitazione: "",
-    ip_address: "",
     campagna: "",
     gruppo: "",
     contenitore: "",
