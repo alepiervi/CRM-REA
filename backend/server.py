@@ -952,6 +952,305 @@ class ChatBotService:
 # Initialize ChatBot service
 chatbot_service = ChatBotService()
 
+# Call Center Services
+class TwilioService:
+    """Service for managing Twilio Voice operations"""
+    
+    def __init__(self):
+        if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+            self.client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        else:
+            self.client = None
+            logging.warning("Twilio credentials not configured")
+        
+        self.request_validator = RequestValidator(TWILIO_AUTH_TOKEN) if TWILIO_AUTH_TOKEN else None
+    
+    async def make_outbound_call(
+        self,
+        to_number: str,
+        from_number: str = None,
+        twiml_url: str = None
+    ) -> Dict[str, Any]:
+        """Make outbound call"""
+        if not self.client:
+            raise HTTPException(status_code=500, detail="Twilio not configured")
+        
+        try:
+            call = self.client.calls.create(
+                to=to_number,
+                from_=from_number or DEFAULT_CALLER_ID,
+                url=twiml_url or f"{WEBHOOK_BASE_URL}/api/call-center/voice/outbound-twiml"
+            )
+            
+            return {
+                "call_sid": call.sid,
+                "status": call.status,
+                "to": call.to,
+                "from": call.from_
+            }
+        except Exception as e:
+            logging.error(f"Error making outbound call: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Call failed: {str(e)}")
+    
+    async def update_call(self, call_sid: str, **kwargs) -> Dict[str, Any]:
+        """Update call status or properties"""
+        if not self.client:
+            raise HTTPException(status_code=500, detail="Twilio not configured")
+        
+        try:
+            call = self.client.calls(call_sid).update(**kwargs)
+            return {
+                "call_sid": call.sid,
+                "status": call.status
+            }
+        except Exception as e:
+            logging.error(f"Error updating call {call_sid}: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Update failed: {str(e)}")
+    
+    def validate_request(self, url: str, post_vars: dict, signature: str) -> bool:
+        """Validate Twilio webhook request"""
+        if not self.request_validator:
+            return False
+        return self.request_validator.validate(url, post_vars, signature)
+
+class CallCenterService:
+    """Service for managing call center operations"""
+    
+    def __init__(self):
+        self.twilio_service = TwilioService()
+        self.active_calls = {}  # In-memory cache for active calls
+        self.agent_status = {}  # Agent availability cache
+    
+    async def create_call(self, call_data: CallCreate) -> Call:
+        """Create new call record"""
+        call = Call(**call_data.dict())
+        call.queue_time = datetime.now(timezone.utc)
+        
+        # Insert into database
+        await db.calls.insert_one(call.dict())
+        
+        # Add to active calls cache
+        self.active_calls[call.call_sid] = call
+        
+        return call
+    
+    async def update_call_status(
+        self,
+        call_sid: str,
+        status: CallStatus,
+        **kwargs
+    ) -> Optional[Call]:
+        """Update call status and properties"""
+        update_data = {"status": status, "updated_at": datetime.now(timezone.utc)}
+        
+        # Add additional fields
+        for key, value in kwargs.items():
+            if hasattr(Call, key):
+                update_data[key] = value
+        
+        # Update database
+        result = await db.calls.update_one(
+            {"call_sid": call_sid},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count > 0:
+            # Update cache
+            if call_sid in self.active_calls:
+                for key, value in update_data.items():
+                    setattr(self.active_calls[call_sid], key, value)
+            
+            # Get updated call
+            call_doc = await db.calls.find_one({"call_sid": call_sid})
+            return Call(**call_doc) if call_doc else None
+        
+        return None
+    
+    async def get_call(self, call_sid: str) -> Optional[Call]:
+        """Get call by SID"""
+        # Check cache first
+        if call_sid in self.active_calls:
+            return self.active_calls[call_sid]
+        
+        # Query database
+        call_doc = await db.calls.find_one({"call_sid": call_sid})
+        return Call(**call_doc) if call_doc else None
+    
+    async def assign_agent_to_call(self, call_sid: str, agent_id: str) -> bool:
+        """Assign agent to call"""
+        update_result = await db.calls.update_one(
+            {"call_sid": call_sid},
+            {
+                "$set": {
+                    "agent_id": agent_id,
+                    "answered_at": datetime.now(timezone.utc),
+                    "status": CallStatus.IN_PROGRESS,
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        if update_result.modified_count > 0:
+            # Update agent status
+            await self.update_agent_status(agent_id, AgentStatus.BUSY)
+            return True
+        
+        return False
+    
+    async def update_agent_status(self, agent_id: str, status: AgentStatus):
+        """Update agent status"""
+        await db.agent_call_center.update_one(
+            {"user_id": agent_id},
+            {
+                "$set": {
+                    "status": status,
+                    "last_activity": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        # Update cache
+        self.agent_status[agent_id] = {
+            "status": status,
+            "last_activity": datetime.now(timezone.utc)
+        }
+    
+    async def get_available_agents(self, unit_id: str = None) -> List[AgentCallCenter]:
+        """Get available agents"""
+        query = {"status": AgentStatus.AVAILABLE}
+        if unit_id:
+            # Get users from this unit
+            unit_users = await db.users.find({"unit_id": unit_id}).to_list(length=None)
+            user_ids = [user["id"] for user in unit_users]
+            query["user_id"] = {"$in": user_ids}
+        
+        agents = await db.agent_call_center.find(query).to_list(length=None)
+        return [AgentCallCenter(**agent) for agent in agents]
+    
+    async def find_best_agent(
+        self,
+        skills_required: List[str] = None,
+        unit_id: str = None
+    ) -> Optional[AgentCallCenter]:
+        """Find best available agent based on skills and load"""
+        available_agents = await self.get_available_agents(unit_id)
+        
+        if not available_agents:
+            return None
+        
+        # Filter by skills if specified
+        if skills_required:
+            qualified_agents = []
+            for agent in available_agents:
+                if all(skill in agent.skills for skill in skills_required):
+                    qualified_agents.append(agent)
+            available_agents = qualified_agents
+        
+        if not available_agents:
+            return None
+        
+        # Select agent with lowest current load (simple algorithm)
+        return min(available_agents, key=lambda a: a.calls_in_progress)
+
+class ACDService:
+    """Automatic Call Distribution service"""
+    
+    def __init__(self):
+        self.call_center_service = CallCenterService()
+        self.call_queues = {}  # Queue management
+    
+    async def route_incoming_call(
+        self,
+        call_sid: str,
+        from_number: str,
+        to_number: str,
+        unit_id: str = None
+    ) -> Dict[str, Any]:
+        """Route incoming call to available agent"""
+        
+        # Create call record
+        call_data = CallCreate(
+            direction=CallDirection.INBOUND,
+            from_number=from_number,
+            to_number=to_number,
+            unit_id=unit_id or "default"
+        )
+        call_data.call_sid = call_sid
+        call = await self.call_center_service.create_call(call_data)
+        
+        # Find available agent
+        agent = await self.call_center_service.find_best_agent(unit_id=unit_id)
+        
+        if agent:
+            # Assign call to agent
+            await self.call_center_service.assign_agent_to_call(call_sid, agent.user_id)
+            
+            return {
+                "action": "connect_agent",
+                "agent_id": agent.user_id,
+                "call_sid": call_sid
+            }
+        else:
+            # Queue the call
+            await self.queue_call(call_sid, unit_id)
+            
+            return {
+                "action": "queue_call",
+                "message": "All agents are busy. Please hold.",
+                "call_sid": call_sid
+            }
+    
+    async def queue_call(self, call_sid: str, unit_id: str):
+        """Add call to queue"""
+        queue_name = f"queue_{unit_id}"
+        
+        if queue_name not in self.call_queues:
+            self.call_queues[queue_name] = []
+        
+        self.call_queues[queue_name].append({
+            "call_sid": call_sid,
+            "queued_at": datetime.now(timezone.utc),
+            "unit_id": unit_id
+        })
+        
+        # Update call status
+        await self.call_center_service.update_call_status(
+            call_sid,
+            CallStatus.QUEUED,
+            queue_time=datetime.now(timezone.utc)
+        )
+    
+    async def process_queue(self, unit_id: str = None):
+        """Process queued calls when agents become available"""
+        queue_name = f"queue_{unit_id}" if unit_id else "queue_default"
+        
+        if queue_name not in self.call_queues or not self.call_queues[queue_name]:
+            return
+        
+        # Get next call in queue (FIFO)
+        queued_call = self.call_queues[queue_name].pop(0)
+        call_sid = queued_call["call_sid"]
+        
+        # Find available agent
+        agent = await self.call_center_service.find_best_agent(unit_id=unit_id)
+        
+        if agent:
+            # Assign agent to call
+            await self.call_center_service.assign_agent_to_call(call_sid, agent.user_id)
+            
+            # TODO: Redirect call to agent using Twilio API
+            return True
+        else:
+            # Put back in queue
+            self.call_queues[queue_name].insert(0, queued_call)
+            return False
+
+# Initialize Call Center services
+twilio_service = TwilioService()
+call_center_service = CallCenterService()
+acd_service = ACDService()
+
 async def assign_lead_to_agent(lead: Lead):
     """Automatically assign lead to agent based on province coverage"""
     # Find agents covering this province
