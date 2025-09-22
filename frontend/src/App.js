@@ -69,7 +69,20 @@ import {
   PenTool,
   X,
   Workflow,
-  ArrowLeft
+  ArrowLeft,
+  PhoneCall,
+  PhoneIncoming,
+  PhoneOutgoing,
+  PhoneMissed,
+  Headphones,
+  Activity,
+  Clock4,
+  UserCheck,
+  UserX,
+  Radio,
+  PlayCircle,
+  StopCircle,
+  Volume2
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
