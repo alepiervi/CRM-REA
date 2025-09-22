@@ -430,6 +430,196 @@ class WorkflowExecutionCreate(BaseModel):
     contact_id: Optional[str] = None
     trigger_data: Optional[dict] = None
 
+# Call Center Models
+class CallStatus(str, Enum):
+    QUEUED = "queued"
+    RINGING = "ringing"
+    IN_PROGRESS = "in-progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    BUSY = "busy"
+    NO_ANSWER = "no-answer"
+    CANCELED = "canceled"
+    ABANDONED = "abandoned"
+
+class CallDirection(str, Enum):
+    INBOUND = "inbound"
+    OUTBOUND = "outbound"
+
+class AgentStatus(str, Enum):
+    AVAILABLE = "available"
+    BUSY = "busy"
+    OFFLINE = "offline"
+    BREAK = "break"
+    TRAINING = "training"
+
+class Call(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    call_sid: str  # Twilio Call SID
+    direction: CallDirection
+    from_number: str
+    to_number: str
+    agent_id: Optional[str] = None
+    unit_id: str
+    status: CallStatus = CallStatus.QUEUED
+    priority: int = 1  # 1 = normal, 2 = high, 3 = urgent
+    queue_time: Optional[datetime] = None
+    answered_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+    duration: Optional[int] = None  # seconds
+    recording_sid: Optional[str] = None
+    recording_url: Optional[str] = None
+    caller_country: Optional[str] = None
+    caller_state: Optional[str] = None
+    caller_city: Optional[str] = None
+    disposition: Optional[str] = None  # resolved, escalated, callback_requested
+    notes: Optional[str] = None
+    satisfaction_score: Optional[int] = None  # 1-5 rating
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+class CallCreate(BaseModel):
+    direction: CallDirection
+    from_number: str
+    to_number: str
+    unit_id: str
+    priority: int = 1
+
+class CallUpdate(BaseModel):
+    status: Optional[CallStatus] = None
+    agent_id: Optional[str] = None
+    disposition: Optional[str] = None
+    notes: Optional[str] = None
+    satisfaction_score: Optional[int] = None
+
+class AgentCallCenter(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str  # Reference to existing User model
+    status: AgentStatus = AgentStatus.OFFLINE
+    skills: List[str] = []  # e.g., ["sales", "support", "italian", "english"]
+    languages: List[str] = ["italian"]
+    department: str = "general"
+    max_concurrent_calls: int = 1
+    experience_score: int = 1  # 1-10 rating
+    extension: Optional[str] = None
+    last_activity: Optional[datetime] = None
+    total_calls_today: int = 0
+    calls_in_progress: int = 0
+    avg_call_duration: Optional[float] = None
+    customer_satisfaction: Optional[float] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+class AgentCreate(BaseModel):
+    user_id: str
+    skills: List[str] = []
+    languages: List[str] = ["italian"]
+    department: str = "general"
+    max_concurrent_calls: int = 1
+    extension: Optional[str] = None
+
+class AgentUpdate(BaseModel):
+    status: Optional[AgentStatus] = None
+    skills: Optional[List[str]] = None
+    languages: Optional[List[str]] = None
+    department: Optional[str] = None
+    max_concurrent_calls: Optional[int] = None
+    extension: Optional[str] = None
+
+class CallQueue(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    unit_id: str
+    description: Optional[str] = None
+    skills_required: List[str] = []
+    priority_weight: int = 1
+    max_wait_time: int = 600  # seconds
+    overflow_destination: Optional[str] = None  # queue name or voicemail
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CallQueueCreate(BaseModel):
+    name: str
+    unit_id: str
+    description: Optional[str] = None
+    skills_required: List[str] = []
+    max_wait_time: int = 600
+
+class CallRecording(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    call_sid: str
+    recording_sid: str  # Twilio Recording SID
+    agent_id: Optional[str] = None
+    duration: Optional[int] = None  # seconds
+    file_size: Optional[int] = None  # bytes
+    storage_url: Optional[str] = None
+    transcription: Optional[str] = None
+    status: str = "pending"  # pending, processing, completed, failed
+    is_encrypted: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    processed_at: Optional[datetime] = None
+
+class OutboundCampaign(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    unit_id: str
+    description: Optional[str] = None
+    status: str = "draft"  # draft, active, paused, completed
+    caller_id: str  # Phone number to use as caller ID
+    total_contacts: int = 0
+    contacted: int = 0
+    connected: int = 0
+    completed: int = 0
+    script: Optional[str] = None
+    schedule_start: Optional[datetime] = None
+    schedule_end: Optional[datetime] = None
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+class OutboundContact(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    campaign_id: str
+    lead_id: Optional[str] = None  # If based on existing lead
+    phone_number: str
+    name: Optional[str] = None
+    status: str = "pending"  # pending, called, answered, busy, no_answer, failed
+    attempts: int = 0
+    max_attempts: int = 3
+    last_attempt: Optional[datetime] = None
+    next_attempt: Optional[datetime] = None
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PhoneNumber(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    phone_number: str
+    twilio_sid: str
+    unit_id: str
+    is_active: bool = True
+    capabilities: List[str] = ["voice", "sms"]  # voice, sms, mms
+    is_dynamic: bool = False  # For dynamic number rotation
+    rotation_interval: Optional[int] = None  # minutes
+    last_rotated: Optional[datetime] = None
+    usage_count: int = 0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CallAnalytics(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    date: datetime
+    unit_id: str
+    total_calls: int = 0
+    inbound_calls: int = 0
+    outbound_calls: int = 0
+    answered_calls: int = 0
+    abandoned_calls: int = 0
+    avg_wait_time: Optional[float] = None
+    avg_call_duration: Optional[float] = None
+    service_level_20s: Optional[float] = None  # % of calls answered within 20 seconds
+    agent_utilization: Optional[float] = None
+    customer_satisfaction: Optional[float] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
