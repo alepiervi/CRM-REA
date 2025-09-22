@@ -58,6 +58,17 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # OpenAI ChatBot Configuration
 EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
 
+# Twilio Configuration
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_API_KEY_SID = os.environ.get("TWILIO_API_KEY_SID", "")
+TWILIO_API_KEY_SECRET = os.environ.get("TWILIO_API_KEY_SECRET", "")
+DEFAULT_CALLER_ID = os.environ.get("DEFAULT_CALLER_ID", "")
+WEBHOOK_BASE_URL = os.environ.get("WEBHOOK_BASE_URL", "https://localhost")
+RECORDING_STORAGE_BUCKET = os.environ.get("RECORDING_STORAGE_BUCKET", "")
+MAX_CALL_DURATION = int(os.environ.get("MAX_CALL_DURATION", "3600"))
+CALL_RECORDING_ENABLED = os.environ.get("CALL_RECORDING_ENABLED", "true").lower() == "true"
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
