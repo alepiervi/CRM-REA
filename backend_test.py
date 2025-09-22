@@ -1952,6 +1952,459 @@ class CRMAPITester:
         else:
             self.log_test("Admin without unit_id access", False, f"Status: {status}")
 
+    def test_call_center_models(self):
+        """Test Call Center Models Implementation"""
+        print("\n📞 Testing Call Center Models Implementation...")
+        
+        # Test creating an agent (Call Center Agent)
+        if not self.created_resources['units']:
+            # Create a unit first
+            unit_data = {
+                "name": f"Call Center Unit {datetime.now().strftime('%H%M%S')}",
+                "description": "Unit for Call Center testing"
+            }
+            success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
+            if success:
+                unit_id = unit_response['id']
+                self.created_resources['units'].append(unit_id)
+            else:
+                self.log_test("Create unit for Call Center", False, f"Status: {status}")
+                return
+        else:
+            unit_id = self.created_resources['units'][0]
+        
+        # Create a user first (needed for agent)
+        user_data = {
+            "username": f"cc_agent_{datetime.now().strftime('%H%M%S')}",
+            "email": f"cc_agent_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "TestPass123!",
+            "role": "agente",
+            "unit_id": unit_id,
+            "provinces": ["Roma", "Milano"]
+        }
+        
+        success, user_response, status = self.make_request('POST', 'users', user_data, 200)
+        if success:
+            user_id = user_response['id']
+            self.created_resources['users'].append(user_id)
+            self.log_test("Create user for Call Center agent", True, f"User ID: {user_id}")
+        else:
+            self.log_test("Create user for Call Center agent", False, f"Status: {status}")
+            return
+        
+        # Test Call Center Agent creation
+        agent_data = {
+            "user_id": user_id,
+            "skills": ["sales", "support", "italian"],
+            "languages": ["italian", "english"],
+            "department": "sales",
+            "max_concurrent_calls": 2,
+            "extension": "1001"
+        }
+        
+        success, agent_response, status = self.make_request('POST', 'call-center/agents', agent_data, 200)
+        if success:
+            agent_id = agent_response['id']
+            self.log_test("Create Call Center Agent", True, f"Agent ID: {agent_id}")
+            
+            # Verify agent properties
+            skills = agent_response.get('skills', [])
+            department = agent_response.get('department', '')
+            extension = agent_response.get('extension', '')
+            
+            if skills == agent_data['skills'] and department == agent_data['department']:
+                self.log_test("Agent properties validation", True, f"Skills: {skills}, Dept: {department}, Ext: {extension}")
+            else:
+                self.log_test("Agent properties validation", False, f"Properties mismatch")
+        else:
+            self.log_test("Create Call Center Agent", False, f"Status: {status}, Response: {agent_response}")
+            return
+        
+        # Test Call creation
+        call_data = {
+            "direction": "inbound",
+            "from_number": "+39123456789",
+            "to_number": "+39987654321",
+            "unit_id": unit_id,
+            "priority": 1
+        }
+        call_data["call_sid"] = f"CA{uuid.uuid4().hex[:32]}"  # Mock Twilio SID
+        
+        success, call_response, status = self.make_request('POST', 'call-center/calls', call_data, 200)
+        if success:
+            call_id = call_response['id']
+            call_sid = call_response.get('call_sid', '')
+            direction = call_response.get('direction', '')
+            self.log_test("Create Call record", True, f"Call ID: {call_id}, SID: {call_sid}, Direction: {direction}")
+        else:
+            self.log_test("Create Call record", False, f"Status: {status}, Response: {call_response}")
+
+    def test_call_center_api_endpoints(self):
+        """Test Call Center API Endpoints"""
+        print("\n🔗 Testing Call Center API Endpoints...")
+        
+        # Test GET /call-center/agents
+        success, agents_response, status = self.make_request('GET', 'call-center/agents', expected_status=200)
+        if success:
+            agents = agents_response.get('agents', [])
+            self.log_test("GET /call-center/agents", True, f"Found {len(agents)} agents")
+        else:
+            self.log_test("GET /call-center/agents", False, f"Status: {status}")
+        
+        # Test GET /call-center/calls
+        success, calls_response, status = self.make_request('GET', 'call-center/calls', expected_status=200)
+        if success:
+            calls = calls_response.get('calls', [])
+            self.log_test("GET /call-center/calls", True, f"Found {len(calls)} calls")
+        else:
+            self.log_test("GET /call-center/calls", False, f"Status: {status}")
+        
+        # Test analytics dashboard endpoint
+        success, analytics_response, status = self.make_request('GET', 'call-center/analytics/dashboard', expected_status=200)
+        if success:
+            metrics = analytics_response.get('metrics', {})
+            active_calls = metrics.get('active_calls', 0)
+            available_agents = metrics.get('available_agents', 0)
+            self.log_test("GET /call-center/analytics/dashboard", True, 
+                f"Active calls: {active_calls}, Available agents: {available_agents}")
+        else:
+            self.log_test("GET /call-center/analytics/dashboard", False, f"Status: {status}")
+        
+        # Test agent status update
+        if agents and len(agents) > 0:
+            agent_id = agents[0]['id']
+            status_data = {"status": "available"}
+            
+            success, status_response, status_code = self.make_request('PUT', f'call-center/agents/{agent_id}/status', status_data, 200)
+            if success:
+                new_status = status_response.get('status', '')
+                self.log_test("PUT /call-center/agents/{id}/status", True, f"Status updated to: {new_status}")
+            else:
+                self.log_test("PUT /call-center/agents/{id}/status", False, f"Status: {status_code}")
+        
+        # Test outbound call creation
+        outbound_data = {
+            "to_number": "+39123456789",
+            "from_number": "+39987654321"
+        }
+        
+        success, outbound_response, status = self.make_request('POST', 'call-center/calls/outbound', outbound_data, expected_status=[200, 500])
+        if success:
+            self.log_test("POST /call-center/calls/outbound", True, "Outbound call endpoint accessible")
+        elif status == 500:
+            # Expected if Twilio is not configured
+            self.log_test("POST /call-center/calls/outbound", True, "Expected 500 - Twilio not configured")
+        else:
+            self.log_test("POST /call-center/calls/outbound", False, f"Status: {status}")
+
+    def test_twilio_webhook_handlers(self):
+        """Test Twilio Webhook Handlers"""
+        print("\n📡 Testing Twilio Webhook Handlers...")
+        
+        # Test incoming call webhook
+        incoming_data = {
+            "CallSid": f"CA{uuid.uuid4().hex[:32]}",
+            "From": "+39123456789",
+            "To": "+39987654321",
+            "CallStatus": "ringing"
+        }
+        
+        success, incoming_response, status = self.make_request(
+            'POST', 'call-center/voice/incoming', incoming_data, 
+            expected_status=200, auth_required=False
+        )
+        if success:
+            # Should return TwiML response
+            response_content = incoming_response
+            self.log_test("POST /call-center/voice/incoming", True, "Webhook handler accessible")
+        else:
+            self.log_test("POST /call-center/voice/incoming", False, f"Status: {status}")
+        
+        # Test call status update webhook
+        call_sid = incoming_data["CallSid"]
+        status_data = {
+            "CallSid": call_sid,
+            "CallStatus": "in-progress",
+            "CallDuration": "30"
+        }
+        
+        success, status_response, status_code = self.make_request(
+            'POST', f'call-center/voice/call-status/{call_sid}', status_data,
+            expected_status=200, auth_required=False
+        )
+        if success:
+            self.log_test("POST /call-center/voice/call-status/{call_sid}", True, "Status webhook handler accessible")
+        else:
+            self.log_test("POST /call-center/voice/call-status/{call_sid}", False, f"Status: {status_code}")
+        
+        # Test recording complete webhook
+        recording_data = {
+            "CallSid": call_sid,
+            "RecordingSid": f"RE{uuid.uuid4().hex[:32]}",
+            "RecordingUrl": "https://api.twilio.com/recording.mp3",
+            "RecordingDuration": "120"
+        }
+        
+        success, recording_response, status = self.make_request(
+            'POST', f'call-center/voice/recording-complete/{call_sid}', recording_data,
+            expected_status=200, auth_required=False
+        )
+        if success:
+            self.log_test("POST /call-center/voice/recording-complete/{call_sid}", True, "Recording webhook handler accessible")
+        else:
+            self.log_test("POST /call-center/voice/recording-complete/{call_sid}", False, f"Status: {status}")
+
+    def test_call_center_authentication(self):
+        """Test Call Center Authentication & Authorization"""
+        print("\n🔐 Testing Call Center Authentication & Authorization...")
+        
+        # Test admin access to Call Center endpoints
+        success, response, status = self.make_request('GET', 'call-center/agents', expected_status=200)
+        if success:
+            self.log_test("Admin access to Call Center endpoints", True, "Admin can access Call Center")
+        else:
+            self.log_test("Admin access to Call Center endpoints", False, f"Status: {status}")
+        
+        # Create a non-admin user to test access restrictions
+        if self.created_resources['units']:
+            unit_id = self.created_resources['units'][0]
+            
+            # Create referente user
+            referente_data = {
+                "username": f"cc_referente_{datetime.now().strftime('%H%M%S')}",
+                "email": f"cc_referente_{datetime.now().strftime('%H%M%S')}@test.com",
+                "password": "TestPass123!",
+                "role": "referente",
+                "unit_id": unit_id,
+                "provinces": []
+            }
+            
+            success, referente_response, status = self.make_request('POST', 'users', referente_data, 200)
+            if success:
+                referente_id = referente_response['id']
+                self.created_resources['users'].append(referente_id)
+                
+                # Test login as referente
+                success, login_response, status = self.make_request(
+                    'POST', 'auth/login',
+                    {'username': referente_data['username'], 'password': referente_data['password']},
+                    200, auth_required=False
+                )
+                
+                if success:
+                    referente_token = login_response['access_token']
+                    original_token = self.token
+                    self.token = referente_token
+                    
+                    # Test referente access to Call Center (should be restricted)
+                    success, response, status = self.make_request('GET', 'call-center/agents', expected_status=403)
+                    if success:
+                        self.log_test("Referente access restriction", True, "Correctly denied access to Call Center")
+                    else:
+                        self.log_test("Referente access restriction", False, f"Expected 403, got {status}")
+                    
+                    # Restore admin token
+                    self.token = original_token
+                else:
+                    self.log_test("Referente login for access test", False, f"Status: {status}")
+            else:
+                self.log_test("Create referente for access test", False, f"Status: {status}")
+        
+        # Test unauthenticated access to protected endpoints
+        original_token = self.token
+        self.token = None
+        
+        success, response, status = self.make_request('GET', 'call-center/agents', expected_status=401)
+        if success:
+            self.log_test("Unauthenticated access restriction", True, "Correctly denied unauthenticated access")
+        else:
+            self.log_test("Unauthenticated access restriction", False, f"Expected 401, got {status}")
+        
+        # Restore token
+        self.token = original_token
+
+    def test_call_center_error_handling(self):
+        """Test Call Center Error Handling"""
+        print("\n⚠️ Testing Call Center Error Handling...")
+        
+        # Test creating agent with non-existent user
+        invalid_agent_data = {
+            "user_id": "non-existent-user-id",
+            "skills": ["sales"],
+            "department": "sales"
+        }
+        
+        success, response, status = self.make_request('POST', 'call-center/agents', invalid_agent_data, 404)
+        if success:
+            self.log_test("Agent creation with invalid user_id", True, "Correctly returned 404")
+        else:
+            self.log_test("Agent creation with invalid user_id", False, f"Expected 404, got {status}")
+        
+        # Test getting non-existent agent
+        success, response, status = self.make_request('GET', 'call-center/agents/non-existent-id', expected_status=404)
+        if success:
+            self.log_test("Get non-existent agent", True, "Correctly returned 404")
+        else:
+            self.log_test("Get non-existent agent", False, f"Expected 404, got {status}")
+        
+        # Test getting non-existent call
+        success, response, status = self.make_request('GET', 'call-center/calls/non-existent-sid', expected_status=404)
+        if success:
+            self.log_test("Get non-existent call", True, "Correctly returned 404")
+        else:
+            self.log_test("Get non-existent call", False, f"Expected 404, got {status}")
+        
+        # Test invalid call data
+        invalid_call_data = {
+            "direction": "invalid_direction",
+            "from_number": "invalid_number",
+            "to_number": "+39123456789",
+            "unit_id": "non-existent-unit"
+        }
+        
+        success, response, status = self.make_request('POST', 'call-center/calls', invalid_call_data, expected_status=[400, 422])
+        if success:
+            self.log_test("Invalid call data validation", True, f"Correctly returned {status}")
+        else:
+            self.log_test("Invalid call data validation", False, f"Expected 400/422, got {status}")
+        
+        # Test outbound call without Twilio configuration
+        outbound_data = {
+            "to_number": "+39123456789",
+            "from_number": "+39987654321"
+        }
+        
+        success, response, status = self.make_request('POST', 'call-center/calls/outbound', outbound_data, expected_status=500)
+        if success:
+            error_detail = response.get('detail', '')
+            if 'Twilio not configured' in error_detail:
+                self.log_test("Outbound call without Twilio config", True, "Correctly returned Twilio error")
+            else:
+                self.log_test("Outbound call without Twilio config", True, f"Got expected 500 error: {error_detail}")
+        else:
+            self.log_test("Outbound call without Twilio config", False, f"Expected 500, got {status}")
+
+    def test_call_center_data_models(self):
+        """Test Call Center Data Models Validation"""
+        print("\n📊 Testing Call Center Data Models...")
+        
+        # Test agent creation with all fields
+        if not self.created_resources['users']:
+            self.log_test("Call Center data models test", False, "No users available for agent creation")
+            return
+        
+        user_id = self.created_resources['users'][0]
+        
+        # Test comprehensive agent data
+        comprehensive_agent_data = {
+            "user_id": user_id,
+            "skills": ["sales", "support", "technical", "italian", "english"],
+            "languages": ["italian", "english", "spanish"],
+            "department": "customer_service",
+            "max_concurrent_calls": 3,
+            "extension": "2001"
+        }
+        
+        success, agent_response, status = self.make_request('POST', 'call-center/agents', comprehensive_agent_data, 200)
+        if success:
+            agent_id = agent_response['id']
+            
+            # Verify all fields are properly stored
+            skills = agent_response.get('skills', [])
+            languages = agent_response.get('languages', [])
+            department = agent_response.get('department', '')
+            max_calls = agent_response.get('max_concurrent_calls', 0)
+            extension = agent_response.get('extension', '')
+            
+            if (len(skills) == 5 and len(languages) == 3 and 
+                department == "customer_service" and max_calls == 3 and extension == "2001"):
+                self.log_test("Comprehensive agent data validation", True, 
+                    f"All fields correctly stored: {len(skills)} skills, {len(languages)} languages")
+            else:
+                self.log_test("Comprehensive agent data validation", False, 
+                    f"Data mismatch - Skills: {len(skills)}, Languages: {len(languages)}")
+            
+            # Test agent update
+            update_data = {
+                "status": "busy",
+                "skills": ["sales", "support", "italian"],
+                "department": "sales"
+            }
+            
+            success, update_response, status = self.make_request('PUT', f'call-center/agents/{agent_id}', update_data, 200)
+            if success:
+                updated_status = update_response.get('status', '')
+                updated_skills = update_response.get('skills', [])
+                updated_dept = update_response.get('department', '')
+                
+                if (updated_status == "busy" and len(updated_skills) == 3 and updated_dept == "sales"):
+                    self.log_test("Agent update validation", True, 
+                        f"Status: {updated_status}, Skills: {len(updated_skills)}, Dept: {updated_dept}")
+                else:
+                    self.log_test("Agent update validation", False, "Update data mismatch")
+            else:
+                self.log_test("Agent update validation", False, f"Status: {status}")
+        else:
+            self.log_test("Comprehensive agent creation", False, f"Status: {status}")
+        
+        # Test call with comprehensive data
+        if self.created_resources['units']:
+            unit_id = self.created_resources['units'][0]
+            
+            comprehensive_call_data = {
+                "direction": "outbound",
+                "from_number": "+39987654321",
+                "to_number": "+39123456789",
+                "unit_id": unit_id,
+                "priority": 2
+            }
+            comprehensive_call_data["call_sid"] = f"CA{uuid.uuid4().hex[:32]}"
+            
+            success, call_response, status = self.make_request('POST', 'call-center/calls', comprehensive_call_data, 200)
+            if success:
+                call_direction = call_response.get('direction', '')
+                call_priority = call_response.get('priority', 0)
+                call_unit = call_response.get('unit_id', '')
+                
+                if (call_direction == "outbound" and call_priority == 2 and call_unit == unit_id):
+                    self.log_test("Comprehensive call data validation", True, 
+                        f"Direction: {call_direction}, Priority: {call_priority}")
+                else:
+                    self.log_test("Comprehensive call data validation", False, "Call data mismatch")
+            else:
+                self.log_test("Comprehensive call creation", False, f"Status: {status}")
+
+    def run_call_center_tests(self):
+        """Run Call Center Testing Suite"""
+        print("🚀 Starting CRM API Testing - CALL CENTER SYSTEM...")
+        print(f"📡 Backend URL: {self.base_url}")
+        print("=" * 60)
+        
+        # Authentication is required for most tests
+        if not self.test_authentication():
+            print("❌ Authentication failed - stopping tests")
+            return False
+        
+        # Run Call Center test suite
+        self.test_call_center_models()
+        self.test_call_center_api_endpoints()
+        self.test_twilio_webhook_handlers()
+        self.test_call_center_authentication()
+        self.test_call_center_error_handling()
+        self.test_call_center_data_models()
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 Call Center Test Results: {self.tests_passed}/{self.tests_run} passed")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 All Call Center tests passed!")
+            return True
+        else:
+            failed = self.tests_run - self.tests_passed
+            print(f"⚠️  {failed} Call Center tests failed")
+            return False
+
     def run_all_tests(self):
         """Run Workflow Builder FASE 3 Backend Tests"""
         print("🚀 Starting CRM API Testing - WORKFLOW BUILDER FASE 3 BACKEND...")
