@@ -2092,58 +2092,61 @@ class CRMAPITester:
         """Test Twilio Webhook Handlers"""
         print("\n📡 Testing Twilio Webhook Handlers...")
         
-        # Test incoming call webhook
-        incoming_data = {
-            "CallSid": f"CA{uuid.uuid4().hex[:32]}",
+        # Test incoming call webhook with form data
+        call_sid = f"CA{uuid.uuid4().hex[:32]}"
+        
+        import requests
+        url = f"{self.base_url}/call-center/voice/incoming"
+        form_data = {
+            "CallSid": call_sid,
             "From": "+39123456789",
             "To": "+39987654321",
             "CallStatus": "ringing"
         }
         
-        success, incoming_response, status = self.make_request(
-            'POST', 'call-center/voice/incoming', incoming_data, 
-            expected_status=200, auth_required=False
-        )
-        if success:
-            # Should return TwiML response
-            response_content = incoming_response
-            self.log_test("POST /call-center/voice/incoming", True, "Webhook handler accessible")
-        else:
-            self.log_test("POST /call-center/voice/incoming", False, f"Status: {status}")
+        try:
+            response = requests.post(url, data=form_data, timeout=30)
+            if response.status_code == 200:
+                self.log_test("POST /call-center/voice/incoming", True, "Webhook handler accessible")
+            else:
+                self.log_test("POST /call-center/voice/incoming", False, f"Status: {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            self.log_test("POST /call-center/voice/incoming", False, f"Request error: {str(e)}")
         
-        # Test call status update webhook
-        call_sid = incoming_data["CallSid"]
-        status_data = {
+        # Test call status update webhook with form data
+        url = f"{self.base_url}/call-center/voice/call-status/{call_sid}"
+        status_form_data = {
             "CallSid": call_sid,
             "CallStatus": "in-progress",
             "CallDuration": "30"
         }
         
-        success, status_response, status_code = self.make_request(
-            'POST', f'call-center/voice/call-status/{call_sid}', status_data,
-            expected_status=200, auth_required=False
-        )
-        if success:
-            self.log_test("POST /call-center/voice/call-status/{call_sid}", True, "Status webhook handler accessible")
-        else:
-            self.log_test("POST /call-center/voice/call-status/{call_sid}", False, f"Status: {status_code}")
+        try:
+            response = requests.post(url, data=status_form_data, timeout=30)
+            if response.status_code == 200:
+                self.log_test("POST /call-center/voice/call-status/{call_sid}", True, "Status webhook handler accessible")
+            else:
+                self.log_test("POST /call-center/voice/call-status/{call_sid}", False, f"Status: {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            self.log_test("POST /call-center/voice/call-status/{call_sid}", False, f"Request error: {str(e)}")
         
-        # Test recording complete webhook
-        recording_data = {
+        # Test recording complete webhook with form data
+        url = f"{self.base_url}/call-center/voice/recording-complete/{call_sid}"
+        recording_form_data = {
             "CallSid": call_sid,
             "RecordingSid": f"RE{uuid.uuid4().hex[:32]}",
             "RecordingUrl": "https://api.twilio.com/recording.mp3",
             "RecordingDuration": "120"
         }
         
-        success, recording_response, status = self.make_request(
-            'POST', f'call-center/voice/recording-complete/{call_sid}', recording_data,
-            expected_status=200, auth_required=False
-        )
-        if success:
-            self.log_test("POST /call-center/voice/recording-complete/{call_sid}", True, "Recording webhook handler accessible")
-        else:
-            self.log_test("POST /call-center/voice/recording-complete/{call_sid}", False, f"Status: {status}")
+        try:
+            response = requests.post(url, data=recording_form_data, timeout=30)
+            if response.status_code == 200:
+                self.log_test("POST /call-center/voice/recording-complete/{call_sid}", True, "Recording webhook handler accessible")
+            else:
+                self.log_test("POST /call-center/voice/recording-complete/{call_sid}", False, f"Status: {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            self.log_test("POST /call-center/voice/recording-complete/{call_sid}", False, f"Request error: {str(e)}")
 
     def test_call_center_authentication(self):
         """Test Call Center Authentication & Authorization"""
