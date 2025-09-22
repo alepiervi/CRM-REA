@@ -2281,12 +2281,30 @@ class CRMAPITester:
         """Test Call Center Data Models Validation"""
         print("\n📊 Testing Call Center Data Models...")
         
-        # Test agent creation with all fields
-        if not self.created_resources['users']:
-            self.log_test("Call Center data models test", False, "No users available for agent creation")
+        # Create a new user for comprehensive agent testing
+        if not self.created_resources['units']:
+            self.log_test("Call Center data models test", False, "No units available for user creation")
             return
         
-        user_id = self.created_resources['users'][0]
+        unit_id = self.created_resources['units'][0]
+        
+        # Create a new user for this test
+        user_data = {
+            "username": f"cc_data_agent_{datetime.now().strftime('%H%M%S')}",
+            "email": f"cc_data_agent_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "TestPass123!",
+            "role": "agente",
+            "unit_id": unit_id,
+            "provinces": ["Roma", "Milano"]
+        }
+        
+        success, user_response, status = self.make_request('POST', 'users', user_data, 200)
+        if success:
+            user_id = user_response['id']
+            self.created_resources['users'].append(user_id)
+        else:
+            self.log_test("Create user for data models test", False, f"Status: {status}")
+            return
         
         # Test comprehensive agent data
         comprehensive_agent_data = {
