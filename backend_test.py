@@ -2046,15 +2046,16 @@ class CRMAPITester:
         # Test GET /call-center/agents
         success, agents_response, status = self.make_request('GET', 'call-center/agents', expected_status=200)
         if success:
-            agents = agents_response.get('agents', [])
+            agents = agents_response if isinstance(agents_response, list) else []
             self.log_test("GET /call-center/agents", True, f"Found {len(agents)} agents")
         else:
             self.log_test("GET /call-center/agents", False, f"Status: {status}")
+            agents = []
         
         # Test GET /call-center/calls
         success, calls_response, status = self.make_request('GET', 'call-center/calls', expected_status=200)
         if success:
-            calls = calls_response.get('calls', [])
+            calls = calls_response if isinstance(calls_response, list) else []
             self.log_test("GET /call-center/calls", True, f"Found {len(calls)} calls")
         else:
             self.log_test("GET /call-center/calls", False, f"Status: {status}")
@@ -2062,7 +2063,7 @@ class CRMAPITester:
         # Test analytics dashboard endpoint
         success, analytics_response, status = self.make_request('GET', 'call-center/analytics/dashboard', expected_status=200)
         if success:
-            metrics = analytics_response.get('metrics', {})
+            metrics = analytics_response.get('metrics', {}) if isinstance(analytics_response, dict) else {}
             active_calls = metrics.get('active_calls', 0)
             available_agents = metrics.get('available_agents', 0)
             self.log_test("GET /call-center/analytics/dashboard", True, 
@@ -2077,7 +2078,7 @@ class CRMAPITester:
             
             success, status_response, status_code = self.make_request('PUT', f'call-center/agents/{agent_id}/status', status_data, 200)
             if success:
-                new_status = status_response.get('status', '')
+                new_status = status_response.get('status', '') if isinstance(status_response, dict) else ''
                 self.log_test("PUT /call-center/agents/{id}/status", True, f"Status updated to: {new_status}")
             else:
                 self.log_test("PUT /call-center/agents/{id}/status", False, f"Status: {status_code}")
