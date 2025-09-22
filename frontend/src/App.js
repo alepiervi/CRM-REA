@@ -428,6 +428,7 @@ const Dashboard = () => {
         { id: "workflow-builder", label: "Workflow Builder", icon: Workflow },
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
         { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+        { id: "call-center", label: "Call Center", icon: PhoneCall },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
     } else if (user.role === "referente") {
