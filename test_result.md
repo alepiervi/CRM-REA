@@ -480,6 +480,90 @@ frontend:
           agent: "main"
           comment: "✅ WORKFLOW BUILDER FRONTEND COMPLETATO! Implementato componente WorkflowBuilderManagement completo con: navigazione sidebar integrata, lista workflow con stato (Bozza/Attivo), modal creazione workflow funzionante, interfaccia canvas con sidebar nodi (Trigger, Azione, Condizione, Attesa), pulsanti Salva/Pubblica. Test completato: creazione workflow 'Benvenuto Nuovo Cliente' funziona perfettamente con toast di successo."
 
+  - task: "Call Center Navigation Integration"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Aggiunto 'Call Center' alla navigazione sidebar per admin users con icona PhoneCall. Aggiunto case 'call-center' nella funzione renderTabContent che renderizza CallCenterManagement component."
+
+  - task: "CallCenterManagement Component Implementation"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementato componente CallCenterManagement completo con 3 viste: Dashboard (metriche tempo reale, stats chiamate, controlli), Agenti (gestione status, skills, performance), Chiamate (registro chiamate con filtri e dettagli)."
+
+  - task: "Call Center Dashboard Implementation"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementata dashboard con 4 card metriche (Chiamate Attive, Agenti Disponibili, Chiamate Oggi, Tempo Attesa Medio), metriche prestazioni (tasso risposta/abbandono), form chiamate outbound con validazione."
+
+  - task: "Agent Management Interface"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementata interfaccia gestione agenti con tabella (status, dipartimento, chiamate oggi, interno), dropdown per cambio stato agente (disponibile/occupato/pausa/offline), badge colorati per status."
+
+  - task: "Call Registry Interface"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementato registro chiamate con tabella completa (direzione, numero, agente, stato, durata, data/ora), icone per inbound/outbound, badge status colorati, pulsanti azioni (visualizza, ascolto registrazione)."
+
+  - task: "Outbound Call Form Component"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementato componente OutboundCallForm con input numero telefono, validazione, submit handler, loading state, integrazione con API /call-center/calls/outbound."
+
+  - task: "Call Center Icons Integration"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Aggiunte icone Lucide React per Call Center: PhoneCall, PhoneIncoming, PhoneOutgoing, PhoneMissed, Headphones, Activity, Clock4, UserCheck, UserX, Radio, PlayCircle, StopCircle, Volume2."
+
 agent_communication:
     - agent: "testing"
       message: "🎉 COMPLETE SUCCESS: DELETE endpoint for leads is fully functional and secure! Comprehensive testing completed with 18/21 tests passed (85.7% success rate). All critical functionality verified: ✅ DELETE /api/leads/{lead_id} works correctly, ✅ Only admin can delete leads (proper access control), ✅ Referential integrity prevents deletion of leads with documents, ✅ Error messages are accurate and informative, ✅ Actual database deletion confirmed. The 3 minor test failures were due to network issues during user login tests and expected vs actual HTTP status codes (both 401 and 403 are valid security responses). The core DELETE functionality, security controls, and data integrity are all working perfectly as requested."
