@@ -8,7 +8,7 @@ import requests
 import json
 
 def final_verification():
-    base_url = "https://crmassist.preview.emergentagent.com/api"
+    base_url = "https://smart-lead-desk.preview.emergentagent.com/api"
     
     print("🔐 Final Verification - Authenticating as admin...")
     

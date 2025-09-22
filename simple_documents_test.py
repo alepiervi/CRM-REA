@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_documents_endpoint():
-    base_url = "https://crmassist.preview.emergentagent.com/api"
+    base_url = "https://smart-lead-desk.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     
