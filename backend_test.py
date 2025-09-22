@@ -2255,11 +2255,11 @@ class CRMAPITester:
             # Missing user_id
         }
         
-        success, response, status = self.make_request('POST', 'call-center/agents', invalid_agent_data2, expected_status=[400, 422])
+        success, response, status = self.make_request('POST', 'call-center/agents', invalid_agent_data2, expected_status=422)
         if success:
             self.log_test("Invalid agent data validation", True, f"Correctly returned {status}")
         else:
-            self.log_test("Invalid agent data validation", False, f"Expected 400/422, got {status}")
+            self.log_test("Invalid agent data validation", False, f"Expected 422, got {status}")
         
         # Test outbound call without Twilio configuration
         outbound_data = {
