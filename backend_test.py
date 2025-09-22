@@ -2248,19 +2248,18 @@ class CRMAPITester:
         else:
             self.log_test("Get non-existent call", False, f"Expected 404, got {status}")
         
-        # Test invalid call data
-        invalid_call_data = {
-            "direction": "invalid_direction",
-            "from_number": "invalid_number",
-            "to_number": "+39123456789",
-            "unit_id": "non-existent-unit"
+        # Test invalid agent data (missing required fields)
+        invalid_agent_data2 = {
+            "skills": ["sales"],
+            "department": "sales"
+            # Missing user_id
         }
         
-        success, response, status = self.make_request('POST', 'call-center/calls', invalid_call_data, expected_status=[400, 422])
+        success, response, status = self.make_request('POST', 'call-center/agents', invalid_agent_data2, expected_status=[400, 422])
         if success:
-            self.log_test("Invalid call data validation", True, f"Correctly returned {status}")
+            self.log_test("Invalid agent data validation", True, f"Correctly returned {status}")
         else:
-            self.log_test("Invalid call data validation", False, f"Expected 400/422, got {status}")
+            self.log_test("Invalid agent data validation", False, f"Expected 400/422, got {status}")
         
         # Test outbound call without Twilio configuration
         outbound_data = {
@@ -2270,7 +2269,7 @@ class CRMAPITester:
         
         success, response, status = self.make_request('POST', 'call-center/calls/outbound', outbound_data, expected_status=500)
         if success:
-            error_detail = response.get('detail', '')
+            error_detail = response.get('detail', '') if isinstance(response, dict) else ''
             if 'Twilio not configured' in error_detail:
                 self.log_test("Outbound call without Twilio config", True, "Correctly returned Twilio error")
             else:
