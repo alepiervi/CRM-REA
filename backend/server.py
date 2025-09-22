@@ -3771,6 +3771,365 @@ async def copy_workflow_to_unit(
         logging.error(f"Copy workflow error: {e}")
         raise HTTPException(status_code=500, detail="Failed to copy workflow")
 
+# Call Center Endpoints
+
+# Agent Management
+@api_router.post("/call-center/agents", response_model=AgentCallCenter)
+async def create_agent(agent_data: AgentCreate, current_user: User = Depends(get_current_user)):
+    """Create new call center agent"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if agent already exists
+    existing_agent = await db.agent_call_center.find_one({"user_id": agent_data.user_id})
+    if existing_agent:
+        raise HTTPException(status_code=400, detail="Agent already exists")
+    
+    # Verify user exists
+    user = await db.users.find_one({"id": agent_data.user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    agent = AgentCallCenter(**agent_data.dict())
+    await db.agent_call_center.insert_one(agent.dict())
+    
+    return agent
+
+@api_router.get("/call-center/agents", response_model=List[AgentCallCenter])
+async def get_agents(current_user: User = Depends(get_current_user)):
+    """Get all call center agents"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    agents = await db.agent_call_center.find().to_list(length=None)
+    return [AgentCallCenter(**agent) for agent in agents]
+
+@api_router.get("/call-center/agents/{agent_id}", response_model=AgentCallCenter)
+async def get_agent(agent_id: str, current_user: User = Depends(get_current_user)):
+    """Get specific agent"""
+    if current_user.role not in ["admin", "referente"] and current_user.id != agent_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    agent_doc = await db.agent_call_center.find_one({"user_id": agent_id})
+    if not agent_doc:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    return AgentCallCenter(**agent_doc)
+
+@api_router.put("/call-center/agents/{agent_id}/status")
+async def update_agent_status(
+    agent_id: str,
+    status_data: Dict[str, str],
+    current_user: User = Depends(get_current_user)
+):
+    """Update agent status"""
+    if current_user.role not in ["admin", "referente"] and current_user.id != agent_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    status = status_data.get("status")
+    if status not in [s.value for s in AgentStatus]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    await call_center_service.update_agent_status(agent_id, AgentStatus(status))
+    
+    return {"message": "Status updated successfully"}
+
+# Call Management
+@api_router.get("/call-center/calls", response_model=List[Call])
+async def get_calls(
+    unit_id: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user)
+):
+    """Get calls with filters"""
+    if current_user.role not in ["admin", "referente"]:
+        # Agents can only see their own calls
+        agent_id = current_user.id
+    
+    query = {}
+    if unit_id:
+        query["unit_id"] = unit_id
+    if agent_id:
+        query["agent_id"] = agent_id
+    if status:
+        query["status"] = status
+    
+    calls = await db.calls.find(query).sort("created_at", -1).limit(limit).to_list(length=None)
+    return [Call(**call) for call in calls]
+
+@api_router.get("/call-center/calls/{call_sid}", response_model=Call)
+async def get_call(call_sid: str, current_user: User = Depends(get_current_user)):
+    """Get specific call"""
+    call_doc = await db.calls.find_one({"call_sid": call_sid})
+    if not call_doc:
+        raise HTTPException(status_code=404, detail="Call not found")
+    
+    call = Call(**call_doc)
+    
+    # Check access permissions
+    if current_user.role not in ["admin", "referente"] and call.agent_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return call
+
+@api_router.post("/call-center/calls/outbound")
+async def make_outbound_call(
+    call_data: Dict[str, str],
+    current_user: User = Depends(get_current_user)
+):
+    """Make outbound call"""
+    to_number = call_data.get("to_number")
+    from_number = call_data.get("from_number", DEFAULT_CALLER_ID)
+    
+    if not to_number:
+        raise HTTPException(status_code=400, detail="to_number is required")
+    
+    try:
+        # Create call record
+        call_create_data = CallCreate(
+            direction=CallDirection.OUTBOUND,
+            from_number=from_number,
+            to_number=to_number,
+            unit_id=current_user.unit_id or "default"
+        )
+        
+        # Make Twilio call
+        twilio_result = await twilio_service.make_outbound_call(
+            to_number=to_number,
+            from_number=from_number
+        )
+        
+        # Create call record with Twilio SID
+        call_create_data.call_sid = twilio_result["call_sid"]
+        call = await call_center_service.create_call(call_create_data)
+        
+        # Assign to current user (agent making the call)
+        await call_center_service.assign_agent_to_call(twilio_result["call_sid"], current_user.id)
+        
+        return {
+            "call_sid": twilio_result["call_sid"],
+            "status": "initiated",
+            "to": to_number,
+            "from": from_number
+        }
+        
+    except Exception as e:
+        logging.error(f"Outbound call error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Call failed: {str(e)}")
+
+# Twilio Webhook Endpoints
+@api_router.post("/call-center/voice/incoming")
+async def handle_incoming_call(request: Request):
+    """Handle incoming call webhook from Twilio"""
+    form_data = await request.form()
+    
+    # Extract call information
+    call_sid = form_data.get("CallSid")
+    from_number = form_data.get("From")
+    to_number = form_data.get("To")
+    caller_country = form_data.get("CallerCountry")
+    caller_state = form_data.get("CallerState")
+    caller_city = form_data.get("CallerCity")
+    
+    logging.info(f"Incoming call {call_sid} from {from_number} to {to_number}")
+    
+    try:
+        # Route call through ACD
+        routing_result = await acd_service.route_incoming_call(
+            call_sid=call_sid,
+            from_number=from_number,
+            to_number=to_number,
+            unit_id="default"  # TODO: Determine unit from phone number
+        )
+        
+        # Generate TwiML response
+        response = VoiceResponse()
+        
+        if routing_result["action"] == "connect_agent":
+            response.say("Connecting you to an agent. Please hold.")
+            
+            # TODO: Connect to agent via WebRTC or conference
+            dial = Dial()
+            dial.number("+1234567890")  # Placeholder - should connect to agent
+            response.append(dial)
+            
+        elif routing_result["action"] == "queue_call":
+            response.say(routing_result["message"])
+            response.say("Your call is important to us. Please stay on the line.")
+            
+            # Hold music or queue announcement
+            response.play("http://com.twilio.music.classical.s3.amazonaws.com/BusyStrings.wav")
+        
+        # Start call recording if enabled
+        if CALL_RECORDING_ENABLED:
+            response.record(
+                action=f"/api/call-center/voice/recording-status/{call_sid}",
+                recordingStatusCallback=f"/api/call-center/voice/recording-complete/{call_sid}",
+                recordingStatusCallbackMethod="POST"
+            )
+        
+        return Response(content=str(response), media_type="application/xml")
+        
+    except Exception as e:
+        logging.error(f"Error handling incoming call: {str(e)}")
+        
+        # Fallback TwiML
+        response = VoiceResponse()
+        response.say("We're sorry, but we're experiencing technical difficulties. Please try again later.")
+        response.hangup()
+        
+        return Response(content=str(response), media_type="application/xml")
+
+@api_router.post("/call-center/voice/call-status/{call_sid}")
+async def handle_call_status(call_sid: str, request: Request):
+    """Handle call status updates from Twilio"""
+    form_data = await request.form()
+    
+    call_status = form_data.get("CallStatus")
+    call_duration = form_data.get("CallDuration", "0")
+    
+    logging.info(f"Call {call_sid} status: {call_status}, duration: {call_duration}")
+    
+    try:
+        # Update call record
+        await call_center_service.update_call_status(
+            call_sid=call_sid,
+            status=CallStatus(call_status.lower().replace("-", "_")),
+            duration=int(call_duration) if call_duration.isdigit() else 0
+        )
+        
+        # Handle call completion
+        if call_status in ["completed", "failed", "busy", "no-answer", "canceled"]:
+            call = await call_center_service.get_call(call_sid)
+            if call and call.agent_id:
+                # Release agent
+                await call_center_service.update_agent_status(call.agent_id, AgentStatus.AVAILABLE)
+                
+                # Process next call in queue
+                await acd_service.process_queue(call.unit_id)
+        
+        return {"status": "ok"}
+        
+    except Exception as e:
+        logging.error(f"Error handling call status for {call_sid}: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+@api_router.post("/call-center/voice/recording-complete/{call_sid}")
+async def handle_recording_complete(call_sid: str, request: Request):
+    """Handle recording completion webhook"""
+    form_data = await request.form()
+    
+    recording_sid = form_data.get("RecordingSid")
+    recording_url = form_data.get("RecordingUrl")
+    recording_duration = form_data.get("RecordingDuration", "0")
+    
+    logging.info(f"Recording completed for call {call_sid}: {recording_sid}")
+    
+    try:
+        # Create recording record
+        recording = CallRecording(
+            call_sid=call_sid,
+            recording_sid=recording_sid,
+            duration=int(recording_duration) if recording_duration.isdigit() else 0,
+            storage_url=recording_url,
+            status="completed"
+        )
+        
+        await db.call_recordings.insert_one(recording.dict())
+        
+        # Update call record with recording info
+        await db.calls.update_one(
+            {"call_sid": call_sid},
+            {
+                "$set": {
+                    "recording_sid": recording_sid,
+                    "recording_url": recording_url
+                }
+            }
+        )
+        
+        return {"status": "ok"}
+        
+    except Exception as e:
+        logging.error(f"Error handling recording completion: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+# Call Analytics
+@api_router.get("/call-center/analytics/dashboard")
+async def get_call_center_dashboard(
+    unit_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get call center dashboard metrics"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        current_time = datetime.now(timezone.utc)
+        
+        # Active calls count
+        active_calls = await db.calls.count_documents({
+            "status": {"$in": ["queued", "ringing", "in-progress"]}
+        })
+        
+        # Available agents count
+        available_agents = await db.agent_call_center.count_documents({
+            "status": "available"
+        })
+        
+        # Today's metrics
+        today_start = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        calls_today = await db.calls.count_documents({
+            "created_at": {"$gte": today_start}
+        })
+        
+        answered_today = await db.calls.count_documents({
+            "created_at": {"$gte": today_start},
+            "status": "completed"
+        })
+        
+        abandoned_today = await db.calls.count_documents({
+            "created_at": {"$gte": today_start},
+            "status": "abandoned"
+        })
+        
+        # Average wait time calculation (simplified)
+        avg_wait_pipeline = [
+            {"$match": {
+                "created_at": {"$gte": today_start},
+                "answered_at": {"$ne": None}
+            }},
+            {"$addFields": {
+                "wait_time": {"$subtract": ["$answered_at", "$created_at"]}
+            }},
+            {"$group": {
+                "_id": None,
+                "avg_wait_time": {"$avg": "$wait_time"}
+            }}
+        ]
+        
+        wait_time_result = await db.calls.aggregate(avg_wait_pipeline).to_list(length=None)
+        avg_wait_time = wait_time_result[0]["avg_wait_time"] / 1000 if wait_time_result else 0  # Convert to seconds
+        
+        return {
+            "timestamp": current_time.isoformat(),
+            "active_calls": active_calls,
+            "available_agents": available_agents,
+            "calls_today": calls_today,
+            "answered_today": answered_today,
+            "abandoned_today": abandoned_today,
+            "answer_rate": (answered_today / calls_today * 100) if calls_today > 0 else 0,
+            "abandonment_rate": (abandoned_today / calls_today * 100) if calls_today > 0 else 0,
+            "avg_wait_time": round(avg_wait_time, 2)
+        }
+        
+    except Exception as e:
+        logging.error(f"Dashboard error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to load dashboard")
+
 # Include the router in the main app
 app.include_router(api_router)
 
