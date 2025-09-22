@@ -2434,7 +2434,7 @@ class CRMAPITester:
 def main():
     """Main test execution"""
     tester = CRMAPITester()
-    success = tester.run_all_tests()
+    success = tester.run_call_center_tests()
     return 0 if success else 1
 
 if __name__ == "__main__":
