@@ -2179,28 +2179,31 @@ class CRMAPITester:
                 self.created_resources['users'].append(referente_id)
                 
                 # Test login as referente
-                success, login_response, status = self.make_request(
-                    'POST', 'auth/login',
-                    {'username': referente_data['username'], 'password': referente_data['password']},
-                    200, auth_required=False
-                )
-                
-                if success:
-                    referente_token = login_response['access_token']
-                    original_token = self.token
-                    self.token = referente_token
+                try:
+                    success, login_response, status = self.make_request(
+                        'POST', 'auth/login',
+                        {'username': referente_data['username'], 'password': referente_data['password']},
+                        200, auth_required=False
+                    )
                     
-                    # Test referente access to Call Center (should be restricted)
-                    success, response, status = self.make_request('GET', 'call-center/agents', expected_status=403)
                     if success:
-                        self.log_test("Referente access restriction", True, "Correctly denied access to Call Center")
+                        referente_token = login_response['access_token']
+                        original_token = self.token
+                        self.token = referente_token
+                        
+                        # Test referente access to Call Center (should be restricted)
+                        success, response, status = self.make_request('GET', 'call-center/agents', expected_status=403)
+                        if success:
+                            self.log_test("Referente access restriction", True, "Correctly denied access to Call Center")
+                        else:
+                            self.log_test("Referente access restriction", False, f"Expected 403, got {status}")
+                        
+                        # Restore admin token
+                        self.token = original_token
                     else:
-                        self.log_test("Referente access restriction", False, f"Expected 403, got {status}")
-                    
-                    # Restore admin token
-                    self.token = original_token
-                else:
-                    self.log_test("Referente login for access test", False, f"Status: {status}")
+                        self.log_test("Referente login for access test", False, f"Status: {status}")
+                except Exception as e:
+                    self.log_test("Referente login for access test", False, f"Error: {str(e)}")
             else:
                 self.log_test("Create referente for access test", False, f"Status: {status}")
         
