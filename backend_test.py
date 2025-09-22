@@ -2211,11 +2211,11 @@ class CRMAPITester:
         original_token = self.token
         self.token = None
         
-        success, response, status = self.make_request('GET', 'call-center/agents', expected_status=[401, 403])
+        success, response, status = self.make_request('GET', 'call-center/agents', expected_status=403)
         if success:
             self.log_test("Unauthenticated access restriction", True, f"Correctly denied unauthenticated access ({status})")
         else:
-            self.log_test("Unauthenticated access restriction", False, f"Expected 401/403, got {status}")
+            self.log_test("Unauthenticated access restriction", False, f"Expected 403, got {status}")
         
         # Restore token
         self.token = original_token
