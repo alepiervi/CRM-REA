@@ -105,6 +105,78 @@
 user_problem_statement: "Implementazione e test del sistema Call Center CRM: 1. Backend - Verificare creazione modelli Call, AgentCallCenter, CallQueue, CallRecording e tutti gli endpoint API (/api/call-center/*), 2. Frontend - Verificare navigazione 'Call Center' nella sidebar per admin, 3. Dashboard Call Center - metrics tempo reale (chiamate attive, agenti disponibili, metriche prestazioni), 4. Gestione Agenti - visualizzazione status, cambio stato, skills e dipartimenti, 5. Registro Chiamate - visualizzazione chiamate inbound/outbound con filtri e dettagli, 6. Controlli Chiamate - form per chiamate outbound, 7. Integrazione Twilio - webhook endpoints per gestione chiamate, 8. Sistema ACD - routing automatico chiamate in ingresso. Il sistema Call Center è la nuova FASE implementata e dovrebbe essere completamente funzionale con supporto Twilio Voice, WebRTC, e analytics avanzate. Focus su testing completo dell'architettura Call Center."
 
 backend:
+  - task: "Call Center Models Implementation"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementati modelli Call, AgentCallCenter, CallQueue, CallRecording, OutboundCampaign, PhoneNumber, CallAnalytics con tutti gli enum necessari (CallStatus, CallDirection, AgentStatus). Modelli integrati nel server.py dopo i modelli Workflow."
+
+  - task: "Twilio Integration Service"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementato TwilioService con metodi make_outbound_call, update_call, validate_request. Configurazione Twilio aggiunta al .env con variabili TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, etc."
+
+  - task: "Call Center Service Implementation"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementato CallCenterService con gestione chiamate (create_call, update_call_status, assign_agent_to_call), gestione agenti (update_agent_status, get_available_agents, find_best_agent) e cache in-memory per performance."
+
+  - task: "ACD (Automatic Call Distribution) Service"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementato ACDService con routing intelligente chiamate (route_incoming_call), gestione code (queue_call, process_queue) e algoritmi di assegnazione agenti basati su skills e carico di lavoro."
+
+  - task: "Call Center API Endpoints"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementati tutti gli endpoint API: Agent Management (POST/GET/PUT /call-center/agents), Call Management (GET/POST /call-center/calls), Twilio Webhooks (/call-center/voice/*), Analytics Dashboard (/call-center/analytics/dashboard)."
+
+  - task: "Twilio Webhook Handlers"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementati webhook handlers per: incoming calls con routing ACD, call status updates, recording completion. Generazione TwiML response per routing chiamate e gestione code."
+
   - task: "DELETE /api/leads/{lead_id} endpoint functionality"
     implemented: true
     working: true
