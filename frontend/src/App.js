@@ -510,7 +510,6 @@ const Dashboard = () => {
     if (user.role === "admin") {
       items.push(
         { id: "users", label: "Utenti", icon: Users },
-        { id: "units", label: "Unit", icon: Building2 },
         { id: "containers", label: "Contenitori", icon: Home },
         { id: "workflow-builder", label: "Workflow Builder", icon: Workflow },
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
@@ -518,7 +517,7 @@ const Dashboard = () => {
         { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "call-center", label: "Call Center", icon: PhoneCall },
         { id: "commesse", label: "Commesse", icon: Building },
-        { id: "sub-agenzie", label: "Sub Agenzie", icon: Store },
+        { id: "sub-agenzie", label: "Unit & Sub Agenzie", icon: Store },
         { id: "clienti", label: "Clienti", icon: UserCheck },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
