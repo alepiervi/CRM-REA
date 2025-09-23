@@ -90,7 +90,6 @@ import {
   Settings2,
   FileUser,
   FileSpreadsheet,
-  AlertCircle,
   CheckCircle2,
   Progress
 } from "lucide-react";
