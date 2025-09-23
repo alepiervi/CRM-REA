@@ -6477,12 +6477,15 @@ const ClientiManagement = ({ selectedUnit, units }) => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Gestione Clienti</h2>
         <div className="flex space-x-3">
-          <Select value={selectedCommessa || ""} onValueChange={setSelectedCommessa}>
+          <Select 
+            value={selectedCommessa || "all"} 
+            onValueChange={(value) => setSelectedCommessa(value === "all" ? null : value)}
+          >
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Seleziona Commessa" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tutte le Commesse</SelectItem>
+              <SelectItem value="all">Tutte le Commesse</SelectItem>
               {commesse.map((commessa) => (
                 <SelectItem key={commessa.id} value={commessa.id}>
                   {commessa.nome}
