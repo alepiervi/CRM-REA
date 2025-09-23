@@ -6411,6 +6411,7 @@ const ClientiManagement = ({ selectedUnit, units }) => {
   const [selectedCommessa, setSelectedCommessa] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
