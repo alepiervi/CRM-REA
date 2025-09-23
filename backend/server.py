@@ -2245,6 +2245,562 @@ twilio_service = TwilioService()
 call_center_service = CallCenterService()
 acd_service = ACDService()
 
+# Automated Lead Qualification System (FASE 4)
+class LeadQualificationBot:
+    """Automated lead qualification system with 12-hour timeout and auto-assignment"""
+    
+    def __init__(self):
+        self.qualification_timeout = 12 * 60 * 60  # 12 hours in seconds
+        self.bot_stages = {
+            "initial": "initial_contact",
+            "interest_check": "checking_interest", 
+            "info_gathering": "gathering_info",
+            "qualification": "qualifying_lead",
+            "completed": "qualification_completed",
+            "timeout": "bot_timeout",
+            "agent_assigned": "agent_takeover"
+        }
+        
+    async def start_qualification_process(self, lead_id: str):
+        """Start automated qualification process for new lead"""
+        try:
+            lead = await db.leads.find_one({"id": lead_id})
+            if not lead:
+                logging.error(f"Lead {lead_id} not found for qualification")
+                return
+                
+            # Initialize qualification record
+            qualification_data = {
+                "id": str(uuid.uuid4()),
+                "lead_id": lead_id,
+                "stage": "initial",
+                "status": "active",
+                "started_at": datetime.now(timezone.utc),
+                "timeout_at": datetime.now(timezone.utc) + timedelta(hours=12),
+                "responses": [],
+                "score": 0,
+                "qualification_data": {},
+                "bot_messages_sent": 0,
+                "lead_responses": 0
+            }
+            
+            await db.lead_qualifications.insert_one(qualification_data)
+            
+            # Send initial qualification message
+            await self.send_initial_message(lead_id, lead)
+            
+            # Schedule timeout check
+            await self.schedule_timeout_check(lead_id)
+            
+            logging.info(f"Started qualification process for lead {lead_id}")
+            
+        except Exception as e:
+            logging.error(f"Error starting qualification for lead {lead_id}: {e}")
+    
+    async def send_initial_message(self, lead_id: str, lead: dict):
+        """Send initial qualification message to lead"""
+        try:
+            nome = lead.get("nome", "Cliente")
+            phone_number = lead.get("telefono")
+            
+            if not phone_number:
+                logging.warning(f"No phone number for lead {lead_id}, skipping qualification")
+                return
+            
+            # Personalized initial message
+            message = f"""Ciao {nome}! 👋
+
+Grazie per averci contattato per informazioni sui nostri servizi.
+
+Per offrirti la migliore assistenza possibile, vorrei farti alcune veloci domande:
+
+1️⃣ Sei interessato/a a ricevere informazioni sui nostri servizi? (Rispondi SI o NO)
+
+Il nostro team è qui per aiutarti! 😊"""
+
+            # Send via WhatsApp if possible, otherwise log for manual follow-up
+            if await self.is_whatsapp_available(lead_id):
+                result = await whatsapp_service.send_message(phone_number, message)
+                if result.get("success"):
+                    await self.log_bot_message(lead_id, message, "whatsapp")
+                else:
+                    await self.log_bot_message(lead_id, message, "failed_whatsapp")
+            else:
+                # Log for manual follow-up by agents
+                await self.log_bot_message(lead_id, message, "manual_followup")
+                
+            # Update lead status
+            await db.leads.update_one(
+                {"id": lead_id},
+                {
+                    "$set": {
+                        "esito": "In Qualificazione Bot",
+                        "bot_qualification_active": True,
+                        "updated_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            
+        except Exception as e:
+            logging.error(f"Error sending initial qualification message for lead {lead_id}: {e}")
+    
+    async def process_lead_response(self, lead_id: str, message: str, source: str = "whatsapp"):
+        """Process lead response during qualification"""
+        try:
+            # Get qualification record
+            qualification = await db.lead_qualifications.find_one({"lead_id": lead_id, "status": "active"})
+            if not qualification:
+                return False
+                
+            # Check if still within timeout
+            if datetime.now(timezone.utc) > qualification["timeout_at"]:
+                await self.handle_qualification_timeout(lead_id)
+                return False
+                
+            current_stage = qualification["stage"]
+            message_lower = message.lower().strip()
+            
+            # Log the response
+            response_data = {
+                "message": message,
+                "timestamp": datetime.now(timezone.utc),
+                "source": source,
+                "stage": current_stage
+            }
+            
+            await db.lead_qualifications.update_one(
+                {"lead_id": lead_id},
+                {
+                    "$push": {"responses": response_data},
+                    "$inc": {"lead_responses": 1}
+                }
+            )
+            
+            # Process response based on current stage
+            next_stage = await self.evaluate_response(lead_id, current_stage, message_lower)
+            
+            if next_stage:
+                await self.advance_to_stage(lead_id, next_stage, message_lower)
+                
+            return True
+            
+        except Exception as e:
+            logging.error(f"Error processing lead response for {lead_id}: {e}")
+            return False
+    
+    async def evaluate_response(self, lead_id: str, current_stage: str, message: str) -> Optional[str]:
+        """Evaluate lead response and determine next stage"""
+        try:
+            positive_responses = ['si', 'sì', 'yes', 'interessato', 'interessata', 'ok', 'va bene', 'perfetto']
+            negative_responses = ['no', 'non interessato', 'non interessa', 'stop', 'basta', 'non ora']
+            
+            if current_stage == "initial":
+                if any(word in message for word in positive_responses):
+                    return "interest_check"
+                elif any(word in message for word in negative_responses):
+                    return "completed"  # Not interested
+                else:
+                    return "interest_check"  # Assume interest for unclear responses
+                    
+            elif current_stage == "interest_check":
+                return "info_gathering"
+                
+            elif current_stage == "info_gathering":
+                return "qualification"
+                
+            elif current_stage == "qualification":
+                return "completed"
+                
+            return None
+            
+        except Exception as e:
+            logging.error(f"Error evaluating response for lead {lead_id}: {e}")
+            return None
+    
+    async def advance_to_stage(self, lead_id: str, next_stage: str, last_response: str):
+        """Advance qualification to next stage"""
+        try:
+            # Update qualification record
+            await db.lead_qualifications.update_one(
+                {"lead_id": lead_id},
+                {
+                    "$set": {
+                        "stage": next_stage,
+                        "updated_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            
+            # Send appropriate message for the new stage
+            await self.send_stage_message(lead_id, next_stage, last_response)
+            
+        except Exception as e:
+            logging.error(f"Error advancing lead {lead_id} to stage {next_stage}: {e}")
+    
+    async def send_stage_message(self, lead_id: str, stage: str, last_response: str = ""):
+        """Send message appropriate for current qualification stage"""
+        try:
+            lead = await db.leads.find_one({"id": lead_id})
+            nome = lead.get("nome", "Cliente")
+            phone_number = lead.get("telefono")
+            
+            message = ""
+            
+            if stage == "interest_check":
+                if any(word in last_response for word in ['si', 'sì', 'interessato']):
+                    message = f"""Perfetto {nome}! 🎉
+
+Per poterti offrire la soluzione migliore, dimmi:
+
+2️⃣ In che tipo di abitazione vivi?
+A) Appartamento
+B) Villa/Casa indipendente 
+C) Altro
+
+Scrivi semplicemente la lettera (A, B, o C)"""
+                else:
+                    message = f"""Capisco {nome}.
+
+Ti va di dirmi comunque che tipo di abitazione hai? Potrebbe esserci una soluzione anche per te!
+
+A) Appartamento  
+B) Villa/Casa indipendente
+C) Altro"""
+                    
+            elif stage == "info_gathering":
+                message = f"""Grazie per l'informazione! 📋
+
+3️⃣ Ultima domanda: In che zona/provincia ti trovi?
+
+Questo mi aiuta a capire se possiamo offrirti i nostri servizi nella tua area."""
+                
+            elif stage == "qualification":
+                message = f"""Eccellente {nome}! ✅
+
+Hai risposto a tutte le domande. In base alle tue risposte, sembra che i nostri servizi potrebbero fare al caso tuo!
+
+Un nostro consulente specializzato ti contatterà entro 24 ore per:
+📞 Spiegarti nel dettaglio la nostra offerta
+💰 Fornirti un preventivo personalizzato  
+📋 Rispondere a tutte le tue domande
+
+Grazie per il tempo dedicato! A presto! 😊"""
+                
+                # Mark as qualified
+                await self.complete_qualification(lead_id, "qualified", 85)
+                return
+                
+            elif stage == "completed":
+                if "non interesse" in last_response or "no" in last_response:
+                    message = f"""Capisco perfettamente {nome}.
+
+Grazie comunque per averci contattato! Se in futuro dovessi cambiare idea, saremo sempre qui per aiutarti.
+
+Buona giornata! 😊"""
+                    await self.complete_qualification(lead_id, "not_interested", 10)
+                    return
+                    
+            # Send message
+            if message and phone_number:
+                if await self.is_whatsapp_available(lead_id):
+                    result = await whatsapp_service.send_message(phone_number, message)
+                    if result.get("success"):
+                        await self.log_bot_message(lead_id, message, "whatsapp")
+                else:
+                    await self.log_bot_message(lead_id, message, "manual_followup")
+                    
+        except Exception as e:
+            logging.error(f"Error sending stage message for lead {lead_id} at stage {stage}: {e}")
+    
+    async def complete_qualification(self, lead_id: str, result: str, score: int):
+        """Complete the qualification process"""
+        try:
+            # Update qualification record
+            await db.lead_qualifications.update_one(
+                {"lead_id": lead_id},
+                {
+                    "$set": {
+                        "status": "completed",
+                        "stage": "completed", 
+                        "result": result,
+                        "score": score,
+                        "completed_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            
+            # Update lead record
+            esito_mapping = {
+                "qualified": "Bot Qualificato",
+                "not_interested": "Non Interessato", 
+                "timeout": "Timeout Bot",
+                "error": "Errore Qualificazione"
+            }
+            
+            await db.leads.update_one(
+                {"id": lead_id},
+                {
+                    "$set": {
+                        "esito": esito_mapping.get(result, "Completato Bot"),
+                        "bot_qualification_active": False,
+                        "bot_qualification_completed": True,
+                        "qualification_score": score,
+                        "updated_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            
+            # If qualified, assign to agent
+            if result == "qualified" and score >= 70:
+                await self.assign_qualified_lead_to_agent(lead_id)
+                
+            logging.info(f"Completed qualification for lead {lead_id} with result: {result}, score: {score}")
+            
+        except Exception as e:
+            logging.error(f"Error completing qualification for lead {lead_id}: {e}")
+    
+    async def handle_qualification_timeout(self, lead_id: str):
+        """Handle qualification timeout after 12 hours"""
+        try:
+            # Check current responses
+            qualification = await db.lead_qualifications.find_one({"lead_id": lead_id})
+            if not qualification:
+                return
+                
+            responses_count = qualification.get("lead_responses", 0)
+            
+            if responses_count > 0:
+                # Lead responded but didn't complete - assign to agent
+                await self.complete_qualification(lead_id, "timeout", 50)
+                await self.assign_qualified_lead_to_agent(lead_id, "timeout_with_responses")
+            else:
+                # No response - mark as unresponsive
+                await self.complete_qualification(lead_id, "timeout", 20)
+                
+                # Send final message
+                lead = await db.leads.find_one({"id": lead_id})
+                if lead and lead.get("telefono"):
+                    final_message = f"""Ciao {lead.get('nome', 'Cliente')}!
+
+Non ho ricevuto una tua risposta, ma non ti preoccupare! 😊
+
+Un nostro consulente ti contatterà comunque per assisterti al meglio.
+
+Grazie e a presto!"""
+                    
+                    if await self.is_whatsapp_available(lead_id):
+                        await whatsapp_service.send_message(lead.get("telefono"), final_message)
+            
+            logging.info(f"Handled timeout for lead {lead_id} with {responses_count} responses")
+            
+        except Exception as e:
+            logging.error(f"Error handling timeout for lead {lead_id}: {e}")
+    
+    async def assign_qualified_lead_to_agent(self, lead_id: str, assignment_reason: str = "bot_qualified"):
+        """Assign qualified lead to best available agent"""
+        try:
+            lead = await db.leads.find_one({"id": lead_id})
+            if not lead:
+                return
+                
+            # Find best agent for this lead
+            unit_id = lead.get("unit_id")
+            provincia = lead.get("provincia")
+            
+            # Get agents from same unit or with matching provinces
+            query = {"role": "agente", "is_active": True}
+            if unit_id:
+                query["unit_id"] = unit_id
+                
+            agents = await db.users.find(query).to_list(length=None)
+            
+            # Filter agents by province if specified
+            suitable_agents = []
+            for agent in agents:
+                if provincia and provincia in agent.get("provinces", []):
+                    suitable_agents.append(agent)
+                elif not agent.get("provinces"):  # Agent covers all provinces
+                    suitable_agents.append(agent)
+            
+            # If no province match, use any agent from unit
+            if not suitable_agents:
+                suitable_agents = agents
+                
+            if suitable_agents:
+                # Select agent with least active leads
+                best_agent = None
+                min_leads = float('inf')
+                
+                for agent in suitable_agents:
+                    # Count active leads for this agent
+                    lead_count = await db.leads.count_documents({
+                        "agent_id": agent["id"],
+                        "esito": {"$in": ["Da Contattare", "In Lavorazione", "Bot Qualificato"]}
+                    })
+                    
+                    if lead_count < min_leads:
+                        min_leads = lead_count
+                        best_agent = agent
+                        
+                if best_agent:
+                    # Assign lead to agent
+                    await db.leads.update_one(
+                        {"id": lead_id},
+                        {
+                            "$set": {
+                                "agent_id": best_agent["id"],
+                                "assigned_at": datetime.now(timezone.utc),
+                                "assignment_reason": assignment_reason,
+                                "esito": "Assegnato da Bot"
+                            }
+                        }
+                    )
+                    
+                    # Log assignment
+                    assignment_log = {
+                        "id": str(uuid.uuid4()),
+                        "lead_id": lead_id,
+                        "agent_id": best_agent["id"],
+                        "assignment_reason": assignment_reason,
+                        "assigned_at": datetime.now(timezone.utc),
+                        "previous_esito": lead.get("esito"),
+                        "qualification_score": lead.get("qualification_score", 0)
+                    }
+                    
+                    await db.lead_assignments.insert_one(assignment_log)
+                    
+                    logging.info(f"Assigned lead {lead_id} to agent {best_agent['username']} (reason: {assignment_reason})")
+                    return best_agent["id"]
+            
+            logging.warning(f"No suitable agents found for lead {lead_id}")
+            return None
+            
+        except Exception as e:
+            logging.error(f"Error assigning lead {lead_id} to agent: {e}")
+            return None
+    
+    async def is_whatsapp_available(self, lead_id: str) -> bool:
+        """Check if WhatsApp is available for this lead"""
+        try:
+            lead = await db.leads.find_one({"id": lead_id})
+            if not lead or not lead.get("telefono"):
+                return False
+                
+            # Check if we have a WhatsApp validation for this number
+            validation = await db.lead_whatsapp_validations.find_one({
+                "lead_id": lead_id,
+                "is_whatsapp": True
+            })
+            
+            return validation is not None
+            
+        except Exception as e:
+            logging.error(f"Error checking WhatsApp availability for lead {lead_id}: {e}")
+            return False
+    
+    async def log_bot_message(self, lead_id: str, message: str, channel: str):
+        """Log bot message for tracking"""
+        try:
+            log_data = {
+                "id": str(uuid.uuid4()),
+                "lead_id": lead_id,
+                "message": message,
+                "channel": channel,  # whatsapp, email, sms, manual_followup, failed_whatsapp
+                "sent_at": datetime.now(timezone.utc),
+                "message_type": "bot_qualification"
+            }
+            
+            await db.bot_messages.insert_one(log_data)
+            
+            # Update qualification stats
+            await db.lead_qualifications.update_one(
+                {"lead_id": lead_id},
+                {"$inc": {"bot_messages_sent": 1}}
+            )
+            
+        except Exception as e:
+            logging.error(f"Error logging bot message for lead {lead_id}: {e}")
+    
+    async def schedule_timeout_check(self, lead_id: str):
+        """Schedule timeout check for lead (simplified implementation)"""
+        try:
+            # In production, this would use a task queue like Celery or APScheduler
+            # For now, we'll create a scheduled task record
+            timeout_task = {
+                "id": str(uuid.uuid4()),
+                "lead_id": lead_id,
+                "task_type": "qualification_timeout",
+                "scheduled_at": datetime.now(timezone.utc) + timedelta(hours=12),
+                "status": "scheduled",
+                "created_at": datetime.now(timezone.utc)
+            }
+            
+            await db.scheduled_tasks.insert_one(timeout_task)
+            
+        except Exception as e:
+            logging.error(f"Error scheduling timeout check for lead {lead_id}: {e}")
+    
+    async def process_scheduled_tasks(self):
+        """Process scheduled qualification timeout tasks"""
+        try:
+            # Find tasks that should be executed
+            current_time = datetime.now(timezone.utc)
+            tasks = await db.scheduled_tasks.find({
+                "task_type": "qualification_timeout",
+                "status": "scheduled",
+                "scheduled_at": {"$lte": current_time}
+            }).to_list(length=100)
+            
+            processed_count = 0
+            
+            for task in tasks:
+                try:
+                    lead_id = task["lead_id"]
+                    
+                    # Check if qualification is still active
+                    qualification = await db.lead_qualifications.find_one({
+                        "lead_id": lead_id,
+                        "status": "active"
+                    })
+                    
+                    if qualification:
+                        await self.handle_qualification_timeout(lead_id)
+                        processed_count += 1
+                    
+                    # Mark task as completed
+                    await db.scheduled_tasks.update_one(
+                        {"id": task["id"]},
+                        {
+                            "$set": {
+                                "status": "completed",
+                                "processed_at": current_time
+                            }
+                        }
+                    )
+                    
+                except Exception as e:
+                    logging.error(f"Error processing timeout task {task['id']}: {e}")
+                    # Mark task as failed
+                    await db.scheduled_tasks.update_one(
+                        {"id": task["id"]},
+                        {
+                            "$set": {
+                                "status": "failed",
+                                "error": str(e),
+                                "processed_at": current_time
+                            }
+                        }
+                    )
+            
+            if processed_count > 0:
+                logging.info(f"Processed {processed_count} qualification timeout tasks")
+                
+            return processed_count
+            
+        except Exception as e:
+            logging.error(f"Error processing scheduled tasks: {e}")
+            return 0
+
 # Initialize WhatsApp service
 whatsapp_service = WhatsAppService()
 
