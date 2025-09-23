@@ -640,6 +640,151 @@ class CallAnalytics(BaseModel):
     customer_satisfaction: Optional[float] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# Sistema Autorizzazioni Gerarchiche Models
+class Commessa(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    descrizione: Optional[str] = None
+    is_active: bool = True
+    responsabile_id: Optional[str] = None  # User ID del Responsabile Commessa
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+class CommessaCreate(BaseModel):
+    nome: str
+    descrizione: Optional[str] = None
+    responsabile_id: Optional[str] = None
+
+class CommessaUpdate(BaseModel):
+    nome: Optional[str] = None
+    descrizione: Optional[str] = None
+    responsabile_id: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class Servizio(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    commessa_id: str
+    nome: str
+    descrizione: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ServizioCreate(BaseModel):
+    commessa_id: str
+    nome: str
+    descrizione: Optional[str] = None
+
+class SubAgenzia(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    descrizione: Optional[str] = None
+    responsabile_id: str  # User ID del responsabile della sub agenzia
+    commesse_autorizzate: List[str] = []  # Lista di commessa_id autorizzate
+    is_active: bool = True
+    created_by: str  # admin o responsabile_commessa che l'ha creata
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+class SubAgenziaCreate(BaseModel):
+    nome: str
+    descrizione: Optional[str] = None
+    responsabile_id: str
+    commesse_autorizzate: List[str] = []
+
+class SubAgenziaUpdate(BaseModel):
+    nome: Optional[str] = None
+    descrizione: Optional[str] = None
+    responsabile_id: Optional[str] = None
+    commesse_autorizzate: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+class ClienteStatus(str, Enum):
+    NUOVO = "nuovo"
+    IN_LAVORAZIONE = "in_lavorazione"
+    COMPLETATO = "completato"
+    SOSPESO = "sospeso"
+    ANNULLATO = "annullato"
+
+class Cliente(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    cliente_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])  # Short ID
+    nome: str
+    cognome: str
+    email: Optional[EmailStr] = None
+    telefono: str
+    indirizzo: Optional[str] = None
+    citta: Optional[str] = None
+    provincia: Optional[str] = None
+    cap: Optional[str] = None
+    codice_fiscale: Optional[str] = None
+    partita_iva: Optional[str] = None
+    commessa_id: str
+    sub_agenzia_id: str
+    servizio_id: Optional[str] = None
+    status: ClienteStatus = ClienteStatus.NUOVO
+    note: Optional[str] = None
+    dati_aggiuntivi: Dict[str, Any] = {}  # Campi personalizzati per commessa
+    created_by: str  # User ID di chi ha creato il cliente
+    assigned_to: Optional[str] = None  # User ID assegnato per lavorazione
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+    last_contact: Optional[datetime] = None
+
+class ClienteCreate(BaseModel):
+    nome: str
+    cognome: str
+    email: Optional[EmailStr] = None
+    telefono: str
+    indirizzo: Optional[str] = None
+    citta: Optional[str] = None
+    provincia: Optional[str] = None
+    cap: Optional[str] = None
+    codice_fiscale: Optional[str] = None
+    partita_iva: Optional[str] = None
+    commessa_id: str
+    sub_agenzia_id: str
+    servizio_id: Optional[str] = None
+    note: Optional[str] = None
+    dati_aggiuntivi: Dict[str, Any] = {}
+
+class ClienteUpdate(BaseModel):
+    nome: Optional[str] = None
+    cognome: Optional[str] = None
+    email: Optional[EmailStr] = None
+    telefono: Optional[str] = None
+    indirizzo: Optional[str] = None
+    citta: Optional[str] = None
+    provincia: Optional[str] = None
+    cap: Optional[str] = None
+    codice_fiscale: Optional[str] = None
+    partita_iva: Optional[str] = None
+    servizio_id: Optional[str] = None
+    status: Optional[ClienteStatus] = None
+    note: Optional[str] = None
+    dati_aggiuntivi: Optional[Dict[str, Any]] = None
+    assigned_to: Optional[str] = None
+
+class UserCommessaAuthorization(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    commessa_id: str
+    sub_agenzia_id: Optional[str] = None  # Se è assegnato a specifica sub agenzia
+    role_in_commessa: UserRole
+    can_view_all_agencies: bool = False  # Per BackOffice Commessa e Responsabile
+    can_modify_clients: bool = False
+    can_create_clients: bool = False
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserCommessaAuthorizationCreate(BaseModel):
+    user_id: str
+    commessa_id: str
+    sub_agenzia_id: Optional[str] = None
+    role_in_commessa: UserRole
+    can_view_all_agencies: bool = False
+    can_modify_clients: bool = False
+    can_create_clients: bool = False
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
