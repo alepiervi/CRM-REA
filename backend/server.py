@@ -30,6 +30,8 @@ import io
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Dial, Say, Record, Connect, Stream
 from twilio.request_validator import RequestValidator
+import pandas as pd
+import numpy as np
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
