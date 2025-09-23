@@ -3602,6 +3602,7 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
           }}
           units={units}
           selectedUnit={selectedUnit}
+          documentType={activeTab}
         />
       )}
 
