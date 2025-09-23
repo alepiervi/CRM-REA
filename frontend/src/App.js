@@ -5059,6 +5059,480 @@ const LeadWhatsAppValidator = () => {
   );
 };
 
+// Lead Qualification Management Component (FASE 4)
+const LeadQualificationManagement = ({ selectedUnit, units }) => {
+  const [activeTab, setActiveTab] = useState("active");
+  const [qualifications, setQualifications] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (activeTab === "active") {
+      fetchActiveQualifications();
+    } else if (activeTab === "analytics") {
+      fetchQualificationAnalytics();
+    }
+  }, [activeTab, selectedUnit]);
+
+  const fetchActiveQualifications = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      
+      const response = await axios.get(`${API}/lead-qualification/active?${params}`);
+      setQualifications(response.data.active_qualifications || []);
+    } catch (error) {
+      console.error("Error fetching active qualifications:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento delle qualificazioni attive",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchQualificationAnalytics = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      
+      // Last 30 days
+      const dateFrom = new Date();
+      dateFrom.setDate(dateFrom.getDate() - 30);
+      params.append('date_from', dateFrom.toISOString());
+      
+      const response = await axios.get(`${API}/lead-qualification/analytics?${params}`);
+      setAnalytics(response.data.analytics);
+    } catch (error) {
+      console.error("Error fetching qualification analytics:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento delle analytics qualificazioni",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManualResponse = async (leadId, message) => {
+    try {
+      const formData = new FormData();
+      formData.append('message', message);
+      formData.append('source', 'manual');
+      
+      const response = await axios.post(`${API}/lead-qualification/${leadId}/response`, formData);
+      
+      if (response.data.success) {
+        toast({
+          title: "Successo",
+          description: "Risposta processata con successo",
+        });
+        setShowResponseModal(false);
+        setSelectedLead(null);
+        fetchActiveQualifications();
+      } else {
+        toast({
+          title: "Attenzione",
+          description: response.data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error processing manual response:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'invio della risposta",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCompleteQualification = async (leadId, result, score, notes) => {
+    try {
+      const formData = new FormData();
+      formData.append('result', result);
+      formData.append('score', score.toString());
+      formData.append('notes', notes);
+      
+      const response = await axios.post(`${API}/lead-qualification/${leadId}/complete`, formData);
+      
+      if (response.data.success) {
+        toast({
+          title: "Successo",
+          description: "Qualificazione completata manualmente",
+        });
+        fetchActiveQualifications();
+      }
+    } catch (error) {
+      console.error("Error completing qualification:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel completamento manuale",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatTimeRemaining = (seconds) => {
+    if (!seconds || seconds <= 0) return "Scaduto";
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    } else {
+      return `${minutes}m`;
+    }
+  };
+
+  const getStageLabel = (stage) => {
+    const stages = {
+      "initial": "Contatto Iniziale",
+      "interest_check": "Verifica Interesse", 
+      "info_gathering": "Raccolta Info",
+      "qualification": "Qualificazione",
+      "completed": "Completato",
+      "timeout": "Timeout",
+      "agent_assigned": "Assegnato ad Agente"
+    };
+    return stages[stage] || stage;
+  };
+
+  const renderActiveQualifications = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      );
+    }
+
+    if (qualifications.length === 0) {
+      return (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Bot className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600">Nessuna qualificazione attiva al momento</p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {qualifications.map((qual) => (
+          <Card key={qual.qualification_id} className="border-l-4 border-l-blue-500">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Bot className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <CardTitle className="text-lg">{qual.lead_name}</CardTitle>
+                    <p className="text-sm text-slate-500">{qual.lead_phone}</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="flex items-center space-x-1">
+                  <Timer className="w-3 h-3" />
+                  <span>{formatTimeRemaining(qual.time_remaining_seconds)}</span>
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <Label className="text-xs text-slate-500">Stadio</Label>
+                  <p className="font-medium">{getStageLabel(qual.stage)}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500">Score</Label>
+                  <p className="font-medium flex items-center">
+                    <Award className="w-4 h-4 mr-1 text-yellow-500" />
+                    {qual.score}/100
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500">Risposte Lead</Label>
+                  <p className="font-medium">{qual.responses_count}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500">Messaggi Bot</Label>
+                  <p className="font-medium">{qual.bot_messages_sent}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-slate-500">
+                  Iniziato: {new Date(qual.started_at).toLocaleString('it-IT')}
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedLead(qual);
+                      setShowResponseModal(true);
+                    }}
+                  >
+                    <MessageCircle className="w-4 h-4 mr-1" />
+                    Aggiungi Risposta
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleCompleteQualification(qual.lead_id, 'manual_completion', qual.score, 'Completato manualmente')}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                    Completa
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  const renderAnalytics = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      );
+    }
+
+    if (!analytics) {
+      return (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Activity className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600">Nessun dato analytics disponibile</p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Qualificazioni Totali</CardTitle>
+              <Bot className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{analytics.total_qualifications}</div>
+              <p className="text-xs text-muted-foreground">Negli ultimi 30 giorni</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Attualmente Attive</CardTitle>
+              <Timer className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{analytics.active_qualifications}</div>
+              <p className="text-xs text-muted-foreground">In corso ora</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tasso Conversione</CardTitle>
+              <Award className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{analytics.conversion_rate}%</div>
+              <p className="text-xs text-muted-foreground">Lead qualificati</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Score Medio</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{analytics.average_score}</div>
+              <p className="text-xs text-muted-foreground">Qualità media lead</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Results Breakdown */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Risultati Qualificazione</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Object.entries(analytics.results_breakdown).map(([result, count]) => (
+                <div key={result} className="text-center p-3 bg-slate-50 rounded-lg">
+                  <div className="text-2xl font-bold text-slate-800">{count}</div>
+                  <div className="text-sm text-slate-600 capitalize">{result.replace('_', ' ')}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Performance Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Metriche Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">Risposte medie per lead:</span>
+                  <span className="font-medium">{analytics.average_responses_per_lead}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">Messaggi bot medi:</span>
+                  <span className="font-medium">{analytics.average_bot_messages}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">Lead qualificati:</span>
+                  <span className="font-medium text-green-600">{analytics.qualified_leads}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">Completati:</span>
+                  <span className="font-medium">{analytics.completed_qualifications}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Sistema Bot Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-blue-600 mb-2">
+                  {analytics.conversion_rate}%
+                </div>
+                <p className="text-slate-600">Efficacia Bot</p>
+                <div className="mt-4 text-sm text-slate-500">
+                  Il sistema bot qualifica automaticamente i lead con un tasso di successo del {analytics.conversion_rate}%
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+          <Bot className="w-8 h-8 mr-3 text-blue-600" />
+          Qualificazione Lead Automatica
+        </h2>
+        <div className="flex items-center space-x-2">
+          <Button
+            onClick={() => fetchActiveQualifications()}
+            variant="outline"
+            size="sm"
+            disabled={loading}
+          >
+            <Activity className="w-4 h-4 mr-2" />
+            Aggiorna
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="active">Qualificazioni Attive</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics & Performance</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="space-y-6">
+          {renderActiveQualifications()}
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          {renderAnalytics()}
+        </TabsContent>
+      </Tabs>
+
+      {/* Manual Response Modal */}
+      {showResponseModal && selectedLead && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md m-4">
+            <CardHeader>
+              <CardTitle>Aggiungi Risposta Manuale</CardTitle>
+              <p className="text-sm text-slate-500">
+                Lead: {selectedLead.lead_name} - {selectedLead.lead_phone}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const message = e.target.message.value;
+                if (message.trim()) {
+                  handleManualResponse(selectedLead.lead_id, message);
+                }
+              }}>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Messaggio del Lead</Label>
+                    <Input
+                      name="message"
+                      placeholder="Inserisci la risposta del lead..."
+                      required
+                    />
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Stadio attuale: {getStageLabel(selectedLead.stage)}
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button type="submit" className="flex-1">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Invia Risposta
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowResponseModal(false);
+                        setSelectedLead(null);
+                      }}
+                    >
+                      Annulla
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Workflow Builder Management Component (FASE 3)
 const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
   const [workflows, setWorkflows] = useState([]);
