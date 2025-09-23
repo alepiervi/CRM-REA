@@ -6971,6 +6971,8 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
   const [subAgenzie, setSubAgenzie] = useState([]);
   const [commesse, setCommesse] = useState([]);
   const [showCreateSubModal, setShowCreateSubModal] = useState(false);
+  const [showEditSubModal, setShowEditSubModal] = useState(false);
+  const [editingSubAgenzia, setEditingSubAgenzia] = useState(null);
   
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
