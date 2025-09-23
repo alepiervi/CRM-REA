@@ -217,6 +217,18 @@ const AuthProvider = ({ children }) => {
     delete axios.defaults.headers.common["Authorization"];
   };
 
+  const checkAuth = async () => {
+    if (!token) return false;
+    
+    try {
+      await axios.get(`${API}/auth/me`);
+      return true;
+    } catch (error) {
+      logout();
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider 
       value={{ user, token, loading, login, logout }}
