@@ -339,10 +339,9 @@ metadata:
 test_plan:
   current_focus:
     - "Sistema Autorizzazioni Gerarchiche - Lead vs Cliente Separation"
-  stuck_tasks:
-    - "Sistema Autorizzazioni Gerarchiche - Lead vs Cliente Separation"
+  stuck_tasks: []
   test_all: false
-  test_priority: "stuck_first"
+  test_priority: "high_first"
 
 frontend:
   - task: "Sistema Autorizzazioni Gerarchiche - Navigation Integration"
