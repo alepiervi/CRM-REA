@@ -3074,7 +3074,7 @@ async def get_units(current_user: User = Depends(get_current_user)):
     return [Unit(**unit) for unit in units]
 
 @api_router.put("/units/{unit_id}", response_model=Unit)
-async def update_unit(unit_id: str, unit_data: UnitCreate, current_user: User = Depends(get_current_user)):
+async def update_unit(unit_id: str, unit_data: UnitUpdate, current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Only admin can update units")
     
