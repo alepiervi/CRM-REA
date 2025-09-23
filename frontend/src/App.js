@@ -7198,6 +7198,23 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
                     </div>
                   </div>
                   
+                  {/* Commesse autorizzate */}
+                  {unit.commesse_autorizzate && unit.commesse_autorizzate.length > 0 && (
+                    <div className="mt-4">
+                      <Label className="text-xs text-slate-500 mb-2 block">Commesse Autorizzate</Label>
+                      <div className="flex flex-wrap gap-1">
+                        {unit.commesse_autorizzate.map((commessaId) => {
+                          const commessa = commesse.find(c => c.id === commessaId);
+                          return (
+                            <Badge key={commessaId} variant="secondary" className="text-xs">
+                              {commessa?.nome || commessaId}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
                   {unit.webhook_url && (
                     <div className="mt-4 p-3 bg-slate-50 rounded-lg">
                       <Label className="text-xs font-medium text-slate-700">Webhook Endpoint</Label>
@@ -7222,7 +7239,16 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
                     </div>
                   )}
                   
-                  <div className="flex justify-end mt-4">
+                  {/* Actions */}
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditUnit(unit)}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Modifica
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
