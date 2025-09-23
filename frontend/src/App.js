@@ -3496,7 +3496,9 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome File</TableHead>
-                  <TableHead>Lead</TableHead>
+                  <TableHead>{activeTab === "lead" ? "Lead" : "Cliente"}</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  {activeTab === "cliente" && <TableHead>Commessa/Agenzia</TableHead>}
                   <TableHead>Dimensione</TableHead>
                   <TableHead>Caricato da</TableHead>
                   <TableHead>Data Caricamento</TableHead>
@@ -3514,10 +3516,12 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {doc.lead ? (
+                      {doc.entity ? (
                         <div>
-                          <div className="font-medium">{doc.lead.nome} {doc.lead.cognome}</div>
-                          <div className="text-xs text-slate-500">ID: {doc.lead.lead_id}</div>
+                          <div className="font-medium">{doc.entity.nome} {doc.entity.cognome}</div>
+                          <div className="text-xs text-slate-500">
+                            ID: {doc.entity.type === "lead" ? doc.entity.lead_id : doc.entity.cliente_id}
+                          </div>
                         </div>
                       ) : (
                         <span className="text-slate-400">Lead non trovato</span>
