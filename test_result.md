@@ -338,6 +338,11 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Sistema Autorizzazioni Gerarchiche - Models Implementation"
+    - "Sistema Autorizzazioni Gerarchiche - API Endpoints"
+    - "Sistema Autorizzazioni Gerarchiche - Initial Data Creation"
+    - "Sistema Autorizzazioni Gerarchiche - Permission System"
+    - "Sistema Autorizzazioni Gerarchiche - Lead vs Cliente Separation"
     - "Call Center Models Implementation"
     - "Twilio Integration Service"
     - "Call Center Service Implementation"
