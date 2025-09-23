@@ -3760,26 +3760,57 @@ const DocumentUploadModal = ({ onClose, onSuccess, units, selectedUnit, document
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Carica Documento</DialogTitle>
+          <DialogTitle>Carica Documento {documentType === "lead" ? "Lead" : "Cliente"}</DialogTitle>
           <DialogDescription>
-            Carica un documento PDF per un lead specifico
+            Carica un documento PDF per un {documentType === "lead" ? "lead" : "cliente"} specifico
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {documentType === "cliente" && (
+            <div>
+              <Label htmlFor="commessa">Commessa *</Label>
+              <Select value={selectedCommessa || "none"} onValueChange={(value) => {
+                setSelectedCommessa(value === "none" ? "" : value);
+                setSelectedEntity(""); // Reset selected entity
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona commessa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Seleziona commessa</SelectItem>
+                  {commesse.map((commessa) => (
+                    <SelectItem key={commessa.id} value={commessa.id}>
+                      {commessa.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div>
-            <Label htmlFor="lead">Lead *</Label>
-            <Select value={selectedLead} onValueChange={setSelectedLead}>
+            <Label htmlFor="entity">{documentType === "lead" ? "Lead" : "Cliente"} *</Label>
+            <Select 
+              value={selectedEntity || "none"} 
+              onValueChange={(value) => setSelectedEntity(value === "none" ? "" : value)}
+              disabled={documentType === "cliente" && !selectedCommessa}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Seleziona lead" />
+                <SelectValue placeholder={`Seleziona ${documentType === "lead" ? "lead" : "cliente"}`} />
               </SelectTrigger>
               <SelectContent>
-                {leadsLoading ? (
+                <SelectItem value="none">
+                  Seleziona {documentType === "lead" ? "lead" : "cliente"}
+                </SelectItem>
+                {entitiesLoading ? (
                   <SelectItem value="loading" disabled>Caricamento...</SelectItem>
                 ) : (
-                  leads.map((lead) => (
-                    <SelectItem key={lead.id} value={lead.id}>
-                      {lead.nome} {lead.cognome} - {lead.email}
+                  entities.map((entity) => (
+                    <SelectItem key={entity.id} value={entity.id}>
+                      {entity.nome} {entity.cognome}
+                      {entity.email && ` - ${entity.email}`}
+                      {documentType === "cliente" && entity.cliente_id && ` (ID: ${entity.cliente_id})`}
                     </SelectItem>
                   ))
                 )}
