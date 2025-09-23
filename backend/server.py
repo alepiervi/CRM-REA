@@ -4983,6 +4983,136 @@ async def get_commessa_analytics(commessa_id: str, current_user: User = Depends(
         "sub_agenzie_stats": sub_agenzie_stats
     }
 
+# Importazione Clienti Endpoints
+@api_router.post("/clienti/import/preview")
+async def preview_clienti_import(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Preview clienti import file"""
+    # Check permissions
+    if current_user.role not in [UserRole.ADMIN, UserRole.OPERATORE, UserRole.BACKOFFICE_COMMESSA, UserRole.BACKOFFICE_AGENZIA]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions for import")
+    
+    # Validate file type
+    allowed_extensions = ['csv', 'xls', 'xlsx']
+    file_extension = file.filename.lower().split('.')[-1] if '.' in file.filename else ''
+    
+    if file_extension not in allowed_extensions:
+        raise HTTPException(status_code=400, detail=f"File type not allowed. Supported: {allowed_extensions}")
+    
+    # Read file content
+    try:
+        content = await file.read()
+        if len(content) > 10 * 1024 * 1024:  # 10MB limit
+            raise HTTPException(status_code=400, detail="File too large. Maximum size: 10MB")
+        
+        preview = await parse_uploaded_file(content, file.filename)
+        return preview
+        
+    except Exception as e:
+        logging.error(f"Preview import error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
+
+@api_router.post("/clienti/import/execute", response_model=ImportResult)
+async def execute_clienti_import(
+    file: UploadFile = File(...),
+    config: str = Form(...),  # JSON string of ImportConfiguration
+    current_user: User = Depends(get_current_user)
+):
+    """Execute clienti import"""
+    # Check permissions
+    if current_user.role not in [UserRole.ADMIN, UserRole.OPERATORE, UserRole.BACKOFFICE_COMMESSA, UserRole.BACKOFFICE_AGENZIA]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions for import")
+    
+    try:
+        # Parse configuration
+        import json
+        config_dict = json.loads(config)
+        import_config = ImportConfiguration(**config_dict)
+        
+        # Verify access to commessa
+        if not await check_commessa_access(current_user, import_config.commessa_id):
+            raise HTTPException(status_code=403, detail="Access denied to this commessa")
+        
+        # Verify sub agenzia exists and is authorized for commessa
+        sub_agenzia = await db.sub_agenzie.find_one({"id": import_config.sub_agenzia_id})
+        if not sub_agenzia:
+            raise HTTPException(status_code=404, detail="Sub agenzia not found")
+        
+        if import_config.commessa_id not in sub_agenzia.get("commesse_autorizzate", []):
+            raise HTTPException(status_code=400, detail="Sub agenzia not authorized for this commessa")
+        
+        # Read file content
+        content = await file.read()
+        
+        # Process import
+        result = await process_import_batch(
+            content,
+            file.filename,
+            import_config,
+            current_user.id
+        )
+        
+        return result
+        
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid configuration format")
+    except Exception as e:
+        logging.error(f"Execute import error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+
+@api_router.get("/clienti/import/template/{file_type}")
+async def download_import_template(
+    file_type: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Download import template file"""
+    if file_type not in ['csv', 'xlsx']:
+        raise HTTPException(status_code=400, detail="Invalid file type. Use 'csv' or 'xlsx'")
+    
+    # Define template columns
+    template_data = {
+        'nome': ['Mario', 'Luigi', 'Anna'],
+        'cognome': ['Rossi', 'Verdi', 'Bianchi'],
+        'email': ['mario.rossi@email.com', 'luigi.verdi@email.com', 'anna.bianchi@email.com'],
+        'telefono': ['+393471234567', '+393487654321', '+393451122334'],
+        'indirizzo': ['Via Roma 1', 'Via Milano 23', 'Via Napoli 45'],
+        'citta': ['Roma', 'Milano', 'Napoli'],
+        'provincia': ['RM', 'MI', 'NA'],
+        'cap': ['00100', '20100', '80100'],
+        'codice_fiscale': ['RSSMRA80A01H501Z', 'VRDLGU75B15F205X', 'BNCNNA90C45F839Y'],
+        'partita_iva': ['12345678901', '98765432109', '11223344556'],
+        'note': ['Cliente VIP', 'Contatto commerciale', 'Referenziato']
+    }
+    
+    df = pd.DataFrame(template_data)
+    
+    if file_type == 'csv':
+        # Create CSV
+        output = io.BytesIO()
+        df.to_csv(output, index=False, encoding='utf-8')
+        output.seek(0)
+        
+        return StreamingResponse(
+            io.BytesIO(output.getvalue()),
+            media_type="application/csv",
+            headers={"Content-Disposition": "attachment; filename=template_clienti.csv"}
+        )
+    
+    elif file_type == 'xlsx':
+        # Create Excel
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Clienti', index=False)
+        output.seek(0)
+        
+        return StreamingResponse(
+            io.BytesIO(output.getvalue()),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=template_clienti.xlsx"}
+        )
+
 # Include the router in the main app
 app.include_router(api_router)
 
