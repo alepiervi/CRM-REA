@@ -2539,6 +2539,27 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
             />
           </div>
 
+          {/* Commesse Selection */}
+          <div>
+            <Label>Commesse Autorizzate</Label>
+            <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-3">
+              {commesse?.map((commessa) => (
+                <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.commesse_autorizzate.includes(commessa.id)}
+                    onChange={() => toggleCommessa(commessa.id)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">{commessa.nome}</span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Selezionate: {formData.commesse_autorizzate.length} commesse
+            </p>
+          </div>
+
           {/* Assistant selection removed as requested */}
 
           {/* Unit Info Display */}
