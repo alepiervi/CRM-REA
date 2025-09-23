@@ -7572,10 +7572,17 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800 flex items-center">
-          <Store className="w-8 h-8 mr-3 text-green-600" />
-          Unit & Sub Agenzie
-        </h2>
+        <div>
+          <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+            <Store className="w-8 h-8 mr-3 text-green-600" />
+            Unit & Sub Agenzie
+          </h2>
+          {selectedCommessa && selectedCommessa !== "all" && (
+            <p className="text-sm text-slate-600 mt-1 ml-11">
+              Filtrato per commessa: <Badge variant="secondary">{commesse.find(c => c.id === selectedCommessa)?.nome || selectedCommessa}</Badge>
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Tabs Navigation */}
