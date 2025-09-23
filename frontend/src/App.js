@@ -7300,7 +7300,12 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
           </div>
         ) : (
           <div className="grid gap-4">
-            {unitsData.map((unit) => (
+            {unitsData
+              .filter(unit => 
+                selectedCommessa === "all" || 
+                unit.commesse_autorizzate?.includes(selectedCommessa)
+              )
+              .map((unit) => (
               <Card key={unit.id}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
