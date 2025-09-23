@@ -470,6 +470,7 @@ const Dashboard = () => {
     fetchUnits();
     fetchAssistants();
     fetchCommesse();
+    fetchSubAgenzie();
   }, []);
 
   useEffect(() => {
