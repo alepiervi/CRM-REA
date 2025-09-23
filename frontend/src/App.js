@@ -2851,6 +2851,7 @@ const EditContainerModal = ({ container, onClose, onSubmit, units }) => {
 // Advanced Analytics Management Component with Charts and Reports
 const AnalyticsManagement = ({ selectedUnit, units }) => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [analyticsData, setAnalyticsData] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
