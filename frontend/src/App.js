@@ -6498,16 +6498,29 @@ const ClientiManagement = ({ selectedUnit, units }) => {
               ))}
             </SelectContent>
           </Select>
-          <Button 
-            onClick={() => {
-              fetchSubAgenzie();
-              setShowCreateModal(true);
-            }}
-            disabled={!selectedCommessa}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nuovo Cliente
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              onClick={() => {
+                fetchSubAgenzie();
+                setShowCreateModal(true);
+              }}
+              disabled={!selectedCommessa}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nuovo Cliente
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                fetchSubAgenzie();
+                setShowImportModal(true);
+              }}
+              disabled={!selectedCommessa}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Importa Clienti
+            </Button>
+          </div>
         </div>
       </div>
 
