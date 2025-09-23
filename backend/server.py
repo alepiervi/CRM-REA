@@ -32,7 +32,7 @@ from twilio.twiml.voice_response import VoiceResponse, Dial, Say, Record, Connec
 from twilio.request_validator import RequestValidator
 import pandas as pd
 import numpy as np
-import aioredis
+# import aioredis  # Temporarily disabled due to version conflict
 import json
 from typing import Union
 
