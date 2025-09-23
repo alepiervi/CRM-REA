@@ -414,6 +414,21 @@ frontend:
           agent: "testing"
           comment: "✅ CRITICAL SUCCESS - SELECTITEM FIX RISOLTO! (3/4 test passed): ✅ RISOLTO: Pagina 'Gestione Clienti' ora carica senza errori JavaScript! ✅ Nessun errore SelectItem rilevato nella console, ✅ Dropdown 'Tutte le Commesse' funziona correttamente con 4 opzioni, ✅ Tabella clienti visualizzata correttamente. ❌ Minor: Modal 'Nuovo Cliente' non si apre (possibile problema UI specifico ma non critico). Il fix SelectItem ha risolto il problema principale di caricamento pagina."
 
+  - task: "Sistema Autorizzazioni Gerarchiche - Sub Agenzie Management Interface"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementato componente SubAgenzieManagement con tabella completa (Nome, Responsabile, Commesse Autorizzate, Stato, Data), modal creazione con selezione multiple commesse, e badge per commesse autorizzate."
+        - working: true
+          agent: "testing"
+          comment: "✅ SUB AGENZIE MANAGEMENT COMPLETAMENTE FUNZIONANTE (5/5 test passed): ✅ Pagina carica correttamente, ✅ Tabella con tutti gli header richiesti (Nome, Responsabile, Commesse Autorizzate, Stato, Data Creazione), ✅ Modal 'Nuova Sub Agenzia' funziona perfettamente, ✅ Form completo con campi nome, responsabile, descrizione e sezione 'Commesse Autorizzate' con 3 checkboxes multiple, ✅ Esistente sub agenzia 'Updated Sub Agenzia 110913' visualizzata correttamente con stato 'Attiva'."
+
   - task: "Sistema Autorizzazioni Gerarchiche - Lead vs Cliente Separation"
     implemented: true
     working: false
