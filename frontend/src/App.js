@@ -254,11 +254,6 @@ const Login = () => {
           </form>
         </CardContent>
         
-        <CardFooter className="pt-6 border-t border-slate-100">
-          <p className="text-xs text-slate-500 text-center w-full">
-            Account di default: <strong>admin</strong> / <strong>admin123</strong>
-          </p>
-        </CardFooter>
       </Card>
     </div>
   );
