@@ -2503,7 +2503,7 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSuccess(formData);
   };
 
   return (
