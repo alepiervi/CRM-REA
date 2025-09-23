@@ -428,6 +428,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ SEPARAZIONE LEAD vs CLIENTI NON VERIFICABILE: A causa del mancato caricamento della sezione Clienti, non è possibile verificare la corretta separazione tra Lead e Clienti. La sezione Lead è accessibile e funzionante, ma la sezione Clienti presenta errori che impediscono la verifica della separazione."
+        - working: false
+          agent: "testing"
+          comment: "❌ SEPARAZIONE LEAD vs CLIENTI NON IMPLEMENTATA CORRETTAMENTE: Dopo il fix SelectItem, ora entrambe le sezioni sono accessibili ma mostrano gli STESSI dati. Lead section: 1 record 'Mario Updated Bianchi Updated', Clienti section: 1 record 'Mario Updated Bianchi Updated'. Le sezioni mostrano contenuto identico invece di essere separate. Questo indica che il backend non sta filtrando correttamente i dati o che il frontend sta chiamando gli stessi endpoint."
 
   - task: "WhatsApp Section - Admin Navigation Visibility"
     implemented: true
