@@ -6959,22 +6959,88 @@ const CommesseManagement = ({ selectedUnit, units }) => {
   );
 };
 
-// Sub Agenzie Management Component
+// Unit & Sub Agenzie Management Component (Unified)
 const SubAgenzieManagement = ({ selectedUnit, units }) => {
+  const [activeTab, setActiveTab] = useState("units");
+  
+  // Units state
+  const [unitsData, setUnitsData] = useState([]);
+  const [showCreateUnitModal, setShowCreateUnitModal] = useState(false);
+  
+  // Sub Agenzie state  
   const [subAgenzie, setSubAgenzie] = useState([]);
   const [commesse, setCommesse] = useState([]);
+  const [showCreateSubModal, setShowCreateSubModal] = useState(false);
+  
   const [loading, setLoading] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    fetchUnits();
     fetchSubAgenzie();
     fetchCommesse();
-  }, [selectedUnit]);
+  }, []);
 
-  const fetchSubAgenzie = async () => {
+  // Units functions
+  const fetchUnits = async () => {
     try {
       setLoading(true);
+      const response = await axios.get(`${API}/units`);
+      setUnitsData(response.data);
+    } catch (error) {
+      console.error("Error fetching units:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento delle unit",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createUnit = async (unitData) => {
+    try {
+      const response = await axios.post(`${API}/units`, unitData);
+      setUnitsData([response.data, ...unitsData]);
+      toast({
+        title: "Successo",
+        description: "Unit creata con successo",
+      });
+      setShowCreateUnitModal(false);
+    } catch (error) {
+      console.error("Error creating unit:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione della unit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteUnit = async (unitId) => {
+    if (window.confirm("Sei sicuro di voler eliminare questa unit?")) {
+      try {
+        await axios.delete(`${API}/units/${unitId}`);
+        setUnitsData(unitsData.filter(unit => unit.id !== unitId));
+        toast({
+          title: "Successo", 
+          description: "Unit eliminata con successo",
+        });
+      } catch (error) {
+        console.error("Error deleting unit:", error);
+        toast({
+          title: "Errore",
+          description: "Errore nell'eliminazione della unit",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  // Sub Agenzie functions
+  const fetchSubAgenzie = async () => {
+    try {
       const response = await axios.get(`${API}/sub-agenzie`);
       setSubAgenzie(response.data);
     } catch (error) {
@@ -6984,8 +7050,6 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
         description: "Errore nel caricamento delle sub agenzie",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -7001,11 +7065,12 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
   const createSubAgenzia = async (subAgenziaData) => {
     try {
       const response = await axios.post(`${API}/sub-agenzie`, subAgenziaData);
-      setSubAgenzie([...subAgenzie, response.data]);
+      setSubAgenzie([response.data, ...subAgenzie]);
       toast({
         title: "Successo",
         description: "Sub Agenzia creata con successo",
       });
+      setShowCreateSubModal(false);
     } catch (error) {
       console.error("Error creating sub agenzia:", error);
       toast({
@@ -7016,85 +7081,251 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gestione Sub Agenzie</h2>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nuova Sub Agenzia
-        </Button>
-      </div>
+  // Render Units Tab
+  const renderUnitsTab = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-medium text-slate-800">Gestione Unit</h3>
+            <p className="text-sm text-slate-600">Gestisci le unit organizzative del sistema</p>
+          </div>
+          <Button onClick={() => setShowCreateUnitModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuova Unit
+          </Button>
+        </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Responsabile</TableHead>
-                <TableHead>Commesse Autorizzate</TableHead>
-                <TableHead>Stato</TableHead>
-                <TableHead>Data Creazione</TableHead>
-                <TableHead>Azioni</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {subAgenzie.map((subAgenzia) => (
-                <TableRow key={subAgenzia.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Store className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium">{subAgenzia.nome}</span>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {unitsData.map((unit) => (
+              <Card key={unit.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Building2 className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <CardTitle className="text-lg">{unit.name}</CardTitle>
+                        <p className="text-sm text-slate-500">{unit.description}</p>
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{subAgenzia.responsabile_id}</span>
-                  </TableCell>
-                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Badge variant={unit.is_active ? "default" : "secondary"}>
+                        {unit.is_active ? "Attiva" : "Inattiva"}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <Label className="text-xs text-slate-500">ID</Label>
+                      <p className="font-mono text-xs">{unit.id}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Webhook URL</Label>
+                      <p className="font-mono text-xs break-all">
+                        {unit.webhook_url || "Non configurato"}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Creata il</Label>
+                      <p className="text-xs">
+                        {new Date(unit.created_at).toLocaleDateString('it-IT')}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {unit.webhook_url && (
+                    <div className="mt-4 p-3 bg-slate-50 rounded-lg">
+                      <Label className="text-xs font-medium text-slate-700">Webhook Endpoint</Label>
+                      <div className="mt-1 flex items-center space-x-2">
+                        <code className="text-xs bg-white px-2 py-1 rounded border font-mono break-all">
+                          {unit.webhook_url}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            navigator.clipboard.writeText(unit.webhook_url);
+                            toast({
+                              title: "Copiato!",
+                              description: "URL webhook copiato negli appunti"
+                            });
+                          }}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-end mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteUnit(unit.id)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Elimina
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Create Unit Modal */}
+        {showCreateUnitModal && (
+          <CreateUnitModal
+            onClose={() => setShowCreateUnitModal(false)}
+            onSuccess={createUnit}
+          />
+        )}
+      </div>
+    );
+  };
+
+  // Render Sub Agenzie Tab
+  const renderSubAgenzieTab = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-medium text-slate-800">Gestione Sub Agenzie</h3>
+            <p className="text-sm text-slate-600">Gestisci le sub agenzie e le loro autorizzazioni</p>
+          </div>
+          <Button onClick={() => setShowCreateSubModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuova Sub Agenzia
+          </Button>
+        </div>
+
+        <div className="grid gap-4">
+          {subAgenzie.map((subAgenzia) => (
+            <Card key={subAgenzia.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Store className="w-5 h-5 text-green-600" />
+                    <div>
+                      <CardTitle className="text-lg">{subAgenzia.nome}</CardTitle>
+                      <p className="text-sm text-slate-500">{subAgenzia.descrizione}</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">
+                    {subAgenzia.commesse_autorizzate?.length || 0} Commesse
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label className="text-xs text-slate-500">Responsabile</Label>
+                    <p className="font-medium">{subAgenzia.responsabile || "Non assegnato"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-500">Email</Label>
+                    <p className="text-sm">{subAgenzia.email || "Non configurata"}</p>
+                  </div>
+                </div>
+
+                {subAgenzia.commesse_autorizzate && subAgenzia.commesse_autorizzate.length > 0 && (
+                  <div className="mb-4">
+                    <Label className="text-xs text-slate-500 mb-2 block">Commesse Autorizzate</Label>
                     <div className="flex flex-wrap gap-1">
                       {subAgenzia.commesse_autorizzate.map((commessaId) => {
                         const commessa = commesse.find(c => c.id === commessaId);
                         return (
-                          <Badge key={commessaId} variant="outline" className="text-xs">
+                          <Badge key={commessaId} variant="secondary" className="text-xs">
                             {commessa?.nome || commessaId}
                           </Badge>
                         );
                       })}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={subAgenzia.is_active ? "default" : "secondary"}>
-                      {subAgenzia.is_active ? "Attiva" : "Inattiva"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(subAgenzia.created_at).toLocaleDateString('it-IT')}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <ShieldCheck className="w-4 h-4" />
+                  </div>
+                )}
+
+                {/* Webhook URL per Sub Agenzia */}
+                {subAgenzia.webhook_url && (
+                  <div className="p-3 bg-slate-50 rounded-lg">
+                    <Label className="text-xs font-medium text-slate-700">Webhook Sub Agenzia</Label>
+                    <div className="mt-1 flex items-center space-x-2">
+                      <code className="text-xs bg-white px-2 py-1 rounded border font-mono break-all">
+                        {subAgenzia.webhook_url}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          navigator.clipboard.writeText(subAgenzia.webhook_url);
+                          toast({
+                            title: "Copiato!",
+                            description: "URL webhook Sub Agenzia copiato negli appunti"
+                          });
+                        }}
+                      >
+                        <Copy className="w-3 h-3" />
                       </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  </div>
+                )}
 
-      {/* Create Sub Agenzia Modal */}
-      <CreateSubAgenziaModal 
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSubmit={createSubAgenzia}
-        commesse={commesse}
-      />
+                <div className="text-xs text-slate-400 mt-2">
+                  Creata il: {new Date(subAgenzia.created_at).toLocaleDateString('it-IT')}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Create Sub Agenzia Modal */}
+        {showCreateSubModal && (
+          <CreateSubAgenziaModal
+            onClose={() => setShowCreateSubModal(false)}
+            onSuccess={createSubAgenzia}
+            commesse={commesse}
+          />
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800 flex items-center">
+          <Store className="w-8 h-8 mr-3 text-green-600" />
+          Unit & Sub Agenzie
+        </h2>
+      </div>
+
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="units" className="flex items-center space-x-2">
+            <Building2 className="w-4 h-4" />
+            <span>Unit</span>
+          </TabsTrigger>
+          <TabsTrigger value="sub-agenzie" className="flex items-center space-x-2">
+            <Store className="w-4 h-4" />
+            <span>Sub Agenzie</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="units" className="space-y-6">
+          {renderUnitsTab()}
+        </TabsContent>
+
+        <TabsContent value="sub-agenzie" className="space-y-6">
+          {renderSubAgenzieTab()}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
