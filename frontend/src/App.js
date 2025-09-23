@@ -3618,12 +3618,14 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
 };
 
 // Document Upload Modal Component
-const DocumentUploadModal = ({ onClose, onSuccess, units, selectedUnit }) => {
-  const [selectedLead, setSelectedLead] = useState("");
-  const [leads, setLeads] = useState([]);
+const DocumentUploadModal = ({ onClose, onSuccess, units, selectedUnit, documentType = "lead" }) => {
+  const [selectedEntity, setSelectedEntity] = useState("");
+  const [entities, setEntities] = useState([]);
+  const [commesse, setCommesse] = useState([]);
+  const [selectedCommessa, setSelectedCommessa] = useState("");
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [entitiesLoading, setEntitiesLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
