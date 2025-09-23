@@ -3453,9 +3453,11 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
             <div className="flex space-x-2">
               <Button
                 onClick={() => setFilters({
-                  lead_id: "",
+                  entity_id: "",
                   nome: "",
                   cognome: "",
+                  commessa_id: "",
+                  sub_agenzia_id: "",
                   uploaded_by: "",
                   date_from: "",
                   date_to: "",
