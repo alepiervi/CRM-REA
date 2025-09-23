@@ -274,7 +274,9 @@ class Document(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class DocumentUpload(BaseModel):
-    lead_id: str
+    document_type: DocumentType
+    lead_id: Optional[str] = None
+    cliente_id: Optional[str] = None
     uploaded_by: str
 
 class ChatMessage(BaseModel):
