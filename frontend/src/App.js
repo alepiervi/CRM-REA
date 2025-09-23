@@ -3859,7 +3859,239 @@ const DocumentDetailsModal = ({ document, onClose, onDownload }) => {
 
 // Chat Management Component removed as requested
 
-// AI Configuration components removed as requested
+// AI Configuration Management Component
+const AIConfigurationManagement = () => {
+  const [config, setConfig] = useState(null);
+  const [assistants, setAssistants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchAIConfig();
+  }, []);
+
+  const fetchAIConfig = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/ai-config`);
+      setConfig(response.data);
+      
+      if (response.data && response.data.assistants) {
+        setAssistants(response.data.assistants);
+      }
+    } catch (error) {
+      console.error("Error fetching AI config:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-slate-800">
+          Configurazione AI
+        </h2>
+        <Button onClick={() => setShowConfigModal(true)}>
+          <Settings className="w-4 h-4 mr-2" />
+          Configura
+        </Button>
+      </div>
+
+      {/* Current Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Stato Configurazione</CardTitle>
+          <CardDescription>
+            Visualizza lo stato attuale della configurazione AI
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {config && config.openai_configured ? (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                <span className="text-green-700 font-medium">OpenAI configurato correttamente</span>
+              </div>
+              
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="font-medium text-green-800 mb-2">Dettagli Configurazione:</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-green-600 font-medium">Modello:</span>
+                    <span className="ml-2 text-green-800">{config.model_name || "gpt-3.5-turbo"}</span>
+                  </div>
+                  <div>
+                    <span className="text-green-600 font-medium">Status:</span>
+                    <span className="ml-2 text-green-800">Attivo</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+                <span className="text-amber-700 font-medium">OpenAI non configurato</span>
+              </div>
+              <p className="text-slate-600">
+                Per utilizzare le funzionalità AI, è necessario configurare una chiave API OpenAI valida.
+              </p>
+              <Button onClick={() => setShowConfigModal(true)} className="w-fit">
+                <Settings className="w-4 h-4 mr-2" />
+                Configura OpenAI
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Assistants List */}
+      {assistants && assistants.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Assistant Configurati</CardTitle>
+            <CardDescription>
+              Lista degli assistant AI configurati per le unità
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {assistants.map((assistant, index) => (
+                <div key={index} className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{assistant.name || "Assistant"}</h4>
+                      <p className="text-sm text-slate-600">Unità: {assistant.unit_id || "Tutte"}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span className="text-sm text-green-600">Attivo</span>
+                    </div>
+                  </div>
+                  {assistant.description && (
+                    <p className="text-sm text-slate-600 mt-2">{assistant.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Configuration Modal */}
+      {showConfigModal && (
+        <AIConfigModal
+          onClose={() => setShowConfigModal(false)}
+          onSuccess={() => {
+            fetchAIConfig();
+            setShowConfigModal(false);
+          }}
+          existingConfig={config}
+        />
+      )}
+    </div>
+  );
+};
+
+// AI Configuration Modal Component
+const AIConfigModal = ({ onClose, onSuccess, existingConfig }) => {
+  const [apiKey, setApiKey] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (existingConfig && existingConfig.openai_api_key_preview) {
+      setApiKey(existingConfig.openai_api_key_preview);
+    }
+  }, [existingConfig]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!apiKey.trim()) {
+      toast({
+        title: "Errore",
+        description: "Inserisci una chiave API valida",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(`${API}/ai-config`, {
+        openai_api_key: apiKey.trim()
+      });
+
+      if (response.data.success) {
+        toast({
+          title: "Successo",
+          description: "Configurazione AI salvata correttamente",
+        });
+        onSuccess();
+      } else {
+        throw new Error(response.data.message || "Configurazione non valida");
+      }
+    } catch (error) {
+      console.error("Error saving AI config:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nel salvataggio della configurazione",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Configurazione AI</DialogTitle>
+          <DialogDescription>
+            Inserisci la tua chiave API OpenAI per abilitare le funzionalità AI
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="apiKey">Chiave API OpenAI</Label>
+            <Input
+              id="apiKey"
+              type="password"
+              placeholder="sk-..."
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              required
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              La chiave API verrà crittografata e salvata in modo sicuro
+            </p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Validazione..." : "Salva Configurazione"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 
 // WhatsApp Management Component
