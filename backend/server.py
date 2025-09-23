@@ -787,6 +787,35 @@ class UserCommessaAuthorizationCreate(BaseModel):
     can_modify_clients: bool = False
     can_create_clients: bool = False
 
+# Importazione Clienti Models
+class ImportPreview(BaseModel):
+    headers: List[str]
+    sample_data: List[List[str]]
+    total_rows: int
+    file_type: str
+
+class FieldMapping(BaseModel):
+    csv_field: str
+    client_field: str
+    required: bool = False
+    example_value: Optional[str] = None
+
+class ImportConfiguration(BaseModel):
+    commessa_id: str
+    sub_agenzia_id: str
+    field_mappings: List[FieldMapping]
+    skip_header: bool = True
+    skip_duplicates: bool = True
+    validate_phone: bool = True
+    validate_email: bool = True
+
+class ImportResult(BaseModel):
+    total_processed: int
+    successful: int
+    failed: int
+    errors: List[str]
+    created_client_ids: List[str]
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
