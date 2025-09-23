@@ -6613,6 +6613,18 @@ const ClientiManagement = ({ selectedUnit, units }) => {
         subAgenzie={subAgenzie}
         selectedCommessa={selectedCommessa}
       />
+
+      {/* Import Clienti Modal */}
+      <ImportClientiModal 
+        isOpen={showImportModal}
+        onClose={() => {
+          setShowImportModal(false);
+          fetchClienti(); // Refresh list after import
+        }}
+        commesse={commesse}
+        subAgenzie={subAgenzie}
+        selectedCommessa={selectedCommessa}
+      />
     </div>
   );
 };
