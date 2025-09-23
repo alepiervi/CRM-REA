@@ -4391,6 +4391,392 @@ async def get_call_center_dashboard(
         logging.error(f"Dashboard error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to load dashboard")
 
+# Sistema Autorizzazioni Gerarchiche Endpoints
+
+# Gestione Commesse
+@api_router.post("/commesse", response_model=Commessa)
+async def create_commessa(commessa_data: CommessaCreate, current_user: User = Depends(get_current_user)):
+    """Create new commessa"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    commessa = Commessa(**commessa_data.dict())
+    await db.commesse.insert_one(commessa.dict())
+    
+    return commessa
+
+@api_router.get("/commesse", response_model=List[Commessa])
+async def get_commesse(current_user: User = Depends(get_current_user)):
+    """Get accessible commesse for current user"""
+    accessible_commesse_ids = await get_user_accessible_commesse(current_user)
+    
+    commesse = await db.commesse.find({
+        "id": {"$in": accessible_commesse_ids},
+        "is_active": True
+    }).to_list(length=None)
+    
+    return [Commessa(**c) for c in commesse]
+
+@api_router.get("/commesse/{commessa_id}", response_model=Commessa)
+async def get_commessa(commessa_id: str, current_user: User = Depends(get_current_user)):
+    """Get specific commessa"""
+    if not await check_commessa_access(current_user, commessa_id):
+        raise HTTPException(status_code=403, detail="Access denied to this commessa")
+    
+    commessa_doc = await db.commesse.find_one({"id": commessa_id})
+    if not commessa_doc:
+        raise HTTPException(status_code=404, detail="Commessa not found")
+    
+    return Commessa(**commessa_doc)
+
+@api_router.put("/commesse/{commessa_id}", response_model=Commessa)
+async def update_commessa(commessa_id: str, commessa_update: CommessaUpdate, current_user: User = Depends(get_current_user)):
+    """Update commessa"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    update_data = {k: v for k, v in commessa_update.dict().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    result = await db.commesse.update_one(
+        {"id": commessa_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Commessa not found")
+    
+    commessa_doc = await db.commesse.find_one({"id": commessa_id})
+    return Commessa(**commessa_doc)
+
+# Gestione Servizi
+@api_router.post("/servizi", response_model=Servizio)
+async def create_servizio(servizio_data: ServizioCreate, current_user: User = Depends(get_current_user)):
+    """Create new servizio"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Verifica che la commessa esista
+    commessa = await db.commesse.find_one({"id": servizio_data.commessa_id})
+    if not commessa:
+        raise HTTPException(status_code=404, detail="Commessa not found")
+    
+    servizio = Servizio(**servizio_data.dict())
+    await db.servizi.insert_one(servizio.dict())
+    
+    return servizio
+
+@api_router.get("/commesse/{commessa_id}/servizi", response_model=List[Servizio])
+async def get_servizi_by_commessa(commessa_id: str, current_user: User = Depends(get_current_user)):
+    """Get servizi for a specific commessa"""
+    if not await check_commessa_access(current_user, commessa_id):
+        raise HTTPException(status_code=403, detail="Access denied to this commessa")
+    
+    servizi = await db.servizi.find({
+        "commessa_id": commessa_id,
+        "is_active": True
+    }).to_list(length=None)
+    
+    return [Servizio(**s) for s in servizi]
+
+# Gestione Sub Agenzie
+@api_router.post("/sub-agenzie", response_model=SubAgenzia)
+async def create_sub_agenzia(sub_agenzia_data: SubAgenziaCreate, current_user: User = Depends(get_current_user)):
+    """Create new sub agenzia"""
+    # Solo admin e responsabile commessa possono creare sub agenzie
+    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    # Verifica che l'utente abbia accesso alle commesse specificate
+    for commessa_id in sub_agenzia_data.commesse_autorizzate:
+        if not await check_commessa_access(current_user, commessa_id):
+            raise HTTPException(status_code=403, detail=f"No access to commessa {commessa_id}")
+    
+    sub_agenzia = SubAgenzia(
+        **sub_agenzia_data.dict(),
+        created_by=current_user.id
+    )
+    await db.sub_agenzie.insert_one(sub_agenzia.dict())
+    
+    return sub_agenzia
+
+@api_router.get("/sub-agenzie", response_model=List[SubAgenzia])
+async def get_sub_agenzie(
+    commessa_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get sub agenzie accessible to current user"""
+    query = {"is_active": True}
+    
+    if current_user.role == UserRole.ADMIN:
+        # Admin vede tutte
+        if commessa_id:
+            query["commesse_autorizzate"] = {"$in": [commessa_id]}
+    else:
+        # Altri vedono solo quelle delle loro commesse
+        accessible_commesse = await get_user_accessible_commesse(current_user)
+        query["commesse_autorizzate"] = {"$in": accessible_commesse}
+        
+        if commessa_id:
+            if commessa_id not in accessible_commesse:
+                raise HTTPException(status_code=403, detail="Access denied to this commessa")
+            query["commesse_autorizzate"] = {"$in": [commessa_id]}
+    
+    sub_agenzie = await db.sub_agenzie.find(query).to_list(length=None)
+    return [SubAgenzia(**sa) for sa in sub_agenzie]
+
+@api_router.put("/sub-agenzie/{sub_agenzia_id}", response_model=SubAgenzia)
+async def update_sub_agenzia(
+    sub_agenzia_id: str,
+    sub_agenzia_update: SubAgenziaUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update sub agenzia"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    # Get current sub agenzia
+    current_sub_agenzia = await db.sub_agenzie.find_one({"id": sub_agenzia_id})
+    if not current_sub_agenzia:
+        raise HTTPException(status_code=404, detail="Sub Agenzia not found")
+    
+    # Verifica autorizzazioni per le nuove commesse
+    if sub_agenzia_update.commesse_autorizzate:
+        for commessa_id in sub_agenzia_update.commesse_autorizzate:
+            if not await check_commessa_access(current_user, commessa_id):
+                raise HTTPException(status_code=403, detail=f"No access to commessa {commessa_id}")
+    
+    update_data = {k: v for k, v in sub_agenzia_update.dict().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    result = await db.sub_agenzie.update_one(
+        {"id": sub_agenzia_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Sub Agenzia not found")
+    
+    sub_agenzia_doc = await db.sub_agenzie.find_one({"id": sub_agenzia_id})
+    return SubAgenzia(**sub_agenzia_doc)
+
+# Gestione Clienti
+@api_router.post("/clienti", response_model=Cliente)
+async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depends(get_current_user)):
+    """Create new cliente"""
+    # Verifica accesso alla commessa
+    if not await check_commessa_access(current_user, cliente_data.commessa_id, ["can_create_clients"]):
+        raise HTTPException(status_code=403, detail="No permission to create clients in this commessa")
+    
+    # Verifica che la sub agenzia sia autorizzata per la commessa
+    sub_agenzia = await db.sub_agenzie.find_one({"id": cliente_data.sub_agenzia_id})
+    if not sub_agenzia or cliente_data.commessa_id not in sub_agenzia.get("commesse_autorizzate", []):
+        raise HTTPException(status_code=400, detail="Sub agenzia not authorized for this commessa")
+    
+    cliente = Cliente(
+        **cliente_data.dict(),
+        created_by=current_user.id
+    )
+    await db.clienti.insert_one(cliente.dict())
+    
+    return cliente
+
+@api_router.get("/clienti", response_model=List[Cliente])
+async def get_clienti(
+    commessa_id: Optional[str] = None,
+    sub_agenzia_id: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user)
+):
+    """Get clienti accessible to current user"""
+    query = {}
+    
+    # Filtra per commesse accessibili
+    accessible_commesse = await get_user_accessible_commesse(current_user)
+    if commessa_id:
+        if commessa_id not in accessible_commesse:
+            raise HTTPException(status_code=403, detail="Access denied to this commessa")
+        query["commessa_id"] = commessa_id
+    else:
+        query["commessa_id"] = {"$in": accessible_commesse}
+    
+    # Filtra per sub agenzie accessibili
+    if commessa_id:
+        accessible_sub_agenzie = await get_user_accessible_sub_agenzie(current_user, commessa_id)
+        if sub_agenzia_id:
+            if sub_agenzia_id not in accessible_sub_agenzie:
+                raise HTTPException(status_code=403, detail="Access denied to this sub agenzia")
+            query["sub_agenzia_id"] = sub_agenzia_id
+        else:
+            query["sub_agenzia_id"] = {"$in": accessible_sub_agenzie}
+    
+    if status:
+        query["status"] = status
+    
+    clienti = await db.clienti.find(query).sort("created_at", -1).limit(limit).to_list(length=None)
+    return [Cliente(**c) for c in clienti]
+
+@api_router.get("/clienti/{cliente_id}", response_model=Cliente)
+async def get_cliente(cliente_id: str, current_user: User = Depends(get_current_user)):
+    """Get specific cliente"""
+    cliente_doc = await db.clienti.find_one({"id": cliente_id})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente not found")
+    
+    cliente = Cliente(**cliente_doc)
+    
+    # Verifica accesso
+    if not await check_commessa_access(current_user, cliente.commessa_id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    accessible_sub_agenzie = await get_user_accessible_sub_agenzie(current_user, cliente.commessa_id)
+    if cliente.sub_agenzia_id not in accessible_sub_agenzie:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return cliente
+
+@api_router.put("/clienti/{cliente_id}", response_model=Cliente)
+async def update_cliente(
+    cliente_id: str,
+    cliente_update: ClienteUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update cliente"""
+    cliente_doc = await db.clienti.find_one({"id": cliente_id})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente not found")
+    
+    cliente = Cliente(**cliente_doc)
+    
+    # Verifica permessi di modifica
+    if not await can_user_modify_cliente(current_user, cliente):
+        raise HTTPException(status_code=403, detail="No permission to modify this cliente")
+    
+    update_data = {k: v for k, v in cliente_update.dict().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    result = await db.clienti.update_one(
+        {"id": cliente_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Cliente not found")
+    
+    cliente_doc = await db.clienti.find_one({"id": cliente_id})
+    return Cliente(**cliente_doc)
+
+# Gestione Autorizzazioni Utenti
+@api_router.post("/user-commessa-authorizations", response_model=UserCommessaAuthorization)
+async def create_user_authorization(
+    auth_data: UserCommessaAuthorizationCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create user authorization for commessa"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    # Responsabile commessa può autorizzare solo per le sue commesse
+    if current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        if not await check_commessa_access(current_user, auth_data.commessa_id):
+            raise HTTPException(status_code=403, detail="Access denied to this commessa")
+    
+    # Verifica che l'utente esista
+    user = await db.users.find_one({"id": auth_data.user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Controlla se autorizzazione già esiste
+    existing_auth = await db.user_commessa_authorizations.find_one({
+        "user_id": auth_data.user_id,
+        "commessa_id": auth_data.commessa_id,
+        "sub_agenzia_id": auth_data.sub_agenzia_id
+    })
+    
+    if existing_auth:
+        raise HTTPException(status_code=400, detail="Authorization already exists")
+    
+    authorization = UserCommessaAuthorization(**auth_data.dict())
+    await db.user_commessa_authorizations.insert_one(authorization.dict())
+    
+    return authorization
+
+@api_router.get("/user-commessa-authorizations")
+async def get_user_authorizations(
+    user_id: Optional[str] = None,
+    commessa_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get user authorizations"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    query = {"is_active": True}
+    
+    if user_id:
+        query["user_id"] = user_id
+    
+    if commessa_id:
+        # Responsabile commessa può vedere solo le sue commesse
+        if current_user.role == UserRole.RESPONSABILE_COMMESSA:
+            if not await check_commessa_access(current_user, commessa_id):
+                raise HTTPException(status_code=403, detail="Access denied")
+        query["commessa_id"] = commessa_id
+    
+    authorizations = await db.user_commessa_authorizations.find(query).to_list(length=None)
+    return [UserCommessaAuthorization(**auth) for auth in authorizations]
+
+# Analytics per Responsabile Commessa
+@api_router.get("/commesse/{commessa_id}/analytics")
+async def get_commessa_analytics(commessa_id: str, current_user: User = Depends(get_current_user)):
+    """Get analytics for commessa"""
+    if not await check_commessa_access(current_user, commessa_id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Analytics per sub agenzia
+    pipeline = [
+        {"$match": {"commessa_id": commessa_id}},
+        {"$group": {
+            "_id": "$sub_agenzia_id",
+            "total_clienti": {"$sum": 1},
+            "clienti_completati": {"$sum": {"$cond": [{"$eq": ["$status", "completato"]}, 1, 0]}},
+            "clienti_in_lavorazione": {"$sum": {"$cond": [{"$eq": ["$status", "in_lavorazione"]}, 1, 0]}},
+            "ultimo_cliente": {"$max": "$created_at"}
+        }}
+    ]
+    
+    results = await db.clienti.aggregate(pipeline).to_list(length=None)
+    
+    # Get sub agenzia details
+    sub_agenzie_stats = []
+    for result in results:
+        sub_agenzia = await db.sub_agenzie.find_one({"id": result["_id"]})
+        if sub_agenzia:
+            sub_agenzie_stats.append({
+                "sub_agenzia_id": result["_id"],
+                "sub_agenzia_nome": sub_agenzia["nome"],
+                "total_clienti": result["total_clienti"],
+                "clienti_completati": result["clienti_completati"],
+                "clienti_in_lavorazione": result["clienti_in_lavorazione"],
+                "ultimo_cliente": result["ultimo_cliente"]
+            })
+    
+    # Analytics generali commessa
+    total_clienti = await db.clienti.count_documents({"commessa_id": commessa_id})
+    clienti_completati = await db.clienti.count_documents({
+        "commessa_id": commessa_id,
+        "status": "completato"
+    })
+    
+    return {
+        "commessa_id": commessa_id,
+        "total_clienti": total_clienti,
+        "clienti_completati": clienti_completati,
+        "tasso_completamento": (clienti_completati / total_clienti * 100) if total_clienti > 0 else 0,
+        "sub_agenzie_stats": sub_agenzie_stats
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 
