@@ -3163,14 +3163,19 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
 
 // Documents Management Component
 const DocumentsManagement = ({ selectedUnit, units }) => {
+  const [activeTab, setActiveTab] = useState("lead"); // "lead" or "cliente"
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
+  const [commesse, setCommesse] = useState([]);
+  const [subAgenzie, setSubAgenzie] = useState([]);
   const [filters, setFilters] = useState({
-    lead_id: "",
+    entity_id: "",
     nome: "",
     cognome: "",
+    commessa_id: "",
+    sub_agenzia_id: "",
     uploaded_by: "",
     date_from: "",
     date_to: "",
