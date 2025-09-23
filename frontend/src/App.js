@@ -2395,7 +2395,7 @@ const UnitsManagement = ({ selectedUnit }) => {
 };
 
 // Create Unit Modal Component
-const CreateUnitModal = ({ onClose, onSubmit }) => {
+const CreateUnitModal = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -2404,7 +2404,7 @@ const CreateUnitModal = ({ onClose, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSuccess(formData);
   };
 
   return (
