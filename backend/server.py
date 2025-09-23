@@ -3172,7 +3172,7 @@ async def delete_container(container_id: str, current_user: User = Depends(get_c
 # Lead management
 @api_router.post("/leads", response_model=Lead)
 async def create_lead(lead_data: LeadCreate):
-    """Create lead - accessible via webhook"""
+    """Create lead - accessible via webhook with automatic qualification"""
     # Validate province
     if lead_data.provincia not in ITALIAN_PROVINCES:
         raise HTTPException(status_code=400, detail="Invalid province")
@@ -3180,8 +3180,44 @@ async def create_lead(lead_data: LeadCreate):
     lead_obj = Lead(**lead_data.dict())
     await db.leads.insert_one(lead_obj.dict())
     
-    # Auto-assign to agent
-    await assign_lead_to_agent(lead_obj)
+    # Start automatic lead qualification if phone number is provided
+    if lead_obj.telefono and lead_obj.telefono.strip():
+        try:
+            # First validate WhatsApp availability
+            validation_result = await whatsapp_service.validate_phone_number(lead_obj.telefono)
+            
+            # Store validation result
+            if validation_result.get("is_whatsapp"):
+                validation_data = {
+                    "id": str(uuid.uuid4()),
+                    "lead_id": lead_obj.id,
+                    "phone_number": lead_obj.telefono,
+                    "is_whatsapp": validation_result["is_whatsapp"],
+                    "validation_status": validation_result["validation_status"],
+                    "validation_date": datetime.now(timezone.utc),
+                    "created_at": datetime.now(timezone.utc)
+                }
+                await db.lead_whatsapp_validations.insert_one(validation_data)
+            
+            # Start qualification process
+            await lead_qualification_bot.start_qualification_process(lead_obj.id)
+            
+            logging.info(f"Started automatic qualification for new lead {lead_obj.id}")
+            
+        except Exception as e:
+            logging.error(f"Error starting qualification for new lead {lead_obj.id}: {e}")
+            # Continue with normal flow even if qualification fails
+            pass
+    
+    # If qualification is not started, proceed with traditional auto-assignment
+    qualification = await db.lead_qualifications.find_one({
+        "lead_id": lead_obj.id,
+        "status": "active"
+    })
+    
+    if not qualification:
+        # Auto-assign to agent using traditional method
+        await assign_lead_to_agent(lead_obj)
     
     return lead_obj
 
