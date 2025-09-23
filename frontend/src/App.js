@@ -6966,6 +6966,8 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
   // Units state
   const [unitsData, setUnitsData] = useState([]);
   const [showCreateUnitModal, setShowCreateUnitModal] = useState(false);
+  const [showEditUnitModal, setShowEditUnitModal] = useState(false);
+  const [editingUnit, setEditingUnit] = useState(null);
   
   // Sub Agenzie state  
   const [subAgenzie, setSubAgenzie] = useState([]);
