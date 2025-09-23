@@ -7752,6 +7752,104 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse }) => {
   );
 };
 
+// Edit Sub Agenzia Modal Component
+const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse }) => {
+  const [formData, setFormData] = useState({
+    nome: subAgenzia?.nome || '',
+    descrizione: subAgenzia?.descrizione || '',
+    responsabile: subAgenzia?.responsabile || '',
+    email: subAgenzia?.email || '',
+    commesse_autorizzate: subAgenzia?.commesse_autorizzate || []
+  });
+
+  const toggleCommessa = (commessaId) => {
+    setFormData({
+      ...formData,
+      commesse_autorizzate: formData.commesse_autorizzate.includes(commessaId)
+        ? formData.commesse_autorizzate.filter(id => id !== commessaId)
+        : [...formData.commesse_autorizzate, commessaId]
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSuccess(formData);
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Modifica Sub Agenzia</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="nome">Nome *</Label>
+            <Input
+              id="nome"
+              value={formData.nome}
+              onChange={(e) => setFormData({...formData, nome: e.target.value})}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="descrizione">Descrizione</Label>
+            <Textarea
+              id="descrizione"
+              value={formData.descrizione}
+              onChange={(e) => setFormData({...formData, descrizione: e.target.value})}
+            />
+          </div>
+          <div>
+            <Label htmlFor="responsabile">Responsabile</Label>
+            <Input
+              id="responsabile"
+              value={formData.responsabile}
+              onChange={(e) => setFormData({...formData, responsabile: e.target.value})}
+            />
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+            />
+          </div>
+          <div>
+            <Label>Commesse Autorizzate</Label>
+            <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-3">
+              {commesse.map((commessa) => (
+                <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.commesse_autorizzate.includes(commessa.id)}
+                    onChange={() => toggleCommessa(commessa.id)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">{commessa.nome}</span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Selezionate: {formData.commesse_autorizzate.length} commesse
+            </p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">
+              Salva Modifiche
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, selectedCommessa }) => {
   const [formData, setFormData] = useState({
     nome: '',
