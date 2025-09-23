@@ -3097,8 +3097,8 @@ Duplicate,Test,+393471234567"""
                 os.unlink(temp_file_path)
 
     def run_all_tests(self):
-        """Run Clienti Import Tests"""
-        print("🚀 Starting CRM API Testing - CLIENTI IMPORT FUNCTIONALITY...")
+        """Run all test suites including Reports & Analytics"""
+        print("🚀 Starting CRM API Testing - REPORTS & ANALYTICS SYSTEM...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
@@ -3106,6 +3106,9 @@ Duplicate,Test,+393471234567"""
         if not self.test_authentication():
             print("❌ Authentication failed - stopping tests")
             return False
+        
+        # Run Reports & Analytics tests
+        self.test_reports_analytics_system()
         
         # Run Clienti Import tests
         self.test_clienti_import_functionality()
