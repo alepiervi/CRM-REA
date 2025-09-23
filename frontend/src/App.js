@@ -3348,9 +3348,9 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
             <div>
               <Label>{activeTab === "lead" ? "Lead ID" : "Cliente ID"}</Label>
               <Input
-                placeholder="Filtra per Lead ID"
-                value={filters.lead_id}
-                onChange={(e) => setFilters({ ...filters, lead_id: e.target.value })}
+                placeholder={`Filtra per ${activeTab === "lead" ? "Lead ID" : "Cliente ID"}`}
+                value={filters.entity_id}
+                onChange={(e) => setFilters({ ...filters, entity_id: e.target.value })}
               />
             </div>
             <div>
@@ -3369,6 +3369,61 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
                 onChange={(e) => setFilters({ ...filters, cognome: e.target.value })}
               />
             </div>
+            
+            {/* Cliente-specific filters */}
+            {activeTab === "cliente" && (
+              <>
+                <div>
+                  <Label>Commessa</Label>
+                  <Select
+                    value={filters.commessa_id || "all"}
+                    onValueChange={(value) => setFilters({ 
+                      ...filters, 
+                      commessa_id: value === "all" ? "" : value,
+                      sub_agenzia_id: "" // Reset sub agenzia when commessa changes
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tutte le Commesse" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le Commesse</SelectItem>
+                      {commesse.map((commessa) => (
+                        <SelectItem key={commessa.id} value={commessa.id}>
+                          {commessa.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Sub Agenzia</Label>
+                  <Select
+                    value={filters.sub_agenzia_id || "all"}
+                    onValueChange={(value) => setFilters({ 
+                      ...filters, 
+                      sub_agenzia_id: value === "all" ? "" : value 
+                    })}
+                    disabled={!filters.commessa_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tutte le Sub Agenzie" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le Sub Agenzie</SelectItem>
+                      {subAgenzie
+                        .filter(sa => !filters.commessa_id || sa.commesse_autorizzate.includes(filters.commessa_id))
+                        .map((subAgenzia) => (
+                          <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
+                            {subAgenzia.nome}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+            
             <div>
               <Label>Caricato da</Label>
               <Input
