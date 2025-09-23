@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 class CRMAPITester:
-    def __init__(self, base_url="http://localhost:8001/api"):
+    def __init__(self, base_url="http://127.0.0.1:8001/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
