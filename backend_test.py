@@ -3540,8 +3540,8 @@ Duplicate,Test,+393471234567"""
             self.log_test("Database integration test", False, f"Error: {str(e)}")
 
     def run_all_tests(self):
-        """Run all test suites including WhatsApp Business API System"""
-        print("🚀 Starting CRM API Testing - WhatsApp Business API System...")
+        """Run all test suites including Lead Qualification System (FASE 4)"""
+        print("🚀 Starting CRM API Testing - Lead Qualification System (FASE 4)...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
@@ -3550,12 +3550,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # Create basic resources needed for WhatsApp testing
+        # Create basic resources needed for testing
         self.test_units_management()
         self.test_leads_management()
         
-        # Run WhatsApp Business API System tests
-        self.test_whatsapp_system()
+        # Run Lead Qualification System (FASE 4) tests
+        self.test_lead_qualification_system()
         
         # Print summary
         print("\n" + "=" * 60)
