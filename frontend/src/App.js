@@ -2372,7 +2372,7 @@ const UnitsManagement = ({ selectedUnit }) => {
 };
 
 // Create Unit Modal Component
-const CreateUnitModal = ({ onClose, onSubmit, assistants = [] }) => {
+const CreateUnitModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
