@@ -6060,6 +6060,887 @@ const OutboundCallForm = ({ onCall, loading }) => {
   );
 };
 
+// Commesse Management Component
+const CommesseManagement = ({ selectedUnit, units }) => {
+  const [commesse, setCommesse] = useState([]);
+  const [servizi, setServizi] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedCommessa, setSelectedCommessa] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchCommesse();
+  }, [selectedUnit]);
+
+  const fetchCommesse = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/commesse`);
+      setCommesse(response.data);
+    } catch (error) {
+      console.error("Error fetching commesse:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento delle commesse",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchServizi = async (commessaId) => {
+    try {
+      const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+      setServizi(response.data);
+    } catch (error) {
+      console.error("Error fetching servizi:", error);
+    }
+  };
+
+  const createCommessa = async (commessaData) => {
+    try {
+      const response = await axios.post(`${API}/commesse`, commessaData);
+      setCommesse([...commesse, response.data]);
+      toast({
+        title: "Successo",
+        description: "Commessa creata con successo",
+      });
+    } catch (error) {
+      console.error("Error creating commessa:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione della commessa",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createServizio = async (servizioData) => {
+    try {
+      const response = await axios.post(`${API}/servizi`, servizioData);
+      setServizi([...servizi, response.data]);
+      toast({
+        title: "Successo",
+        description: "Servizio creato con successo",
+      });
+    } catch (error) {
+      console.error("Error creating servizio:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione del servizio",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Gestione Commesse</h2>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nuova Commessa
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Lista Commesse */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Commesse Attive</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {commesse.map((commessa) => (
+                <div 
+                  key={commessa.id}
+                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                    selectedCommessa?.id === commessa.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => {
+                    setSelectedCommessa(commessa);
+                    fetchServizi(commessa.id);
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Building className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <h3 className="font-medium">{commessa.nome}</h3>
+                        {commessa.descrizione && (
+                          <p className="text-sm text-gray-600">{commessa.descrizione}</p>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant={commessa.is_active ? "default" : "secondary"}>
+                      {commessa.is_active ? "Attiva" : "Inattiva"}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dettagli Commessa e Servizi */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {selectedCommessa ? `Servizi - ${selectedCommessa.nome}` : 'Seleziona una Commessa'}
+            </CardTitle>
+            {selectedCommessa && (
+              <Button 
+                size="sm" 
+                onClick={() => {
+                  const nomeServizio = prompt("Nome del nuovo servizio:");
+                  if (nomeServizio) {
+                    createServizio({
+                      commessa_id: selectedCommessa.id,
+                      nome: nomeServizio
+                    });
+                  }
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nuovo Servizio
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {selectedCommessa ? (
+              <div className="space-y-3">
+                {servizi.map((servizio) => (
+                  <div key={servizio.id} className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Settings2 className="w-4 h-4 text-green-600" />
+                        <span className="font-medium">{servizio.nome}</span>
+                      </div>
+                      <Badge variant={servizio.is_active ? "default" : "secondary"}>
+                        {servizio.is_active ? "Attivo" : "Inattivo"}
+                      </Badge>
+                    </div>
+                    {servizio.descrizione && (
+                      <p className="text-sm text-gray-600 mt-1">{servizio.descrizione}</p>
+                    )}
+                  </div>
+                ))}
+                {servizi.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">
+                    Nessun servizio configurato per questa commessa
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">
+                Seleziona una commessa per vedere i servizi
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Create Commessa Modal */}
+      <CreateCommessaModal 
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={createCommessa}
+      />
+    </div>
+  );
+};
+
+// Sub Agenzie Management Component
+const SubAgenzieManagement = ({ selectedUnit, units }) => {
+  const [subAgenzie, setSubAgenzie] = useState([]);
+  const [commesse, setCommesse] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchSubAgenzie();
+    fetchCommesse();
+  }, [selectedUnit]);
+
+  const fetchSubAgenzie = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/sub-agenzie`);
+      setSubAgenzie(response.data);
+    } catch (error) {
+      console.error("Error fetching sub agenzie:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento delle sub agenzie",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCommesse = async () => {
+    try {
+      const response = await axios.get(`${API}/commesse`);
+      setCommesse(response.data);
+    } catch (error) {
+      console.error("Error fetching commesse:", error);
+    }
+  };
+
+  const createSubAgenzia = async (subAgenziaData) => {
+    try {
+      const response = await axios.post(`${API}/sub-agenzie`, subAgenziaData);
+      setSubAgenzie([...subAgenzie, response.data]);
+      toast({
+        title: "Successo",
+        description: "Sub Agenzia creata con successo",
+      });
+    } catch (error) {
+      console.error("Error creating sub agenzia:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione della sub agenzia",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Gestione Sub Agenzie</h2>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nuova Sub Agenzia
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Responsabile</TableHead>
+                <TableHead>Commesse Autorizzate</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead>Data Creazione</TableHead>
+                <TableHead>Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {subAgenzie.map((subAgenzia) => (
+                <TableRow key={subAgenzia.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Store className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium">{subAgenzia.nome}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{subAgenzia.responsabile_id}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {subAgenzia.commesse_autorizzate.map((commessaId) => {
+                        const commessa = commesse.find(c => c.id === commessaId);
+                        return (
+                          <Badge key={commessaId} variant="outline" className="text-xs">
+                            {commessa?.nome || commessaId}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={subAgenzia.is_active ? "default" : "secondary"}>
+                      {subAgenzia.is_active ? "Attiva" : "Inattiva"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(subAgenzia.created_at).toLocaleDateString('it-IT')}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <ShieldCheck className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Create Sub Agenzia Modal */}
+      <CreateSubAgenziaModal 
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={createSubAgenzia}
+        commesse={commesse}
+      />
+    </div>
+  );
+};
+
+// Clienti Management Component
+const ClientiManagement = ({ selectedUnit, units }) => {
+  const [clienti, setClienti] = useState([]);
+  const [commesse, setCommesse] = useState([]);
+  const [subAgenzie, setSubAgenzie] = useState([]);
+  const [selectedCommessa, setSelectedCommessa] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchCommesse();
+    fetchClienti();
+  }, [selectedUnit]);
+
+  const fetchCommesse = async () => {
+    try {
+      const response = await axios.get(`${API}/commesse`);
+      setCommesse(response.data);
+    } catch (error) {
+      console.error("Error fetching commesse:", error);
+    }
+  };
+
+  const fetchSubAgenzie = async () => {
+    try {
+      const response = await axios.get(`${API}/sub-agenzie`);
+      setSubAgenzie(response.data);
+    } catch (error) {
+      console.error("Error fetching sub agenzie:", error);
+    }
+  };
+
+  const fetchClienti = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (selectedCommessa) {
+        params.append('commessa_id', selectedCommessa);
+      }
+      params.append('limit', '50');
+      
+      const response = await axios.get(`${API}/clienti?${params}`);
+      setClienti(response.data);
+    } catch (error) {
+      console.error("Error fetching clienti:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei clienti",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createCliente = async (clienteData) => {
+    try {
+      const response = await axios.post(`${API}/clienti`, clienteData);
+      setClienti([response.data, ...clienti]);
+      toast({
+        title: "Successo",
+        description: "Cliente creato con successo",
+      });
+    } catch (error) {
+      console.error("Error creating cliente:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione del cliente",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (selectedCommessa) {
+      fetchClienti();
+    }
+  }, [selectedCommessa]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Gestione Clienti</h2>
+        <div className="flex space-x-3">
+          <Select value={selectedCommessa || ""} onValueChange={setSelectedCommessa}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Seleziona Commessa" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Tutte le Commesse</SelectItem>
+              {commesse.map((commessa) => (
+                <SelectItem key={commessa.id} value={commessa.id}>
+                  {commessa.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={() => {
+              fetchSubAgenzie();
+              setShowCreateModal(true);
+            }}
+            disabled={!selectedCommessa}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nuovo Cliente
+          </Button>
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Telefono</TableHead>
+                <TableHead>Commessa</TableHead>
+                <TableHead>Sub Agenzia</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead>Data Creazione</TableHead>
+                <TableHead>Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {clienti.map((cliente) => (
+                <TableRow key={cliente.id}>
+                  <TableCell>
+                    <span className="font-mono text-sm">{cliente.cliente_id}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <FileUser className="w-4 h-4 text-green-600" />
+                      <span>{cliente.nome} {cliente.cognome}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{cliente.email || 'N/A'}</TableCell>
+                  <TableCell>{cliente.telefono}</TableCell>
+                  <TableCell>
+                    {commesse.find(c => c.id === cliente.commessa_id)?.nome || 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    {subAgenzie.find(sa => sa.id === cliente.sub_agenzia_id)?.nome || 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant={
+                        cliente.status === "completato" ? "default" :
+                        cliente.status === "in_lavorazione" ? "secondary" : "outline"
+                      }
+                    >
+                      {cliente.status.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(cliente.created_at).toLocaleDateString('it-IT')}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {clienti.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-gray-500">
+                {selectedCommessa ? 'Nessun cliente trovato per questa commessa' : 'Seleziona una commessa per vedere i clienti'}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Create Cliente Modal */}
+      <CreateClienteModal 
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={createCliente}
+        commesse={commesse}
+        subAgenzie={subAgenzie}
+        selectedCommessa={selectedCommessa}
+      />
+    </div>
+  );
+};
+
+// Modal Components
+const CreateCommessaModal = ({ isOpen, onClose, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    nome: '',
+    descrizione: '',
+    responsabile_id: ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+    setFormData({ nome: '', descrizione: '', responsabile_id: '' });
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Nuova Commessa</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="nome">Nome Commessa *</Label>
+            <Input
+              id="nome"
+              value={formData.nome}
+              onChange={(e) => setFormData({...formData, nome: e.target.value})}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="descrizione">Descrizione</Label>
+            <Textarea
+              id="descrizione"
+              value={formData.descrizione}
+              onChange={(e) => setFormData({...formData, descrizione: e.target.value})}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">
+              Crea Commessa
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const CreateSubAgenziaModal = ({ isOpen, onClose, onSubmit, commesse }) => {
+  const [formData, setFormData] = useState({
+    nome: '',
+    descrizione: '',
+    responsabile_id: '',
+    commesse_autorizzate: []
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+    setFormData({ nome: '', descrizione: '', responsabile_id: '', commesse_autorizzate: [] });
+    onClose();
+  };
+
+  const toggleCommessa = (commessaId) => {
+    setFormData(prev => ({
+      ...prev,
+      commesse_autorizzate: prev.commesse_autorizzate.includes(commessaId)
+        ? prev.commesse_autorizzate.filter(id => id !== commessaId)
+        : [...prev.commesse_autorizzate, commessaId]
+    }));
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Nuova Sub Agenzia</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="nome">Nome Sub Agenzia *</Label>
+            <Input
+              id="nome"
+              value={formData.nome}
+              onChange={(e) => setFormData({...formData, nome: e.target.value})}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="responsabile_id">ID Responsabile *</Label>
+            <Input
+              id="responsabile_id"
+              value={formData.responsabile_id}
+              onChange={(e) => setFormData({...formData, responsabile_id: e.target.value})}
+              placeholder="Inserisci l'ID dell'utente responsabile"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="descrizione">Descrizione</Label>
+            <Textarea
+              id="descrizione"
+              value={formData.descrizione}
+              onChange={(e) => setFormData({...formData, descrizione: e.target.value})}
+            />
+          </div>
+          <div>
+            <Label>Commesse Autorizzate</Label>
+            <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-3">
+              {commesse.map((commessa) => (
+                <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.commesse_autorizzate.includes(commessa.id)}
+                    onChange={() => toggleCommessa(commessa.id)}
+                    className="rounded border-gray-300"
+                  />
+                  <span>{commessa.nome}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">
+              Crea Sub Agenzia
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, selectedCommessa }) => {
+  const [formData, setFormData] = useState({
+    nome: '',
+    cognome: '',
+    email: '',
+    telefono: '',
+    indirizzo: '',
+    citta: '',
+    provincia: '',
+    cap: '',
+    codice_fiscale: '',
+    partita_iva: '',
+    commessa_id: selectedCommessa || '',
+    sub_agenzia_id: '',
+    note: ''
+  });
+
+  useEffect(() => {
+    if (selectedCommessa) {
+      setFormData(prev => ({ ...prev, commessa_id: selectedCommessa }));
+    }
+  }, [selectedCommessa]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+    setFormData({
+      nome: '', cognome: '', email: '', telefono: '', indirizzo: '', 
+      citta: '', provincia: '', cap: '', codice_fiscale: '', partita_iva: '',
+      commessa_id: selectedCommessa || '', sub_agenzia_id: '', note: ''
+    });
+    onClose();
+  };
+
+  const availableSubAgenzie = subAgenzie.filter(sa => 
+    sa.commesse_autorizzate.includes(formData.commessa_id)
+  );
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Nuovo Cliente</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nome">Nome *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="cognome">Cognome *</Label>
+              <Input
+                id="cognome"
+                value={formData.cognome}
+                onChange={(e) => setFormData({...formData, cognome: e.target.value})}
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="telefono">Telefono *</Label>
+              <Input
+                id="telefono"
+                value={formData.telefono}
+                onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="commessa_id">Commessa *</Label>
+              <Select 
+                value={formData.commessa_id} 
+                onValueChange={(value) => setFormData({...formData, commessa_id: value, sub_agenzia_id: ''})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona Commessa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {commesse.map((commessa) => (
+                    <SelectItem key={commessa.id} value={commessa.id}>
+                      {commessa.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
+              <Select 
+                value={formData.sub_agenzia_id} 
+                onValueChange={(value) => setFormData({...formData, sub_agenzia_id: value})}
+                disabled={!formData.commessa_id}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona Sub Agenzia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSubAgenzie.map((subAgenzia) => (
+                    <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
+                      {subAgenzia.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="indirizzo">Indirizzo</Label>
+            <Input
+              id="indirizzo"
+              value={formData.indirizzo}
+              onChange={(e) => setFormData({...formData, indirizzo: e.target.value})}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="citta">Città</Label>
+              <Input
+                id="citta"
+                value={formData.citta}
+                onChange={(e) => setFormData({...formData, citta: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="provincia">Provincia</Label>
+              <Input
+                id="provincia"
+                value={formData.provincia}
+                onChange={(e) => setFormData({...formData, provincia: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="cap">CAP</Label>
+              <Input
+                id="cap"
+                value={formData.cap}
+                onChange={(e) => setFormData({...formData, cap: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="codice_fiscale">Codice Fiscale</Label>
+              <Input
+                id="codice_fiscale"
+                value={formData.codice_fiscale}
+                onChange={(e) => setFormData({...formData, codice_fiscale: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="partita_iva">Partita IVA</Label>
+              <Input
+                id="partita_iva"
+                value={formData.partita_iva}
+                onChange={(e) => setFormData({...formData, partita_iva: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="note">Note</Label>
+            <Textarea
+              id="note"
+              value={formData.note}
+              onChange={(e) => setFormData({...formData, note: e.target.value})}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">
+              Crea Cliente
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Main App Component
 const App = () => {
   const { user, loading } = useAuth();
