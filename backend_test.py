@@ -2329,6 +2329,341 @@ class CRMAPITester:
         else:
             self.log_test("Call model structure validation", False, f"Status: {status}")
 
+    def test_sistema_autorizzazioni_gerarchiche(self):
+        """Test Sistema Autorizzazioni Gerarchiche - Complete hierarchical authorization system"""
+        print("\n🏢 Testing SISTEMA AUTORIZZAZIONI GERARCHICHE...")
+        
+        # Test 1: Get initial commesse (should include Fastweb and Fotovoltaico)
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if success:
+            commesse = commesse_response
+            self.log_test("GET /commesse - Initial data", True, f"Found {len(commesse)} commesse")
+            
+            # Check for default commesse
+            fastweb_commessa = next((c for c in commesse if c['nome'] == 'Fastweb'), None)
+            fotovoltaico_commessa = next((c for c in commesse if c['nome'] == 'Fotovoltaico'), None)
+            
+            if fastweb_commessa:
+                self.log_test("Default Fastweb commessa exists", True, f"ID: {fastweb_commessa['id']}")
+                fastweb_id = fastweb_commessa['id']
+            else:
+                self.log_test("Default Fastweb commessa exists", False, "Fastweb commessa not found")
+                fastweb_id = None
+                
+            if fotovoltaico_commessa:
+                self.log_test("Default Fotovoltaico commessa exists", True, f"ID: {fotovoltaico_commessa['id']}")
+                fotovoltaico_id = fotovoltaico_commessa['id']
+            else:
+                self.log_test("Default Fotovoltaico commessa exists", False, "Fotovoltaico commessa not found")
+                fotovoltaico_id = None
+        else:
+            self.log_test("GET /commesse - Initial data", False, f"Status: {status}")
+            return
+        
+        # Test 2: Get Fastweb servizi (should include TLS, Agent, Negozi, Presidi)
+        if fastweb_id:
+            success, servizi_response, status = self.make_request('GET', f'commesse/{fastweb_id}/servizi', expected_status=200)
+            if success:
+                servizi = servizi_response
+                self.log_test("GET /commesse/{id}/servizi - Fastweb services", True, f"Found {len(servizi)} servizi")
+                
+                expected_servizi = ['TLS', 'Agent', 'Negozi', 'Presidi']
+                found_servizi = [s['nome'] for s in servizi]
+                missing_servizi = [s for s in expected_servizi if s not in found_servizi]
+                
+                if not missing_servizi:
+                    self.log_test("Default Fastweb servizi complete", True, f"All services found: {found_servizi}")
+                else:
+                    self.log_test("Default Fastweb servizi complete", False, f"Missing: {missing_servizi}")
+            else:
+                self.log_test("GET /commesse/{id}/servizi - Fastweb services", False, f"Status: {status}")
+        
+        # Test 3: Create new commessa
+        new_commessa_data = {
+            "nome": f"Test Commessa {datetime.now().strftime('%H%M%S')}",
+            "descrizione": "Commessa di test per sistema autorizzazioni",
+            "responsabile_id": self.user_data['id']  # Admin as responsabile
+        }
+        
+        success, commessa_response, status = self.make_request('POST', 'commesse', new_commessa_data, 200)
+        if success:
+            test_commessa_id = commessa_response['id']
+            self.log_test("POST /commesse - Create new commessa", True, f"Commessa ID: {test_commessa_id}")
+        else:
+            self.log_test("POST /commesse - Create new commessa", False, f"Status: {status}")
+            return
+        
+        # Test 4: Create servizio for new commessa
+        servizio_data = {
+            "commessa_id": test_commessa_id,
+            "nome": "Test Service",
+            "descrizione": "Servizio di test"
+        }
+        
+        success, servizio_response, status = self.make_request('POST', 'servizi', servizio_data, 200)
+        if success:
+            test_servizio_id = servizio_response['id']
+            self.log_test("POST /servizi - Create service", True, f"Servizio ID: {test_servizio_id}")
+        else:
+            self.log_test("POST /servizi - Create service", False, f"Status: {status}")
+            test_servizio_id = None
+        
+        # Test 5: Create users with new roles
+        new_roles_users = []
+        new_roles = [
+            ("responsabile_commessa", "Responsabile Commessa Test"),
+            ("backoffice_commessa", "BackOffice Commessa Test"),
+            ("agente_commessa", "Agente Commessa Test"),
+            ("backoffice_agenzia", "BackOffice Agenzia Test"),
+            ("operatore", "Operatore Test")
+        ]
+        
+        for role, description in new_roles:
+            user_data = {
+                "username": f"test_{role}_{datetime.now().strftime('%H%M%S')}",
+                "email": f"test_{role}_{datetime.now().strftime('%H%M%S')}@test.com",
+                "password": "TestPass123!",
+                "role": role,
+                "provinces": []
+            }
+            
+            success, user_response, status = self.make_request('POST', 'users', user_data, 200)
+            if success:
+                user_id = user_response['id']
+                new_roles_users.append((user_id, role))
+                self.created_resources['users'].append(user_id)
+                self.log_test(f"Create user with role {role}", True, f"User ID: {user_id}")
+            else:
+                self.log_test(f"Create user with role {role}", False, f"Status: {status}")
+        
+        # Test 6: Create sub agenzia
+        if new_roles_users:
+            responsabile_user = next((u for u in new_roles_users if u[1] == 'responsabile_commessa'), None)
+            if responsabile_user:
+                responsabile_id = responsabile_user[0]
+            else:
+                responsabile_id = self.user_data['id']  # Fallback to admin
+            
+            sub_agenzia_data = {
+                "nome": f"Test Sub Agenzia {datetime.now().strftime('%H%M%S')}",
+                "descrizione": "Sub agenzia di test",
+                "responsabile_id": responsabile_id,
+                "commesse_autorizzate": [test_commessa_id] if test_commessa_id else []
+            }
+            
+            success, sub_agenzia_response, status = self.make_request('POST', 'sub-agenzie', sub_agenzia_data, 200)
+            if success:
+                test_sub_agenzia_id = sub_agenzia_response['id']
+                self.log_test("POST /sub-agenzie - Create sub agenzia", True, f"Sub Agenzia ID: {test_sub_agenzia_id}")
+            else:
+                self.log_test("POST /sub-agenzie - Create sub agenzia", False, f"Status: {status}")
+                test_sub_agenzia_id = None
+        else:
+            test_sub_agenzia_id = None
+        
+        # Test 7: Get sub agenzie
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        if success:
+            sub_agenzie = sub_agenzie_response
+            self.log_test("GET /sub-agenzie - List sub agenzie", True, f"Found {len(sub_agenzie)} sub agenzie")
+        else:
+            self.log_test("GET /sub-agenzie - List sub agenzie", False, f"Status: {status}")
+        
+        # Test 8: Create cliente (manual record separate from leads)
+        if test_sub_agenzia_id and test_commessa_id:
+            cliente_data = {
+                "nome": "Mario",
+                "cognome": "Bianchi",
+                "email": "mario.bianchi@test.com",
+                "telefono": "+39 123 456 7890",
+                "indirizzo": "Via Roma 123",
+                "citta": "Milano",
+                "provincia": "Milano",
+                "cap": "20100",
+                "codice_fiscale": "BNCMRA80A01F205X",
+                "commessa_id": test_commessa_id,
+                "sub_agenzia_id": test_sub_agenzia_id,
+                "servizio_id": test_servizio_id,
+                "note": "Cliente di test per sistema autorizzazioni",
+                "dati_aggiuntivi": {"campo_test": "valore_test"}
+            }
+            
+            success, cliente_response, status = self.make_request('POST', 'clienti', cliente_data, 200)
+            if success:
+                test_cliente_id = cliente_response['id']
+                cliente_short_id = cliente_response.get('cliente_id', 'N/A')
+                self.log_test("POST /clienti - Create cliente", True, f"Cliente ID: {cliente_short_id}")
+                
+                # Verify cliente_id is 8 characters
+                if len(cliente_short_id) == 8:
+                    self.log_test("Cliente ID format (8 chars)", True, f"Cliente ID: {cliente_short_id}")
+                else:
+                    self.log_test("Cliente ID format (8 chars)", False, f"Expected 8 chars, got {len(cliente_short_id)}")
+            else:
+                self.log_test("POST /clienti - Create cliente", False, f"Status: {status}")
+                test_cliente_id = None
+        else:
+            test_cliente_id = None
+        
+        # Test 9: Get clienti
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        if success:
+            clienti = clienti_response
+            self.log_test("GET /clienti - List clienti", True, f"Found {len(clienti)} clienti")
+        else:
+            self.log_test("GET /clienti - List clienti", False, f"Status: {status}")
+        
+        # Test 10: Create user-commessa authorization
+        if new_roles_users and test_commessa_id:
+            agente_user = next((u for u in new_roles_users if u[1] == 'agente_commessa'), None)
+            if agente_user:
+                authorization_data = {
+                    "user_id": agente_user[0],
+                    "commessa_id": test_commessa_id,
+                    "sub_agenzia_id": test_sub_agenzia_id,
+                    "role_in_commessa": "agente_commessa",
+                    "can_view_all_agencies": False,
+                    "can_modify_clients": True,
+                    "can_create_clients": True
+                }
+                
+                success, auth_response, status = self.make_request('POST', 'user-commessa-authorizations', authorization_data, 200)
+                if success:
+                    auth_id = auth_response['id']
+                    self.log_test("POST /user-commessa-authorizations - Create authorization", True, f"Authorization ID: {auth_id}")
+                else:
+                    self.log_test("POST /user-commessa-authorizations - Create authorization", False, f"Status: {status}")
+        
+        # Test 11: Get user-commessa authorizations
+        success, auth_list_response, status = self.make_request('GET', 'user-commessa-authorizations', expected_status=200)
+        if success:
+            authorizations = auth_list_response
+            self.log_test("GET /user-commessa-authorizations - List authorizations", True, f"Found {len(authorizations)} authorizations")
+        else:
+            self.log_test("GET /user-commessa-authorizations - List authorizations", False, f"Status: {status}")
+        
+        # Test 12: Update commessa
+        if test_commessa_id:
+            update_commessa_data = {
+                "nome": f"Updated Test Commessa {datetime.now().strftime('%H%M%S')}",
+                "descrizione": "Commessa aggiornata",
+                "is_active": True
+            }
+            
+            success, update_response, status = self.make_request('PUT', f'commesse/{test_commessa_id}', update_commessa_data, 200)
+            if success:
+                updated_name = update_response.get('nome', '')
+                self.log_test("PUT /commesse/{id} - Update commessa", True, f"Updated name: {updated_name}")
+            else:
+                self.log_test("PUT /commesse/{id} - Update commessa", False, f"Status: {status}")
+        
+        # Test 13: Update sub agenzia
+        if test_sub_agenzia_id:
+            update_sub_agenzia_data = {
+                "nome": f"Updated Sub Agenzia {datetime.now().strftime('%H%M%S')}",
+                "descrizione": "Sub agenzia aggiornata"
+            }
+            
+            success, update_response, status = self.make_request('PUT', f'sub-agenzie/{test_sub_agenzia_id}', update_sub_agenzia_data, 200)
+            if success:
+                updated_name = update_response.get('nome', '')
+                self.log_test("PUT /sub-agenzie/{id} - Update sub agenzia", True, f"Updated name: {updated_name}")
+            else:
+                self.log_test("PUT /sub-agenzie/{id} - Update sub agenzia", False, f"Status: {status}")
+        
+        # Test 14: Update cliente
+        if test_cliente_id:
+            update_cliente_data = {
+                "nome": "Mario Updated",
+                "cognome": "Bianchi Updated",
+                "status": "in_lavorazione",
+                "note": "Cliente aggiornato tramite API"
+            }
+            
+            success, update_response, status = self.make_request('PUT', f'clienti/{test_cliente_id}', update_cliente_data, 200)
+            if success:
+                updated_status = update_response.get('status', '')
+                self.log_test("PUT /clienti/{id} - Update cliente", True, f"Updated status: {updated_status}")
+            else:
+                self.log_test("PUT /clienti/{id} - Update cliente", False, f"Status: {status}")
+        
+        # Test 15: Get single commessa
+        if test_commessa_id:
+            success, single_commessa_response, status = self.make_request('GET', f'commesse/{test_commessa_id}', expected_status=200)
+            if success:
+                commessa_name = single_commessa_response.get('nome', '')
+                self.log_test("GET /commesse/{id} - Get single commessa", True, f"Commessa: {commessa_name}")
+            else:
+                self.log_test("GET /commesse/{id} - Get single commessa", False, f"Status: {status}")
+        
+        # Test 16: Get single cliente
+        if test_cliente_id:
+            success, single_cliente_response, status = self.make_request('GET', f'clienti/{test_cliente_id}', expected_status=200)
+            if success:
+                cliente_nome = single_cliente_response.get('nome', '')
+                cliente_cognome = single_cliente_response.get('cognome', '')
+                self.log_test("GET /clienti/{id} - Get single cliente", True, f"Cliente: {cliente_nome} {cliente_cognome}")
+            else:
+                self.log_test("GET /clienti/{id} - Get single cliente", False, f"Status: {status}")
+        
+        # Test 17: Analytics commesse
+        if test_commessa_id:
+            success, analytics_response, status = self.make_request('GET', f'commesse/{test_commessa_id}/analytics', expected_status=200)
+            if success:
+                total_clienti = analytics_response.get('total_clienti', 0)
+                total_sub_agenzie = analytics_response.get('total_sub_agenzie', 0)
+                self.log_test("GET /commesse/{id}/analytics - Commessa analytics", True, f"Clienti: {total_clienti}, Sub Agenzie: {total_sub_agenzie}")
+            else:
+                self.log_test("GET /commesse/{id}/analytics - Commessa analytics", False, f"Status: {status}")
+        
+        # Test 18: Test Lead vs Cliente separation
+        # Create a lead to verify it's separate from clienti
+        if self.created_resources['units']:
+            unit_id = self.created_resources['units'][0] if self.created_resources['units'] else None
+            if not unit_id:
+                # Create a unit for lead testing
+                unit_data = {
+                    "name": f"Lead Test Unit {datetime.now().strftime('%H%M%S')}",
+                    "description": "Unit for lead vs cliente separation test"
+                }
+                success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
+                if success:
+                    unit_id = unit_response['id']
+                    self.created_resources['units'].append(unit_id)
+            
+            if unit_id:
+                lead_data = {
+                    "nome": "Lead",
+                    "cognome": "Test",
+                    "telefono": "+39 987 654 3210",
+                    "email": "lead.test@test.com",
+                    "provincia": "Roma",
+                    "tipologia_abitazione": "appartamento",
+                    "campagna": "Social Campaign Test",
+                    "gruppo": unit_id,
+                    "contenitore": "Social Container",
+                    "privacy_consent": True,
+                    "marketing_consent": True
+                }
+                
+                success, lead_response, status = self.make_request('POST', 'leads', lead_data, 200, auth_required=False)
+                if success:
+                    lead_id = lead_response['id']
+                    self.created_resources['leads'].append(lead_id)
+                    self.log_test("Create Lead (social campaign)", True, f"Lead ID: {lead_id}")
+                    
+                    # Verify lead is not in clienti list
+                    success, clienti_check_response, status = self.make_request('GET', 'clienti', expected_status=200)
+                    if success:
+                        clienti_check = clienti_check_response
+                        lead_in_clienti = any(c.get('email') == 'lead.test@test.com' for c in clienti_check)
+                        self.log_test("Lead/Cliente separation", not lead_in_clienti, 
+                            f"Lead correctly {'not found' if not lead_in_clienti else 'found'} in clienti list")
+                    else:
+                        self.log_test("Lead/Cliente separation check", False, f"Status: {status}")
+                else:
+                    self.log_test("Create Lead (social campaign)", False, f"Status: {status}")
+
     def run_call_center_tests(self):
         """Run Call Center Testing Suite"""
         print("🚀 Starting CRM API Testing - CALL CENTER SYSTEM...")
