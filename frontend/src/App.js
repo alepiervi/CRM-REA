@@ -89,8 +89,6 @@ import {
   Users2,
   Settings2,
   FileUser,
-  Upload,
-  Download,
   FileSpreadsheet,
   AlertCircle,
   CheckCircle2,
