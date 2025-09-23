@@ -2721,6 +2721,158 @@ class CRMAPITester:
             print(f"⚠️  {failed} tests failed")
             return False
 
+    def test_lead_vs_clienti_separation(self):
+        """Test RAPIDO per verifica separazione Lead vs Clienti endpoints"""
+        print("\n🔍 Testing LEAD vs CLIENTI SEPARATION (RAPIDO VERIFICATION)...")
+        
+        # Test 1: GET /api/leads - should return only Lead from social campaigns
+        success, leads_response, status = self.make_request('GET', 'leads', expected_status=200)
+        if success:
+            leads_data = leads_response
+            self.log_test("GET /api/leads endpoint", True, f"Found {len(leads_data)} leads")
+            
+            # Check structure of leads data
+            if leads_data:
+                first_lead = leads_data[0]
+                lead_fields = list(first_lead.keys())
+                expected_lead_fields = ['id', 'lead_id', 'nome', 'cognome', 'telefono', 'email', 'provincia', 'campagna', 'gruppo', 'contenitore']
+                missing_fields = [f for f in expected_lead_fields if f not in lead_fields]
+                
+                if not missing_fields:
+                    self.log_test("Lead data structure", True, f"Lead has correct fields: {expected_lead_fields}")
+                else:
+                    self.log_test("Lead data structure", False, f"Missing fields: {missing_fields}")
+                
+                # Check for "Mario Updated Bianchi Updated" in leads
+                mario_lead = next((lead for lead in leads_data if 
+                                 lead.get('nome', '').strip() == 'Mario Updated' and 
+                                 lead.get('cognome', '').strip() == 'Bianchi Updated'), None)
+                if mario_lead:
+                    self.log_test("Mario Updated Bianchi Updated in LEADS", True, 
+                        f"Found in leads collection - ID: {mario_lead.get('id', 'N/A')}, Lead ID: {mario_lead.get('lead_id', 'N/A')}")
+                else:
+                    self.log_test("Mario Updated Bianchi Updated in LEADS", False, "Not found in leads collection")
+            else:
+                self.log_test("Lead data structure", False, "No leads found to verify structure")
+        else:
+            self.log_test("GET /api/leads endpoint", False, f"Status: {status}")
+        
+        # Test 2: GET /api/clienti - should return only Clienti (manual anagrafiche)
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        if success:
+            clienti_data = clienti_response
+            self.log_test("GET /api/clienti endpoint", True, f"Found {len(clienti_data)} clienti")
+            
+            # Check structure of clienti data
+            if clienti_data:
+                first_cliente = clienti_data[0]
+                cliente_fields = list(first_cliente.keys())
+                expected_cliente_fields = ['id', 'cliente_id', 'nome', 'cognome', 'telefono', 'email', 'codice_fiscale', 'partita_iva', 'sub_agenzia_id', 'commessa_id']
+                missing_fields = [f for f in expected_cliente_fields if f not in cliente_fields]
+                
+                if not missing_fields:
+                    self.log_test("Clienti data structure", True, f"Cliente has correct fields: {expected_cliente_fields}")
+                else:
+                    self.log_test("Clienti data structure", False, f"Missing fields: {missing_fields}")
+                
+                # Check for "Mario Updated Bianchi Updated" in clienti
+                mario_cliente = next((cliente for cliente in clienti_data if 
+                                    cliente.get('nome', '').strip() == 'Mario Updated' and 
+                                    cliente.get('cognome', '').strip() == 'Bianchi Updated'), None)
+                if mario_cliente:
+                    self.log_test("Mario Updated Bianchi Updated in CLIENTI", True, 
+                        f"Found in clienti collection - ID: {mario_cliente.get('id', 'N/A')}, Cliente ID: {mario_cliente.get('cliente_id', 'N/A')}")
+                else:
+                    self.log_test("Mario Updated Bianchi Updated in CLIENTI", False, "Not found in clienti collection")
+            else:
+                self.log_test("Clienti data structure", False, "No clienti found to verify structure")
+        else:
+            self.log_test("GET /api/clienti endpoint", False, f"Status: {status}")
+        
+        # Test 3: Verify separation - check if same record exists in both collections
+        if leads_response and clienti_response:
+            leads_data = leads_response
+            clienti_data = clienti_response
+            
+            # Check for duplicates by name
+            duplicate_records = []
+            for lead in leads_data:
+                lead_name = f"{lead.get('nome', '')} {lead.get('cognome', '')}"
+                for cliente in clienti_data:
+                    cliente_name = f"{cliente.get('nome', '')} {cliente.get('cognome', '')}"
+                    if lead_name.strip() == cliente_name.strip() and lead_name.strip():
+                        duplicate_records.append({
+                            'name': lead_name,
+                            'lead_id': lead.get('id'),
+                            'cliente_id': cliente.get('id')
+                        })
+            
+            if duplicate_records:
+                self.log_test("SEPARATION VERIFICATION - Duplicates Found", False, 
+                    f"Found {len(duplicate_records)} duplicate records between leads and clienti: {[d['name'] for d in duplicate_records]}")
+                
+                # Detailed analysis of the duplicate
+                for dup in duplicate_records:
+                    self.log_test(f"DUPLICATE ANALYSIS: {dup['name']}", False, 
+                        f"Same record exists in both collections - Lead ID: {dup['lead_id']}, Cliente ID: {dup['cliente_id']}")
+            else:
+                self.log_test("SEPARATION VERIFICATION - No Duplicates", True, 
+                    "No duplicate records found between leads and clienti collections")
+        
+        # Test 4: Database collection verification
+        print("\n   📊 COLLECTION ANALYSIS:")
+        if leads_response:
+            print(f"   • LEADS collection: {len(leads_response)} records")
+            if leads_response:
+                print(f"     - Sample lead: {leads_response[0].get('nome', 'N/A')} {leads_response[0].get('cognome', 'N/A')}")
+        
+        if clienti_response:
+            print(f"   • CLIENTI collection: {len(clienti_response)} records")
+            if clienti_response:
+                print(f"     - Sample cliente: {clienti_response[0].get('nome', 'N/A')} {clienti_response[0].get('cognome', 'N/A')}")
+        
+        # Test 5: Verify endpoint behavior difference
+        if leads_response and clienti_response:
+            # Check if endpoints return different data structures
+            lead_keys = set(leads_response[0].keys()) if leads_response else set()
+            cliente_keys = set(clienti_response[0].keys()) if clienti_response else set()
+            
+            unique_to_leads = lead_keys - cliente_keys
+            unique_to_clienti = cliente_keys - lead_keys
+            
+            if unique_to_leads or unique_to_clienti:
+                self.log_test("ENDPOINT STRUCTURE DIFFERENCE", True, 
+                    f"Leads unique fields: {list(unique_to_leads)}, Clienti unique fields: {list(unique_to_clienti)}")
+            else:
+                self.log_test("ENDPOINT STRUCTURE DIFFERENCE", False, 
+                    "Both endpoints return identical data structures - possible same collection issue")
+
+    def run_lead_clienti_separation_test(self):
+        """Run RAPIDO Lead vs Clienti Separation Test"""
+        print("🚀 Starting RAPIDO LEAD vs CLIENTI SEPARATION TEST...")
+        print(f"📡 Backend URL: {self.base_url}")
+        print("=" * 60)
+        
+        # Authentication is required for most tests
+        if not self.test_authentication():
+            print("❌ Authentication failed - stopping tests")
+            return False
+        
+        # Run Lead vs Clienti separation test
+        self.test_lead_vs_clienti_separation()
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 Lead vs Clienti Separation Test Results: {self.tests_passed}/{self.tests_run} passed")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 All Lead vs Clienti separation tests passed!")
+            return True
+        else:
+            failed = self.tests_run - self.tests_passed
+            print(f"⚠️  {failed} Lead vs Clienti separation tests failed")
+            return False
+
     def run_sistema_autorizzazioni_tests(self):
         """Run Sistema Autorizzazioni Gerarchiche Testing Suite"""
         print("🚀 Starting CRM API Testing - SISTEMA AUTORIZZAZIONI GERARCHICHE...")
