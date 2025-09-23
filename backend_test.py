@@ -2902,7 +2902,7 @@ class CRMAPITester:
 def main():
     """Main test execution"""
     tester = CRMAPITester()
-    success = tester.run_sistema_autorizzazioni_tests()
+    success = tester.run_lead_clienti_separation_test()
     return 0 if success else 1
 
 if __name__ == "__main__":
