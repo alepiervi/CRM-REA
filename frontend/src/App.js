@@ -476,7 +476,15 @@ const Dashboard = () => {
     }
   };
 
-  // AI Assistant functions removed as requested
+  const fetchAssistants = async () => {
+    try {
+      const response = await axios.get(`${API}/ai-assistants`);
+      setAssistants(response.data);
+    } catch (error) {
+      console.error("Error fetching assistants:", error);
+      setAssistants([]);
+    }
+  };
 
   const handleUnitChange = (unitId) => {
     setSelectedUnit(unitId);
