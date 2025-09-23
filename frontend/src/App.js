@@ -3838,7 +3838,7 @@ const DocumentUploadModal = ({ onClose, onSuccess, units, selectedUnit, document
             <Button type="button" variant="outline" onClick={onClose}>
               Annulla
             </Button>
-            <Button type="submit" disabled={isLoading || !selectedLead || !file}>
+            <Button type="submit" disabled={isLoading || !selectedEntity || !file}>
               {isLoading ? "Caricamento..." : "Carica Documento"}
             </Button>
           </DialogFooter>
