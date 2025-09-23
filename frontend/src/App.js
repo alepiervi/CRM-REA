@@ -552,6 +552,8 @@ const Dashboard = () => {
         return user.role === "admin" ? <AIConfigurationManagement /> : <div>Non autorizzato</div>;
       case "whatsapp":
         return user.role === "admin" ? <WhatsAppManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+      case "lead-qualification":
+        return (user.role === "admin" || user.role === "referente") ? <LeadQualificationManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
       case "call-center":
         return user.role === "admin" ? <CallCenterManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
       case "commesse":
