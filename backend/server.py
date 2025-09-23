@@ -1426,7 +1426,7 @@ async def save_temporary_file(file) -> str:
     
     return temp_path
 
-async def create_document_record(lead_id: str, file, aruba_response: Dict[str, Any], uploaded_by: str) -> Document:
+async def create_document_record(document_type: DocumentType, entity_id: str, file, aruba_response: Dict[str, Any], uploaded_by: str) -> Document:
     """Create database record for uploaded document"""
     # Reset file to get accurate size
     await file.seek(0)
@@ -1434,14 +1434,14 @@ async def create_document_record(lead_id: str, file, aruba_response: Dict[str, A
     file_size = len(content)
     await file.seek(0)  # Reset again
     
-    document = Document(
-        lead_id=lead_id,
-        filename=f"{uuid.uuid4()}.pdf",
-        original_filename=file.filename or "document.pdf",
-        file_size=file_size,
-        content_type=getattr(file, 'content_type', "application/pdf"),
-        aruba_drive_file_id=aruba_response.get("file_id"),
-        aruba_drive_url=aruba_response.get("download_url"),
+    document_data = {
+        "document_type": document_type,
+        "filename": f"{uuid.uuid4()}.pdf",
+        "original_filename": file.filename or "document.pdf",
+        "file_size": file_size,
+        "content_type": getattr(file, 'content_type', "application/pdf"),
+        "aruba_drive_file_id": aruba_response.get("file_id"),
+        "aruba_drive_url": aruba_response.get("download_url"),
         upload_status="completed",
         uploaded_by=uploaded_by
     )
