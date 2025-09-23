@@ -486,7 +486,6 @@ const Dashboard = () => {
       { id: "dashboard", label: "Dashboard", icon: BarChart3 },
       { id: "leads", label: "Lead", icon: Phone },
       { id: "documents", label: "Documenti", icon: FileText },
-      { id: "chat", label: "Chat AI", icon: MessageCircle },
     ];
 
     if (user.role === "admin") {
