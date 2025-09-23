@@ -515,6 +515,7 @@ const Dashboard = () => {
         { id: "workflow-builder", label: "Workflow Builder", icon: Workflow },
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
         { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+        { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "call-center", label: "Call Center", icon: PhoneCall },
         { id: "commesse", label: "Commesse", icon: Building },
         { id: "sub-agenzie", label: "Sub Agenzie", icon: Store },
@@ -523,6 +524,7 @@ const Dashboard = () => {
       );
     } else if (user.role === "referente") {
       items.push(
+        { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
     }
