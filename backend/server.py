@@ -2046,7 +2046,23 @@ class WhatsAppService:
     async def process_lead_message(self, lead_id: str, message: str, phone_number: str):
         """Process message from existing lead"""
         try:
-            # Check if automated response is needed
+            # First check if there's an active qualification process
+            qualification = await db.lead_qualifications.find_one({
+                "lead_id": lead_id,
+                "status": "active"
+            })
+            
+            if qualification:
+                # Process response through qualification bot
+                processed = await lead_qualification_bot.process_lead_response(lead_id, message, "whatsapp")
+                
+                if processed:
+                    logging.info(f"Processed qualification response from lead {lead_id}: {message}")
+                    return
+                else:
+                    logging.warning(f"Could not process qualification response from lead {lead_id}")
+            
+            # If no active qualification or processing failed, use standard automated response
             response_message = await self.generate_automated_response(message, lead_id)
             
             if response_message:
