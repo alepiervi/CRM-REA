@@ -1,76 +1,69 @@
 <analysis>
-The AI engineer systematically addressed several complex feature enhancements and critical bug fixes. Initially, a major frontend refactoring transitioned the application from a top-bar to a left-sided navigation sidebar, successfully integrating all existing modules and resolving a backend dependency issue (). Subsequently, Phase 3: Workflow Builder was implemented, featuring a GoHighLevel-style drag-and-drop canvas, custom nodes (e.g., Send WhatsApp, Set Status), and robust backend support for workflow management and validation. Critical user feedback led to fixing WhatsApp configuration issues, including phone number format validation and the generation of a dynamic QR code. A significant architectural change made both WhatsApp configurations and Workflow management unit-specific, adding a copy workflow functionality. The login functionality was also re-validated and confirmed working after the backend fixes. The current focus has shifted to designing and implementing a comprehensive Call Center system with Twilio integration.
+The trajectory outlines the transition of development from an AI engineer to a human engineer. The previous AI engineer systematically expanded the CRM application. Initial work involved a major refactoring of the UI to a left-sidebar navigation and resolving a backend  dependency. Key features implemented include a GoHighLevel-style Workflow Builder with unit-specific configurations and a copy functionality, and unit-specific WhatsApp configurations with dynamic QR code generation. The current work detailed in the trajectory focused on implementing a comprehensive Call Center system with Twilio integration. Subsequent development included a robust Hierarchical Authorization System, client import functionality (CSV/XLS/XLSX), and extending the document management to include client-specific documents with hierarchical access. A temporary removal of the AI Configuration section occurred due to a misunderstanding, which is currently being rectified. The system uses React, FastAPI, and MongoDB.
 </analysis>
 
 <product_requirements>
-The user requires a comprehensive CRM system with robust lead distribution, administrative controls, and analytical dashboards, supporting Admin, Referente, and Agente roles. Leads from Facebook campaigns are distributed a goccia to agents, with data including standard and custom fields. Agents update ESITO and Note. Admin features include full CRUD for Users, Units, and Containers, plus activation/deactivation. Reporting includes dashboards and Excel export.
+The application is a comprehensive CRM system designed for lead distribution, administrative controls, and analytics, supporting Admin, Referente, and Agente roles. Leads from Facebook are distributed a goccia, with agents updating ESITO and Note. Admins have full CRUD for Users, Units, and Containers, plus activation/deactivation. Reporting includes dashboards and Excel export.
 
-Recent enhancements added mobile-friendliness, email notifications, an OpenAI GPT-4o Mini chatbot per Unit with a WhatsApp-like interface, and Aruba Drive integration for client document storage. An advanced lead qualification system is envisioned, where leads chat with a bot before agent assignment, with auto-assignment if no bot response within 12 hours.
+Recent enhancements include mobile-friendliness, email notifications, an OpenAI GPT-4o Mini chatbot per Unit, and Aruba Drive integration for document storage. An advanced lead qualification system involves bot interaction before agent assignment.
 
-The system now features a fully refactored left-sidebar navigation, a functional Workflow Builder (FASE 3) with GoHighLevel-style drag-and-drop, custom nodes, and unit-specific workflows with copy functionality. The WhatsApp configuration is now unit-specific, allowing dedicated numbers per unit, with a working QR code generation and resolved lag issues. The next major phase is implementing a Call Center system with automatic call distribution, recording, analytics, and dynamic outgoing numbers.
+Within this trajectory, a left-sidebar navigation was implemented. A functional Workflow Builder (FASE 3) with drag-and-drop, custom nodes, and unit-specific workflows with copy functionality was added. WhatsApp configuration became unit-specific with QR code generation. A Call Center system with Twilio integration was implemented, featuring outbound calls, automatic distribution, scheduling, client pop-ups, call recording, and analytics. A hierarchical authorization system for commesse (projects/commissions) was implemented, defining roles (Responsabile Commessa, BackOffice Commessa, Agente Commessa, BackOffice Agenzia, Operatore) and granular access to client data, separate from leads. Client import from CSV/XLS/XLSX files was added. The document management system was extended to allow Sub Agencies to upload and manage documents specifically for their clients, not other leads or clients.
 </product_requirements>
 
 <key_technical_concepts>
 -   **Full-stack**: React (frontend), FastAPI (backend), MongoDB (database).
--   **Authentication**: JWT, bcrypt.
--   **UI/UX**: Shadcn UI components, Tailwind CSS, React Flow (for workflow builder).
--   **Data Management**: Pydantic, PyMongo, UUIDs for IDs.
--   **External Integrations**: Aruba Drive, OpenAI GPT-4o Mini, WhatsApp API, Twilio Voice (upcoming).
--   **Development practices**: , ,  management for performance.
+-   **UI/UX**: Shadcn UI, Tailwind CSS, React Flow (workflow builder).
+-   **Data Management**: Pydantic, PyMongo, UUIDs, datetime (timezone-aware/ISO format).
+-   **Integrations**: OpenAI GPT-4o Mini, WhatsApp API, Twilio Voice, Aruba Drive,  for Excel.
+-   **Backend**:  for file type detection.
+-   **Frontend**: Axios interceptors for auth,  for QR generation.
 </key_technical_concepts>
 
 <code_architecture>
-The application utilizes a standard full-stack architecture with a React frontend, a FastAPI backend, and a MongoDB database for persistence.
+The application maintains a full-stack architecture with React, FastAPI, and MongoDB.
 
 
 
 -   
-    -   **Importance**: Core backend logic for API endpoints, database models, business logic.
+    -   **Importance**: Central for API endpoints, database models, and business logic.
     -   **Changes Made**:
-        -   Added , , , ,  Pydantic models for the workflow builder, including  for unit-specific management.
-        -   Implemented CRUD API endpoints for workflows, nodes, and connections, including  for GoHighLevel-style node definitions.
-        -   Added  endpoint to duplicate workflows between units.
-        -   Modified  model to include .
-        -   Updated , ,  and  endpoints to filter and manage WhatsApp configurations based on .
-        -   Fixed  related to  by ensuring correct  and  dependencies.
-        -   Adjusted  endpoint to handle admin users without an assigned .
-
+        -   **Call Center**: Added Pydantic models (e.g., , , ), services, Twilio imports/config (temporarily  import commented out), and API endpoints ().  and  imported from FastAPI.
+        -   **Hierarchical Authorization**:  enum extended with new roles (e.g., ). New models (, , , , ), helper functions for permissions, and CRUD API endpoints. Default commesse initialized at startup.
+        -   **Client Import**: Added models (, ), parsing helpers for CSV/Excel, and API endpoints ().
+        -   **Documents**:  and  models modified to accept  or . Document API endpoints (, , ) were refactored for type-specific filtering and hierarchical access control.
 -   
-    -   **Importance**: Main React component managing global state, routing, UI rendering, and interaction with the backend.
+    -   **Importance**: Main React component managing routing, state, and UI.
     -   **Changes Made**:
-        -   Refactored main navigation to a left sidebar layout, removing old navigation components (implicitly, as the structure was already updated before the current trajectory).
-        -   Integrated  component for the drag-and-drop workflow canvas.
-        -   Added Workflow Builder to  and .
-        -   Implemented  component to display unit-specific workflows, including a Copy button and  for duplicating workflows to other units.
-        -   Enhanced  component to be unit-aware, passing  to API calls and displaying the configured unit in the UI.
-        -   Modified  to remove spaces from phone numbers before sending to the backend, resolving validation issues.
-        -   Updated  to dynamically generate and display QR codes from base64 string data received from the backend using the  library.
-        -   Removed aggressive  polling in  to resolve UI lag, optimizing API calls and loading states.
-        -   Handled various UI interactions and state management for the new features.
-
+        -   **Call Center**: Added icons (e.g., ), Call Center navigation item,  component, and  case.
+        -   **Login Fixes**: Removed hardcoded default credentials, enhanced  function, added  interceptor for token refresh,  function.
+        -   **Hierarchical Authorization**: Added icons (e.g., , ), navigation items for Commesse, Sub Agenzie, Clienti, and corresponding , ,  components, and  cases.
+        -   **Client Import**: Added  icon and  component.
+        -   **Documents**: Refactored  component with Documenti Lead and Documenti Clienti tabs, dynamic filtering, and a redesigned  to handle both lead and client document uploads.
+        -   **Chat AI/Assistant Management**:  component and its navigation/ entry were removed.  and its related logic (for OpenAI API key and assistant setup) was initially removed by mistake and is currently being restored.
+        -   Resolved multiple duplicate icon imports (e.g., , , ).
 -   
-    -   **Importance**: Manages Python package dependencies.
-    -   **Changes Made**: Ensured  (and its underlying  system dependency) is correctly handled for document operations and general backend stability.
-
+    -   **Importance**: Python package dependencies.
+    -   **Changes Made**: ,  added. Ensured  and  handled (though  import was commented out as a temporary fix).
 -   
-    -   **Importance**: Manages Node.js package dependencies for the frontend.
-    -   **Changes Made**: Added  (for the workflow builder canvas) and  (for generating WhatsApp QR codes).
+    -   **Importance**: Node.js package dependencies for the frontend.
+    -   **Changes Made**:  (implicitly, as it was already mentioned in previous work summary as an addition).
+-   
+    -   **Importance**: Environment variables for backend configuration.
+    -   **Changes Made**: , ,  added.
 </code_architecture>
 
 <pending_tasks>
 -   **Reports & Excel Export (Frontend)**: Development of the frontend UI for advanced reports with graphs, custom filters, and initiating Excel download.
 -   **WhatsApp System (Full Implementation)**: Beyond configuration, real-time message handling, and automated lead validation beyond simulation are pending.
 -   **Automated Lead Qualification (FASE 4)**: Implementation of automated lead engagement, 12-hour timeout for bot response, and auto-assignment to agents.
--   **Call Center System**: Full implementation of automatic call distribution, client info pop-up, appointment-based calls, call recording, and advanced analytics.
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer initiated the implementation of a comprehensive Call Center system within the CRM. The user requested features including outbound calls from CSV/XLS lists or existing leads, automatic call distribution to the first available agent, scheduling three calls per lead at different times, pop-up client information during a call, appointment scheduling with automated call initiation, call recording, advanced analytics, and dynamic outgoing phone number generation every 30 minutes.
+Immediately prior to this summary, the AI engineer was tasked with removing the Chat AI/Assistant section from the frontend. This was implemented by removing the navigation entry,  case, and the  and  components, along with related state and functions. However, the user clarified that the *AI Configuration* section (responsible for OpenAI API key setup and assistant management for lead generation) should *not* have been removed, only the *Chat AI* interactive chat component.
 
-The AI engineer has acknowledged the ambitious nature of the request and, after consulting with the user regarding technology choices (WebRTC confirmed, no specific provider), has selected **Twilio** as the primary integration for testing and implementation due to its robust WebRTC and API capabilities. The last recorded action was receiving a detailed playbook for integrating **Twilio Voice with WebRTC** for the call center functionality from the  sub-agent. The current state is poised to begin the actual backend and frontend implementation guided by this playbook.
+Therefore, the AI engineer's precise current work involves rectifying this misunderstanding. The last actions in the trajectory show the AI engineer in the process of restoring the  navigation item, its corresponding  case, and the  component, along with relevant state () and data fetching functions () in . This is a critical step to ensure that the lead generation capabilities leveraging OpenAI are re-enabled and properly configured, without reintroducing the interactive chat UI.
 </current_work>
 
 <optional_next_step>
-Start implementing the Twilio Voice integration for the Call Center system, following the received playbook.
+Complete the restoration of the  function and  state in the Dashboard.
 </optional_next_step>
-
