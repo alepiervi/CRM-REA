@@ -2483,13 +2483,23 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
 };
 
 // Edit Unit Modal Component  
-const EditUnitModal = ({ unit, onClose, onSubmit }) => {
+const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    name: unit.name || "",
-    description: unit.description || "",
-    assistant_id: unit.assistant_id || "",
+    name: unit?.name || "",
+    description: unit?.description || "",
+    assistant_id: unit?.assistant_id || "",
+    commesse_autorizzate: unit?.commesse_autorizzate || []
   });
+
+  const toggleCommessa = (commessaId) => {
+    setFormData({
+      ...formData,
+      commesse_autorizzate: formData.commesse_autorizzate.includes(commessaId)
+        ? formData.commesse_autorizzate.filter(id => id !== commessaId)
+        : [...formData.commesse_autorizzate, commessaId]
+    });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
