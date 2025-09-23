@@ -494,6 +494,7 @@ const Dashboard = () => {
         { id: "units", label: "Unit", icon: Building2 },
         { id: "containers", label: "Contenitori", icon: Home },
         { id: "workflow-builder", label: "Workflow Builder", icon: Workflow },
+        { id: "ai-config", label: "Configurazione AI", icon: Settings },
         { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
         { id: "call-center", label: "Call Center", icon: PhoneCall },
         { id: "commesse", label: "Commesse", icon: Building },
