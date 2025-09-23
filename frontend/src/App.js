@@ -2414,28 +2414,7 @@ const CreateUnitModal = ({ onClose, onSubmit }) => {
             />
           </div>
 
-          <div>
-            <Label htmlFor="assistant">Assistente AI (Opzionale)</Label>
-            <Select
-              value={formData.assistant_id}
-              onValueChange={(value) => setFormData({ ...formData, assistant_id: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleziona un assistente (vuoto = nessun bot)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Nessun assistente</SelectItem>
-                {assistants.map((assistant) => (
-                  <SelectItem key={assistant.id} value={assistant.id}>
-                    {assistant.name} ({assistant.model})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-slate-500 mt-1">
-              Se lasci vuoto, i lead si smisteranno automaticamente agli agenti senza bot
-            </p>
-          </div>
+          {/* Assistant selection removed as requested */}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
