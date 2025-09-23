@@ -1853,6 +1853,391 @@ class ACDService:
             self.call_queues[queue_name].insert(0, queued_call)
             return False
 
+# WhatsApp Business API Service
+class WhatsAppService:
+    """Comprehensive WhatsApp Business API service for CRM integration"""
+    
+    def __init__(self):
+        self.api_key = os.environ.get("WHATSAPP_API_KEY", "")
+        self.phone_number_id = os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "")
+        self.business_account_id = os.environ.get("WHATSAPP_BUSINESS_ACCOUNT_ID", "")
+        self.webhook_verify_token = os.environ.get("WHATSAPP_WEBHOOK_VERIFY_TOKEN", "")
+        self.redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+        self.base_url = "https://graph.facebook.com/v18.0"
+        self.redis = None
+        
+    async def get_redis(self):
+        """Get Redis connection"""
+        if not self.redis:
+            try:
+                self.redis = await aioredis.from_url(self.redis_url)
+            except Exception as e:
+                logging.warning(f"Redis connection failed: {e}")
+                self.redis = None
+        return self.redis
+    
+    def get_headers(self):
+        """Get API headers"""
+        return {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+    
+    async def send_message(self, phone_number: str, message: str, message_type: str = "text") -> dict:
+        """Send WhatsApp message"""
+        try:
+            url = f"{self.base_url}/{self.phone_number_id}/messages"
+            
+            # Format phone number
+            if not phone_number.startswith('+'):
+                phone_number = f"+{phone_number.lstrip('0')}"
+            
+            payload = {
+                "messaging_product": "whatsapp",
+                "to": phone_number,
+                "type": message_type
+            }
+            
+            if message_type == "text":
+                payload["text"] = {"body": message}
+            elif message_type == "template":
+                # For template messages (future enhancement)
+                payload["template"] = {
+                    "name": message,
+                    "language": {"code": "it"}
+                }
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(url, json=payload, headers=self.get_headers())
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    # Store message in database
+                    await self.store_message({
+                        "phone_number": phone_number,
+                        "message": message,
+                        "message_type": message_type,
+                        "direction": "outgoing",
+                        "status": "sent",
+                        "whatsapp_message_id": result.get("messages", [{}])[0].get("id", ""),
+                        "timestamp": datetime.now(timezone.utc)
+                    })
+                    
+                    return {"success": True, "message_id": result.get("messages", [{}])[0].get("id", "")}
+                else:
+                    logging.error(f"WhatsApp send failed: {response.status_code} - {response.text}")
+                    return {"success": False, "error": response.text}
+                    
+        except Exception as e:
+            logging.error(f"WhatsApp send message error: {e}")
+            return {"success": False, "error": str(e)}
+    
+    async def validate_phone_number(self, phone_number: str) -> dict:
+        """Validate if phone number is on WhatsApp"""
+        try:
+            # For demo purposes, simulate validation
+            # In production, use WhatsApp Business API validation endpoint
+            
+            # Store validation result
+            redis = await self.get_redis()
+            if redis:
+                await redis.setex(f"whatsapp:validation:{phone_number}", 3600, "valid")
+            
+            # Mock validation - consider most numbers as valid WhatsApp numbers
+            is_valid = not any(invalid in phone_number for invalid in ['000', '111', '999'])
+            
+            return {
+                "phone_number": phone_number,
+                "is_whatsapp": is_valid,
+                "validation_status": "valid" if is_valid else "invalid",
+                "validation_date": datetime.now(timezone.utc).isoformat()
+            }
+            
+        except Exception as e:
+            logging.error(f"WhatsApp validation error: {e}")
+            return {
+                "phone_number": phone_number,
+                "is_whatsapp": None,
+                "validation_status": "error",
+                "validation_date": datetime.now(timezone.utc).isoformat(),
+                "error": str(e)
+            }
+    
+    async def generate_qr_code(self, unit_id: str = None) -> dict:
+        """Generate WhatsApp QR code for connection simulation"""
+        try:
+            # For demo purposes, generate a mock QR code
+            qr_data = f"whatsapp://connect/{unit_id or 'default'}_{int(datetime.now().timestamp())}"
+            
+            redis = await self.get_redis()
+            if redis:
+                # Store QR with 5-minute expiration
+                await redis.setex(f"whatsapp:qr:{unit_id or 'default'}", 300, qr_data)
+            
+            return {
+                "qr_code": qr_data,
+                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+                "unit_id": unit_id
+            }
+            
+        except Exception as e:
+            logging.error(f"WhatsApp QR generation error: {e}")
+            return {"error": str(e)}
+    
+    async def process_webhook(self, webhook_data: dict) -> dict:
+        """Process incoming WhatsApp webhook"""
+        try:
+            entry = webhook_data.get("entry", [])
+            if not entry:
+                return {"success": True, "processed": 0}
+            
+            processed_count = 0
+            
+            for entry_item in entry:
+                changes = entry_item.get("changes", [])
+                
+                for change in changes:
+                    if change.get("field") == "messages":
+                        messages = change.get("value", {}).get("messages", [])
+                        
+                        for message in messages:
+                            await self.handle_incoming_message(message)
+                            processed_count += 1
+            
+            return {"success": True, "processed": processed_count}
+            
+        except Exception as e:
+            logging.error(f"WhatsApp webhook processing error: {e}")
+            return {"success": False, "error": str(e)}
+    
+    async def handle_incoming_message(self, message_data: dict):
+        """Handle individual incoming WhatsApp message"""
+        try:
+            phone_number = message_data.get("from", "")
+            message_text = message_data.get("text", {}).get("body", "")
+            message_id = message_data.get("id", "")
+            timestamp = datetime.fromtimestamp(int(message_data.get("timestamp", 0)), tz=timezone.utc)
+            
+            # Store incoming message
+            await self.store_message({
+                "phone_number": phone_number,
+                "message": message_text,
+                "message_type": "text",
+                "direction": "incoming",
+                "status": "received",
+                "whatsapp_message_id": message_id,
+                "timestamp": timestamp
+            })
+            
+            # Find associated lead
+            lead = await db.leads.find_one({"telefono": phone_number})
+            if lead:
+                await self.process_lead_message(lead["id"], message_text, phone_number)
+            else:
+                # Create new lead from WhatsApp conversation
+                await self.create_lead_from_whatsapp(phone_number, message_text)
+                
+        except Exception as e:
+            logging.error(f"Handle incoming message error: {e}")
+    
+    async def process_lead_message(self, lead_id: str, message: str, phone_number: str):
+        """Process message from existing lead"""
+        try:
+            # Check if automated response is needed
+            response_message = await self.generate_automated_response(message, lead_id)
+            
+            if response_message:
+                await self.send_message(phone_number, response_message)
+                
+            # Update lead status if needed
+            await self.update_lead_from_message(lead_id, message)
+            
+        except Exception as e:
+            logging.error(f"Process lead message error: {e}")
+    
+    async def generate_automated_response(self, message: str, lead_id: str) -> Optional[str]:
+        """Generate automated response based on message content and lead stage"""
+        try:
+            message_lower = message.lower()
+            
+            # Simple keyword-based responses
+            if any(word in message_lower for word in ['ciao', 'salve', 'buongiorno', 'buonasera']):
+                return "Ciao! Grazie per averci contattato. Un nostro agente ti risponderà al più presto. Come possiamo aiutarti?"
+            
+            elif any(word in message_lower for word in ['prezzo', 'costo', 'quanto', 'tariffa']):
+                return "Per informazioni sui prezzi e le nostre offerte, un consulente ti contatterà a breve per fornirti un preventivo personalizzato."
+            
+            elif any(word in message_lower for word in ['info', 'informazioni', 'dettagli']):
+                return "Saremo felici di fornirti tutte le informazioni necessarie. Un nostro esperto ti contatterà entro 24 ore."
+            
+            elif any(word in message_lower for word in ['si', 'sì', 'interessato', 'interessata']):
+                return "Perfetto! Abbiamo preso nota del tuo interesse. Ti contatteremo al più presto per discutere la soluzione migliore per te."
+            
+            elif any(word in message_lower for word in ['no', 'non interessato', 'non interessa']):
+                return "Nessun problema, grazie per averci fatto sapere. Se in futuro dovessi cambiare idea, siamo sempre qui per aiutarti."
+            
+            # Default response only for first message of the day
+            redis = await self.get_redis()
+            if redis:
+                last_response_key = f"whatsapp:last_response:{lead_id}"
+                today_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                
+                last_response_date = await redis.get(last_response_key)
+                if not last_response_date or last_response_date.decode() != today_key:
+                    await redis.setex(last_response_key, 86400, today_key)  # 24 hours
+                    return "Grazie per il tuo messaggio! Il nostro team ha ricevuto la tua comunicazione e ti risponderà al più presto."
+            
+            return None
+            
+        except Exception as e:
+            logging.error(f"Generate automated response error: {e}")
+            return None
+    
+    async def create_lead_from_whatsapp(self, phone_number: str, first_message: str):
+        """Create new lead from WhatsApp conversation"""
+        try:
+            lead_data = {
+                "id": str(uuid.uuid4()),
+                "nome": "Contatto",
+                "cognome": "WhatsApp",
+                "telefono": phone_number,
+                "email": f"whatsapp_{phone_number.replace('+', '')}@generated.com",
+                "esito": "Da Contattare",
+                "note": f"Primo messaggio WhatsApp: {first_message}",
+                "created_at": datetime.now(timezone.utc),
+                "source": "whatsapp",
+                "unit_id": None  # Will be assigned by admin
+            }
+            
+            await db.leads.insert_one(lead_data)
+            
+            # Send welcome message
+            welcome_msg = "Benvenuto! Abbiamo ricevuto il tuo messaggio e creato la tua richiesta. Il nostro team ti contatterà al più presto per assisterti."
+            await self.send_message(phone_number, welcome_msg)
+            
+            logging.info(f"Created new lead from WhatsApp: {phone_number}")
+            
+        except Exception as e:
+            logging.error(f"Create lead from WhatsApp error: {e}")
+    
+    async def update_lead_from_message(self, lead_id: str, message: str):
+        """Update lead status based on message content"""
+        try:
+            message_lower = message.lower()
+            
+            # Update lead status based on message sentiment
+            if any(word in message_lower for word in ['interessato', 'si', 'sì', 'perfetto', 'va bene']):
+                await db.leads.update_one(
+                    {"id": lead_id},
+                    {
+                        "$set": {
+                            "esito": "Interessato",
+                            "updated_at": datetime.now(timezone.utc)
+                        },
+                        "$push": {
+                            "note": f"WhatsApp: {message} (Auto-aggiornato)"
+                        }
+                    }
+                )
+            elif any(word in message_lower for word in ['no', 'non interessato', 'non interessa', 'stop']):
+                await db.leads.update_one(
+                    {"id": lead_id},
+                    {
+                        "$set": {
+                            "esito": "Non Interessato",
+                            "updated_at": datetime.now(timezone.utc)
+                        },
+                        "$push": {
+                            "note": f"WhatsApp: {message} (Auto-aggiornato)"
+                        }
+                    }
+                )
+                
+        except Exception as e:
+            logging.error(f"Update lead from message error: {e}")
+    
+    async def store_message(self, message_data: dict):
+        """Store WhatsApp message in database"""
+        try:
+            message_record = {
+                "id": str(uuid.uuid4()),
+                "phone_number": message_data["phone_number"],
+                "message": message_data["message"],
+                "message_type": message_data.get("message_type", "text"),
+                "direction": message_data["direction"],
+                "status": message_data.get("status", "sent"),
+                "whatsapp_message_id": message_data.get("whatsapp_message_id", ""),
+                "timestamp": message_data["timestamp"],
+                "created_at": datetime.now(timezone.utc)
+            }
+            
+            await db.whatsapp_messages.insert_one(message_record)
+            
+            # Update conversation
+            await self.update_conversation(message_data["phone_number"], message_data["message"])
+            
+        except Exception as e:
+            logging.error(f"Store message error: {e}")
+    
+    async def update_conversation(self, phone_number: str, last_message: str):
+        """Update or create WhatsApp conversation record"""
+        try:
+            # Find lead by phone number
+            lead = await db.leads.find_one({"telefono": phone_number})
+            lead_id = lead["id"] if lead else None
+            
+            # Update or create conversation
+            await db.whatsapp_conversations.update_one(
+                {"phone_number": phone_number},
+                {
+                    "$set": {
+                        "lead_id": lead_id,
+                        "last_message": last_message[:500],  # Truncate long messages
+                        "last_message_time": datetime.now(timezone.utc),
+                        "updated_at": datetime.now(timezone.utc)
+                    },
+                    "$inc": {"unread_count": 1}
+                },
+                upsert=True
+            )
+            
+        except Exception as e:
+            logging.error(f"Update conversation error: {e}")
+    
+    async def get_conversation_history(self, phone_number: str, limit: int = 50) -> List[dict]:
+        """Get conversation history for phone number"""
+        try:
+            messages = await db.whatsapp_messages.find(
+                {"phone_number": phone_number}
+            ).sort("timestamp", -1).limit(limit).to_list(length=limit)
+            
+            return messages
+            
+        except Exception as e:
+            logging.error(f"Get conversation history error: {e}")
+            return []
+    
+    async def get_active_conversations(self, unit_id: str = None) -> List[dict]:
+        """Get active WhatsApp conversations"""
+        try:
+            query = {"status": "active"}
+            
+            # If unit_id specified, filter by leads from that unit
+            if unit_id:
+                unit_leads = await db.leads.find({"unit_id": unit_id}).to_list(length=None)
+                lead_ids = [lead["id"] for lead in unit_leads]
+                query["lead_id"] = {"$in": lead_ids}
+            
+            conversations = await db.whatsapp_conversations.find(query)\
+                .sort("last_message_time", -1).to_list(length=100)
+            
+            return conversations
+            
+        except Exception as e:
+            logging.error(f"Get active conversations error: {e}")
+            return []
+
 # Initialize Call Center services
 twilio_service = TwilioService()
 call_center_service = CallCenterService()
