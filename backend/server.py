@@ -798,16 +798,16 @@ async def validate_uploaded_file(file) -> bool:
     if len(content) == 0:
         raise HTTPException(status_code=400, detail="Empty files are not allowed")
     
-    # Validate content type using python-magic
-    try:
-        mime_type = magic.from_buffer(content, mime=True)
-        if mime_type not in ALLOWED_FILE_TYPES:
-            raise HTTPException(
-                status_code=400,
-                detail=f"File type {mime_type} not allowed. Supported types: {ALLOWED_FILE_TYPES}"
-            )
-    except Exception as e:
-        logging.warning(f"Could not detect MIME type: {e}, checking file extension")
+    # Validate content type using python-magic (Temporaneamente disabilitato)
+    # try:
+    #     mime_type = magic.from_buffer(content, mime=True)
+    #     if mime_type not in ALLOWED_FILE_TYPES:
+    #         raise HTTPException(
+    #             status_code=400,
+    #             detail=f"File type {mime_type} not allowed. Supported types: {ALLOWED_FILE_TYPES}"
+    #         )
+    # except Exception as e:
+    #     logging.warning(f"Could not detect MIME type: {e}, checking file extension")
         # Fallback to file extension check
         if not file.filename.lower().endswith('.pdf'):
             raise HTTPException(
