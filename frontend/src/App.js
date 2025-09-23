@@ -2475,28 +2475,7 @@ const EditUnitModal = ({ unit, onClose, onSubmit }) => {
             />
           </div>
 
-          <div>
-            <Label htmlFor="edit-assistant">Assistente AI (Opzionale)</Label>
-            <Select
-              value={formData.assistant_id}
-              onValueChange={(value) => setFormData({ ...formData, assistant_id: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleziona un assistente (vuoto = nessun bot)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Nessun assistente</SelectItem>
-                {assistants.map((assistant) => (
-                  <SelectItem key={assistant.id} value={assistant.id}>
-                    {assistant.name} ({assistant.model})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-slate-500 mt-1">
-              {formData.assistant_id ? "Bot attivo per questa unit" : "Nessun bot configurato - lead vanno direttamente agli agenti"}
-            </p>
-          </div>
+          {/* Assistant selection removed as requested */}
 
           {/* Unit Info Display */}
           <div className="bg-slate-50 p-3 rounded-lg space-y-2">
