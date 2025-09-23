@@ -2354,7 +2354,6 @@ const UnitsManagement = ({ selectedUnit }) => {
         <CreateUnitModal
           onClose={() => setShowCreateModal(false)}
           onSubmit={createUnit}
-          assistants={assistants}
         />
       )}
 
