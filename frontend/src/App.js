@@ -450,7 +450,6 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedUnit, setSelectedUnit] = useState("all");
   const [units, setUnits] = useState([]);
-  const [assistants, setAssistants] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
   const { user, logout } = useAuth();
 
