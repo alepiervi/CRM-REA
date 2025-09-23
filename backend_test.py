@@ -3122,6 +3122,233 @@ Duplicate,Test,+393471234567"""
             print(f"⚠️  {failed} tests failed")
             return False
 
+    def test_reports_analytics_system(self):
+        """Test the new Reports & Analytics system as requested"""
+        print("\n📊 Testing Reports & Analytics System (NEW)...")
+        
+        # Test Analytics Dashboard Endpoints
+        print("\n📈 Testing Analytics Dashboard Endpoints...")
+        
+        # 1. GET /api/leads (with date filters for dashboard)
+        from datetime import datetime, timedelta
+        today = datetime.now().strftime('%Y-%m-%d')
+        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        success, response, status = self.make_request('GET', f'leads?date_from={yesterday}&date_to={today}', expected_status=200)
+        if success:
+            leads_count = len(response)
+            self.log_test("GET /api/leads with date filters", True, f"Found {leads_count} leads in date range")
+        else:
+            self.log_test("GET /api/leads with date filters", False, f"Status: {status}")
+        
+        # 2. GET /api/users (for analytics agents/referenti)
+        success, response, status = self.make_request('GET', 'users', expected_status=200)
+        if success:
+            users = response
+            agents = [u for u in users if u.get('role') == 'agente']
+            referenti = [u for u in users if u.get('role') == 'referente']
+            self.log_test("GET /api/users for analytics", True, f"Found {len(agents)} agents, {len(referenti)} referenti")
+        else:
+            self.log_test("GET /api/users for analytics", False, f"Status: {status}")
+        
+        # 3. GET /api/commesse (for dashboard overview)
+        success, response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if success:
+            commesse = response
+            self.log_test("GET /api/commesse for dashboard", True, f"Found {len(commesse)} commesse")
+        else:
+            self.log_test("GET /api/commesse for dashboard", False, f"Status: {status}")
+        
+        # 4. GET /api/clienti (for client metrics)
+        success, response, status = self.make_request('GET', 'clienti', expected_status=200)
+        if success:
+            clienti = response
+            self.log_test("GET /api/clienti for metrics", True, f"Found {len(clienti)} clienti")
+        else:
+            self.log_test("GET /api/clienti for metrics", False, f"Status: {status}")
+        
+        # Test Export Endpoints
+        print("\n📤 Testing Export Endpoints...")
+        
+        # 5. GET /api/leads/export (with date range parameters)
+        success, response, status = self.make_request('GET', f'leads/export?date_from={yesterday}&date_to={today}', expected_status=200)
+        if success:
+            self.log_test("GET /api/leads/export with date range", True, "Excel export working")
+        else:
+            if status == 404:
+                self.log_test("GET /api/leads/export with date range", True, "No leads to export (expected)")
+            else:
+                self.log_test("GET /api/leads/export with date range", False, f"Status: {status}")
+        
+        # Test Analytics Existing Endpoints
+        print("\n📊 Testing Analytics Existing Endpoints...")
+        
+        # Get admin user ID for testing
+        admin_id = self.user_data['id']
+        
+        # 6. GET /api/analytics/agent/{agent_id}
+        success, response, status = self.make_request('GET', f'analytics/agent/{admin_id}', expected_status=200)
+        if success:
+            agent_info = response.get('agent', {})
+            stats = response.get('stats', {})
+            self.log_test("GET /api/analytics/agent/{agent_id}", True, 
+                f"Agent: {agent_info.get('username')}, Total leads: {stats.get('total_leads', 0)}")
+        else:
+            self.log_test("GET /api/analytics/agent/{agent_id}", False, f"Status: {status}")
+        
+        # 7. GET /api/analytics/referente/{referente_id}
+        success, response, status = self.make_request('GET', f'analytics/referente/{admin_id}', expected_status=200)
+        if success:
+            referente_info = response.get('referente', {})
+            total_stats = response.get('total_stats', {})
+            self.log_test("GET /api/analytics/referente/{referente_id}", True, 
+                f"Referente: {referente_info.get('username')}, Total leads: {total_stats.get('total_leads', 0)}")
+        else:
+            self.log_test("GET /api/analytics/referente/{referente_id}", False, f"Status: {status}")
+        
+        # 8. GET /api/commesse/{commessa_id}/analytics
+        if commesse:
+            commessa_id = commesse[0]['id']
+            success, response, status = self.make_request('GET', f'commesse/{commessa_id}/analytics', expected_status=200)
+            if success:
+                total_clienti = response.get('total_clienti', 0)
+                clienti_completati = response.get('clienti_completati', 0)
+                tasso_completamento = response.get('tasso_completamento', 0)
+                self.log_test("GET /api/commesse/{commessa_id}/analytics", True, 
+                    f"Total clienti: {total_clienti}, Completati: {clienti_completati}, Tasso: {tasso_completamento}%")
+            else:
+                self.log_test("GET /api/commesse/{commessa_id}/analytics", False, f"Status: {status}")
+        else:
+            self.log_test("GET /api/commesse/{commessa_id}/analytics", False, "No commesse available for testing")
+        
+        # Test Data Aggregation
+        print("\n🔢 Testing Data Aggregation...")
+        
+        # Test dashboard stats with date filters
+        success, response, status = self.make_request('GET', f'dashboard/stats', expected_status=200)
+        if success:
+            expected_keys = ['total_leads', 'total_users', 'total_units', 'leads_today']
+            missing_keys = [key for key in expected_keys if key not in response]
+            
+            if not missing_keys:
+                self.log_test("Dashboard data aggregation", True, 
+                    f"Users: {response.get('total_users', 0)}, "
+                    f"Units: {response.get('total_units', 0)}, "
+                    f"Leads: {response.get('total_leads', 0)}, "
+                    f"Today: {response.get('leads_today', 0)}")
+            else:
+                self.log_test("Dashboard data aggregation", False, f"Missing keys: {missing_keys}")
+        else:
+            self.log_test("Dashboard data aggregation", False, f"Status: {status}")
+        
+        # Test Authorization & Permissions
+        print("\n🔐 Testing Authorization & Permissions...")
+        
+        # Create test users for permission testing
+        if self.created_resources['units']:
+            unit_id = self.created_resources['units'][0]
+            
+            # Create referente user
+            referente_data = {
+                "username": f"analytics_referente_{datetime.now().strftime('%H%M%S')}",
+                "email": f"analytics_referente_{datetime.now().strftime('%H%M%S')}@test.com",
+                "password": "TestPass123!",
+                "role": "referente",
+                "unit_id": unit_id,
+                "provinces": []
+            }
+            
+            success, referente_response, status = self.make_request('POST', 'users', referente_data, 200)
+            if success:
+                referente_id = referente_response['id']
+                self.created_resources['users'].append(referente_id)
+                
+                # Create agent under referente
+                agent_data = {
+                    "username": f"analytics_agent_{datetime.now().strftime('%H%M%S')}",
+                    "email": f"analytics_agent_{datetime.now().strftime('%H%M%S')}@test.com",
+                    "password": "TestPass123!",
+                    "role": "agente",
+                    "unit_id": unit_id,
+                    "referente_id": referente_id,
+                    "provinces": ["Milano", "Roma"]
+                }
+                
+                success, agent_response, status = self.make_request('POST', 'users', agent_data, 200)
+                if success:
+                    agent_id = agent_response['id']
+                    self.created_resources['users'].append(agent_id)
+                    
+                    # Test referente login and permissions
+                    success, referente_login_response, status = self.make_request(
+                        'POST', 'auth/login', 
+                        {'username': referente_data['username'], 'password': referente_data['password']}, 
+                        200, auth_required=False
+                    )
+                    
+                    if success:
+                        referente_token = referente_login_response['access_token']
+                        original_token = self.token
+                        self.token = referente_token
+                        
+                        # Test referente can access their own analytics
+                        success, response, status = self.make_request('GET', f'analytics/referente/{referente_id}', expected_status=200)
+                        if success:
+                            self.log_test("Referente access to own analytics", True, "Referente can access own analytics")
+                        else:
+                            self.log_test("Referente access to own analytics", False, f"Status: {status}")
+                        
+                        # Test referente can access their agent's analytics
+                        success, response, status = self.make_request('GET', f'analytics/agent/{agent_id}', expected_status=200)
+                        if success:
+                            self.log_test("Referente access to agent analytics", True, "Referente can access agent analytics")
+                        else:
+                            self.log_test("Referente access to agent analytics", False, f"Status: {status}")
+                        
+                        # Test referente cannot access other referente's analytics
+                        success, response, status = self.make_request('GET', f'analytics/referente/{admin_id}', expected_status=403)
+                        if success:
+                            self.log_test("Referente limited access control", True, "Correctly denied access to other referente")
+                        else:
+                            self.log_test("Referente limited access control", False, f"Expected 403, got {status}")
+                        
+                        self.token = original_token
+                    
+                    # Test agent login and permissions
+                    success, agent_login_response, status = self.make_request(
+                        'POST', 'auth/login', 
+                        {'username': agent_data['username'], 'password': agent_data['password']}, 
+                        200, auth_required=False
+                    )
+                    
+                    if success:
+                        agent_token = agent_login_response['access_token']
+                        original_token = self.token
+                        self.token = agent_token
+                        
+                        # Test agent can access their own analytics
+                        success, response, status = self.make_request('GET', f'analytics/agent/{agent_id}', expected_status=200)
+                        if success:
+                            self.log_test("Agent access to own analytics", True, "Agent can access own analytics")
+                        else:
+                            self.log_test("Agent access to own analytics", False, f"Status: {status}")
+                        
+                        # Test agent cannot access other agent's analytics
+                        success, response, status = self.make_request('GET', f'analytics/agent/{admin_id}', expected_status=403)
+                        if success:
+                            self.log_test("Agent limited access control", True, "Correctly denied access to other agent")
+                        else:
+                            self.log_test("Agent limited access control", False, f"Expected 403, got {status}")
+                        
+                        self.token = original_token
+        
+        # Test admin access to all analytics
+        success, response, status = self.make_request('GET', f'analytics/agent/{admin_id}', expected_status=200)
+        if success:
+            self.log_test("Admin access to all analytics", True, "Admin can access all analytics")
+        else:
+            self.log_test("Admin access to all analytics", False, f"Status: {status}")
+
     def test_lead_vs_clienti_separation(self):
         """Test RAPIDO per verifica separazione Lead vs Clienti endpoints"""
         print("\n🔍 Testing LEAD vs CLIENTI SEPARATION (RAPIDO VERIFICATION)...")
