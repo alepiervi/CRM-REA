@@ -963,6 +963,181 @@ async def can_user_modify_cliente(user: User, cliente: Cliente) -> bool:
     # Altrimenti solo clienti della sua sub agenzia
     return auth_obj.sub_agenzia_id == cliente.sub_agenzia_id
 
+# Importazione Clienti Helper Functions
+async def parse_uploaded_file(file_content: bytes, filename: str) -> ImportPreview:
+    """Parse uploaded CSV/Excel file and return preview"""
+    try:
+        # Determine file type
+        file_extension = filename.lower().split('.')[-1]
+        
+        if file_extension == 'csv':
+            # Try different encodings for CSV
+            for encoding in ['utf-8', 'latin-1', 'cp1252']:
+                try:
+                    df = pd.read_csv(io.BytesIO(file_content), encoding=encoding, nrows=1000)  # Limit preview
+                    break
+                except UnicodeDecodeError:
+                    continue
+            else:
+                raise ValueError("Unable to decode CSV file with common encodings")
+                
+        elif file_extension in ['xls', 'xlsx']:
+            df = pd.read_excel(io.BytesIO(file_content), nrows=1000)  # Limit preview
+        else:
+            raise ValueError(f"Unsupported file type: {file_extension}")
+        
+        # Clean column names
+        df.columns = df.columns.astype(str).str.strip()
+        
+        # Get headers
+        headers = df.columns.tolist()
+        
+        # Get sample data (first 5 rows)
+        sample_data = []
+        for _, row in df.head(5).iterrows():
+            sample_data.append([str(val) if pd.notna(val) else "" for val in row.values])
+        
+        return ImportPreview(
+            headers=headers,
+            sample_data=sample_data,
+            total_rows=len(df),
+            file_type=file_extension
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
+
+def validate_cliente_data(data: dict, config: ImportConfiguration) -> tuple[bool, str]:
+    """Validate cliente data according to configuration"""
+    errors = []
+    
+    # Check required fields
+    nome = data.get('nome', '').strip()
+    cognome = data.get('cognome', '').strip()
+    telefono = data.get('telefono', '').strip()
+    
+    if not nome:
+        errors.append("Nome is required")
+    if not cognome:
+        errors.append("Cognome is required")
+    if not telefono:
+        errors.append("Telefono is required")
+    
+    # Validate phone if required
+    if config.validate_phone and telefono:
+        # Simple phone validation (can be enhanced)
+        phone_clean = ''.join(filter(str.isdigit, telefono))
+        if len(phone_clean) < 9 or len(phone_clean) > 15:
+            errors.append(f"Invalid phone format: {telefono}")
+    
+    # Validate email if provided and validation is enabled
+    email = data.get('email', '').strip()
+    if config.validate_email and email:
+        if '@' not in email or '.' not in email.split('@')[1]:
+            errors.append(f"Invalid email format: {email}")
+    
+    return len(errors) == 0, "; ".join(errors)
+
+async def process_import_batch(
+    file_content: bytes,
+    filename: str,
+    config: ImportConfiguration,
+    created_by: str
+) -> ImportResult:
+    """Process full import batch"""
+    try:
+        # Parse file
+        file_extension = filename.lower().split('.')[-1]
+        
+        if file_extension == 'csv':
+            # Try different encodings for CSV
+            for encoding in ['utf-8', 'latin-1', 'cp1252']:
+                try:
+                    df = pd.read_csv(io.BytesIO(file_content), encoding=encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            else:
+                raise ValueError("Unable to decode CSV file")
+                
+        elif file_extension in ['xls', 'xlsx']:
+            df = pd.read_excel(io.BytesIO(file_content))
+        else:
+            raise ValueError(f"Unsupported file type: {file_extension}")
+        
+        # Clean column names
+        df.columns = df.columns.astype(str).str.strip()
+        
+        # Skip header if configured
+        if config.skip_header:
+            df = df.iloc[1:]
+        
+        # Create field mapping dictionary
+        field_map = {fm.csv_field: fm.client_field for fm in config.field_mappings}
+        
+        results = ImportResult(
+            total_processed=0,
+            successful=0,
+            failed=0,
+            errors=[],
+            created_client_ids=[]
+        )
+        
+        # Process each row
+        for index, row in df.iterrows():
+            try:
+                results.total_processed += 1
+                
+                # Map fields
+                cliente_data = {}
+                for csv_field, client_field in field_map.items():
+                    if csv_field in df.columns:
+                        value = row[csv_field]
+                        if pd.notna(value) and str(value).strip():
+                            cliente_data[client_field] = str(value).strip()
+                
+                # Add required fields
+                cliente_data['commessa_id'] = config.commessa_id
+                cliente_data['sub_agenzia_id'] = config.sub_agenzia_id
+                
+                # Validate data
+                is_valid, error_msg = validate_cliente_data(cliente_data, config)
+                if not is_valid:
+                    results.failed += 1
+                    results.errors.append(f"Row {index + 1}: {error_msg}")
+                    continue
+                
+                # Check for duplicates if configured
+                if config.skip_duplicates:
+                    existing = await db.clienti.find_one({
+                        "telefono": cliente_data.get('telefono'),
+                        "commessa_id": config.commessa_id,
+                        "sub_agenzia_id": config.sub_agenzia_id
+                    })
+                    if existing:
+                        results.failed += 1
+                        results.errors.append(f"Row {index + 1}: Duplicate phone number {cliente_data.get('telefono')}")
+                        continue
+                
+                # Create cliente
+                cliente = Cliente(
+                    **cliente_data,
+                    created_by=created_by
+                )
+                
+                await db.clienti.insert_one(cliente.dict())
+                results.successful += 1
+                results.created_client_ids.append(cliente.id)
+                
+            except Exception as e:
+                results.failed += 1
+                results.errors.append(f"Row {index + 1}: {str(e)}")
+        
+        return results
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Import processing error: {str(e)}")
+
 # Aruba Drive Service Functions
 class ArubadriveService:
     def __init__(self):
