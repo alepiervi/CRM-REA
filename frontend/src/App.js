@@ -7042,6 +7042,33 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  const updateUnit = async (unitId, updateData) => {
+    try {
+      const response = await axios.put(`${API}/units/${unitId}`, updateData);
+      setUnitsData(unitsData.map(unit => 
+        unit.id === unitId ? response.data : unit
+      ));
+      toast({
+        title: "Successo",
+        description: "Unit modificata con successo",
+      });
+      setShowEditUnitModal(false);
+      setEditingUnit(null);
+    } catch (error) {
+      console.error("Error updating unit:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella modifica della unit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditUnit = (unit) => {
+    setEditingUnit(unit);
+    setShowEditUnitModal(true);
+  };
+
   // Sub Agenzie functions
   const fetchSubAgenzie = async () => {
     try {
