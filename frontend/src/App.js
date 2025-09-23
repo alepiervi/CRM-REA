@@ -6093,9 +6093,11 @@ const CommesseManagement = ({ selectedUnit, units }) => {
   const fetchServizi = async (commessaId) => {
     try {
       const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+      console.log(`Servizi per commessa ${commessaId}:`, response.data);
       setServizi(response.data);
     } catch (error) {
       console.error("Error fetching servizi:", error);
+      setServizi([]); // Reset servizi on error
     }
   };
 
