@@ -2360,7 +2360,6 @@ const UnitsManagement = ({ selectedUnit }) => {
       {showEditModal && selectedUnitForEdit && (
         <EditUnitModal
           unit={selectedUnitForEdit}
-          assistants={assistants}
           onClose={() => {
             setShowEditModal(false);
             setSelectedUnitForEdit(null);
