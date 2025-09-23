@@ -4812,6 +4812,69 @@ async def startup_event():
         }
         await db.users.insert_one(admin_data)
         logger.info("Default admin user created: admin/admin123")
+    
+    # Create default commesse if not exist
+    fastweb_commessa = await db.commesse.find_one({"nome": "Fastweb"})
+    if not fastweb_commessa:
+        commesse_data = [
+            {
+                "id": str(uuid.uuid4()),
+                "nome": "Fastweb",
+                "descrizione": "Commessa per servizi Fastweb",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc)
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "nome": "Fotovoltaico",
+                "descrizione": "Commessa per servizi Fotovoltaico",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc)
+            }
+        ]
+        
+        await db.commesse.insert_many(commesse_data)
+        logger.info("Default commesse created: Fastweb, Fotovoltaico")
+        
+        # Create default servizi for Fastweb
+        fastweb_id = commesse_data[0]["id"]
+        servizi_fastweb = [
+            {
+                "id": str(uuid.uuid4()),
+                "commessa_id": fastweb_id,
+                "nome": "TLS",
+                "descrizione": "Servizio TLS",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc)
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "commessa_id": fastweb_id,
+                "nome": "Agent",
+                "descrizione": "Servizio Agent",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc)
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "commessa_id": fastweb_id,
+                "nome": "Negozi",
+                "descrizione": "Servizio Negozi",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc)
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "commessa_id": fastweb_id,
+                "nome": "Presidi",
+                "descrizione": "Servizio Presidi",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc)
+            }
+        ]
+        
+        await db.servizi.insert_many(servizi_fastweb)
+        logger.info("Default servizi created for Fastweb")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
