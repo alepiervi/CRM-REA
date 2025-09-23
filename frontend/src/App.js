@@ -499,6 +499,16 @@ const Dashboard = () => {
     }
   };
 
+  const fetchCommesse = async () => {
+    try {
+      const response = await axios.get(`${API}/commesse`);
+      setCommesse(response.data);
+    } catch (error) {
+      console.error("Error fetching commesse:", error);
+      setCommesse([]);
+    }
+  };
+
   const handleUnitChange = (unitId) => {
     setSelectedUnit(unitId);
   };
