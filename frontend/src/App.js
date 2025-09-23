@@ -7308,6 +7308,18 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
                 <div className="text-xs text-slate-400 mt-2">
                   Creata il: {new Date(subAgenzia.created_at).toLocaleDateString('it-IT')}
                 </div>
+                
+                {/* Actions */}
+                <div className="flex justify-end mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditSubAgenzia(subAgenzia)}
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Modifica
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
