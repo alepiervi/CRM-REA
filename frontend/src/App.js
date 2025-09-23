@@ -2847,21 +2847,35 @@ const EditContainerModal = ({ container, onClose, onSubmit, units }) => {
   );
 };
 
-// Analytics Management Component
+// Advanced Analytics Management Component with Charts and Reports
 const AnalyticsManagement = ({ selectedUnit, units }) => {
-  const [analyticsData, setAnalyticsData] = useState(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [dashboardData, setDashboardData] = useState(null);
+  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState("");
   const [selectedReferente, setSelectedReferente] = useState("");
   const [agents, setAgents] = useState([]);
   const [referenti, setReferenti] = useState([]);
+  const [commesse, setCommesse] = useState([]);
+  const [subAgenzie, setSubAgenzie] = useState([]);
+  const [dateRange, setDateRange] = useState({
+    startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
+    endDate: format(new Date(), 'yyyy-MM-dd')
+  });
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user.role === "admin" || user.role === "referente") {
       fetchUsers();
+      fetchCommesse();
+      fetchSubAgenzie();
     }
-  }, [selectedUnit]);
+    if (activeTab === "dashboard") {
+      fetchDashboardData();
+    }
+  }, [selectedUnit, activeTab, dateRange]);
 
   const fetchUsers = async () => {
     try {
@@ -2877,6 +2891,112 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
       setReferenti(users.filter(u => u.role === "referente"));
     } catch (error) {
       console.error("Error fetching users:", error);
+    }
+  };
+
+  const fetchCommesse = async () => {
+    try {
+      const response = await axios.get(`${API}/commesse`);
+      setCommesse(response.data);
+    } catch (error) {
+      console.error("Error fetching commesse:", error);
+    }
+  };
+
+  const fetchSubAgenzie = async () => {
+    try {
+      const response = await axios.get(`${API}/sub-agenzie`);
+      setSubAgenzie(response.data);
+    } catch (error) {
+      console.error("Error fetching sub agenzie:", error);
+    }
+  };
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      params.append('date_from', dateRange.startDate);
+      params.append('date_to', dateRange.endDate);
+
+      // Fetch multiple analytics endpoints
+      const [leadsRes, usersRes, commesseRes] = await Promise.all([
+        axios.get(`${API}/leads?${params}`),
+        axios.get(`${API}/users?${params}`),
+        axios.get(`${API}/commesse`)
+      ]);
+
+      const leads = leadsRes.data;
+      const users = usersRes.data;
+
+      // Process dashboard metrics
+      const totalLeads = leads.length;
+      const totalUsers = users.length;
+      const totalCommesse = commesseRes.data.length;
+      const totalClients = await axios.get(`${API}/clienti`).then(res => res.data.length).catch(() => 0);
+
+      // Calculate conversion rates and esiti breakdown
+      const esitoBreakdown = leads.reduce((acc, lead) => {
+        const esito = lead.esito || 'Non Impostato';
+        acc[esito] = (acc[esito] || 0) + 1;
+        return acc;
+      }, {});
+
+      // Generate chart data - leads per day
+      const leadsPerDay = leads.reduce((acc, lead) => {
+        const date = format(parseISO(lead.created_at || new Date().toISOString()), 'yyyy-MM-dd');
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      }, {});
+
+      const chartDataArray = Object.entries(leadsPerDay)
+        .map(([date, count]) => ({
+          date: format(parseISO(date + 'T00:00:00'), 'dd/MM', { locale: it }),
+          leads: count,
+          fullDate: date
+        }))
+        .sort((a, b) => a.fullDate.localeCompare(b.fullDate))
+        .slice(-14); // Last 14 days
+
+      // Performance by agents
+      const agentPerformance = users
+        .filter(u => u.role === 'agente')
+        .map(agent => {
+          const agentLeads = leads.filter(l => l.agent_id === agent.id);
+          return {
+            name: agent.username,
+            leads: agentLeads.length,
+            conversions: agentLeads.filter(l => ['Interessato', 'Venduto', 'Completato'].includes(l.esito)).length
+          };
+        })
+        .sort((a, b) => b.leads - a.leads)
+        .slice(0, 10);
+
+      setDashboardData({
+        totalLeads,
+        totalUsers,
+        totalCommesse,
+        totalClients,
+        esitoBreakdown,
+        agentPerformance,
+        conversionRate: totalLeads > 0 ? Math.round((Object.entries(esitoBreakdown).filter(([esito]) => 
+          ['Interessato', 'Venduto', 'Completato'].includes(esito)
+        ).reduce((sum, [, count]) => sum + count, 0) / totalLeads) * 100) : 0
+      });
+
+      setChartData(chartDataArray);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei dati dashboard",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -2902,6 +3022,235 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Export functions
+  const exportLeads = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedUnit && selectedUnit !== "all") params.append('unit_id', selectedUnit);
+      params.append('date_from', dateRange.startDate);
+      params.append('date_to', dateRange.endDate);
+      
+      const response = await axios.get(`${API}/leads/export?${params}`, {
+        responseType: 'blob'
+      });
+      
+      downloadFile(response.data, `leads_export_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+      toast({ title: "Successo", description: "Export Leads completato" });
+    } catch (error) {
+      console.error("Error exporting leads:", error);
+      toast({ title: "Errore", description: "Errore nell'export dei leads", variant: "destructive" });
+    }
+  };
+
+  const exportClienti = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.append('date_from', dateRange.startDate);
+      params.append('date_to', dateRange.endDate);
+      
+      // Create a temporary export endpoint for clients
+      const response = await axios.get(`${API}/clienti`, { params });
+      const clientiData = response.data;
+      
+      // For now, download as JSON (future: implement Excel export for clients)
+      const blob = new Blob([JSON.stringify(clientiData, null, 2)], { type: 'application/json' });
+      downloadFile(blob, `clienti_export_${format(new Date(), 'yyyyMMdd')}.json`);
+      
+      toast({ title: "Successo", description: "Export Clienti completato" });
+    } catch (error) {
+      console.error("Error exporting clienti:", error);
+      toast({ title: "Errore", description: "Errore nell'export dei clienti", variant: "destructive" });
+    }
+  };
+
+  const exportAnalytics = async () => {
+    try {
+      if (!dashboardData) return;
+      
+      const reportData = {
+        generated_at: new Date().toISOString(),
+        date_range: dateRange,
+        unit: selectedUnit || 'all',
+        summary: {
+          total_leads: dashboardData.totalLeads,
+          total_users: dashboardData.totalUsers,
+          total_commesse: dashboardData.totalCommesse,
+          total_clients: dashboardData.totalClients,
+          conversion_rate: dashboardData.conversionRate + '%'
+        },
+        esito_breakdown: dashboardData.esitoBreakdown,
+        agent_performance: dashboardData.agentPerformance,
+        chart_data: chartData
+      };
+      
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+      downloadFile(blob, `analytics_report_${format(new Date(), 'yyyyMMdd')}.json`);
+      
+      toast({ title: "Successo", description: "Export Analytics completato" });
+    } catch (error) {
+      console.error("Error exporting analytics:", error);
+      toast({ title: "Errore", description: "Errore nell'export analytics", variant: "destructive" });
+    }
+  };
+
+  const downloadFile = (blob, filename) => {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Charts color schemes
+  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'];
+
+  const renderDashboard = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      );
+    }
+
+    if (!dashboardData) return null;
+
+    return (
+      <div className="space-y-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Totale Lead</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{dashboardData.totalLeads}</div>
+              <p className="text-xs text-muted-foreground">Lead generati nel periodo</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Totale Clienti</CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{dashboardData.totalClients}</div>
+              <p className="text-xs text-muted-foreground">Clienti acquisiti</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tasso Conversione</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{dashboardData.conversionRate}%</div>
+              <p className="text-xs text-muted-foreground">Lead convertiti</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Commesse Attive</CardTitle>
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{dashboardData.totalCommesse}</div>
+              <p className="text-xs text-muted-foreground">Progetti in corso</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Line Chart - Leads Trend */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Andamento Lead (Ultimi 14 giorni)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="leads" 
+                    stroke="#3B82F6" 
+                    strokeWidth={2}
+                    dot={{ fill: '#3B82F6' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Pie Chart - Esiti Breakdown */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribuzione Esiti</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={Object.entries(dashboardData.esitoBreakdown).map(([esito, count]) => ({
+                      name: esito,
+                      value: count
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {Object.entries(dashboardData.esitoBreakdown).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Performance Chart */}
+        {dashboardData.agentPerformance.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Performance Agenti (Top 10)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={dashboardData.agentPerformance}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="leads" fill="#3B82F6" name="Lead Totali" />
+                  <Bar dataKey="conversions" fill="#10B981" name="Conversioni" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
   };
 
   const renderAgentAnalytics = () => {
