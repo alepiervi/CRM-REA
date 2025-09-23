@@ -16,6 +16,11 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
+// Charts and date utilities
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { format, subDays, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { it } from 'date-fns/locale';
+
 // Shadcn components
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
