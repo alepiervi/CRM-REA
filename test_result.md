@@ -365,9 +365,9 @@ frontend:
 
   - task: "Sistema Autorizzazioni Gerarchiche - Commesse Management Interface"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/App.js"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
@@ -377,6 +377,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ COMMESSE MANAGEMENT PARZIALMENTE FUNZIONANTE (3/4 test passed): ✅ Pagina carica correttamente, ✅ Commesse esistenti (Fastweb, Fotovoltaico) visibili, ✅ Modal 'Nuova Commessa' funziona, ❌ CRITICO: Click su commessa Fastweb non mostra i servizi (TLS, Agent, Negozi, Presidi). Il sistema di visualizzazione servizi non funziona correttamente."
+        - working: true
+          agent: "testing"
+          comment: "✅ CRITICAL SUCCESS - COMMESSE MANAGEMENT COMPLETAMENTE FUNZIONANTE! (4/4 test passed): ✅ Pagina carica correttamente, ✅ Commesse esistenti (Fastweb, Fotovoltaico) visibili, ✅ Modal 'Nuova Commessa' funziona perfettamente, ✅ RISOLTO: Click su commessa Fastweb ora mostra TUTTI i servizi (TLS, Agent, Negozi, Presidi)! Console log conferma caricamento servizi. Il debug implementato ha risolto il problema di visualizzazione servizi."
 
   - task: "Sistema Autorizzazioni Gerarchiche - Sub Agenzie Management Interface"
     implemented: true
