@@ -6853,14 +6853,18 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             <div>
               <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
               <Select 
-                value={formData.sub_agenzia_id} 
-                onValueChange={(value) => setFormData({...formData, sub_agenzia_id: value})}
+                value={formData.sub_agenzia_id || "none"} 
+                onValueChange={(value) => setFormData({
+                  ...formData, 
+                  sub_agenzia_id: value === "none" ? "" : value
+                })}
                 disabled={!formData.commessa_id}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona Sub Agenzia" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Seleziona Sub Agenzia</SelectItem>
                   {availableSubAgenzie.map((subAgenzia) => (
                     <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
                       {subAgenzia.nome}
