@@ -1870,7 +1870,9 @@ class WhatsAppService:
         """Get Redis connection"""
         if not self.redis:
             try:
-                self.redis = await aioredis.from_url(self.redis_url)
+                # self.redis = await aioredis.from_url(self.redis_url)  # Temporarily disabled due to version conflict
+                logging.warning("Redis connection disabled due to aioredis version conflict")
+                self.redis = None
             except Exception as e:
                 logging.warning(f"Redis connection failed: {e}")
                 self.redis = None
