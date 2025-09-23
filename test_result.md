@@ -361,6 +361,81 @@ test_plan:
   test_priority: "high_first"
 
 frontend:
+  - task: "Sistema Autorizzazioni Gerarchiche - Navigation Integration"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementata navigazione sidebar per Sistema Autorizzazioni Gerarchiche con tre sezioni: Commesse, Sub Agenzie, Clienti. Tutte le sezioni sono admin-only con icone appropriate (Building, Store, UserCheck)."
+        - working: true
+          agent: "testing"
+          comment: "✅ NAVIGAZIONE SISTEMA AUTORIZZAZIONI PERFETTAMENTE FUNZIONANTE: Tutti e 3 gli elementi di navigazione (Commesse, Sub Agenzie, Clienti) sono visibili nella sidebar per utenti admin. Icone corrette implementate. Accesso admin-only verificato e funzionante."
+
+  - task: "Sistema Autorizzazioni Gerarchiche - Commesse Management Interface"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementato componente CommesseManagement completo con caricamento commesse esistenti, visualizzazione servizi, modal creazione nuova commessa, e gestione servizi per commessa."
+        - working: false
+          agent: "testing"
+          comment: "❌ COMMESSE MANAGEMENT PARZIALMENTE FUNZIONANTE (3/4 test passed): ✅ Pagina carica correttamente, ✅ Commesse esistenti (Fastweb, Fotovoltaico) visibili, ✅ Modal 'Nuova Commessa' funziona, ❌ CRITICO: Click su commessa Fastweb non mostra i servizi (TLS, Agent, Negozi, Presidi). Il sistema di visualizzazione servizi non funziona correttamente."
+
+  - task: "Sistema Autorizzazioni Gerarchiche - Sub Agenzie Management Interface"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementato componente SubAgenzieManagement con tabella completa (Nome, Responsabile, Commesse Autorizzate, Stato, Data), modal creazione con selezione multiple commesse, e badge per commesse autorizzate."
+        - working: true
+          agent: "testing"
+          comment: "✅ SUB AGENZIE MANAGEMENT COMPLETAMENTE FUNZIONANTE (4/4 test passed): ✅ Pagina carica correttamente, ✅ Tabella con tutti gli header richiesti (Nome, Responsabile, Commesse Autorizzate, Stato, Data Creazione), ✅ Modal 'Nuova Sub Agenzia' funziona perfettamente, ✅ Form completo con campi nome, responsabile_id, descrizione e sezione 'Commesse Autorizzate' con checkboxes multiple."
+
+  - task: "Sistema Autorizzazioni Gerarchiche - Clienti Management Interface"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementato componente ClientiManagement con dropdown selezione commessa, tabella clienti completa, modal creazione cliente con 27+ campi, filtro sub agenzie basato su commessa selezionata."
+        - working: false
+          agent: "testing"
+          comment: "❌ CLIENTI MANAGEMENT NON FUNZIONANTE (0/4 test passed): ❌ CRITICO: La pagina 'Gestione Clienti' non carica correttamente. Errori JavaScript rilevati relativi a SelectItem components. Il componente ClientiManagement è implementato ma presenta errori di rendering che impediscono il caricamento della pagina."
+
+  - task: "Sistema Autorizzazioni Gerarchiche - Lead vs Cliente Separation"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementata separazione completa tra Lead (da campagne social) e Clienti (anagrafiche manuali sub agenzie). Lead mantengono sezione esistente, Clienti hanno sezione dedicata separata."
+        - working: false
+          agent: "testing"
+          comment: "❌ SEPARAZIONE LEAD vs CLIENTI NON VERIFICABILE: A causa del mancato caricamento della sezione Clienti, non è possibile verificare la corretta separazione tra Lead e Clienti. La sezione Lead è accessibile e funzionante, ma la sezione Clienti presenta errori che impediscono la verifica della separazione."
+
   - task: "WhatsApp Section - Admin Navigation Visibility"
     implemented: true
     working: true
