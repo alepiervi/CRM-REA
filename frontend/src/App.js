@@ -3630,33 +3630,69 @@ const DocumentUploadModal = ({ onClose, onSuccess, units, selectedUnit, document
   const { user } = useAuth();
 
   useEffect(() => {
-    fetchLeads();
-  }, [selectedUnit]);
+    if (documentType === "lead") {
+      fetchLeads();
+    } else {
+      fetchCommesse();
+    }
+  }, [selectedUnit, documentType, selectedCommessa]);
 
   const fetchLeads = async () => {
     try {
-      setLeadsLoading(true);
+      setEntitiesLoading(true);
       const params = new URLSearchParams();
       if (selectedUnit && selectedUnit !== "all") {
         params.append('unit_id', selectedUnit);
       }
       
       const response = await axios.get(`${API}/leads?${params}`);
-      setLeads(response.data);
+      setEntities(response.data);
     } catch (error) {
       console.error("Error fetching leads:", error);
     } finally {
-      setLeadsLoading(false);
+      setEntitiesLoading(false);
     }
   };
+
+  const fetchCommesse = async () => {
+    try {
+      const response = await axios.get(`${API}/commesse`);
+      setCommesse(response.data);
+    } catch (error) {
+      console.error("Error fetching commesse:", error);
+    }
+  };
+
+  const fetchClienti = async () => {
+    if (!selectedCommessa) return;
+    
+    try {
+      setEntitiesLoading(true);
+      const params = new URLSearchParams();
+      params.append('commessa_id', selectedCommessa);
+      
+      const response = await axios.get(`${API}/clienti?${params}`);
+      setEntities(response.data);
+    } catch (error) {
+      console.error("Error fetching clienti:", error);
+    } finally {
+      setEntitiesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (documentType === "cliente" && selectedCommessa) {
+      fetchClienti();
+    }
+  }, [selectedCommessa]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!selectedLead || !file) {
+    if (!selectedEntity || !file) {
       toast({
         title: "Errore",
-        description: "Seleziona un lead e un file PDF",
+        description: `Seleziona un ${documentType === "lead" ? "lead" : "cliente"} e un file PDF`,
         variant: "destructive",
       });
       return;
@@ -3666,10 +3702,12 @@ const DocumentUploadModal = ({ onClose, onSuccess, units, selectedUnit, document
 
     try {
       const formData = new FormData();
+      formData.append('document_type', documentType);
+      formData.append('entity_id', selectedEntity);
       formData.append('file', file);
       formData.append('uploaded_by', user.username);
 
-      await axios.post(`${API}/documents/upload/${selectedLead}`, formData, {
+      await axios.post(`${API}/documents/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
