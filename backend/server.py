@@ -2243,6 +2243,9 @@ twilio_service = TwilioService()
 call_center_service = CallCenterService()
 acd_service = ACDService()
 
+# Initialize WhatsApp service
+whatsapp_service = WhatsAppService()
+
 async def assign_lead_to_agent(lead: Lead):
     """Automatically assign lead to agent based on province coverage"""
     # Find agents covering this province
