@@ -7611,7 +7611,7 @@ const CreateCommessaModal = ({ isOpen, onClose, onSubmit }) => {
   );
 };
 
-const CreateSubAgenziaModal = ({ isOpen, onClose, onSubmit, commesse }) => {
+const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse }) => {
   const [formData, setFormData] = useState({
     nome: '',
     descrizione: '',
@@ -7621,9 +7621,8 @@ const CreateSubAgenziaModal = ({ isOpen, onClose, onSubmit, commesse }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSuccess(formData);
     setFormData({ nome: '', descrizione: '', responsabile_id: '', commesse_autorizzate: [] });
-    onClose();
   };
 
   const toggleCommessa = (commessaId) => {
@@ -7635,10 +7634,8 @@ const CreateSubAgenziaModal = ({ isOpen, onClose, onSubmit, commesse }) => {
     }));
   };
 
-  if (!isOpen) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Nuova Sub Agenzia</DialogTitle>
