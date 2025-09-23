@@ -2542,6 +2542,11 @@ async def download_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     
+    # Check access permissions
+    document_obj = Document(**document)
+    if not await can_user_access_document(current_user, document_obj):
+        raise HTTPException(status_code=403, detail="Access denied to this document")
+    
     try:
         # Download from Aruba Drive
         file_content = await aruba_service.download_file(document["aruba_drive_file_id"])
