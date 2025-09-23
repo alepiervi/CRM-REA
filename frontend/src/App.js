@@ -3524,9 +3524,26 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
                           </div>
                         </div>
                       ) : (
-                        <span className="text-slate-400">Lead non trovato</span>
+                        <span className="text-slate-400">Entità non trovata</span>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <Badge variant={doc.document_type === "lead" ? "default" : "secondary"}>
+                        {doc.document_type === "lead" ? "Lead" : "Cliente"}
+                      </Badge>
+                    </TableCell>
+                    {activeTab === "cliente" && (
+                      <TableCell>
+                        {doc.entity?.commessa && doc.entity?.sub_agenzia ? (
+                          <div>
+                            <div className="text-sm font-medium">{doc.entity.commessa}</div>
+                            <div className="text-xs text-slate-500">{doc.entity.sub_agenzia}</div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">N/A</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>{formatFileSize(doc.size)}</TableCell>
                     <TableCell>{doc.uploaded_by}</TableCell>
                     <TableCell>
