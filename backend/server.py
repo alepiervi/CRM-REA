@@ -2421,7 +2421,13 @@ async def upload_document(
             aruba_response = await aruba_service.upload_file(temp_path, file.filename)
             
             # Create database record
-            document = await create_document_record(lead_id, file, aruba_response, uploaded_by)
+            document = await create_document_record(doc_type, entity_id, file, aruba_response, uploaded_by)
+            
+            entity_info = {
+                "id": entity["id"],
+                "nome": entity["nome"],
+                "cognome": entity["cognome"]
+            }
             
             return {
                 "success": True,
@@ -2434,11 +2440,8 @@ async def upload_document(
                     "upload_status": document.upload_status,
                     "created_at": document.created_at.isoformat()
                 },
-                "lead": {
-                    "id": lead["id"],
-                    "nome": lead["nome"],
-                    "cognome": lead["cognome"]
-                }
+                "entity": entity_info,
+                "document_type": doc_type
             }
             
         finally:
