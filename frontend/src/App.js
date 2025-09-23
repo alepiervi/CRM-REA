@@ -510,6 +510,16 @@ const Dashboard = () => {
     }
   };
 
+  const fetchSubAgenzie = async () => {
+    try {
+      const response = await axios.get(`${API}/sub-agenzie`);
+      setSubAgenzie(response.data);
+    } catch (error) {
+      console.error("Error fetching sub agenzie:", error);
+      setSubAgenzie([]);
+    }
+  };
+
   const handleUnitChange = (unitId) => {
     setSelectedUnit(unitId);
   };
