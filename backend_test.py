@@ -2695,9 +2695,410 @@ class CRMAPITester:
             print(f"⚠️  {failed} Call Center tests failed")
             return False
 
+    def test_clienti_import_functionality(self):
+        """Test Clienti Import functionality (CSV/Excel)"""
+        print("\n📥 Testing CLIENTI IMPORT FUNCTIONALITY...")
+        
+        # First ensure we have commesse and sub agenzie for testing
+        # Get existing commesse
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if not success or not commesse_response:
+            self.log_test("Get commesse for import test", False, "No commesse available for import testing")
+            return
+        
+        commessa_id = commesse_response[0]['id']
+        self.log_test("Get commesse for import", True, f"Using commessa: {commessa_id}")
+        
+        # Get sub agenzie for this commessa
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        if not success or not sub_agenzie_response:
+            self.log_test("Get sub agenzie for import test", False, "No sub agenzie available for import testing")
+            return
+        
+        # Find a sub agenzia authorized for our commessa
+        authorized_sub_agenzia = None
+        for sa in sub_agenzie_response:
+            if commessa_id in sa.get('commesse_autorizzate', []):
+                authorized_sub_agenzia = sa
+                break
+        
+        if not authorized_sub_agenzia:
+            self.log_test("Find authorized sub agenzia", False, "No sub agenzia authorized for commessa")
+            return
+        
+        sub_agenzia_id = authorized_sub_agenzia['id']
+        self.log_test("Find authorized sub agenzia", True, f"Using sub agenzia: {sub_agenzia_id}")
+        
+        # TEST 1: Template Download CSV
+        success, response, status = self.make_request('GET', 'clienti/import/template/csv', expected_status=200)
+        if success:
+            self.log_test("Download CSV template", True, "CSV template downloaded successfully")
+        else:
+            self.log_test("Download CSV template", False, f"Status: {status}")
+        
+        # TEST 2: Template Download XLSX
+        success, response, status = self.make_request('GET', 'clienti/import/template/xlsx', expected_status=200)
+        if success:
+            self.log_test("Download XLSX template", True, "XLSX template downloaded successfully")
+        else:
+            self.log_test("Download XLSX template", False, f"Status: {status}")
+        
+        # TEST 3: Template Download Invalid Type
+        success, response, status = self.make_request('GET', 'clienti/import/template/invalid', expected_status=400)
+        self.log_test("Invalid template type rejection", success, "Correctly rejected invalid file type")
+        
+        # TEST 4: Import Preview with CSV
+        import tempfile
+        import os
+        import requests
+        
+        # Create test CSV content
+        csv_content = """nome,cognome,email,telefono,indirizzo,citta,provincia,cap,codice_fiscale,partita_iva,note
+Mario,Rossi,mario.rossi@test.com,+393471234567,Via Roma 1,Roma,RM,00100,RSSMRA80A01H501Z,12345678901,Cliente VIP
+Luigi,Verdi,luigi.verdi@test.com,+393487654321,Via Milano 23,Milano,MI,20100,VRDLGU75B15F205X,98765432109,Contatto commerciale
+Anna,Bianchi,anna.bianchi@test.com,+393451122334,Via Napoli 45,Napoli,NA,80100,BNCNNA90C45F839Y,11223344556,Referenziato"""
+        
+        # Create temporary CSV file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as temp_file:
+            temp_file.write(csv_content)
+            temp_file.flush()
+            temp_file_path = temp_file.name
+        
+        try:
+            # Test CSV preview
+            url = f"{self.base_url}/clienti/import/preview"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('test_clienti.csv', f, 'text/csv')}
+                
+                try:
+                    response = requests.post(url, files=files, headers=headers, timeout=30)
+                    
+                    if response.status_code == 200:
+                        preview_data = response.json()
+                        headers_found = preview_data.get('headers', [])
+                        sample_data = preview_data.get('sample_data', [])
+                        total_rows = preview_data.get('total_rows', 0)
+                        file_type = preview_data.get('file_type', '')
+                        
+                        self.log_test("CSV import preview", True, 
+                            f"Headers: {len(headers_found)}, Rows: {total_rows}, Type: {file_type}")
+                        
+                        # Verify expected headers are present
+                        expected_headers = ['nome', 'cognome', 'email', 'telefono']
+                        missing_headers = [h for h in expected_headers if h not in headers_found]
+                        if not missing_headers:
+                            self.log_test("CSV headers validation", True, "All required headers found")
+                        else:
+                            self.log_test("CSV headers validation", False, f"Missing headers: {missing_headers}")
+                        
+                        # Verify sample data
+                        if len(sample_data) > 0 and len(sample_data[0]) > 0:
+                            self.log_test("CSV sample data", True, f"Sample: {sample_data[0][0]} {sample_data[0][1]}")
+                        else:
+                            self.log_test("CSV sample data", False, "No sample data returned")
+                            
+                    else:
+                        self.log_test("CSV import preview", False, f"Status: {response.status_code}, Response: {response.text}")
+                        
+                except requests.exceptions.RequestException as e:
+                    self.log_test("CSV import preview", False, f"Request error: {str(e)}")
+                    
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+        
+        # TEST 5: Import Execute with CSV
+        # Create smaller CSV for execution test
+        execute_csv_content = """nome,cognome,email,telefono,indirizzo,citta,provincia,cap
+TestImport,Cliente,test.import@test.com,+393471234999,Via Test 1,Roma,RM,00100"""
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as temp_file:
+            temp_file.write(execute_csv_content)
+            temp_file.flush()
+            temp_file_path = temp_file.name
+        
+        try:
+            # Prepare import configuration
+            import json
+            import_config = {
+                "commessa_id": commessa_id,
+                "sub_agenzia_id": sub_agenzia_id,
+                "field_mappings": [
+                    {"csv_field": "nome", "client_field": "nome", "required": True},
+                    {"csv_field": "cognome", "client_field": "cognome", "required": True},
+                    {"csv_field": "email", "client_field": "email", "required": False},
+                    {"csv_field": "telefono", "client_field": "telefono", "required": True},
+                    {"csv_field": "indirizzo", "client_field": "indirizzo", "required": False},
+                    {"csv_field": "citta", "client_field": "citta", "required": False},
+                    {"csv_field": "provincia", "client_field": "provincia", "required": False},
+                    {"csv_field": "cap", "client_field": "cap", "required": False}
+                ],
+                "skip_header": True,
+                "skip_duplicates": True,
+                "validate_phone": True,
+                "validate_email": True
+            }
+            
+            url = f"{self.base_url}/clienti/import/execute"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('test_execute.csv', f, 'text/csv')}
+                data = {'config': json.dumps(import_config)}
+                
+                try:
+                    response = requests.post(url, files=files, data=data, headers=headers, timeout=30)
+                    
+                    if response.status_code == 200:
+                        result_data = response.json()
+                        total_processed = result_data.get('total_processed', 0)
+                        successful = result_data.get('successful', 0)
+                        failed = result_data.get('failed', 0)
+                        errors = result_data.get('errors', [])
+                        created_ids = result_data.get('created_client_ids', [])
+                        
+                        self.log_test("CSV import execution", True, 
+                            f"Processed: {total_processed}, Success: {successful}, Failed: {failed}")
+                        
+                        if successful > 0:
+                            self.log_test("Client creation via import", True, f"Created {len(created_ids)} clients")
+                        else:
+                            self.log_test("Client creation via import", False, f"No clients created. Errors: {errors}")
+                            
+                    else:
+                        self.log_test("CSV import execution", False, f"Status: {response.status_code}, Response: {response.text}")
+                        
+                except requests.exceptions.RequestException as e:
+                    self.log_test("CSV import execution", False, f"Request error: {str(e)}")
+                    
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+        
+        # TEST 6: Import with Excel file
+        # Create test Excel content
+        import pandas as pd
+        excel_data = {
+            'nome': ['ExcelTest'],
+            'cognome': ['Cliente'],
+            'email': ['excel.test@test.com'],
+            'telefono': ['+393471234888'],
+            'indirizzo': ['Via Excel 1'],
+            'citta': ['Milano'],
+            'provincia': ['MI'],
+            'cap': ['20100']
+        }
+        
+        df = pd.DataFrame(excel_data)
+        
+        with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as temp_file:
+            df.to_excel(temp_file.name, index=False)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Test Excel preview
+            url = f"{self.base_url}/clienti/import/preview"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('test_clienti.xlsx', f, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}
+                
+                try:
+                    response = requests.post(url, files=files, headers=headers, timeout=30)
+                    
+                    if response.status_code == 200:
+                        preview_data = response.json()
+                        file_type = preview_data.get('file_type', '')
+                        total_rows = preview_data.get('total_rows', 0)
+                        
+                        self.log_test("Excel import preview", True, f"Type: {file_type}, Rows: {total_rows}")
+                    else:
+                        self.log_test("Excel import preview", False, f"Status: {response.status_code}")
+                        
+                except requests.exceptions.RequestException as e:
+                    self.log_test("Excel import preview", False, f"Request error: {str(e)}")
+                    
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+        
+        # TEST 7: File size limit validation (10MB)
+        # Create large CSV content (over 10MB)
+        large_csv_content = "nome,cognome,telefono\n" + "Test,User,+393471234567\n" * 500000  # Should exceed 10MB
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as temp_file:
+            temp_file.write(large_csv_content)
+            temp_file.flush()
+            temp_file_path = temp_file.name
+        
+        try:
+            url = f"{self.base_url}/clienti/import/preview"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('large_file.csv', f, 'text/csv')}
+                
+                try:
+                    response = requests.post(url, files=files, headers=headers, timeout=30)
+                    
+                    if response.status_code == 400:
+                        error_detail = response.json().get('detail', '')
+                        if 'too large' in error_detail.lower() or '10mb' in error_detail.lower():
+                            self.log_test("File size limit validation", True, "Correctly rejected large file")
+                        else:
+                            self.log_test("File size limit validation", False, f"Wrong error: {error_detail}")
+                    else:
+                        self.log_test("File size limit validation", False, f"Expected 400, got {response.status_code}")
+                        
+                except requests.exceptions.RequestException as e:
+                    self.log_test("File size limit validation", False, f"Request error: {str(e)}")
+                    
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+        
+        # TEST 8: Invalid file type rejection
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as temp_file:
+            temp_file.write("This is not a CSV or Excel file")
+            temp_file.flush()
+            temp_file_path = temp_file.name
+        
+        try:
+            url = f"{self.base_url}/clienti/import/preview"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('invalid_file.txt', f, 'text/plain')}
+                
+                try:
+                    response = requests.post(url, files=files, headers=headers, timeout=30)
+                    
+                    if response.status_code == 400:
+                        self.log_test("Invalid file type rejection", True, "Correctly rejected non-CSV/Excel file")
+                    else:
+                        self.log_test("Invalid file type rejection", False, f"Expected 400, got {response.status_code}")
+                        
+                except requests.exceptions.RequestException as e:
+                    self.log_test("Invalid file type rejection", False, f"Request error: {str(e)}")
+                    
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+        
+        # TEST 9: Authorization check - non-admin user should be denied
+        # Create a regular user (agente) to test permissions
+        unit_data = {
+            "name": f"Import Test Unit {datetime.now().strftime('%H%M%S')}",
+            "description": "Unit for import authorization testing"
+        }
+        success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
+        if success:
+            unit_id = unit_response['id']
+            
+            # Create agente user
+            agente_data = {
+                "username": f"import_agente_{datetime.now().strftime('%H%M%S')}",
+                "email": f"import_agente_{datetime.now().strftime('%H%M%S')}@test.com",
+                "password": "TestPass123!",
+                "role": "agente",
+                "unit_id": unit_id,
+                "provinces": ["Roma"]
+            }
+            
+            success, agente_response, status = self.make_request('POST', 'users', agente_data, 200)
+            if success:
+                # Login as agente
+                success, agente_login_response, status = self.make_request(
+                    'POST', 'auth/login', 
+                    {'username': agente_data['username'], 'password': agente_data['password']}, 
+                    200, auth_required=False
+                )
+                
+                if success:
+                    agente_token = agente_login_response['access_token']
+                    original_token = self.token
+                    self.token = agente_token
+                    
+                    # Test agente access to import (should be denied)
+                    success, response, status = self.make_request('GET', 'clienti/import/template/csv', expected_status=403)
+                    self.log_test("Import authorization - agente denied", success, "Correctly denied agente access to import")
+                    
+                    # Restore admin token
+                    self.token = original_token
+                else:
+                    self.log_test("Agente login for import test", False, f"Status: {status}")
+            else:
+                self.log_test("Create agente for import test", False, f"Status: {status}")
+        else:
+            self.log_test("Create unit for import test", False, f"Status: {status}")
+        
+        # TEST 10: Duplicate handling
+        duplicate_csv_content = """nome,cognome,telefono
+Duplicate,Test,+393471234567
+Duplicate,Test,+393471234567"""
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as temp_file:
+            temp_file.write(duplicate_csv_content)
+            temp_file.flush()
+            temp_file_path = temp_file.name
+        
+        try:
+            # Test with skip_duplicates = True
+            import_config_skip = {
+                "commessa_id": commessa_id,
+                "sub_agenzia_id": sub_agenzia_id,
+                "field_mappings": [
+                    {"csv_field": "nome", "client_field": "nome", "required": True},
+                    {"csv_field": "cognome", "client_field": "cognome", "required": True},
+                    {"csv_field": "telefono", "client_field": "telefono", "required": True}
+                ],
+                "skip_header": True,
+                "skip_duplicates": True,
+                "validate_phone": True,
+                "validate_email": True
+            }
+            
+            url = f"{self.base_url}/clienti/import/execute"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': ('duplicate_test.csv', f, 'text/csv')}
+                data = {'config': json.dumps(import_config_skip)}
+                
+                try:
+                    response = requests.post(url, files=files, data=data, headers=headers, timeout=30)
+                    
+                    if response.status_code == 200:
+                        result_data = response.json()
+                        successful = result_data.get('successful', 0)
+                        failed = result_data.get('failed', 0)
+                        
+                        # Should process 2 rows but only create 1 client (second is duplicate)
+                        if successful == 1 and failed == 1:
+                            self.log_test("Duplicate handling", True, "Correctly handled duplicate phone numbers")
+                        else:
+                            self.log_test("Duplicate handling", False, f"Expected 1 success, 1 fail. Got {successful} success, {failed} fail")
+                    else:
+                        self.log_test("Duplicate handling test", False, f"Status: {response.status_code}")
+                        
+                except requests.exceptions.RequestException as e:
+                    self.log_test("Duplicate handling test", False, f"Request error: {str(e)}")
+                    
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+
     def run_all_tests(self):
-        """Run Workflow Builder FASE 3 Backend Tests"""
-        print("🚀 Starting CRM API Testing - WORKFLOW BUILDER FASE 3 BACKEND...")
+        """Run Clienti Import Tests"""
+        print("🚀 Starting CRM API Testing - CLIENTI IMPORT FUNCTIONALITY...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
@@ -2706,8 +3107,8 @@ class CRMAPITester:
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # Run Workflow Builder FASE 3 tests
-        self.test_workflow_builder_fase3()
+        # Run Clienti Import tests
+        self.test_clienti_import_functionality()
         
         # Print summary
         print("\n" + "=" * 60)
