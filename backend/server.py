@@ -3083,8 +3083,8 @@ async def update_unit(unit_id: str, unit_data: UnitUpdate, current_user: User = 
     if not existing_unit:
         raise HTTPException(status_code=404, detail="Unit not found")
     
-    # Update unit data
-    update_data = unit_data.dict()
+    # Update unit data - only update non-None fields
+    update_data = {k: v for k, v in unit_data.dict().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc)
     
     await db.units.update_one(
