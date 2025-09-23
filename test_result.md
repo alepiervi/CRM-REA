@@ -338,27 +338,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Sistema Autorizzazioni Gerarchiche - Models Implementation"
-    - "Sistema Autorizzazioni Gerarchiche - API Endpoints"
-    - "Sistema Autorizzazioni Gerarchiche - Initial Data Creation"
-    - "Sistema Autorizzazioni Gerarchiche - Permission System"
+    - "Sistema Autorizzazioni Gerarchiche - Commesse Management Interface"
+    - "Sistema Autorizzazioni Gerarchiche - Clienti Management Interface"
     - "Sistema Autorizzazioni Gerarchiche - Lead vs Cliente Separation"
-    - "Call Center Models Implementation"
-    - "Twilio Integration Service"
-    - "Call Center Service Implementation"
-    - "ACD (Automatic Call Distribution) Service"
-    - "Call Center API Endpoints"
-    - "Twilio Webhook Handlers"
-    - "Call Center Navigation Integration"
-    - "CallCenterManagement Component Implementation"
-    - "Call Center Dashboard Implementation"
-    - "Agent Management Interface"
-    - "Call Registry Interface"
-    - "Outbound Call Form Component"
-    - "Call Center Icons Integration"
-  stuck_tasks: []
+  stuck_tasks:
+    - "Sistema Autorizzazioni Gerarchiche - Commesse Management Interface"
+    - "Sistema Autorizzazioni Gerarchiche - Clienti Management Interface"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "stuck_first"
 
 frontend:
   - task: "Sistema Autorizzazioni Gerarchiche - Navigation Integration"
