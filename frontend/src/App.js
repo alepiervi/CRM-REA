@@ -97,7 +97,6 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Progress,
-  Target,
   Briefcase
 } from "lucide-react";
 
