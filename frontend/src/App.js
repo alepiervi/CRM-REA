@@ -2395,12 +2395,22 @@ const UnitsManagement = ({ selectedUnit }) => {
 };
 
 // Create Unit Modal Component
-const CreateUnitModal = ({ onClose, onSuccess }) => {
+const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     assistant_id: "",
+    commesse_autorizzate: []
   });
+
+  const toggleCommessa = (commessaId) => {
+    setFormData({
+      ...formData,
+      commesse_autorizzate: formData.commesse_autorizzate.includes(commessaId)
+        ? formData.commesse_autorizzate.filter(id => id !== commessaId)
+        : [...formData.commesse_autorizzate, commessaId]
+    });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
