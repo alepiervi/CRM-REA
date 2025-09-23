@@ -2721,10 +2721,36 @@ class CRMAPITester:
             print(f"⚠️  {failed} tests failed")
             return False
 
+    def run_sistema_autorizzazioni_tests(self):
+        """Run Sistema Autorizzazioni Gerarchiche Testing Suite"""
+        print("🚀 Starting CRM API Testing - SISTEMA AUTORIZZAZIONI GERARCHICHE...")
+        print(f"📡 Backend URL: {self.base_url}")
+        print("=" * 60)
+        
+        # Authentication is required for most tests
+        if not self.test_authentication():
+            print("❌ Authentication failed - stopping tests")
+            return False
+        
+        # Run Sistema Autorizzazioni Gerarchiche test suite
+        self.test_sistema_autorizzazioni_gerarchiche()
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 Sistema Autorizzazioni Test Results: {self.tests_passed}/{self.tests_run} passed")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 All Sistema Autorizzazioni tests passed!")
+            return True
+        else:
+            failed = self.tests_run - self.tests_passed
+            print(f"⚠️  {failed} Sistema Autorizzazioni tests failed")
+            return False
+
 def main():
     """Main test execution"""
     tester = CRMAPITester()
-    success = tester.run_call_center_tests()
+    success = tester.run_sistema_autorizzazioni_tests()
     return 0 if success else 1
 
 if __name__ == "__main__":
