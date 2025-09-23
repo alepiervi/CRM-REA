@@ -518,8 +518,6 @@ const Dashboard = () => {
         return <LeadsManagement selectedUnit={selectedUnit} units={units} />;
       case "documents":
         return <DocumentsManagement selectedUnit={selectedUnit} units={units} />;
-      case "chat":
-        return <ChatManagement selectedUnit={selectedUnit} units={units} />;
       case "users":
         return user.role === "admin" ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
       case "units":
