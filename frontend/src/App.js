@@ -149,11 +149,28 @@ const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
+      // Validazione input
+      if (!username || !password) {
+        return { 
+          success: false, 
+          error: "Username e password sono obbligatori" 
+        };
+      }
+
       const response = await axios.post(`${API}/auth/login`, {
         username,
         password,
       });
+      
       const { access_token, user: userData } = response.data;
+      
+      // Validazione risposta
+      if (!access_token || !userData) {
+        return { 
+          success: false, 
+          error: "Risposta del server non valida" 
+        };
+      }
       
       setToken(access_token);
       setUser(userData);
@@ -162,9 +179,33 @@ const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (error) {
+      console.error("Login error:", error);
+      
+      let errorMessage = "Errore durante il login";
+      
+      if (error.response) {
+        // Errori dal server
+        switch (error.response.status) {
+          case 401:
+            errorMessage = "Username o password non validi";
+            break;
+          case 403:
+            errorMessage = "Account non autorizzato";
+            break;
+          case 500:
+            errorMessage = "Errore interno del server";
+            break;
+          default:
+            errorMessage = error.response.data?.detail || "Errore di autenticazione";
+        }
+      } else if (error.request) {
+        // Errori di rete
+        errorMessage = "Impossibile connettersi al server";
+      }
+      
       return { 
         success: false, 
-        error: error.response?.data?.detail || "Login failed" 
+        error: errorMessage 
       };
     }
   };
