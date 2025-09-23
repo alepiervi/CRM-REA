@@ -255,6 +255,81 @@ backend:
           agent: "testing"
           comment: "✅ Actual database deletion verified. Lead is completely removed from database after successful DELETE operation. Subsequent queries confirm lead no longer exists. Database integrity maintained."
 
+  - task: "Sistema Autorizzazioni Gerarchiche - Models Implementation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementati tutti i modelli per il sistema autorizzazioni gerarchiche: Commessa, Servizio, SubAgenzia, Cliente (con ClienteStatus enum), UserCommessaAuthorization. Aggiunti nuovi ruoli utente: responsabile_commessa, backoffice_commessa, agente_commessa, backoffice_agenzia, operatore."
+        - working: true
+          agent: "testing"
+          comment: "✅ MODELLI SISTEMA AUTORIZZAZIONI COMPLETAMENTE FUNZIONALI: Tutti i 5 nuovi ruoli utente creati con successo (responsabile_commessa, backoffice_commessa, agente_commessa, backoffice_agenzia, operatore). Modelli Commessa, Servizio, SubAgenzia, Cliente implementati correttamente con validazione dati completa. Cliente ID a 8 caratteri funzionante. Enum ClienteStatus con tutti gli stati (nuovo, in_lavorazione, completato, sospeso, annullato) operativo."
+
+  - task: "Sistema Autorizzazioni Gerarchiche - API Endpoints"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementati tutti gli endpoint API per il sistema autorizzazioni: GET/POST/PUT /commesse, GET/POST /servizi, GET/POST/PUT /sub-agenzie, GET/POST/GET/PUT /clienti, GET/POST /user-commessa-authorizations, GET /commesse/{id}/analytics. Tutti gli endpoint con controllo accessi admin-only e gestione autorizzazioni gerarchiche."
+        - working: true
+          agent: "testing"
+          comment: "✅ TUTTI GLI ENDPOINT API SISTEMA AUTORIZZAZIONI FUNZIONANTI: GET/POST/PUT /commesse (creazione, listing, aggiornamento commesse), GET/POST /servizi (gestione servizi per commessa), GET/POST/PUT /sub-agenzie (gestione sub agenzie con autorizzazioni multiple), GET/POST/GET/PUT /clienti (gestione clienti - anagrafiche manuali), GET/POST /user-commessa-authorizations (autorizzazioni utenti), GET /commesse/{id}/analytics (analytics commesse). Tutti gli endpoint testati con successo, controlli accesso admin-only funzionanti."
+
+  - task: "Sistema Autorizzazioni Gerarchiche - Initial Data Creation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementata creazione automatica dati iniziali: Commesse Fastweb e Fotovoltaico, Servizi Fastweb (TLS, Agent, Negozi, Presidi). Sistema di inizializzazione database con controllo esistenza dati per evitare duplicati."
+        - working: true
+          agent: "testing"
+          comment: "✅ DATI INIZIALI CREATI CORRETTAMENTE: Commesse Fastweb e Fotovoltaico presenti nel database. Servizi Fastweb completi: TLS, Agent, Negozi, Presidi tutti trovati e funzionanti. Sistema di inizializzazione automatica operativo."
+
+  - task: "Sistema Autorizzazioni Gerarchiche - Permission System"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementate funzioni helper per controlli accesso gerarchici: check_commessa_access(), get_user_accessible_commesse(), get_user_accessible_sub_agenzie(), can_user_modify_cliente(). Sistema permessi con controllo admin, autorizzazioni specifiche per commessa, gestione view_all_agencies."
+        - working: true
+          agent: "testing"
+          comment: "✅ SISTEMA PERMESSI GERARCHICI FUNZIONANTE: Controlli accesso implementati correttamente. Admin ha accesso completo a tutte le commesse. Autorizzazioni utente-commessa create e gestite correttamente. Sistema di permessi granulari per modifica/creazione clienti operativo. Filtri basati su autorizzazioni utente funzionanti."
+
+  - task: "Sistema Autorizzazioni Gerarchiche - Lead vs Cliente Separation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implementata separazione completa tra Lead (da campagne social) e Clienti (anagrafiche manuali sub agenzie). Lead mantengono struttura esistente, Clienti hanno modello dedicato con campi specifici (codice_fiscale, partita_iva, indirizzo completo, dati_aggiuntivi)."
+        - working: true
+          agent: "testing"
+          comment: "✅ SEPARAZIONE LEAD vs CLIENTI PERFETTAMENTE IMPLEMENTATA: Lead da campagne social creati correttamente e non presenti nella lista clienti. Clienti come anagrafiche manuali separate con campi dedicati (indirizzo, codice fiscale, partita IVA, dati aggiuntivi). Separazione completa e funzionale tra i due sistemi."
+
 metadata:
   created_by: "testing_agent"
   version: "1.0"
