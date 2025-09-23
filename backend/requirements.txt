@@ -124,6 +124,7 @@ urllib3==2.5.0
 uvicorn==0.25.0
 watchfiles==1.1.0
 websockets==15.0.1
+xlrd==2.0.2
 xlsxwriter==3.2.9
 yarl==1.20.1
 zipp==3.23.0
