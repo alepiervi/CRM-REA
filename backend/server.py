@@ -246,10 +246,19 @@ class ContainerCreate(BaseModel):
     name: str
     unit_id: str
 
+class DocumentType(str, Enum):
+    LEAD = "lead"
+    CLIENTE = "cliente"
+
 class Document(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     document_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
-    lead_id: str  # Lead ID this document belongs to
+    
+    # Support both Lead and Cliente documents
+    document_type: DocumentType = DocumentType.LEAD
+    lead_id: Optional[str] = None  # For Lead documents
+    cliente_id: Optional[str] = None  # For Cliente documents
+    
     filename: str
     original_filename: str
     file_size: int
