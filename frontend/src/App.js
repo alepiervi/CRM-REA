@@ -3185,12 +3185,35 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
 
   useEffect(() => {
     fetchDocuments();
-  }, [selectedUnit, filters]);
+    fetchCommesse();
+    fetchSubAgenzie();
+  }, [selectedUnit, filters, activeTab]);
+
+  const fetchCommesse = async () => {
+    try {
+      const response = await axios.get(`${API}/commesse`);
+      setCommesse(response.data);
+    } catch (error) {
+      console.error("Error fetching commesse:", error);
+    }
+  };
+
+  const fetchSubAgenzie = async () => {
+    try {
+      const response = await axios.get(`${API}/sub-agenzie`);
+      setSubAgenzie(response.data);
+    } catch (error) {
+      console.error("Error fetching sub agenzie:", error);
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      
+      // Add document type filter
+      params.append('document_type', activeTab);
       
       // Add all filter parameters
       Object.entries(filters).forEach(([key, value]) => {
@@ -3199,8 +3222,8 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
         }
       });
       
-      // Add unit filter if selected
-      if (selectedUnit && selectedUnit !== "all") {
+      // Add unit filter if selected (only for lead documents)
+      if (selectedUnit && selectedUnit !== "all" && activeTab === "lead") {
         params.append('unit_id', selectedUnit);
       }
       
