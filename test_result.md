@@ -338,7 +338,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Sistema Autorizzazioni Gerarchiche - Lead vs Cliente Separation"
+    - "Clienti Import Functionality - CSV/Excel Import System"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
