@@ -1442,9 +1442,17 @@ async def create_document_record(document_type: DocumentType, entity_id: str, fi
         "content_type": getattr(file, 'content_type', "application/pdf"),
         "aruba_drive_file_id": aruba_response.get("file_id"),
         "aruba_drive_url": aruba_response.get("download_url"),
-        upload_status="completed",
-        uploaded_by=uploaded_by
-    )
+        "upload_status": "completed",
+        "uploaded_by": uploaded_by
+    }
+    
+    # Set specific ID field based on document type
+    if document_type == DocumentType.LEAD:
+        document_data["lead_id"] = entity_id
+    elif document_type == DocumentType.CLIENTE:
+        document_data["cliente_id"] = entity_id
+    
+    document = Document(**document_data)
     
     # Save to MongoDB
     await db.documents.insert_one(document.dict())
