@@ -2178,7 +2178,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti }
 };
 
 // Enhanced Units Management Component
-const UnitsManagement = ({ selectedUnit, assistants }) => {
+const UnitsManagement = ({ selectedUnit }) => {
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
