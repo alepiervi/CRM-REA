@@ -4806,6 +4806,370 @@ async def bulk_validate_leads(
         logging.error(f"Bulk WhatsApp validation error: {e}")
         raise HTTPException(status_code=500, detail=f"Bulk validation failed: {str(e)}")
 
+# Automated Lead Qualification (FASE 4) endpoints
+@api_router.post("/lead-qualification/start")
+async def start_lead_qualification(
+    lead_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Start automated qualification process for a lead"""
+    
+    if current_user.role not in [UserRole.ADMIN, UserRole.REFERENTE]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    try:
+        # Verify lead exists
+        lead = await db.leads.find_one({"id": lead_id})
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        
+        # Check if qualification already active
+        existing_qualification = await db.lead_qualifications.find_one({
+            "lead_id": lead_id,
+            "status": "active"
+        })
+        
+        if existing_qualification:
+            raise HTTPException(status_code=400, detail="Qualification already active for this lead")
+        
+        # Start qualification process
+        await lead_qualification_bot.start_qualification_process(lead_id)
+        
+        return {
+            "success": True,
+            "message": "Lead qualification started successfully",
+            "lead_id": lead_id,
+            "qualification_started": True
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Start qualification error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to start qualification: {str(e)}")
+
+@api_router.get("/lead-qualification/{lead_id}/status")
+async def get_qualification_status(
+    lead_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get qualification status for a lead"""
+    
+    if current_user.role not in [UserRole.ADMIN, UserRole.REFERENTE, UserRole.AGENTE]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    try:
+        # Get qualification record
+        qualification = await db.lead_qualifications.find_one({"lead_id": lead_id})
+        
+        if not qualification:
+            return {
+                "lead_id": lead_id,
+                "qualification_active": False,
+                "message": "No qualification found for this lead"
+            }
+        
+        # Calculate time remaining
+        time_remaining = None
+        if qualification["status"] == "active":
+            timeout_at = qualification["timeout_at"]
+            current_time = datetime.now(timezone.utc)
+            if current_time < timeout_at:
+                time_remaining = int((timeout_at - current_time).total_seconds())
+        
+        return {
+            "lead_id": lead_id,
+            "qualification_active": qualification["status"] == "active",
+            "stage": qualification["stage"],
+            "status": qualification["status"],
+            "score": qualification.get("score", 0),
+            "started_at": qualification["started_at"].isoformat(),
+            "timeout_at": qualification["timeout_at"].isoformat(),
+            "time_remaining_seconds": time_remaining,
+            "responses_count": qualification.get("lead_responses", 0),
+            "bot_messages_sent": qualification.get("bot_messages_sent", 0),
+            "result": qualification.get("result"),
+            "completed_at": qualification.get("completed_at").isoformat() if qualification.get("completed_at") else None
+        }
+        
+    except Exception as e:
+        logging.error(f"Get qualification status error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get qualification status")
+
+@api_router.post("/lead-qualification/{lead_id}/response")
+async def process_qualification_response(
+    lead_id: str,
+    message: str = Form(...),
+    source: str = Form("manual"),
+    current_user: User = Depends(get_current_user)
+):
+    """Process lead response during qualification (for manual input)"""
+    
+    if current_user.role not in [UserRole.ADMIN, UserRole.REFERENTE, UserRole.AGENTE]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    try:
+        # Process the response
+        processed = await lead_qualification_bot.process_lead_response(lead_id, message, source)
+        
+        if processed:
+            return {
+                "success": True,
+                "message": "Response processed successfully",
+                "lead_id": lead_id,
+                "response_message": message
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Could not process response (qualification may be inactive or timed out)",
+                "lead_id": lead_id
+            }
+        
+    except Exception as e:
+        logging.error(f"Process qualification response error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to process response")
+
+@api_router.post("/lead-qualification/{lead_id}/complete")
+async def complete_qualification_manually(
+    lead_id: str,
+    result: str = Form(...),  # qualified, not_interested, error
+    score: int = Form(50),
+    notes: str = Form(""),
+    current_user: User = Depends(get_current_user)
+):
+    """Manually complete qualification (admin/referente only)"""
+    
+    if current_user.role not in [UserRole.ADMIN, UserRole.REFERENTE]:
+        raise HTTPException(status_code=403, detail="Only admin/referente can manually complete qualification")
+    
+    try:
+        # Verify qualification exists and is active
+        qualification = await db.lead_qualifications.find_one({
+            "lead_id": lead_id,
+            "status": "active"
+        })
+        
+        if not qualification:
+            raise HTTPException(status_code=404, detail="No active qualification found for this lead")
+        
+        # Add manual completion note
+        if notes:
+            await db.lead_qualifications.update_one(
+                {"lead_id": lead_id},
+                {
+                    "$push": {
+                        "responses": {
+                            "message": f"Manual completion: {notes}",
+                            "timestamp": datetime.now(timezone.utc),
+                            "source": "manual_admin",
+                            "stage": qualification["stage"],
+                            "completed_by": current_user.username
+                        }
+                    }
+                }
+            )
+        
+        # Complete qualification
+        await lead_qualification_bot.complete_qualification(lead_id, result, score)
+        
+        return {
+            "success": True,
+            "message": "Qualification completed manually",
+            "lead_id": lead_id,
+            "result": result,
+            "score": score
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Manual complete qualification error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to complete qualification")
+
+@api_router.get("/lead-qualification/active")
+async def get_active_qualifications(
+    unit_id: Optional[str] = Query(None),
+    limit: int = Query(50, le=100),
+    current_user: User = Depends(get_current_user)
+):
+    """Get active qualification processes"""
+    
+    if current_user.role not in [UserRole.ADMIN, UserRole.REFERENTE]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    try:
+        # Build query
+        query = {"status": "active"}
+        
+        # Filter by unit if specified and user has access
+        if unit_id:
+            if current_user.role != UserRole.ADMIN and current_user.unit_id != unit_id:
+                raise HTTPException(status_code=403, detail="Access denied to this unit")
+            
+            # Get leads from specified unit
+            unit_leads = await db.leads.find({"unit_id": unit_id}).to_list(length=None)
+            lead_ids = [lead["id"] for lead in unit_leads]
+            query["lead_id"] = {"$in": lead_ids}
+        elif current_user.role != UserRole.ADMIN and current_user.unit_id:
+            # Referente - filter by their unit
+            unit_leads = await db.leads.find({"unit_id": current_user.unit_id}).to_list(length=None)
+            lead_ids = [lead["id"] for lead in unit_leads]
+            query["lead_id"] = {"$in": lead_ids}
+        
+        # Get active qualifications
+        qualifications = await db.lead_qualifications.find(query)\
+            .sort("started_at", -1).limit(limit).to_list(length=limit)
+        
+        # Enrich with lead data
+        enriched_qualifications = []
+        for qual in qualifications:
+            lead = await db.leads.find_one({"id": qual["lead_id"]})
+            if lead:
+                # Calculate time remaining
+                time_remaining = None
+                if qual["timeout_at"] > datetime.now(timezone.utc):
+                    time_remaining = int((qual["timeout_at"] - datetime.now(timezone.utc)).total_seconds())
+                
+                enriched_qualifications.append({
+                    "qualification_id": qual["id"],
+                    "lead_id": qual["lead_id"],
+                    "lead_name": f"{lead.get('nome', '')} {lead.get('cognome', '')}".strip(),
+                    "lead_phone": lead.get("telefono"),
+                    "stage": qual["stage"],
+                    "score": qual.get("score", 0),
+                    "started_at": qual["started_at"].isoformat(),
+                    "time_remaining_seconds": time_remaining,
+                    "responses_count": qual.get("lead_responses", 0),
+                    "bot_messages_sent": qual.get("bot_messages_sent", 0)
+                })
+        
+        return {
+            "success": True,
+            "active_qualifications": enriched_qualifications,
+            "total": len(enriched_qualifications),
+            "unit_id": unit_id or current_user.unit_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Get active qualifications error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get active qualifications")
+
+@api_router.post("/lead-qualification/process-timeouts")
+async def process_qualification_timeouts(
+    current_user: User = Depends(get_current_user)
+):
+    """Process qualification timeouts (admin only - for manual trigger)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can trigger timeout processing")
+    
+    try:
+        processed_count = await lead_qualification_bot.process_scheduled_tasks()
+        
+        return {
+            "success": True,
+            "message": f"Processed {processed_count} timeout tasks",
+            "processed_count": processed_count
+        }
+        
+    except Exception as e:
+        logging.error(f"Process timeouts error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to process timeouts")
+
+@api_router.get("/lead-qualification/analytics")
+async def get_qualification_analytics(
+    unit_id: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Get qualification analytics and statistics"""
+    
+    if current_user.role not in [UserRole.ADMIN, UserRole.REFERENTE]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    try:
+        # Build date filter
+        date_filter = {}
+        if date_from:
+            date_filter["$gte"] = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+        if date_to:
+            date_filter["$lte"] = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+        
+        query = {}
+        if date_filter:
+            query["started_at"] = date_filter
+        
+        # Filter by unit if specified and user has access
+        if unit_id:
+            if current_user.role != UserRole.ADMIN and current_user.unit_id != unit_id:
+                raise HTTPException(status_code=403, detail="Access denied to this unit")
+            
+            unit_leads = await db.leads.find({"unit_id": unit_id}).to_list(length=None)
+            lead_ids = [lead["id"] for lead in unit_leads]
+            query["lead_id"] = {"$in": lead_ids}
+        elif current_user.role != UserRole.ADMIN and current_user.unit_id:
+            unit_leads = await db.leads.find({"unit_id": current_user.unit_id}).to_list(length=None)
+            lead_ids = [lead["id"] for lead in unit_leads]
+            query["lead_id"] = {"$in": lead_ids}
+        
+        # Get all qualifications for analytics
+        qualifications = await db.lead_qualifications.find(query).to_list(length=None)
+        
+        # Calculate statistics
+        total_qualifications = len(qualifications)
+        active_qualifications = len([q for q in qualifications if q["status"] == "active"])
+        completed_qualifications = len([q for q in qualifications if q["status"] == "completed"])
+        
+        # Results breakdown
+        results_breakdown = {}
+        scores_list = []
+        
+        for qual in qualifications:
+            if qual["status"] == "completed":
+                result = qual.get("result", "unknown")
+                results_breakdown[result] = results_breakdown.get(result, 0) + 1
+                if qual.get("score"):
+                    scores_list.append(qual["score"])
+        
+        # Calculate averages
+        avg_score = sum(scores_list) / len(scores_list) if scores_list else 0
+        avg_responses = sum([q.get("lead_responses", 0) for q in qualifications]) / total_qualifications if total_qualifications > 0 else 0
+        avg_bot_messages = sum([q.get("bot_messages_sent", 0) for q in qualifications]) / total_qualifications if total_qualifications > 0 else 0
+        
+        # Conversion rates
+        qualified_count = results_breakdown.get("qualified", 0)
+        conversion_rate = (qualified_count / completed_qualifications * 100) if completed_qualifications > 0 else 0
+        
+        return {
+            "success": True,
+            "analytics": {
+                "total_qualifications": total_qualifications,
+                "active_qualifications": active_qualifications,
+                "completed_qualifications": completed_qualifications,
+                "results_breakdown": results_breakdown,
+                "conversion_rate": round(conversion_rate, 2),
+                "average_score": round(avg_score, 1),
+                "average_responses_per_lead": round(avg_responses, 1),
+                "average_bot_messages": round(avg_bot_messages, 1),
+                "qualified_leads": qualified_count
+            },
+            "date_range": {
+                "from": date_from,
+                "to": date_to
+            },
+            "unit_id": unit_id or current_user.unit_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Get qualification analytics error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get qualification analytics")
+
 # Workflow Builder endpoints (FASE 3)
 @api_router.get("/workflows", response_model=List[Workflow])
 async def get_workflows(
