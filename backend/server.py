@@ -22,7 +22,7 @@ import tempfile
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import asyncio
 import aiofiles
-import magic
+# import magic  # Temporaneamente commentato per risolvere problema libmagic
 import httpx
 from typing import BinaryIO
 import io
