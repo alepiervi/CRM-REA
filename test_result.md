@@ -338,12 +338,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Sistema Autorizzazioni Gerarchiche - Commesse Management Interface"
-    - "Sistema Autorizzazioni Gerarchiche - Clienti Management Interface"
     - "Sistema Autorizzazioni Gerarchiche - Lead vs Cliente Separation"
   stuck_tasks:
-    - "Sistema Autorizzazioni Gerarchiche - Commesse Management Interface"
-    - "Sistema Autorizzazioni Gerarchiche - Clienti Management Interface"
+    - "Sistema Autorizzazioni Gerarchiche - Lead vs Cliente Separation"
   test_all: false
   test_priority: "stuck_first"
 
