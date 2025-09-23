@@ -595,16 +595,42 @@ const Dashboard = () => {
             </div>
           </div>
           
+          {/* Commessa Selector */}
+          <div className="mb-4">
+            <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">Commessa</Label>
+            <Select value={selectedCommessa} onValueChange={setSelectedCommessa}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Seleziona commessa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le Commesse</SelectItem>
+                {commesse.map((commessa) => (
+                  <SelectItem key={commessa.id} value={commessa.id}>
+                    <div className="flex items-center space-x-2">
+                      <Briefcase className="w-3 h-3" />
+                      <span>{commessa.nome}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           {/* Unit Selector */}
           <div>
-            <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">Unit Attiva</Label>
+            <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">Unit / Sub Agenzia</Label>
             <Select value={selectedUnit} onValueChange={handleUnitChange}>
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Seleziona unit" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le Unit</SelectItem>
-                {units.map((unit) => (
+                {units
+                  .filter(unit => 
+                    selectedCommessa === "all" || 
+                    unit.commesse_autorizzate?.includes(selectedCommessa)
+                  )
+                  .map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
                     <div className="flex items-center space-x-2">
                       <Building2 className="w-3 h-3" />
@@ -615,6 +641,11 @@ const Dashboard = () => {
                     </div>
                   </SelectItem>
                 ))}
+                {/* Sub Agenzie filtered by commessa */}
+                <SelectItem value="divider" disabled>
+                  <span className="text-slate-400 text-xs">Sub Agenzie</span>
+                </SelectItem>
+                {/* This would need sub agenzie data - we'll implement this after */}
               </SelectContent>
             </Select>
           </div>
