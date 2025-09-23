@@ -113,6 +113,25 @@ const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  // Axios interceptor per gestire automaticamente i token scaduti
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          // Token scaduto o non valido, forza logout
+          logout();
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup dell'interceptor quando il componente viene smontato
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, []);
+
   const fetchCurrentUser = async () => {
     try {
       const response = await axios.get(`${API}/auth/me`);
