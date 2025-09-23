@@ -7269,6 +7269,20 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
           <CreateUnitModal
             onClose={() => setShowCreateUnitModal(false)}
             onSuccess={createUnit}
+            commesse={commesse}
+          />
+        )}
+        
+        {/* Edit Unit Modal */}
+        {showEditUnitModal && editingUnit && (
+          <EditUnitModal
+            unit={editingUnit}
+            onClose={() => {
+              setShowEditUnitModal(false);
+              setEditingUnit(null);
+            }}
+            onSuccess={(updateData) => updateUnit(editingUnit.id, updateData)}
+            commesse={commesse}
           />
         )}
       </div>
