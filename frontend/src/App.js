@@ -7333,6 +7333,19 @@ const SubAgenzieManagement = ({ selectedUnit, units }) => {
             commesse={commesse}
           />
         )}
+        
+        {/* Edit Sub Agenzia Modal */}
+        {showEditSubModal && editingSubAgenzia && (
+          <EditSubAgenziaModal
+            subAgenzia={editingSubAgenzia}
+            onClose={() => {
+              setShowEditSubModal(false);
+              setEditingSubAgenzia(null);
+            }}
+            onSuccess={(updateData) => updateSubAgenzia(editingSubAgenzia.id, updateData)}
+            commesse={commesse}
+          />
+        )}
       </div>
     );
   };
