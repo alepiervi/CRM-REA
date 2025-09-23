@@ -499,6 +499,9 @@ const Dashboard = () => {
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
         { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
         { id: "call-center", label: "Call Center", icon: PhoneCall },
+        { id: "commesse", label: "Commesse", icon: Building },
+        { id: "sub-agenzie", label: "Sub Agenzie", icon: Store },
+        { id: "clienti", label: "Clienti", icon: UserCheck },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
     } else if (user.role === "referente") {
