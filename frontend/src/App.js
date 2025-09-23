@@ -7099,18 +7099,19 @@ const CommesseManagement = ({ selectedUnit, units }) => {
 };
 
 // Unit & Sub Agenzie Management Component (Unified)
-const SubAgenzieManagement = ({ selectedUnit, units }) => {
+const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse: commesseFromParent, subAgenzie: subAgenzieFromParent }) => {
   const [activeTab, setActiveTab] = useState("units");
   
-  // Units state
-  const [unitsData, setUnitsData] = useState([]);
+  // Use props data when available, fallback to local state
+  const [unitsData, setUnitsData] = useState(units || []);
+  const [subAgenzie, setSubAgenzie] = useState(subAgenzieFromParent || []);
+  const [commesse, setCommesse] = useState(commesseFromParent || []);
+  
   const [showCreateUnitModal, setShowCreateUnitModal] = useState(false);
   const [showEditUnitModal, setShowEditUnitModal] = useState(false);
   const [editingUnit, setEditingUnit] = useState(null);
   
   // Sub Agenzie state  
-  const [subAgenzie, setSubAgenzie] = useState([]);
-  const [commesse, setCommesse] = useState([]);
   const [showCreateSubModal, setShowCreateSubModal] = useState(false);
   const [showEditSubModal, setShowEditSubModal] = useState(false);
   const [editingSubAgenzia, setEditingSubAgenzia] = useState(null);
