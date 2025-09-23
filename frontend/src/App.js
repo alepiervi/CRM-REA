@@ -521,7 +521,7 @@ const Dashboard = () => {
       case "users":
         return user.role === "admin" ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
       case "units":
-        return user.role === "admin" ? <UnitsManagement selectedUnit={selectedUnit} assistants={assistants} /> : <div>Non autorizzato</div>;
+        return user.role === "admin" ? <UnitsManagement selectedUnit={selectedUnit} /> : <div>Non autorizzato</div>;
       case "containers":
         return user.role === "admin" ? <ContainersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
       case "workflow-builder":
