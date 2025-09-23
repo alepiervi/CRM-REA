@@ -119,7 +119,10 @@ const AuthProvider = ({ children }) => {
       setUser(response.data);
     } catch (error) {
       console.error("Error fetching user:", error);
-      logout();
+      // Se il token è scaduto o non valido, rimuovi tutto e forza login
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        logout();
+      }
     } finally {
       setLoading(false);
     }
