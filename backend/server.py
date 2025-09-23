@@ -2804,6 +2804,9 @@ Grazie e a presto!"""
 # Initialize WhatsApp service
 whatsapp_service = WhatsAppService()
 
+# Initialize Lead Qualification Bot
+lead_qualification_bot = LeadQualificationBot()
+
 async def assign_lead_to_agent(lead: Lead):
     """Automatically assign lead to agent based on province coverage"""
     # Find agents covering this province
