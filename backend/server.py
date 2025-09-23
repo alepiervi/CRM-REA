@@ -822,6 +822,116 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise credentials_exception
     return User(**user)
 
+# Autorizzazioni Gerarchiche Helper Functions
+async def get_user_commessa_authorizations(user_id: str) -> List[UserCommessaAuthorization]:
+    """Get all commessa authorizations for a user"""
+    authorizations = await db.user_commessa_authorizations.find({
+        "user_id": user_id,
+        "is_active": True
+    }).to_list(length=None)
+    return [UserCommessaAuthorization(**auth) for auth in authorizations]
+
+async def check_commessa_access(user: User, commessa_id: str, required_permissions: List[str] = None) -> bool:
+    """Check if user has access to a specific commessa"""
+    # Admin sempre autorizzato
+    if user.role == UserRole.ADMIN:
+        return True
+    
+    # Controllo autorizzazioni specifiche per commessa
+    authorization = await db.user_commessa_authorizations.find_one({
+        "user_id": user.id,
+        "commessa_id": commessa_id,
+        "is_active": True
+    })
+    
+    if not authorization:
+        return False
+    
+    # Se ci sono permessi specifici richiesti, controllarli
+    if required_permissions:
+        auth_obj = UserCommessaAuthorization(**authorization)
+        for permission in required_permissions:
+            if not getattr(auth_obj, permission, False):
+                return False
+    
+    return True
+
+async def get_user_accessible_commesse(user: User) -> List[str]:
+    """Get list of commessa IDs accessible to user"""
+    if user.role == UserRole.ADMIN:
+        # Admin vede tutte le commesse
+        commesse = await db.commesse.find({"is_active": True}).to_list(length=None)
+        return [c["id"] for c in commesse]
+    
+    # Altri ruoli vedono solo commesse autorizzate
+    authorizations = await db.user_commessa_authorizations.find({
+        "user_id": user.id,
+        "is_active": True
+    }).to_list(length=None)
+    return [auth["commessa_id"] for auth in authorizations]
+
+async def get_user_accessible_sub_agenzie(user: User, commessa_id: str) -> List[str]:
+    """Get list of sub agenzia IDs accessible to user for a specific commessa"""
+    if user.role == UserRole.ADMIN:
+        # Admin vede tutte le sub agenzie
+        sub_agenzie = await db.sub_agenzie.find({
+            "commesse_autorizzate": {"$in": [commessa_id]},
+            "is_active": True
+        }).to_list(length=None)
+        return [sa["id"] for sa in sub_agenzie]
+    
+    authorization = await db.user_commessa_authorizations.find_one({
+        "user_id": user.id,
+        "commessa_id": commessa_id,
+        "is_active": True
+    })
+    
+    if not authorization:
+        return []
+    
+    auth_obj = UserCommessaAuthorization(**authorization)
+    
+    # Se può vedere tutte le agenzie (BackOffice Commessa, Responsabile)
+    if auth_obj.can_view_all_agencies:
+        sub_agenzie = await db.sub_agenzie.find({
+            "commesse_autorizzate": {"$in": [commessa_id]},
+            "is_active": True
+        }).to_list(length=None)
+        return [sa["id"] for sa in sub_agenzie]
+    
+    # Altrimenti solo la sua sub agenzia
+    if auth_obj.sub_agenzia_id:
+        return [auth_obj.sub_agenzia_id]
+    
+    return []
+
+async def can_user_modify_cliente(user: User, cliente: Cliente) -> bool:
+    """Check if user can modify a specific cliente"""
+    if user.role == UserRole.ADMIN:
+        return True
+    
+    authorization = await db.user_commessa_authorizations.find_one({
+        "user_id": user.id,
+        "commessa_id": cliente.commessa_id,
+        "is_active": True
+    })
+    
+    if not authorization:
+        return False
+    
+    auth_obj = UserCommessaAuthorization(**authorization)
+    
+    # Deve avere permesso di modifica
+    if not auth_obj.can_modify_clients:
+        return False
+    
+    # Se può vedere tutte le agenzie, può modificare tutti i clienti
+    if auth_obj.can_view_all_agencies:
+        return True
+    
+    # Altrimenti solo clienti della sua sub agenzia
+    return auth_obj.sub_agenzia_id == cliente.sub_agenzia_id
+
 # Aruba Drive Service Functions
 class ArubadriveService:
     def __init__(self):
