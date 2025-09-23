@@ -654,10 +654,31 @@ const Dashboard = () => {
                   </SelectItem>
                 ))}
                 {/* Sub Agenzie filtered by commessa */}
-                <SelectItem value="divider" disabled>
-                  <span className="text-slate-400 text-xs">Sub Agenzie</span>
-                </SelectItem>
-                {/* This would need sub agenzie data - we'll implement this after */}
+                {subAgenzie
+                  .filter(subAgenzia => 
+                    selectedCommessa === "all" || 
+                    subAgenzia.commesse_autorizzate?.includes(selectedCommessa)
+                  )
+                  .length > 0 && (
+                  <>
+                    <SelectItem value="divider" disabled>
+                      <span className="text-slate-400 text-xs">━ Sub Agenzie ━</span>
+                    </SelectItem>
+                    {subAgenzie
+                      .filter(subAgenzia => 
+                        selectedCommessa === "all" || 
+                        subAgenzia.commesse_autorizzate?.includes(selectedCommessa)
+                      )
+                      .map((subAgenzia) => (
+                      <SelectItem key={`sub-${subAgenzia.id}`} value={`sub-${subAgenzia.id}`}>
+                        <div className="flex items-center space-x-2">
+                          <Store className="w-3 h-3" />
+                          <span>{subAgenzia.nome}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
