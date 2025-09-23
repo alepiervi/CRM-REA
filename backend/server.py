@@ -2370,19 +2370,44 @@ async def delete_custom_field(field_id: str, current_user: User = Depends(get_cu
     return {"message": "Custom field deleted successfully"}
 
 # Document management endpoints
-@api_router.post("/documents/upload/{lead_id}")
+@api_router.post("/documents/upload")
 async def upload_document(
-    lead_id: str,
+    document_type: str = Form(...),
+    entity_id: str = Form(...),  # lead_id or cliente_id
     file: UploadFile = File(...),
     uploaded_by: str = Form(...),
     current_user: User = Depends(get_current_user)
 ):
-    """Upload a PDF document for a specific lead"""
+    """Upload a PDF document for a specific lead or cliente"""
     
-    # Check if lead exists
-    lead = await db.leads.find_one({"id": lead_id})
-    if not lead:
-        raise HTTPException(status_code=404, detail="Lead not found")
+    # Validate document type
+    try:
+        doc_type = DocumentType(document_type)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid document type")
+    
+    # Check if entity exists and user has access
+    if doc_type == DocumentType.LEAD:
+        entity = await db.leads.find_one({"id": entity_id})
+        if not entity:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        
+        # Check lead access (existing logic)
+        if current_user.role == UserRole.REFERENTE and entity.get("unit_id") != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Access denied to this lead")
+        elif current_user.role == UserRole.AGENTE:
+            if entity.get("assigned_to") != current_user.id and entity.get("unit_id") != current_user.unit_id:
+                raise HTTPException(status_code=403, detail="Access denied to this lead")
+                
+    elif doc_type == DocumentType.CLIENTE:
+        entity = await db.clienti.find_one({"id": entity_id})
+        if not entity:
+            raise HTTPException(status_code=404, detail="Cliente not found")
+        
+        # Check cliente access using new authorization logic
+        cliente_obj = Cliente(**entity)
+        if not await can_user_modify_cliente(current_user, cliente_obj):
+            raise HTTPException(status_code=403, detail="Access denied to this cliente")
     
     try:
         # Validate file
