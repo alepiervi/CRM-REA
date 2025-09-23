@@ -974,6 +974,124 @@ async def can_user_modify_cliente(user: User, cliente: Cliente) -> bool:
     # Altrimenti solo clienti della sua sub agenzia
     return auth_obj.sub_agenzia_id == cliente.sub_agenzia_id
 
+# Document Access Helper Functions
+async def can_user_access_document(user: User, document: Document) -> bool:
+    """Check if user can access a specific document"""
+    if user.role == UserRole.ADMIN:
+        return True
+    
+    # For Lead documents - existing logic
+    if document.document_type == DocumentType.LEAD and document.lead_id:
+        lead = await db.leads.find_one({"id": document.lead_id})
+        if not lead:
+            return False
+        
+        # Check if user has access to the lead's unit
+        if user.role == UserRole.REFERENTE:
+            return user.unit_id == lead.get("unit_id")
+        elif user.role == UserRole.AGENTE:
+            return user.id == lead.get("assigned_to") or user.unit_id == lead.get("unit_id")
+    
+    # For Cliente documents - new authorization logic
+    elif document.document_type == DocumentType.CLIENTE and document.cliente_id:
+        cliente = await db.clienti.find_one({"id": document.cliente_id})
+        if not cliente:
+            return False
+        
+        cliente_obj = Cliente(**cliente)
+        
+        # Check commessa access first
+        if not await check_commessa_access(user, cliente_obj.commessa_id):
+            return False
+        
+        # Check sub agenzia access
+        authorization = await db.user_commessa_authorizations.find_one({
+            "user_id": user.id,
+            "commessa_id": cliente_obj.commessa_id,
+            "is_active": True
+        })
+        
+        if not authorization:
+            return False
+        
+        auth_obj = UserCommessaAuthorization(**authorization)
+        
+        # If can view all agencies (BackOffice Commessa, Responsabile)
+        if auth_obj.can_view_all_agencies:
+            return True
+        
+        # Otherwise only own sub agenzia documents
+        return auth_obj.sub_agenzia_id == cliente_obj.sub_agenzia_id
+    
+    return False
+
+async def get_user_accessible_documents(user: User, document_type: Optional[DocumentType] = None) -> List[str]:
+    """Get list of document IDs accessible to user"""
+    if user.role == UserRole.ADMIN:
+        query = {"is_active": True}
+        if document_type:
+            query["document_type"] = document_type
+        documents = await db.documents.find(query).to_list(length=None)
+        return [doc["id"] for doc in documents]
+    
+    accessible_doc_ids = []
+    
+    # Lead documents access
+    if document_type is None or document_type == DocumentType.LEAD:
+        if user.role == UserRole.REFERENTE:
+            # Can access all leads in their unit
+            leads = await db.leads.find({"unit_id": user.unit_id}).to_list(length=None)
+            lead_ids = [lead["id"] for lead in leads]
+            lead_docs = await db.documents.find({
+                "document_type": DocumentType.LEAD,
+                "lead_id": {"$in": lead_ids},
+                "is_active": True
+            }).to_list(length=None)
+            accessible_doc_ids.extend([doc["id"] for doc in lead_docs])
+            
+        elif user.role == UserRole.AGENTE:
+            # Can access assigned leads or all leads in unit
+            leads = await db.leads.find({
+                "$or": [
+                    {"assigned_to": user.id},
+                    {"unit_id": user.unit_id}
+                ]
+            }).to_list(length=None)
+            lead_ids = [lead["id"] for lead in leads]
+            lead_docs = await db.documents.find({
+                "document_type": DocumentType.LEAD,
+                "lead_id": {"$in": lead_ids},
+                "is_active": True
+            }).to_list(length=None)
+            accessible_doc_ids.extend([doc["id"] for doc in lead_docs])
+    
+    # Cliente documents access
+    if document_type is None or document_type == DocumentType.CLIENTE:
+        accessible_commesse = await get_user_accessible_commesse(user)
+        
+        for commessa_id in accessible_commesse:
+            accessible_sub_agenzie = await get_user_accessible_sub_agenzie(user, commessa_id)
+            
+            if accessible_sub_agenzie:
+                # Get clienti for accessible sub agenzie
+                clienti = await db.clienti.find({
+                    "commessa_id": commessa_id,
+                    "sub_agenzia_id": {"$in": accessible_sub_agenzie}
+                }).to_list(length=None)
+                
+                cliente_ids = [cliente["id"] for cliente in clienti]
+                
+                # Get documents for these clienti
+                cliente_docs = await db.documents.find({
+                    "document_type": DocumentType.CLIENTE,
+                    "cliente_id": {"$in": cliente_ids},
+                    "is_active": True
+                }).to_list(length=None)
+                
+                accessible_doc_ids.extend([doc["id"] for doc in cliente_docs])
+    
+    return accessible_doc_ids
+
 # Importazione Clienti Helper Functions
 async def parse_uploaded_file(file_content: bytes, filename: str) -> ImportPreview:
     """Parse uploaded CSV/Excel file and return preview"""
