@@ -3321,12 +3321,32 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
         </Button>
       </div>
 
+      {/* Document Type Tabs */}
+      <div className="flex space-x-1 bg-slate-100 rounded-lg p-1">
+        <Button
+          variant={activeTab === "lead" ? "default" : "ghost"}
+          onClick={() => setActiveTab("lead")}
+          className="flex items-center space-x-2"
+        >
+          <FileUser className="w-4 h-4" />
+          <span>Documenti Lead</span>
+        </Button>
+        <Button
+          variant={activeTab === "cliente" ? "default" : "ghost"}
+          onClick={() => setActiveTab("cliente")}
+          className="flex items-center space-x-2"
+        >
+          <FileSpreadsheet className="w-4 h-4" />
+          <span>Documenti Clienti</span>
+        </Button>
+      </div>
+
       {/* Filters */}
       <Card className="border-0 shadow-sm">
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div>
-              <Label>Lead ID</Label>
+              <Label>{activeTab === "lead" ? "Lead ID" : "Cliente ID"}</Label>
               <Input
                 placeholder="Filtra per Lead ID"
                 value={filters.lead_id}
