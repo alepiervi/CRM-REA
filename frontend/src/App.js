@@ -6162,8 +6162,11 @@ const CommesseManagement = ({ selectedUnit, units }) => {
                     selectedCommessa?.id === commessa.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
                   }`}
                   onClick={() => {
-                    setSelectedCommessa(commessa);
-                    fetchServizi(commessa.id);
+                    if (selectedCommessa?.id !== commessa.id) {
+                      setServizi([]); // Reset servizi
+                      setSelectedCommessa(commessa);
+                      fetchServizi(commessa.id);
+                    }
                   }}
                 >
                   <div className="flex items-center justify-between">
