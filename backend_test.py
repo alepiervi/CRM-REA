@@ -3096,9 +3096,259 @@ Duplicate,Test,+393471234567"""
             if os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
 
+    def test_whatsapp_system(self):
+        """Test comprehensive WhatsApp Business API system"""
+        print("\n📱 Testing WhatsApp Business API System...")
+        
+        # Test 1: WhatsApp Configuration Endpoints
+        print("\n🔧 Testing WhatsApp Configuration...")
+        
+        # Test POST /api/whatsapp-config (admin only)
+        config_data = {
+            "phone_number": "+39 123 456 7890",
+            "unit_id": self.created_resources['units'][0] if self.created_resources['units'] else None
+        }
+        
+        success, response, status = self.make_request('POST', 'whatsapp-config', config_data, 200)
+        if success and response.get('success'):
+            config_id = response.get('config_id')
+            qr_code = response.get('qr_code')
+            self.log_test("POST /api/whatsapp-config", True, 
+                f"Config ID: {config_id}, QR generated: {'Yes' if qr_code else 'No'}")
+        else:
+            self.log_test("POST /api/whatsapp-config", False, f"Status: {status}, Response: {response}")
+        
+        # Test GET /api/whatsapp-config
+        success, response, status = self.make_request('GET', 'whatsapp-config', expected_status=200)
+        if success:
+            configured = response.get('configured', False)
+            phone_number = response.get('phone_number', 'N/A')
+            connection_status = response.get('connection_status', 'N/A')
+            self.log_test("GET /api/whatsapp-config", True, 
+                f"Configured: {configured}, Phone: {phone_number}, Status: {connection_status}")
+        else:
+            self.log_test("GET /api/whatsapp-config", False, f"Status: {status}")
+        
+        # Test POST /api/whatsapp-connect
+        success, response, status = self.make_request('POST', 'whatsapp-connect', expected_status=200)
+        if success and response.get('success'):
+            connection_status = response.get('connection_status')
+            self.log_test("POST /api/whatsapp-connect", True, f"Connection status: {connection_status}")
+        else:
+            self.log_test("POST /api/whatsapp-connect", False, f"Status: {status}")
+        
+        # Test 2: WhatsApp Business API Endpoints
+        print("\n💬 Testing WhatsApp Business API Endpoints...")
+        
+        # Test POST /api/whatsapp/send
+        import requests
+        url = f"{self.base_url}/whatsapp/send"
+        headers = {'Authorization': f'Bearer {self.token}'}
+        data = {
+            'phone_number': '+39 123 456 7890',
+            'message': 'Test message from CRM WhatsApp API',
+            'message_type': 'text'
+        }
+        
+        try:
+            response = requests.post(url, data=data, headers=headers, timeout=30)
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('success'):
+                    message_id = result.get('message_id', 'N/A')
+                    self.log_test("POST /api/whatsapp/send", True, f"Message ID: {message_id}")
+                else:
+                    self.log_test("POST /api/whatsapp/send", False, f"Send failed: {result}")
+            else:
+                self.log_test("POST /api/whatsapp/send", False, f"Status: {response.status_code}")
+        except Exception as e:
+            self.log_test("POST /api/whatsapp/send", False, f"Error: {str(e)}")
+        
+        # Test GET /api/whatsapp/webhook (verification)
+        success, response, status = self.make_request(
+            'GET', 
+            'whatsapp/webhook?hub.mode=subscribe&hub.challenge=12345&hub.verify_token=whatsapp_webhook_token_2024',
+            expected_status=200,
+            auth_required=False
+        )
+        if success:
+            self.log_test("GET /api/whatsapp/webhook (verification)", True, f"Challenge response: {response}")
+        else:
+            self.log_test("GET /api/whatsapp/webhook (verification)", False, f"Status: {status}")
+        
+        # Test POST /api/whatsapp/webhook (incoming message simulation)
+        webhook_data = {
+            "entry": [{
+                "changes": [{
+                    "field": "messages",
+                    "value": {
+                        "messages": [{
+                            "from": "+39 123 456 7890",
+                            "id": "test_message_id_123",
+                            "timestamp": "1640995200",
+                            "text": {"body": "Ciao, sono interessato ai vostri servizi"},
+                            "type": "text"
+                        }]
+                    }
+                }]
+            }]
+        }
+        
+        success, response, status = self.make_request(
+            'POST', 'whatsapp/webhook', webhook_data, 200, auth_required=False
+        )
+        if success and response.get('success'):
+            processed = response.get('processed', 0)
+            self.log_test("POST /api/whatsapp/webhook", True, f"Processed {processed} messages")
+        else:
+            self.log_test("POST /api/whatsapp/webhook", False, f"Status: {status}")
+        
+        # Test 3: Lead Validation & Integration
+        print("\n🔍 Testing Lead Validation & Integration...")
+        
+        # Create a test lead for validation
+        if self.created_resources['leads']:
+            lead_id = self.created_resources['leads'][0]
+            
+            # Test POST /api/whatsapp/validate-lead
+            success, response, status = self.make_request('POST', f'whatsapp/validate-lead?lead_id={lead_id}', expected_status=200)
+            if success and response.get('success'):
+                is_whatsapp = response.get('is_whatsapp')
+                validation_status = response.get('validation_status')
+                phone_number = response.get('phone_number')
+                self.log_test("POST /api/whatsapp/validate-lead", True, 
+                    f"Phone: {phone_number}, WhatsApp: {is_whatsapp}, Status: {validation_status}")
+            else:
+                self.log_test("POST /api/whatsapp/validate-lead", False, f"Status: {status}")
+        else:
+            self.log_test("POST /api/whatsapp/validate-lead", False, "No leads available for validation")
+        
+        # Test POST /api/whatsapp/bulk-validate
+        success, response, status = self.make_request('POST', 'whatsapp/bulk-validate', expected_status=200)
+        if success and response.get('success'):
+            validated_count = response.get('validated_count', 0)
+            total_leads = response.get('total_leads', 0)
+            self.log_test("POST /api/whatsapp/bulk-validate", True, 
+                f"Validated {validated_count}/{total_leads} leads")
+        else:
+            self.log_test("POST /api/whatsapp/bulk-validate", False, f"Status: {status}")
+        
+        # Test 4: Conversation Management
+        print("\n💭 Testing Conversation Management...")
+        
+        # Test GET /api/whatsapp/conversations
+        success, response, status = self.make_request('GET', 'whatsapp/conversations', expected_status=200)
+        if success and response.get('success'):
+            conversations = response.get('conversations', [])
+            total = response.get('total', 0)
+            self.log_test("GET /api/whatsapp/conversations", True, f"Found {total} conversations")
+        else:
+            self.log_test("GET /api/whatsapp/conversations", False, f"Status: {status}")
+        
+        # Test GET /api/whatsapp/conversation/{phone}/history
+        test_phone = "+39 123 456 7890"
+        success, response, status = self.make_request(
+            'GET', f'whatsapp/conversation/{test_phone.replace("+", "%2B")}/history', expected_status=200
+        )
+        if success and response.get('success'):
+            messages = response.get('messages', [])
+            phone_number = response.get('phone_number')
+            self.log_test("GET /api/whatsapp/conversation/history", True, 
+                f"Phone: {phone_number}, Messages: {len(messages)}")
+        else:
+            self.log_test("GET /api/whatsapp/conversation/history", False, f"Status: {status}")
+        
+        # Test 5: Authorization & Security
+        print("\n🔐 Testing Authorization & Security...")
+        
+        # Test admin-only access for configuration
+        if self.created_resources['users']:
+            # Create non-admin user for testing
+            non_admin_data = {
+                "username": f"whatsapp_test_user_{datetime.now().strftime('%H%M%S')}",
+                "email": f"whatsapp_test_{datetime.now().strftime('%H%M%S')}@test.com",
+                "password": "testpass123",
+                "role": "agente",
+                "unit_id": self.created_resources['units'][0] if self.created_resources['units'] else None,
+                "provinces": ["Roma"]
+            }
+            
+            success, user_response, status = self.make_request('POST', 'users', non_admin_data, 200)
+            if success:
+                # Login as non-admin user
+                success, login_response, status = self.make_request(
+                    'POST', 'auth/login',
+                    {'username': non_admin_data['username'], 'password': non_admin_data['password']},
+                    200, auth_required=False
+                )
+                
+                if success:
+                    original_token = self.token
+                    self.token = login_response['access_token']
+                    
+                    # Test access to admin-only WhatsApp config endpoint
+                    success, response, status = self.make_request('GET', 'whatsapp-config', expected_status=403)
+                    self.log_test("WhatsApp config access control (non-admin)", success, 
+                        "Correctly denied access to non-admin user")
+                    
+                    # Test access to bulk validation (admin-only)
+                    success, response, status = self.make_request('POST', 'whatsapp/bulk-validate', expected_status=403)
+                    self.log_test("WhatsApp bulk validation access control", success,
+                        "Correctly denied bulk validation to non-admin")
+                    
+                    # Restore admin token
+                    self.token = original_token
+                    
+                    # Clean up test user
+                    self.make_request('DELETE', f'users/{user_response["id"]}', expected_status=200)
+        
+        # Test webhook verification with wrong token
+        success, response, status = self.make_request(
+            'GET',
+            'whatsapp/webhook?hub.mode=subscribe&hub.challenge=12345&hub.verify_token=wrong_token',
+            expected_status=403,
+            auth_required=False
+        )
+        self.log_test("WhatsApp webhook security (wrong token)", success, 
+            "Correctly rejected webhook with wrong verify token")
+        
+        # Test 6: Database Integration
+        print("\n🗄️ Testing Database Integration...")
+        
+        # Check if WhatsApp collections exist and have data
+        try:
+            # This is a simplified test - in real scenario we'd check MongoDB directly
+            # For now, we verify through API responses that data is being stored
+            
+            # Test that configuration was stored
+            success, config_response, status = self.make_request('GET', 'whatsapp-config', expected_status=200)
+            if success and config_response.get('configured'):
+                self.log_test("WhatsApp configuration storage", True, "Configuration stored in database")
+            else:
+                self.log_test("WhatsApp configuration storage", False, "Configuration not found in database")
+            
+            # Test that conversations are being tracked
+            success, conv_response, status = self.make_request('GET', 'whatsapp/conversations', expected_status=200)
+            if success:
+                self.log_test("WhatsApp conversations storage", True, "Conversations collection accessible")
+            else:
+                self.log_test("WhatsApp conversations storage", False, "Conversations collection not accessible")
+            
+            # Test that validations are being stored
+            if self.created_resources['leads']:
+                lead_id = self.created_resources['leads'][0]
+                success, val_response, status = self.make_request('POST', f'whatsapp/validate-lead?lead_id={lead_id}', expected_status=200)
+                if success and val_response.get('success'):
+                    self.log_test("WhatsApp validation storage", True, "Lead validation stored in database")
+                else:
+                    self.log_test("WhatsApp validation storage", False, "Lead validation not stored")
+            
+        except Exception as e:
+            self.log_test("Database integration test", False, f"Error: {str(e)}")
+
     def run_all_tests(self):
-        """Run all test suites including Reports & Analytics"""
-        print("🚀 Starting CRM API Testing - REPORTS & ANALYTICS SYSTEM...")
+        """Run all test suites including WhatsApp Business API System"""
+        print("🚀 Starting CRM API Testing - WhatsApp Business API System...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
@@ -3107,11 +3357,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # Run Reports & Analytics tests
-        self.test_reports_analytics_system()
+        # Create basic resources needed for WhatsApp testing
+        self.test_units_management()
+        self.test_leads_management()
         
-        # Run Clienti Import tests
-        self.test_clienti_import_functionality()
+        # Run WhatsApp Business API System tests
+        self.test_whatsapp_system()
         
         # Print summary
         print("\n" + "=" * 60)
