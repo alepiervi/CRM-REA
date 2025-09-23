@@ -428,7 +428,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "WhatsApp Business API System - All components tested and working"
+    - "Automated Lead Qualification (FASE 4) - All components tested and working"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
