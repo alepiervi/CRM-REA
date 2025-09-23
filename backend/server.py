@@ -2610,15 +2610,17 @@ async def delete_document(
 @api_router.get("/documents")
 async def list_all_documents(
     current_user: User = Depends(get_current_user),
-    unit_id: Optional[str] = None,
+    document_type: Optional[str] = None,
+    entity_id: Optional[str] = None,  # lead_id or cliente_id
     nome: Optional[str] = None,
     cognome: Optional[str] = None,
-    lead_id: Optional[str] = None,
+    commessa_id: Optional[str] = None,
+    sub_agenzia_id: Optional[str] = None,
     uploaded_by: Optional[str] = None,
     skip: int = 0,
     limit: int = 100
 ):
-    """List all documents with filtering options"""
+    """List all documents with filtering options for both Lead and Cliente"""
     
     # Build lead query first if we have lead filters
     lead_query = {}
