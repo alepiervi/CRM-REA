@@ -338,7 +338,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Clienti Import Functionality - CSV/Excel Import System"
+    - "Reports & Analytics System - All components tested and working"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
