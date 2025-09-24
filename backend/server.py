@@ -140,6 +140,7 @@ class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     username: str
     email: EmailStr
+    password_hash: str  # Campo per la password hashata
     role: UserRole
     is_active: bool = True
     unit_id: Optional[str] = None
