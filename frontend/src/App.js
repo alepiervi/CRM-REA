@@ -2674,7 +2674,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
 };
 
 // Edit User Modal Component
-const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti }) => {
+const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, commesse, subAgenzie, fetchServizi }) => {
   const [formData, setFormData] = useState({
     username: user.username,
     email: user.email,
