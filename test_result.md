@@ -461,7 +461,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Automated Lead Qualification (FASE 4) - All components tested and working"
+    - "User System Complete Testing - Login, Users endpoint, Data validation, Error handling"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
