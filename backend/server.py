@@ -725,9 +725,18 @@ class SubAgenziaUpdate(BaseModel):
 class ClienteStatus(str, Enum):
     NUOVO = "nuovo"
     IN_LAVORAZIONE = "in_lavorazione"
-    COMPLETATO = "completato"
-    SOSPESO = "sospeso"
-    ANNULLATO = "annullato"
+    CONTATTATO = "contattato"
+    CONVERTITO = "convertito"
+
+class TipologiaContratto(str, Enum):
+    ENERGIA_FASTWEB = "energia_fastweb"
+    TELEFONIA_FASTWEB = "telefonia_fastweb" 
+    HO_MOBILE = "ho_mobile"
+    TELEPASS = "telepass"
+
+class Segmento(str, Enum):
+    RESIDENZIALE = "residenziale"
+    BUSINESS = "business"
 
 class Cliente(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
