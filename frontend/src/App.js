@@ -8405,6 +8405,79 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             </div>
           </div>
 
+          {/* Nuovi campi: Servizio, Tipologia Contratto, Segmento */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="servizio_id">Servizio</Label>
+              <Select 
+                value={formData.servizio_id || "none"} 
+                onValueChange={(value) => {
+                  const servizioId = value === "none" ? "" : value;
+                  handleServizioChange(servizioId);
+                }}
+                disabled={!formData.commessa_id}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona Servizio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Seleziona Servizio</SelectItem>
+                  {servizi.map((servizio) => (
+                    <SelectItem key={servizio.id} value={servizio.id}>
+                      {servizio.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="tipologia_contratto">Tipologia Contratto</Label>
+              <Select 
+                value={formData.tipologia_contratto || "none"} 
+                onValueChange={(value) => setFormData({
+                  ...formData, 
+                  tipologia_contratto: value === "none" ? "" : value
+                })}
+                disabled={!formData.servizio_id}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona Tipologia" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Seleziona Tipologia</SelectItem>
+                  {tipologieContratto.map((tipologia) => (
+                    <SelectItem key={tipologia.value} value={tipologia.value}>
+                      {tipologia.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="segmento">Segmento</Label>
+              <Select 
+                value={formData.segmento || "none"} 
+                onValueChange={(value) => setFormData({
+                  ...formData, 
+                  segmento: value === "none" ? "" : value
+                })}
+                disabled={!formData.tipologia_contratto}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona Segmento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Seleziona Segmento</SelectItem>
+                  {segmenti.map((segmento) => (
+                    <SelectItem key={segmento.value} value={segmento.value}>
+                      {segmento.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div>
             <Label htmlFor="indirizzo">Indirizzo</Label>
             <Input
