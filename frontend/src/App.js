@@ -7867,7 +7867,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         onSubmit={createCliente}
         commesse={commesse}
         subAgenzie={subAgenzie}
-        selectedCommessa={selectedCommessa}
+        selectedCommessa={selectedCommessaLocal}
       />
 
       {/* Import Clienti Modal */}
