@@ -2700,9 +2700,21 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   useEffect(() => {
     if (formData.commesse_autorizzate?.length > 0) {
       // Carica servizi per la prima commessa autorizzata
-      fetchServizi(formData.commesse_autorizzate[0]);
+      handleCommessaChange(formData.commesse_autorizzate[0]);
     }
   }, [formData.commesse_autorizzate]);
+
+  const handleCommessaChange = async (commessaId) => {
+    if (commessaId && fetchServizi) {
+      try {
+        const servizi = await fetchServizi(commessaId);
+        setServizi(servizi);
+      } catch (error) {
+        console.error("Error fetching servizi:", error);
+        setServizi([]);
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
