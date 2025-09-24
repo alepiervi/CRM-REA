@@ -2117,6 +2117,12 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="referente">Referente</SelectItem>
                   <SelectItem value="agente">Agente</SelectItem>
+                  <SelectItem value="responsabile_commessa">Responsabile Commessa</SelectItem>
+                  <SelectItem value="backoffice_commessa">BackOffice Commessa</SelectItem>
+                  <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
+                  <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
+                  <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
+                  <SelectItem value="operatore">Operatore</SelectItem>
                 </SelectContent>
               </Select>
             </div>
