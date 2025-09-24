@@ -39,6 +39,7 @@ import { Toaster } from "./components/ui/toaster";
 // Lucide icons
 import { 
   Users, 
+  User,
   Building2, 
   Phone, 
   Mail, 
