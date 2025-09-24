@@ -179,6 +179,7 @@ class UserUpdate(BaseModel):
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
     unit_id: Optional[str] = None
+    sub_agenzia_id: Optional[str] = None
     referente_id: Optional[str] = None
     provinces: Optional[List[str]] = None
     commesse_autorizzate: Optional[List[str]] = None
