@@ -1991,7 +1991,9 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     email: "",
     password: "",
     role: "",
+    assignment_type: "unit", // "unit" o "sub_agenzia" 
     unit_id: selectedUnit && selectedUnit !== "all" ? selectedUnit : "",
+    sub_agenzia_id: "",
     referente_id: "",
     provinces: [],
     // Nuovi campi per autorizzazioni specializzate
