@@ -487,6 +487,9 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
       const params = new URLSearchParams();
       if (dateFrom) params.append('date_from', dateFrom);
       if (dateTo) params.append('date_to', dateTo);
+      if (selectedTipologiaContratto && selectedTipologiaContratto !== 'all') {
+        params.append('tipologia_contratto', selectedTipologiaContratto);
+      }
       
       const response = await axios.get(`${API}/responsabile-commessa/dashboard?${params}`);
       setDashboardData(response.data);
