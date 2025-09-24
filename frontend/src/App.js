@@ -507,7 +507,8 @@ const Dashboard = () => {
       setCommesse(response.data);
     } catch (error) {
       console.error("Error fetching commesse:", error);
-      setCommesse([]);
+      // Don't show toast for this as it's handled by the component fallback to props
+      setCommesse([]); // Fallback to empty array
     }
   };
 
@@ -517,7 +518,8 @@ const Dashboard = () => {
       setSubAgenzie(response.data);
     } catch (error) {
       console.error("Error fetching sub agenzie:", error);
-      setSubAgenzie([]);
+      // Don't show toast for this as it's handled by the component fallback to props
+      setSubAgenzie([]); // Fallback to empty array
     }
   };
 
