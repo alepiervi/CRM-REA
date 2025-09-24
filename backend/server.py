@@ -7461,6 +7461,9 @@ async def startup_event():
         await db.servizi.insert_many(servizi_fastweb)
         logger.info("Default servizi created for Fastweb")
 
+# Include the router in the main app (MUST be after all endpoints are defined)
+app.include_router(api_router)
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
