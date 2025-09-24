@@ -583,7 +583,7 @@ const Dashboard = () => {
       case "sub-agenzie":
         return user.role === "admin" ? <SubAgenzieManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} units={units} commesse={commesse} subAgenzie={subAgenzie} /> : <div>Non autorizzato</div>;
       case "clienti":
-        return <ClientiManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} units={units} commesse={commesse} subAgenzie={subAgenzie} />;
+        return user.role === "admin" ? <ClientiManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} units={units} commesse={commesse} subAgenzie={subAgenzie} /> : <div>Non autorizzato</div>;
       case "analytics":
         return <AnalyticsManagement selectedUnit={selectedUnit} units={units} />;
       default:
