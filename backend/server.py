@@ -7340,6 +7340,7 @@ async def get_responsabile_commessa_analytics(
 @api_router.get("/responsabile-commessa/analytics/export")
 async def export_responsabile_commessa_analytics(
     commessa_id: Optional[str] = None,
+    tipologia_contratto: Optional[str] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     current_user: User = Depends(get_current_user)
