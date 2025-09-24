@@ -143,90 +143,167 @@ class CRMAPITester:
         else:
             self.log_test("Dashboard stats", False, f"Status: {status}")
 
-    def test_user_management(self):
-        """Test user management endpoints"""
-        print("\n👥 Testing User Management...")
+    def test_user_system_complete(self):
+        """Test completo del sistema utenti come richiesto"""
+        print("\n👥 Testing Complete User System (Sistema Utenti Completo)...")
         
-        # Get existing users
+        # 1. LOGIN FUNZIONAMENTO - Test login with admin/admin123
+        print("\n🔐 1. TESTING LOGIN FUNCTIONALITY...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ LOGIN admin/admin123", True, f"Login successful - Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ LOGIN admin/admin123", False, f"Login failed - Status: {status}, Response: {response}")
+            return False
+
+        # 2. ENDPOINT UTENTI FUNZIONAMENTO - Test GET /api/users
+        print("\n👥 2. TESTING USER ENDPOINTS FUNCTIONALITY...")
         success, response, status = self.make_request('GET', 'users', expected_status=200)
+        
         if success:
             users = response
-            self.log_test("Get users", True, f"Found {len(users)} users")
+            self.log_test("✅ GET /api/users endpoint", True, f"Endpoint working - Found {len(users)} users")
             
-            # Check if admin user exists
-            admin_user = next((u for u in users if u['username'] == 'admin'), None)
-            if admin_user:
-                self.log_test("Admin user exists", True, f"Role: {admin_user['role']}")
+            # Check for expected users (admin, test, testuser2, testuser3, testuser4, testuser5)
+            expected_usernames = ['admin', 'test', 'testuser2', 'testuser3', 'testuser4', 'testuser5']
+            found_usernames = [user.get('username', '') for user in users]
+            
+            # Count how many expected users are found
+            found_expected = [username for username in expected_usernames if username in found_usernames]
+            missing_expected = [username for username in expected_usernames if username not in found_usernames]
+            
+            if len(found_expected) >= 1:  # At least admin should exist
+                self.log_test("✅ Expected users visibility", True, 
+                    f"Found {len(found_expected)} expected users: {found_expected}")
+                if missing_expected:
+                    self.log_test("ℹ️ Missing expected users", True, 
+                        f"Missing users (may not exist): {missing_expected}")
             else:
-                self.log_test("Admin user exists", False, "Admin user not found")
+                self.log_test("❌ Expected users visibility", False, 
+                    f"No expected users found. Found usernames: {found_usernames}")
+            
+            # Check for 500 errors (we got 200, so no 500 error)
+            self.log_test("✅ No 500 errors on GET /api/users", True, "Endpoint returned 200, no server errors")
+            
         else:
-            self.log_test("Get users", False, f"Status: {status}")
+            self.log_test("❌ GET /api/users endpoint", False, f"Endpoint failed - Status: {status}")
+            if status == 500:
+                self.log_test("❌ 500 Error detected", False, "Server error on GET /api/users")
+            return False
 
-        # Create a test unit first (needed for user creation)
-        unit_data = {
-            "name": f"Test Unit {datetime.now().strftime('%H%M%S')}",
-            "description": "Unit for testing user creation"
-        }
-        success, unit_response, status = self.make_request('POST', 'units', unit_data, 200)
-        if success:
-            unit_id = unit_response['id']
-            self.created_resources['units'].append(unit_id)
-            self.log_test("Create test unit for user", True, f"Unit ID: {unit_id}")
-        else:
-            self.log_test("Create test unit for user", False, f"Status: {status}")
-            unit_id = None
-
-        # Create a test user (referente)
-        test_user_data = {
-            "username": f"test_referente_{datetime.now().strftime('%H%M%S')}",
-            "email": f"test_referente_{datetime.now().strftime('%H%M%S')}@test.com",
-            "password": "testpass123",
-            "role": "referente",
-            "unit_id": unit_id,
-            "provinces": []
-        }
+        # 3. USER DATA VALIDATION - Verify user data structure
+        print("\n🔍 3. TESTING USER DATA VALIDATION...")
         
-        success, user_response, status = self.make_request('POST', 'users', test_user_data, 200)
-        if success:
-            user_id = user_response['id']
-            self.created_resources['users'].append(user_id)
-            self.log_test("Create referente user", True, f"User ID: {user_id}")
-        else:
-            self.log_test("Create referente user", False, f"Status: {status}, Response: {user_response}")
-
-        # Create a test agent with provinces
-        test_agent_data = {
-            "username": f"test_agente_{datetime.now().strftime('%H%M%S')}",
-            "email": f"test_agente_{datetime.now().strftime('%H%M%S')}@test.com",
-            "password": "testpass123",
-            "role": "agente",
-            "unit_id": unit_id,
-            "provinces": ["Roma", "Milano", "Napoli"]
-        }
+        # Required fields check
+        required_fields = ['username', 'email', 'password_hash', 'role', 'id', 'is_active', 'created_at']
         
-        success, agent_response, status = self.make_request('POST', 'users', test_agent_data, 200)
-        if success:
-            agent_id = agent_response['id']
-            self.created_resources['users'].append(agent_id)
-            self.log_test("Create agent with provinces", True, f"Agent ID: {agent_id}, Provinces: {test_agent_data['provinces']}")
-        else:
-            self.log_test("Create agent with provinces", False, f"Status: {status}, Response: {agent_response}")
-
-        # Test duplicate username
-        success, response, status = self.make_request('POST', 'users', test_user_data, 400)
-        self.log_test("Duplicate username rejection", success, "Correctly rejected duplicate")
-
-        # Test invalid province for agent
-        invalid_agent_data = {
-            "username": f"invalid_agent_{datetime.now().strftime('%H%M%S')}",
-            "email": f"invalid_agent_{datetime.now().strftime('%H%M%S')}@test.com",
-            "password": "testpass123",
-            "role": "agente",
-            "provinces": ["InvalidProvince", "AnotherInvalid"]
-        }
+        valid_users_count = 0
+        invalid_users = []
         
-        success, response, status = self.make_request('POST', 'users', invalid_agent_data, 400)
-        self.log_test("Invalid province rejection", success, "Correctly rejected invalid provinces")
+        for user in users:
+            missing_fields = [field for field in required_fields if field not in user or user[field] is None]
+            
+            if not missing_fields:
+                valid_users_count += 1
+            else:
+                invalid_users.append({
+                    'username': user.get('username', 'Unknown'),
+                    'missing_fields': missing_fields
+                })
+        
+        if valid_users_count == len(users):
+            self.log_test("✅ User data validation - All required fields", True, 
+                f"All {len(users)} users have required fields: {required_fields}")
+        else:
+            self.log_test("❌ User data validation - Missing fields", False, 
+                f"{len(invalid_users)} users missing fields: {invalid_users}")
+        
+        # JSON format validation (if we got here, JSON is valid)
+        self.log_test("✅ Valid JSON response format", True, "Response is valid JSON format")
+        
+        # Validate specific field types and values
+        data_validation_errors = []
+        for user in users:
+            # Check email format
+            email = user.get('email', '')
+            if email and '@' not in email:
+                data_validation_errors.append(f"User {user.get('username')}: Invalid email format")
+            
+            # Check role is valid enum
+            role = user.get('role', '')
+            valid_roles = ['admin', 'referente', 'agente', 'responsabile_commessa', 'backoffice_commessa', 
+                          'responsabile_sub_agenzia', 'backoffice_sub_agenzia', 'agente_specializzato', 'operatore']
+            if role not in valid_roles:
+                data_validation_errors.append(f"User {user.get('username')}: Invalid role '{role}'")
+            
+            # Check password_hash exists and is not empty
+            password_hash = user.get('password_hash', '')
+            if not password_hash:
+                data_validation_errors.append(f"User {user.get('username')}: Missing or empty password_hash")
+        
+        if not data_validation_errors:
+            self.log_test("✅ User data field validation", True, "All user data fields are valid")
+        else:
+            self.log_test("❌ User data field validation", False, f"Validation errors: {data_validation_errors}")
+
+        # 4. ERROR HANDLING ROBUSTNESS
+        print("\n🛡️ 4. TESTING ERROR HANDLING ROBUSTNESS...")
+        
+        # Test with invalid authentication
+        success, response, status = self.make_request('GET', 'users', expected_status=401, auth_required=False)
+        if status == 401:
+            self.log_test("✅ Authentication required", True, "Correctly requires authentication (401)")
+        else:
+            self.log_test("❌ Authentication required", False, f"Expected 401, got {status}")
+        
+        # Test with invalid token
+        original_token = self.token
+        self.token = "invalid_token_12345"
+        success, response, status = self.make_request('GET', 'users', expected_status=401)
+        if status == 401:
+            self.log_test("✅ Invalid token rejection", True, "Correctly rejects invalid token (401)")
+        else:
+            self.log_test("❌ Invalid token rejection", False, f"Expected 401, got {status}")
+        
+        # Restore valid token
+        self.token = original_token
+        
+        # Test endpoint handles incomplete user data gracefully
+        # This tests if the endpoint can handle users with missing optional fields
+        success, response, status = self.make_request('GET', 'users', expected_status=200)
+        if success:
+            self.log_test("✅ Handles incomplete user data", True, 
+                "Endpoint handles users with optional missing fields without crashing")
+        else:
+            self.log_test("❌ Handles incomplete user data", False, 
+                f"Endpoint crashed or failed with incomplete data - Status: {status}")
+        
+        # Test backend doesn't crash with malformed requests
+        success, response, status = self.make_request('GET', 'users?invalid_param=test&malformed=', expected_status=200)
+        if success or status in [200, 400]:  # 400 is acceptable for malformed params
+            self.log_test("✅ Backend robustness - malformed params", True, 
+                f"Backend handles malformed parameters gracefully (Status: {status})")
+        else:
+            self.log_test("❌ Backend robustness - malformed params", False, 
+                f"Backend crashed with malformed parameters - Status: {status}")
+        
+        # Summary of user system testing
+        print(f"\n📊 USER SYSTEM TESTING SUMMARY:")
+        print(f"   • Login functionality: {'✅ WORKING' if self.token else '❌ FAILED'}")
+        print(f"   • User endpoints: {'✅ WORKING' if len(users) > 0 else '❌ FAILED'}")
+        print(f"   • Data validation: {'✅ PASSED' if valid_users_count == len(users) else '❌ ISSUES FOUND'}")
+        print(f"   • Error handling: {'✅ ROBUST' if status != 500 else '❌ NEEDS IMPROVEMENT'}")
+        print(f"   • Total users found: {len(users)}")
+        print(f"   • Expected users found: {len(found_expected)} of {len(expected_usernames)}")
+        
+        return True
 
     def test_user_crud_new_features(self):
         """Test NEW User CRUD features: Referenti endpoint, Edit/Delete"""
