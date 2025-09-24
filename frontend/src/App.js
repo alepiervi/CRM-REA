@@ -2113,6 +2113,14 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
         ...formData,
         sub_agenzie_autorizzate: [...formData.sub_agenzie_autorizzate, subAgenziaId],
       });
+      // Carica i servizi per la sub agenzia selezionata
+      // Per ora usiamo tutti i servizi, ma potremmo implementare un endpoint specifico
+      if (subAgenzie.length > 0) {
+        const subAgenzia = subAgenzie.find(sa => sa.id === subAgenziaId);
+        if (subAgenzia && subAgenzia.commessa_id) {
+          handleCommessaChange(subAgenzia.commessa_id);
+        }
+      }
     } else {
       setFormData({
         ...formData,
