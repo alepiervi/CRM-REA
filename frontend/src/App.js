@@ -8241,6 +8241,9 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nuovo Cliente</DialogTitle>
+          <DialogDescription>
+            Crea un nuovo cliente inserendo i dati richiesti. I campi contrassegnati con * sono obbligatori.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
