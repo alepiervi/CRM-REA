@@ -2962,13 +2962,8 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
     
     # Create user
     user_dict = user_data.dict()
-    print(f"DEBUG: Initial user_dict keys: {list(user_dict.keys())}")
-    
     user_dict["password_hash"] = get_password_hash(user_data.password)
     del user_dict["password"]
-    
-    print(f"DEBUG: After password processing, keys: {list(user_dict.keys())}")
-    print(f"DEBUG: password_hash present: {'password_hash' in user_dict}")
     
     # Auto-set can_view_analytics based on role
     if user_dict.get("can_view_analytics") is None:
@@ -2989,27 +2984,9 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
     user_dict.setdefault("created_at", datetime.now(timezone.utc))
     user_dict.setdefault("last_login", None)
     
-    print(f"DEBUG: Final user_dict keys before User creation: {list(user_dict.keys())}")
-    
-    # Create User object to validate
-    try:
-        user_obj = User(**user_dict)
-        print(f"DEBUG: User object created successfully: {user_obj.username}")
-    except Exception as e:
-        print(f"DEBUG: User validation error: {e}")
-        raise HTTPException(status_code=400, detail=f"User data validation failed: {str(e)}")
-    
-    # Convert to dict for MongoDB
-    try:
-        user_data_for_db = user_obj.dict()
-        print(f"DEBUG: User data for DB keys: {list(user_data_for_db.keys())}")
-        print(f"DEBUG: password_hash in DB data: {'password_hash' in user_data_for_db}")
-    except Exception as e:
-        print(f"DEBUG: User serialization error: {e}")
-        raise HTTPException(status_code=500, detail=f"User serialization failed: {str(e)}")
-    
-    await db.users.insert_one(user_data_for_db)
-    print(f"DEBUG: User inserted into database with password_hash")
+    # Create User object and save to database
+    user_obj = User(**user_dict)
+    await db.users.insert_one(user_obj.dict())
     
     return user_obj
 
