@@ -2352,7 +2352,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     } else {
       setFormData({
         ...formData,
-        servizi_autorizzati: formData.servizi_autorizzati.filter((s) => s !== servizioId),
+        servizi_autorizzati: (formData.servizi_autorizzati || []).filter((s) => s !== servizioId),
       });
     }
   };
@@ -2837,7 +2837,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     } else {
       setFormData({
         ...formData,
-        servizi_autorizzati: formData.servizi_autorizzati.filter((s) => s !== servizioId),
+        servizi_autorizzati: (formData.servizi_autorizzati || []).filter((s) => s !== servizioId),
       });
     }
   };
