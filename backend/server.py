@@ -796,6 +796,8 @@ class ClienteUpdate(BaseModel):
     codice_fiscale: Optional[str] = None
     partita_iva: Optional[str] = None
     servizio_id: Optional[str] = None
+    tipologia_contratto: Optional[TipologiaContratto] = None  # Nuovo campo
+    segmento: Optional[Segmento] = None  # Nuovo campo  
     status: Optional[ClienteStatus] = None
     note: Optional[str] = None
     dati_aggiuntivi: Optional[Dict[str, Any]] = None
