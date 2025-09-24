@@ -7352,6 +7352,7 @@ async def export_responsabile_commessa_analytics(
     # Get analytics data
     analytics_data = await get_responsabile_commessa_analytics(
         commessa_id=commessa_id,
+        tipologia_contratto=tipologia_contratto,
         date_from=date_from, 
         date_to=date_to,
         current_user=current_user
