@@ -4292,8 +4292,8 @@ Duplicate,Test,+393471234567"""
         return True
 
     def run_all_tests(self):
-        """Run focused test for 422 error debugging in user modification"""
-        print("🚀 Starting CRM API Testing - 422 Error Debug Focus...")
+        """Run focused test for Responsabile Commessa system"""
+        print("🚀 Starting CRM API Testing - Responsabile Commessa Focus...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
@@ -4302,8 +4302,8 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # PRIORITY TEST: Debug 422 error in user modification
-        self.test_user_edit_422_error_debug()
+        # URGENT TEST: Responsabile Commessa System
+        self.test_responsabile_commessa_system()
         
         # Print summary
         print("\n" + "=" * 60)
