@@ -2027,36 +2027,6 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     return analyticsRoles.includes(role);
   };
 
-  // Handler per gestire le commesse autorizzate
-  const handleCommessaAutorizzataChange = (commessaId, checked) => {
-    if (checked) {
-      setFormData(prev => ({
-        ...prev,
-        commesse_autorizzate: [...prev.commesse_autorizzate, commessaId]
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        commesse_autorizzate: prev.commesse_autorizzate.filter(id => id !== commessaId)
-      }));
-    }
-  };
-
-  // Handler per gestire le sub agenzie autorizzate
-  const handleSubAgenziaAutorizzataChange = (subAgenziaId, checked) => {
-    if (checked) {
-      setFormData(prev => ({
-        ...prev,
-        sub_agenzie_autorizzate: [...prev.sub_agenzie_autorizzate, subAgenziaId]
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        sub_agenzie_autorizzate: prev.sub_agenzie_autorizzate.filter(id => id !== subAgenziaId)
-      }));
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
