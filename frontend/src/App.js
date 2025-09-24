@@ -2698,7 +2698,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
 
   // Load servizi when commesse_autorizzate changes
   useEffect(() => {
-    if (formData.commesse_autorizzate?.length > 0) {
+    if (formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0) {
       // Carica servizi per la prima commessa autorizzata
       handleCommessaChange(formData.commesse_autorizzate[0]);
     }
