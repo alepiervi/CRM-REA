@@ -7050,9 +7050,6 @@ async def download_import_template(
             headers={"Content-Disposition": "attachment; filename=template_clienti.xlsx"}
         )
 
-# Include the router in the main app
-app.include_router(api_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
