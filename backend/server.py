@@ -7202,6 +7202,9 @@ async def get_responsabile_commessa_clienti(
     if status:
         query["status"] = status
         
+    if tipologia_contratto and tipologia_contratto != "all":
+        query["tipologia_contratto"] = tipologia_contratto
+        
     if search:
         query["$or"] = [
             {"nome": {"$regex": search, "$options": "i"}},
