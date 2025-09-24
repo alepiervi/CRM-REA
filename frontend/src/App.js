@@ -798,7 +798,7 @@ const Dashboard = () => {
       switch (activeTab) {
         case "dashboard":
           if (user.role === "responsabile_commessa") {
-            return <ResponsabileCommessaDashboard selectedUnit={selectedUnit} units={units} commesse={commesse} />;
+            return <ResponsabileCommessaDashboard selectedUnit={selectedUnit} selectedTipologiaContratto={selectedTipologiaContratto} units={units} commesse={commesse} />;
           }
           return <DashboardStats selectedUnit={selectedUnit} />;
         case "leads":
