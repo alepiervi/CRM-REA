@@ -1720,6 +1720,10 @@ const UsersManagement = ({ selectedUnit, units }) => {
   const [editingUser, setEditingUser] = useState(null);
   const [provinces, setProvinces] = useState([]);
   const [referenti, setReferenti] = useState([]);
+  // Nuovi state per gestione autorizzazioni specializzate
+  const [commesse, setCommesse] = useState([]);
+  const [servizi, setServizi] = useState([]);
+  const [subAgenzie, setSubAgenzie] = useState([]);
   const { toast } = useToast();
 
   useEffect(() => {
