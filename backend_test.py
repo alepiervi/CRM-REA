@@ -3916,8 +3916,8 @@ Duplicate,Test,+393471234567"""
         return True
 
     def run_all_tests(self):
-        """Run all test suites including Lead Qualification System (FASE 4)"""
-        print("🚀 Starting CRM API Testing - Lead Qualification System (FASE 4)...")
+        """Run all test suites with priority on Responsabile Commessa System"""
+        print("🚀 Starting CRM API Testing - Responsabile Commessa System Complete...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
@@ -3926,11 +3926,14 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # Create basic resources needed for testing
+        # PRIORITY TEST: Responsabile Commessa System Complete with Tipologia Contratto filters
+        self.test_responsabile_commessa_system_complete()
+        
+        # Create basic resources needed for other testing
         self.test_units_management()
         self.test_leads_management()
         
-        # Run Lead Qualification System (FASE 4) tests
+        # Run other test suites
         self.test_lead_qualification_system()
         
         # Print summary
