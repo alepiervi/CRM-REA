@@ -161,6 +161,11 @@ class UserCreate(BaseModel):
     unit_id: Optional[str] = None
     referente_id: Optional[str] = None
     provinces: List[str] = []
+    # Nuovi campi per autorizzazioni specializzate
+    commesse_autorizzate: List[str] = []
+    servizi_autorizzati: List[str] = []
+    sub_agenzie_autorizzate: List[str] = []
+    can_view_analytics: Optional[bool] = None  # Auto-impostato in base al ruolo
 
 class UserLogin(BaseModel):
     username: str
