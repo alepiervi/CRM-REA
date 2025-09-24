@@ -3779,6 +3779,219 @@ const EditContainerModal = ({ container, onClose, onSubmit, units }) => {
 };
 
 // Advanced Analytics Management Component with Charts and Reports
+// Responsabile Commessa Analytics Component
+const ResponsabileCommessaAnalytics = ({ selectedUnit, selectedTipologiaContratto, units, commesse }) => {
+  const [analyticsData, setAnalyticsData] = useState({
+    sub_agenzie_analytics: [],
+    conversioni: {}
+  });
+  const [loading, setLoading] = useState(true);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [selectedCommessa, setSelectedCommessa] = useState('all');
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [dateFrom, dateTo, selectedCommessa, selectedTipologiaContratto]);
+
+  const fetchAnalyticsData = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      if (selectedCommessa && selectedCommessa !== 'all') {
+        params.append('commessa_id', selectedCommessa);
+      }
+      if (selectedTipologiaContratto && selectedTipologiaContratto !== 'all') {
+        params.append('tipologia_contratto', selectedTipologiaContratto);
+      }
+      
+      const response = await axios.get(`${API}/responsabile-commessa/analytics?${params}`);
+      setAnalyticsData(response.data);
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      toast.error('Errore nel caricamento delle analytics');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      if (selectedCommessa && selectedCommessa !== 'all') {
+        params.append('commessa_id', selectedCommessa);
+      }
+      if (selectedTipologiaContratto && selectedTipologiaContratto !== 'all') {
+        params.append('tipologia_contratto', selectedTipologiaContratto);
+      }
+
+      const response = await axios.get(`${API}/responsabile-commessa/analytics/export?${params}`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `analytics_responsabile_commessa_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Export completato con successo');
+    } catch (error) {
+      console.error('Error exporting analytics:', error);
+      toast.error('Errore durante l\'export');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Caricamento analytics...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Analytics Clienti - Responsabile Commessa</h1>
+          <p className="text-gray-600">Analisi performance delle tue commesse e sub agenzie</p>
+        </div>
+        
+        <Button onClick={handleExport} className="flex items-center space-x-2">
+          <Download className="w-4 h-4" />
+          <span>Esporta Excel</span>
+        </Button>
+      </div>
+
+      {/* Filtri */}
+      <div className="bg-white p-4 rounded-lg border">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <Label className="text-sm font-medium">Dal:</Label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Al:</Label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Commessa:</Label>
+            <Select value={selectedCommessa} onValueChange={setSelectedCommessa}>
+              <SelectTrigger>
+                <SelectValue placeholder="Tutte le commesse" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le Commesse</SelectItem>
+                {user.commesse_autorizzate?.map((commessaId) => {
+                  const commessa = commesse.find(c => c.id === commessaId);
+                  return commessa ? (
+                    <SelectItem key={commessa.id} value={commessa.id}>
+                      {commessa.nome}
+                    </SelectItem>
+                  ) : null;
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end">
+            <Button 
+              onClick={() => {
+                setDateFrom('');
+                setDateTo('');
+                setSelectedCommessa('all');
+              }} 
+              variant="outline"
+              className="w-full"
+            >
+              Reset Filtri
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Conversioni Generali */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Riepilogo Generale</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center">
+            <p className="text-3xl font-bold text-blue-600">{analyticsData.conversioni.totale_clienti || 0}</p>
+            <p className="text-sm text-gray-600">Clienti Totali</p>
+          </div>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-green-600">{analyticsData.conversioni.totale_completati || 0}</p>
+            <p className="text-sm text-gray-600">Clienti Completati</p>
+          </div>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-purple-600">{analyticsData.conversioni.conversion_rate_generale || 0}%</p>
+            <p className="text-sm text-gray-600">Tasso Conversione</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Analytics per Sub Agenzia */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Performance per Sub Agenzia</h3>
+        {analyticsData.sub_agenzie_analytics.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2">Sub Agenzia</th>
+                  <th className="text-center py-2">Clienti Totali</th>
+                  <th className="text-center py-2">Completati</th>
+                  <th className="text-center py-2">In Lavorazione</th>
+                  <th className="text-center py-2">Tasso Conversione</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analyticsData.sub_agenzie_analytics.map((item, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="py-2">{item.nome}</td>
+                    <td className="text-center py-2">{item.totale_clienti}</td>
+                    <td className="text-center py-2">
+                      <Badge variant="default">{item.completati}</Badge>
+                    </td>
+                    <td className="text-center py-2">
+                      <Badge variant="secondary">{item.in_lavorazione}</Badge>
+                    </td>
+                    <td className="text-center py-2">
+                      <Badge variant={item.conversion_rate >= 50 ? "default" : "secondary"}>
+                        {item.conversion_rate}%
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-gray-500 text-center py-8">Nessun dato disponibile per le analytics</p>
+        )}
+      </Card>
+    </div>
+  );
+};
+
 const AnalyticsManagement = ({ selectedUnit, units }) => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [analyticsData, setAnalyticsData] = useState(null);
