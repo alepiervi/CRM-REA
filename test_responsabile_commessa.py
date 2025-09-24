@@ -204,13 +204,14 @@ class ResponsabileCommessaTester:
         
         success, response, status = self.make_request('GET', 'tipologie-contratto', expected_status=200)
         if success:
-            tipologie = response.get('tipologie_contratto', [])
-            expected_tipologie = ['energia_fastweb', 'telefonia_fastweb', 'ho_mobile', 'telepass']
+            # Response is a list of dictionaries with 'value' and 'label' keys
+            tipologie = response if isinstance(response, list) else []
+            expected_values = ['energia_fastweb', 'telefonia_fastweb', 'ho_mobile', 'telepass']
             
             if len(tipologie) >= 4:
-                found_tipologie = [tip for tip in expected_tipologie if tip in tipologie]
+                found_values = [tip['value'] for tip in tipologie if 'value' in tip and tip['value'] in expected_values]
                 self.log_test("Tipologie Contratto endpoint", True, 
-                    f"Found {len(tipologie)} tipologie, Expected found: {found_tipologie}")
+                    f"Found {len(tipologie)} tipologie, Expected values found: {found_values}")
             else:
                 self.log_test("Tipologie Contratto endpoint", False, 
                     f"Expected at least 4 tipologie, found {len(tipologie)}")
