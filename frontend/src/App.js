@@ -738,6 +738,20 @@ const Dashboard = () => {
     }
   };
 
+  const fetchTipologieContratto = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedCommessa && selectedCommessa !== "all") {
+        params.append("commessa_id", selectedCommessa);
+      }
+      const response = await axios.get(`${API}/tipologie-contratto?${params}`);
+      setTipologieContratto(response.data);
+    } catch (error) {
+      console.error("Error fetching tipologie contratto:", error);
+      setTipologieContratto([]);
+    }
+  };
+
   const handleUnitChange = (unitId) => {
     setSelectedUnit(unitId);
   };
