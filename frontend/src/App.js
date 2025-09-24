@@ -8210,14 +8210,83 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     partita_iva: '',
     commessa_id: selectedCommessa || '',
     sub_agenzia_id: '',
+    servizio_id: '',
+    tipologia_contratto: '',
+    segmento: '',
     note: ''
   });
+
+  const [servizi, setServizi] = useState([]);
+  const [tipologieContratto, setTipologieContratto] = useState([]);
+  const [segmenti, setSegmenti] = useState([]);
 
   useEffect(() => {
     if (selectedCommessa) {
       setFormData(prev => ({ ...prev, commessa_id: selectedCommessa }));
+      fetchServizi(selectedCommessa);
     }
   }, [selectedCommessa]);
+
+  useEffect(() => {
+    fetchSegmenti();
+  }, []);
+
+  useEffect(() => {
+    if (formData.servizio_id) {
+      fetchTipologieContratto(formData.commessa_id, formData.servizio_id);
+    }
+  }, [formData.servizio_id, formData.commessa_id]);
+
+  const fetchServizi = async (commessaId) => {
+    try {
+      const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+      setServizi(response.data);
+    } catch (error) {
+      console.error("Error fetching servizi:", error);
+      setServizi([]);
+    }
+  };
+
+  const fetchTipologieContratto = async (commessaId, servizioId) => {
+    try {
+      const response = await axios.get(`${API}/tipologie-contratto?commessa_id=${commessaId}&servizio_id=${servizioId}`);
+      setTipologieContratto(response.data);
+    } catch (error) {
+      console.error("Error fetching tipologie contratto:", error);
+      setTipologieContratto([]);
+    }
+  };
+
+  const fetchSegmenti = async () => {
+    try {
+      const response = await axios.get(`${API}/segmenti`);
+      setSegmenti(response.data);
+    } catch (error) {
+      console.error("Error fetching segmenti:", error);
+      setSegmenti([]);
+    }
+  };
+
+  const handleCommessaChange = (commessaId) => {
+    setFormData(prev => ({
+      ...prev, 
+      commessa_id: commessaId,
+      servizio_id: '',
+      tipologia_contratto: '',
+      segmento: ''
+    }));
+    fetchServizi(commessaId);
+    setTipologieContratto([]);
+  };
+
+  const handleServizioChange = (servizioId) => {
+    setFormData(prev => ({
+      ...prev,
+      servizio_id: servizioId,
+      tipologia_contratto: '',
+      segmento: ''
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
