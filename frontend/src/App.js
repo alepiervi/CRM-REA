@@ -7625,9 +7625,15 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchCommesse();
+    // Use props data when available, don't fetch if already provided
+    if (!commesseFromParent || commesseFromParent.length === 0) {
+      fetchCommesse();
+    }
+    if (!subAgenzieFromParent || subAgenzieFromParent.length === 0) {
+      fetchSubAgenzie();
+    }
     fetchClienti();
-  }, [selectedUnit]);
+  }, [selectedUnit, selectedCommessaLocal]);
 
   const fetchCommesse = async () => {
     try {
