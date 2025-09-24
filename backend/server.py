@@ -6500,6 +6500,57 @@ async def get_servizi_by_commessa(commessa_id: str, current_user: User = Depends
     
     return [Servizio(**s) for s in servizi]
 
+@api_router.get("/tipologie-contratto")
+async def get_tipologie_contratto(
+    commessa_id: Optional[str] = Query(None), 
+    servizio_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Get available tipologie contratto based on commessa and servizio"""
+    
+    # Lista base per tutti i servizi di Fastweb
+    tipologie_base = [
+        {"value": "energia_fastweb", "label": "Energia Fastweb"},
+        {"value": "telefonia_fastweb", "label": "Telefonia Fastweb"}
+    ]
+    
+    # Tipologie aggiuntive per servizi specifici
+    tipologie_aggiuntive = [
+        {"value": "ho_mobile", "label": "Ho Mobile"},
+        {"value": "telepass", "label": "Telepass"}
+    ]
+    
+    # Se non specificato, restituisci tutte
+    if not servizio_id:
+        return tipologie_base + tipologie_aggiuntive
+    
+    # Logica basata sul servizio
+    try:
+        servizio = await db.servizi.find_one({"id": servizio_id})
+        if not servizio:
+            return tipologie_base
+        
+        servizio_nome = servizio.get("nome", "").lower()
+        
+        # Per servizi Negozi, Presidi e Agent: aggiunge Ho Mobile e Telepass
+        if any(nome in servizio_nome for nome in ["negozi", "presidi", "agent"]):
+            return tipologie_base + tipologie_aggiuntive
+        else:
+            # Per tutti gli altri servizi: solo Energia e Telefonia Fastweb
+            return tipologie_base
+            
+    except Exception as e:
+        logging.error(f"Error getting tipologie contratto: {e}")
+        return tipologie_base
+
+@api_router.get("/segmenti")  
+async def get_segmenti(current_user: User = Depends(get_current_user)):
+    """Get available segmenti"""
+    return [
+        {"value": "residenziale", "label": "Residenziale"},
+        {"value": "business", "label": "Business"}
+    ]
+
 # Gestione Sub Agenzie
 @api_router.post("/sub-agenzie", response_model=SubAgenzia)
 async def create_sub_agenzia(sub_agenzia_data: SubAgenziaCreate, current_user: User = Depends(get_current_user)):
