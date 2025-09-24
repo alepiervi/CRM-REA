@@ -2974,8 +2974,25 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
             UserRole.OPERATORE  # Per analytics dei propri clienti
         ]
     
-    user_obj = User(**user_dict)
-    await db.users.insert_one(user_obj.dict())
+    # Ensure all required fields are present with default values if missing
+    user_dict.setdefault("is_active", True)
+    user_dict.setdefault("provinces", [])
+    user_dict.setdefault("commesse_autorizzate", [])
+    user_dict.setdefault("servizi_autorizzati", [])
+    user_dict.setdefault("sub_agenzie_autorizzate", [])
+    user_dict.setdefault("created_at", datetime.now(timezone.utc))
+    user_dict.setdefault("last_login", None)
+    
+    # Create User object to validate, then convert to dict for MongoDB
+    try:
+        user_obj = User(**user_dict)
+        # Convert to dict using model_dump() which handles serialization better
+        user_data_for_db = user_obj.model_dump()
+    except Exception as e:
+        logging.error(f"User validation error: {e}")
+        raise HTTPException(status_code=400, detail=f"User data validation failed: {str(e)}")
+    
+    await db.users.insert_one(user_data_for_db)
     
     return user_obj
 
