@@ -937,6 +937,29 @@ const Dashboard = () => {
               </SelectContent>
             </Select>
           </div>
+          
+          {/* Tipologia Contratto Selector - Solo per Responsabile Commessa */}
+          {user.role === "responsabile_commessa" && (
+            <div className="mt-4">
+              <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">Tipologia Contratto</Label>
+              <Select value={selectedTipologiaContratto} onValueChange={setSelectedTipologiaContratto}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona tipologia" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le Tipologie</SelectItem>
+                  {tipologieContratto.map((tipologia) => (
+                    <SelectItem key={tipologia.value} value={tipologia.value}>
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-3 h-3" />
+                        <span>{tipologia.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Navigation Menu - Now with flex-1 to take available space */}
