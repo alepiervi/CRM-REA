@@ -2769,6 +2769,20 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     }
   };
 
+  const handleServizioAutorizzatoChange = (servizioId, checked) => {
+    if (checked) {
+      setFormData({
+        ...formData,
+        servizi_autorizzati: [...formData.servizi_autorizzati, servizioId],
+      });
+    } else {
+      setFormData({
+        ...formData,
+        servizi_autorizzati: formData.servizi_autorizzati.filter((s) => s !== servizioId),
+      });
+    }
+  };
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
