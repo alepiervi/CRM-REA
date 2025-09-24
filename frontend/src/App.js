@@ -463,6 +463,193 @@ const DashboardStats = ({ selectedUnit }) => {
   );
 };
 
+// Responsabile Commessa Dashboard Component
+const ResponsabileCommessaDashboard = ({ selectedUnit, units, commesse }) => {
+  const [dashboardData, setDashboardData] = useState({
+    clienti_oggi: 0,
+    clienti_totali: 0,
+    sub_agenzie: [],
+    punti_lavorazione: {},
+    commesse: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [dateFrom, dateTo]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      
+      const response = await axios.get(`${API}/responsabile-commessa/dashboard?${params}`);
+      setDashboardData(response.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Errore nel caricamento della dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDateReset = () => {
+    setDateFrom('');
+    setDateTo('');
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Caricamento dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard Responsabile Commessa</h1>
+          <p className="text-gray-600">Panoramica delle tue commesse e clienti</p>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium">Dal:</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium">Al:</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+            />
+          </div>
+          <Button onClick={handleDateReset} variant="outline" size="sm">
+            Reset
+          </Button>
+        </div>
+      </div>
+
+      {/* Statistiche principali */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6">
+          <div className="flex items-center">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-600">Clienti {dateFrom || dateTo ? 'nel Periodo' : 'Oggi'}</p>
+              <p className="text-2xl font-bold text-blue-600">{dashboardData.clienti_oggi}</p>
+            </div>
+            <Users className="w-8 h-8 text-blue-500" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-600">Clienti Totali</p>
+              <p className="text-2xl font-bold text-green-600">{dashboardData.clienti_totali}</p>
+            </div>
+            <UserCheck className="w-8 h-8 text-green-500" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-600">Sub Agenzie</p>
+              <p className="text-2xl font-bold text-purple-600">{dashboardData.sub_agenzie.length}</p>
+            </div>
+            <Store className="w-8 h-8 text-purple-500" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-600">Commesse Attive</p>
+              <p className="text-2xl font-bold text-orange-600">{dashboardData.commesse.length}</p>
+            </div>
+            <Building className="w-8 h-8 text-orange-500" />
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Punti di lavorazione */}
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Punti di Lavorazione</h3>
+          <div className="space-y-3">
+            {Object.entries(dashboardData.punti_lavorazione).map(([status, count]) => (
+              <div key={status} className="flex justify-between items-center">
+                <span className="capitalize">{status.replace('_', ' ')}</span>
+                <Badge variant="outline">{count}</Badge>
+              </div>
+            ))}
+            {Object.keys(dashboardData.punti_lavorazione).length === 0 && (
+              <p className="text-gray-500 text-sm">Nessun dato disponibile</p>
+            )}
+          </div>
+        </Card>
+
+        {/* Sub Agenzie */}
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Sub Agenzie delle tue Commesse</h3>
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {dashboardData.sub_agenzie.map((sa) => (
+              <div key={sa.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                <div>
+                  <p className="font-medium">{sa.nome}</p>
+                  <p className="text-sm text-gray-600">{sa.responsabile}</p>
+                </div>
+                <div className="text-right">
+                  <Badge variant={sa.stato === 'attiva' ? 'default' : 'secondary'}>
+                    {sa.stato}
+                  </Badge>
+                  <p className="text-xs text-gray-500 mt-1">{sa.commesse_count} commesse</p>
+                </div>
+              </div>
+            ))}
+            {dashboardData.sub_agenzie.length === 0 && (
+              <p className="text-gray-500 text-sm">Nessuna sub agenzia trovata</p>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Commesse */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Le tue Commesse</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {dashboardData.commesse.map((commessa) => (
+            <div key={commessa.id} className="p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-medium">{commessa.nome}</h4>
+              <p className="text-sm text-gray-600 mt-1">{commessa.descrizione}</p>
+            </div>
+          ))}
+          {dashboardData.commesse.length === 0 && (
+            <p className="text-gray-500 text-sm col-span-full">Nessuna commessa assegnata</p>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
 // Main Dashboard Component
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
