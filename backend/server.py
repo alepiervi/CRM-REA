@@ -7107,6 +7107,10 @@ async def get_responsabile_commessa_dashboard(
     # Query clienti delle commesse autorizzate
     clienti_query = {"commessa_id": {"$in": accessible_commesse}, "is_active": True}
     
+    # Filtro per tipologia contratto
+    if tipologia_contratto and tipologia_contratto != "all":
+        clienti_query["tipologia_contratto"] = tipologia_contratto
+    
     # Clienti totali
     clienti_totali = await db.clienti.count_documents(clienti_query)
     
