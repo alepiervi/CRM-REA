@@ -2311,25 +2311,50 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
           )}
 
           {(formData.role === "responsabile_sub_agenzia" || formData.role === "backoffice_sub_agenzia") && (
-            <div>
-              <Label>Sub Agenzie Autorizzate *</Label>
-              <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
-                <div className="grid grid-cols-2 gap-2">
-                  {subAgenzie.map((subAgenzia) => (
-                    <div key={subAgenzia.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`subagenzia-${subAgenzia.id}`}
-                        checked={formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
-                        onCheckedChange={(checked) => handleSubAgenziaAutorizzataChange(subAgenzia.id, checked)}
-                      />
-                      <Label htmlFor={`subagenzia-${subAgenzia.id}`} className="text-sm">
-                        {subAgenzia.nome}
-                      </Label>
-                    </div>
-                  ))}
+            <>
+              <div>
+                <Label>Sub Agenzie Autorizzate *</Label>
+                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-2">
+                    {subAgenzie.map((subAgenzia) => (
+                      <div key={subAgenzia.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`subagenzia-${subAgenzia.id}`}
+                          checked={formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
+                          onCheckedChange={(checked) => handleSubAgenziaAutorizzataChange(subAgenzia.id, checked)}
+                        />
+                        <Label htmlFor={`subagenzia-${subAgenzia.id}`} className="text-sm">
+                          {subAgenzia.nome}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+
+              {/* Servizi autorizzati per sub agenzie */}
+              {formData.sub_agenzie_autorizzate.length > 0 && (
+                <div>
+                  <Label>Servizi Autorizzati *</Label>
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-2">
+                      {servizi.map((servizio) => (
+                        <div key={servizio.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`servizio-subagenzia-${servizio.id}`}
+                            checked={formData.servizi_autorizzati.includes(servizio.id)}
+                            onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
+                          />
+                          <Label htmlFor={`servizio-subagenzia-${servizio.id}`} className="text-sm">
+                            {servizio.nome}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {formData.role === "agente" && (
