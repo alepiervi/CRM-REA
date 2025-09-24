@@ -7172,6 +7172,7 @@ async def get_responsabile_commessa_clienti(
     commessa_id: Optional[str] = None,
     sub_agenzia_id: Optional[str] = None,
     status: Optional[str] = None,
+    tipologia_contratto: Optional[str] = None,
     search: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
