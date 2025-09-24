@@ -7879,7 +7879,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         }}
         commesse={commesse}
         subAgenzie={subAgenzie}
-        selectedCommessa={selectedCommessa}
+        selectedCommessa={selectedCommessaLocal}
       />
 
       {/* View Cliente Modal */}
