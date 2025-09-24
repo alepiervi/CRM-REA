@@ -1961,6 +1961,9 @@ const UsersManagement = ({ selectedUnit, units }) => {
           units={units}
           referenti={referenti}
           selectedUnit={selectedUnit}
+          commesse={commesse}
+          subAgenzie={subAgenzie}
+          fetchServizi={fetchServizi}
         />
       )}
 
