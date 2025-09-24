@@ -7068,6 +7068,321 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# ============================================
+# RESPONSABILE COMMESSA ENDPOINTS
+# ============================================
+
+@api_router.get("/responsabile-commessa/dashboard")
+async def get_responsabile_commessa_dashboard(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Dashboard specifica per Responsabile Commessa"""
+    if current_user.role != UserRole.RESPONSABILE_COMMESSA:
+        raise HTTPException(status_code=403, detail="Access denied: Responsabile Commessa only")
+    
+    # Get accessible commesse
+    accessible_commesse = await get_user_accessible_commesse(current_user)
+    if not accessible_commesse:
+        return {
+            "clienti_oggi": 0,
+            "clienti_totali": 0,
+            "sub_agenzie": [],
+            "punti_lavorazione": {},
+            "commesse": []
+        }
+    
+    # Parse date filters
+    date_filter = {}
+    if date_from:
+        try:
+            date_filter["$gte"] = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+        except:
+            pass
+    if date_to:
+        try:
+            date_filter["$lte"] = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+        except:
+            pass
+    
+    # Query clienti delle commesse autorizzate
+    clienti_query = {"commessa_id": {"$in": accessible_commesse}, "is_active": True}
+    
+    # Clienti totali
+    clienti_totali = await db.clienti.count_documents(clienti_query)
+    
+    # Clienti oggi o nel range di date
+    clienti_oggi_query = clienti_query.copy()
+    if date_filter:
+        clienti_oggi_query["created_at"] = date_filter
+    else:
+        # Default: oggi
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start.replace(hour=23, minute=59, second=59, microsecond=999999)
+        clienti_oggi_query["created_at"] = {"$gte": today_start, "$lte": today_end}
+    
+    clienti_oggi = await db.clienti.count_documents(clienti_oggi_query)
+    
+    # Get sub agenzie per le commesse autorizzate
+    sub_agenzie = await db.sub_agenzie.find({
+        "commesse_autorizzate": {"$in": accessible_commesse},
+        "is_active": True
+    }).to_list(length=None)
+    
+    # Count clienti per stato (punti di lavorazione)
+    pipeline = [
+        {"$match": clienti_query},
+        {"$group": {
+            "_id": "$status",
+            "count": {"$sum": 1}
+        }}
+    ]
+    punti_lavorazione_result = await db.clienti.aggregate(pipeline).to_list(length=None)
+    punti_lavorazione = {item["_id"]: item["count"] for item in punti_lavorazione_result}
+    
+    # Get commesse info
+    commesse = await db.commesse.find({
+        "id": {"$in": accessible_commesse},
+        "is_active": True
+    }).to_list(length=None)
+    
+    return {
+        "clienti_oggi": clienti_oggi,
+        "clienti_totali": clienti_totali,
+        "sub_agenzie": [{
+            "id": sa["id"],
+            "nome": sa["nome"],
+            "responsabile": sa.get("responsabile", ""),
+            "stato": sa.get("stato", "attiva"),
+            "commesse_count": len([c for c in sa.get("commesse_autorizzate", []) if c in accessible_commesse])
+        } for sa in sub_agenzie],
+        "punti_lavorazione": punti_lavorazione,
+        "commesse": [{
+            "id": c["id"],
+            "nome": c["nome"],
+            "descrizione": c.get("descrizione", "")
+        } for c in commesse]
+    }
+
+@api_router.get("/responsabile-commessa/clienti")
+async def get_responsabile_commessa_clienti(
+    commessa_id: Optional[str] = None,
+    sub_agenzia_id: Optional[str] = None,
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """Lista clienti per Responsabile Commessa (solo commesse autorizzate)"""
+    if current_user.role != UserRole.RESPONSABILE_COMMESSA:
+        raise HTTPException(status_code=403, detail="Access denied: Responsabile Commessa only")
+    
+    # Get accessible commesse
+    accessible_commesse = await get_user_accessible_commesse(current_user)
+    if not accessible_commesse:
+        return {"clienti": [], "total": 0}
+    
+    # Build query
+    query = {
+        "commessa_id": {"$in": accessible_commesse},
+        "is_active": True
+    }
+    
+    if commessa_id and commessa_id in accessible_commesse:
+        query["commessa_id"] = commessa_id
+    
+    if sub_agenzia_id:
+        query["sub_agenzia_id"] = sub_agenzia_id
+        
+    if status:
+        query["status"] = status
+        
+    if search:
+        query["$or"] = [
+            {"nome": {"$regex": search, "$options": "i"}},
+            {"cognome": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}},
+            {"telefono": {"$regex": search, "$options": "i"}}
+        ]
+    
+    # Get total count
+    total = await db.clienti.count_documents(query)
+    
+    # Get clienti
+    clienti = await db.clienti.find(query).skip(skip).limit(limit).sort("created_at", -1).to_list(length=None)
+    
+    return {
+        "clienti": [{
+            "id": c["id"],
+            "cliente_id": c.get("cliente_id", c["id"][:8]),
+            "nome": c["nome"],
+            "cognome": c["cognome"],
+            "email": c["email"],
+            "telefono": c["telefono"],
+            "commessa_id": c["commessa_id"],
+            "sub_agenzia_id": c.get("sub_agenzia_id"),
+            "status": c.get("status", "nuovo"),
+            "created_at": c["created_at"].isoformat()
+        } for c in clienti],
+        "total": total
+    }
+
+@api_router.get("/responsabile-commessa/analytics")
+async def get_responsabile_commessa_analytics(
+    commessa_id: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Analytics per Responsabile Commessa"""
+    if current_user.role != UserRole.RESPONSABILE_COMMESSA:
+        raise HTTPException(status_code=403, detail="Access denied: Responsabile Commessa only")
+    
+    # Get accessible commesse
+    accessible_commesse = await get_user_accessible_commesse(current_user)
+    if not accessible_commesse:
+        return {"sub_agenzie_analytics": [], "conversioni": {}}
+    
+    # Build query
+    query = {"commessa_id": {"$in": accessible_commesse}, "is_active": True}
+    if commessa_id and commessa_id in accessible_commesse:
+        query["commessa_id"] = commessa_id
+    
+    # Date filter
+    if date_from or date_to:
+        date_filter = {}
+        if date_from:
+            try:
+                date_filter["$gte"] = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+            except:
+                pass
+        if date_to:
+            try:
+                date_filter["$lte"] = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+            except:
+                pass
+        if date_filter:
+            query["created_at"] = date_filter
+    
+    # Analytics per sub agenzia
+    pipeline = [
+        {"$match": query},
+        {"$group": {
+            "_id": "$sub_agenzia_id",
+            "totale_clienti": {"$sum": 1},
+            "completati": {
+                "$sum": {"$cond": [{"$eq": ["$status", "completato"]}, 1, 0]}
+            },
+            "in_lavorazione": {
+                "$sum": {"$cond": [{"$eq": ["$status", "in_lavorazione"]}, 1, 0]}
+            }
+        }}
+    ]
+    
+    analytics_result = await db.clienti.aggregate(pipeline).to_list(length=None)
+    
+    # Get sub agenzie info
+    sub_agenzie_ids = [item["_id"] for item in analytics_result if item["_id"]]
+    sub_agenzie_info = {}
+    if sub_agenzie_ids:
+        sub_agenzie = await db.sub_agenzie.find({"id": {"$in": sub_agenzie_ids}}).to_list(length=None)
+        sub_agenzie_info = {sa["id"]: sa["nome"] for sa in sub_agenzie}
+    
+    # Format analytics
+    sub_agenzie_analytics = []
+    total_completati = 0
+    total_clienti = 0
+    
+    for item in analytics_result:
+        sa_id = item["_id"]
+        nome_sa = sub_agenzie_info.get(sa_id, "Sub Agenzia Sconosciuta") if sa_id else "Nessuna Sub Agenzia"
+        completati = item["completati"]
+        totale = item["totale_clienti"]
+        
+        total_completati += completati
+        total_clienti += totale
+        
+        conversion_rate = (completati / totale * 100) if totale > 0 else 0
+        
+        sub_agenzie_analytics.append({
+            "sub_agenzia_id": sa_id,
+            "nome": nome_sa,
+            "totale_clienti": totale,
+            "completati": completati,
+            "in_lavorazione": item["in_lavorazione"],
+            "conversion_rate": round(conversion_rate, 2)
+        })
+    
+    # Overall conversions
+    overall_conversion_rate = (total_completati / total_clienti * 100) if total_clienti > 0 else 0
+    
+    return {
+        "sub_agenzie_analytics": sub_agenzie_analytics,
+        "conversioni": {
+            "totale_clienti": total_clienti,
+            "totale_completati": total_completati,
+            "conversion_rate_generale": round(overall_conversion_rate, 2)
+        }
+    }
+
+@api_router.get("/responsabile-commessa/analytics/export")
+async def export_responsabile_commessa_analytics(
+    commessa_id: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Export Excel analytics per Responsabile Commessa"""
+    if current_user.role != UserRole.RESPONSABILE_COMMESSA:
+        raise HTTPException(status_code=403, detail="Access denied: Responsabile Commessa only")
+    
+    # Get analytics data
+    analytics_data = await get_responsabile_commessa_analytics(
+        commessa_id=commessa_id,
+        date_from=date_from, 
+        date_to=date_to,
+        current_user=current_user
+    )
+    
+    if not analytics_data["sub_agenzie_analytics"]:
+        raise HTTPException(status_code=404, detail="No data available for export")
+    
+    # Create Excel data
+    excel_data = []
+    for item in analytics_data["sub_agenzie_analytics"]:
+        excel_data.append({
+            "Sub Agenzia": item["nome"],
+            "Totale Clienti": item["totale_clienti"],
+            "Clienti Completati": item["completati"],
+            "Clienti In Lavorazione": item["in_lavorazione"],
+            "Tasso Conversione (%)": item["conversion_rate"]
+        })
+    
+    # Create Excel content (simplified - in production use openpyxl)
+    import io
+    import csv
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["Sub Agenzia", "Totale Clienti", "Clienti Completati", "Clienti In Lavorazione", "Tasso Conversione (%)"])
+    writer.writeheader()
+    writer.writerows(excel_data)
+    
+    csv_content = output.getvalue()
+    output.close()
+    
+    # Return as downloadable file
+    from fastapi.responses import Response
+    
+    filename = f"analytics_responsabile_commessa_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 # Add Emergent LLM key to env
 @app.on_event("startup")
 async def startup_event():
