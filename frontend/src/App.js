@@ -8943,6 +8943,9 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie }) => {
             <UserCheck className="w-5 h-5 text-blue-600" />
             <span>Anagrafica Cliente: {cliente.nome} {cliente.cognome}</span>
           </DialogTitle>
+          <DialogDescription>
+            Visualizzazione completa dei dati anagrafici del cliente
+          </DialogDescription>
         </DialogHeader>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
