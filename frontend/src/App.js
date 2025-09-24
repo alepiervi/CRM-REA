@@ -3040,7 +3040,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                 </div>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Selezionate: {formData.sub_agenzie_autorizzate.length} sub agenzie
+                Selezionate: {formData.sub_agenzie_autorizzate ? formData.sub_agenzie_autorizzate.length : 0} sub agenzie
               </p>
             </div>
           )}
