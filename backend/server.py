@@ -109,11 +109,12 @@ class UserRole(str, Enum):
     ADMIN = "admin"
     REFERENTE = "referente"
     AGENTE = "agente"
-    # Nuovi ruoli per sistema autorizzazioni gerarchiche
+    # Nuovi ruoli specializzati per commesse e sub agenzie
     RESPONSABILE_COMMESSA = "responsabile_commessa"
-    BACKOFFICE_COMMESSA = "backoffice_commessa"
-    AGENTE_COMMESSA = "agente_commessa"
-    BACKOFFICE_AGENZIA = "backoffice_agenzia"
+    BACKOFFICE_COMMESSA = "backoffice_commessa" 
+    RESPONSABILE_SUB_AGENZIA = "responsabile_sub_agenzia"
+    BACKOFFICE_SUB_AGENZIA = "backoffice_sub_agenzia"
+    AGENTE_SPECIALIZZATO = "agente_specializzato"  # agente che carica clienti legati a lui
     OPERATORE = "operatore"
 
 class LeadStatus(str, Enum):
