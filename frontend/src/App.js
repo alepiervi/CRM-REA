@@ -2172,6 +2172,51 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </Select>
           </div>
 
+          {/* Campi condizionali per ruoli specializzati */}
+          {(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
+            <div>
+              <Label>Commesse Autorizzate *</Label>
+              <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2">
+                  {commesse.map((commessa) => (
+                    <div key={commessa.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`commessa-${commessa.id}`}
+                        checked={formData.commesse_autorizzate.includes(commessa.id)}
+                        onCheckedChange={(checked) => handleCommessaAutorizzataChange(commessa.id, checked)}
+                      />
+                      <Label htmlFor={`commessa-${commessa.id}`} className="text-sm">
+                        {commessa.nome}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(formData.role === "responsabile_sub_agenzia" || formData.role === "backoffice_sub_agenzia") && (
+            <div>
+              <Label>Sub Agenzie Autorizzate *</Label>
+              <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2">
+                  {subAgenzie.map((subAgenzia) => (
+                    <div key={subAgenzia.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`subagenzia-${subAgenzia.id}`}
+                        checked={formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
+                        onCheckedChange={(checked) => handleSubAgenziaAutorizzataChange(subAgenzia.id, checked)}
+                      />
+                      <Label htmlFor={`subagenzia-${subAgenzia.id}`} className="text-sm">
+                        {subAgenzia.nome}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {formData.role === "agente" && (
             <>
               {referenti.length > 0 && (
