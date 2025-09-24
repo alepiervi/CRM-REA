@@ -4148,6 +4148,43 @@ Duplicate,Test,+393471234567"""
             
             if resp_commessa_exists:
                 self.log_test("resp_commessa user exists", True, f"User found with role: {resp_commessa_user.get('role')}")
+                
+                # Check if authorization records exist for this user
+                success, auth_response, status = self.make_request('GET', 'user-commessa-authorizations', expected_status=200)
+                existing_authorizations = []
+                if success:
+                    authorizations = auth_response if isinstance(auth_response, list) else auth_response.get('authorizations', [])
+                    user_id = resp_commessa_user['id']
+                    existing_authorizations = [auth for auth in authorizations if auth.get('user_id') == user_id]
+                    self.log_test("Check existing authorizations", True, f"Found {len(existing_authorizations)} existing authorizations")
+                
+                # Get available commesse to ensure authorizations exist
+                success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+                available_commesse = []
+                if success:
+                    commesse = commesse_response if isinstance(commesse_response, list) else commesse_response.get('commesse', [])
+                    available_commesse = [c['id'] for c in commesse[:2]]  # Take first 2 commesse
+                
+                # Create missing authorization records
+                user_id = resp_commessa_user['id']
+                existing_commessa_ids = [auth.get('commessa_id') for auth in existing_authorizations]
+                
+                for commessa_id in available_commesse:
+                    if commessa_id not in existing_commessa_ids:
+                        auth_data = {
+                            "user_id": user_id,
+                            "commessa_id": commessa_id,
+                            "role_in_commessa": "responsabile_commessa",
+                            "can_view_all_agencies": True,
+                            "can_modify_clients": True,
+                            "can_create_clients": True
+                        }
+                        
+                        success, auth_response, status = self.make_request('POST', 'user-commessa-authorizations', auth_data, 200)
+                        if success:
+                            self.log_test(f"Create missing authorization for commessa {commessa_id}", True, f"Authorization created")
+                        else:
+                            self.log_test(f"Create missing authorization for commessa {commessa_id}", False, f"Failed - Status: {status}")
             else:
                 self.log_test("resp_commessa user exists", False, "User not found - will create it")
                 
