@@ -174,6 +174,7 @@ class EditUserModalTester:
         update_data = {
             "username": resp_commessa_user['username'],
             "email": resp_commessa_user['email'],
+            "password": "admin123",  # Required by UserCreate model
             "role": "responsabile_commessa",
             "commesse_autorizzate": [commesse[0]['id']] if commesse else [],
             "servizi_autorizzati": [servizi[0]['id']] if servizi else [],
