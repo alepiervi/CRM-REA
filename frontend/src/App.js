@@ -8878,4 +8878,423 @@ const AppWithAuth = () => (
   </AuthProvider>
 );
 
+// View Cliente Modal Component
+const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie }) => {
+  if (!cliente) return null;
+  
+  const getCommessaName = (id) => commesse.find(c => c.id === id)?.nome || id;
+  const getSubAgenziaName = (id) => subAgenzie.find(s => s.id === id)?.nome || id;
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <UserCheck className="w-5 h-5 text-blue-600" />
+            <span>Anagrafica Cliente: {cliente.nome} {cliente.cognome}</span>
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          {/* Dati Personali */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <User className="w-4 h-4 mr-2" />
+                Dati Personali
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Nome Completo</Label>
+                <p className="text-sm">{cliente.nome} {cliente.cognome}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Email</Label>
+                <p className="text-sm">{cliente.email || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Telefono</Label>
+                <p className="text-sm">{cliente.telefono || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Data di Nascita</Label>
+                <p className="text-sm">{cliente.data_nascita || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Luogo di Nascita</Label>
+                <p className="text-sm">{cliente.luogo_nascita || 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dati Fiscali */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                Dati Fiscali
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Codice Fiscale</Label>
+                <p className="text-sm font-mono">{cliente.codice_fiscale || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Partita IVA</Label>
+                <p className="text-sm font-mono">{cliente.partita_iva || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Cliente ID</Label>
+                <p className="text-sm font-mono">{cliente.cliente_id}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Indirizzo */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <MapPin className="w-4 h-4 mr-2" />
+                Indirizzo
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Via/Piazza</Label>
+                <p className="text-sm">{cliente.indirizzo || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Città</Label>
+                <p className="text-sm">{cliente.citta || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Provincia</Label>
+                <p className="text-sm">{cliente.provincia || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">CAP</Label>
+                <p className="text-sm">{cliente.cap || 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dati Organizzativi */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Building className="w-4 h-4 mr-2" />
+                Dati Organizzativi
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Commessa</Label>
+                <p className="text-sm">{getCommessaName(cliente.commessa_id)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Sub Agenzia</Label>
+                <p className="text-sm">{getSubAgenziaName(cliente.sub_agenzia_id)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Status</Label>
+                <Badge variant={
+                  cliente.status === "completato" ? "default" :
+                  cliente.status === "in_corso" ? "secondary" : 
+                  "outline"
+                }>
+                  {cliente.status || 'Non specificato'}
+                </Badge>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Data Creazione</Label>
+                <p className="text-sm">{new Date(cliente.created_at).toLocaleDateString('it-IT')}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Note */}
+        {cliente.note && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                Note
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm whitespace-pre-wrap">{cliente.note}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        <DialogFooter className="mt-6">
+          <Button onClick={onClose}>Chiudi</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Edit Cliente Modal Component  
+const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
+  const [formData, setFormData] = useState({
+    nome: cliente?.nome || '',
+    cognome: cliente?.cognome || '',
+    email: cliente?.email || '',
+    telefono: cliente?.telefono || '',
+    data_nascita: cliente?.data_nascita || '',
+    luogo_nascita: cliente?.luogo_nascita || '',
+    codice_fiscale: cliente?.codice_fiscale || '',
+    partita_iva: cliente?.partita_iva || '',
+    indirizzo: cliente?.indirizzo || '',
+    citta: cliente?.citta || '',
+    provincia: cliente?.provincia || '',
+    cap: cliente?.cap || '',
+    commessa_id: cliente?.commessa_id || '',
+    sub_agenzia_id: cliente?.sub_agenzia_id || '',
+    status: cliente?.status || 'nuovo',
+    note: cliente?.note || ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <Edit className="w-5 h-5 text-blue-600" />
+            <span>Modifica Cliente: {cliente?.nome} {cliente?.cognome}</span>
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          {/* Dati Personali */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Dati Personali</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nome">Nome *</Label>
+                  <Input
+                    id="nome"
+                    value={formData.nome}
+                    onChange={(e) => handleChange('nome', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cognome">Cognome *</Label>
+                  <Input
+                    id="cognome"
+                    value={formData.cognome}
+                    onChange={(e) => handleChange('cognome', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="telefono">Telefono</Label>
+                  <Input
+                    id="telefono"
+                    value={formData.telefono}
+                    onChange={(e) => handleChange('telefono', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="data_nascita">Data di Nascita</Label>
+                  <Input
+                    id="data_nascita"
+                    type="date"
+                    value={formData.data_nascita}
+                    onChange={(e) => handleChange('data_nascita', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="luogo_nascita">Luogo di Nascita</Label>
+                  <Input
+                    id="luogo_nascita"
+                    value={formData.luogo_nascita}
+                    onChange={(e) => handleChange('luogo_nascita', e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dati Fiscali */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Dati Fiscali</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="codice_fiscale">Codice Fiscale</Label>
+                  <Input
+                    id="codice_fiscale"
+                    value={formData.codice_fiscale}
+                    onChange={(e) => handleChange('codice_fiscale', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="partita_iva">Partita IVA</Label>
+                  <Input
+                    id="partita_iva"
+                    value={formData.partita_iva}
+                    onChange={(e) => handleChange('partita_iva', e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Indirizzo */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Indirizzo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="indirizzo">Via/Piazza</Label>
+                  <Input
+                    id="indirizzo"
+                    value={formData.indirizzo}
+                    onChange={(e) => handleChange('indirizzo', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="citta">Città</Label>
+                  <Input
+                    id="citta"
+                    value={formData.citta}
+                    onChange={(e) => handleChange('citta', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="provincia">Provincia</Label>
+                  <Input
+                    id="provincia"
+                    value={formData.provincia}
+                    onChange={(e) => handleChange('provincia', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cap">CAP</Label>
+                  <Input
+                    id="cap"
+                    value={formData.cap}
+                    onChange={(e) => handleChange('cap', e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dati Organizzativi */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Dati Organizzativi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Commessa *</Label>
+                  <Select value={formData.commessa_id} onValueChange={(value) => handleChange('commessa_id', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona commessa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {commesse.map((commessa) => (
+                        <SelectItem key={commessa.id} value={commessa.id}>
+                          {commessa.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Sub Agenzia</Label>
+                  <Select value={formData.sub_agenzia_id} onValueChange={(value) => handleChange('sub_agenzia_id', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona sub agenzia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subAgenzie.map((subAgenzia) => (
+                        <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
+                          {subAgenzia.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nuovo">Nuovo</SelectItem>
+                      <SelectItem value="contattato">Contattato</SelectItem>
+                      <SelectItem value="in_corso">In Corso</SelectItem>
+                      <SelectItem value="completato">Completato</SelectItem>
+                      <SelectItem value="sospeso">Sospeso</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Note */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Note</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={formData.note}
+                onChange={(e) => handleChange('note', e.target.value)}
+                placeholder="Note aggiuntive..."
+                rows={4}
+              />
+            </CardContent>
+          </Card>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">
+              Salva Modifiche
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default AppWithAuth;
