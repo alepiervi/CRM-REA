@@ -2578,7 +2578,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                       <div key={subAgenzia.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`subagenzia-${subAgenzia.id}`}
-                          checked={formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
+                          checked={formData.sub_agenzie_autorizzate && formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
                           onCheckedChange={(checked) => handleSubAgenziaAutorizzataChange(subAgenzia.id, checked)}
                         />
                         <Label htmlFor={`subagenzia-${subAgenzia.id}`} className="text-sm">
@@ -3031,7 +3031,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                     <div key={subAgenzia.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={subAgenzia.id}
-                        checked={formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
+                        checked={formData.sub_agenzie_autorizzate && formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
                         onCheckedChange={(checked) => handleSubAgenziaAutorizzataChange(subAgenzia.id, checked)}
                       />
                       <Label htmlFor={subAgenzia.id} className="text-sm">
