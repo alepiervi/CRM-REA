@@ -4172,7 +4172,25 @@ Duplicate,Test,+393471234567"""
                 success, create_response, status = self.make_request('POST', 'users', resp_user_data, 200)
                 if success:
                     resp_commessa_user = create_response
-                    self.log_test("Create resp_commessa user", True, f"User created with ID: {create_response['id']}")
+                    user_id = create_response['id']
+                    self.log_test("Create resp_commessa user", True, f"User created with ID: {user_id}")
+                    
+                    # Create authorization records for each commessa
+                    for commessa_id in available_commesse:
+                        auth_data = {
+                            "user_id": user_id,
+                            "commessa_id": commessa_id,
+                            "role_in_commessa": "responsabile_commessa",
+                            "can_view_all_agencies": True,
+                            "can_modify_clients": True,
+                            "can_create_clients": True
+                        }
+                        
+                        success, auth_response, status = self.make_request('POST', 'user-commessa-authorizations', auth_data, 200)
+                        if success:
+                            self.log_test(f"Create authorization for commessa {commessa_id}", True, f"Authorization created")
+                        else:
+                            self.log_test(f"Create authorization for commessa {commessa_id}", False, f"Failed - Status: {status}")
                 else:
                     self.log_test("Create resp_commessa user", False, f"Failed to create user - Status: {status}")
                     return False
