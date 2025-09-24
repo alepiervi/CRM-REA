@@ -920,6 +920,21 @@ frontend:
           agent: "testing"
           comment: "🎉 EDITUSERMODAL SYSTEM TESTING - PERFECT SUCCESS! (100% success rate - 18/18 tests passed): ✅ ADMIN LOGIN: admin/admin123 login working perfectly - token received, role verified as admin, ✅ USERS ENDPOINT: GET /api/users working correctly - found 7 users, no 500 errors that could expire session, ✅ RESPONSABILE COMMESSA USER MODIFICATION: PUT /api/users/{user_id} working perfectly - successfully updated with commesse_autorizzate (1), servizi_autorizzati (1), can_view_analytics (True), ✅ SPECIALIZED ROLES MODIFICATION: All specialized roles tested successfully - backoffice_commessa, responsabile_sub_agenzia, backoffice_sub_agenzia - all user modifications working without errors, ✅ COMMESSE AND SUB AGENZIE ENDPOINTS: GET /api/commesse (3 commesse), GET /api/sub-agenzie (2 sub agenzie), GET /api/tipologie-contratto (4 tipologie) all working correctly for dropdowns. ✅ BUG RESOLUTION CONFIRMED: The bug with editing users for specialized roles (responsabile_commessa, backoffice_commessa, etc.) has been COMPLETELY RESOLVED. All endpoints working without session expiration errors. SISTEMA EDITUSERMODAL COMPLETAMENTE FUNZIONANTE!"
 
+  - task: "User Edit 422 Error Debug - Root Cause Analysis and Fix"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "Debug specifico dell'errore 422 nella modifica utenti per identificare la causa esatta: 1. Login Admin (POST /api/auth/login con admin/admin123), 2. Test PUT Utente con dati specifici (ottenere dati utente esistente GET /api/users, trovare utente responsabile_commessa, fare PUT /api/users/{user_id} con dati che potrebbero causare errore 422), 3. Analisi Errore (verificare se errore dovuto a campi mancanti, tipi sbagliati, validazioni Pydantic), 4. Test con dati minimal (provare PUT con solo campi essenziali, aggiungere gradualmente altri campi per identificare quello problematico). FOCUS: Ottenere messaggio di errore dettagliato per errore 422 nella modifica utenti."
+        - working: true
+          agent: "testing"
+          comment: "🎉 422 ERROR DEBUG COMPLETED - ROOT CAUSE IDENTIFIED AND FIXED! (100% success rate - 16/16 tests passed): 🚨 ROOT CAUSE FOUND: The PUT /api/users/{user_id} endpoint was incorrectly using UserCreate model instead of UserUpdate model, causing 'password' field to be required for all updates. ✅ ISSUE FIXED: Changed endpoint parameter from 'user_update: UserCreate' to 'user_update: UserUpdate', added optional password field to UserUpdate model, and updated validation logic to handle optional fields properly. ✅ COMPREHENSIVE TESTING: All user modification scenarios now working perfectly - minimal data updates, specialized fields (commesse_autorizzate, servizi_autorizzati, can_view_analytics), full data updates, and all specialized roles (responsabile_commessa, backoffice_commessa, responsabile_sub_agenzia, backoffice_sub_agenzia, agente_specializzato, operatore). ✅ VALIDATION ERROR RESOLVED: No more 422 'Field required' errors for password field during user updates. The system now correctly handles optional field updates as intended. ERRORE 422 COMPLETAMENTE RISOLTO!"
+
   - task: "Automated Lead Qualification (FASE 4) - Lead Qualification Endpoints"
     implemented: true
     working: true
