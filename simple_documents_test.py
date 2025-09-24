@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_documents_endpoint():
-    base_url = "https://commessa-hub.preview.emergentagent.com/api"
+    base_url = "https://crm-leadpro.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     
