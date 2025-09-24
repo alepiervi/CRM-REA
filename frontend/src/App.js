@@ -502,7 +502,15 @@ const Dashboard = () => {
   const fetchAssistants = async () => {
     try {
       const response = await axios.get(`${API}/ai-assistants`);
-      setAssistants(response.data);
+      // Handle new response structure
+      if (response.data && response.data.assistants) {
+        setAssistants(response.data.assistants);
+      } else if (Array.isArray(response.data)) {
+        // Fallback for old response format
+        setAssistants(response.data);
+      } else {
+        setAssistants([]);
+      }
     } catch (error) {
       console.error("Error fetching assistants:", error);
       setAssistants([]);
