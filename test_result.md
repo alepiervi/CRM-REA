@@ -905,6 +905,21 @@ frontend:
           agent: "testing"
           comment: "🎉 RESPONSABILE COMMESSA SYSTEM WITH TIPOLOGIA CONTRATTO FILTERS - PERFECT SUCCESS! (100% success rate - 22/22 tests passed): ✅ LOGIN FUNCTIONALITY: resp_commessa/admin123 login working perfectly - token received, role verified as responsabile_commessa, ✅ DASHBOARD WITH TIPOLOGIA CONTRATTO FILTER: GET /api/responsabile-commessa/dashboard working correctly with all tipologia_contratto filters (energia_fastweb, telefonia_fastweb, ho_mobile, telepass) - returns filtered data correctly, ✅ CLIENTI ENDPOINT WITH NEW FILTERS: GET /api/responsabile-commessa/clienti working with all new tipologia_contratto filters - all combinations tested (status + tipologia_contratto, search + tipologia_contratto), ✅ ANALYTICS WITH TIPOLOGIA CONTRATTO FILTER: GET /api/responsabile-commessa/analytics working correctly with all tipologia_contratto filters - returns filtered sub_agenzie_analytics and conversioni data, ✅ ANALYTICS EXPORT WITH FILTERS: GET /api/responsabile-commessa/analytics/export working with tipologia_contratto filters (404 expected when no data), ✅ TIPOLOGIE CONTRATTO ENDPOINT: GET /api/tipologie-contratto working perfectly - returns all 4 expected tipologie (energia_fastweb, telefonia_fastweb, ho_mobile, telepass), ✅ ACCESS CONTROL: Perfect authorization - only responsabile_commessa users can access endpoints, admin users correctly denied with 403. ALL REQUESTED MODIFICATIONS SUCCESSFULLY IMPLEMENTED AND TESTED!"
 
+  - task: "EditUserModal System - Complete Testing After Modifications"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "Test completo sistema EditUserModal dopo le modifiche implementate per verificare: 1. Login Admin (POST /api/auth/login con admin/admin123), 2. Endpoint Utenti (GET /api/users per verificare che restituisca tutti gli utenti senza errori 500), 3. Test Modifica Utente Responsabile Commessa (PUT /api/users/{user_id} con dati per resp_commessa includendo commesse_autorizzate, servizi_autorizzati, can_view_analytics), 4. Test Modifica Altri Ruoli Specializzati (backoffice_commessa, responsabile_sub_agenzia, backoffice_sub_agenzia), 5. Endpoint Commesse e Sub Agenzie (GET /api/commesse, GET /api/sub-agenzie, GET /api/tipologie-contratto). FOCUS: Verificare che il bug della modifica utenti per ruoli specializzati sia risolto e che gli endpoint non causino errori di sessione."
+        - working: true
+          agent: "testing"
+          comment: "🎉 EDITUSERMODAL SYSTEM TESTING - PERFECT SUCCESS! (100% success rate - 18/18 tests passed): ✅ ADMIN LOGIN: admin/admin123 login working perfectly - token received, role verified as admin, ✅ USERS ENDPOINT: GET /api/users working correctly - found 7 users, no 500 errors that could expire session, ✅ RESPONSABILE COMMESSA USER MODIFICATION: PUT /api/users/{user_id} working perfectly - successfully updated with commesse_autorizzate (1), servizi_autorizzati (1), can_view_analytics (True), ✅ SPECIALIZED ROLES MODIFICATION: All specialized roles tested successfully - backoffice_commessa, responsabile_sub_agenzia, backoffice_sub_agenzia - all user modifications working without errors, ✅ COMMESSE AND SUB AGENZIE ENDPOINTS: GET /api/commesse (3 commesse), GET /api/sub-agenzie (2 sub agenzie), GET /api/tipologie-contratto (4 tipologie) all working correctly for dropdowns. ✅ BUG RESOLUTION CONFIRMED: The bug with editing users for specialized roles (responsabile_commessa, backoffice_commessa, etc.) has been COMPLETELY RESOLVED. All endpoints working without session expiration errors. SISTEMA EDITUSERMODAL COMPLETAMENTE FUNZIONANTE!"
+
   - task: "Automated Lead Qualification (FASE 4) - Lead Qualification Endpoints"
     implemented: true
     working: true
