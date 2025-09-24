@@ -655,10 +655,12 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedUnit, setSelectedUnit] = useState("all");
   const [selectedCommessa, setSelectedCommessa] = useState("all");
+  const [selectedTipologiaContratto, setSelectedTipologiaContratto] = useState("all");
   const [units, setUnits] = useState([]);
   const [commesse, setCommesse] = useState([]);
   const [subAgenzie, setSubAgenzie] = useState([]);
   const [assistants, setAssistants] = useState([]);
+  const [tipologieContratto, setTipologieContratto] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
   const { user, logout } = useAuth();
 
