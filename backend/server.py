@@ -2961,6 +2961,16 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
     user_dict["password_hash"] = get_password_hash(user_data.password)
     del user_dict["password"]
     
+    # Auto-set can_view_analytics based on role
+    if user_dict.get("can_view_analytics") is None:
+        user_dict["can_view_analytics"] = user_data.role in [
+            UserRole.ADMIN, 
+            UserRole.RESPONSABILE_COMMESSA, 
+            UserRole.RESPONSABILE_SUB_AGENZIA,
+            UserRole.AGENTE_SPECIALIZZATO,  # Per analytics dei propri clienti
+            UserRole.OPERATORE  # Per analytics dei propri clienti
+        ]
+    
     user_obj = User(**user_dict)
     await db.users.insert_one(user_obj.dict())
     
