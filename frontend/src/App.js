@@ -2064,6 +2064,34 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     }
   };
 
+  const handleCommessaAutorizzataChange = (commessaId, checked) => {
+    if (checked) {
+      setFormData({
+        ...formData,
+        commesse_autorizzate: [...formData.commesse_autorizzate, commessaId],
+      });
+    } else {
+      setFormData({
+        ...formData,
+        commesse_autorizzate: formData.commesse_autorizzate.filter((c) => c !== commessaId),
+      });
+    }
+  };
+
+  const handleSubAgenziaAutorizzataChange = (subAgenziaId, checked) => {
+    if (checked) {
+      setFormData({
+        ...formData,
+        sub_agenzie_autorizzate: [...formData.sub_agenzie_autorizzate, subAgenziaId],
+      });
+    } else {
+      setFormData({
+        ...formData,
+        sub_agenzie_autorizzate: formData.sub_agenzie_autorizzate.filter((s) => s !== subAgenziaId),
+      });
+    }
+  };
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
