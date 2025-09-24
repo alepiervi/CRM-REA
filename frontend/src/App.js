@@ -2681,8 +2681,15 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     password: "",
     role: user.role,
     unit_id: user.unit_id || "",
+    sub_agenzia_id: user.sub_agenzia_id || "",
     referente_id: user.referente_id || "",
     provinces: user.provinces || [],
+    // Campi per ruoli specializzati
+    commesse_autorizzate: user.commesse_autorizzate || [],
+    servizi_autorizzati: user.servizi_autorizzati || [],
+    sub_agenzie_autorizzate: user.sub_agenzie_autorizzate || [],
+    can_view_analytics: user.can_view_analytics || false,
+    assignment_type: user.unit_id ? "unit" : "sub_agenzia"
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
