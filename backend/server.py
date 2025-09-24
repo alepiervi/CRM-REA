@@ -3013,7 +3013,23 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
         query["id"] = current_user.id
     
     users = await db.users.find(query).to_list(length=None)
-    return [User(**user) for user in users]
+    
+    # Robust user processing with error handling
+    valid_users = []
+    for user in users:
+        try:
+            # Ensure password_hash exists (safety check)
+            if 'password_hash' not in user:
+                print(f"Warning: User {user.get('username', 'unknown')} missing password_hash, skipping")
+                continue
+            
+            valid_user = User(**user)
+            valid_users.append(valid_user)
+        except Exception as e:
+            print(f"Error processing user {user.get('username', 'unknown')}: {e}")
+            continue
+    
+    return valid_users
 
 @api_router.get("/users/referenti/{unit_id}")
 async def get_referenti_by_unit(unit_id: str, current_user: User = Depends(get_current_user)):
