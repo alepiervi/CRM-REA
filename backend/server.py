@@ -145,6 +145,11 @@ class User(BaseModel):
     unit_id: Optional[str] = None
     referente_id: Optional[str] = None  # For agents only
     provinces: List[str] = []  # For agents - provinces they cover
+    # Nuovi campi per gestione autorizzazioni specializzate
+    commesse_autorizzate: List[str] = []  # IDs commesse per responsabile/backoffice commessa
+    servizi_autorizzati: List[str] = []   # IDs servizi specifici per la commessa
+    sub_agenzie_autorizzate: List[str] = []  # IDs sub agenzie per responsabile/backoffice sub agenzia
+    can_view_analytics: bool = False      # Se può vedere analytics (responsabili sì, backoffice no)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login: Optional[datetime] = None
 
