@@ -6563,15 +6563,22 @@ async def get_clienti(
     
     # Filtra per commesse accessibili
     accessible_commesse = await get_user_accessible_commesse(current_user)
-    if commessa_id:
+    
+    # Handle special case "all" from frontend
+    if commessa_id and commessa_id != "all":
         if commessa_id not in accessible_commesse:
             raise HTTPException(status_code=403, detail="Access denied to this commessa")
         query["commessa_id"] = commessa_id
     else:
-        query["commessa_id"] = {"$in": accessible_commesse}
+        # If commessa_id is None or "all", filter by all accessible commesse
+        if accessible_commesse:
+            query["commessa_id"] = {"$in": accessible_commesse}
+        else:
+            # If user has no accessible commesse, return empty
+            return []
     
-    # Filtra per sub agenzie accessibili
-    if commessa_id:
+    # Filtra per sub agenzie accessibili solo se abbiamo una commessa specifica
+    if commessa_id and commessa_id != "all":
         accessible_sub_agenzie = await get_user_accessible_sub_agenzie(current_user, commessa_id)
         if sub_agenzia_id:
             if sub_agenzia_id not in accessible_sub_agenzie:
