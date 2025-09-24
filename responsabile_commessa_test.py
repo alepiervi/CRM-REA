@@ -100,26 +100,64 @@ class ResponsabileCommessaTester:
         
         self.log_test("Found commesse", True, f"Found {len(commesse_ids)} commesse")
         
-        # Create responsabile_commessa user
-        resp_commessa_data = {
-            "username": "resp_commessa",
-            "email": "resp_commessa@test.com",
-            "password": "admin123",
-            "role": "responsabile_commessa",
-            "commesse_autorizzate": commesse_ids[:2],  # Assign first 2 commesse
-            "can_view_analytics": True
-        }
-        
-        success, user_response, status = self.make_request('POST', 'users', resp_commessa_data, 200)
+        # First, try to find existing resp_commessa user
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        existing_user = None
         if success:
-            resp_commessa_id = user_response['id']
-            self.created_resources['users'].append(resp_commessa_id)
-            self.log_test("Create responsabile_commessa user", True, f"User ID: {resp_commessa_id}")
-        else:
-            self.log_test("Create responsabile_commessa user", False, f"Status: {status}, Response: {user_response}")
-            return False
+            for user in users_response:
+                if user.get('username') == 'resp_commessa':
+                    existing_user = user
+                    break
         
-        # Create user-commessa authorizations
+        if existing_user:
+            self.log_test("Found existing resp_commessa user", True, f"User ID: {existing_user['id']}")
+            resp_commessa_id = existing_user['id']
+            
+            # Check if user has correct role
+            if existing_user.get('role') != 'responsabile_commessa':
+                # Update user role
+                update_data = {
+                    "username": existing_user['username'],
+                    "email": existing_user['email'],
+                    "role": "responsabile_commessa",
+                    "commesse_autorizzate": commesse_ids[:2],
+                    "can_view_analytics": True
+                }
+                success, update_response, status = self.make_request('PUT', f'users/{resp_commessa_id}', update_data, 200)
+                if success:
+                    self.log_test("Updated user role to responsabile_commessa", True, "Role updated")
+                else:
+                    self.log_test("Updated user role to responsabile_commessa", False, f"Status: {status}")
+        else:
+            # Create new responsabile_commessa user
+            resp_commessa_data = {
+                "username": "resp_commessa",
+                "email": "resp_commessa@test.com",
+                "password": "admin123",
+                "role": "responsabile_commessa",
+                "commesse_autorizzate": commesse_ids[:2],  # Assign first 2 commesse
+                "can_view_analytics": True
+            }
+            
+            success, user_response, status = self.make_request('POST', 'users', resp_commessa_data, 200)
+            if success:
+                resp_commessa_id = user_response['id']
+                self.created_resources['users'].append(resp_commessa_id)
+                self.log_test("Create responsabile_commessa user", True, f"User ID: {resp_commessa_id}")
+            else:
+                self.log_test("Create responsabile_commessa user", False, f"Status: {status}, Response: {user_response}")
+                return False
+        
+        # Create user-commessa authorizations (delete existing first)
+        # Get existing authorizations for this user
+        success, existing_auths, status = self.make_request('GET', 'user-commessa-authorizations', expected_status=200)
+        if success:
+            for auth in existing_auths:
+                if auth.get('user_id') == resp_commessa_id:
+                    # Delete existing authorization
+                    self.make_request('DELETE', f'user-commessa-authorizations/{auth["id"]}', expected_status=200)
+        
+        # Create new authorizations
         for commessa_id in commesse_ids[:2]:
             auth_data = {
                 "user_id": resp_commessa_id,
