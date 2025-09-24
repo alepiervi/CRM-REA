@@ -1634,6 +1634,7 @@ const CreateLeadModal = ({ onClose, onSuccess, units, customFields }) => {
   const [containers, setContainers] = useState([]);
   const [provinces, setProvinces] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [servizi, setServizi] = useState([]);
   const { toast } = useToast();
 
   useEffect(() => {
