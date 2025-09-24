@@ -559,37 +559,53 @@ const Dashboard = () => {
   };
 
   const renderTabContent = () => {
-    switch (activeTab) {
-      case "dashboard":
-        return <DashboardStats selectedUnit={selectedUnit} />;
-      case "leads":
-        return <LeadsManagement selectedUnit={selectedUnit} units={units} />;
-      case "documents":
-        return <DocumentsManagement selectedUnit={selectedUnit} units={units} />;
-      case "users":
-        return user.role === "admin" ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
-      case "containers":
-        return user.role === "admin" ? <ContainersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
-      case "workflow-builder":
-        return user.role === "admin" ? <WorkflowBuilderManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
-      case "ai-config":
-        return user.role === "admin" ? <AIConfigurationManagement /> : <div>Non autorizzato</div>;
-      case "whatsapp":
-        return user.role === "admin" ? <WhatsAppManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
-      case "lead-qualification":
-        return (user.role === "admin" || user.role === "referente") ? <LeadQualificationManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
-      case "call-center":
-        return user.role === "admin" ? <CallCenterManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
-      case "commesse":
-        return user.role === "admin" ? <CommesseManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
-      case "sub-agenzie":
-        return user.role === "admin" ? <SubAgenzieManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} units={units} commesse={commesse} subAgenzie={subAgenzie} /> : <div>Non autorizzato</div>;
-      case "clienti":
-        return user.role === "admin" ? <ClientiManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} units={units} commesse={commesse} subAgenzie={subAgenzie} /> : <div>Non autorizzato</div>;
-      case "analytics":
-        return <AnalyticsManagement selectedUnit={selectedUnit} units={units} />;
-      default:
-        return <DashboardStats selectedUnit={selectedUnit} />;
+    console.log("Rendering tab content for:", activeTab);
+    try {
+      switch (activeTab) {
+        case "dashboard":
+          return <DashboardStats selectedUnit={selectedUnit} />;
+        case "leads":
+          return <LeadsManagement selectedUnit={selectedUnit} units={units} />;
+        case "documents":
+          return <DocumentsManagement selectedUnit={selectedUnit} units={units} />;
+        case "users":
+          return user.role === "admin" ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+        case "containers":
+          return user.role === "admin" ? <ContainersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+        case "workflow-builder":
+          return user.role === "admin" ? <WorkflowBuilderManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+        case "ai-config":
+          return user.role === "admin" ? <AIConfigurationManagement /> : <div>Non autorizzato</div>;
+        case "whatsapp":
+          return user.role === "admin" ? <WhatsAppManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+        case "lead-qualification":
+          return (user.role === "admin" || user.role === "referente") ? <LeadQualificationManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+        case "call-center":
+          return user.role === "admin" ? <CallCenterManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+        case "commesse":
+          return user.role === "admin" ? <CommesseManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+        case "sub-agenzie":
+          return user.role === "admin" ? <SubAgenzieManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} units={units} commesse={commesse} subAgenzie={subAgenzie} /> : <div>Non autorizzato</div>;
+        case "clienti":
+          console.log("Rendering ClientiManagement with props:", { selectedUnit, selectedCommessa, units: units?.length, commesse: commesse?.length, subAgenzie: subAgenzie?.length });
+          if (user.role === "admin") {
+            try {
+              return <ClientiManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} units={units} commesse={commesse} subAgenzie={subAgenzie} />;
+            } catch (error) {
+              console.error("Error rendering ClientiManagement:", error);
+              return <div className="p-4 text-red-600">Errore nel caricamento della gestione clienti: {error.message}</div>;
+            }
+          } else {
+            return <div>Non autorizzato</div>;
+          }
+        case "analytics":
+          return <AnalyticsManagement selectedUnit={selectedUnit} units={units} />;
+        default:
+          return <DashboardStats selectedUnit={selectedUnit} />;
+      }
+    } catch (error) {
+      console.error("Error in renderTabContent:", error);
+      return <div className="p-4 text-red-600">Errore nel rendering: {error.message}</div>;
     }
   };
 
