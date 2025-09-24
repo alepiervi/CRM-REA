@@ -570,6 +570,12 @@ const Dashboard = () => {
         { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
+    } else if (user.role === "responsabile_commessa") {
+      items.push(
+        { id: "clienti", label: "Clienti", icon: UserCheck },
+        { id: "documents", label: "Documenti", icon: FileText },
+        { id: "analytics", label: "Analytics", icon: TrendingUp }
+      );
     }
 
     return items;
