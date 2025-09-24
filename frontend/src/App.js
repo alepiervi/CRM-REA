@@ -7875,6 +7875,33 @@ const ClientiManagement = ({ selectedUnit, units }) => {
         subAgenzie={subAgenzie}
         selectedCommessa={selectedCommessa}
       />
+
+      {/* View Cliente Modal */}
+      {showViewModal && selectedCliente && (
+        <ViewClienteModal 
+          cliente={selectedCliente}
+          onClose={() => {
+            setShowViewModal(false);
+            setSelectedCliente(null);
+          }}
+          commesse={commesse}
+          subAgenzie={subAgenzie}
+        />
+      )}
+
+      {/* Edit Cliente Modal */}
+      {showEditModal && selectedCliente && (
+        <EditClienteModal 
+          cliente={selectedCliente}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedCliente(null);
+          }}
+          onSubmit={(updateData) => updateCliente(selectedCliente.id, updateData)}
+          commesse={commesse}
+          subAgenzie={subAgenzie}
+        />
+      )}
     </div>
   );
 };
