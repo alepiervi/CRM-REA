@@ -136,9 +136,17 @@ const AuthProvider = ({ children }) => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401 || error.response?.status === 403) {
+        // Solo fai logout su errori di autenticazione critici, non su tutti i 403
+        if (error.response?.status === 401) {
           // Token scaduto o non valido, forza logout
           logout();
+        } else if (error.response?.status === 403) {
+          // Per 403, fai logout solo se è un errore di auth endpoints
+          const url = error.config?.url || '';
+          if (url.includes('/auth/') || url.includes('/auth/me')) {
+            logout();
+          }
+          // Altri 403 (es. autorizzazioni specifiche risorse) non causano logout
         }
         return Promise.reject(error);
       }
