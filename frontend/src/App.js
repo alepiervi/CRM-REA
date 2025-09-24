@@ -839,6 +839,9 @@ const Dashboard = () => {
             return <div>Non autorizzato</div>;
           }
         case "analytics":
+          if (user.role === "responsabile_commessa") {
+            return <ResponsabileCommessaAnalytics selectedUnit={selectedUnit} selectedTipologiaContratto={selectedTipologiaContratto} units={units} commesse={commesse} />;
+          }
           return <AnalyticsManagement selectedUnit={selectedUnit} units={units} />;
         default:
           return <DashboardStats selectedUnit={selectedUnit} />;
