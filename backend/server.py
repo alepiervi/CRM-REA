@@ -4648,8 +4648,14 @@ async def get_whatsapp_configuration(
         }
         
     except Exception as e:
-        logging.error(f"Get WhatsApp configuration error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get WhatsApp configuration")
+        logging.error(f"Get WhatsApp configuration error: {str(e)}")
+        # Return empty config instead of raising error to prevent frontend crash
+        return {
+            "configured": False,
+            "unit_id": target_unit_id if 'target_unit_id' in locals() else None,
+            "message": f"Error loading WhatsApp configuration: {str(e)}",
+            "error": True
+        }
 
 @api_router.post("/whatsapp-connect")
 async def connect_whatsapp(
