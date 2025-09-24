@@ -461,7 +461,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "User System Complete Testing - Login, Users endpoint, Data validation, Error handling"
+    - "Responsabile Commessa System Testing - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
