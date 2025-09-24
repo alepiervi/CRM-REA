@@ -1985,7 +1985,7 @@ const UsersManagement = ({ selectedUnit, units }) => {
 };
 
 // Enhanced Create User Modal Component with Referenti
-const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, selectedUnit }) => {
+const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, selectedUnit, commesse, subAgenzie, fetchServizi }) => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -1994,9 +1994,38 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     unit_id: selectedUnit && selectedUnit !== "all" ? selectedUnit : "",
     referente_id: "",
     provinces: [],
+    // Nuovi campi per autorizzazioni specializzate
+    commesse_autorizzate: [],
+    servizi_autorizzati: [],
+    sub_agenzie_autorizzate: [],
   });
+  
   const [isLoading, setIsLoading] = useState(false);
+  const [servizi, setServizi] = useState([]);
   const { toast } = useToast();
+
+  // Fetch servizi quando si seleziona una commessa
+  const handleCommessaChange = async (commessaId) => {
+    try {
+      const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+      setServizi(response.data);
+    } catch (error) {
+      console.error("Error fetching servizi:", error);
+      setServizi([]);
+    }
+  };
+
+  // Aggiorna can_view_analytics in base al ruolo
+  const getRolePermissions = (role) => {
+    const analyticsRoles = [
+      'admin', 
+      'responsabile_commessa', 
+      'responsabile_sub_agenzia',
+      'agente_specializzato',
+      'operatore'
+    ];
+    return analyticsRoles.includes(role);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
