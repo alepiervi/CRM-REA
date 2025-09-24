@@ -9520,6 +9520,65 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {/* Nuovi campi */}
+                <div>
+                  <Label>Servizio</Label>
+                  <Select 
+                    value={formData.servizio_id || ""} 
+                    onValueChange={(value) => handleServizioChange(value)}
+                    disabled={!formData.commessa_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona servizio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {servizi.map((servizio) => (
+                        <SelectItem key={servizio.id} value={servizio.id}>
+                          {servizio.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Tipologia Contratto</Label>
+                  <Select 
+                    value={formData.tipologia_contratto || ""} 
+                    onValueChange={(value) => handleChange('tipologia_contratto', value)}
+                    disabled={!formData.servizio_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona tipologia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tipologieContratto.map((tipologia) => (
+                        <SelectItem key={tipologia.value} value={tipologia.value}>
+                          {tipologia.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Segmento</Label>
+                  <Select 
+                    value={formData.segmento || ""} 
+                    onValueChange={(value) => handleChange('segmento', value)}
+                    disabled={!formData.tipologia_contratto}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona segmento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {segmenti.map((segmento) => (
+                        <SelectItem key={segmento.value} value={segmento.value}>
+                          {segmento.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <Label>Status</Label>
                   <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
