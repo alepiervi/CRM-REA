@@ -669,7 +669,16 @@ const Dashboard = () => {
     fetchAssistants();
     fetchCommesse();
     fetchSubAgenzie();
+    if (user.role === "responsabile_commessa") {
+      fetchTipologieContratto();
+    }
   }, []);
+
+  useEffect(() => {
+    if (user.role === "responsabile_commessa" && selectedCommessa !== "all") {
+      fetchTipologieContratto();
+    }
+  }, [selectedCommessa]);
 
   useEffect(() => {
     // Auto-select unit for non-admin users
