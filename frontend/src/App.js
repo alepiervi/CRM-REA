@@ -2709,7 +2709,32 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     setIsLoading(true);
 
     try {
-      await axios.put(`${API}/users/${user.id}`, formData);
+      // Clean data before sending
+      const cleanData = { ...formData };
+      
+      // Remove empty password
+      if (!cleanData.password || cleanData.password.trim() === "") {
+        delete cleanData.password;
+      }
+      
+      // Remove assignment_type field as it's only for UI
+      delete cleanData.assignment_type;
+      
+      // Auto-set can_view_analytics based on role
+      if (formData.role === "responsabile_commessa" || formData.role === "responsabile_sub_agenzia") {
+        cleanData.can_view_analytics = true;
+      } else if (formData.role === "backoffice_commessa" || formData.role === "backoffice_sub_agenzia") {
+        cleanData.can_view_analytics = false;
+      }
+      
+      // Clear unit_id and referente_id for specialist roles that don't need them
+      const specialistRoles = ["responsabile_commessa", "backoffice_commessa", "responsabile_sub_agenzia", "backoffice_sub_agenzia"];
+      if (specialistRoles.includes(formData.role)) {
+        cleanData.unit_id = null;
+        cleanData.referente_id = null;
+      }
+      
+      await axios.put(`${API}/users/${user.id}`, cleanData);
       toast({
         title: "Successo",
         description: "Utente aggiornato con successo",
