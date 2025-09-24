@@ -9492,7 +9492,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Commessa *</Label>
-                  <Select value={formData.commessa_id} onValueChange={(value) => handleChange('commessa_id', value)}>
+                  <Select value={formData.commessa_id} onValueChange={(value) => handleCommessaChange(value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleziona commessa" />
                     </SelectTrigger>
