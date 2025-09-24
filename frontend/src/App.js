@@ -2224,6 +2224,9 @@ const UsersManagement = ({ selectedUnit, units }) => {
           provinces={provinces}
           units={units}
           referenti={referenti}
+          commesse={commesse}
+          subAgenzie={subAgenzie}
+          fetchServizi={fetchServizi}
         />
       )}
     </div>
