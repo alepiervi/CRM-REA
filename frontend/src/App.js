@@ -7732,8 +7732,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         <h2 className="text-2xl font-bold">Gestione Clienti</h2>
         <div className="flex space-x-3">
           <Select 
-            value={selectedCommessa || "all"} 
-            onValueChange={(value) => setSelectedCommessa(value === "all" ? null : value)}
+            value={selectedCommessaLocal || "all"} 
+            onValueChange={(value) => setSelectedCommessaLocal(value === "all" ? null : value)}
           >
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Seleziona Commessa" />
