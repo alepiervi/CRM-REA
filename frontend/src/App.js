@@ -2531,7 +2531,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                       <div key={commessa.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`commessa-${commessa.id}`}
-                          checked={formData.commesse_autorizzate.includes(commessa.id)}
+                          checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
                           onCheckedChange={(checked) => handleCommessaAutorizzataChange(commessa.id, checked)}
                         />
                         <Label htmlFor={`commessa-${commessa.id}`} className="text-sm">
@@ -2980,7 +2980,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                       <div key={commessa.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={commessa.id}
-                          checked={formData.commesse_autorizzate.includes(commessa.id)}
+                          checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
                           onCheckedChange={(checked) => handleCommessaAutorizzataChange(commessa.id, checked)}
                         />
                         <Label htmlFor={commessa.id} className="text-sm">
@@ -3315,7 +3315,7 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
                 <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={formData.commesse_autorizzate.includes(commessa.id)}
+                    checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
                     onChange={() => toggleCommessa(commessa.id)}
                     className="rounded border-gray-300"
                   />
@@ -3407,7 +3407,7 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
                 <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={formData.commesse_autorizzate.includes(commessa.id)}
+                    checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
                     onChange={() => toggleCommessa(commessa.id)}
                     className="rounded border-gray-300"
                   />
@@ -8823,7 +8823,7 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse }) => {
                 <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={formData.commesse_autorizzate.includes(commessa.id)}
+                    checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
                     onChange={() => toggleCommessa(commessa.id)}
                     className="rounded border-gray-300"
                   />
@@ -8918,7 +8918,7 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse }) => {
                 <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={formData.commesse_autorizzate.includes(commessa.id)}
+                    checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
                     onChange={() => toggleCommessa(commessa.id)}
                     className="rounded border-gray-300"
                   />
