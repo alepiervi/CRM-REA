@@ -143,6 +143,7 @@ class User(BaseModel):
     role: UserRole
     is_active: bool = True
     unit_id: Optional[str] = None
+    sub_agenzia_id: Optional[str] = None  # Assegnazione diretta a sub agenzia
     referente_id: Optional[str] = None  # For agents only
     provinces: List[str] = []  # For agents - provinces they cover
     # Nuovi campi per gestione autorizzazioni specializzate
