@@ -3915,6 +3915,215 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_user_edit_422_error_debug(self):
+        """Debug specifico dell'errore 422 nella modifica utenti"""
+        print("\n🔍 Testing User Edit 422 Error Debug...")
+        
+        # 1. LOGIN ADMIN
+        print("\n🔐 1. ADMIN LOGIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. GET EXISTING USERS
+        print("\n👥 2. GET EXISTING USERS...")
+        success, response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        if not success:
+            self.log_test("❌ GET users failed", False, f"Status: {status}")
+            return False
+            
+        users = response
+        self.log_test("✅ GET users", True, f"Found {len(users)} users")
+        
+        # 3. FIND RESPONSABILE_COMMESSA USER OR CREATE ONE
+        print("\n🔍 3. FINDING/CREATING RESPONSABILE_COMMESSA USER...")
+        target_user = None
+        target_user_id = None
+        
+        # Look for existing responsabile_commessa user
+        for user in users:
+            if user.get('role') == 'responsabile_commessa':
+                target_user = user
+                target_user_id = user['id']
+                self.log_test("✅ Found responsabile_commessa user", True, f"User: {user['username']}, ID: {target_user_id}")
+                break
+        
+        # If no responsabile_commessa user found, create one
+        if not target_user:
+            print("   Creating responsabile_commessa user for testing...")
+            create_user_data = {
+                "username": f"resp_commessa_test_{datetime.now().strftime('%H%M%S')}",
+                "email": f"resp_test_{datetime.now().strftime('%H%M%S')}@test.com",
+                "password": "TestPass123!",
+                "role": "responsabile_commessa",
+                "commesse_autorizzate": [],
+                "servizi_autorizzati": [],
+                "can_view_analytics": True
+            }
+            
+            success, create_response, status = self.make_request('POST', 'users', create_user_data, 200)
+            if success:
+                target_user = create_response
+                target_user_id = create_response['id']
+                self.created_resources['users'].append(target_user_id)
+                self.log_test("✅ Created responsabile_commessa user", True, f"User: {create_response['username']}, ID: {target_user_id}")
+            else:
+                self.log_test("❌ Failed to create responsabile_commessa user", False, f"Status: {status}, Response: {create_response}")
+                return False
+
+        # 4. TEST PUT WITH MINIMAL DATA FIRST
+        print("\n🧪 4. TESTING PUT WITH MINIMAL DATA...")
+        minimal_data = {
+            "username": target_user['username'],
+            "email": target_user['email'],
+            "role": "responsabile_commessa"
+        }
+        
+        success, response, status = self.make_request('PUT', f'users/{target_user_id}', minimal_data, expected_status=200)
+        if success:
+            self.log_test("✅ PUT with minimal data", True, "Minimal data update successful")
+        else:
+            self.log_test("❌ PUT with minimal data FAILED", False, f"Status: {status}, Response: {response}")
+            print(f"   🔍 DETAILED ERROR: {response}")
+            
+            # If this fails, let's analyze the error
+            if status == 422:
+                print(f"   🚨 422 VALIDATION ERROR DETECTED!")
+                print(f"   📋 Error details: {response}")
+                if 'detail' in response:
+                    print(f"   📝 Validation details: {response['detail']}")
+
+        # 5. TEST PUT WITH SPECIALIZED FIELDS GRADUALLY
+        print("\n🧪 5. TESTING PUT WITH SPECIALIZED FIELDS...")
+        
+        # Test with commesse_autorizzate
+        data_with_commesse = minimal_data.copy()
+        data_with_commesse['commesse_autorizzate'] = []
+        
+        success, response, status = self.make_request('PUT', f'users/{target_user_id}', data_with_commesse, expected_status=200)
+        if success:
+            self.log_test("✅ PUT with commesse_autorizzate", True, "Update with commesse_autorizzate successful")
+        else:
+            self.log_test("❌ PUT with commesse_autorizzate FAILED", False, f"Status: {status}")
+            print(f"   🔍 DETAILED ERROR: {response}")
+            if status == 422:
+                print(f"   🚨 422 ERROR ON commesse_autorizzate field!")
+                if 'detail' in response:
+                    print(f"   📝 Validation details: {response['detail']}")
+
+        # Test with servizi_autorizzati
+        data_with_servizi = data_with_commesse.copy()
+        data_with_servizi['servizi_autorizzati'] = []
+        
+        success, response, status = self.make_request('PUT', f'users/{target_user_id}', data_with_servizi, expected_status=200)
+        if success:
+            self.log_test("✅ PUT with servizi_autorizzati", True, "Update with servizi_autorizzati successful")
+        else:
+            self.log_test("❌ PUT with servizi_autorizzati FAILED", False, f"Status: {status}")
+            print(f"   🔍 DETAILED ERROR: {response}")
+            if status == 422:
+                print(f"   🚨 422 ERROR ON servizi_autorizzati field!")
+                if 'detail' in response:
+                    print(f"   📝 Validation details: {response['detail']}")
+
+        # Test with can_view_analytics
+        data_with_analytics = data_with_servizi.copy()
+        data_with_analytics['can_view_analytics'] = True
+        
+        success, response, status = self.make_request('PUT', f'users/{target_user_id}', data_with_analytics, expected_status=200)
+        if success:
+            self.log_test("✅ PUT with can_view_analytics", True, "Update with can_view_analytics successful")
+        else:
+            self.log_test("❌ PUT with can_view_analytics FAILED", False, f"Status: {status}")
+            print(f"   🔍 DETAILED ERROR: {response}")
+            if status == 422:
+                print(f"   🚨 422 ERROR ON can_view_analytics field!")
+                if 'detail' in response:
+                    print(f"   📝 Validation details: {response['detail']}")
+
+        # 6. TEST WITH FULL DATA THAT MIGHT CAUSE 422
+        print("\n🧪 6. TESTING PUT WITH FULL PROBLEMATIC DATA...")
+        full_problematic_data = {
+            "username": target_user['username'],
+            "email": target_user['email'],
+            "role": "responsabile_commessa",
+            "is_active": True,
+            "unit_id": None,
+            "sub_agenzia_id": None,
+            "referente_id": None,
+            "provinces": [],
+            "commesse_autorizzate": ["test-commessa-id"],
+            "servizi_autorizzati": ["test-servizio-id"],
+            "sub_agenzie_autorizzate": [],
+            "can_view_analytics": True
+        }
+        
+        success, response, status = self.make_request('PUT', f'users/{target_user_id}', full_problematic_data, expected_status=200)
+        if success:
+            self.log_test("✅ PUT with full data", True, "Full data update successful")
+        else:
+            self.log_test("❌ PUT with full data FAILED", False, f"Status: {status}")
+            print(f"   🔍 DETAILED ERROR: {response}")
+            if status == 422:
+                print(f"   🚨 422 VALIDATION ERROR WITH FULL DATA!")
+                print(f"   📋 Full error response: {response}")
+                if 'detail' in response:
+                    print(f"   📝 Validation details: {response['detail']}")
+                    # Try to identify specific field causing issues
+                    if isinstance(response['detail'], list):
+                        for error in response['detail']:
+                            if isinstance(error, dict):
+                                print(f"   🎯 Field error: {error}")
+
+        # 7. TEST DIFFERENT ENUM VALUES
+        print("\n🧪 7. TESTING DIFFERENT ROLE VALUES...")
+        
+        # Test with different specialized roles
+        specialized_roles = [
+            "backoffice_commessa",
+            "responsabile_sub_agenzia", 
+            "backoffice_sub_agenzia",
+            "agente_specializzato",
+            "operatore"
+        ]
+        
+        for role in specialized_roles:
+            test_data = minimal_data.copy()
+            test_data['role'] = role
+            
+            success, response, status = self.make_request('PUT', f'users/{target_user_id}', test_data, expected_status=200)
+            if success:
+                self.log_test(f"✅ PUT with role {role}", True, f"Role {role} update successful")
+            else:
+                self.log_test(f"❌ PUT with role {role} FAILED", False, f"Status: {status}")
+                print(f"   🔍 ERROR for role {role}: {response}")
+                if status == 422:
+                    print(f"   🚨 422 ERROR ON role {role}!")
+                    if 'detail' in response:
+                        print(f"   📝 Validation details: {response['detail']}")
+
+        # 8. SUMMARY OF FINDINGS
+        print("\n📊 422 ERROR DEBUG SUMMARY:")
+        print("=" * 50)
+        print("   This test systematically checked for 422 validation errors")
+        print("   by testing user modification with different field combinations.")
+        print("   Any 422 errors found above indicate specific validation issues")
+        print("   that need to be addressed in the UserUpdate model or endpoint.")
+        print("=" * 50)
+        
+        return True
+
     def run_all_tests(self):
         """Run all test suites with priority on Responsabile Commessa System"""
         print("🚀 Starting CRM API Testing - Responsabile Commessa System Complete...")
