@@ -9129,6 +9129,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             <Edit className="w-5 h-5 text-blue-600" />
             <span>Modifica Cliente: {cliente?.nome} {cliente?.cognome}</span>
           </DialogTitle>
+          <DialogDescription>
+            Modifica i dati anagrafici del cliente. I campi contrassegnati con * sono obbligatori.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
