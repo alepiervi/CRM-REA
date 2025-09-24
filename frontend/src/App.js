@@ -2034,7 +2034,18 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     setIsLoading(true);
 
     try {
-      await axios.post(`${API}/users`, formData);
+      // Prepara i dati per l'invio, rimuovendo assignment_type e impostando correttamente unit_id/sub_agenzia_id
+      const submitData = { ...formData };
+      delete submitData.assignment_type;
+      
+      // Assicurati che solo uno tra unit_id e sub_agenzia_id sia impostato
+      if (formData.assignment_type === "unit") {
+        submitData.sub_agenzia_id = null;
+      } else {
+        submitData.unit_id = null;
+      }
+
+      await axios.post(`${API}/users`, submitData);
       toast({
         title: "Successo",
         description: "Utente creato con successo",
