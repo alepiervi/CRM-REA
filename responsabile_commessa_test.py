@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import uuid
 
 class ResponsabileCommessaTester:
-    def __init__(self, base_url="https://lead-manager-crm.preview.emergentagent.com/api"):
+    def __init__(self, base_url="http://localhost:8001/api"):
         self.base_url = base_url
         self.admin_token = None
         self.resp_token = None
