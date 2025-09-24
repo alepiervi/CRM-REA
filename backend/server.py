@@ -2983,14 +2983,21 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
     user_dict.setdefault("created_at", datetime.now(timezone.utc))
     user_dict.setdefault("last_login", None)
     
-    # Create User object to validate, then convert to dict for MongoDB
+    # Create User object to validate
     try:
         user_obj = User(**user_dict)
-        # Convert to dict using model_dump() which handles serialization better
-        user_data_for_db = user_obj.model_dump()
+        logging.info(f"User object created successfully: {user_obj.username}")
     except Exception as e:
         logging.error(f"User validation error: {e}")
         raise HTTPException(status_code=400, detail=f"User data validation failed: {str(e)}")
+    
+    # Convert to dict for MongoDB - use dict() method instead of model_dump()
+    try:
+        user_data_for_db = user_obj.dict()
+        logging.info(f"User data prepared for DB, password_hash present: {'password_hash' in user_data_for_db}")
+    except Exception as e:
+        logging.error(f"User serialization error: {e}")
+        raise HTTPException(status_code=500, detail=f"User serialization failed: {str(e)}")
     
     await db.users.insert_one(user_data_for_db)
     
