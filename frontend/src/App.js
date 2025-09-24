@@ -3013,7 +3013,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                     </div>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    Selezionati: {formData.servizi_autorizzati.length} servizi
+                    Selezionati: {formData.servizi_autorizzati ? formData.servizi_autorizzati.length : 0} servizi
                   </p>
                 </div>
               )}
