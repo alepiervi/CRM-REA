@@ -2696,6 +2696,14 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   const [servizi, setServizi] = useState([]);
   const { toast } = useToast();
 
+  // Load servizi when commesse_autorizzate changes
+  useEffect(() => {
+    if (formData.commesse_autorizzate?.length > 0) {
+      // Carica servizi per la prima commessa autorizzata
+      fetchServizi(formData.commesse_autorizzate[0]);
+    }
+  }, [formData.commesse_autorizzate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
