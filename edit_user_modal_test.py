@@ -222,6 +222,7 @@ class EditUserModalTester:
                 update_specialized_data = {
                     "username": specialized_user['username'],
                     "email": specialized_user['email'],
+                    "password": "admin123",  # Required by UserCreate model
                     "role": role,
                     "commesse_autorizzate": [commesse[0]['id']] if commesse else [],
                     "servizi_autorizzati": [servizi[0]['id']] if servizi else [],
