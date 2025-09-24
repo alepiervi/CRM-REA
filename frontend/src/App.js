@@ -1729,6 +1729,8 @@ const UsersManagement = ({ selectedUnit, units }) => {
   useEffect(() => {
     fetchUsers();
     fetchProvinces();
+    fetchCommesse();
+    fetchSubAgenzie();
     if (selectedUnit && selectedUnit !== "all") {
       fetchReferenti(selectedUnit);
     }
