@@ -7651,8 +7651,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (selectedCommessa) {
-        params.append('commessa_id', selectedCommessa);
+      if (selectedCommessaLocal) {
+        params.append('commessa_id', selectedCommessaLocal);
       }
       params.append('limit', '50');
       
