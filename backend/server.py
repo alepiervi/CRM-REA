@@ -171,6 +171,19 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[UserRole] = None
+    is_active: Optional[bool] = None
+    unit_id: Optional[str] = None
+    referente_id: Optional[str] = None
+    provinces: Optional[List[str]] = None
+    commesse_autorizzate: Optional[List[str]] = None
+    servizi_autorizzati: Optional[List[str]] = None
+    sub_agenzie_autorizzate: Optional[List[str]] = None
+    can_view_analytics: Optional[bool] = None
+
 class Token(BaseModel):
     access_token: str
     token_type: str
