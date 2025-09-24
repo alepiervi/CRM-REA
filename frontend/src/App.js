@@ -9122,6 +9122,35 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie }) => {
                 <Label className="text-sm font-medium text-slate-600">Luogo di Nascita</Label>
                 <p className="text-sm">{cliente.luogo_nascita || 'Non specificato'}</p>
               </div>
+              {/* Nuovi campi */}
+              {cliente.servizio_id && (
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Servizio</Label>
+                  <p className="text-sm">{cliente.servizio_id}</p>
+                </div>
+              )}
+              {cliente.tipologia_contratto && (
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Tipologia Contratto</Label>
+                  <p className="text-sm">
+                    {cliente.tipologia_contratto === 'energia_fastweb' ? 'Energia Fastweb' :
+                     cliente.tipologia_contratto === 'telefonia_fastweb' ? 'Telefonia Fastweb' :
+                     cliente.tipologia_contratto === 'ho_mobile' ? 'Ho Mobile' :
+                     cliente.tipologia_contratto === 'telepass' ? 'Telepass' :
+                     cliente.tipologia_contratto}
+                  </p>
+                </div>
+              )}
+              {cliente.segmento && (
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Segmento</Label>
+                  <p className="text-sm">
+                    {cliente.segmento === 'residenziale' ? 'Residenziale' : 
+                     cliente.segmento === 'business' ? 'Business' : 
+                     cliente.segmento}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
