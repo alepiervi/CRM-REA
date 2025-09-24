@@ -461,7 +461,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "EditUserModal System Testing - COMPLETED"
+    - "User Edit 422 Error Debug - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
