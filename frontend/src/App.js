@@ -7619,6 +7619,9 @@ const ClientiManagement = ({ selectedUnit, units }) => {
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
