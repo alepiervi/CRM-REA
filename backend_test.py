@@ -1292,6 +1292,90 @@ class CRMAPITester:
             else:
                 self.log_test("ChatBot sessions list - unit_id error", False, f"Expected 400, got {status}")
 
+    def test_clienti_navigation_endpoints(self):
+        """Test specific endpoints for Clienti navigation issue"""
+        print("\n🏢 Testing Clienti Navigation Endpoints...")
+        
+        # Test GET /api/commesse
+        success, response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if success:
+            commesse = response if isinstance(response, list) else response.get('commesse', [])
+            self.log_test("GET /api/commesse", True, f"Found {len(commesse)} commesse")
+            
+            # Check if we have expected commesse (Fastweb, Fotovoltaico)
+            commesse_names = [c.get('nome', '') for c in commesse]
+            expected_commesse = ['Fastweb', 'Fotovoltaico']
+            found_expected = [name for name in expected_commesse if name in commesse_names]
+            
+            if found_expected:
+                self.log_test("Expected commesse found", True, f"Found: {found_expected}")
+            else:
+                self.log_test("Expected commesse found", False, f"Expected {expected_commesse}, found: {commesse_names}")
+        else:
+            self.log_test("GET /api/commesse", False, f"Status: {status}, Response: {response}")
+        
+        # Test GET /api/sub-agenzie
+        success, response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        if success:
+            sub_agenzie = response if isinstance(response, list) else response.get('sub_agenzie', [])
+            self.log_test("GET /api/sub-agenzie", True, f"Found {len(sub_agenzie)} sub-agenzie")
+            
+            # Check structure of sub-agenzie
+            if sub_agenzie:
+                first_sub_agenzia = sub_agenzie[0]
+                expected_fields = ['id', 'nome', 'responsabile_id', 'commesse_autorizzate']
+                missing_fields = [field for field in expected_fields if field not in first_sub_agenzia]
+                
+                if not missing_fields:
+                    self.log_test("Sub-agenzie structure", True, f"All expected fields present: {expected_fields}")
+                else:
+                    self.log_test("Sub-agenzie structure", False, f"Missing fields: {missing_fields}")
+        else:
+            self.log_test("GET /api/sub-agenzie", False, f"Status: {status}, Response: {response}")
+        
+        # Test GET /api/clienti
+        success, response, status = self.make_request('GET', 'clienti', expected_status=200)
+        if success:
+            clienti = response if isinstance(response, list) else response.get('clienti', [])
+            self.log_test("GET /api/clienti", True, f"Found {len(clienti)} clienti")
+            
+            # Check structure of clienti
+            if clienti:
+                first_cliente = clienti[0]
+                expected_fields = ['id', 'cliente_id', 'nome', 'cognome', 'telefono', 'commessa_id', 'sub_agenzia_id']
+                missing_fields = [field for field in expected_fields if field not in first_cliente]
+                
+                if not missing_fields:
+                    self.log_test("Clienti structure", True, f"All expected fields present: {expected_fields}")
+                else:
+                    self.log_test("Clienti structure", False, f"Missing fields: {missing_fields}")
+                    
+                # Check if cliente_id is 8 characters
+                cliente_id = first_cliente.get('cliente_id', '')
+                if len(cliente_id) == 8:
+                    self.log_test("Cliente ID format", True, f"Cliente ID: {cliente_id} (8 chars)")
+                else:
+                    self.log_test("Cliente ID format", False, f"Expected 8 chars, got {len(cliente_id)}: {cliente_id}")
+        else:
+            self.log_test("GET /api/clienti", False, f"Status: {status}, Response: {response}")
+        
+        # Test admin access to all three endpoints
+        if self.user_data and self.user_data.get('role') == 'admin':
+            self.log_test("Admin access verification", True, f"Testing with admin user: {self.user_data.get('username')}")
+            
+            # Verify all endpoints are accessible with admin credentials
+            endpoints_accessible = True
+            for endpoint_name, endpoint_path in [('commesse', 'commesse'), ('sub-agenzie', 'sub-agenzie'), ('clienti', 'clienti')]:
+                success, _, status = self.make_request('GET', endpoint_path, expected_status=200)
+                if not success:
+                    endpoints_accessible = False
+                    self.log_test(f"Admin access to {endpoint_name}", False, f"Status: {status}")
+                    
+            if endpoints_accessible:
+                self.log_test("All endpoints accessible to admin", True, "All three endpoints working for admin user")
+        else:
+            self.log_test("Admin access verification", False, "Not logged in as admin user")
+
     def test_unauthorized_access(self):
         """Test unauthorized access to protected endpoints"""
         print("\n🚫 Testing Unauthorized Access...")
