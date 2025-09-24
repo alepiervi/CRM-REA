@@ -7625,14 +7625,23 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const { toast } = useToast();
 
   useEffect(() => {
-    // Use props data when available, don't fetch if already provided
-    if (!commesseFromParent || commesseFromParent.length === 0) {
-      fetchCommesse();
+    try {
+      // Use props data when available, don't fetch if already provided
+      if (!commesseFromParent || commesseFromParent.length === 0) {
+        fetchCommesse();
+      }
+      if (!subAgenzieFromParent || subAgenzieFromParent.length === 0) {
+        fetchSubAgenzie();
+      }
+      fetchClienti();
+    } catch (error) {
+      console.error("ClientiManagement useEffect error:", error);
+      toast({
+        title: "Errore",
+        description: "Errore durante il caricamento iniziale",
+        variant: "destructive",
+      });
     }
-    if (!subAgenzieFromParent || subAgenzieFromParent.length === 0) {
-      fetchSubAgenzie();
-    }
-    fetchClienti();
   }, [selectedUnit, selectedCommessaLocal]);
 
   const fetchCommesse = async () => {
