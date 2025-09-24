@@ -3910,7 +3910,10 @@ const ResponsabileCommessaAnalytics = ({ selectedUnit, selectedTipologiaContratt
                       {commessa.nome}
                     </SelectItem>
                   ) : null;
-                })}
+                }) || []}
+                {(!user.commesse_autorizzate || user.commesse_autorizzate.length === 0) && (
+                  <SelectItem value="none" disabled>Nessuna commessa autorizzata</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
