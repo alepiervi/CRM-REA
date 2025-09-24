@@ -58,7 +58,6 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Download,
   Menu,
   Power,
   PowerOff,
