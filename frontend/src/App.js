@@ -2993,7 +2993,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                 </p>
               </div>
 
-              {formData.commesse_autorizzate.length > 0 && servizi.length > 0 && (
+              {formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0 && servizi && servizi.length > 0 && (
                 <div>
                   <Label>Servizi Autorizzati (opzionale)</Label>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
