@@ -2705,10 +2705,11 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   }, [formData.commesse_autorizzate]);
 
   const handleCommessaChange = async (commessaId) => {
-    if (commessaId && fetchServizi) {
+    if (commessaId) {
       try {
-        const servizi = await fetchServizi(commessaId);
-        setServizi(servizi);
+        const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+        setServizi(response.data);
+        console.log("Servizi caricati per commessa:", commessaId, response.data);
       } catch (error) {
         console.error("Error fetching servizi:", error);
         setServizi([]);
