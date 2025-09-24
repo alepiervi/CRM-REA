@@ -2813,6 +2813,9 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifica Utente</DialogTitle>
+          <DialogDescription>
+            Modifica i dati dell'utente e le sue autorizzazioni
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
