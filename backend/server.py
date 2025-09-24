@@ -7257,6 +7257,9 @@ async def get_responsabile_commessa_analytics(
     if commessa_id and commessa_id in accessible_commesse:
         query["commessa_id"] = commessa_id
     
+    if tipologia_contratto and tipologia_contratto != "all":
+        query["tipologia_contratto"] = tipologia_contratto
+    
     # Date filter
     if date_from or date_to:
         date_filter = {}
