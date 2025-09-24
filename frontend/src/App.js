@@ -1771,6 +1771,36 @@ const UsersManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  const fetchCommesse = async () => {
+    try {
+      const response = await axios.get(`${API}/commesse`);
+      setCommesse(response.data);
+    } catch (error) {
+      console.error("Error fetching commesse:", error);
+      setCommesse([]);
+    }
+  };
+
+  const fetchSubAgenzie = async () => {
+    try {
+      const response = await axios.get(`${API}/sub-agenzie`);
+      setSubAgenzie(response.data);
+    } catch (error) {
+      console.error("Error fetching sub agenzie:", error);
+      setSubAgenzie([]);
+    }
+  };
+
+  const fetchServizi = async (commessaId) => {
+    try {
+      const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+      setServizi(response.data);
+    } catch (error) {
+      console.error("Error fetching servizi:", error);
+      setServizi([]);
+    }
+  };
+
   const toggleUserStatus = async (userId, currentStatus) => {
     try {
       await axios.put(`${API}/users/${userId}/toggle-status`);
