@@ -4128,6 +4128,58 @@ Duplicate,Test,+393471234567"""
         """Test completo del sistema Responsabile Commessa come richiesto"""
         print("\n👔 Testing Responsabile Commessa System (URGENT TEST)...")
         
+        # First, check if resp_commessa user exists, if not create it
+        print("\n🔍 CHECKING IF resp_commessa USER EXISTS...")
+        
+        # Get all users to check if resp_commessa exists
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        resp_commessa_exists = False
+        resp_commessa_user = None
+        
+        if success:
+            users = users_response
+            for user in users:
+                if user.get('username') == 'resp_commessa':
+                    resp_commessa_exists = True
+                    resp_commessa_user = user
+                    break
+            
+            self.log_test("Check existing users", True, f"Found {len(users)} users in system")
+            
+            if resp_commessa_exists:
+                self.log_test("resp_commessa user exists", True, f"User found with role: {resp_commessa_user.get('role')}")
+            else:
+                self.log_test("resp_commessa user exists", False, "User not found - will create it")
+                
+                # Get available commesse to assign
+                success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+                available_commesse = []
+                if success:
+                    commesse = commesse_response if isinstance(commesse_response, list) else commesse_response.get('commesse', [])
+                    available_commesse = [c['id'] for c in commesse[:2]]  # Take first 2 commesse
+                    self.log_test("Get available commesse", True, f"Found {len(commesse)} commesse, will assign {len(available_commesse)}")
+                
+                # Create resp_commessa user
+                resp_user_data = {
+                    "username": "resp_commessa",
+                    "email": "resp_commessa@test.com",
+                    "password": "admin123",
+                    "role": "responsabile_commessa",
+                    "commesse_autorizzate": available_commesse,
+                    "can_view_analytics": True
+                }
+                
+                success, create_response, status = self.make_request('POST', 'users', resp_user_data, 200)
+                if success:
+                    resp_commessa_user = create_response
+                    self.log_test("Create resp_commessa user", True, f"User created with ID: {create_response['id']}")
+                else:
+                    self.log_test("Create resp_commessa user", False, f"Failed to create user - Status: {status}")
+                    return False
+        else:
+            self.log_test("Check existing users", False, f"Failed to get users - Status: {status}")
+            return False
+        
         # 1. LOGIN RESPONSABILE COMMESSA - Test login with resp_commessa/admin123
         print("\n🔐 1. TESTING RESPONSABILE COMMESSA LOGIN...")
         success, response, status = self.make_request(
