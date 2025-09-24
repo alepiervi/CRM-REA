@@ -3046,7 +3046,7 @@ async def get_referenti_by_unit(unit_id: str, current_user: User = Depends(get_c
     return [{"id": ref["id"], "username": ref["username"], "email": ref["email"]} for ref in referenti]
 
 @api_router.put("/users/{user_id}", response_model=User)
-async def update_user(user_id: str, user_update: UserCreate, current_user: User = Depends(get_current_user)):
+async def update_user(user_id: str, user_update: UserUpdate, current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Only admin can update users")
     
