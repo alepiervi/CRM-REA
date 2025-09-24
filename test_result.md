@@ -461,7 +461,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "User Edit 422 Error Debug - COMPLETED"
+    - "Responsabile Commessa System - URGENT TEST COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
