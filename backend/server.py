@@ -754,6 +754,8 @@ class Cliente(BaseModel):
     commessa_id: str
     sub_agenzia_id: str
     servizio_id: Optional[str] = None
+    tipologia_contratto: Optional[TipologiaContratto] = None  # Nuovo campo
+    segmento: Optional[Segmento] = None  # Nuovo campo
     status: ClienteStatus = ClienteStatus.NUOVO
     note: Optional[str] = None
     dati_aggiuntivi: Dict[str, Any] = {}  # Campi personalizzati per commessa
