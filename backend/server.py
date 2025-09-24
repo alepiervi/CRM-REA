@@ -7073,6 +7073,7 @@ logger = logging.getLogger(__name__)
 async def get_responsabile_commessa_dashboard(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
+    tipologia_contratto: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
     """Dashboard specifica per Responsabile Commessa"""
