@@ -2989,7 +2989,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                   </div>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Selezionate: {formData.commesse_autorizzate.length} commesse
+                  Selezionate: {formData.commesse_autorizzate ? formData.commesse_autorizzate.length : 0} commesse
                 </p>
               </div>
 
