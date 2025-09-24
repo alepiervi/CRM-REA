@@ -2693,6 +2693,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     assignment_type: user.unit_id ? "unit" : "sub_agenzia"
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [servizi, setServizi] = useState([]);
   const { toast } = useToast();
 
   const handleSubmit = async (e) => {
