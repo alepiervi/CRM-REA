@@ -3056,27 +3056,40 @@ async def update_user(user_id: str, user_update: UserUpdate, current_user: User 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Check if username or email conflicts with other users
-    existing_user = await db.users.find_one({
-        "$and": [
-            {"id": {"$ne": user_id}},
-            {"$or": [{"username": user_update.username}, {"email": user_update.email}]}
-        ]
-    })
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username or email already exists")
+    # Check if username or email conflicts with other users (only if they are being updated)
+    conflict_conditions = []
+    if user_update.username is not None:
+        conflict_conditions.append({"username": user_update.username})
+    if user_update.email is not None:
+        conflict_conditions.append({"email": user_update.email})
     
-    # Validate provinces for agents
-    if user_update.role == UserRole.AGENTE:
-        invalid_provinces = [p for p in user_update.provinces if p not in ITALIAN_PROVINCES]
+    if conflict_conditions:
+        existing_user = await db.users.find_one({
+            "$and": [
+                {"id": {"$ne": user_id}},
+                {"$or": conflict_conditions}
+            ]
+        })
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username or email already exists")
+    
+    # Validate provinces for agents (only if role is being updated to agent or provinces are being updated)
+    if (user_update.role == UserRole.AGENTE and user_update.provinces is not None) or \
+       (user_update.provinces is not None and user.get("role") == "agente"):
+        provinces_to_validate = user_update.provinces if user_update.provinces is not None else []
+        invalid_provinces = [p for p in provinces_to_validate if p not in ITALIAN_PROVINCES]
         if invalid_provinces:
             raise HTTPException(status_code=400, detail=f"Invalid provinces: {invalid_provinces}")
     
-    # Prepare update data
-    update_data = user_update.dict()
-    if user_update.password:
-        update_data["password_hash"] = get_password_hash(user_update.password)
-    del update_data["password"]
+    # Prepare update data - only include fields that are not None
+    update_data = {}
+    for field, value in user_update.dict().items():
+        if value is not None:
+            if field == "password":
+                # Handle password hashing
+                update_data["password_hash"] = get_password_hash(value)
+            else:
+                update_data[field] = value
     
     # Update user
     await db.users.update_one(
