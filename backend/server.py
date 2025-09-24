@@ -3288,7 +3288,19 @@ async def get_leads(
             query["created_at"] = {"$lte": datetime.fromisoformat(date_to)}
     
     leads = await db.leads.find(query).to_list(length=None)
-    return [Lead(**lead) for lead in leads]
+    
+    # Filter out leads with validation errors to prevent crashes
+    valid_leads = []
+    for lead_data in leads:
+        try:
+            lead = Lead(**lead_data)
+            valid_leads.append(lead)
+        except Exception as e:
+            # Log the validation error but continue
+            logging.warning(f"Skipping lead {lead_data.get('id', 'unknown')} due to validation error: {str(e)}")
+            continue
+    
+    return valid_leads
 
 @api_router.put("/leads/{lead_id}", response_model=Lead)
 async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User = Depends(get_current_user)):
