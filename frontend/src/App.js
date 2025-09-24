@@ -7853,7 +7853,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           {clienti.length === 0 && (
             <div className="text-center py-8">
               <p className="text-gray-500">
-                {selectedCommessa ? 'Nessun cliente trovato per questa commessa' : 'Seleziona una commessa per vedere i clienti'}
+                {selectedCommessaLocal ? 'Nessun cliente trovato per questa commessa' : 'Seleziona una commessa per vedere i clienti'}
               </p>
             </div>
           )}
