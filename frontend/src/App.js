@@ -2158,21 +2158,80 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="unit_id">Unit</Label>
-            <Select value={formData.unit_id} onValueChange={(value) => setFormData({ ...formData, unit_id: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleziona unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {units.map((unit) => (
-                  <SelectItem key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Scelta tipo assegnazione */}
+          <div className="col-span-2">
+            <Label>Assegnazione *</Label>
+            <div className="flex space-x-4 mt-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="assignment_unit"
+                  value="unit"
+                  checked={formData.assignment_type === "unit"}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    assignment_type: e.target.value,
+                    unit_id: "",
+                    sub_agenzia_id: ""
+                  })}
+                />
+                <Label htmlFor="assignment_unit">Unit</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="assignment_subagenzia"
+                  value="sub_agenzia"
+                  checked={formData.assignment_type === "sub_agenzia"}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    assignment_type: e.target.value,
+                    unit_id: "",
+                    sub_agenzia_id: ""
+                  })}
+                />
+                <Label htmlFor="assignment_subagenzia">Sub Agenzia</Label>
+              </div>
+            </div>
           </div>
+
+          {/* Campo Unit - mostrato solo se assignment_type è "unit" */}
+          {formData.assignment_type === "unit" && (
+            <div>
+              <Label htmlFor="unit_id">Unit *</Label>
+              <Select value={formData.unit_id} onValueChange={(value) => setFormData({ ...formData, unit_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {units.map((unit) => (
+                    <SelectItem key={unit.id} value={unit.id}>
+                      {unit.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Campo Sub Agenzia - mostrato solo se assignment_type è "sub_agenzia" */}
+          {formData.assignment_type === "sub_agenzia" && (
+            <div>
+              <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
+              <Select value={formData.sub_agenzia_id} onValueChange={(value) => setFormData({ ...formData, sub_agenzia_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona sub agenzia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subAgenzie.map((subAgenzia) => (
+                    <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
+                      {subAgenzia.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Campi condizionali per ruoli specializzati */}
           {(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
