@@ -3700,6 +3700,33 @@ Duplicate,Test,+393471234567"""
         except Exception as e:
             self.log_test("Database integration test", False, f"Error: {str(e)}")
 
+    def run_user_system_tests(self):
+        """Run focused user system tests as requested"""
+        print("🚀 Starting CRM User System Testing...")
+        print(f"📡 Base URL: {self.base_url}")
+        print("🎯 FOCUS: Complete user system testing (Login, Users endpoint, Data validation, Error handling)")
+        
+        # Run the complete user system test
+        success = self.test_user_system_complete()
+        
+        if not success:
+            print("❌ User system testing failed")
+            return False
+        
+        # Print final results
+        print(f"\n📊 User System Test Results:")
+        print(f"   Tests run: {self.tests_run}")
+        print(f"   Tests passed: {self.tests_passed}")
+        print(f"   Tests failed: {self.tests_run - self.tests_passed}")
+        print(f"   Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 All user system tests passed!")
+        else:
+            print("⚠️  Some user system tests failed - check the output above")
+            
+        return self.tests_passed == self.tests_run
+
     def run_all_tests(self):
         """Run all test suites including Lead Qualification System (FASE 4)"""
         print("🚀 Starting CRM API Testing - Lead Qualification System (FASE 4)...")
