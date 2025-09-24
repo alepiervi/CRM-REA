@@ -4058,10 +4058,37 @@ Duplicate,Test,+393471234567"""
             print(f"⚠️  {failed} Sistema Autorizzazioni tests failed")
             return False
 
+    def run_clienti_navigation_test(self):
+        """Run focused test for Clienti navigation endpoints"""
+        print("🚀 Testing Clienti Navigation Endpoints...")
+        print(f"📡 Backend URL: {self.base_url}")
+        print("=" * 60)
+        
+        # Authentication is required
+        if not self.test_authentication():
+            print("❌ Authentication failed - stopping tests")
+            return False
+        
+        # Run the specific test
+        self.test_clienti_navigation_endpoints()
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 Clienti Navigation Test Results: {self.tests_passed}/{self.tests_run} passed")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 All Clienti navigation tests passed!")
+            return True
+        else:
+            failed = self.tests_run - self.tests_passed
+            print(f"⚠️  {failed} Clienti navigation tests failed")
+            return False
+
 def main():
     """Main test execution"""
     tester = CRMAPITester()
-    success = tester.run_all_tests()
+    # Run focused test for Clienti navigation issue
+    success = tester.run_clienti_navigation_test()
     return 0 if success else 1
 
 if __name__ == "__main__":
