@@ -2797,31 +2797,33 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   };
 
   const handleCommessaAutorizzataChange = (commessaId, checked) => {
+    const currentCommesse = formData.commesse_autorizzate || [];
     if (checked) {
       setFormData({
         ...formData,
-        commesse_autorizzate: [...formData.commesse_autorizzate, commessaId],
+        commesse_autorizzate: [...currentCommesse, commessaId],
       });
       // Carica i servizi per la commessa selezionata
       handleCommessaChange(commessaId);
     } else {
       setFormData({
         ...formData,
-        commesse_autorizzate: formData.commesse_autorizzate.filter((c) => c !== commessaId),
+        commesse_autorizzate: currentCommesse.filter((c) => c !== commessaId),
       });
     }
   };
 
   const handleSubAgenziaAutorizzataChange = (subAgenziaId, checked) => {
+    const currentSubAgenzie = formData.sub_agenzie_autorizzate || [];
     if (checked) {
       setFormData({
         ...formData,
-        sub_agenzie_autorizzate: [...formData.sub_agenzie_autorizzate, subAgenziaId],
+        sub_agenzie_autorizzate: [...currentSubAgenzie, subAgenziaId],
       });
     } else {
       setFormData({
         ...formData,
-        sub_agenzie_autorizzate: formData.sub_agenzie_autorizzate.filter((s) => s !== subAgenziaId),
+        sub_agenzie_autorizzate: currentSubAgenzie.filter((s) => s !== subAgenziaId),
       });
     }
   };
