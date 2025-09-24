@@ -2784,6 +2784,8 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
         ...formData,
         commesse_autorizzate: [...formData.commesse_autorizzate, commessaId],
       });
+      // Carica i servizi per la commessa selezionata
+      handleCommessaChange(commessaId);
     } else {
       setFormData({
         ...formData,
