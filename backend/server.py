@@ -4602,8 +4602,27 @@ async def get_whatsapp_configuration(
     try:
         # Use unit_id from query or current user's unit
         target_unit_id = unit_id or current_user.unit_id
+        
+        # For admin users without unit_id, return general status
         if not target_unit_id:
-            raise HTTPException(status_code=400, detail="Unit ID is required")
+            # Return list of all configurations for admin
+            configs = await db.whatsapp_configurations.find({}).to_list(length=None)
+            if not configs:
+                return {
+                    "configured": False,
+                    "unit_id": None,
+                    "message": "No WhatsApp configurations found. Create one for a specific unit.",
+                    "all_configurations": []
+                }
+            
+            # Return info about existing configurations
+            config_info = [{"unit_id": c["unit_id"], "phone_number": c.get("phone_number", "N/A")} for c in configs]
+            return {
+                "configured": True,
+                "unit_id": None,
+                "message": f"Found {len(configs)} WhatsApp configuration(s)",
+                "all_configurations": config_info
+            }
         
         # Get configuration from database
         config = await db.whatsapp_configurations.find_one({"unit_id": target_unit_id})
