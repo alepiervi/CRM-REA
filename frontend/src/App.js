@@ -2083,10 +2083,26 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
         ...formData,
         commesse_autorizzate: [...formData.commesse_autorizzate, commessaId],
       });
+      // Carica i servizi per la commessa selezionata
+      handleCommessaChange(commessaId);
     } else {
       setFormData({
         ...formData,
         commesse_autorizzate: formData.commesse_autorizzate.filter((c) => c !== commessaId),
+      });
+    }
+  };
+
+  const handleServizioAutorizzatoChange = (servizioId, checked) => {
+    if (checked) {
+      setFormData({
+        ...formData,
+        servizi_autorizzati: [...formData.servizi_autorizzati, servizioId],
+      });
+    } else {
+      setFormData({
+        ...formData,
+        servizi_autorizzati: formData.servizi_autorizzati.filter((s) => s !== servizioId),
       });
     }
   };
