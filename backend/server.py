@@ -177,6 +177,7 @@ class UserLogin(BaseModel):
 class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[EmailStr] = None
+    password: Optional[str] = None  # Optional password for updates
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
     unit_id: Optional[str] = None
