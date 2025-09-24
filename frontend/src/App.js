@@ -2752,9 +2752,29 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
       onSuccess();
     } catch (error) {
       console.error("Error updating user:", error);
+      
+      // Handle error message properly to avoid React crash
+      let errorMessage = "Errore nell'aggiornamento dell'utente";
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.detail) {
+          if (typeof error.response.data.detail === 'string') {
+            errorMessage = error.response.data.detail;
+          } else if (Array.isArray(error.response.data.detail)) {
+            // Handle Pydantic validation errors
+            errorMessage = error.response.data.detail.map(err => 
+              `${err.loc ? err.loc.join('.') : 'Field'}: ${err.msg}`
+            ).join(', ');
+          } else {
+            errorMessage = "Errore di validazione dei dati";
+          }
+        }
+      }
+      
       toast({
         title: "Errore",
-        description: error.response?.data?.detail || "Errore nell'aggiornamento dell'utente",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
