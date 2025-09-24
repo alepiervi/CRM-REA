@@ -479,7 +479,7 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
 
   useEffect(() => {
     fetchDashboardData();
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, selectedTipologiaContratto]);
 
   const fetchDashboardData = async () => {
     try {
