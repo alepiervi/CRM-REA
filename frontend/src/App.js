@@ -7611,11 +7611,11 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
 };
 
 // Clienti Management Component
-const ClientiManagement = ({ selectedUnit, units }) => {
+const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: commesseFromParent, subAgenzie: subAgenzieFromParent }) => {
   const [clienti, setClienti] = useState([]);
-  const [commesse, setCommesse] = useState([]);
-  const [subAgenzie, setSubAgenzie] = useState([]);
-  const [selectedCommessa, setSelectedCommessa] = useState(null);
+  const [commesse, setCommesse] = useState(commesseFromParent || []);
+  const [subAgenzie, setSubAgenzie] = useState(subAgenzieFromParent || []);
+  const [selectedCommessaLocal, setSelectedCommessaLocal] = useState(selectedCommessa || null);
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
