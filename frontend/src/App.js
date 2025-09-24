@@ -2169,45 +2169,47 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
           </div>
 
-          {/* Scelta tipo assegnazione */}
-          <div className="col-span-2">
-            <Label>Assegnazione *</Label>
-            <div className="flex space-x-4 mt-2">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="assignment_unit"
-                  value="unit"
-                  checked={formData.assignment_type === "unit"}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    assignment_type: e.target.value,
-                    unit_id: "",
-                    sub_agenzia_id: ""
-                  })}
-                />
-                <Label htmlFor="assignment_unit">Unit</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="assignment_subagenzia"
-                  value="sub_agenzia"
-                  checked={formData.assignment_type === "sub_agenzia"}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    assignment_type: e.target.value,
-                    unit_id: "",
-                    sub_agenzia_id: ""
-                  })}
-                />
-                <Label htmlFor="assignment_subagenzia">Sub Agenzia</Label>
+          {/* Scelta tipo assegnazione - Non per responsabile/backoffice commessa */}
+          {!(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
+            <div className="col-span-2">
+              <Label>Assegnazione *</Label>
+              <div className="flex space-x-4 mt-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="assignment_unit"
+                    value="unit"
+                    checked={formData.assignment_type === "unit"}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      assignment_type: e.target.value,
+                      unit_id: "",
+                      sub_agenzia_id: ""
+                    })}
+                  />
+                  <Label htmlFor="assignment_unit">Unit</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="assignment_subagenzia"
+                    value="sub_agenzia"
+                    checked={formData.assignment_type === "sub_agenzia"}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      assignment_type: e.target.value,
+                      unit_id: "",
+                      sub_agenzia_id: ""
+                    })}
+                  />
+                  <Label htmlFor="assignment_subagenzia">Sub Agenzia</Label>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Campo Unit - mostrato solo se assignment_type è "unit" */}
-          {formData.assignment_type === "unit" && (
+          {/* Campo Unit - mostrato solo se assignment_type è "unit" e non è responsabile/backoffice commessa */}
+          {formData.assignment_type === "unit" && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
             <div>
               <Label htmlFor="unit_id">Unit *</Label>
               <Select value={formData.unit_id} onValueChange={(value) => setFormData({ ...formData, unit_id: value })}>
@@ -2225,8 +2227,8 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
           )}
 
-          {/* Campo Sub Agenzia - mostrato solo se assignment_type è "sub_agenzia" */}
-          {formData.assignment_type === "sub_agenzia" && (
+          {/* Campo Sub Agenzia - mostrato solo se assignment_type è "sub_agenzia" e non è responsabile/backoffice commessa */}
+          {formData.assignment_type === "sub_agenzia" && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
             <div>
               <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
               <Select value={formData.sub_agenzia_id} onValueChange={(value) => setFormData({ ...formData, sub_agenzia_id: value })}>
