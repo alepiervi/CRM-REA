@@ -4125,8 +4125,8 @@ Duplicate,Test,+393471234567"""
         return True
 
     def run_all_tests(self):
-        """Run all test suites with priority on Responsabile Commessa System"""
-        print("🚀 Starting CRM API Testing - Responsabile Commessa System Complete...")
+        """Run focused test for 422 error debugging in user modification"""
+        print("🚀 Starting CRM API Testing - 422 Error Debug Focus...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
@@ -4135,15 +4135,8 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # PRIORITY TEST: Responsabile Commessa System Complete with Tipologia Contratto filters
-        self.test_responsabile_commessa_system_complete()
-        
-        # Create basic resources needed for other testing
-        self.test_units_management()
-        self.test_leads_management()
-        
-        # Run other test suites
-        self.test_lead_qualification_system()
+        # PRIORITY TEST: Debug 422 error in user modification
+        self.test_user_edit_422_error_debug()
         
         # Print summary
         print("\n" + "=" * 60)
