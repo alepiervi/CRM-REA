@@ -7688,6 +7688,38 @@ const ClientiManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  const updateCliente = async (clienteId, updateData) => {
+    try {
+      const response = await axios.put(`${API}/clienti/${clienteId}`, updateData);
+      setClienti(clienti.map(cliente => 
+        cliente.id === clienteId ? response.data : cliente
+      ));
+      toast({
+        title: "Successo",
+        description: "Cliente aggiornato con successo",
+      });
+      setShowEditModal(false);
+      setSelectedCliente(null);
+    } catch (error) {
+      console.error("Error updating cliente:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'aggiornamento del cliente",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewCliente = (cliente) => {
+    setSelectedCliente(cliente);
+    setShowViewModal(true);
+  };
+
+  const handleEditCliente = (cliente) => {
+    setSelectedCliente(cliente);
+    setShowEditModal(true);
+  };
+
   useEffect(() => {
     if (selectedCommessa) {
       fetchClienti();
