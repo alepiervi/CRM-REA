@@ -464,7 +464,7 @@ const DashboardStats = ({ selectedUnit }) => {
 };
 
 // Responsabile Commessa Dashboard Component
-const ResponsabileCommessaDashboard = ({ selectedUnit, units, commesse }) => {
+const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratto, units, commesse }) => {
   const [dashboardData, setDashboardData] = useState({
     clienti_oggi: 0,
     clienti_totali: 0,
