@@ -4584,8 +4584,8 @@ Duplicate,Test,+393471234567"""
 def main():
     """Main test execution"""
     tester = CRMAPITester()
-    # Run focused test for User System as requested
-    success = tester.run_user_system_tests()
+    # Run focused test for 422 error debugging as requested
+    success = tester.run_all_tests()
     return 0 if success else 1
 
 if __name__ == "__main__":
