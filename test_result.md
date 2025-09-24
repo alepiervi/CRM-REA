@@ -420,11 +420,26 @@ backend:
           agent: "testing"
           comment: "✅ SEPARAZIONE LEAD vs CLIENTI PERFETTAMENTE IMPLEMENTATA: Lead da campagne social creati correttamente e non presenti nella lista clienti. Clienti come anagrafiche manuali separate con campi dedicati (indirizzo, codice fiscale, partita IVA, dati aggiuntivi). Separazione completa e funzionale tra i due sistemi."
 
+  - task: "Clienti Navigation Fix - Layout & Rendering Issues"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "main"
+          comment: "PROBLEMA IDENTIFICATO: La navigazione verso 'Clienti' non funziona. Il pulsante è visibile ma il click non aggiorna activeTab. Il problema era causato da: 1) Layout CSS - sidebar footer con position:absolute sovrapposto ai pulsanti, 2) Possibile crash del componente ClientiManagement durante il rendering."
+        - working: true
+          agent: "main"
+          comment: "✅ RISOLTO: 1) Sidebar layout fix - rimosso position:absolute dal footer, implementato flex layout (flex flex-col per container, flex-1 overflow-y-auto per nav), 2) Migliorata gestione errori in ClientiManagement con try-catch blocks, 3) Aggiunto debug logging per identificare problemi rendering. RISULTATO: La navigazione ora funziona correttamente - console logs mostrano 'Rendering tab content for: clienti' e 'Rendering ClientiManagement with props'. Componente si carica ma presenta errore 403 su endpoint /api/clienti che è un problema separato di autorizzazione."
+
 metadata:
-  created_by: "testing_agent"
+  created_by: "main_agent"
   version: "1.0"
-  test_sequence: 4
-  run_ui: false
+  test_sequence: 5
+  run_ui: true
 
 test_plan:
   current_focus:
