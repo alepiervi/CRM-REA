@@ -160,6 +160,7 @@ class UserCreate(BaseModel):
     password: str
     role: UserRole
     unit_id: Optional[str] = None
+    sub_agenzia_id: Optional[str] = None  # Assegnazione diretta a sub agenzia
     referente_id: Optional[str] = None
     provinces: List[str] = []
     # Nuovi campi per autorizzazioni specializzate
