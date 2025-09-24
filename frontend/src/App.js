@@ -612,7 +612,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-slate-200 shadow-sm">
+      <div className="w-64 bg-white border-r border-slate-200 shadow-sm flex flex-col">
         {/* Sidebar Header with Unit Selector */}
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center space-x-3 mb-4">
@@ -702,8 +702,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <nav className="p-4 space-y-1">
+        {/* Navigation Menu - Now with flex-1 to take available space */}
+        <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
           {getNavItems().map((item) => (
             <button
               key={item.id}
@@ -720,8 +720,8 @@ const Dashboard = () => {
           ))}
         </nav>
 
-        {/* Sidebar Footer */}
-        <div className="absolute bottom-0 left-0 right-0 w-64 p-4 border-t border-slate-200 bg-white">
+        {/* Sidebar Footer - No longer absolute, now at bottom */}
+        <div className="p-4 border-t border-slate-200 bg-white">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
               <Users className="w-4 h-4 text-slate-600" />
