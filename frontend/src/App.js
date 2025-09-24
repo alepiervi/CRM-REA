@@ -8362,11 +8362,10 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               <Label htmlFor="commessa_id">Commessa *</Label>
               <Select 
                 value={formData.commessa_id || "none"} 
-                onValueChange={(value) => setFormData({
-                  ...formData, 
-                  commessa_id: value === "none" ? "" : value, 
-                  sub_agenzia_id: ''
-                })}
+                onValueChange={(value) => {
+                  const commessaId = value === "none" ? "" : value;
+                  handleCommessaChange(commessaId);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona Commessa" />
