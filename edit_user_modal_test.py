@@ -160,12 +160,12 @@ class EditUserModalTester:
         
         # Get servizi for the first commessa
         if commesse:
-            success, servizi_response, status = self.make_request('GET', f'servizi?commessa_id={commesse[0]["id"]}', expected_status=200)
+            success, servizi_response, status = self.make_request('GET', f'commesse/{commesse[0]["id"]}/servizi', expected_status=200)
             if success:
                 servizi = servizi_response
-                self.log_test("✅ GET /api/servizi for user update", True, f"Found {len(servizi)} servizi")
+                self.log_test("✅ GET /api/commesse/{commessa_id}/servizi for user update", True, f"Found {len(servizi)} servizi")
             else:
-                self.log_test("❌ GET /api/servizi for user update", False, f"Status: {status}")
+                self.log_test("❌ GET /api/commesse/{commessa_id}/servizi for user update", False, f"Status: {status}")
                 servizi = []
         else:
             servizi = []
