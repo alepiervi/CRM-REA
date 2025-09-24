@@ -4459,7 +4459,13 @@ async def list_openai_assistants(current_user: User = Depends(get_current_user))
         config = await db.ai_configurations.find_one({"is_active": True})
         
         if not config:
-            raise HTTPException(status_code=400, detail="No AI configuration found. Please configure OpenAI API key first.")
+            # Instead of raising an error, return empty list with a message
+            logging.warning("No AI configuration found for assistants listing")
+            return {
+                "assistants": [],
+                "message": "No AI configuration found. Please configure OpenAI API key first.",
+                "configured": False
+            }
         
         # List assistants from OpenAI
         import openai
@@ -4477,6 +4483,21 @@ async def list_openai_assistants(current_user: User = Depends(get_current_user))
                 "instructions": assistant.instructions or "",
                 "created_at": assistant.created_at
             })
+        
+        return {
+            "assistants": assistants,
+            "message": "Assistants loaded successfully",
+            "configured": True
+        }
+        
+    except Exception as e:
+        logging.error(f"List assistants error: {str(e)}")
+        # Return empty list instead of raising error to prevent dashboard crash
+        return {
+            "assistants": [],
+            "message": f"Error loading assistants: {str(e)}",
+            "configured": False
+        }
         
         return {
             "assistants": assistants,
