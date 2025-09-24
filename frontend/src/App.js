@@ -2553,7 +2553,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                         <div key={servizio.id} className="flex items-center space-x-2">
                           <Checkbox
                             id={`servizio-${servizio.id}`}
-                            checked={formData.servizi_autorizzati.includes(servizio.id)}
+                            checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
                             onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
                           />
                           <Label htmlFor={`servizio-${servizio.id}`} className="text-sm">
@@ -2600,7 +2600,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                         <div key={servizio.id} className="flex items-center space-x-2">
                           <Checkbox
                             id={`servizio-subagenzia-${servizio.id}`}
-                            checked={formData.servizi_autorizzati.includes(servizio.id)}
+                            checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
                             onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
                           />
                           <Label htmlFor={`servizio-subagenzia-${servizio.id}`} className="text-sm">
@@ -3004,7 +3004,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                         <div key={servizio.id} className="flex items-center space-x-2">
                           <Checkbox
                             id={servizio.id}
-                            checked={formData.servizi_autorizzati.includes(servizio.id)}
+                            checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
                             onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
                           />
                           <Label htmlFor={servizio.id} className="text-sm">
