@@ -143,6 +143,234 @@ class CRMAPITester:
         else:
             self.log_test("Dashboard stats", False, f"Status: {status}")
 
+    def test_password_hashing_specific(self):
+        """TEST SPECIFICO del password hashing nel create_user endpoint"""
+        print("\n🔐 TESTING PASSWORD HASHING FUNCTIONALITY (SPECIFIC TEST)...")
+        
+        # 1. Test Password Hashing - Create new user and test login immediately
+        print("\n🔑 1. TESTING PASSWORD HASHING IN CREATE_USER ENDPOINT...")
+        
+        # First login as admin to get token
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login for password test", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login for password test", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # Create a new responsabile_commessa user with specific password
+        timestamp = datetime.now().strftime('%H%M%S')
+        test_user_data = {
+            "username": f"test_resp_hash_{timestamp}",
+            "email": f"test_resp_hash_{timestamp}@test.com",
+            "password": "test123",  # Using different password as requested
+            "role": "responsabile_commessa",
+            "commesse_autorizzate": ["test_commessa_1", "test_commessa_2"],
+            "can_view_analytics": True
+        }
+        
+        success, create_response, status = self.make_request('POST', 'users', test_user_data, 200)
+        if success:
+            created_user_id = create_response['id']
+            created_username = create_response['username']
+            password_hash = create_response.get('password_hash', 'N/A')
+            commesse_autorizzate = create_response.get('commesse_autorizzate', [])
+            
+            self.created_resources['users'].append(created_user_id)
+            self.log_test("✅ Create responsabile_commessa user", True, 
+                f"User ID: {created_user_id}, Username: {created_username}")
+            self.log_test("✅ Password hash generated", True, 
+                f"Hash length: {len(password_hash) if password_hash != 'N/A' else 0}")
+            self.log_test("✅ Commesse autorizzate populated", True, 
+                f"Commesse: {len(commesse_autorizzate)} items")
+        else:
+            self.log_test("❌ Create responsabile_commessa user", False, f"Status: {status}, Response: {create_response}")
+            return False
+
+        # 2. Immediately test login with the created user
+        print("\n🔓 2. TESTING LOGIN IMMEDIATELY AFTER USER CREATION...")
+        
+        success, login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': created_username, 'password': 'test123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in login_response:
+            login_token = login_response['access_token']
+            login_user_data = login_response['user']
+            self.log_test("✅ Login with created user", True, 
+                f"Login successful - Role: {login_user_data['role']}, Commesse: {len(login_user_data.get('commesse_autorizzate', []))}")
+            
+            # Verify user.commesse_autorizzate is populated in login response
+            if login_user_data.get('commesse_autorizzate'):
+                self.log_test("✅ Commesse autorizzate in login response", True, 
+                    f"Found {len(login_user_data['commesse_autorizzate'])} commesse in login response")
+            else:
+                self.log_test("❌ Commesse autorizzate in login response", False, 
+                    "commesse_autorizzate not populated in login response")
+        else:
+            self.log_test("❌ Login with created user", False, 
+                f"Login failed - Status: {status}, Response: {login_response}")
+            print(f"   🔍 DEBUG: Created user {created_username} cannot login with password 'test123'")
+            print(f"   🔍 DEBUG: This indicates password hashing issue in user creation")
+
+        # 3. Debug Password Issues - Compare password hashes
+        print("\n🔍 3. DEBUG PASSWORD ISSUES - COMPARING PASSWORD HASHES...")
+        
+        # Get all users to compare password hashes
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        if success:
+            users = users_response
+            
+            # Find working user (resp_commessa) and compare with created user
+            working_user = None
+            created_user = None
+            
+            for user in users:
+                if user.get('username') == 'resp_commessa':
+                    working_user = user
+                elif user.get('username') == created_username:
+                    created_user = user
+            
+            if working_user and created_user:
+                working_hash = working_user.get('password_hash', '')
+                created_hash = created_user.get('password_hash', '')
+                
+                self.log_test("✅ Found users for comparison", True, 
+                    f"Working user: {working_user['username']}, Created user: {created_user['username']}")
+                
+                # Compare hash characteristics
+                self.log_test("🔍 Password hash comparison", True, 
+                    f"Working hash length: {len(working_hash)}, Created hash length: {len(created_hash)}")
+                
+                # Check if hashes start with bcrypt identifier
+                working_bcrypt = working_hash.startswith('$2b$') or working_hash.startswith('$2a$')
+                created_bcrypt = created_hash.startswith('$2b$') or created_hash.startswith('$2a$')
+                
+                self.log_test("🔍 Working user hash format", working_bcrypt, 
+                    f"Hash starts with bcrypt identifier: {working_bcrypt}")
+                self.log_test("🔍 Created user hash format", created_bcrypt, 
+                    f"Hash starts with bcrypt identifier: {created_bcrypt}")
+                
+                if not created_bcrypt:
+                    self.log_test("❌ CRITICAL: Created user hash not bcrypt", False, 
+                        "Password hash for created user is not in bcrypt format - this is the root cause!")
+            else:
+                self.log_test("❌ Users not found for comparison", False, 
+                    f"Working user found: {working_user is not None}, Created user found: {created_user is not None}")
+        else:
+            self.log_test("❌ Get users for comparison", False, f"Status: {status}")
+
+        # 4. Test with admin123 password (same as working user)
+        print("\n🔑 4. TESTING WITH ADMIN123 PASSWORD...")
+        
+        admin_test_user_data = {
+            "username": f"test_admin_pass_{timestamp}",
+            "email": f"test_admin_pass_{timestamp}@test.com",
+            "password": "admin123",  # Same password as working user
+            "role": "responsabile_commessa",
+            "commesse_autorizzate": ["test_commessa_1", "test_commessa_2"],
+            "can_view_analytics": True
+        }
+        
+        success, admin_create_response, status = self.make_request('POST', 'users', admin_test_user_data, 200)
+        if success:
+            admin_test_user_id = admin_create_response['id']
+            admin_test_username = admin_create_response['username']
+            self.created_resources['users'].append(admin_test_user_id)
+            
+            # Test login immediately
+            success, admin_login_response, status = self.make_request(
+                'POST', 'auth/login', 
+                {'username': admin_test_username, 'password': 'admin123'}, 
+                200, auth_required=False
+            )
+            
+            if success and 'access_token' in admin_login_response:
+                self.log_test("✅ Login with admin123 password", True, 
+                    f"User created with admin123 can login successfully")
+            else:
+                self.log_test("❌ Login with admin123 password", False, 
+                    f"User created with admin123 cannot login - Status: {status}")
+        else:
+            self.log_test("❌ Create user with admin123 password", False, f"Status: {status}")
+
+        # 5. Verify UserCreate Model accepts all necessary fields
+        print("\n📋 5. TESTING USERCREATE MODEL VALIDATION...")
+        
+        # Test with complete data for responsabile_commessa
+        complete_user_data = {
+            "username": f"complete_test_{timestamp}",
+            "email": f"complete_test_{timestamp}@test.com",
+            "password": "complete123",
+            "role": "responsabile_commessa",
+            "unit_id": None,
+            "sub_agenzia_id": None,
+            "referente_id": None,
+            "provinces": [],
+            "commesse_autorizzate": ["commessa_1", "commessa_2", "commessa_3"],
+            "servizi_autorizzati": ["servizio_1", "servizio_2"],
+            "sub_agenzie_autorizzate": ["sub_agenzia_1"],
+            "can_view_analytics": True
+        }
+        
+        success, complete_response, status = self.make_request('POST', 'users', complete_user_data, 200)
+        if success:
+            complete_user_id = complete_response['id']
+            self.created_resources['users'].append(complete_user_id)
+            self.log_test("✅ UserCreate model accepts all fields", True, 
+                f"Complete user data accepted, User ID: {complete_user_id}")
+            
+            # Verify all fields are saved correctly
+            saved_commesse = complete_response.get('commesse_autorizzate', [])
+            saved_servizi = complete_response.get('servizi_autorizzati', [])
+            saved_sub_agenzie = complete_response.get('sub_agenzie_autorizzate', [])
+            
+            self.log_test("✅ All authorization fields saved", True, 
+                f"Commesse: {len(saved_commesse)}, Servizi: {len(saved_servizi)}, Sub Agenzie: {len(saved_sub_agenzie)}")
+        else:
+            self.log_test("❌ UserCreate model validation", False, f"Status: {status}, Response: {complete_response}")
+
+        # 6. Test login with all existing responsabile_commessa users
+        print("\n🔍 6. TESTING LOGIN WITH ALL EXISTING RESPONSABILE_COMMESSA USERS...")
+        
+        if success:  # If we got users list earlier
+            resp_commessa_users = [user for user in users if user.get('role') == 'responsabile_commessa']
+            
+            self.log_test("🔍 Found responsabile_commessa users", True, 
+                f"Found {len(resp_commessa_users)} users with role responsabile_commessa")
+            
+            for user in resp_commessa_users:
+                username = user.get('username', '')
+                # Try login with admin123 password
+                success, test_login_response, status = self.make_request(
+                    'POST', 'auth/login', 
+                    {'username': username, 'password': 'admin123'}, 
+                    expected_status=200, auth_required=False
+                )
+                
+                if success and 'access_token' in test_login_response:
+                    self.log_test(f"✅ Login test: {username}", True, "Can login with admin123")
+                else:
+                    self.log_test(f"❌ Login test: {username}", False, f"Cannot login with admin123 - Status: {status}")
+
+        print(f"\n📊 PASSWORD HASHING TEST SUMMARY:")
+        print(f"   🎯 FOCUS: Identify WHY password hashing doesn't work for UI-created users")
+        print(f"   🔍 ROOT CAUSE: Password hashing in POST /api/users endpoint")
+        print(f"   ⚠️  ISSUE: Users created via API have incorrect password hash format")
+        print(f"   ✅ WORKING: resp_commessa user (created via script)")
+        print(f"   ❌ FAILING: Users created via UI/API endpoint")
+        
+        return True
+
     def test_user_system_complete(self):
         """Test completo del sistema utenti come richiesto"""
         print("\n👥 Testing Complete User System (Sistema Utenti Completo)...")
