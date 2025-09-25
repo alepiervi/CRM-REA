@@ -162,13 +162,10 @@ const AuthProvider = ({ children }) => {
 
   const fetchCurrentUser = async () => {
     try {
-      console.log("=== FETCHING CURRENT USER ===");
       const response = await axios.get(`${API}/auth/me`);
-      console.log("User data ricevuta da /api/auth/me:", response.data);
-      console.log("Commesse autorizzate nel user data:", response.data.commesse_autorizzate);
       setUser(response.data);
     } catch (error) {
-      console.error("❌ Error fetching user:", error);
+      console.error("Error fetching user:", error);
       // Se il token è scaduto o non valido, rimuovi tutto e forza login
       if (error.response?.status === 401 || error.response?.status === 403) {
         logout();
