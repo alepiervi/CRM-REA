@@ -1010,20 +1010,17 @@ const Dashboard = () => {
           <div className="mt-4">
             <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
               1. Seleziona Commessa
-              {!commesseLoading && getAvailableCommesse().length > 0 && (
+              {getAvailableCommesse().length > 0 && (
                 <span className="ml-1 text-xs text-green-600">({getAvailableCommesse().length} disponibili)</span>
               )}
-              {commesseLoading && (
-                <span className="ml-1 text-xs text-blue-600">(caricamento...)</span>
-              )}
             </Label>
-            <Select value={selectedCommessa} onValueChange={handleCommessaChange} disabled={commesseLoading}>
+            <Select value={selectedCommessa} onValueChange={handleCommessaChange}>
               <SelectTrigger className="mt-1">
-                <SelectValue placeholder={commesseLoading ? "Caricamento commesse..." : "Seleziona commessa"} />
+                <SelectValue placeholder="Seleziona commessa" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le Commesse</SelectItem>
-                {!commesseLoading && getAvailableCommesse().map((commessa) => (
+                {getAvailableCommesse().map((commessa) => (
                   <SelectItem key={commessa.id} value={commessa.id}>
                     <div className="flex items-center space-x-2">
                       <Building className="w-3 h-3" />
@@ -1034,19 +1031,11 @@ const Dashboard = () => {
                     </div>
                   </SelectItem>
                 ))}
-                {!commesseLoading && getAvailableCommesse().length === 0 && (
+                {getAvailableCommesse().length === 0 && (
                   <SelectItem value="none" disabled>
                     <div className="flex items-center space-x-2 text-slate-500">
                       <AlertCircle className="w-3 h-3" />
                       <span>Nessuna commessa disponibile</span>
-                    </div>
-                  </SelectItem>
-                )}
-                {commesseLoading && (
-                  <SelectItem value="loading" disabled>
-                    <div className="flex items-center space-x-2 text-blue-500">
-                      <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      <span>Caricamento commesse...</span>
                     </div>
                   </SelectItem>
                 )}
