@@ -2248,6 +2248,7 @@ const UsersManagement = ({ selectedUnit, units }) => {
 
   const fetchCommesse = async () => {
     try {
+      setCommesseLoading(true);
       console.log("=== FETCHING COMMESSE ===");
       const response = await axios.get(`${API}/commesse`);
       console.log("Response ricevuta da /api/commesse:", response.data);
@@ -2256,6 +2257,8 @@ const UsersManagement = ({ selectedUnit, units }) => {
     } catch (error) {
       console.error("❌ Error fetching commesse:", error);
       setCommesse([]);
+    } finally {
+      setCommesseLoading(false);
     }
   };
 
