@@ -812,6 +812,35 @@ const Dashboard = () => {
     }
   };
 
+  // useEffect per caricare tipologie contratto quando cambia commessa/servizio/unit
+  useEffect(() => {
+    const loadTipologieContratto = async () => {
+      if (selectedCommessa && selectedCommessa !== "all" && 
+          selectedServizio && selectedServizio !== "all" &&
+          selectedUnit && selectedUnit !== "all") {
+        
+        try {
+          const params = new URLSearchParams();
+          params.append("commessa_id", selectedCommessa);
+          if (selectedServizio !== "all") {
+            params.append("servizio_id", selectedServizio);
+          }
+          
+          const response = await axios.get(`${API}/tipologie-contratto?${params}`);
+          setTipologieContratto(response.data);
+          console.log("Tipologie contratto caricate:", response.data);
+        } catch (error) {
+          console.error("Error fetching tipologie contratto:", error);
+          setTipologieContratto([]);
+        }
+      } else {
+        setTipologieContratto([]);
+      }
+    };
+
+    loadTipologieContratto();
+  }, [selectedCommessa, selectedServizio, selectedUnit]);
+
   const handleUnitChange = (unitId) => {
     setSelectedUnit(unitId);
   };
