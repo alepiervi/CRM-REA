@@ -4562,6 +4562,9 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # URGENT TEST FIRST: Tipologia Contratto Selector for Responsabile Commessa
+        self.test_responsabile_commessa_tipologia_contratto_urgent()
+        
         # URGENT TEST: Responsabile Commessa System
         self.test_responsabile_commessa_system()
         
