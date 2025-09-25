@@ -456,10 +456,10 @@ backend:
   - task: "Responsabile Commessa User Creation Debug - Backend Analysis"
     implemented: true
     working: false
-    file: "/app/backend/server.py"
+    file: "/app/frontend/src/App.js"
     stuck_count: 2
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "testing"
