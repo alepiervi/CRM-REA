@@ -671,6 +671,7 @@ const Dashboard = () => {
   const [assistants, setAssistants] = useState([]);
   const [tipologieContratto, setTipologieContratto] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
+  const [commesseLoading, setCommesseLoading] = useState(true);
   const { user, logout } = useAuth();
 
   useEffect(() => {
