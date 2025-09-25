@@ -2655,7 +2655,11 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
 
             <div>
               <Label htmlFor="role">Ruolo *</Label>
-              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+              <Select value={formData.role} onValueChange={(value) => {
+                console.log("🎯 Role selector onChange:", value);
+                setFormData({ ...formData, role: value });
+                console.log("🎯 FormData after role change:", { ...formData, role: value });
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona ruolo" />
                 </SelectTrigger>
@@ -3121,7 +3125,11 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
 
             <div>
               <Label htmlFor="role">Ruolo *</Label>
-              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+              <Select value={formData.role} onValueChange={(value) => {
+                console.log("🎯 Role selector onChange:", value);
+                setFormData({ ...formData, role: value });
+                console.log("🎯 FormData after role change:", { ...formData, role: value });
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona ruolo" />
                 </SelectTrigger>
