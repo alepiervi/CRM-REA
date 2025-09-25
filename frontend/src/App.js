@@ -755,6 +755,39 @@ const Dashboard = () => {
     }
   };
 
+  const fetchTipologieContrattoResponsabile = async () => {
+    try {
+      if (!user.commesse_autorizzate || user.commesse_autorizzate.length === 0) {
+        console.log("Nessuna commessa autorizzata trovata per l'utente");
+        setTipologieContratto([]);
+        return;
+      }
+
+      // Carica tutte le tipologie per le commesse autorizzate
+      const allTipologie = new Set();
+      
+      for (const commessaId of user.commesse_autorizzate) {
+        try {
+          const response = await axios.get(`${API}/tipologie-contratto?commessa_id=${commessaId}`);
+          response.data.forEach(tipologia => {
+            allTipologie.add(JSON.stringify(tipologia));
+          });
+        } catch (error) {
+          console.error(`Error fetching tipologie for commessa ${commessaId}:`, error);
+        }
+      }
+
+      // Converte Set back to array of objects
+      const tipologieArray = Array.from(allTipologie).map(tipologiaStr => JSON.parse(tipologiaStr));
+      
+      console.log("Tipologie contratto caricate per responsabile commessa:", tipologieArray);
+      setTipologieContratto(tipologieArray);
+    } catch (error) {
+      console.error("Error fetching tipologie contratto for responsabile:", error);
+      setTipologieContratto([]);
+    }
+  };
+
   const handleUnitChange = (unitId) => {
     setSelectedUnit(unitId);
   };
