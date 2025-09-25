@@ -460,7 +460,9 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Sistema Gerarchico Selettori - Responsabile Commessa Testing"
+    - "Sistema Gerarchico Selettori - Admin Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
