@@ -925,170 +925,139 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Commessa Selector */}
-          <div className="mb-4">
-            <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">Commessa</Label>
-            <Select value={selectedCommessa} onValueChange={setSelectedCommessa}>
+          {/* Sistema Gerarchico di Selettori per TUTTI i Ruoli */}
+          
+          {/* 1. SELETTORE COMMESSA - Primo Livello */}
+          <div className="mt-4">
+            <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+              1. Seleziona Commessa
+              {getAvailableCommesse().length > 0 && (
+                <span className="ml-1 text-xs text-green-600">({getAvailableCommesse().length} disponibili)</span>
+              )}
+            </Label>
+            <Select value={selectedCommessa} onValueChange={handleCommessaChange}>
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Seleziona commessa" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le Commesse</SelectItem>
-                {commesse.map((commessa) => (
+                {getAvailableCommesse().map((commessa) => (
                   <SelectItem key={commessa.id} value={commessa.id}>
                     <div className="flex items-center space-x-2">
-                      <Briefcase className="w-3 h-3" />
+                      <Building className="w-3 h-3" />
                       <span>{commessa.nome}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Unit Selector */}
-          <div>
-            <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">Unit / Sub Agenzia</Label>
-            <Select value={selectedUnit} onValueChange={handleUnitChange}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Seleziona unit" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutte le Unit</SelectItem>
-                {units
-                  .filter(unit => 
-                    selectedCommessa === "all" || 
-                    unit.commesse_autorizzate?.includes(selectedCommessa)
-                  )
-                  .map((unit) => (
-                  <SelectItem key={unit.id} value={unit.id}>
-                    <div className="flex items-center space-x-2">
-                      <Building2 className="w-3 h-3" />
-                      <span>{unit.name}</span>
-                      {!unit.is_active && (
+                      {!commessa.is_active && (
                         <Badge variant="secondary" className="text-xs">Inattiva</Badge>
                       )}
                     </div>
                   </SelectItem>
                 ))}
-                {/* Sub Agenzie filtered by commessa */}
-                {subAgenzie
-                  .filter(subAgenzia => 
-                    selectedCommessa === "all" || 
-                    subAgenzia.commesse_autorizzate?.includes(selectedCommessa)
-                  )
-                  .length > 0 && (
-                  <>
-                    <SelectItem value="divider" disabled>
-                      <span className="text-slate-400 text-xs">━ Sub Agenzie ━</span>
-                    </SelectItem>
-                    {subAgenzie
-                      .filter(subAgenzia => 
-                        selectedCommessa === "all" || 
-                        subAgenzia.commesse_autorizzate?.includes(selectedCommessa)
-                      )
-                      .map((subAgenzia) => (
-                      <SelectItem key={`sub-${subAgenzia.id}`} value={`sub-${subAgenzia.id}`}>
-                        <div className="flex items-center space-x-2">
-                          <Store className="w-3 h-3" />
-                          <span>{subAgenzia.nome}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </>
+                {getAvailableCommesse().length === 0 && (
+                  <SelectItem value="none" disabled>
+                    <div className="flex items-center space-x-2 text-slate-500">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>Nessuna commessa disponibile</span>
+                    </div>
+                  </SelectItem>
                 )}
               </SelectContent>
             </Select>
           </div>
-          
-          {/* Selettori per Responsabile Commessa */}
-          {user.role === "responsabile_commessa" && (
-            <>
-              {/* Selettore Commesse Autorizzate */}
-              <div className="mt-4">
-                <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                  Commesse Autorizzate
-                  {user.commesse_autorizzate && (
-                    <span className="ml-1 text-xs text-green-600">({user.commesse_autorizzate.length} disponibili)</span>
-                  )}
-                </Label>
-                <Select value={selectedCommessa} onValueChange={setSelectedCommessa}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleziona commessa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tutte le Commesse</SelectItem>
-                    {user.commesse_autorizzate?.map((commessaId) => {
-                      const commessa = commesse.find(c => c.id === commessaId);
-                      return commessa ? (
-                        <SelectItem key={commessa.id} value={commessa.id}>
-                          <div className="flex items-center space-x-2">
-                            <Building className="w-3 h-3" />
-                            <span>{commessa.nome}</span>
-                          </div>
-                        </SelectItem>
-                      ) : null;
-                    }) || []}
-                    {(!user.commesse_autorizzate || user.commesse_autorizzate.length === 0) && (
-                      <SelectItem value="none" disabled>
-                        <div className="flex items-center space-x-2 text-slate-500">
-                          <AlertCircle className="w-3 h-3" />
-                          <span>Nessuna commessa autorizzata</span>
+
+          {/* 2. SELETTORE SERVIZIO - Secondo Livello (appare quando commessa selezionata) */}
+          {selectedCommessa && selectedCommessa !== "all" && (
+            <div className="mt-4">
+              <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                2. Seleziona Servizio
+                {servizi.length > 0 && (
+                  <span className="ml-1 text-xs text-green-600">({servizi.length} disponibili)</span>
+                )}
+              </Label>
+              <Select value={selectedServizio || "all"} onValueChange={handleServizioChange}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona servizio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i Servizi</SelectItem>
+                  {servizi.length > 0 ? (
+                    servizi.map((servizio) => (
+                      <SelectItem key={servizio.id} value={servizio.id}>
+                        <div className="flex items-center space-x-2">
+                          <Cog className="w-3 h-3" />
+                          <span>{servizio.nome}</span>
                         </div>
                       </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+                    ))
+                  ) : (
+                    <SelectItem value="no-data" disabled>
+                      <div className="flex items-center space-x-2 text-slate-500">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>Caricamento servizi...</span>
+                      </div>
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-              {/* Selettore Servizi (quando commessa selezionata) */}
-              {selectedCommessa && selectedCommessa !== "all" && (
-                <div className="mt-4">
-                  <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                    Servizi Disponibili
-                    {servizi.length > 0 && (
-                      <span className="ml-1 text-xs text-green-600">({servizi.length} disponibili)</span>
-                    )}
-                  </Label>
-                  <Select value={selectedServizio || "all"} onValueChange={setSelectedServizio}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Seleziona servizio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutti i Servizi</SelectItem>
-                      {servizi.length > 0 ? (
-                        servizi.map((servizio) => (
-                          <SelectItem key={servizio.id} value={servizio.id}>
-                            <div className="flex items-center space-x-2">
-                              <Cog className="w-3 h-3" />
-                              <span>{servizio.nome}</span>
-                            </div>
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-data" disabled>
-                          <div className="flex items-center space-x-2 text-slate-500">
-                            <AlertCircle className="w-3 h-3" />
-                            <span>Nessun servizio disponibile</span>
-                          </div>
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Tipologia Contratto Selector */}
-              <div className="mt-4">
+          {/* 3. SELETTORE UNIT/SUB AGENZIA - Terzo Livello (appare quando servizio selezionato) */}
+          {selectedCommessa && selectedCommessa !== "all" && selectedServizio && selectedServizio !== "all" && (
+            <div className="mt-4">
               <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                Tipologia Contratto
+                3. Seleziona Unit/Sub Agenzia
+                {getAvailableUnitsSubAgenzie().length > 0 && (
+                  <span className="ml-1 text-xs text-green-600">({getAvailableUnitsSubAgenzie().length} disponibili)</span>
+                )}
+              </Label>
+              <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona unit/sub agenzia" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le Unit/Sub Agenzie</SelectItem>
+                  {getAvailableUnitsSubAgenzie().map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      <div className="flex items-center space-x-2">
+                        {item.type === 'unit' ? (
+                          <Building2 className="w-3 h-3" />
+                        ) : (
+                          <Store className="w-3 h-3" />
+                        )}
+                        <span>{item.nome}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {item.type === 'unit' ? 'Unit' : 'Sub Agenzia'}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                  {getAvailableUnitsSubAgenzie().length === 0 && (
+                    <SelectItem value="none" disabled>
+                      <div className="flex items-center space-x-2 text-slate-500">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>Nessuna unit/sub agenzia autorizzata</span>
+                      </div>
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* 4. SELETTORE TIPOLOGIA CONTRATTO - Quarto Livello (appare quando unit/sub agenzia selezionata) */}
+          {selectedCommessa && selectedCommessa !== "all" && 
+           selectedServizio && selectedServizio !== "all" && 
+           selectedUnit && selectedUnit !== "all" && (
+            <div className="mt-4">
+              <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                4. Seleziona Tipologia Contratto
                 {tipologieContratto.length > 0 && (
                   <span className="ml-1 text-xs text-green-600">({tipologieContratto.length} disponibili)</span>
                 )}
               </Label>
               <Select value={selectedTipologiaContratto} onValueChange={setSelectedTipologiaContratto}>
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Seleziona tipologia" />
+                  <SelectValue placeholder="Seleziona tipologia contratto" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le Tipologie</SelectItem>
@@ -1105,21 +1074,28 @@ const Dashboard = () => {
                     <SelectItem value="no-data" disabled>
                       <div className="flex items-center space-x-2 text-slate-500">
                         <AlertCircle className="w-3 h-3" />
-                        <span>Nessuna tipologia disponibile</span>
+                        <span>Caricamento tipologie...</span>
                       </div>
                     </SelectItem>
                   )}
                 </SelectContent>
               </Select>
-              
-              {/* Debug info per il responsabile commessa */}
-              {user.commesse_autorizzate && (
-                <p className="text-xs text-slate-500 mt-1">
-                  Commesse autorizzate: {user.commesse_autorizzate.length}
-                </p>
-              )}
             </div>
-            </>
+          )}
+
+          {/* Debug Info per tutti i ruoli */}
+          {user && (
+            <div className="mt-4 p-3 bg-slate-50 rounded border text-xs">
+              <p className="font-medium text-slate-700">Debug Info:</p>
+              <p className="text-slate-600">Ruolo: {user.role}</p>
+              {user.commesse_autorizzate && (
+                <p className="text-slate-600">Commesse autorizzate: {user.commesse_autorizzate.length}</p>
+              )}
+              <p className="text-slate-600">Commessa: {selectedCommessa}</p>
+              <p className="text-slate-600">Servizio: {selectedServizio}</p>
+              <p className="text-slate-600">Unit: {selectedUnit}</p>
+              <p className="text-slate-600">Tipologia: {selectedTipologiaContratto}</p>
+            </div>
           )}
         </div>
 
