@@ -2646,8 +2646,11 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
+                placeholder="Lascia vuoto per default: admin123"
               />
+              <p className="text-xs text-slate-500 mt-1">
+                Se vuoto, verrà impostata automaticamente "admin123"
+              </p>
             </div>
 
             <div>
