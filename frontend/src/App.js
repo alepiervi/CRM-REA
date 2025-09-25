@@ -2900,7 +2900,15 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             <Button type="button" variant="outline" onClick={onClose}>
               Annulla
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              onClick={(e) => {
+                console.log("🎯 BUTTON ONCLICK chiamato! Event:", e);
+                console.log("🎯 Button type:", e.target.type);
+                console.log("🎯 Form element:", e.target.form);
+              }}
+            >
               {isLoading ? "Creazione..." : "Crea Utente"}
             </Button>
           </DialogFooter>
