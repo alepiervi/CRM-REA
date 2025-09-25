@@ -5242,8 +5242,8 @@ Duplicate,Test,+393471234567"""
                 print(f"🚨 CRITICAL: Inconsistency found - Working: {working_commesse}, Created: {created_commesse}")
 
     def run_all_tests(self):
-        """Run focused test for Responsabile Commessa system"""
-        print("🚀 Starting CRM API Testing - Responsabile Commessa Focus...")
+        """Run focused test for Password Hashing and Responsabile Commessa system"""
+        print("🚀 Starting CRM API Testing - Password Hashing Focus...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
@@ -5251,6 +5251,9 @@ Duplicate,Test,+393471234567"""
         if not self.test_authentication():
             print("❌ Authentication failed - stopping tests")
             return False
+        
+        # SPECIFIC PASSWORD HASHING TEST (as requested in review)
+        self.test_password_hashing_specific()
         
         # URGENT DEBUG TEST FIRST: User Creation Process
         self.test_responsabile_commessa_user_creation_debug()
