@@ -915,9 +915,9 @@ frontend:
 
   - task: "Responsabile Commessa Urgent Debug - Commesse Vuote Problem"
     implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
