@@ -4753,7 +4753,10 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # URGENT TEST FIRST: Tipologia Contratto Selector for Responsabile Commessa
+        # URGENT DEBUG TEST FIRST: Commesse Vuote Problem
+        self.test_responsabile_commessa_urgent_debug()
+        
+        # URGENT TEST: Tipologia Contratto Selector for Responsabile Commessa
         self.test_responsabile_commessa_tipologia_contratto_urgent()
         
         # URGENT TEST: Responsabile Commessa System
