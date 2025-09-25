@@ -52,6 +52,7 @@ import {
   Eye,
   Search,
   Download,
+  Cog,
   MapPin,
   Home,
   Clock,
