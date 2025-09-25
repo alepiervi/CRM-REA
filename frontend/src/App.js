@@ -672,9 +672,14 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchUnits();
-    fetchAssistants();
     fetchCommesse();
     fetchSubAgenzie();
+    
+    // Fetch assistants solo per admin
+    if (user.role === "admin") {
+      fetchAssistants();
+    }
+    
     if (user.role === "responsabile_commessa") {
       fetchTipologieContratto();
     }
