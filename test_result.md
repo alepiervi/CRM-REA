@@ -461,7 +461,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "AI-Assistants 403 Error Fix Verification - COMPLETED"
+    - "Responsabile Commessa User Creation Debug - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
