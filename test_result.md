@@ -970,6 +970,21 @@ frontend:
           agent: "testing"
           comment: "🎉 FINAL URGENT FRONTEND UI TEST COMPLETED SUCCESSFULLY! (88.9% success rate - 8/9 checks passed): ✅ LOGIN & SIDEBAR CHECK: resp_commessa/admin123 login working perfectly, sidebar shows 'TIPOLOGIA CONTRATTO (4 DISPONIBILI)' and 'Commesse autorizzate: 2' debug info as expected, ✅ SELECTOR FUNCTIONALITY: Dropdown opens correctly and shows commesse options (Tutte le Commesse, Fastweb, Fotovoltaico), selection works perfectly, ✅ CROSS-NAVIGATION PERSISTENCE: Selection persists correctly across Dashboard → Analytics → Clienti → Dashboard navigation, ✅ DATA FILTERING: Console logs confirm '4 tipologie contratto caricate per responsabile commessa', ClientiManagement component receives correct props with selectedCommessa filtering, ✅ NO ERROR MESSAGES: 'Nessuna tipologia disponibile' message correctly NOT present, ✅ DEBUG VERIFICATION: All required debug info visible in sidebar (commesse autorizzate count, tipologie disponibili count). Minor note: Dropdown shows commesse names instead of individual tipologie names (this appears to be the correct implementation for the commessa-based filtering system). TIPOLOGIA CONTRATTO SELECTOR UI COMPLETAMENTE FUNZIONANTE!"
 
+  - task: "AI-Assistants 403 Error Fix for Responsabile Commessa"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "TEST di verifica risoluzione errore 403 per /api/ai-assistants: OBIETTIVO verificare che il responsabile commessa non riceva più l'errore 403. TEST SPECIFICI: 1. Test Responsabile Commessa (login resp_commessa/admin123, verificare NO errori 403 per /api/ai-assistants, verificare NO AxiosError), 2. Test Admin (verificare chiamata /api/ai-assistants funzioni correttamente, verificare sezione Configurazione AI visibile), 3. Network Tab Verification (resp_commessa: NESSUNA chiamata a /api/ai-assistants, admin: chiamata con status 200)."
+        - working: true
+          agent: "testing"
+          comment: "🎉 AI-ASSISTANTS 403 ERROR FIX VERIFICATION - PERFECT SUCCESS! (100% success rate - ALL CRITERIA MET): ✅ RESPONSABILE COMMESSA RESULTS: ZERO 403 errors for /api/ai-assistants (0 found), ZERO AxiosError for ai-assistants (0 found), ZERO network requests to /api/ai-assistants (0 made - correct behavior), 'Configurazione AI' navigation NOT visible (correct admin-only restriction), ✅ ADMIN RESULTS: 'Configurazione AI' navigation visible (correct), Admin makes 4 network requests to /api/ai-assistants, Admin receives 2 successful 200 responses from /api/ai-assistants, ZERO 403 errors for admin (0 found), ✅ NETWORK TAB VERIFICATION: Responsabile commessa makes NO calls to /api/ai-assistants (expected), Admin successfully calls /api/ai-assistants with 200 status (working correctly), ✅ SUCCESS CRITERIA COMPLETELY MET: ZERO 403 errors for /api/ai-assistants for responsabile_commessa, Dashboard responsabile commessa loads without errors, Admin continues to have access to AI assistants. THE 403 ERROR FIX IS WORKING PERFECTLY!"
+
 agent_communication:
     - agent: "testing"
       message: "🚨 URGENT DEBUG COMPLETATO - PROBLEMA IDENTIFICATO! Il problema delle 'commesse vuote' per responsabile_commessa NON è nel backend! TUTTI GLI ENDPOINT FUNZIONANO PERFETTAMENTE: 1) Login resp_commessa/admin123 restituisce correttamente user.commesse_autorizzate con 2 commesse ['b8f5732d-6521-41c1-9375-2a899d366404', '4f90875a-9820-41bc-b4bb-4119594772c1'], 2) GET /api/auth/me restituisce gli stessi dati con perfetta consistenza, 3) GET /api/commesse restituisce 2 commesse (Fastweb, Fotovoltaico) con tutti i dettagli, 4) Database verification conferma che l'utente resp_commessa ha commesse_autorizzate popolato correttamente. CONCLUSIONE CRITICA: Il problema è nel FRONTEND che non processa/visualizza correttamente i dati ricevuti dal backend. Il frontend mostra solo 'Tutte le commesse' senza opzioni specifiche perché probabilmente non utilizza il campo commesse_autorizzate dal login response."
