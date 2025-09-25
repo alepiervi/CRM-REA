@@ -687,6 +687,15 @@ const Dashboard = () => {
   }, [user]);
 
   useEffect(() => {
+    // Carica servizi quando cambia la commessa selezionata (per responsabile_commessa)
+    if (user.role === "responsabile_commessa" && selectedCommessa && selectedCommessa !== "all") {
+      fetchServiziPerCommessa(selectedCommessa);
+    } else if (user.role === "responsabile_commessa" && selectedCommessa === "all") {
+      setServizi([]); // Reset servizi quando "all" è selezionato
+    }
+  }, [selectedCommessa, user.role]);
+
+  useEffect(() => {
     // Auto-select unit for non-admin users
     if (user.role !== "admin" && user.unit_id && !selectedUnit) {
       setSelectedUnit(user.unit_id);
