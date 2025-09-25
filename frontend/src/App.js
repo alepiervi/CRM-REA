@@ -680,20 +680,7 @@ const Dashboard = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (user.role === "responsabile_commessa") {
-      fetchTipologieContrattoResponsabile();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    // Carica servizi quando cambia la commessa selezionata (per responsabile_commessa)
-    if (user.role === "responsabile_commessa" && selectedCommessa && selectedCommessa !== "all") {
-      fetchServiziPerCommessa(selectedCommessa);
-    } else if (user.role === "responsabile_commessa" && selectedCommessa === "all") {
-      setServizi([]); // Reset servizi quando "all" è selezionato
-    }
-  }, [selectedCommessa, user.role]);
+  // Rimossi vecchi useEffect - ora gestiti dal sistema gerarchico
 
   useEffect(() => {
     // Auto-select unit for non-admin users
