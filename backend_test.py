@@ -4551,6 +4551,197 @@ Duplicate,Test,+393471234567"""
             # Restore original admin token
             self.token = original_token
 
+    def test_responsabile_commessa_urgent_debug(self):
+        """URGENT DEBUG: Test responsabile_commessa commesse vuote problem"""
+        print("\n🎯 URGENT DEBUG: Responsabile Commessa Commesse Vuote Problem")
+        print("=" * 80)
+        
+        # STEP 1: LOGIN TEST with resp_commessa/admin123
+        print("\n🔐 1. LOGIN TEST - resp_commessa/admin123")
+        success, login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'resp_commessa', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in login_response:
+            resp_token = login_response['access_token']
+            resp_user = login_response['user']
+            
+            print(f"✅ LOGIN SUCCESSFUL")
+            print(f"   📋 User Role: {resp_user.get('role', 'N/A')}")
+            print(f"   🔑 Token Length: {len(resp_token)} chars")
+            
+            # CRITICAL: Check commesse_autorizzate in login response
+            commesse_autorizzate = resp_user.get('commesse_autorizzate', [])
+            print(f"   🎯 COMMESSE_AUTORIZZATE in LOGIN: {commesse_autorizzate}")
+            print(f"   📊 Number of authorized commesse: {len(commesse_autorizzate)}")
+            
+            # Show ALL fields in user object
+            print(f"   📄 ALL USER FIELDS in LOGIN RESPONSE:")
+            for key, value in resp_user.items():
+                print(f"      • {key}: {value}")
+            
+            self.log_test("Login resp_commessa/admin123", True, 
+                f"Role: {resp_user.get('role')}, Commesse: {len(commesse_autorizzate)}")
+        else:
+            print(f"❌ LOGIN FAILED - Status: {status}")
+            print(f"   Response: {login_response}")
+            self.log_test("Login resp_commessa/admin123", False, f"Status: {status}")
+            return
+        
+        # STEP 2: AUTH/ME TEST with responsabile_commessa token
+        print("\n🔍 2. AUTH/ME TEST - Verify complete user data")
+        original_token = self.token
+        self.token = resp_token
+        
+        success, me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+        if success:
+            print(f"✅ AUTH/ME SUCCESSFUL")
+            
+            # Check commesse_autorizzate in /auth/me response
+            me_commesse = me_response.get('commesse_autorizzate', [])
+            print(f"   🎯 COMMESSE_AUTORIZZATE in AUTH/ME: {me_commesse}")
+            print(f"   📊 Number of authorized commesse: {len(me_commesse)}")
+            
+            # Show ALL fields in auth/me response
+            print(f"   📄 ALL USER FIELDS in AUTH/ME RESPONSE:")
+            for key, value in me_response.items():
+                print(f"      • {key}: {value}")
+            
+            # Compare login vs auth/me
+            login_commesse = set(commesse_autorizzate)
+            me_commesse_set = set(me_commesse)
+            
+            if login_commesse == me_commesse_set:
+                print(f"   ✅ CONSISTENCY: Login and Auth/Me have same commesse_autorizzate")
+            else:
+                print(f"   ❌ INCONSISTENCY: Login vs Auth/Me commesse_autorizzate differ")
+                print(f"      Login: {login_commesse}")
+                print(f"      Auth/Me: {me_commesse_set}")
+            
+            self.log_test("Auth/Me resp_commessa", True, 
+                f"Commesse in auth/me: {len(me_commesse)}")
+        else:
+            print(f"❌ AUTH/ME FAILED - Status: {status}")
+            self.log_test("Auth/Me resp_commessa", False, f"Status: {status}")
+        
+        # STEP 3: COMMESSE ENDPOINT TEST
+        print("\n📋 3. COMMESSE ENDPOINT TEST - GET /api/commesse")
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if success:
+            commesse_list = commesse_response if isinstance(commesse_response, list) else []
+            print(f"✅ COMMESSE ENDPOINT SUCCESSFUL")
+            print(f"   📊 Total commesse returned: {len(commesse_list)}")
+            
+            if commesse_list:
+                print(f"   📄 COMMESSE DETAILS:")
+                for i, commessa in enumerate(commesse_list, 1):
+                    print(f"      {i}. ID: {commessa.get('id', 'N/A')}")
+                    print(f"         Nome: {commessa.get('nome', 'N/A')}")
+                    print(f"         Descrizione: {commessa.get('descrizione', 'N/A')}")
+                    print(f"         Is Active: {commessa.get('is_active', 'N/A')}")
+                    print(f"         Responsabile ID: {commessa.get('responsabile_id', 'N/A')}")
+            else:
+                print(f"   ⚠️ NO COMMESSE RETURNED - This might be the problem!")
+            
+            self.log_test("GET /api/commesse for resp_commessa", True, 
+                f"Found {len(commesse_list)} commesse")
+        else:
+            print(f"❌ COMMESSE ENDPOINT FAILED - Status: {status}")
+            print(f"   Response: {commesse_response}")
+            self.log_test("GET /api/commesse for resp_commessa", False, f"Status: {status}")
+        
+        # STEP 4: DATABASE VERIFICATION
+        print("\n🗄️ 4. DATABASE VERIFICATION - Direct database check")
+        
+        # Check users collection for resp_commessa user
+        print("   🔍 Checking users collection...")
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        if success:
+            resp_user_in_db = None
+            for user in users_response:
+                if user.get('username') == 'resp_commessa':
+                    resp_user_in_db = user
+                    break
+            
+            if resp_user_in_db:
+                print(f"   ✅ Found resp_commessa user in database")
+                db_commesse = resp_user_in_db.get('commesse_autorizzate', [])
+                print(f"   🎯 COMMESSE_AUTORIZZATE in DATABASE: {db_commesse}")
+                print(f"   📊 Number of authorized commesse in DB: {len(db_commesse)}")
+                
+                print(f"   📄 ALL DATABASE FIELDS for resp_commessa:")
+                for key, value in resp_user_in_db.items():
+                    print(f"      • {key}: {value}")
+                
+                self.log_test("Database resp_commessa user found", True, 
+                    f"DB Commesse: {len(db_commesse)}")
+            else:
+                print(f"   ❌ resp_commessa user NOT FOUND in database!")
+                self.log_test("Database resp_commessa user found", False, "User not found")
+        else:
+            print(f"   ❌ Failed to query users - Status: {status}")
+            self.log_test("Database users query", False, f"Status: {status}")
+        
+        # Check commesse collection
+        print("   🔍 Checking commesse collection...")
+        success, all_commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if success:
+            all_commesse = all_commesse_response if isinstance(all_commesse_response, list) else []
+            print(f"   📊 Total commesse in database: {len(all_commesse)}")
+            
+            if all_commesse:
+                print(f"   📄 ALL COMMESSE IN DATABASE:")
+                for i, commessa in enumerate(all_commesse, 1):
+                    print(f"      {i}. ID: {commessa.get('id', 'N/A')}")
+                    print(f"         Nome: {commessa.get('nome', 'N/A')}")
+                    print(f"         Is Active: {commessa.get('is_active', 'N/A')}")
+                    print(f"         Responsabile ID: {commessa.get('responsabile_id', 'N/A')}")
+            
+            self.log_test("Database commesse collection", True, 
+                f"Found {len(all_commesse)} total commesse")
+        else:
+            print(f"   ❌ Failed to query commesse - Status: {status}")
+            self.log_test("Database commesse collection", False, f"Status: {status}")
+        
+        # STEP 5: PROBLEM ANALYSIS
+        print("\n🔍 5. PROBLEM ANALYSIS")
+        print("=" * 50)
+        
+        # Analyze the data we collected
+        login_has_commesse = len(commesse_autorizzate) > 0
+        authme_has_commesse = len(me_commesse) > 0 if 'me_commesse' in locals() else False
+        endpoint_returns_commesse = len(commesse_list) > 0 if 'commesse_list' in locals() else False
+        db_has_commesse = len(db_commesse) > 0 if 'db_commesse' in locals() else False
+        
+        print(f"📊 ANALYSIS RESULTS:")
+        print(f"   • Login response has commesse_autorizzate: {'✅ YES' if login_has_commesse else '❌ NO'}")
+        print(f"   • Auth/Me response has commesse_autorizzate: {'✅ YES' if authme_has_commesse else '❌ NO'}")
+        print(f"   • GET /api/commesse returns data: {'✅ YES' if endpoint_returns_commesse else '❌ NO'}")
+        print(f"   • Database user has commesse_autorizzate: {'✅ YES' if db_has_commesse else '❌ NO'}")
+        
+        # Identify the problem
+        if not login_has_commesse and not authme_has_commesse and not db_has_commesse:
+            print(f"\n🚨 PROBLEM IDENTIFIED: Database user has NO commesse_autorizzate")
+            print(f"   💡 SOLUTION: Need to populate commesse_autorizzate field for resp_commessa user")
+        elif login_has_commesse and authme_has_commesse and not endpoint_returns_commesse:
+            print(f"\n🚨 PROBLEM IDENTIFIED: Backend filtering is too restrictive")
+            print(f"   💡 SOLUTION: Check GET /api/commesse endpoint authorization logic")
+        elif not login_has_commesse or not authme_has_commesse:
+            print(f"\n🚨 PROBLEM IDENTIFIED: Login/Auth endpoints not returning commesse_autorizzate")
+            print(f"   💡 SOLUTION: Check user serialization in auth endpoints")
+        else:
+            print(f"\n✅ NO OBVIOUS PROBLEM: All endpoints returning data correctly")
+            print(f"   🤔 FRONTEND ISSUE: Problem might be in frontend processing")
+        
+        # Restore original token
+        self.token = original_token
+        
+        print("\n" + "=" * 80)
+        print("🎯 URGENT DEBUG COMPLETED")
+        print("=" * 80)
+
     def run_all_tests(self):
         """Run focused test for Responsabile Commessa system"""
         print("🚀 Starting CRM API Testing - Responsabile Commessa Focus...")
