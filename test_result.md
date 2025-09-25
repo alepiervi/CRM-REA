@@ -461,6 +461,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Responsabile Commessa Urgent Debug - Commesse Vuote Problem"
     - "Sistema Gerarchico Selettori - Responsabile Commessa Testing"
     - "Sistema Gerarchico Selettori - Admin Testing"
   stuck_tasks: []
