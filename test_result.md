@@ -461,9 +461,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Responsabile Commessa Urgent Debug - Commesse Vuote Problem"
-    - "Sistema Gerarchico Selettori - Responsabile Commessa Testing"
-    - "Sistema Gerarchico Selettori - Admin Testing"
+    - "AI-Assistants 403 Error Fix Verification - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
