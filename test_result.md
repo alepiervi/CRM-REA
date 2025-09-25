@@ -913,6 +913,21 @@ frontend:
           agent: "testing"
           comment: "🎯 RESPONSABILE COMMESSA URGENT CORRECTIONS FINAL TEST - MIXED RESULTS (75% success rate - 3/4 critical corrections verified): ✅ DASHBOARD SHOWS CLIENTI DATA: Dashboard correctly displays 'Dashboard Responsabile Commessa' with CLIENTI-focused metrics (Clienti Oggi: 0, Clienti Totali: 0, Sub Agenzie: 2, Commesse Attive: 2) - NO Lead metrics present, ✅ ANALYTICS SHOWS CLIENTI DATA: Analytics section correctly shows 'Analytics Clienti - Responsabile Commessa' with CLIENTI data from authorized commesse, filters for commessa and tipologia contratto working, ✅ SERVIZI LOADING & 422 ERROR FIX: CRITICAL SUCCESS - Edit user modal opens correctly, when Fastweb commessa selected ALL 4 servizi load (TLS, Agent, Negozi, Presidi), console shows 'Servizi caricati per commessa', save functionality working with 200 responses and NO 422 errors detected, ❌ CRITICAL ISSUE: Lead section STILL PRESENT in responsabile_commessa navigation - should be completely removed but found in navigation items ['Dashboard', 'Lead', 'Documenti', 'Clienti', 'Analytics']. URGENT: Lead section must be removed from responsabile_commessa role navigation."
 
+  - task: "Responsabile Commessa Urgent Debug - Commesse Vuote Problem"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "URGENT DEBUG richiesto dall'utente per problema commesse vuote per responsabile_commessa: 1. Login Test con resp_commessa/admin123, 2. Auth Me Test per verificare user completo, 3. Commesse Endpoint Test per verificare quante commesse restituisce, 4. Database Verification per controllare direttamente nel database."
+        - working: true
+          agent: "testing"
+          comment: "🎯 URGENT DEBUG COMPLETATO - PROBLEMA NON NEL BACKEND! (100% success rate - 8/8 tests passed): ✅ LOGIN TEST: resp_commessa/admin123 login working perfectly - token received, role verified as responsabile_commessa, ✅ COMMESSE_AUTORIZZATE IN LOGIN: Found 2 authorized commesse in login response ['b8f5732d-6521-41c1-9375-2a899d366404', '4f90875a-9820-41bc-b4bb-4119594772c1'], ✅ AUTH/ME TEST: GET /api/auth/me working perfectly - returns complete user with same 2 commesse_autorizzate, perfect consistency between login and auth/me, ✅ COMMESSE ENDPOINT TEST: GET /api/commesse working correctly - returns 2 commesse (Fastweb, Fotovoltaico) with all details, ✅ DATABASE VERIFICATION: resp_commessa user found in database with 2 commesse_autorizzate populated correctly, ✅ PROBLEM ANALYSIS: All backend endpoints returning data correctly - Login has commesse_autorizzate ✅, Auth/Me has commesse_autorizzate ✅, GET /api/commesse returns data ✅, Database user has commesse_autorizzate ✅. 🚨 CONCLUSIONE: Il problema NON è nel backend! Tutti gli endpoint restituiscono correttamente i dati. Il problema è probabilmente nel frontend che non processa/visualizza correttamente i dati ricevuti dal backend."
+
   - task: "Responsabile Commessa Tipologia Contratto Selector - COMPLETED"
     implemented: true
     working: true
