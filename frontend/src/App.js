@@ -678,10 +678,10 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (user.role === "responsabile_commessa" && selectedCommessa !== "all") {
-      fetchTipologieContratto();
+    if (user.role === "responsabile_commessa") {
+      fetchTipologieContrattoResponsabile();
     }
-  }, [selectedCommessa]);
+  }, [user]);
 
   useEffect(() => {
     // Auto-select unit for non-admin users
