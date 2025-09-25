@@ -5288,8 +5288,8 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # SPECIFIC PASSWORD HASHING TEST (as requested in review)
-        self.test_password_hashing_specific()
+        # CRITICAL PASSWORD HASHING TEST (as requested in review)
+        self.test_critical_password_bug_immediate()
         
         # URGENT DEBUG TEST FIRST: User Creation Process
         self.test_responsabile_commessa_user_creation_debug()
