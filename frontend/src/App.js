@@ -980,23 +980,44 @@ const Dashboard = () => {
           {/* Tipologia Contratto Selector - Solo per Responsabile Commessa */}
           {user.role === "responsabile_commessa" && (
             <div className="mt-4">
-              <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">Tipologia Contratto</Label>
+              <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                Tipologia Contratto
+                {tipologieContratto.length > 0 && (
+                  <span className="ml-1 text-xs text-green-600">({tipologieContratto.length} disponibili)</span>
+                )}
+              </Label>
               <Select value={selectedTipologiaContratto} onValueChange={setSelectedTipologiaContratto}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Seleziona tipologia" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le Tipologie</SelectItem>
-                  {tipologieContratto.map((tipologia) => (
-                    <SelectItem key={tipologia.value} value={tipologia.value}>
-                      <div className="flex items-center space-x-2">
-                        <FileText className="w-3 h-3" />
-                        <span>{tipologia.label}</span>
+                  {tipologieContratto.length > 0 ? (
+                    tipologieContratto.map((tipologia) => (
+                      <SelectItem key={tipologia.value} value={tipologia.value}>
+                        <div className="flex items-center space-x-2">
+                          <FileText className="w-3 h-3" />
+                          <span>{tipologia.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-data" disabled>
+                      <div className="flex items-center space-x-2 text-slate-500">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>Nessuna tipologia disponibile</span>
                       </div>
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
+              
+              {/* Debug info per il responsabile commessa */}
+              {user.commesse_autorizzate && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Commesse autorizzate: {user.commesse_autorizzate.length}
+                </p>
+              )}
             </div>
           )}
         </div>
