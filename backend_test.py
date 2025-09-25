@@ -5024,7 +5024,10 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # URGENT DEBUG TEST FIRST: Commesse Vuote Problem
+        # URGENT DEBUG TEST FIRST: User Creation Process
+        self.test_responsabile_commessa_user_creation_debug()
+        
+        # URGENT DEBUG TEST: Commesse Vuote Problem
         self.test_responsabile_commessa_urgent_debug()
         
         # URGENT TEST: Tipologia Contratto Selector for Responsabile Commessa
