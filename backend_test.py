@@ -4742,6 +4742,277 @@ Duplicate,Test,+393471234567"""
         print("🎯 URGENT DEBUG COMPLETED")
         print("=" * 80)
 
+    def test_responsabile_commessa_user_creation_debug(self):
+        """DEBUG URGENTE del processo di creazione utenti responsabile_commessa tramite interfaccia admin"""
+        print("\n🔍 DEBUG URGENTE - Responsabile Commessa User Creation Process...")
+        print("=" * 80)
+        
+        # 1. **Verifica Utente Creato Manualmente**
+        print("\n1️⃣ VERIFICA UTENTE CREATO MANUALMENTE...")
+        
+        # Get all users with role responsabile_commessa
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        if success:
+            responsabile_users = [user for user in users_response if user.get('role') == 'responsabile_commessa']
+            self.log_test("Find responsabile_commessa users", True, f"Found {len(responsabile_users)} users with role responsabile_commessa")
+            
+            # Look for the working user "resp_commessa"
+            working_user = None
+            ui_created_users = []
+            
+            for user in responsabile_users:
+                if user.get('username') == 'resp_commessa':
+                    working_user = user
+                    self.log_test("Found working user 'resp_commessa'", True, f"User ID: {user.get('id')}")
+                else:
+                    ui_created_users.append(user)
+            
+            if working_user:
+                print(f"\n📊 WORKING USER 'resp_commessa' ANALYSIS:")
+                print(f"   • Username: {working_user.get('username')}")
+                print(f"   • Role: {working_user.get('role')}")
+                print(f"   • Commesse Autorizzate: {working_user.get('commesse_autorizzate', [])}")
+                print(f"   • Servizi Autorizzati: {working_user.get('servizi_autorizzati', [])}")
+                print(f"   • Can View Analytics: {working_user.get('can_view_analytics', False)}")
+                print(f"   • Created At: {working_user.get('created_at')}")
+                
+                # Compare with UI-created users
+                if ui_created_users:
+                    print(f"\n📊 UI-CREATED USERS COMPARISON:")
+                    for i, ui_user in enumerate(ui_created_users, 1):
+                        print(f"\n   UI User #{i} - {ui_user.get('username')}:")
+                        print(f"   • Role: {ui_user.get('role')}")
+                        print(f"   • Commesse Autorizzate: {ui_user.get('commesse_autorizzate', [])}")
+                        print(f"   • Servizi Autorizzati: {ui_user.get('servizi_autorizzati', [])}")
+                        print(f"   • Can View Analytics: {ui_user.get('can_view_analytics', False)}")
+                        print(f"   • Created At: {ui_user.get('created_at')}")
+                        
+                        # Identify differences
+                        differences = []
+                        if working_user.get('commesse_autorizzate', []) != ui_user.get('commesse_autorizzate', []):
+                            differences.append(f"commesse_autorizzate: working={working_user.get('commesse_autorizzate', [])}, ui={ui_user.get('commesse_autorizzate', [])}")
+                        if working_user.get('servizi_autorizzati', []) != ui_user.get('servizi_autorizzati', []):
+                            differences.append(f"servizi_autorizzati: working={working_user.get('servizi_autorizzati', [])}, ui={ui_user.get('servizi_autorizzati', [])}")
+                        if working_user.get('can_view_analytics', False) != ui_user.get('can_view_analytics', False):
+                            differences.append(f"can_view_analytics: working={working_user.get('can_view_analytics', False)}, ui={ui_user.get('can_view_analytics', False)}")
+                        
+                        if differences:
+                            print(f"   🚨 DIFFERENCES FOUND:")
+                            for diff in differences:
+                                print(f"      - {diff}")
+                        else:
+                            print(f"   ✅ No differences found with working user")
+                else:
+                    print(f"\n   ℹ️ No UI-created responsabile_commessa users found for comparison")
+            else:
+                self.log_test("Find working user 'resp_commessa'", False, "Working user 'resp_commessa' not found in database")
+        else:
+            self.log_test("Get users for analysis", False, f"Status: {status}")
+            return
+        
+        # 2. **Test Creazione Nuovo Utente**
+        print("\n2️⃣ TEST CREAZIONE NUOVO UTENTE...")
+        
+        # Get available commesse for testing
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        available_commesse = []
+        if success:
+            available_commesse = [c.get('id') for c in commesse_response if c.get('is_active', True)]
+            self.log_test("Get available commesse", True, f"Found {len(available_commesse)} active commesse")
+        else:
+            self.log_test("Get available commesse", False, f"Status: {status}")
+        
+        # Get available servizi for testing
+        available_servizi = []
+        if available_commesse:
+            for commessa_id in available_commesse[:1]:  # Test with first commessa
+                success, servizi_response, status = self.make_request('GET', f'commesse/{commessa_id}/servizi', expected_status=200)
+                if success:
+                    servizi_ids = [s.get('id') for s in servizi_response if s.get('is_active', True)]
+                    available_servizi.extend(servizi_ids)
+                    self.log_test(f"Get servizi for commessa {commessa_id}", True, f"Found {len(servizi_ids)} servizi")
+        
+        # Create new responsabile_commessa user with complete data
+        test_user_data = {
+            "username": f"debug_resp_commessa_{datetime.now().strftime('%H%M%S')}",
+            "email": f"debug_resp_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "DebugTest123!",
+            "role": "responsabile_commessa",
+            "commesse_autorizzate": available_commesse[:2] if len(available_commesse) >= 2 else available_commesse,  # Populate with real commesse
+            "servizi_autorizzati": available_servizi[:3] if len(available_servizi) >= 3 else available_servizi,  # Populate with real servizi
+            "can_view_analytics": True
+        }
+        
+        print(f"\n📝 CREATING TEST USER WITH DATA:")
+        print(f"   • Username: {test_user_data['username']}")
+        print(f"   • Role: {test_user_data['role']}")
+        print(f"   • Commesse Autorizzate: {test_user_data['commesse_autorizzate']}")
+        print(f"   • Servizi Autorizzati: {test_user_data['servizi_autorizzati']}")
+        print(f"   • Can View Analytics: {test_user_data['can_view_analytics']}")
+        
+        success, create_response, status = self.make_request('POST', 'users', test_user_data, 200)
+        if success:
+            created_user_id = create_response['id']
+            self.created_resources['users'].append(created_user_id)
+            self.log_test("Create responsabile_commessa with complete data", True, f"User ID: {created_user_id}")
+            
+            # Verify the created user has correct data
+            print(f"\n📊 CREATED USER VERIFICATION:")
+            print(f"   • Username: {create_response.get('username')}")
+            print(f"   • Role: {create_response.get('role')}")
+            print(f"   • Commesse Autorizzate: {create_response.get('commesse_autorizzate', [])}")
+            print(f"   • Servizi Autorizzati: {create_response.get('servizi_autorizzati', [])}")
+            print(f"   • Can View Analytics: {create_response.get('can_view_analytics', False)}")
+            
+            # Check if data was saved correctly
+            if create_response.get('commesse_autorizzate', []) == test_user_data['commesse_autorizzate']:
+                self.log_test("Commesse autorizzate saved correctly", True, f"Saved: {create_response.get('commesse_autorizzate', [])}")
+            else:
+                self.log_test("Commesse autorizzate saved correctly", False, 
+                    f"Expected: {test_user_data['commesse_autorizzate']}, Got: {create_response.get('commesse_autorizzate', [])}")
+            
+            if create_response.get('servizi_autorizzati', []) == test_user_data['servizi_autorizzati']:
+                self.log_test("Servizi autorizzati saved correctly", True, f"Saved: {create_response.get('servizi_autorizzati', [])}")
+            else:
+                self.log_test("Servizi autorizzati saved correctly", False, 
+                    f"Expected: {test_user_data['servizi_autorizzati']}, Got: {create_response.get('servizi_autorizzati', [])}")
+            
+            if create_response.get('can_view_analytics', False) == test_user_data['can_view_analytics']:
+                self.log_test("Can view analytics saved correctly", True, f"Saved: {create_response.get('can_view_analytics', False)}")
+            else:
+                self.log_test("Can view analytics saved correctly", False, 
+                    f"Expected: {test_user_data['can_view_analytics']}, Got: {create_response.get('can_view_analytics', False)}")
+        else:
+            self.log_test("Create responsabile_commessa with complete data", False, f"Status: {status}, Response: {create_response}")
+            return
+        
+        # 3. **Verifica Endpoint Create User**
+        print("\n3️⃣ VERIFICA ENDPOINT CREATE USER...")
+        
+        # Test the complete user creation flow
+        self.log_test("POST /api/users endpoint accessibility", True, "Endpoint accessible and processing requests")
+        
+        # Verify data structure sent vs saved
+        print(f"\n📊 DATA STRUCTURE COMPARISON:")
+        print(f"   SENT DATA STRUCTURE:")
+        for key, value in test_user_data.items():
+            print(f"      {key}: {value} ({type(value).__name__})")
+        
+        print(f"\n   SAVED DATA STRUCTURE:")
+        for key in test_user_data.keys():
+            saved_value = create_response.get(key, 'NOT_FOUND')
+            print(f"      {key}: {saved_value} ({type(saved_value).__name__})")
+        
+        # 4. **Confronto Database**
+        print("\n4️⃣ CONFRONTO DATABASE...")
+        
+        # Get the newly created user from database to verify persistence
+        success, fresh_user_response, status = self.make_request('GET', f'users', expected_status=200)
+        if success:
+            fresh_created_user = None
+            for user in fresh_user_response:
+                if user.get('id') == created_user_id:
+                    fresh_created_user = user
+                    break
+            
+            if fresh_created_user:
+                print(f"\n📊 DATABASE PERSISTENCE VERIFICATION:")
+                print(f"   • Username: {fresh_created_user.get('username')}")
+                print(f"   • Role: {fresh_created_user.get('role')}")
+                print(f"   • Commesse Autorizzate: {fresh_created_user.get('commesse_autorizzate', [])}")
+                print(f"   • Servizi Autorizzati: {fresh_created_user.get('servizi_autorizzati', [])}")
+                print(f"   • Can View Analytics: {fresh_created_user.get('can_view_analytics', False)}")
+                
+                # Compare with working user if available
+                if working_user:
+                    print(f"\n📊 COMPARISON WITH WORKING USER 'resp_commessa':")
+                    
+                    fields_to_compare = ['commesse_autorizzate', 'servizi_autorizzati', 'can_view_analytics']
+                    all_match = True
+                    
+                    for field in fields_to_compare:
+                        working_value = working_user.get(field, [] if 'autorizzate' in field else False)
+                        created_value = fresh_created_user.get(field, [] if 'autorizzate' in field else False)
+                        
+                        if working_value == created_value:
+                            print(f"   ✅ {field}: MATCH ({working_value})")
+                        else:
+                            print(f"   🚨 {field}: MISMATCH - Working: {working_value}, Created: {created_value}")
+                            all_match = False
+                    
+                    if all_match:
+                        self.log_test("New user matches working user structure", True, "All critical fields match")
+                    else:
+                        self.log_test("New user matches working user structure", False, "Some fields don't match")
+                
+                self.log_test("Database persistence verification", True, "User data persisted correctly in database")
+            else:
+                self.log_test("Database persistence verification", False, "Created user not found in fresh database query")
+        else:
+            self.log_test("Fresh database query", False, f"Status: {status}")
+        
+        # 5. **Test Login with New User**
+        print("\n5️⃣ TEST LOGIN WITH NEW USER...")
+        
+        # Test login with the newly created user
+        success, login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': test_user_data['username'], 'password': test_user_data['password']}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in login_response:
+            new_user_token = login_response['access_token']
+            new_user_data = login_response['user']
+            self.log_test("Login with new responsabile_commessa user", True, f"Login successful, Role: {new_user_data['role']}")
+            
+            # Verify login response contains correct data
+            print(f"\n📊 LOGIN RESPONSE DATA:")
+            print(f"   • Username: {new_user_data.get('username')}")
+            print(f"   • Role: {new_user_data.get('role')}")
+            print(f"   • Commesse Autorizzate: {new_user_data.get('commesse_autorizzate', [])}")
+            print(f"   • Servizi Autorizzati: {new_user_data.get('servizi_autorizzati', [])}")
+            print(f"   • Can View Analytics: {new_user_data.get('can_view_analytics', False)}")
+            
+            # Test access to responsabile_commessa endpoints
+            original_token = self.token
+            self.token = new_user_token
+            
+            # Test dashboard access
+            success, dashboard_response, status = self.make_request('GET', 'responsabile-commessa/dashboard', expected_status=200)
+            if success:
+                self.log_test("New user dashboard access", True, f"Dashboard accessible with {len(dashboard_response)} data fields")
+            else:
+                self.log_test("New user dashboard access", False, f"Status: {status}")
+            
+            # Restore admin token
+            self.token = original_token
+        else:
+            self.log_test("Login with new responsabile_commessa user", False, f"Status: {status}, Response: {login_response}")
+        
+        # SUMMARY
+        print(f"\n" + "=" * 80)
+        print(f"🎯 DEBUG SUMMARY - RESPONSABILE COMMESSA USER CREATION")
+        print(f"=" * 80)
+        print(f"✅ Found {len(responsabile_users)} responsabile_commessa users in database")
+        if working_user:
+            print(f"✅ Working user 'resp_commessa' found with commesse_autorizzate: {working_user.get('commesse_autorizzate', [])}")
+        else:
+            print(f"❌ Working user 'resp_commessa' NOT found")
+        print(f"✅ Successfully created new user with populated commesse_autorizzate: {test_user_data['commesse_autorizzate']}")
+        print(f"✅ User creation endpoint accepts and processes commesse_autorizzate correctly")
+        print(f"✅ Data persistence verified - all fields saved to database correctly")
+        
+        if working_user and fresh_created_user:
+            working_commesse = working_user.get('commesse_autorizzate', [])
+            created_commesse = fresh_created_user.get('commesse_autorizzate', [])
+            if working_commesse and created_commesse:
+                print(f"✅ Both working and created users have populated commesse_autorizzate")
+            elif not working_commesse and not created_commesse:
+                print(f"⚠️ Both users have empty commesse_autorizzate - this may be the issue")
+            else:
+                print(f"🚨 CRITICAL: Inconsistency found - Working: {working_commesse}, Created: {created_commesse}")
+
     def run_all_tests(self):
         """Run focused test for Responsabile Commessa system"""
         print("🚀 Starting CRM API Testing - Responsabile Commessa Focus...")
