@@ -816,6 +816,100 @@ const Dashboard = () => {
     setSelectedUnit(unitId);
   };
 
+  // Funzioni per il sistema gerarchico di selettori
+  const getAvailableCommesse = () => {
+    if (user.role === "responsabile_commessa") {
+      // Per responsabile commessa, mostra solo le commesse autorizzate
+      if (!user.commesse_autorizzate || user.commesse_autorizzate.length === 0) {
+        return [];
+      }
+      return commesse.filter(commessa => 
+        user.commesse_autorizzate.includes(commessa.id)
+      );
+    } else {
+      // Per admin e altri ruoli, mostra tutte le commesse
+      return commesse;
+    }
+  };
+
+  const handleCommessaChange = async (commessaId) => {
+    setSelectedCommessa(commessaId);
+    
+    // Reset dei selettori successivi
+    setSelectedServizio("all");
+    setSelectedUnit("all");
+    setSelectedTipologiaContratto("all");
+    
+    // Carica servizi per la commessa selezionata
+    if (commessaId && commessaId !== "all") {
+      await fetchServiziPerCommessa(commessaId);
+    } else {
+      setServizi([]);
+    }
+  };
+
+  const handleServizioChange = (servizioId) => {
+    setSelectedServizio(servizioId);
+    
+    // Reset dei selettori successivi
+    setSelectedUnit("all");
+    setSelectedTipologiaContratto("all");
+  };
+
+  const getAvailableUnitsSubAgenzie = () => {
+    const availableItems = [];
+    
+    // Filtra units in base alla commessa e servizio selezionati
+    const filteredUnits = units.filter(unit => {
+      // Verifica autorizzazione commessa
+      const commessaAuthorized = selectedCommessa === "all" || 
+        unit.commesse_autorizzate?.includes(selectedCommessa);
+      
+      // Verifica autorizzazione servizio (se implementato)
+      const servizioAuthorized = selectedServizio === "all" || 
+        !unit.servizi_autorizzati || 
+        unit.servizi_autorizzati.includes(selectedServizio);
+      
+      return commessaAuthorized && servizioAuthorized;
+    });
+
+    // Aggiungi units con tipo
+    filteredUnits.forEach(unit => {
+      availableItems.push({
+        id: unit.id,
+        nome: unit.name,
+        type: 'unit',
+        is_active: unit.is_active
+      });
+    });
+
+    // Filtra sub agenzie in base alla commessa e servizio selezionati
+    const filteredSubAgenzie = subAgenzie.filter(subAgenzia => {
+      // Verifica autorizzazione commessa
+      const commessaAuthorized = selectedCommessa === "all" || 
+        subAgenzia.commesse_autorizzate?.includes(selectedCommessa);
+      
+      // Verifica autorizzazione servizio (se implementato)
+      const servizioAuthorized = selectedServizio === "all" || 
+        !subAgenzia.servizi_autorizzati || 
+        subAgenzia.servizi_autorizzati.includes(selectedServizio);
+      
+      return commessaAuthorized && servizioAuthorized;
+    });
+
+    // Aggiungi sub agenzie con tipo
+    filteredSubAgenzie.forEach(subAgenzia => {
+      availableItems.push({
+        id: `sub-${subAgenzia.id}`,
+        nome: subAgenzia.nome,
+        type: 'sub_agenzia',
+        is_active: true // Assumiamo che le sub agenzie siano sempre attive
+      });
+    });
+
+    return availableItems;
+  };
+
   const getNavItems = () => {
     const items = [
       { id: "dashboard", label: "Dashboard", icon: BarChart3 }
