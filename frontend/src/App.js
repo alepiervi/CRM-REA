@@ -2244,14 +2244,11 @@ const UsersManagement = ({ selectedUnit, units }) => {
 
   const fetchCommesse = async () => {
     try {
-      setCommesseLoading(true);
       const response = await axios.get(`${API}/commesse`);
       setCommesse(response.data);
     } catch (error) {
       console.error("Error fetching commesse:", error);
       setCommesse([]);
-    } finally {
-      setCommesseLoading(false);
     }
   };
 
