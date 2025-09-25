@@ -6586,6 +6586,11 @@ async def get_tipologie_contratto(
 ):
     """Get available tipologie contratto based on commessa and servizio"""
     
+    # Controllo autorizzazione per responsabile commessa
+    if current_user.role == UserRole.RESPONSABILE_COMMESSA and commessa_id:
+        if not await check_commessa_access(current_user, commessa_id):
+            raise HTTPException(status_code=403, detail="Access denied to this commessa")
+    
     # Lista base per tutti i servizi di Fastweb
     tipologie_base = [
         {"value": "energia_fastweb", "label": "Energia Fastweb"},
