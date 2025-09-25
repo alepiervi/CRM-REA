@@ -4398,6 +4398,159 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_responsabile_commessa_tipologia_contratto_urgent(self):
+        """Test urgente per verificare la correzione del selettore Tipologia Contratto per responsabile_commessa"""
+        print("\n🎯 URGENT TEST: Responsabile Commessa Tipologia Contratto Selector...")
+        
+        # 1. LOGIN RESPONSABILE COMMESSA
+        print("\n🔐 1. TESTING RESPONSABILE COMMESSA LOGIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'resp_commessa', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            resp_token = response['access_token']
+            resp_user_data = response['user']
+            self.log_test("✅ LOGIN resp_commessa/admin123", True, 
+                f"Login successful - Role: {resp_user_data['role']}")
+            
+            # Verify user.commesse_autorizzate is populated correctly
+            commesse_autorizzate = resp_user_data.get('commesse_autorizzate', [])
+            if commesse_autorizzate:
+                self.log_test("✅ Commesse autorizzate populated", True, 
+                    f"Found {len(commesse_autorizzate)} authorized commesse: {commesse_autorizzate}")
+            else:
+                self.log_test("❌ Commesse autorizzate populated", False, 
+                    "No authorized commesse found in user data")
+                return False
+        else:
+            self.log_test("❌ LOGIN resp_commessa/admin123", False, 
+                f"Login failed - Status: {status}, Response: {response}")
+            return False
+
+        # Store original token and switch to resp_commessa token
+        original_token = self.token
+        self.token = resp_token
+        
+        try:
+            # 2. TEST ENDPOINT TIPOLOGIE CONTRATTO
+            print("\n📋 2. TESTING TIPOLOGIE CONTRATTO ENDPOINTS...")
+            
+            # Test GET /api/tipologie-contratto without parameters (should return all types)
+            success, response, status = self.make_request('GET', 'tipologie-contratto', expected_status=200)
+            if success:
+                all_tipologie = response
+                self.log_test("✅ GET /api/tipologie-contratto (all)", True, 
+                    f"Found {len(all_tipologie)} tipologie contratto: {[t.get('value', t) for t in all_tipologie] if isinstance(all_tipologie, list) else all_tipologie}")
+            else:
+                self.log_test("❌ GET /api/tipologie-contratto (all)", False, f"Status: {status}")
+            
+            # Test GET /api/tipologie-contratto?commessa_id={commessa_autorizzata} for each authorized commessa
+            for commessa_id in commesse_autorizzate:
+                success, response, status = self.make_request('GET', f'tipologie-contratto?commessa_id={commessa_id}', expected_status=200)
+                if success:
+                    commessa_tipologie = response
+                    self.log_test(f"✅ GET tipologie for commessa {commessa_id[:8]}", True, 
+                        f"Found {len(commessa_tipologie) if isinstance(commessa_tipologie, list) else 'N/A'} tipologie for authorized commessa")
+                else:
+                    self.log_test(f"❌ GET tipologie for commessa {commessa_id[:8]}", False, f"Status: {status}")
+            
+            # Test authorization control - try to access a non-authorized commessa (should give 403)
+            # First get all commesse to find one not in authorized list
+            success, all_commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+            if success:
+                all_commesse = all_commesse_response
+                unauthorized_commessa = None
+                for commessa in all_commesse:
+                    if commessa['id'] not in commesse_autorizzate:
+                        unauthorized_commessa = commessa['id']
+                        break
+                
+                if unauthorized_commessa:
+                    success, response, status = self.make_request('GET', f'tipologie-contratto?commessa_id={unauthorized_commessa}', expected_status=403)
+                    if success:
+                        self.log_test("✅ Authorization control (403 for unauthorized)", True, 
+                            f"Correctly denied access to unauthorized commessa {unauthorized_commessa[:8]}")
+                    else:
+                        self.log_test("❌ Authorization control (403 for unauthorized)", False, 
+                            f"Expected 403, got {status} for unauthorized commessa")
+                else:
+                    self.log_test("ℹ️ Authorization control test", True, 
+                        "No unauthorized commesse found to test 403 response")
+            
+            # 3. TEST FOR SPECIFIC SERVICES
+            print("\n🔧 3. TESTING SERVICES SPECIFIC FUNCTIONALITY...")
+            
+            # For each authorized commessa, get services
+            for commessa_id in commesse_autorizzate:
+                success, servizi_response, status = self.make_request('GET', f'commesse/{commessa_id}/servizi', expected_status=200)
+                if success:
+                    servizi = servizi_response
+                    self.log_test(f"✅ GET servizi for commessa {commessa_id[:8]}", True, 
+                        f"Found {len(servizi)} servizi: {[s.get('nome', 'N/A') for s in servizi]}")
+                    
+                    # For each service, test tipologie contratto with service filter
+                    for servizio in servizi:
+                        servizio_id = servizio.get('id')
+                        servizio_nome = servizio.get('nome', 'Unknown')
+                        
+                        success, tipologie_response, status = self.make_request(
+                            'GET', f'tipologie-contratto?commessa_id={commessa_id}&servizio_id={servizio_id}', 
+                            expected_status=200
+                        )
+                        if success:
+                            servizio_tipologie = tipologie_response
+                            self.log_test(f"✅ GET tipologie for servizio {servizio_nome}", True, 
+                                f"Found {len(servizio_tipologie) if isinstance(servizio_tipologie, list) else 'N/A'} tipologie for service")
+                        else:
+                            self.log_test(f"❌ GET tipologie for servizio {servizio_nome}", False, f"Status: {status}")
+                else:
+                    self.log_test(f"❌ GET servizi for commessa {commessa_id[:8]}", False, f"Status: {status}")
+            
+            # 4. VERIFY AUTHORIZATIONS
+            print("\n🔒 4. VERIFYING AUTHORIZATION CONTROLS...")
+            
+            # Test that responsabile_commessa sees only tipologie for their authorized commesse
+            success, all_tipologie_response, status = self.make_request('GET', 'tipologie-contratto', expected_status=200)
+            if success:
+                visible_tipologie = all_tipologie_response
+                self.log_test("✅ Responsabile sees authorized tipologie only", True, 
+                    f"Responsabile can see {len(visible_tipologie) if isinstance(visible_tipologie, list) else 'N/A'} tipologie contratto")
+            else:
+                self.log_test("❌ Responsabile tipologie visibility", False, f"Status: {status}")
+            
+            # Test access to commesse (should only see authorized ones)
+            success, visible_commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+            if success:
+                visible_commesse = visible_commesse_response
+                visible_commesse_ids = [c['id'] for c in visible_commesse]
+                
+                # Check if only authorized commesse are visible
+                unauthorized_visible = [c_id for c_id in visible_commesse_ids if c_id not in commesse_autorizzate]
+                if not unauthorized_visible:
+                    self.log_test("✅ Commesse visibility control", True, 
+                        f"Responsabile sees only {len(visible_commesse)} authorized commesse")
+                else:
+                    self.log_test("❌ Commesse visibility control", False, 
+                        f"Responsabile can see unauthorized commesse: {unauthorized_visible}")
+            else:
+                self.log_test("❌ Commesse visibility test", False, f"Status: {status}")
+            
+            print(f"\n📊 URGENT TEST SUMMARY:")
+            print(f"   • Login resp_commessa/admin123: {'✅ SUCCESS' if resp_token else '❌ FAILED'}")
+            print(f"   • Commesse autorizzate populated: {'✅ YES' if commesse_autorizzate else '❌ NO'}")
+            print(f"   • Tipologie contratto endpoint: {'✅ WORKING' if all_tipologie else '❌ FAILED'}")
+            print(f"   • Authorization controls: {'✅ IMPLEMENTED' if status == 403 else '❌ NEEDS REVIEW'}")
+            print(f"   • Services integration: {'✅ FUNCTIONAL' if servizi else '❌ ISSUES'}")
+            
+            return True
+            
+        finally:
+            # Restore original admin token
+            self.token = original_token
+
     def run_all_tests(self):
         """Run focused test for Responsabile Commessa system"""
         print("🚀 Starting CRM API Testing - Responsabile Commessa Focus...")
