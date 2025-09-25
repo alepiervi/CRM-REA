@@ -461,7 +461,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Responsabile Commessa System - URGENT CORRECTIONS FINAL TEST"
+    - "Responsabile Commessa Tipologia Contratto Selector - COMPLETED"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
