@@ -917,7 +917,7 @@ frontend:
     implemented: true
     working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
@@ -930,6 +930,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "🎯 FRONTEND DEBUG COMPLETATO - PROBLEMA IDENTIFICATO! RACE CONDITION nel caricamento dati: ✅ LOGIN SUCCESSFUL: resp_commessa/admin123 login working, user data received with commesse_autorizzate: [b8f5732d-6521-41c1-9375-2a899d366404, 4f90875a-9820-41bc-b4bb-4119594772c1], ✅ CONSOLE LOGS ANALYSIS: Debug logs mostrano pattern chiaro - inizialmente 'Commesse totali disponibili: []' (vuoto), poi dopo alcuni secondi 'Commesse totali disponibili: [Object, Object]' (popolato), ✅ NETWORK REQUESTS: GET /api/commesse viene chiamato correttamente e restituisce 200, ✅ SIDEBAR SELECTOR: Quando commesse sono caricate, il selector funziona e mostra 3 opzioni: 'Tutte le Commesse', 'Fastweb', 'Fotovoltaico', ❌ PROBLEMA CRITICO: RACE CONDITION - fetchCommesse() viene chiamato DOPO che getAvailableCommesse() viene eseguito multiple volte, causando selettori vuoti inizialmente. Il timing del caricamento asincrono non è sincronizzato correttamente. SOLUZIONE RICHIESTA: Implementare loading states o attendere che fetchCommesse() completi prima di renderizzare i selettori."
+        - working: false
+          agent: "testing"
+          comment: "❌ RACE CONDITION FIX VERIFICATION FAILED! (37.5% success rate - 3/8 tests passed): ✅ LOGIN SUCCESSFUL: resp_commessa/admin123 login working perfectly - token received, role verified as responsabile_commessa, ✅ USER DATA CORRECT: Commesse autorizzate nel user data: [b8f5732d-6521-41c1-9375-2a899d366404, 4f90875a-9820-41bc-b4bb-4119594772c1], ✅ NETWORK REQUESTS WORKING: GET /api/commesse called 2 times with 200 responses - backend is working correctly, ❌ CRITICAL ISSUE: SELECTOR REMAINS DISABLED - After 15 seconds of waiting, the commesse selector is still disabled with 'caricamento...' text, ❌ LOADING STATE NOT CLEARED: Label shows '1. Seleziona Commessa(caricamento...)' permanently, ❌ UI NOT UPDATING: Despite successful API calls, the frontend is not updating the selector state to enable it, ❌ RACE CONDITION NOT FIXED: The issue persists - commesse load successfully from backend but UI remains in loading state indefinitely. CONCLUSION: The race condition fix has NOT been implemented correctly. The backend works fine, but the frontend loading state management is broken."
 
   - task: "Responsabile Commessa Tipologia Contratto Selector - COMPLETED"
     implemented: true
