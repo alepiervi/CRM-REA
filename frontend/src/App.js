@@ -2483,6 +2483,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
   };
 
   const handleSubmit = async (e) => {
+    console.log("🚀 HANDLESUBMIT CHIAMATO! Event:", e);
     e.preventDefault();
     setIsLoading(true);
 
