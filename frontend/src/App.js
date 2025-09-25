@@ -878,59 +878,7 @@ const Dashboard = () => {
     return availableItems;
   };
 
-  const getAvailableUnitsSubAgenzie = () => {
-    const availableItems = [];
-    
-    // Filtra units in base alla commessa e servizio selezionati
-    const filteredUnits = units.filter(unit => {
-      // Verifica autorizzazione commessa
-      const commessaAuthorized = selectedCommessa === "all" || 
-        unit.commesse_autorizzate?.includes(selectedCommessa);
-      
-      // Verifica autorizzazione servizio (se implementato)
-      const servizioAuthorized = selectedServizio === "all" || 
-        !unit.servizi_autorizzati || 
-        unit.servizi_autorizzati.includes(selectedServizio);
-      
-      return commessaAuthorized && servizioAuthorized;
-    });
-
-    // Aggiungi units con tipo
-    filteredUnits.forEach(unit => {
-      availableItems.push({
-        id: unit.id,
-        nome: unit.name,
-        type: 'unit',
-        is_active: unit.is_active
-      });
-    });
-
-    // Filtra sub agenzie in base alla commessa e servizio selezionati
-    const filteredSubAgenzie = subAgenzie.filter(subAgenzia => {
-      // Verifica autorizzazione commessa
-      const commessaAuthorized = selectedCommessa === "all" || 
-        subAgenzia.commesse_autorizzate?.includes(selectedCommessa);
-      
-      // Verifica autorizzazione servizio (se implementato)
-      const servizioAuthorized = selectedServizio === "all" || 
-        !subAgenzia.servizi_autorizzati || 
-        subAgenzia.servizi_autorizzati.includes(selectedServizio);
-      
-      return commessaAuthorized && servizioAuthorized;
-    });
-
-    // Aggiungi sub agenzie con tipo
-    filteredSubAgenzie.forEach(subAgenzia => {
-      availableItems.push({
-        id: `sub-${subAgenzia.id}`,
-        nome: subAgenzia.nome,
-        type: 'sub_agenzia',
-        is_active: true // Assumiamo che le sub agenzie siano sempre attive
-      });
-    });
-
-    return availableItems;
-  };
+  // Duplicate function removed - using the updated version above
 
   const getNavItems = () => {
     const items = [
