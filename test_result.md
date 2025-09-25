@@ -455,9 +455,9 @@ backend:
 
   - task: "Responsabile Commessa User Creation Debug - Backend Analysis"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 2
+    stuck_count: 3
     priority: "high"
     needs_retesting: false
     status_history:
@@ -485,6 +485,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "🚨 CRITICAL PASSWORD BUG TEST COMPLETED - MAJOR BREAKTHROUGH! ✅ BACKEND PASSWORD HASHING WORKING PERFECTLY: Created user 'test_immediato' with password 'admin123' - LOGIN SUCCESSFUL immediately after creation! Both resp_commessa and test_immediato have proper bcrypt hashes (60 chars, $2b$ format). ✅ PASSWORD FUNCTIONS VERIFIED: get_password_hash() and verify_password() working correctly - multiple users with same password generate different hashes (proper salt usage) and all can login successfully. ✅ ROOT CAUSE IDENTIFIED: The password hashing issue reported in previous tests was INCORRECT - the backend API works perfectly! Users created via POST /api/users can login immediately with correct passwords. ✅ COMPREHENSIVE TESTING: Created 10+ test users with various passwords (test123, admin123, explicit passwords) - ALL can login successfully. Password creation without explicit password fails with 422 (expected validation behavior). ✅ DATABASE ANALYSIS: Found 20 users total, 10 with role responsabile_commessa. All have proper bcrypt password hashes and correct authorization data structure. ✅ CONCLUSION: There is NO password hashing bug in the backend. The issue reported was likely due to incorrect password assumptions or frontend form submission issues, not backend password processing. The backend user creation and authentication system is FULLY FUNCTIONAL."
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL PASSWORD DEBUG TEST COMPLETED - FRONTEND FORM SUBMISSION ISSUE IDENTIFIED! ✅ SETUP SUCCESSFUL: Admin login working, navigation to Utenti successful, modal opens correctly. ✅ PASSWORD FIELD FILLED: Successfully filled password field with explicit 'mypassword123' (13 chars confirmed via JavaScript). ✅ FORM FIELDS POPULATED: Username 'test_password_debug', email 'test_password_debug@example.com', password 'mypassword123' all filled correctly. ✅ FORM SUBMISSION: Submit button clicked via JavaScript successfully. ❌ CRITICAL ISSUE IDENTIFIED: Form submission FAILED - no success message appeared, user NOT created in database, user NOT found in users table. ❌ MISSING DEBUG MESSAGES: None of the expected debug console messages appeared: '=== DEBUG CREAZIONE UTENTE ===', 'FormData originale', 'Password prima del controllo', etc. This indicates the form submission is not reaching the frontend JavaScript handler. ❌ ROOT CAUSE: Frontend form submission process is broken - the form data is not being processed by the CreateUserModal component's submit handler. The password field contains correct data but the form submission mechanism is not working. ❌ CONCLUSION: The password bug is actually a FORM SUBMISSION BUG in the frontend CreateUserModal component. The password data is correct but never gets sent to the backend because the form submission fails at the frontend level."
 
 metadata:
   created_by: "main_agent"
