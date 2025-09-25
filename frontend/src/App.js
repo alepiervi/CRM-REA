@@ -800,6 +800,18 @@ const Dashboard = () => {
     }
   };
 
+  const fetchServiziPerCommessa = async (commessaId) => {
+    try {
+      console.log("Caricamento servizi per commessa:", commessaId);
+      const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+      setServizi(response.data);
+      console.log("Servizi caricati:", response.data);
+    } catch (error) {
+      console.error(`Error fetching servizi for commessa ${commessaId}:`, error);
+      setServizi([]);
+    }
+  };
+
   const handleUnitChange = (unitId) => {
     setSelectedUnit(unitId);
   };
