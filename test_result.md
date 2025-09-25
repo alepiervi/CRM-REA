@@ -494,9 +494,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Responsabile Commessa User Creation Debug - Backend Analysis"
-  stuck_tasks:
-    - "Responsabile Commessa User Creation Debug - Backend Analysis"
+    - "Frontend form submission debugging"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
