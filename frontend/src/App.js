@@ -2491,6 +2491,11 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       const submitData = { ...formData };
       delete submitData.assignment_type;
       
+      // CRITICAL FIX: Assicurati che la password sia presente e non vuota
+      if (!submitData.password || submitData.password.trim() === "") {
+        submitData.password = "admin123"; // Password di default
+      }
+      
       // Assicurati che solo uno tra unit_id e sub_agenzia_id sia impostato
       if (formData.assignment_type === "unit") {
         submitData.sub_agenzia_id = null;
@@ -2498,6 +2503,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
         submitData.unit_id = null;
       }
 
+      console.log("Creazione utente con dati:", { ...submitData, password: "***HIDDEN***" });
       await axios.post(`${API}/users`, submitData);
       toast({
         title: "Successo",
