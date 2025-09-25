@@ -977,9 +977,85 @@ const Dashboard = () => {
             </Select>
           </div>
           
-          {/* Tipologia Contratto Selector - Solo per Responsabile Commessa */}
+          {/* Selettori per Responsabile Commessa */}
           {user.role === "responsabile_commessa" && (
-            <div className="mt-4">
+            <>
+              {/* Selettore Commesse Autorizzate */}
+              <div className="mt-4">
+                <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                  Commesse Autorizzate
+                  {user.commesse_autorizzate && (
+                    <span className="ml-1 text-xs text-green-600">({user.commesse_autorizzate.length} disponibili)</span>
+                  )}
+                </Label>
+                <Select value={selectedCommessa} onValueChange={setSelectedCommessa}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Seleziona commessa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le Commesse</SelectItem>
+                    {user.commesse_autorizzate?.map((commessaId) => {
+                      const commessa = commesse.find(c => c.id === commessaId);
+                      return commessa ? (
+                        <SelectItem key={commessa.id} value={commessa.id}>
+                          <div className="flex items-center space-x-2">
+                            <Building className="w-3 h-3" />
+                            <span>{commessa.nome}</span>
+                          </div>
+                        </SelectItem>
+                      ) : null;
+                    }) || []}
+                    {(!user.commesse_autorizzate || user.commesse_autorizzate.length === 0) && (
+                      <SelectItem value="none" disabled>
+                        <div className="flex items-center space-x-2 text-slate-500">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>Nessuna commessa autorizzata</span>
+                        </div>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Selettore Servizi (quando commessa selezionata) */}
+              {selectedCommessa && selectedCommessa !== "all" && (
+                <div className="mt-4">
+                  <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                    Servizi Disponibili
+                    {servizi.length > 0 && (
+                      <span className="ml-1 text-xs text-green-600">({servizi.length} disponibili)</span>
+                    )}
+                  </Label>
+                  <Select value={selectedServizio || "all"} onValueChange={setSelectedServizio}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleziona servizio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutti i Servizi</SelectItem>
+                      {servizi.length > 0 ? (
+                        servizi.map((servizio) => (
+                          <SelectItem key={servizio.id} value={servizio.id}>
+                            <div className="flex items-center space-x-2">
+                              <Cog className="w-3 h-3" />
+                              <span>{servizio.nome}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-data" disabled>
+                          <div className="flex items-center space-x-2 text-slate-500">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>Nessun servizio disponibile</span>
+                          </div>
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Tipologia Contratto Selector */}
+              <div className="mt-4">
               <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
                 Tipologia Contratto
                 {tipologieContratto.length > 0 && (
