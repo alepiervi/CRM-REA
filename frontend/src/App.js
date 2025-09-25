@@ -817,7 +817,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleCommessaChange = async (commessaId) => {
+  const handleCommessaChange = (commessaId) => {
     setSelectedCommessa(commessaId);
     
     // Reset dei selettori successivi
@@ -827,7 +827,7 @@ const Dashboard = () => {
     
     // Carica servizi per la commessa selezionata
     if (commessaId && commessaId !== "all") {
-      await fetchServiziPerCommessa(commessaId);
+      fetchServiziPerCommessa(commessaId);
     } else {
       setServizi([]);
     }
@@ -839,6 +839,43 @@ const Dashboard = () => {
     // Reset dei selettori successivi
     setSelectedUnit("all");
     setSelectedTipologiaContratto("all");
+  };
+
+  const getAvailableUnitsSubAgenzie = () => {
+    // Combina units e sub agenzie disponibili per la commessa e servizio selezionati
+    const availableItems = [];
+    
+    if (selectedCommessa && selectedCommessa !== "all") {
+      // Filtra units autorizzate per la commessa
+      const filteredUnits = units.filter(unit => 
+        unit.commesse_autorizzate?.includes(selectedCommessa) ||
+        (user.role === "admin") // Admin vede tutte
+      );
+      
+      filteredUnits.forEach(unit => {
+        availableItems.push({
+          id: unit.id,
+          nome: unit.name,
+          type: 'unit'
+        });
+      });
+      
+      // Filtra sub agenzie autorizzate per la commessa
+      const filteredSubAgenzie = subAgenzie.filter(subAgenzia => 
+        subAgenzia.commesse_autorizzate?.includes(selectedCommessa) ||
+        (user.role === "admin") // Admin vede tutte
+      );
+      
+      filteredSubAgenzie.forEach(subAgenzia => {
+        availableItems.push({
+          id: `sub-${subAgenzia.id}`,
+          nome: subAgenzia.nome,
+          type: 'sub_agenzia'
+        });
+      });
+    }
+    
+    return availableItems;
   };
 
   const getAvailableUnitsSubAgenzie = () => {
