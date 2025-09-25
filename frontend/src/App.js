@@ -803,16 +803,27 @@ const Dashboard = () => {
 
   // Funzioni per il sistema gerarchico di selettori
   const getAvailableCommesse = () => {
+    console.log("=== DEBUG getAvailableCommesse ===");
+    console.log("User role:", user.role);
+    console.log("User commesse_autorizzate:", user.commesse_autorizzate);
+    console.log("Commesse totali disponibili:", commesse);
+    
     if (user.role === "responsabile_commessa") {
       // Per responsabile commessa, mostra solo le commesse autorizzate
       if (!user.commesse_autorizzate || user.commesse_autorizzate.length === 0) {
+        console.log("❌ Nessuna commessa autorizzata trovata per responsabile commessa");
         return [];
       }
-      return commesse.filter(commessa => 
+      
+      const filteredCommesse = commesse.filter(commessa => 
         user.commesse_autorizzate.includes(commessa.id)
       );
+      
+      console.log("✅ Commesse filtrate per responsabile:", filteredCommesse);
+      return filteredCommesse;
     } else {
       // Per admin e altri ruoli, mostra tutte le commesse
+      console.log("✅ Utente admin - restituisco tutte le commesse:", commesse);
       return commesse;
     }
   };
