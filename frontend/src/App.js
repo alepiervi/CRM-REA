@@ -2487,13 +2487,21 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     setIsLoading(true);
 
     try {
+      console.log("=== DEBUG CREAZIONE UTENTE ===");
+      console.log("FormData originale:", { ...formData, password: formData.password ? `[${formData.password.length} chars]` : "[VUOTO]" });
+      
       // Prepara i dati per l'invio, rimuovendo assignment_type e impostando correttamente unit_id/sub_agenzia_id
       const submitData = { ...formData };
       delete submitData.assignment_type;
       
       // CRITICAL FIX: Assicurati che la password sia presente e non vuota
+      console.log("Password prima del controllo:", submitData.password ? `[${submitData.password.length} chars]` : "[VUOTO/NULL]");
+      
       if (!submitData.password || submitData.password.trim() === "") {
-        submitData.password = "admin123"; // Password di default
+        console.log("⚠️ Password vuota detected - impostazione default admin123");
+        submitData.password = "admin123";
+      } else {
+        console.log("✅ Password già presente:", `[${submitData.password.length} chars]`);
       }
       
       // Assicurati che solo uno tra unit_id e sub_agenzia_id sia impostato
@@ -2503,8 +2511,19 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
         submitData.unit_id = null;
       }
 
-      console.log("Creazione utente con dati:", { ...submitData, password: "***HIDDEN***" });
-      await axios.post(`${API}/users`, submitData);
+      // Validazione dati critici
+      if (!submitData.username || !submitData.email || !submitData.role) {
+        throw new Error("Campi obbligatori mancanti: username, email, o role");
+      }
+      
+      console.log("📤 Invio dati utente:", { 
+        ...submitData, 
+        password: `[${submitData.password.length} chars - ${submitData.password.substring(0,3)}...]`,
+        commesse_autorizzate: submitData.commesse_autorizzate?.length || 0
+      });
+      
+      const response = await axios.post(`${API}/users`, submitData);
+      console.log("✅ Utente creato con successo:", response.data);
       toast({
         title: "Successo",
         description: "Utente creato con successo",
