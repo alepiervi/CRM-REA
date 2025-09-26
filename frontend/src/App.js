@@ -1147,11 +1147,51 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* 3. SELETTORE UNIT/SUB AGENZIA - Terzo Livello (appare quando servizio selezionato) */}
-          {selectedCommessa && selectedCommessa !== "all" && selectedServizio && selectedServizio !== "all" && (
+          {/* 3. SELETTORE TIPOLOGIA CONTRATTO - Terzo Livello (appare quando servizio selezionato) */}
+          {selectedCommessa && selectedCommessa !== "all" && 
+           selectedServizio && selectedServizio !== "all" && (
             <div className="mt-4">
               <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                3. Seleziona Unit/Sub Agenzia
+                3. Seleziona Tipologia Contratto
+                {tipologieContratto.length > 0 && (
+                  <span className="ml-1 text-xs text-green-600">({tipologieContratto.length} disponibili)</span>
+                )}
+              </Label>
+              <Select value={selectedTipologiaContratto} onValueChange={setSelectedTipologiaContratto}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona tipologia contratto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le Tipologie</SelectItem>
+                  {tipologieContratto.length > 0 ? (
+                    tipologieContratto.map((tipologia) => (
+                      <SelectItem key={tipologia.value} value={tipologia.value}>
+                        <div className="flex items-center space-x-2">
+                          <FileText className="w-3 h-3" />
+                          <span>{tipologia.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-data" disabled>
+                      <div className="flex items-center space-x-2 text-slate-500">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>Caricamento tipologie...</span>
+                      </div>
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* 4. SELETTORE UNIT/SUB AGENZIA - Quarto Livello (appare quando tipologia contratto selezionata) */}
+          {selectedCommessa && selectedCommessa !== "all" && 
+           selectedServizio && selectedServizio !== "all" && 
+           selectedTipologiaContratto && selectedTipologiaContratto !== "all" && (
+            <div className="mt-4">
+              <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                4. Seleziona Unit/Sub Agenzia
                 {getAvailableUnitsSubAgenzie().length > 0 && (
                   <span className="ml-1 text-xs text-green-600">({getAvailableUnitsSubAgenzie().length} disponibili)</span>
                 )}
@@ -1182,44 +1222,6 @@ const Dashboard = () => {
                       <div className="flex items-center space-x-2 text-slate-500">
                         <AlertCircle className="w-3 h-3" />
                         <span>Nessuna unit/sub agenzia autorizzata</span>
-                      </div>
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* 4. SELETTORE TIPOLOGIA CONTRATTO - Quarto Livello (appare quando servizio selezionato) */}
-          {selectedCommessa && selectedCommessa !== "all" && 
-           selectedServizio && selectedServizio !== "all" && (
-            <div className="mt-4">
-              <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-                4. Seleziona Tipologia Contratto
-                {tipologieContratto.length > 0 && (
-                  <span className="ml-1 text-xs text-green-600">({tipologieContratto.length} disponibili)</span>
-                )}
-              </Label>
-              <Select value={selectedTipologiaContratto} onValueChange={setSelectedTipologiaContratto}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Seleziona tipologia contratto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le Tipologie</SelectItem>
-                  {tipologieContratto.length > 0 ? (
-                    tipologieContratto.map((tipologia) => (
-                      <SelectItem key={tipologia.value} value={tipologia.value}>
-                        <div className="flex items-center space-x-2">
-                          <FileText className="w-3 h-3" />
-                          <span>{tipologia.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-data" disabled>
-                      <div className="flex items-center space-x-2 text-slate-500">
-                        <AlertCircle className="w-3 h-3" />
-                        <span>Caricamento tipologie...</span>
                       </div>
                     </SelectItem>
                   )}
