@@ -9540,7 +9540,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     }
   };
 
-  const fetchTipologieContratto = async (commessaId, servizioId) => {
+  const fetchCreateTipologieContratto = async (commessaId, servizioId) => {
     try {
       const response = await axios.get(`${API}/tipologie-contratto?commessa_id=${commessaId}&servizio_id=${servizioId}`);
       setCreateTipologieContratto(response.data);
