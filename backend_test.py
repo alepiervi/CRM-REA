@@ -143,6 +143,98 @@ class CRMAPITester:
         else:
             self.log_test("Dashboard stats", False, f"Status: {status}")
 
+    def test_password_fix_multiple_users_login(self):
+        """TEST IMMEDIATO del fix password - Verifica login utenti multipli"""
+        print("\n🚨 TEST IMMEDIATO DEL FIX PASSWORD - VERIFICA LOGIN UTENTI MULTIPLI...")
+        
+        # Test users as specified in the review request
+        test_users = [
+            {'username': 'resp_commessa', 'password': 'admin123', 'expected_role': 'responsabile_commessa'},
+            {'username': 'test2', 'password': 'admin123', 'expected_role': 'responsabile_commessa'},
+            {'username': 'debug_resp_commessa_155357', 'password': 'admin123', 'expected_role': 'responsabile_commessa'}
+        ]
+        
+        successful_logins = 0
+        failed_logins = 0
+        
+        print("\n🔑 TESTING MULTIPLE USER LOGINS WITH admin123 PASSWORD...")
+        
+        for user_info in test_users:
+            username = user_info['username']
+            password = user_info['password']
+            expected_role = user_info['expected_role']
+            
+            print(f"\n   Testing {username}/{password}...")
+            
+            success, response, status = self.make_request(
+                'POST', 'auth/login', 
+                {'username': username, 'password': password}, 
+                expected_status=200, auth_required=False
+            )
+            
+            if success and status == 200 and 'access_token' in response:
+                # Login successful - verify token and user data
+                token = response['access_token']
+                user_data = response['user']
+                
+                # Verify user role
+                actual_role = user_data.get('role', 'MISSING')
+                role_correct = actual_role == expected_role
+                
+                # Verify commesse_autorizzate is populated
+                commesse_autorizzate = user_data.get('commesse_autorizzate', [])
+                has_commesse = len(commesse_autorizzate) > 0
+                
+                self.log_test(f"✅ {username} LOGIN SUCCESS", True, 
+                    f"Status: {status}, Role: {actual_role}, Token: {'Present' if token else 'Missing'}")
+                
+                if role_correct:
+                    self.log_test(f"✅ {username} ROLE CORRECT", True, f"Expected: {expected_role}, Got: {actual_role}")
+                else:
+                    self.log_test(f"❌ {username} ROLE INCORRECT", False, f"Expected: {expected_role}, Got: {actual_role}")
+                
+                if has_commesse:
+                    self.log_test(f"✅ {username} COMMESSE POPULATED", True, f"Commesse autorizzate: {len(commesse_autorizzate)} items")
+                else:
+                    self.log_test(f"❌ {username} COMMESSE EMPTY", False, f"Commesse autorizzate is empty: {commesse_autorizzate}")
+                
+                # Verify token is valid by making authenticated request
+                temp_token = self.token
+                self.token = token
+                auth_success, auth_response, auth_status = self.make_request('GET', 'auth/me', expected_status=200)
+                self.token = temp_token
+                
+                if auth_success and auth_response.get('username') == username:
+                    self.log_test(f"✅ {username} TOKEN VALID", True, f"Token authentication successful")
+                else:
+                    self.log_test(f"❌ {username} TOKEN INVALID", False, f"Token authentication failed: {auth_status}")
+                
+                successful_logins += 1
+                
+            else:
+                # Login failed
+                detail = response.get('detail', 'No detail provided') if isinstance(response, dict) else str(response)
+                self.log_test(f"❌ {username} LOGIN FAILED", False, 
+                    f"Status: {status}, Detail: {detail}")
+                failed_logins += 1
+        
+        # Summary of results
+        total_users = len(test_users)
+        print(f"\n📊 LOGIN TEST SUMMARY:")
+        print(f"   • Total users tested: {total_users}")
+        print(f"   • Successful logins: {successful_logins}")
+        print(f"   • Failed logins: {failed_logins}")
+        print(f"   • Success rate: {(successful_logins/total_users)*100:.1f}%")
+        
+        if successful_logins == total_users:
+            print(f"   🎉 ALL USERS CAN NOW LOGIN WITH admin123 - PASSWORD FIX SUCCESSFUL!")
+            self.log_test("🎉 PASSWORD FIX VERIFICATION", True, f"All {total_users} users can login successfully")
+        else:
+            print(f"   🚨 PASSWORD FIX INCOMPLETE - {failed_logins} users still cannot login")
+            self.log_test("🚨 PASSWORD FIX VERIFICATION", False, f"{failed_logins} out of {total_users} users still failing")
+        
+        return successful_logins == total_users
+
     def test_critical_login_debug_401_issue(self):
         """DEBUG CRITICO dell'endpoint /api/auth/login per identificare perché utenti non-admin ricevono 401"""
         print("\n🚨 DEBUG CRITICO DELL'ENDPOINT /api/auth/login - 401 ISSUE...")
