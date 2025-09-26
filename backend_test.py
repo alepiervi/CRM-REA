@@ -5649,36 +5649,9 @@ Duplicate,Test,+393471234567"""
                 servizio_id = servizio['id']
                 servizio_nome = servizio.get('nome', 'Unknown')
                 
-                print(f"\n   Testing tipologie-contratto for {commessa_nome} -> {servizio_nome}...")
+                print(f"\n   Testing endpoints for {commessa_nome} -> {servizio_nome}...")
                 
-                # GET /api/commesse/{commessa_id}/servizi/{servizio_id}/tipologie-contratto
-                success, tipologie_response, status = self.make_request(
-                    'GET', f'commesse/{commessa_id}/servizi/{servizio_id}/tipologie-contratto', 
-                    expected_status=200
-                )
-                
-                if success:
-                    tipologie_list = tipologie_response
-                    self.log_test(f"✅ Tipologie for {commessa_nome}-{servizio_nome}", True, 
-                        f"Found {len(tipologie_list)} tipologie contratto")
-                    
-                    # Store tipologie for verification
-                    for tipologia in tipologie_list:
-                        tipologie_found.append({
-                            'commessa': commessa_nome,
-                            'servizio': servizio_nome,
-                            'tipologia': tipologia
-                        })
-                        
-                    # Log tipologie names
-                    if tipologie_list:
-                        tipologie_names = [t.get('nome', t) if isinstance(t, dict) else str(t) for t in tipologie_list]
-                        print(f"      Tipologie: {tipologie_names}")
-                    
-                else:
-                    self.log_test(f"❌ Tipologie for {commessa_nome}-{servizio_nome}", False, f"Status: {status}")
-                
-                # Also test units-sub-agenzie endpoint
+                # First get units-sub-agenzie for this commessa+servizio
                 success, units_response, status = self.make_request(
                     'GET', f'commesse/{commessa_id}/servizi/{servizio_id}/units-sub-agenzie', 
                     expected_status=200
@@ -5688,8 +5661,107 @@ Duplicate,Test,+393471234567"""
                     units_list = units_response
                     self.log_test(f"✅ Units-SubAgenzie for {commessa_nome}-{servizio_nome}", True, 
                         f"Found {len(units_list)} units/sub-agenzie")
+                    
+                    # Now test tipologie-contratto with each unit (if any units found)
+                    if units_list:
+                        for unit in units_list:
+                            unit_id = unit.get('id', '')
+                            unit_nome = unit.get('nome', 'Unknown')
+                            unit_type = unit.get('type', 'unknown')
+                            
+                            # Skip sub-agenzie for now, focus on units
+                            if unit_type == 'unit':
+                                print(f"      Testing tipologie-contratto for unit: {unit_nome}...")
+                                
+                                # GET /api/commesse/{commessa_id}/servizi/{servizio_id}/units/{unit_id}/tipologie-contratto
+                                success, tipologie_response, status = self.make_request(
+                                    'GET', f'commesse/{commessa_id}/servizi/{servizio_id}/units/{unit_id}/tipologie-contratto', 
+                                    expected_status=200
+                                )
+                                
+                                if success:
+                                    tipologie_list = tipologie_response
+                                    self.log_test(f"✅ Tipologie for {commessa_nome}-{servizio_nome}-{unit_nome}", True, 
+                                        f"Found {len(tipologie_list)} tipologie contratto")
+                                    
+                                    # Store tipologie for verification
+                                    for tipologia in tipologie_list:
+                                        tipologie_found.append({
+                                            'commessa': commessa_nome,
+                                            'servizio': servizio_nome,
+                                            'unit': unit_nome,
+                                            'tipologia': tipologia
+                                        })
+                                        
+                                    # Log tipologie names
+                                    if tipologie_list:
+                                        tipologie_names = [t.get('label', t.get('nome', str(t))) if isinstance(t, dict) else str(t) for t in tipologie_list]
+                                        print(f"         Tipologie: {tipologie_names}")
+                                    
+                                else:
+                                    self.log_test(f"❌ Tipologie for {commessa_nome}-{servizio_nome}-{unit_nome}", False, f"Status: {status}")
+                    else:
+                        # No units found, try the simpler endpoint with query parameters
+                        print(f"      No units found, testing simpler tipologie-contratto endpoint...")
+                        
+                        # GET /api/tipologie-contratto?commessa_id=X&servizio_id=Y
+                        success, tipologie_response, status = self.make_request(
+                            'GET', f'tipologie-contratto?commessa_id={commessa_id}&servizio_id={servizio_id}', 
+                            expected_status=200
+                        )
+                        
+                        if success:
+                            tipologie_list = tipologie_response
+                            self.log_test(f"✅ Tipologie (query) for {commessa_nome}-{servizio_nome}", True, 
+                                f"Found {len(tipologie_list)} tipologie contratto")
+                            
+                            # Store tipologie for verification
+                            for tipologia in tipologie_list:
+                                tipologie_found.append({
+                                    'commessa': commessa_nome,
+                                    'servizio': servizio_nome,
+                                    'unit': 'query_endpoint',
+                                    'tipologia': tipologia
+                                })
+                                
+                            # Log tipologie names
+                            if tipologie_list:
+                                tipologie_names = [t.get('label', t.get('nome', str(t))) if isinstance(t, dict) else str(t) for t in tipologie_list]
+                                print(f"         Tipologie: {tipologie_names}")
+                        else:
+                            self.log_test(f"❌ Tipologie (query) for {commessa_nome}-{servizio_nome}", False, f"Status: {status}")
                 else:
                     self.log_test(f"❌ Units-SubAgenzie for {commessa_nome}-{servizio_nome}", False, f"Status: {status}")
+                    
+                    # If units-sub-agenzie fails, still try the simpler tipologie endpoint
+                    print(f"      Units-sub-agenzie failed, trying simpler tipologie-contratto endpoint...")
+                    
+                    # GET /api/tipologie-contratto?commessa_id=X&servizio_id=Y
+                    success, tipologie_response, status = self.make_request(
+                        'GET', f'tipologie-contratto?commessa_id={commessa_id}&servizio_id={servizio_id}', 
+                        expected_status=200
+                    )
+                    
+                    if success:
+                        tipologie_list = tipologie_response
+                        self.log_test(f"✅ Tipologie (fallback) for {commessa_nome}-{servizio_nome}", True, 
+                            f"Found {len(tipologie_list)} tipologie contratto")
+                        
+                        # Store tipologie for verification
+                        for tipologia in tipologie_list:
+                            tipologie_found.append({
+                                'commessa': commessa_nome,
+                                'servizio': servizio_nome,
+                                'unit': 'fallback_endpoint',
+                                'tipologia': tipologia
+                            })
+                            
+                        # Log tipologie names
+                        if tipologie_list:
+                            tipologie_names = [t.get('label', t.get('nome', str(t))) if isinstance(t, dict) else str(t) for t in tipologie_list]
+                            print(f"         Tipologie: {tipologie_names}")
+                    else:
+                        self.log_test(f"❌ Tipologie (fallback) for {commessa_nome}-{servizio_nome}", False, f"Status: {status}")
 
         # 4. VERIFICA AUTORIZZAZIONI E TIPOLOGIE ATTESE
         print("\n🔍 4. VERIFICATION OF EXPECTED CONTRACT TYPES...")
