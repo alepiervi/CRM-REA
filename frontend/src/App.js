@@ -1171,8 +1171,8 @@ const Dashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le Tipologie</SelectItem>
-                  {tipologieContratto.length > 0 ? (
-                    tipologieContratto.map((tipologia) => (
+                  {formTipologieContratto.length > 0 ? (
+                    formTipologieContratto.map((tipologia) => (
                       <SelectItem key={tipologia.value} value={tipologia.value}>
                         <div className="flex items-center space-x-2">
                           <FileText className="w-3 h-3" />
