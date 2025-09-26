@@ -552,6 +552,21 @@ backend:
           agent: "testing"
           comment: "🎉 TIPOLOGIE CONTRATTO ENDPOINT FILTERING TEST COMPLETED - 100% SUCCESS! ✅ LOGIN: resp_commessa/admin123 works perfectly (Role: responsabile_commessa, 2 commesse autorizzate). ✅ BASE ENDPOINT: GET /api/tipologie-contratto returns 4 tipologie (Energia Fastweb, Telefonia Fastweb, Ho Mobile, Telepass). ✅ COMMESSA FILTER: GET /api/tipologie-contratto?commessa_id=fastweb_id returns 4 tipologie for authorized commessa. ✅ SERVICE FILTERING WORKING: TLS service returns 2 tipologie (Energia + Telefonia Fastweb only), Agent service returns 4 tipologie (includes Ho Mobile + Telepass). ✅ AUTHORIZATION: Correctly returns 403 for unauthorized commessa access. ✅ HIERARCHICAL ENDPOINT: Available but skipped due to no units. ✅ FILTERING LOGIC: Agent service correctly has more tipologie than TLS (4 vs 2), confirming service-based filtering works as expected. SUCCESS RATE: 100% (13/13 tests passed) - All filtering and authorization requirements met!"
 
+  - task: "Frontend Tipologie Contratto Filtering UI Test"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "URGENT FRONTEND UI TEST per verificare che il fix per le tipologie contratto funzioni correttamente: 1. Login come resp_commessa/admin123, 2. Selezionare Commessa Fastweb, 3. Selezionare Servizio TLS (deve mostrare solo 2 tipologie: Energia + Telefonia Fastweb), 4. Cambiare servizio ad Agent (deve mostrare tutte 4 tipologie: include Ho Mobile + Telepass)."
+        - working: true
+          agent: "testing"
+          comment: "🎉 FRONTEND TIPOLOGIE CONTRATTO FILTERING TEST COMPLETED - 100% SUCCESS! ✅ LOGIN: resp_commessa/admin123 successful, Dashboard Responsabile Commessa loaded correctly. ✅ COMMESSA SELECTION: Fastweb selected successfully, servizi loaded (TLS, Agent, Negozi, Presidi). ✅ TLS SERVICE TEST: Selected TLS service, console shows '✅ Tipologie contratto ricevute: [Object, Object]' (2 tipologie received as expected). ✅ AGENT SERVICE TEST: Changed to Agent service, console shows '✅ Tipologie contratto ricevute: [Object, Object, Object, Object]' (4 tipologie received as expected). ✅ UI VERIFICATION: Screenshot confirms tipologie dropdown shows all 4 options for Agent service: Tutte le Tipologie, Energia Fastweb, Telefonia Fastweb, Ho Mobile, Telepass. ✅ FILTERING LOGIC CONFIRMED: TLS service correctly filters to 2 tipologie (Energia + Telefonia Fastweb only), Agent service shows all 4 tipologie (includes Ho Mobile + Telepass). ✅ FRONTEND FIX WORKING: The fetchTipologieContratto() function with servizio_id parameter is working correctly, API calls show proper filtering URLs. URGENT TEST REQUIREMENTS MET: The fix for tipologie contratto filtering is working perfectly!"
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
