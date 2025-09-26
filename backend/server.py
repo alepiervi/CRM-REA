@@ -6618,10 +6618,25 @@ async def get_servizi_by_commessa(commessa_id: str, current_user: User = Depends
     if not has_access:
         raise HTTPException(status_code=403, detail="Access denied to this commessa")
     
-    servizi = await db.servizi.find({
+    # Get servizi base query
+    base_query = {
         "commessa_id": commessa_id,
         "is_active": True
-    }).to_list(length=None)
+    }
+    
+    # DIRECT FIX: Per responsabile_commessa filtra per servizi_autorizzati
+    if current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        if hasattr(current_user, 'servizi_autorizzati') and current_user.servizi_autorizzati:
+            # Filtra solo servizi autorizzati
+            base_query["id"] = {"$in": current_user.servizi_autorizzati}
+        else:
+            # FALLBACK: Ricarica servizi_autorizzati dal database
+            user_data = await db.users.find_one({"username": current_user.username})
+            if user_data and "servizi_autorizzati" in user_data and user_data["servizi_autorizzati"]:
+                base_query["id"] = {"$in": user_data["servizi_autorizzati"]}
+            # Se non ha servizi_autorizzati, mostra tutti i servizi della commessa (backward compatibility)
+    
+    servizi = await db.servizi.find(base_query).to_list(length=None)
     
     return [Servizio(**s) for s in servizi]
 
