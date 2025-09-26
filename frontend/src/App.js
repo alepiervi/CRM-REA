@@ -838,13 +838,13 @@ const Dashboard = () => {
           console.log("🔄 Loading tipologie contratto for commessa+servizio+unit...");
           const response = await axios.get(`${API}/commesse/${selectedCommessa}/servizi/${selectedServizio}/units/${selectedUnit}/tipologie-contratto`);
           console.log("✅ Tipologie contratto loaded:", response.data);
-          setTipologieContratto(response.data);
+          setFormTipologieContratto(response.data);
         } catch (error) {
           console.error("❌ Error loading tipologie contratto:", error);
-          setTipologieContratto([]);
+          setFormTipologieContratto([]);
         }
       } else {
-        setTipologieContratto([]);
+        setFormTipologieContratto([]);
       }
     };
 
