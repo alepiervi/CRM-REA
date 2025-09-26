@@ -560,7 +560,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Final responsabile commessa login and dashboard functionality test completed successfully"
+    - "Tipologie Contratto endpoint filtering test completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -568,6 +568,8 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: "🎯 PROBLEMA IDENTIFICATO: I selettori gerarchici sono implementati ma seguono logica a cascata. Il Tipologia Contratto appare SOLO quando: 1) Commessa != 'all', 2) Servizio != 'all', 3) Unit != 'all'. Attualmente l'utente ha 'Tutte le Commesse' selezionate, quindi nessun selettore successivo appare. Backend confermato funzionante (4 tipologie disponibili). NEXT: Test frontend per verificare cascata selettori o modifica logica di visualizzazione."
+    - agent: "testing"
+      message: "🎯 TIPOLOGIE CONTRATTO ENDPOINT TESTING COMPLETED SUCCESSFULLY! ✅ COMPREHENSIVE TESTING: All 6 test scenarios completed with 100% success rate (13/13 tests passed). ✅ FILTERING VERIFICATION: Service-based filtering working correctly - TLS service returns 2 tipologie (base Fastweb services), Agent service returns 4 tipologie (includes Ho Mobile + Telepass). ✅ AUTHORIZATION: resp_commessa user correctly authorized for Fastweb commessa, properly denied for unauthorized commesse (403 error). ✅ ENDPOINT FUNCTIONALITY: Both query parameter filtering (?commessa_id=X&servizio_id=Y) and hierarchical endpoint structure working. ✅ EXPECTED BEHAVIOR CONFIRMED: Different services return different tipologie counts as expected - Agent service has more options than TLS service. Backend endpoint implementation is FULLY FUNCTIONAL and meets all filtering requirements!"
 
 frontend:
   - task: "Sistema Autorizzazioni Gerarchiche - Navigation Integration"
