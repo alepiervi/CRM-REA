@@ -1132,13 +1132,14 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Mobile Selectors - Simplified */}
-            <div className="p-4 bg-slate-50 border-b border-slate-200">
+            {/* Mobile Selectors - Complete Hierarchy */}
+            <div className="p-4 bg-slate-50 border-b border-slate-200 max-h-64 overflow-y-auto">
+              {/* 1. Commessa Selector */}
               <div>
                 <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
                   Commessa
-                  {getAvailableCommesse().length > 0 && (
-                    <span className="ml-1 text-xs text-green-600">({getAvailableCommesse().length})</span>
+                  {commesse.length > 0 && (
+                    <span className="ml-1 text-xs text-green-600">({commesse.length})</span>
                   )}
                 </Label>
                 <Select value={selectedCommessa} onValueChange={handleCommessaChange}>
@@ -1151,13 +1152,70 @@ const Dashboard = () => {
                       <SelectItem key={commessa.id} value={commessa.id}>
                         <div className="flex items-center space-x-2">
                           <Building className="w-3 h-3" />
-                          <span>{commessa.nome}</span>
+                          <span className="text-sm">{commessa.nome}</span>
                         </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* 2. Servizio Selector - Mobile */}
+              {selectedCommessa && selectedCommessa !== "all" && (
+                <div className="mt-3">
+                  <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                    Servizio
+                    {servizi.length > 0 && (
+                      <span className="ml-1 text-xs text-green-600">({servizi.length})</span>
+                    )}
+                  </Label>
+                  <Select value={selectedServizio || "all"} onValueChange={handleServizioChange}>
+                    <SelectTrigger className="mt-1 mobile-select">
+                      <SelectValue placeholder="Seleziona servizio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutti i Servizi</SelectItem>
+                      {servizi.map((servizio) => (
+                        <SelectItem key={servizio.id} value={servizio.id}>
+                          <div className="flex items-center space-x-2">
+                            <Cog className="w-3 h-3" />
+                            <span className="text-sm">{servizio.nome}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* 3. Tipologia Contratto Selector - Mobile */}
+              {selectedCommessa && selectedCommessa !== "all" && 
+               selectedServizio && selectedServizio !== "all" && (
+                <div className="mt-3">
+                  <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                    Tipologia Contratto
+                    {formTipologieContratto.length > 0 && (
+                      <span className="ml-1 text-xs text-green-600">({formTipologieContratto.length})</span>
+                    )}
+                  </Label>
+                  <Select value={selectedTipologiaContratto} onValueChange={handleTipologiaContrattoChange}>
+                    <SelectTrigger className="mt-1 mobile-select">
+                      <SelectValue placeholder="Seleziona tipologia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le Tipologie</SelectItem>
+                      {formTipologieContratto.map((tipologia) => (
+                        <SelectItem key={tipologia.value} value={tipologia.value}>
+                          <div className="flex items-center space-x-2">
+                            <FileText className="w-3 h-3" />
+                            <span className="text-sm">{tipologia.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* Mobile Navigation */}
