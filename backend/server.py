@@ -6596,7 +6596,26 @@ async def create_servizio(servizio_data: ServizioCreate, current_user: User = De
 @api_router.get("/commesse/{commessa_id}/servizi", response_model=List[Servizio])
 async def get_servizi_by_commessa(commessa_id: str, current_user: User = Depends(get_current_user)):
     """Get servizi for a specific commessa"""
-    if not await check_commessa_access(current_user, commessa_id):
+    
+    # DIRECT FIX: Per admin sempre accesso, per responsabile_commessa verifica diretta
+    has_access = False
+    
+    if current_user.role == UserRole.ADMIN:
+        has_access = True
+    elif current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        # DIRECT CHECK: Verifica se commessa_id è nelle commesse autorizzate
+        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            has_access = commessa_id in current_user.commesse_autorizzate
+        else:
+            # FALLBACK: Ricarica dal database
+            user_data = await db.users.find_one({"username": current_user.username})
+            if user_data and "commesse_autorizzate" in user_data:
+                has_access = commessa_id in user_data["commesse_autorizzate"]
+    else:
+        # Altri utenti: usa il sistema normale
+        has_access = await check_commessa_access(current_user, commessa_id)
+    
+    if not has_access:
         raise HTTPException(status_code=403, detail="Access denied to this commessa")
     
     servizi = await db.servizi.find({
