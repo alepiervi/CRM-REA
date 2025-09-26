@@ -686,7 +686,8 @@ const Dashboard = () => {
     }
     
     if (user.role === "responsabile_commessa") {
-      fetchTipologieContratto();
+      // NON caricare tipologie contratto all'inizio - verranno caricate quando necessario
+      console.log("✅ Utente responsabile_commessa - tipologie contratto caricate dinamicamente");
       
       // EMERGENCY FIX: Se commesse_autorizzate è vuoto, ricarica user data
       if (!user.commesse_autorizzate || user.commesse_autorizzate.length === 0) {
