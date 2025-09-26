@@ -694,8 +694,10 @@ const Dashboard = () => {
   // Funzione di emergenza per ricaricare dati utente
   const fetchCurrentUserData = async () => {
     try {
+      console.log("🔄 Caricamento dati utente fresh dal backend...");
       const response = await axios.get(`${API}/auth/me`);
-      console.log("🔄 Dati utente ricaricati:", response.data);
+      console.log("✅ NUOVI dati utente dal backend:", response.data);
+      console.log("✅ COMMESSE_AUTORIZZATE ricevute:", response.data.commesse_autorizzate);
       setUser(response.data);
     } catch (error) {
       console.error("❌ Errore nel ricaricare dati utente:", error);
