@@ -806,10 +806,10 @@ const Dashboard = () => {
       
       const response = await axios.get(url);
       console.log("✅ Tipologie contratto ricevute:", response.data);
-      setTipologieContratto(response.data);
+      setFormTipologieContratto(response.data);
     } catch (error) {
       console.error("❌ Error fetching tipologie contratto:", error);
-      setTipologieContratto([]);
+      setFormTipologieContratto([]);
     }
   };
 
