@@ -2901,12 +2901,12 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
               Annulla
             </Button>
             <Button 
-              type="submit" 
+              type="button" 
               disabled={isLoading}
               onClick={(e) => {
-                console.log("🎯 BUTTON ONCLICK chiamato! Event:", e);
-                console.log("🎯 Button type:", e.target.type);
-                console.log("🎯 Form element:", e.target.form);
+                console.log("🎯 BUTTON ONCLICK chiamato! Forcing form submit...");
+                e.preventDefault();
+                handleSubmit(e);
               }}
             >
               {isLoading ? "Creazione..." : "Crea Utente"}
