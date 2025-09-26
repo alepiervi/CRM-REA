@@ -1722,70 +1722,141 @@ const LeadsManagement = ({ selectedUnit, units }) => {
           {loading ? (
             <div className="p-8 text-center">Caricamento...</div>
           ) : (
-            <div className="mobile-table-container">
-              <Table className="mobile-table">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="mobile-table">ID Lead</TableHead>
-                    <TableHead className="mobile-table">Nome</TableHead>
-                    <TableHead className="mobile-table">Telefono</TableHead>
-                    <TableHead className="mobile-table">Provincia</TableHead>
-                    <TableHead className="mobile-table">Campagna</TableHead>
-                    <TableHead className="mobile-table">Stato</TableHead>
-                    <TableHead className="mobile-table">Data</TableHead>
-                    <TableHead className="mobile-table">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {leads.map((lead) => (
-                    <TableRow key={lead.id}>
-                      <TableCell className="font-mono text-sm">
-                        {lead.lead_id || lead.id.slice(0, 8)}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {lead.nome} {lead.cognome}
-                      </TableCell>
-                      <TableCell>{lead.telefono}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <MapPin className="w-3 h-3 text-slate-400" />
-                          <span>{lead.provincia}</span> 
-                        </div>
-                      </TableCell>
-                      <TableCell>{lead.campagna}</TableCell>
-                      <TableCell>{getStatusBadge(lead.esito)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-3 h-3 text-slate-400" />
-                          <span>{new Date(lead.created_at).toLocaleDateString("it-IT")}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-1">
-                          <Button
-                            onClick={() => setSelectedLead(lead)}
-                            variant="ghost"
-                            size="sm"
-                            title="Visualizza dettagli"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          {user.role === "admin" && (
-                            <Button
-                              onClick={() => deleteLead(lead.id, `${lead.nome} ${lead.cognome}`)}
-                              variant="destructive"
-                              size="sm"
-                              title="Elimina lead"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+            <div>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID Lead</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Telefono</TableHead>
+                      <TableHead>Provincia</TableHead>
+                      <TableHead>Campagna</TableHead>
+                      <TableHead>Stato</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Azioni</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {leads.map((lead) => (
+                      <TableRow key={lead.id}>
+                        <TableCell className="font-mono text-sm">
+                          {lead.lead_id || lead.id.slice(0, 8)}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {lead.nome} {lead.cognome}
+                        </TableCell>
+                        <TableCell>{lead.telefono}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-1">
+                            <MapPin className="w-3 h-3 text-slate-400" />
+                            <span>{lead.provincia}</span> 
+                          </div>
+                        </TableCell>
+                        <TableCell>{lead.campagna}</TableCell>
+                        <TableCell>{getStatusBadge(lead.esito)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-1">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            <span>{new Date(lead.created_at).toLocaleDateString("it-IT")}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Button
+                              onClick={() => setSelectedLead(lead)}
+                              variant="ghost"
+                              size="sm"
+                              title="Visualizza dettagli"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            {user.role === "admin" && (
+                              <Button
+                                onClick={() => deleteLead(lead.id, `${lead.nome} ${lead.cognome}`)}
+                                variant="destructive"
+                                size="sm"
+                                title="Elimina lead"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden">
+                {leads.map((lead) => (
+                  <div key={lead.id} className="border-b border-slate-200 p-4 last:border-b-0">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <Users className="w-4 h-4 text-blue-600" />
+                          <h3 className="font-semibold text-slate-900">
+                            {lead.nome} {lead.cognome}
+                          </h3>
+                        </div>
+                        <p className="text-sm text-slate-500 font-mono">
+                          ID: {lead.lead_id || lead.id.slice(0, 8)}
+                        </p>
+                      </div>
+                      {getStatusBadge(lead.esito)}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-2 mb-3 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <Phone className="w-3 h-3 text-slate-400" />
+                        <span className="text-slate-600">{lead.telefono}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="w-3 h-3 text-slate-400" />
+                        <span className="text-slate-600">{lead.provincia}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Tag className="w-3 h-3 text-slate-400" />
+                        <span className="text-slate-600">{lead.campagna}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <span className="text-slate-600">
+                          {new Date(lead.created_at).toLocaleDateString("it-IT")}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2 pt-2 border-t border-slate-100">
+                      <Button
+                        onClick={() => setSelectedLead(lead)}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        title="Visualizza dettagli"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Vista
+                      </Button>
+                      {user.role === "admin" && (
+                        <Button
+                          onClick={() => deleteLead(lead.id, `${lead.nome} ${lead.cognome}`)}
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1"
+                          title="Elimina lead"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Elimina
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </CardContent>
