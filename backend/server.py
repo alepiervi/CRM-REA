@@ -2938,8 +2938,14 @@ async def login_for_access_token(form_data: UserLogin):
     user_obj = User(**user)
     return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
 
-@api_router.get("/auth/me", response_model=User)
+@api_router.get("/auth/me")
 async def read_users_me(current_user: User = Depends(get_current_user)):
+    # Get fresh user data from database to ensure all fields are included
+    user_data = await db.users.find_one({"username": current_user.username})
+    if user_data:
+        # Convert ObjectId to string and return raw data to ensure all fields are present
+        user_data["_id"] = str(user_data["_id"])
+        return user_data
     return current_user
 
 # User management endpoints
