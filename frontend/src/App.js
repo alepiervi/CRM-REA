@@ -1108,7 +1108,7 @@ const Dashboard = () => {
           />
           
           {/* Mobile Sidebar */}
-          <div className={`mobile-sidebar ${isMobileMenuOpen ? 'active' : ''}`} style={{display: 'flex', flexDirection: 'column', height: '100vh', maxHeight: '100vh'}}>
+          <div className={`mobile-sidebar ${isMobileMenuOpen ? 'active' : ''}`}>
             <div className="p-4">
               <h1>CRM Mobile</h1>
 
