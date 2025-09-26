@@ -58,6 +58,7 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  Tag,
   AlertCircle,
   Menu,
   Power,
