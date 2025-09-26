@@ -550,6 +550,10 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
+agent_communication:
+    - agent: "main"
+      message: "🎯 PROBLEMA IDENTIFICATO: I selettori gerarchici sono implementati ma seguono logica a cascata. Il Tipologia Contratto appare SOLO quando: 1) Commessa != 'all', 2) Servizio != 'all', 3) Unit != 'all'. Attualmente l'utente ha 'Tutte le Commesse' selezionate, quindi nessun selettore successivo appare. Backend confermato funzionante (4 tipologie disponibili). NEXT: Test frontend per verificare cascata selettori o modifica logica di visualizzazione."
+
 frontend:
   - task: "Sistema Autorizzazioni Gerarchiche - Navigation Integration"
     implemented: true
