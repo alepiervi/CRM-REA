@@ -1109,28 +1109,8 @@ const Dashboard = () => {
           
           {/* Mobile Sidebar */}
           <div className={`mobile-sidebar ${isMobileMenuOpen ? 'active' : ''}`} style={{display: 'flex', flexDirection: 'column', height: '100vh', maxHeight: '100vh'}}>
-            {/* Mobile Header */}
-            <div className="p-3 border-b border-slate-200 bg-white flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-lg font-bold text-slate-800">CRM System</h1>
-                    <p className="text-xs text-slate-500">Mobile</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
+            <div className="p-4">
+              <h1>CRM Mobile</h1>
 
             {/* Mobile Selectors - Complete Hierarchy */}
             <div className="p-2 bg-slate-50 border-b border-slate-200 max-h-24 overflow-y-auto flex-shrink-0">
