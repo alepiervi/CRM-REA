@@ -960,12 +960,22 @@ async def get_user_accessible_commesse(user: User) -> List[str]:
         commesse = await db.commesse.find({"is_active": True}).to_list(length=None)
         return [c["id"] for c in commesse]
     
-    # Altri ruoli vedono solo commesse autorizzate
+    # CRITICAL FIX: Dual check pattern per altri ruoli
+    authorized_commesse = []
+    
+    # Metodo 1: Campo diretto nell'utente (nuova logica)
+    if hasattr(user, 'commesse_autorizzate') and user.commesse_autorizzate:
+        authorized_commesse.extend(user.commesse_autorizzate)
+    
+    # Metodo 2: Tabella separata (vecchia logica - fallback)
     authorizations = await db.user_commessa_authorizations.find({
         "user_id": user.id,
         "is_active": True
     }).to_list(length=None)
-    return [auth["commessa_id"] for auth in authorizations]
+    authorized_commesse.extend([auth["commessa_id"] for auth in authorizations])
+    
+    # Rimuovi duplicati e ritorna lista unica
+    return list(set(authorized_commesse))
 
 async def get_user_accessible_sub_agenzie(user: User, commessa_id: str) -> List[str]:
     """Get list of sub agenzia IDs accessible to user for a specific commessa"""
