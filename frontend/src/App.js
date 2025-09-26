@@ -9386,6 +9386,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             </TableBody>
           </Table>
           </div>
+          </div>
           {clienti.length === 0 && (
             <div className="text-center py-8">
               <p className="text-gray-500">
