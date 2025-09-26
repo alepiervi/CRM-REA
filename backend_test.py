@@ -5548,10 +5548,14 @@ Duplicate,Test,+393471234567"""
                 print(f"🚨 CRITICAL: Inconsistency found - Working: {working_commesse}, Created: {created_commesse}")
 
     def run_all_tests(self):
-        """Run focused test for Password Hashing and Responsabile Commessa system"""
-        print("🚀 Starting CRM API Testing - Password Hashing Focus...")
+        """Run focused test for Password Fix Verification and Multiple User Login"""
+        print("🚀 Starting CRM API Testing - Password Fix Verification Focus...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
+        
+        # PRIORITY TEST: Password fix verification for multiple users (as requested in review)
+        print("\n🎯 PRIORITY TEST: PASSWORD FIX VERIFICATION FOR MULTIPLE USERS...")
+        password_fix_success = self.test_password_fix_multiple_users_login()
         
         # Authentication is required for most tests
         if not self.test_authentication():
@@ -5576,6 +5580,7 @@ Duplicate,Test,+393471234567"""
         # Print summary
         print("\n" + "=" * 60)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
+        print(f"🔑 Password Fix Status: {'✅ SUCCESS' if password_fix_success else '❌ FAILED'}")
         
         if self.tests_passed == self.tests_run:
             print("🎉 All tests passed!")
