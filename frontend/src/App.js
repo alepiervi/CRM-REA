@@ -9316,77 +9316,159 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
       <Card>
         <CardContent className="p-0">
-          <div className="mobile-table-container">
-            <Table className="mobile-table">
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="mobile-table">ID</TableHead>
-                  <TableHead className="mobile-table">Nome</TableHead>
-                  <TableHead className="mobile-table">Email</TableHead>
-                  <TableHead className="mobile-table">Telefono</TableHead>
-                  <TableHead className="mobile-table">Commessa</TableHead>
-                  <TableHead className="mobile-table">Sub Agenzia</TableHead>
-                  <TableHead className="mobile-table">Stato</TableHead>
-                  <TableHead className="mobile-table">Data Creazione</TableHead>
-                  <TableHead className="mobile-table">Azioni</TableHead>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Telefono</TableHead>
+                  <TableHead>Commessa</TableHead>
+                  <TableHead>Sub Agenzia</TableHead>
+                  <TableHead>Stato</TableHead>
+                  <TableHead>Data Creazione</TableHead>
+                  <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
-            <TableBody>
-              {clienti.map((cliente) => (
-                <TableRow key={cliente.id}>
-                  <TableCell className="mobile-table">
-                    <span className="font-mono text-sm">{cliente.cliente_id}</span>
-                  </TableCell>
-                  <TableCell className="mobile-table">
-                    <div className="flex items-center space-x-2">
-                      <FileUser className="w-4 h-4 text-green-600" />
-                      <span>{cliente.nome} {cliente.cognome}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="mobile-table">{cliente.email || 'N/A'}</TableCell>
-                  <TableCell className="mobile-table">{cliente.telefono}</TableCell>
-                  <TableCell className="mobile-table">
-                    {commesse.find(c => c.id === cliente.commessa_id)?.nome || 'N/A'}
-                  </TableCell>
-                  <TableCell className="mobile-table">
-                    {subAgenzie.find(sa => sa.id === cliente.sub_agenzia_id)?.nome || 'N/A'}
-                  </TableCell>
-                  <TableCell className="mobile-table">
-                    <Badge 
-                      variant={
-                        cliente.status === "completato" ? "default" :
-                        cliente.status === "in_lavorazione" ? "secondary" : "outline"
-                      }
-                    >
-                      {cliente.status.replace('_', ' ').toUpperCase()}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="mobile-table">
-                    {new Date(cliente.created_at).toLocaleDateString('it-IT')}
-                  </TableCell>
-                  <TableCell className="mobile-table">
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleViewCliente(cliente)}
+              <TableBody>
+                {clienti.map((cliente) => (
+                  <TableRow key={cliente.id}>
+                    <TableCell>
+                      <span className="font-mono text-sm">{cliente.cliente_id}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <FileUser className="w-4 h-4 text-green-600" />
+                        <span>{cliente.nome} {cliente.cognome}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{cliente.email || 'N/A'}</TableCell>
+                    <TableCell>{cliente.telefono}</TableCell>
+                    <TableCell>
+                      {commesse.find(c => c.id === cliente.commessa_id)?.nome || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      {subAgenzie.find(sa => sa.id === cliente.sub_agenzia_id)?.nome || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={
+                          cliente.status === "completato" ? "default" :
+                          cliente.status === "in_lavorazione" ? "secondary" : "outline"
+                        }
                       >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEditCliente(cliente)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                        {cliente.status.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(cliente.created_at).toLocaleDateString('it-IT')}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewCliente(cliente)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditCliente(cliente)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden">
+            {clienti.map((cliente) => (
+              <div key={cliente.id} className="border-b border-slate-200 p-4 last:border-b-0">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <FileUser className="w-4 h-4 text-green-600" />
+                      <h3 className="font-semibold text-slate-900">
+                        {cliente.nome} {cliente.cognome}
+                      </h3>
+                    </div>
+                    <p className="text-sm text-slate-500 font-mono">ID: {cliente.cliente_id}</p>
+                  </div>
+                  <Badge 
+                    variant={
+                      cliente.status === "completato" ? "default" :
+                      cliente.status === "in_lavorazione" ? "secondary" : "outline"
+                    }
+                    className="text-xs"
+                  >
+                    {cliente.status.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-2 mb-3 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <Mail className="w-3 h-3 text-slate-400" />
+                    <span className="text-slate-600">{cliente.email || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Phone className="w-3 h-3 text-slate-400" />
+                    <span className="text-slate-600">{cliente.telefono}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Building className="w-3 h-3 text-slate-400" />
+                    <span className="text-slate-600">
+                      {commesse.find(c => c.id === cliente.commessa_id)?.nome || 'N/A'}
+                    </span>
+                  </div>
+                  {cliente.sub_agenzia_id && (
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-3 h-3 text-slate-400" />
+                      <span className="text-slate-600">
+                        {subAgenzie.find(sa => sa.id === cliente.sub_agenzia_id)?.nome || 'N/A'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-3 h-3 text-slate-400" />
+                    <span className="text-slate-600">
+                      {new Date(cliente.created_at).toLocaleDateString('it-IT')}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex space-x-2 pt-2 border-t border-slate-100">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewCliente(cliente)}
+                    className="flex-1"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Vista
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleEditCliente(cliente)}
+                    className="flex-1"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Modifica
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
           {clienti.length === 0 && (
             <div className="text-center py-8">
               <p className="text-gray-500">
