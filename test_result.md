@@ -537,6 +537,21 @@ backend:
           agent: "testing"
           comment: "🎉 FINAL RESPONSABILE COMMESSA TEST COMPLETED - ALL REQUIREMENTS MET! ✅ LOGIN TESTS: Both test2/admin123 and resp_commessa/admin123 login successfully with proper dashboard access. ✅ DASHBOARD ACCESS: Both users see 'Dashboard Responsabile Commessa' with correct layout and data. ✅ SELECTOR FUNCTIONALITY: Commessa selector shows 3 options (Tutte le Commesse, Fastweb, Fotovoltaico) as expected. Servizio selector appears correctly after commessa selection with 4 services loaded. ✅ DEBUG INFO VERIFICATION: resp_commessa shows 'Commesse autorizzate: 2' and test2 shows 'Commesse autorizzate: 1' - both correct. ✅ NAVIGATION WORKING: Analytics navigation works perfectly with selectors persisting across pages. ✅ NO 401 ERRORS: Zero authentication errors detected during testing. ✅ DASHBOARD DATA: Sub Agenzie count shows 2, Commesse Attive shows 2, all metrics displaying correctly. ✅ CROSS-NAVIGATION: Selection state persists when navigating between Dashboard and Analytics. SUCCESS CRITERIA MET: All responsabile_commessa users can login, access dashboard, and use selectors without errors!"
 
+  - task: "Tipologie Contratto Endpoint with Service Filtering"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "TEST ENDPOINT TIPOLOGIE CONTRATTO CON FILTRI SERVIZIO: Testing GET /api/tipologie-contratto with filtering capabilities for servizio and authorization verification using resp_commessa/admin123 credentials."
+        - working: true
+          agent: "testing"
+          comment: "🎉 TIPOLOGIE CONTRATTO ENDPOINT FILTERING TEST COMPLETED - 100% SUCCESS! ✅ LOGIN: resp_commessa/admin123 works perfectly (Role: responsabile_commessa, 2 commesse autorizzate). ✅ BASE ENDPOINT: GET /api/tipologie-contratto returns 4 tipologie (Energia Fastweb, Telefonia Fastweb, Ho Mobile, Telepass). ✅ COMMESSA FILTER: GET /api/tipologie-contratto?commessa_id=fastweb_id returns 4 tipologie for authorized commessa. ✅ SERVICE FILTERING WORKING: TLS service returns 2 tipologie (Energia + Telefonia Fastweb only), Agent service returns 4 tipologie (includes Ho Mobile + Telepass). ✅ AUTHORIZATION: Correctly returns 403 for unauthorized commessa access. ✅ HIERARCHICAL ENDPOINT: Available but skipped due to no units. ✅ FILTERING LOGIC: Agent service correctly has more tipologie than TLS (4 vs 2), confirming service-based filtering works as expected. SUCCESS RATE: 100% (13/13 tests passed) - All filtering and authorization requirements met!"
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
