@@ -712,17 +712,17 @@ const Dashboard = () => {
 
   // Rimossi vecchi useEffect - ora gestiti dal sistema gerarchico
 
-  // useEffect per ricaricare tipologie contratto quando cambiano commessa/servizio per responsabile_commessa
+  // useEffect per ricaricare tipologie contratto quando cambiano commessa/servizio - PER TUTTI I RUOLI
   useEffect(() => {
-    if (user.role === "responsabile_commessa" && selectedCommessa && selectedCommessa !== "all" && selectedServizio && selectedServizio !== "all") {
-      console.log("🔄 USEEFFECT: Ricarico tipologie per commessa/servizio changed:", { selectedCommessa, selectedServizio });
+    if (selectedCommessa && selectedCommessa !== "all" && selectedServizio && selectedServizio !== "all") {
+      console.log("🔄 USEEFFECT (ALL ROLES): Ricarico tipologie per commessa/servizio changed:", { selectedCommessa, selectedServizio, userRole: user.role });
       fetchTipologieContratto(selectedCommessa, selectedServizio);
-    } else if (user.role === "responsabile_commessa") {
+    } else {
       // Se non ci sono filtri, svuoto le tipologie
-      console.log("🔄 USEEFFECT: Reset tipologie (no filters)");
+      console.log("🔄 USEEFFECT (ALL ROLES): Reset tipologie (no filters)");
       setTipologieContratto([]);
     }
-  }, [selectedCommessa, selectedServizio, user.role]);
+  }, [selectedCommessa, selectedServizio]);
 
   useEffect(() => {
     // Auto-select unit for non-admin users
