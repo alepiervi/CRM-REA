@@ -9770,20 +9770,20 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               </Select>
             </div>
             <div>
-              <Label htmlFor="tipologia_contratto">Tipologia Contratto</Label>
+              <Label htmlFor="tipologia_contratto">Tipologia Contratto *</Label>
               <Select 
                 value={formData.tipologia_contratto || "none"} 
                 onValueChange={(value) => setFormData({
                   ...formData, 
                   tipologia_contratto: value === "none" ? "" : value
                 })}
-                disabled={!formData.servizio_id}
+                disabled={!formData.servizio_id || createTipologieContratto.length === 0}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona Tipologia" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Seleziona Tipologia</SelectItem>
+                  <SelectItem value="none" disabled>Seleziona Tipologia</SelectItem>
                   {createTipologieContratto.map((tipologia) => (
                     <SelectItem key={tipologia.value} value={tipologia.value}>
                       {tipologia.label}
@@ -9793,20 +9793,20 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               </Select>
             </div>
             <div>
-              <Label htmlFor="segmento">Segmento</Label>
+              <Label htmlFor="segmento">Segmento *</Label>
               <Select 
                 value={formData.segmento || "none"} 
                 onValueChange={(value) => setFormData({
                   ...formData, 
                   segmento: value === "none" ? "" : value
                 })}
-                disabled={!formData.tipologia_contratto}
+                disabled={!formData.tipologia_contratto || segmenti.length === 0}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona Segmento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Seleziona Segmento</SelectItem>
+                  <SelectItem value="none" disabled>Seleziona Segmento</SelectItem>
                   {segmenti.map((segmento) => (
                     <SelectItem key={segmento.value} value={segmento.value}>
                       {segmento.label}
