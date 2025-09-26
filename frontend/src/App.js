@@ -1161,8 +1161,8 @@ const Dashboard = () => {
             <div className="mt-4">
               <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
                 3. Seleziona Tipologia Contratto
-                {tipologieContratto.length > 0 && (
-                  <span className="ml-1 text-xs text-green-600">({tipologieContratto.length} disponibili)</span>
+                {formTipologieContratto.length > 0 && (
+                  <span className="ml-1 text-xs text-green-600">({formTipologieContratto.length} disponibili)</span>
                 )}
               </Label>
               <Select value={selectedTipologiaContratto} onValueChange={handleTipologiaContrattoChange}>
