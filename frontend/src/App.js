@@ -4946,88 +4946,100 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
     if (!dashboardData) return null;
 
     return (
-      <div className="space-y-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Totale Lead</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{dashboardData.totalLeads}</div>
-              <p className="text-xs text-muted-foreground">Lead generati nel periodo</p>
-            </CardContent>
-          </Card>
+      <div>
+        {/* 📱 MOBILE VIEW */}
+        <div className="md:hidden space-y-4">
+          {/* Mobile Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4 text-white">
+            <h2 className="text-lg font-bold mb-1">Analytics Overview</h2>
+            <p className="text-blue-100 text-sm">Reports & Performance</p>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Totale Clienti</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{dashboardData.totalClients}</div>
-              <p className="text-xs text-muted-foreground">Clienti acquisiti</p>
-            </CardContent>
-          </Card>
+          {/* Mobile Stats - Stacked */}
+          <div className="space-y-3">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-700">Totale Lead</p>
+                    <p className="text-2xl font-bold text-blue-900">{dashboardData.totalLeads}</p>
+                    <p className="text-xs text-blue-600">Lead generati nel periodo</p>
+                  </div>
+                  <Users className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tasso Conversione</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{dashboardData.conversionRate}%</div>
-              <p className="text-xs text-muted-foreground">Lead convertiti</p>
-            </CardContent>
-          </Card>
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-700">Totale Clienti</p>
+                    <p className="text-2xl font-bold text-green-900">{dashboardData.totalClients}</p>
+                    <p className="text-xs text-green-600">Clienti acquisiti</p>
+                  </div>
+                  <Building2 className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Commesse Attive</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{dashboardData.totalCommesse}</div>
-              <p className="text-xs text-muted-foreground">Progetti in corso</p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card className="bg-purple-50 border-purple-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-purple-700">Tasso Conversione</p>
+                    <p className="text-2xl font-bold text-purple-900">{dashboardData.conversionRate}%</p>
+                    <p className="text-xs text-purple-600">Lead convertiti</p>
+                  </div>
+                  <Target className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Line Chart - Leads Trend */}
+            <Card className="bg-orange-50 border-orange-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-orange-700">Commesse Attive</p>
+                    <p className="text-2xl font-bold text-orange-900">{dashboardData.totalCommesse}</p>
+                    <p className="text-xs text-orange-600">Progetti in corso</p>
+                  </div>
+                  <Briefcase className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mobile Charts - Stacked */}
           <Card>
-            <CardHeader>
-              <CardTitle>Andamento Lead (Ultimi 14 giorni)</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Andamento Lead</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
+                  <XAxis dataKey="date" fontSize={10} />
+                  <YAxis fontSize={10} />
                   <Tooltip />
-                  <Legend />
                   <Line 
                     type="monotone" 
                     dataKey="leads" 
                     stroke="#3B82F6" 
                     strokeWidth={2}
-                    dot={{ fill: '#3B82F6' }}
+                    dot={{ fill: '#3B82F6', r: 3 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Pie Chart - Esiti Breakdown */}
           <Card>
-            <CardHeader>
-              <CardTitle>Distribuzione Esiti</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Distribuzione Esiti</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
                     data={Object.entries(dashboardData.esitoBreakdown).map(([esito, count]) => ({
@@ -5036,11 +5048,10 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
                     }))}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
+                    outerRadius={70}
                     fill="#8884d8"
                     dataKey="value"
+                    label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                   >
                     {Object.entries(dashboardData.esitoBreakdown).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -5051,29 +5062,159 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+
+          {/* Mobile Performance Chart */}
+          {dashboardData.agentPerformance.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Top Agenti</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={dashboardData.agentPerformance.slice(0, 5)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" fontSize={10} />
+                    <YAxis fontSize={10} />
+                    <Tooltip />
+                    <Bar dataKey="leads" fill="#3B82F6" />
+                    <Bar dataKey="conversions" fill="#10B981" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
-        {/* Performance Chart */}
-        {dashboardData.agentPerformance.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Agenti (Top 10)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={dashboardData.agentPerformance}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="leads" fill="#3B82F6" name="Lead Totali" />
-                  <Bar dataKey="conversions" fill="#10B981" name="Conversioni" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
+        {/* 🖥️ DESKTOP VIEW */}
+        <div className="hidden md:block space-y-6">
+          {/* Desktop Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Totale Lead</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{dashboardData.totalLeads}</div>
+                <p className="text-xs text-muted-foreground">Lead generati nel periodo</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Totale Clienti</CardTitle>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{dashboardData.totalClients}</div>
+                <p className="text-xs text-muted-foreground">Clienti acquisiti</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tasso Conversione</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-purple-600">{dashboardData.conversionRate}%</div>
+                <p className="text-xs text-muted-foreground">Lead convertiti</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Commesse Attive</CardTitle>
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">{dashboardData.totalCommesse}</div>
+                <p className="text-xs text-muted-foreground">Progetti in corso</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Desktop Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Line Chart - Leads Trend */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Andamento Lead (Ultimi 14 giorni)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="leads" 
+                      stroke="#3B82F6" 
+                      strokeWidth={2}
+                      dot={{ fill: '#3B82F6' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Pie Chart - Esiti Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribuzione Esiti</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={Object.entries(dashboardData.esitoBreakdown).map(([esito, count]) => ({
+                        name: esito,
+                        value: count
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {Object.entries(dashboardData.esitoBreakdown).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Desktop Performance Chart */}
+          {dashboardData.agentPerformance.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Agenti (Top 10)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={dashboardData.agentPerformance}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="leads" fill="#3B82F6" name="Lead Totali" />
+                    <Bar dataKey="conversions" fill="#10B981" name="Conversioni" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     );
   };
