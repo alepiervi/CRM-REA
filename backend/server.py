@@ -7107,21 +7107,51 @@ async def get_clienti(
 
 @api_router.get("/clienti/{cliente_id}", response_model=Cliente)
 async def get_cliente(cliente_id: str, current_user: User = Depends(get_current_user)):
-    """Get specific cliente"""
+    """Get specific cliente with role-based access control"""
     cliente_doc = await db.clienti.find_one({"id": cliente_id})
     if not cliente_doc:
         raise HTTPException(status_code=404, detail="Cliente not found")
     
     cliente = Cliente(**cliente_doc)
     
-    # Verifica accesso
-    if not await check_commessa_access(current_user, cliente.commessa_id):
-        raise HTTPException(status_code=403, detail="Access denied")
+    # CRITICAL FIX: Role-based access control for single client
+    if current_user.role == UserRole.ADMIN:
+        # Admin può accedere a qualsiasi cliente
+        print(f"🔓 ADMIN ACCESS: User {current_user.username} accessing client {cliente_id}")
+        return cliente
+        
+    elif current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        # Responsabile Commessa: deve essere autorizzato per la commessa del cliente
+        accessible_commesse = await get_user_accessible_commesse(current_user)
+        if cliente.commessa_id not in accessible_commesse:
+            raise HTTPException(status_code=403, detail="Access denied to this client's commessa")
+            
+    elif current_user.role == UserRole.BACKOFFICE_COMMESSA:
+        # BackOffice Commessa: deve essere autorizzato per la commessa del cliente
+        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            if cliente.commessa_id not in current_user.commesse_autorizzate:
+                raise HTTPException(status_code=403, detail="Access denied to this client's commessa")
+        else:
+            accessible_commesse = await get_user_accessible_commesse(current_user)
+            if cliente.commessa_id not in accessible_commesse:
+                raise HTTPException(status_code=403, detail="Access denied to this client's commessa")
+                
+    elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+        # Responsabile/BackOffice Sub Agenzia: deve essere della stessa sub agenzia
+        if not hasattr(current_user, 'sub_agenzia_id') or not current_user.sub_agenzia_id:
+            raise HTTPException(status_code=403, detail="User has no assigned sub agenzia")
+        if cliente.sub_agenzia_id != current_user.sub_agenzia_id:
+            raise HTTPException(status_code=403, detail="Access denied to client from different sub agenzia")
+            
+    elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
+        # Agente Specializzato & Operatore: possono vedere solo clienti creati da loro
+        if cliente.created_by != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied - you can only view clients you created")
+            
+    else:
+        raise HTTPException(status_code=403, detail=f"Role {current_user.role} not authorized for client access")
     
-    accessible_sub_agenzie = await get_user_accessible_sub_agenzie(current_user, cliente.commessa_id)
-    if cliente.sub_agenzia_id not in accessible_sub_agenzie:
-        raise HTTPException(status_code=403, detail="Access denied")
-    
+    print(f"✅ ACCESS GRANTED: User {current_user.username} ({current_user.role}) accessing client {cliente_id}")
     return cliente
 
 @api_router.put("/clienti/{cliente_id}", response_model=Cliente)
