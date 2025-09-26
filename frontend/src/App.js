@@ -9592,11 +9592,48 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // CRITICAL FIX: Frontend validation before submit
+    const errors = [];
+    
+    // Validate required fields
+    if (!formData.nome.trim()) errors.push("Nome è obbligatorio");
+    if (!formData.cognome.trim()) errors.push("Cognome è obbligatorio");  
+    if (!formData.email.trim()) errors.push("Email è obbligatoria");
+    if (!formData.telefono.trim()) errors.push("Telefono è obbligatorio");
+    if (!formData.commessa_id) errors.push("Commessa è obbligatoria");
+    if (!formData.sub_agenzia_id) errors.push("Sub Agenzia è obbligatoria");
+    if (!formData.servizio_id) errors.push("Servizio è obbligatorio");
+    if (!formData.tipologia_contratto || formData.tipologia_contratto === "none" || formData.tipologia_contratto === "") {
+      errors.push("Tipologia Contratto è obbligatoria");
+    }
+    if (!formData.segmento || formData.segmento === "none" || formData.segmento === "") {
+      errors.push("Segmento è obbligatorio");
+    }
+    
+    // If validation errors, show them and prevent submit
+    if (errors.length > 0) {
+      alert(`Errori di validazione:\n${errors.join('\n')}`);
+      return;
+    }
+    
+    // Create clean data object for submission
+    const cleanFormData = {
+      ...formData,
+      // Ensure no "none" values are sent
+      tipologia_contratto: formData.tipologia_contratto === "none" ? "" : formData.tipologia_contratto,
+      segmento: formData.segmento === "none" ? "" : formData.segmento
+    };
+    
+    console.log("🎯 SUBMITTING CLIENTE DATA:", cleanFormData);
+    onSubmit(cleanFormData);
+    
+    // Reset form after successful submit
     setFormData({
       nome: '', cognome: '', email: '', telefono: '', indirizzo: '', 
       citta: '', provincia: '', cap: '', codice_fiscale: '', partita_iva: '',
-      commessa_id: selectedCommessa || '', sub_agenzia_id: '', note: ''
+      commessa_id: selectedCommessa || '', sub_agenzia_id: '', servizio_id: '',
+      tipologia_contratto: '', segmento: '', note: ''
     });
     onClose();
   };
