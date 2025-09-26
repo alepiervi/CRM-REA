@@ -530,7 +530,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Password fix verification completed successfully"
+    - "Final responsabile commessa login and dashboard functionality test completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
