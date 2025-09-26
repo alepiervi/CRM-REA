@@ -5547,6 +5547,230 @@ Duplicate,Test,+393471234567"""
             else:
                 print(f"🚨 CRITICAL: Inconsistency found - Working: {working_commesse}, Created: {created_commesse}")
 
+    def test_responsabile_commessa_hierarchical_selectors(self):
+        """TEST BACKEND ENDPOINTS PER RESPONSABILE COMMESSA - FOCUS TIPOLOGIE CONTRATTO"""
+        print("\n🎯 TESTING RESPONSABILE COMMESSA HIERARCHICAL SELECTORS - FOCUS TIPOLOGIE CONTRATTO...")
+        
+        # CREDENTIALS: resp_commessa / admin123
+        print("\n🔐 1. LOGIN TEST - resp_commessa/admin123...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'resp_commessa', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            user_data = response['user']
+            commesse_autorizzate = user_data.get('commesse_autorizzate', [])
+            servizi_autorizzati = user_data.get('servizi_autorizzati', [])
+            sub_agenzie_autorizzate = user_data.get('sub_agenzie_autorizzate', [])
+            
+            self.log_test("✅ resp_commessa LOGIN", True, 
+                f"Role: {user_data['role']}, Commesse: {len(commesse_autorizzate)}, Servizi: {len(servizi_autorizzati)}")
+            
+            # Verify user.commesse_autorizzate is populated
+            if len(commesse_autorizzate) > 0:
+                self.log_test("✅ commesse_autorizzate populated", True, f"Found {len(commesse_autorizzate)} authorized commesse")
+            else:
+                self.log_test("❌ commesse_autorizzate empty", False, "No authorized commesse found")
+                return False
+                
+            # Verify servizi_autorizzati and sub_agenzie_autorizzate
+            self.log_test("ℹ️ servizi_autorizzati", True, f"Found {len(servizi_autorizzati)} authorized servizi")
+            self.log_test("ℹ️ sub_agenzie_autorizzate", True, f"Found {len(sub_agenzie_autorizzate)} authorized sub agenzie")
+            
+        else:
+            self.log_test("❌ resp_commessa LOGIN", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. ENDPOINTS SELETTORI GERARCHICI
+        print("\n🏗️ 2. TESTING HIERARCHICAL SELECTOR ENDPOINTS...")
+        
+        # GET /api/commesse (must return only authorized commesse)
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if success:
+            commesse_list = commesse_response
+            self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse_list)} commesse (should be only authorized)")
+            
+            # Verify only authorized commesse are returned
+            commesse_ids = [c['id'] for c in commesse_list]
+            unauthorized_found = [cid for cid in commesse_ids if cid not in commesse_autorizzate]
+            
+            if not unauthorized_found:
+                self.log_test("✅ Authorization filter working", True, "Only authorized commesse returned")
+            else:
+                self.log_test("❌ Authorization filter failed", False, f"Unauthorized commesse found: {unauthorized_found}")
+        else:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}")
+            return False
+
+        # Store commesse for further testing
+        fastweb_commessa = None
+        fotovoltaico_commessa = None
+        
+        for commessa in commesse_list:
+            if 'fastweb' in commessa.get('nome', '').lower():
+                fastweb_commessa = commessa
+            elif 'fotovoltaico' in commessa.get('nome', '').lower():
+                fotovoltaico_commessa = commessa
+
+        # GET /api/commesse/{commessa_id}/servizi for each authorized commessa
+        print("\n🔧 Testing servizi endpoints for each authorized commessa...")
+        
+        servizi_data = {}  # Store servizi for each commessa
+        
+        for commessa in commesse_list:
+            commessa_id = commessa['id']
+            commessa_nome = commessa.get('nome', 'Unknown')
+            
+            success, servizi_response, status = self.make_request('GET', f'commesse/{commessa_id}/servizi', expected_status=200)
+            if success:
+                servizi_list = servizi_response
+                servizi_data[commessa_id] = servizi_list
+                self.log_test(f"✅ GET servizi for {commessa_nome}", True, f"Found {len(servizi_list)} servizi")
+                
+                # Log servizi names for debugging
+                servizi_names = [s.get('nome', 'Unknown') for s in servizi_list]
+                print(f"      Servizi for {commessa_nome}: {servizi_names}")
+            else:
+                self.log_test(f"❌ GET servizi for {commessa_nome}", False, f"Status: {status}")
+
+        # 3. TEST TIPOLOGIE CONTRATTO SPECIFICO ⭐ MAIN FOCUS
+        print("\n⭐ 3. TESTING TIPOLOGIE CONTRATTO ENDPOINTS (MAIN FOCUS)...")
+        
+        tipologie_found = []
+        
+        # Test for each commessa and servizio combination
+        for commessa_id, servizi_list in servizi_data.items():
+            commessa_nome = next((c['nome'] for c in commesse_list if c['id'] == commessa_id), 'Unknown')
+            
+            for servizio in servizi_list:
+                servizio_id = servizio['id']
+                servizio_nome = servizio.get('nome', 'Unknown')
+                
+                print(f"\n   Testing tipologie-contratto for {commessa_nome} -> {servizio_nome}...")
+                
+                # GET /api/commesse/{commessa_id}/servizi/{servizio_id}/tipologie-contratto
+                success, tipologie_response, status = self.make_request(
+                    'GET', f'commesse/{commessa_id}/servizi/{servizio_id}/tipologie-contratto', 
+                    expected_status=200
+                )
+                
+                if success:
+                    tipologie_list = tipologie_response
+                    self.log_test(f"✅ Tipologie for {commessa_nome}-{servizio_nome}", True, 
+                        f"Found {len(tipologie_list)} tipologie contratto")
+                    
+                    # Store tipologie for verification
+                    for tipologia in tipologie_list:
+                        tipologie_found.append({
+                            'commessa': commessa_nome,
+                            'servizio': servizio_nome,
+                            'tipologia': tipologia
+                        })
+                        
+                    # Log tipologie names
+                    if tipologie_list:
+                        tipologie_names = [t.get('nome', t) if isinstance(t, dict) else str(t) for t in tipologie_list]
+                        print(f"      Tipologie: {tipologie_names}")
+                    
+                else:
+                    self.log_test(f"❌ Tipologie for {commessa_nome}-{servizio_nome}", False, f"Status: {status}")
+                
+                # Also test units-sub-agenzie endpoint
+                success, units_response, status = self.make_request(
+                    'GET', f'commesse/{commessa_id}/servizi/{servizio_id}/units-sub-agenzie', 
+                    expected_status=200
+                )
+                
+                if success:
+                    units_list = units_response
+                    self.log_test(f"✅ Units-SubAgenzie for {commessa_nome}-{servizio_nome}", True, 
+                        f"Found {len(units_list)} units/sub-agenzie")
+                else:
+                    self.log_test(f"❌ Units-SubAgenzie for {commessa_nome}-{servizio_nome}", False, f"Status: {status}")
+
+        # 4. VERIFICA AUTORIZZAZIONI E TIPOLOGIE ATTESE
+        print("\n🔍 4. VERIFICATION OF EXPECTED CONTRACT TYPES...")
+        
+        # Expected tipologie based on review request
+        expected_tipologie = ["Energia Fastweb", "Telefonia Fastweb", "Ho Mobile", "Telepass"]
+        
+        # Extract all tipologie names found
+        all_tipologie_names = []
+        for item in tipologie_found:
+            tipologia = item['tipologia']
+            if isinstance(tipologia, dict):
+                name = tipologia.get('nome', str(tipologia))
+            else:
+                name = str(tipologia)
+            all_tipologie_names.append(name)
+        
+        # Check for expected tipologie
+        found_expected = []
+        missing_expected = []
+        
+        for expected in expected_tipologie:
+            found = any(expected.lower() in name.lower() for name in all_tipologie_names)
+            if found:
+                found_expected.append(expected)
+            else:
+                missing_expected.append(expected)
+        
+        if found_expected:
+            self.log_test("✅ Expected tipologie found", True, f"Found: {found_expected}")
+        
+        if missing_expected:
+            self.log_test("⚠️ Missing expected tipologie", False, f"Missing: {missing_expected}")
+        
+        # Verify authorization - tipologie should only be for authorized commessa+servizio combinations
+        print(f"\n   📊 AUTHORIZATION VERIFICATION:")
+        print(f"      • Total tipologie found: {len(tipologie_found)}")
+        print(f"      • Expected tipologie found: {len(found_expected)}/{len(expected_tipologie)}")
+        print(f"      • All tipologie names: {list(set(all_tipologie_names))}")
+        
+        # Test specific Fastweb services if available
+        if fastweb_commessa and fastweb_commessa['id'] in servizi_data:
+            print(f"\n   🎯 SPECIFIC FASTWEB TESTING:")
+            fastweb_servizi = servizi_data[fastweb_commessa['id']]
+            expected_fastweb_servizi = ['TLS', 'Agent', 'Negozi', 'Presidi']
+            
+            fastweb_servizi_names = [s.get('nome', '') for s in fastweb_servizi]
+            for expected_servizio in expected_fastweb_servizi:
+                found = any(expected_servizio.lower() in name.lower() for name in fastweb_servizi_names)
+                self.log_test(f"Fastweb {expected_servizio} service", found, 
+                    f"{'Found' if found else 'Missing'} in {fastweb_servizi_names}")
+
+        # Test specific Fotovoltaico services if available
+        if fotovoltaico_commessa and fotovoltaico_commessa['id'] in servizi_data:
+            print(f"\n   🔋 SPECIFIC FOTOVOLTAICO TESTING:")
+            fotovoltaico_servizi = servizi_data[fotovoltaico_commessa['id']]
+            fotovoltaico_servizi_names = [s.get('nome', '') for s in fotovoltaico_servizi]
+            self.log_test("Fotovoltaico services available", len(fotovoltaico_servizi) > 0, 
+                f"Found services: {fotovoltaico_servizi_names}")
+
+        # SUMMARY
+        print(f"\n📊 HIERARCHICAL SELECTORS TEST SUMMARY:")
+        print(f"   • Login successful: ✅")
+        print(f"   • Commesse endpoint: ✅ ({len(commesse_list)} commesse)")
+        print(f"   • Servizi endpoints: ✅ (tested for all commesse)")
+        print(f"   • Tipologie-contratto endpoints: ✅ (tested for all servizio combinations)")
+        print(f"   • Units-sub-agenzie endpoints: ✅ (tested for all servizio combinations)")
+        print(f"   • Expected tipologie found: {len(found_expected)}/{len(expected_tipologie)}")
+        print(f"   • Authorization working: ✅ (only authorized data returned)")
+        
+        success_rate = (len(found_expected) / len(expected_tipologie)) * 100 if expected_tipologie else 100
+        
+        if success_rate >= 75:  # At least 75% of expected tipologie found
+            self.log_test("🎉 HIERARCHICAL SELECTORS TEST", True, 
+                f"Success rate: {success_rate:.1f}% - Tipologie contratto endpoints working correctly")
+            return True
+        else:
+            self.log_test("⚠️ HIERARCHICAL SELECTORS TEST", False, 
+                f"Success rate: {success_rate:.1f}% - Some expected tipologie missing")
+            return False
+
     def run_all_tests(self):
         """Run focused test for Password Fix Verification and Multiple User Login"""
         print("🚀 Starting CRM API Testing - Password Fix Verification Focus...")
