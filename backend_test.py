@@ -413,74 +413,83 @@ class CRMAPITester:
             else:
                 self.log_test("❌ Hash function NOT using salt", False, "Same hash for same password")
 
-        # 4. **Debug Password Creation**: Testare creazione con password esplicita "test123" e senza password (default admin123)
-        print("\n🔑 4. DEBUG PASSWORD CREATION - test123 e default admin123...")
+        # 4. **Check Login Endpoint Logic**
+        print("\n🔍 4. CHECK LOGIN ENDPOINT LOGIC...")
         
-        timestamp = datetime.now().strftime('%H%M%S')
+        # Test if there are role restrictions in login endpoint
+        print("   Testing for role-based login restrictions...")
         
-        # Test con password esplicita "test123"
-        test123_user_data = {
-            "username": f"test_explicit_{timestamp}",
-            "email": f"test_explicit_{timestamp}@test.com",
-            "password": "test123",
-            "role": "responsabile_commessa",
-            "commesse_autorizzate": ["test_commessa_1"],
-            "can_view_analytics": True
-        }
+        # Get all users with different roles
+        role_users = {}
+        for user in users:
+            role = user.get('role')
+            if role not in role_users:
+                role_users[role] = []
+            role_users[role].append(user)
         
-        success, test123_response, status = self.make_request('POST', 'users', test123_user_data, 200)
-        if success:
-            test123_user_id = test123_response['id']
-            test123_username = test123_response['username']
-            self.created_resources['users'].append(test123_user_id)
-            
-            # Test login immediato con test123
-            success, test123_login, status = self.make_request(
-                'POST', 'auth/login', 
-                {'username': test123_username, 'password': 'test123'}, 
-                200, auth_required=False
-            )
-            
-            if success and 'access_token' in test123_login:
-                self.log_test("✅ Creazione e login con password test123", True, 
-                    f"Utente {test123_username} può fare login con test123")
-            else:
-                self.log_test("❌ Creazione e login con password test123", False, 
-                    f"Utente {test123_username} NON può fare login con test123 - Status: {status}")
-        else:
-            self.log_test("❌ Creazione utente con password test123", False, f"Status: {status}")
+        print(f"   Found users by role: {[(role, len(users_list)) for role, users_list in role_users.items()]}")
         
-        # Test senza password (dovrebbe usare default admin123)
-        no_password_user_data = {
-            "username": f"test_no_pass_{timestamp}",
-            "email": f"test_no_pass_{timestamp}@test.com",
-            # NO password field - should use default
-            "role": "responsabile_commessa",
-            "commesse_autorizzate": ["test_commessa_1"],
-            "can_view_analytics": True
-        }
+        # Test login for each role type
+        for role, users_list in role_users.items():
+            if users_list:
+                user = users_list[0]  # Take first user of this role
+                username = user.get('username')
+                
+                # Try login with admin123 (most common password)
+                success, role_login, status = self.make_request(
+                    'POST', 'auth/login', 
+                    {'username': username, 'password': 'admin123'}, 
+                    expected_status=None, auth_required=False
+                )
+                
+                if status == 200 and 'access_token' in role_login:
+                    self.log_test(f"✅ {role} role login", True, f"{username} can login")
+                elif status == 401:
+                    self.log_test(f"❌ {role} role login", False, f"{username} gets 401 - {role_login.get('detail', 'No detail')}")
+                else:
+                    self.log_test(f"❓ {role} role login", False, f"{username} status {status}")
         
-        success, no_pass_response, status = self.make_request('POST', 'users', no_password_user_data, 200)
-        if success:
-            no_pass_user_id = no_pass_response['id']
-            no_pass_username = no_pass_response['username']
-            self.created_resources['users'].append(no_pass_user_id)
-            
-            # Test login con admin123 (default)
-            success, no_pass_login, status = self.make_request(
-                'POST', 'auth/login', 
-                {'username': no_pass_username, 'password': 'admin123'}, 
-                200, auth_required=False
-            )
-            
-            if success and 'access_token' in no_pass_login:
-                self.log_test("✅ Creazione senza password e login con admin123", True, 
-                    f"Utente {no_pass_username} può fare login con admin123 (default)")
-            else:
-                self.log_test("❌ Creazione senza password e login con admin123", False, 
-                    f"Utente {no_pass_username} NON può fare login con admin123 - Status: {status}")
-        else:
-            self.log_test("❌ Creazione utente senza password", False, f"Status: {status}")
+        # Check for is_active field issues
+        print("\n   Checking is_active field for problematic users...")
+        problematic_users = ['resp_commessa', 'test2', 'debug_resp_commessa_155357']
+        for username in problematic_users:
+            user = next((u for u in users if u.get('username') == username), None)
+            if user:
+                is_active = user.get('is_active', 'MISSING')
+                role = user.get('role', 'MISSING')
+                print(f"      {username}: is_active={is_active}, role={role}")
+                
+                if not is_active:
+                    self.log_test(f"❌ {username} is_active issue", False, f"User is not active: {is_active}")
+                else:
+                    self.log_test(f"✅ {username} is_active OK", True, f"User is active: {is_active}")
+        
+        # Test specific validation logic
+        print("\n   Testing specific validation scenarios...")
+        
+        # Test with empty password
+        success, empty_pass, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': ''}, 
+            expected_status=401, auth_required=False
+        )
+        self.log_test("Empty password rejection", status == 401, f"Status: {status}")
+        
+        # Test with missing username
+        success, missing_user, status = self.make_request(
+            'POST', 'auth/login', 
+            {'password': 'admin123'}, 
+            expected_status=422, auth_required=False
+        )
+        self.log_test("Missing username rejection", status == 422, f"Status: {status}")
+        
+        # Test with missing password
+        success, missing_pass, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin'}, 
+            expected_status=422, auth_required=False
+        )
+        self.log_test("Missing password rejection", status == 422, f"Status: {status}")
 
         # 5. **Verifica Funzione Hash**: Controllare che get_password_hash("admin123") generi hash valido
         print("\n🔐 5. VERIFICA FUNZIONE HASH - Test backend password functions...")
