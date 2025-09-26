@@ -2596,13 +2596,13 @@ const UsersManagement = ({ selectedUnit, units }) => {
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.username}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium mobile-table">{user.username}</TableCell>
+                    <TableCell className="mobile-table">{user.email}</TableCell>
+                    <TableCell className="mobile-table">{getRoleBadge(user.role)}</TableCell>
+                    <TableCell className="mobile-table">
                       {user.unit_id ? units.find(u => u.id === user.unit_id)?.name || "N/A" : "N/A"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="mobile-table">
                       {user.provinces?.length > 0 ? (
                         <div className="text-xs">
                           {user.provinces.slice(0, 2).join(", ")}
@@ -2610,18 +2610,18 @@ const UsersManagement = ({ selectedUnit, units }) => {
                         </div>
                       ) : "N/A"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="mobile-table">
                       <Badge variant={user.is_active ? "default" : "secondary"}>
                         {user.is_active ? "Attivo" : "Disattivo"}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="mobile-table">
                       {user.last_login ? 
                         new Date(user.last_login).toLocaleDateString("it-IT") : 
                         "Mai"
                       }
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="mobile-table">
                       <div className="flex space-x-1">
                         <Button
                           onClick={() => setEditingUser(user)}
