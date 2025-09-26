@@ -1165,7 +1165,7 @@ const Dashboard = () => {
                   <span className="ml-1 text-xs text-green-600">({tipologieContratto.length} disponibili)</span>
                 )}
               </Label>
-              <Select value={selectedTipologiaContratto} onValueChange={setSelectedTipologiaContratto}>
+              <Select value={selectedTipologiaContratto} onValueChange={handleTipologiaContrattoChange}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Seleziona tipologia contratto" />
                 </SelectTrigger>
