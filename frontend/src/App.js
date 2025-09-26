@@ -5406,7 +5406,7 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   return (
     <div className="space-y-6">
       {/* 🖥️ DESKTOP ONLY: Header with Filters and Export Buttons */}
-      <div className="hidden md:flex justify-between items-center">
+      <div className="hidden md:flex justify-between items-center p-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Reports & Analytics</h1>
           <p className="text-slate-600 mt-1">Analisi performance e reportistica completa</p>
