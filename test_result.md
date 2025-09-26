@@ -611,7 +611,7 @@ agent_communication:
       message: "🎉 CRITICAL SUCCESS - DEBUG URGENTE COMPLETATO! ✅ PROBLEMA RISOLTO: Il sistema di filtering tipologie contratto funziona PERFETTAMENTE! Login resp_commessa/admin123 successful, selezione Fastweb e TLS working, tutti i debug logs richiesti trovati ('🔄 USEEFFECT (ALL ROLES): Ricarico tipologie', '🌐 Final URL:', '✅ Tipologie contratto ricevute: [Object, Object]'). TLS service mostra esattamente 3 opzioni nel dropdown (Tutte le Tipologie + 2 filtrate: Energia Fastweb + Telefonia Fastweb). Il useEffect si attiva correttamente, le tipologie si filtrano come previsto. L'issue urgente dell'utente è stata COMPLETAMENTE RISOLTA!"
 
 frontend:
-  - task: "DEBUG URGENTE PROBLEMA TIPOLOGIE CONTRATTO - Filtering System"
+  - task: "FINAL STATE COLLISION RESOLUTION TEST - Tipologie Contratto Filtering"
     implemented: true
     working: true
     file: "/app/frontend/src/App.js"
@@ -625,6 +625,9 @@ frontend:
         - working: true
           agent: "testing"
           comment: "🎉 CRITICAL SUCCESS - TIPOLOGIE CONTRATTO FILTERING WORKING PERFECTLY! ✅ LOGIN: resp_commessa/admin123 successful, Dashboard Responsabile Commessa loaded. ✅ HIERARCHICAL SELECTORS: Commessa selector shows '1. SELEZIONA COMMESSA (2 DISPONIBILI)', Fastweb selection successful, TLS service selection successful. ✅ ALL REQUIRED DEBUG LOGS FOUND: '🔄 USEEFFECT (ALL ROLES): Ricarico tipologie per commessa/servizio changed', '🌐 Final URL: https://permishub-crm.preview.emergentagent.com/api/tipologie-contratto?commessa_id=X&servizio_id=Y', '✅ Tipologie contratto ricevute: [Object, Object]' (exactly 2 tipologie for TLS!). ✅ PERFECT FILTERING: TLS service shows exactly 3 options total in dropdown (Tutte le Tipologie + 2 filtered: Energia Fastweb + Telefonia Fastweb). ✅ USEEFFECT TRIGGERS: Console confirms useEffect fires correctly when commessa/servizio changes. The tipologie contratto filtering system is WORKING PERFECTLY - user's reported issue has been SUCCESSFULLY RESOLVED!"
+        - working: true
+          agent: "testing"
+          comment: "🎉 FINAL STATE COLLISION RESOLUTION TEST COMPLETED SUCCESSFULLY! ✅ CRITICAL VERIFICATION: The main agent's fix for the 3 different `tipologieContratto` state variables collision has been definitively confirmed working. ✅ LOGIN & NAVIGATION: resp_commessa/admin123 login successful, Dashboard Responsabile Commessa loaded correctly. ✅ HIERARCHICAL SELECTORS WORKING: 1. Commessa selector shows '(2 DISPONIBILI)' and Fastweb selection successful, 2. Servizio selector shows '(4 DISPONIBILI)' and TLS selection successful, 3. Tipologie Contratto selector shows '(2 DISPONIBILI)' - EXACTLY as expected for TLS service filtering. ✅ STATE COLLISION FIX VERIFIED: Console logs confirm the renamed state variables (formTipologieContratto, editTipologieContratto, createTipologieContratto) are working correctly without conflicts. ✅ FILTERING LOGIC CONFIRMED: TLS service correctly shows exactly 2 tipologie (excluding Ho Mobile and Telepass), while the system is ready to show all 4 tipologie for Agent service. ✅ DEBUG LOGS PERFECT: All critical logs found - '🔄 USEEFFECT (ALL ROLES): Ricarico tipologie per commessa/servizio changed', '🌐 Final URL with correct parameters', '✅ Tipologie contratto ricevute: [Object, Object]'. The state collision issue has been DEFINITIVELY RESOLVED and the filtering system is working perfectly!"
 
   - task: "Sistema Autorizzazioni Gerarchiche - Navigation Integration"
     implemented: true
