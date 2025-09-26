@@ -936,7 +936,16 @@ const Dashboard = () => {
     setSelectedTipologiaContratto("all");
     setSelectedUnit("all");
     
-    console.log("🎯 SERVIZIO CHANGED: tipologie e unit reset, tipologie verranno ricaricate dal useEffect");
+    // CRITICAL FIX: Chiamata diretta per bypassare React async timing issue
+    if (selectedCommessa && selectedCommessa !== "all" && servizioId && servizioId !== "all") {
+      console.log("🎯 DIRECT CALL: Calling fetchTipologieContratto directly to bypass timing issue");
+      fetchTipologieContratto(selectedCommessa, servizioId);
+    } else {
+      console.log("🎯 DIRECT RESET: Resetting tipologie (no valid filters)");
+      setFormTipologieContratto([]);
+    }
+    
+    console.log("🎯 SERVIZIO CHANGED: tipologie e unit reset, chiamata diretta effettuata");
   };
 
   const [unitsSubAgenzie, setUnitsSubAgenzie] = useState([]);
