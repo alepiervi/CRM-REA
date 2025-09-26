@@ -6708,6 +6708,52 @@ async def get_units_sub_agenzie_by_commessa_servizio(
     
     return result
 
+@api_router.get("/commesse/{commessa_id}/servizi/{servizio_id}/units/{unit_id}/tipologie-contratto")
+async def get_tipologie_contratto_by_commessa_servizio_unit(
+    commessa_id: str,
+    servizio_id: str, 
+    unit_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get tipologie contratto for specific commessa+servizio+unit combination"""
+    
+    # DIRECT FIX: Verifica accesso
+    has_access = False
+    
+    if current_user.role == UserRole.ADMIN:
+        has_access = True
+    elif current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        # DIRECT CHECK: Verifica autorizzazioni
+        commessa_ok = False
+        servizio_ok = False
+        
+        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            commessa_ok = commessa_id in current_user.commesse_autorizzate
+        if hasattr(current_user, 'servizi_autorizzati') and current_user.servizi_autorizzati:
+            servizio_ok = servizio_id in current_user.servizi_autorizzati
+        
+        if not (commessa_ok and servizio_ok):
+            # FALLBACK: Ricarica dal database
+            user_data = await db.users.find_one({"username": current_user.username})
+            if user_data:
+                commessa_ok = commessa_id in user_data.get("commesse_autorizzate", [])
+                servizio_ok = servizio_id in user_data.get("servizi_autorizzati", [])
+        
+        has_access = commessa_ok and servizio_ok
+    
+    if not has_access:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Lista base tipologie per Fastweb
+    tipologie_base = [
+        {"value": "energia_fastweb", "label": "Energia Fastweb"},
+        {"value": "telefonia_fastweb", "label": "Telefonia Fastweb"},
+        {"value": "ho_mobile", "label": "Ho Mobile"},
+        {"value": "telepass", "label": "Telepass"}
+    ]
+    
+    return tipologie_base
+
 @api_router.get("/tipologie-contratto")
 async def get_tipologie_contratto(
     commessa_id: Optional[str] = Query(None), 
