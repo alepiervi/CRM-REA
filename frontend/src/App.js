@@ -904,10 +904,7 @@ const Dashboard = () => {
     // Ricarica tipologie contratto per il servizio selezionato (solo per responsabile_commessa)
     if (user.role === "responsabile_commessa") {
       console.log("🎯 SERVIZIO CHANGED: Ricarico tipologie contratto per servizio:", servizioId);
-      // Uso setTimeout per assicurarmi che selectedServizio sia aggiornato prima della fetch
-      setTimeout(() => {
-        fetchTipologieContratto();
-      }, 100);
+      fetchTipologieContratto(selectedCommessa, servizioId);
     }
   };
 
