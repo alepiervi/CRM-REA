@@ -720,7 +720,7 @@ const Dashboard = () => {
     } else {
       // Se non ci sono filtri, svuoto le tipologie
       console.log("🔄 USEEFFECT (ALL ROLES): Reset tipologie (no filters)");
-      setTipologieContratto([]);
+      setFormTipologieContratto([]);
     }
   }, [selectedCommessa, selectedServizio]);
 
