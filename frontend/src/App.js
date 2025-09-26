@@ -10611,10 +10611,10 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const fetchTipologieContratto = async (commessaId, servizioId) => {
     try {
       const response = await axios.get(`${API}/tipologie-contratto?commessa_id=${commessaId}&servizio_id=${servizioId}`);
-      setTipologieContratto(response.data);
+      setEditTipologieContratto(response.data);
     } catch (error) {
       console.error("Error fetching tipologie contratto:", error);
-      setTipologieContratto([]);
+      setEditTipologieContratto([]);
     }
   };
 
