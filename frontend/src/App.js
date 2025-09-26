@@ -1114,6 +1114,7 @@ const Dashboard = () => {
               <Button onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
                 Logout
               </Button>
+            </div>
           </div>
         </div>
       )}
