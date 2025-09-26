@@ -9052,7 +9052,6 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       });
     }
   };
-  };
 
   const updateCliente = async (clienteId, updateData) => {
     try {
