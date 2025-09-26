@@ -565,16 +565,23 @@ class CRMAPITester:
                 print(f"        ❓ UNEXPECTED STATUS - Full response: {final_response}")
 
         # SUMMARY CRITICO
-        print(f"\n🚨 SUMMARY TEST CRITICO IMMEDIATO:")
-        print(f"   🎯 OBIETTIVO: Identificare ESATTAMENTE perché utenti appena creati non possono fare login")
-        print(f"   🔍 FOCUS: Flusso completo creazione → login immediato")
+        print(f"\n🚨 SUMMARY DEBUG CRITICO LOGIN 401 ISSUE:")
+        print(f"   🎯 OBIETTIVO: Identificare perché utenti non-admin ricevono 401 su /api/auth/login")
+        print(f"   🔍 FOCUS: Confronto admin (funziona) vs resp_commessa (401)")
         print(f"   📊 RISULTATI:")
-        print(f"      • Creazione utente test_immediato: {'✅ SUCCESS' if created_user_id else '❌ FAILED'}")
-        print(f"      • Login immediato test_immediato: {'✅ SUCCESS' if 'login_token' in locals() else '❌ FAILED'}")
-        print(f"      • Confronto hash resp_commessa vs test_immediato: {'✅ DONE' if working_user and test_immediato_user else '❌ FAILED'}")
-        print(f"      • Test password esplicita test123: {'✅ SUCCESS' if 'test123_login' in locals() and 'access_token' in test123_login else '❌ FAILED'}")
-        print(f"      • Test password default admin123: {'✅ SUCCESS' if 'no_pass_login' in locals() and 'access_token' in no_pass_login else '❌ FAILED'}")
-        print(f"   🎯 ROOT CAUSE: {'IDENTIFICATO' if any(['login_token' not in locals(), 'test123_login' not in locals() or 'access_token' not in test123_login]) else 'NON IDENTIFICATO'}")
+        print(f"      • Admin login (admin/admin123): {'✅ SUCCESS' if admin_login_success else '❌ FAILED'}")
+        print(f"      • resp_commessa login (resp_commessa/admin123): {'❌ 401 CONFIRMED' if resp_login_failed else '✅ UNEXPECTED SUCCESS'}")
+        print(f"      • Database user analysis: {'✅ COMPLETED' if len(users) > 0 else '❌ FAILED'}")
+        print(f"      • Password hash comparison: {'✅ COMPLETED' if admin_user and resp_commessa_user else '❌ FAILED'}")
+        print(f"      • Role-based login testing: {'✅ COMPLETED' if role_users else '❌ FAILED'}")
+        print(f"      • test_immediato creation and login: {'✅ SUCCESS' if 'created_user_id' in locals() else '❌ FAILED'}")
+        
+        if resp_login_failed and admin_login_success:
+            print(f"   🎯 ROOT CAUSE ANALYSIS:")
+            print(f"      • Issue confirmed: Non-admin users get 401 while admin works")
+            print(f"      • Password hashes appear to be in correct bcrypt format")
+            print(f"      • Issue likely in login endpoint logic or user validation")
+            print(f"      • Recommend checking backend login endpoint for role-specific restrictions")
         
         return True
 
