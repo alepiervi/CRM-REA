@@ -1237,8 +1237,8 @@ const Dashboard = () => {
             </nav>
 
             {/* Mobile Footer */}
-            <div className="p-3 border-t border-slate-200 bg-white flex-shrink-0" style={{marginTop: 'auto'}}>
-              <div className="flex items-center space-x-3 mb-2">
+            <div className="p-2 border-t border-slate-200 bg-white flex-shrink-0" style={{marginTop: 'auto'}>
+              <div className="flex items-center space-x-2 mb-2">
                 <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
                   <Users className="w-5 h-5 text-slate-600" />
                 </div>
