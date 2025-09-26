@@ -2654,6 +2654,7 @@ const UsersManagement = ({ selectedUnit, units }) => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
