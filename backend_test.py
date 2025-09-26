@@ -339,62 +339,79 @@ class CRMAPITester:
             self.log_test("❌ Get users for analysis", False, f"Status: {status}")
             return False
 
-        # 3. **Confronto Password Hash**: Confrontare il password_hash dell'utente "resp_commessa" (funzionante) con "test_immediato"
-        print("\n🔍 3. CONFRONTO PASSWORD HASH - resp_commessa vs test_immediato...")
+        # 3. **Verifica Password Verification**
+        print("\n🔐 3. VERIFICA PASSWORD VERIFICATION...")
         
-        # Get all users to compare password hashes
-        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
-        if success:
-            users = users_response
+        # Test password verification by comparing hash characteristics
+        if admin_user and resp_commessa_user:
+            admin_hash = admin_user.get('password_hash', '')
+            resp_hash = resp_commessa_user.get('password_hash', '')
             
-            # Find working user (resp_commessa) and compare with created user
-            working_user = None
-            test_immediato_user = None
+            print(f"   🔍 HASH COMPARISON:")
+            print(f"      Admin hash: {admin_hash[:50]}... (length: {len(admin_hash)})")
+            print(f"      resp_commessa hash: {resp_hash[:50]}... (length: {len(resp_hash)})")
             
-            for user in users:
-                if user.get('username') == 'resp_commessa':
-                    working_user = user
-                elif user.get('username') == 'test_immediato':
-                    test_immediato_user = user
+            # Check bcrypt format
+            admin_bcrypt = admin_hash.startswith('$2b$') or admin_hash.startswith('$2a$')
+            resp_bcrypt = resp_hash.startswith('$2b$') or resp_hash.startswith('$2a$')
             
-            if working_user and test_immediato_user:
-                working_hash = working_user.get('password_hash', '')
-                test_hash = test_immediato_user.get('password_hash', '')
-                
-                self.log_test("✅ Utenti trovati per confronto", True, 
-                    f"resp_commessa (funzionante) vs test_immediato (appena creato)")
-                
-                # Compare hash characteristics
-                print(f"   🔍 resp_commessa hash: {working_hash[:30]}... (length: {len(working_hash)})")
-                print(f"   🔍 test_immediato hash: {test_hash[:30]}... (length: {len(test_hash)})")
-                
-                # Check if hashes start with bcrypt identifier
-                working_bcrypt = working_hash.startswith('$2b$') or working_hash.startswith('$2a$')
-                test_bcrypt = test_hash.startswith('$2b$') or test_hash.startswith('$2a$')
-                
-                self.log_test("🔍 resp_commessa hash format", working_bcrypt, 
-                    f"Bcrypt format: {working_bcrypt}")
-                self.log_test("🔍 test_immediato hash format", test_bcrypt, 
-                    f"Bcrypt format: {test_bcrypt}")
-                
-                # Verificare se hanno formato diverso
-                if working_bcrypt and test_bcrypt:
-                    self.log_test("✅ Entrambi hash in formato bcrypt", True, "Formato hash corretto per entrambi")
-                elif working_bcrypt and not test_bcrypt:
-                    self.log_test("❌ CRITICAL: test_immediato hash NON bcrypt", False, 
-                        "Hash dell'utente appena creato NON è in formato bcrypt!")
-                elif not working_bcrypt and test_bcrypt:
-                    self.log_test("❌ CRITICAL: resp_commessa hash NON bcrypt", False, 
-                        "Hash dell'utente funzionante NON è in formato bcrypt!")
-                else:
-                    self.log_test("❌ CRITICAL: Nessun hash in formato bcrypt", False, 
-                        "Nessuno dei due hash è in formato bcrypt!")
-                        
+            self.log_test("Admin hash format (bcrypt)", admin_bcrypt, f"Is bcrypt: {admin_bcrypt}")
+            self.log_test("resp_commessa hash format (bcrypt)", resp_bcrypt, f"Is bcrypt: {resp_bcrypt}")
+            
+            # Check if both have same password but different hashes (salt working)
+            if admin_bcrypt and resp_bcrypt and admin_hash != resp_hash:
+                self.log_test("✅ Password hashing uses salt", True, "Different hashes for same password (good)")
+            elif admin_hash == resp_hash:
+                self.log_test("❌ Password hashing NO salt", False, "Same hash for same password (security issue)")
+            
+            # Test if resp_commessa has any special characters or issues
+            if len(resp_hash) < 50:
+                self.log_test("❌ resp_commessa hash too short", False, f"Hash length: {len(resp_hash)} (should be ~60)")
+            elif len(resp_hash) > 70:
+                self.log_test("❌ resp_commessa hash too long", False, f"Hash length: {len(resp_hash)} (should be ~60)")
             else:
-                self.log_test("❌ Utenti non trovati per confronto", False, 
-                    f"resp_commessa trovato: {working_user is not None}, test_immediato trovato: {test_immediato_user is not None}")
-        else:
-            self.log_test("❌ Get users per confronto", False, f"Status: {status}")
+                self.log_test("✅ resp_commessa hash length OK", True, f"Hash length: {len(resp_hash)}")
+        
+        # Test creating multiple users with same password to verify hashing
+        print("\n   🧪 TESTING PASSWORD HASHING CONSISTENCY:")
+        hash_test_users = []
+        for i in range(2):
+            hash_test_data = {
+                "username": f"hash_test_{datetime.now().strftime('%H%M%S')}_{i}",
+                "email": f"hash_test_{datetime.now().strftime('%H%M%S')}_{i}@test.com",
+                "password": "admin123",
+                "role": "agente"
+            }
+            
+            success, hash_response, status = self.make_request('POST', 'users', hash_test_data, 200)
+            if success:
+                hash_test_users.append({
+                    'id': hash_response['id'],
+                    'username': hash_response['username'],
+                    'hash': hash_response.get('password_hash', '')
+                })
+                self.created_resources['users'].append(hash_response['id'])
+                
+                # Test immediate login
+                success, login_resp, status = self.make_request(
+                    'POST', 'auth/login', 
+                    {'username': hash_response['username'], 'password': 'admin123'}, 
+                    200, auth_required=False
+                )
+                
+                if success and 'access_token' in login_resp:
+                    self.log_test(f"✅ {hash_response['username']} can login", True, "Immediate login successful")
+                else:
+                    self.log_test(f"❌ {hash_response['username']} cannot login", False, f"Status: {status}")
+        
+        if len(hash_test_users) >= 2:
+            hash1 = hash_test_users[0]['hash']
+            hash2 = hash_test_users[1]['hash']
+            
+            if hash1 != hash2:
+                self.log_test("✅ Hash function uses salt correctly", True, "Different hashes for same password")
+            else:
+                self.log_test("❌ Hash function NOT using salt", False, "Same hash for same password")
 
         # 4. **Debug Password Creation**: Testare creazione con password esplicita "test123" e senza password (default admin123)
         print("\n🔑 4. DEBUG PASSWORD CREATION - test123 e default admin123...")
