@@ -1264,6 +1264,7 @@ const Dashboard = () => {
         </>
       )}
 
+
       {/* 🎯 DESKTOP: Desktop Sidebar (hidden on mobile) */}
       <div className="desktop-sidebar w-64 bg-white border-r border-slate-200 shadow-sm flex flex-col">
         {/* Desktop Header */}
