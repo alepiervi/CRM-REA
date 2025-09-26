@@ -10608,7 +10608,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   };
 
-  const fetchTipologieContratto = async (commessaId, servizioId) => {
+  const fetchEditTipologieContratto = async (commessaId, servizioId) => {
     try {
       const response = await axios.get(`${API}/tipologie-contratto?commessa_id=${commessaId}&servizio_id=${servizioId}`);
       setEditTipologieContratto(response.data);
