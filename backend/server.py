@@ -6935,8 +6935,24 @@ async def update_sub_agenzia(
 @api_router.post("/clienti", response_model=Cliente)
 async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depends(get_current_user)):
     """Create new cliente"""
-    # Verifica accesso alla commessa
-    if not await check_commessa_access(current_user, cliente_data.commessa_id, ["can_create_clients"]):
+    
+    # CRITICAL FIX: Dual check pattern per autorizzazione commessa
+    has_commessa_access = False
+    
+    # Admin sempre autorizzato
+    if current_user.role == UserRole.ADMIN:
+        has_commessa_access = True
+    else:
+        # Metodo 1: Controlla tabella separata (vecchia logica)
+        if await check_commessa_access(current_user, cliente_data.commessa_id, ["can_create_clients"]):
+            has_commessa_access = True
+        
+        # Metodo 2: Controlla campo diretto nell'utente (nuova logica)
+        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            if cliente_data.commessa_id in current_user.commesse_autorizzate:
+                has_commessa_access = True
+    
+    if not has_commessa_access:
         raise HTTPException(status_code=403, detail="No permission to create clients in this commessa")
     
     # Verifica che la sub agenzia sia autorizzata per la commessa
@@ -6944,10 +6960,32 @@ async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depen
     if not sub_agenzia or cliente_data.commessa_id not in sub_agenzia.get("commesse_autorizzate", []):
         raise HTTPException(status_code=400, detail="Sub agenzia not authorized for this commessa")
     
-    cliente = Cliente(
-        **cliente_data.dict(),
-        created_by=current_user.id
-    )
+    # CRITICAL FIX: Add detailed validation error logging
+    try:
+        cliente = Cliente(
+            **cliente_data.dict(),
+            created_by=current_user.id
+        )
+    except ValidationError as e:
+        # Log detailed validation error for debugging
+        print(f"❌ VALIDATION ERROR in Cliente creation: {e}")
+        print(f"❌ Cliente data received: {cliente_data.dict()}")
+        print(f"❌ Current user ID: {current_user.id}")
+        
+        # Return detailed error to frontend
+        error_details = []
+        for error in e.errors():
+            error_details.append(f"{error['loc'][0] if error['loc'] else 'unknown'}: {error['msg']}")
+        
+        raise HTTPException(
+            status_code=422, 
+            detail=f"Validation error: {'; '.join(error_details)}"
+        )
+    except Exception as e:
+        print(f"❌ UNEXPECTED ERROR in Cliente creation: {e}")
+        print(f"❌ Cliente data: {cliente_data.dict()}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    
     await db.clienti.insert_one(cliente.dict())
     
     return cliente
