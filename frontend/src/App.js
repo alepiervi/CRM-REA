@@ -1108,11 +1108,156 @@ const Dashboard = () => {
           />
           
           {/* Mobile Sidebar */}
-          <div className={`mobile-sidebar ${isMobileMenuOpen ? 'active' : ''}`}>
-            <div className="p-4">
-              <h1>CRM Mobile</h1>
-              <Button onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
-                Logout
+          <div className={`mobile-sidebar ${isMobileMenuOpen ? 'active' : ''}`} style={{display: 'flex', flexDirection: 'column', height: '100vh', maxHeight: '100vh'}}>
+            {/* Mobile Header */}
+            <div className="p-3 border-b border-slate-200 bg-white flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-lg font-bold text-slate-800">CRM System</h1>
+                    <p className="text-xs text-slate-500">Mobile</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Mobile Selectors - Complete Hierarchy */}
+            <div className="p-2 bg-slate-50 border-b border-slate-200 max-h-32 overflow-y-auto flex-shrink-0">
+              {/* 1. Commessa Selector */}
+              <div>
+                <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                  Commessa
+                  {commesse.length > 0 && (
+                    <span className="ml-1 text-xs text-green-600">({commesse.length})</span>
+                  )}
+                </Label>
+                <Select value={selectedCommessa} onValueChange={handleCommessaChange}>
+                  <SelectTrigger className="mt-1 mobile-select">
+                    <SelectValue placeholder="Seleziona commessa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le Commesse</SelectItem>
+                    {getAvailableCommesse().map((commessa) => (
+                      <SelectItem key={commessa.id} value={commessa.id}>
+                        <div className="flex items-center space-x-2">
+                          <Building className="w-3 h-3" />
+                          <span className="text-sm">{commessa.nome}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 2. Servizio Selector - Mobile */}
+              {selectedCommessa && selectedCommessa !== "all" && (
+                <div className="mt-3">
+                  <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                    Servizio
+                    {servizi.length > 0 && (
+                      <span className="ml-1 text-xs text-green-600">({servizi.length})</span>
+                    )}
+                  </Label>
+                  <Select value={selectedServizio || "all"} onValueChange={handleServizioChange}>
+                    <SelectTrigger className="mt-1 mobile-select">
+                      <SelectValue placeholder="Seleziona servizio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutti i Servizi</SelectItem>
+                      {servizi.map((servizio) => (
+                        <SelectItem key={servizio.id} value={servizio.id}>
+                          <div className="flex items-center space-x-2">
+                            <Cog className="w-3 h-3" />
+                            <span className="text-sm">{servizio.nome}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* 3. Tipologia Contratto Selector - Mobile */}
+              {selectedCommessa && selectedCommessa !== "all" && 
+               selectedServizio && selectedServizio !== "all" && (
+                <div className="mt-3">
+                  <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                    Tipologia Contratto
+                    {formTipologieContratto.length > 0 && (
+                      <span className="ml-1 text-xs text-green-600">({formTipologieContratto.length})</span>
+                    )}
+                  </Label>
+                  <Select value={selectedTipologiaContratto} onValueChange={handleTipologiaContrattoChange}>
+                    <SelectTrigger className="mt-1 mobile-select">
+                      <SelectValue placeholder="Seleziona tipologia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le Tipologie</SelectItem>
+                      {formTipologieContratto.map((tipologia) => (
+                        <SelectItem key={tipologia.value} value={tipologia.value}>
+                          <div className="flex items-center space-x-2">
+                            <FileText className="w-3 h-3" />
+                            <span className="text-sm">{tipologia.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Navigation */}
+            <nav className="flex-1 overflow-y-auto px-1 py-2 min-h-0" style={{maxHeight: 'calc(100vh - 240px)'}}>
+              {getNavItems().map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleTabChange(item.id)}
+                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors mobile-nav-item ${
+                    activeTab === item.id
+                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </nav>
+
+            {/* Mobile Footer */}
+            <div className="p-3 border-t border-slate-200 bg-white flex-shrink-0" style={{marginTop: 'auto'}}>
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                  <Users className="w-4 h-4 text-slate-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800 truncate">{user.username}</p>
+                  <p className="text-xs text-slate-500 capitalize">{user.role}</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => {
+                  logout();
+                  setIsMobileMenuOpen(false);
+                }}
+                variant="outline"
+                size="sm"
+                className="w-full text-slate-600 hover:text-red-600 hover:border-red-300 mobile-button"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Esci
               </Button>
             </div>
           </div>
