@@ -1108,9 +1108,9 @@ const Dashboard = () => {
           />
           
           {/* Mobile Sidebar */}
-          <div className={`mobile-sidebar ${isMobileMenuOpen ? 'active' : ''}`}>
+          <div className={`mobile-sidebar ${isMobileMenuOpen ? 'active' : ''}`} style={{display: 'flex', flexDirection: 'column', height: '100vh'}}>
             {/* Mobile Header */}
-            <div className="p-4 border-b border-slate-200 bg-white">
+            <div className="p-4 border-b border-slate-200 bg-white flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
