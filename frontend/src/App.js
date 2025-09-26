@@ -1182,20 +1182,7 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Debug Info per tutti i ruoli */}
-          {user && (
-            <div className="mt-4 p-3 bg-slate-50 rounded border text-xs">
-              <p className="font-medium text-slate-700">Debug Info:</p>
-              <p className="text-slate-600">Ruolo: {user.role}</p>
-              {user.commesse_autorizzate && (
-                <p className="text-slate-600">Commesse autorizzate: {user.commesse_autorizzate.length}</p>
-              )}
-              <p className="text-slate-600">Commessa: {selectedCommessa}</p>
-              <p className="text-slate-600">Servizio: {selectedServizio}</p>
-              <p className="text-slate-600">Unit: {selectedUnit}</p>
-              <p className="text-slate-600">Tipologia: {selectedTipologiaContratto}</p>
-            </div>
-          )}
+          {/* Debug Info rimosso */}
         </div>
 
         {/* Navigation Menu - Now with flex-1 to take available space */}
