@@ -98,7 +98,7 @@ class TipologieContrattoTester:
 
         # Get servizi for Fastweb to find TLS and Agent IDs
         print("\n🔧 GETTING SERVIZI FOR FASTWEB...")
-        success, servizi_response, status = self.make_request('GET', f'servizi?commessa_id={fastweb_id}', expected_status=200)
+        success, servizi_response, status = self.make_request('GET', f'commesse/{fastweb_id}/servizi', expected_status=200)
         if not success:
             self.log_test("Get servizi", False, f"Status: {status}")
             return False
