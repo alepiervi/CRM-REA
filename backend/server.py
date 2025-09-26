@@ -6764,7 +6764,19 @@ async def get_tipologie_contratto(
     
     # Controllo autorizzazione per responsabile commessa
     if current_user.role == UserRole.RESPONSABILE_COMMESSA and commessa_id:
-        if not await check_commessa_access(current_user, commessa_id):
+        # CRITICAL FIX: Controlla sia user_commessa_authorizations che commesse_autorizzate direttamente nell'utente
+        has_access = False
+        
+        # Metodo 1: Controlla tabella separata (vecchia logica)
+        if await check_commessa_access(current_user, commessa_id):
+            has_access = True
+        
+        # Metodo 2: Controlla campo diretto nell'utente (nuova logica)
+        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            if commessa_id in current_user.commesse_autorizzate:
+                has_access = True
+        
+        if not has_access:
             raise HTTPException(status_code=403, detail="Access denied to this commessa")
     
     # Lista base per tutti i servizi di Fastweb
