@@ -593,7 +593,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Hierarchical Selector System Test completed successfully for ALL ROLES"
+    - "URGENTISSIMO TIMING ISSUE FIX - Tipologie Contratto Direct Call Bypass completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
