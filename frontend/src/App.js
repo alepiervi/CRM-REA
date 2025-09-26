@@ -1735,56 +1735,57 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                     <TableHead className="mobile-table">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
-              <TableBody>
-                {leads.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell className="font-mono text-sm">
-                      {lead.lead_id || lead.id.slice(0, 8)}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {lead.nome} {lead.cognome}
-                    </TableCell>
-                    <TableCell>{lead.telefono}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="w-3 h-3 text-slate-400" />
-                        <span>{lead.provincia}</span> 
-                      </div>
-                    </TableCell>
-                    <TableCell>{lead.campagna}</TableCell>
-                    <TableCell>{getStatusBadge(lead.esito)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span>{new Date(lead.created_at).toLocaleDateString("it-IT")}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1">
-                        <Button
-                          onClick={() => setSelectedLead(lead)}
-                          variant="ghost"
-                          size="sm"
-                          title="Visualizza dettagli"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        {user.role === "admin" && (
+                <TableBody>
+                  {leads.map((lead) => (
+                    <TableRow key={lead.id}>
+                      <TableCell className="font-mono text-sm">
+                        {lead.lead_id || lead.id.slice(0, 8)}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {lead.nome} {lead.cognome}
+                      </TableCell>
+                      <TableCell>{lead.telefono}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-1">
+                          <MapPin className="w-3 h-3 text-slate-400" />
+                          <span>{lead.provincia}</span> 
+                        </div>
+                      </TableCell>
+                      <TableCell>{lead.campagna}</TableCell>
+                      <TableCell>{getStatusBadge(lead.esito)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          <span>{new Date(lead.created_at).toLocaleDateString("it-IT")}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1">
                           <Button
-                            onClick={() => deleteLead(lead.id, `${lead.nome} ${lead.cognome}`)}
-                            variant="destructive"
+                            onClick={() => setSelectedLead(lead)}
+                            variant="ghost"
                             size="sm"
-                            title="Elimina lead"
+                            title="Visualizza dettagli"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Eye className="w-4 h-4" />
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          {user.role === "admin" && (
+                            <Button
+                              onClick={() => deleteLead(lead.id, `${lead.nome} ${lead.cognome}`)}
+                              variant="destructive"
+                              size="sm"
+                              title="Elimina lead"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
