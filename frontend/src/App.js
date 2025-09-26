@@ -9593,42 +9593,40 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // CRITICAL FIX: Frontend validation before submit (less restrictive)
-    const errors = [];
+    console.log("🎯 HANDLE SUBMIT CALLED - DEBUGGING");
+    console.log("🎯 Form Data Before Validation:", formData);
     
-    // Validate required basic fields
-    if (!formData.nome.trim()) errors.push("Nome è obbligatorio");
-    if (!formData.cognome.trim()) errors.push("Cognome è obbligatorio");  
-    if (!formData.email.trim()) errors.push("Email è obbligatoria");
-    if (!formData.telefono.trim()) errors.push("Telefono è obbligatorio");
-    if (!formData.commessa_id || formData.commessa_id === "none") errors.push("Commessa è obbligatoria");
-    if (!formData.sub_agenzia_id || formData.sub_agenzia_id === "none") errors.push("Sub Agenzia è obbligatoria");
+    // TEMPORARY: Remove all validation to test if form submission works
+    // Will add back validation once we confirm the submission process works
     
-    // FIXED: Only validate tipologia_contratto and segmento if they have real values
-    // Don't force them to be required - let backend handle validation
-    if (formData.tipologia_contratto === "none") {
-      formData.tipologia_contratto = "";
-    }
-    if (formData.segmento === "none") {
-      formData.segmento = "";  
-    }
+    // Clean data
+    const cleanFormData = {
+      ...formData,
+      // Convert "none" values to empty strings
+      commessa_id: formData.commessa_id === "none" ? "" : formData.commessa_id,
+      sub_agenzia_id: formData.sub_agenzia_id === "none" ? "" : formData.sub_agenzia_id,
+      servizio_id: formData.servizio_id === "none" ? "" : formData.servizio_id,
+      tipologia_contratto: formData.tipologia_contratto === "none" ? "" : formData.tipologia_contratto,
+      segmento: formData.segmento === "none" ? "" : formData.segmento
+    };
     
-    // If validation errors, show them and prevent submit
-    if (errors.length > 0) {
-      alert(`Errori di validazione:\n${errors.join('\n')}`);
-      return;
-    }
+    console.log("🎯 CLEAN FORM DATA FOR SUBMISSION:", cleanFormData);
+    console.log("🎯 CALLING onSubmit FUNCTION...");
     
-    console.log("🎯 SUBMITTING CLIENTE DATA:", formData);
-    onSubmit(formData);
+    // Call the onSubmit function passed from parent
+    onSubmit(cleanFormData);
     
-    // Reset form after successful submit
+    console.log("🎯 ONSUBMIT CALLED - RESETTING FORM");
+    
+    // Reset form after submit
     setFormData({
       nome: '', cognome: '', email: '', telefono: '', indirizzo: '', 
       citta: '', provincia: '', cap: '', codice_fiscale: '', partita_iva: '',
       commessa_id: selectedCommessa || '', sub_agenzia_id: '', servizio_id: '',
       tipologia_contratto: '', segmento: '', note: ''
     });
+    
+    console.log("🎯 CLOSING MODAL");
     onClose();
   };
 
