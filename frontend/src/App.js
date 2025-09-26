@@ -10594,7 +10594,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   useEffect(() => {
     if (formData.servizio_id && formData.commessa_id) {
-      fetchTipologieContratto(formData.commessa_id, formData.servizio_id);
+      fetchEditTipologieContratto(formData.commessa_id, formData.servizio_id);
     }
   }, [formData.servizio_id, formData.commessa_id]);
 
