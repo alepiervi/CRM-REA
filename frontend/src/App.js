@@ -898,10 +898,10 @@ const Dashboard = () => {
   const handleCommessaChange = (commessaId) => {
     setSelectedCommessa(commessaId);
     
-    // Reset dei selettori successivi
+    // Reset dei selettori successivi (nuovo ordine: servizi -> tipologie -> unit)
     setSelectedServizio("all");
-    setSelectedUnit("all");
     setSelectedTipologiaContratto("all");
+    setSelectedUnit("all");
     
     // Carica servizi per la commessa selezionata
     if (commessaId && commessaId !== "all") {
@@ -910,8 +910,7 @@ const Dashboard = () => {
       setServizi([]);
     }
     
-    // Le tipologie contratto verranno ricaricate automaticamente dal useEffect
-    console.log("🎯 COMMESSA CHANGED: tipologie verranno ricaricate dal useEffect");
+    console.log("🎯 COMMESSA CHANGED: servizi, tipologie e unit reset");
   };
 
   const handleServizioChange = (servizioId) => {
