@@ -671,7 +671,7 @@ const Dashboard = () => {
   const [subAgenzie, setSubAgenzie] = useState([]);
   const [servizi, setServizi] = useState([]);
   const [assistants, setAssistants] = useState([]);
-  const [tipologieContratto, setTipologieContratto] = useState([]);
+  const [formTipologieContratto, setFormTipologieContratto] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
   const { user, logout, setUser } = useAuth();
 
