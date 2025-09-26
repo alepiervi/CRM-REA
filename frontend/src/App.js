@@ -4462,29 +4462,29 @@ const ResponsabileCommessaAnalytics = ({ selectedUnit, selectedTipologiaContratt
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Performance per Sub Agenzia</h3>
         {analyticsData.sub_agenzie_analytics.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="mobile-table-container">
+            <table className="w-full text-sm mobile-table">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2">Sub Agenzia</th>
-                  <th className="text-center py-2">Clienti Totali</th>
-                  <th className="text-center py-2">Completati</th>
-                  <th className="text-center py-2">In Lavorazione</th>
-                  <th className="text-center py-2">Tasso Conversione</th>
+                  <th className="text-left py-2 mobile-table">Sub Agenzia</th>
+                  <th className="text-center py-2 mobile-table">Clienti Totali</th>
+                  <th className="text-center py-2 mobile-table">Completati</th>
+                  <th className="text-center py-2 mobile-table">In Lavorazione</th>
+                  <th className="text-center py-2 mobile-table">Tasso Conversione</th>
                 </tr>
               </thead>
               <tbody>
                 {analyticsData.sub_agenzie_analytics.map((item, index) => (
                   <tr key={index} className="border-b">
-                    <td className="py-2">{item.nome}</td>
-                    <td className="text-center py-2">{item.totale_clienti}</td>
-                    <td className="text-center py-2">
+                    <td className="py-2 mobile-table">{item.nome}</td>
+                    <td className="text-center py-2 mobile-table">{item.totale_clienti}</td>
+                    <td className="text-center py-2 mobile-table">
                       <Badge variant="default">{item.completati}</Badge>
                     </td>
-                    <td className="text-center py-2">
+                    <td className="text-center py-2 mobile-table">
                       <Badge variant="secondary">{item.in_lavorazione}</Badge>
                     </td>
-                    <td className="text-center py-2">
+                    <td className="text-center py-2 mobile-table">
                       <Badge variant={item.conversion_rate >= 50 ? "default" : "secondary"}>
                         {item.conversion_rate}%
                       </Badge>
