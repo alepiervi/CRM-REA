@@ -1170,10 +1170,9 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* 4. SELETTORE TIPOLOGIA CONTRATTO - Quarto Livello (appare quando unit/sub agenzia selezionata) */}
+          {/* 4. SELETTORE TIPOLOGIA CONTRATTO - Quarto Livello (appare quando servizio selezionato) */}
           {selectedCommessa && selectedCommessa !== "all" && 
-           selectedServizio && selectedServizio !== "all" && 
-           selectedUnit && selectedUnit !== "all" && (
+           selectedServizio && selectedServizio !== "all" && (
             <div className="mt-4">
               <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
                 4. Seleziona Tipologia Contratto
