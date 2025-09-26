@@ -1133,7 +1133,7 @@ const Dashboard = () => {
             </div>
 
             {/* Mobile Selectors - Complete Hierarchy */}
-            <div className="p-3 bg-slate-50 border-b border-slate-200 max-h-48 overflow-y-auto">
+            <div className="p-2 bg-slate-50 border-b border-slate-200 max-h-32 overflow-y-auto">
               {/* 1. Commessa Selector */}
               <div>
                 <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
