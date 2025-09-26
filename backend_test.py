@@ -143,11 +143,11 @@ class CRMAPITester:
         else:
             self.log_test("Dashboard stats", False, f"Status: {status}")
 
-    def test_critical_password_bug_immediate(self):
-        """TEST CRITICO IMMEDIATO - Flusso completo creazione utente → login per identificare il bug password"""
-        print("\n🚨 TEST CRITICO IMMEDIATO - PASSWORD BUG IDENTIFICATION...")
+    def test_critical_login_debug_401_issue(self):
+        """DEBUG CRITICO dell'endpoint /api/auth/login per identificare perché utenti non-admin ricevono 401"""
+        print("\n🚨 DEBUG CRITICO DELL'ENDPOINT /api/auth/login - 401 ISSUE...")
         
-        # First login as admin to get token
+        # First login as admin to get token for database queries
         success, response, status = self.make_request(
             'POST', 'auth/login', 
             {'username': 'admin', 'password': 'admin123'}, 
@@ -157,9 +157,9 @@ class CRMAPITester:
         if success and 'access_token' in response:
             self.token = response['access_token']
             self.user_data = response['user']
-            self.log_test("✅ Admin login for critical test", True, f"Token received, Role: {self.user_data['role']}")
+            self.log_test("✅ Admin login for debug", True, f"Token received, Role: {self.user_data['role']}")
         else:
-            self.log_test("❌ Admin login for critical test", False, f"Status: {status}, Response: {response}")
+            self.log_test("❌ Admin login for debug", False, f"Status: {status}, Response: {response}")
             return False
 
         # 1. **Creazione Utente di Test**: POST /api/users per creare nuovo utente "test_immediato" con password "admin123"
