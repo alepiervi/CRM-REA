@@ -10874,7 +10874,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                       <SelectValue placeholder="Seleziona tipologia" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tipologieContratto.map((tipologia) => (
+                      {editTipologieContratto.map((tipologia) => (
                         <SelectItem key={tipologia.value} value={tipologia.value}>
                           {tipologia.label}
                         </SelectItem>
