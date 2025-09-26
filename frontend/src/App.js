@@ -766,14 +766,24 @@ const Dashboard = () => {
 
   const fetchTipologieContratto = async () => {
     try {
+      console.log("🔄 Fetching tipologie contratto with filters:", { 
+        selectedCommessa, 
+        selectedServizio 
+      });
+      
       const params = new URLSearchParams();
       if (selectedCommessa && selectedCommessa !== "all") {
         params.append("commessa_id", selectedCommessa);
       }
+      if (selectedServizio && selectedServizio !== "all") {
+        params.append("servizio_id", selectedServizio);
+      }
+      
       const response = await axios.get(`${API}/tipologie-contratto?${params}`);
+      console.log("✅ Tipologie contratto ricevute:", response.data);
       setTipologieContratto(response.data);
     } catch (error) {
-      console.error("Error fetching tipologie contratto:", error);
+      console.error("❌ Error fetching tipologie contratto:", error);
       setTipologieContratto([]);
     }
   };
