@@ -4081,6 +4081,7 @@ const ResponsabileCommessaAnalytics = ({ selectedUnit, selectedTipologiaContratt
   const [dateTo, setDateTo] = useState('');
   const [selectedCommessa, setSelectedCommessa] = useState('all');
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchAnalyticsData();
