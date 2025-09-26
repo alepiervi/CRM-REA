@@ -2579,19 +2579,20 @@ const UsersManagement = ({ selectedUnit, units }) => {
           {loading ? (
             <div className="p-8 text-center">Caricamento...</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Ruolo</TableHead>
-                  <TableHead>Unit</TableHead>
-                  <TableHead>Province</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Ultimo Accesso</TableHead>
-                  <TableHead>Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
+            <div className="mobile-table-container">
+              <Table className="mobile-table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="mobile-table">Username</TableHead>
+                    <TableHead className="mobile-table">Email</TableHead>
+                    <TableHead className="mobile-table">Ruolo</TableHead>
+                    <TableHead className="mobile-table">Unit</TableHead>
+                    <TableHead className="mobile-table">Province</TableHead>
+                    <TableHead className="mobile-table">Stato</TableHead>
+                    <TableHead className="mobile-table">Ultimo Accesso</TableHead>
+                    <TableHead className="mobile-table">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
