@@ -162,9 +162,74 @@ class CRMAPITester:
             self.log_test("❌ Admin login for debug", False, f"Status: {status}, Response: {response}")
             return False
 
-        # 1. **Creazione Utente di Test**: POST /api/users per creare nuovo utente "test_immediato" con password "admin123"
-        print("\n🔑 1. CREAZIONE UTENTE DI TEST - test_immediato/admin123...")
+        # 1. **Test Login Admin vs Non-Admin**
+        print("\n🔑 1. TEST LOGIN ADMIN vs NON-ADMIN...")
         
+        # Test admin/admin123 (dovrebbe funzionare)
+        print("   Testing admin/admin123 (should work)...")
+        success, admin_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in admin_response:
+            self.log_test("✅ Admin login (admin/admin123)", True, 
+                f"SUCCESS - Token received, Role: {admin_response['user']['role']}")
+            admin_login_success = True
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, 
+                f"FAILED - Status: {status}, Response: {admin_response}")
+            admin_login_success = False
+        
+        # Test resp_commessa/admin123 (dovrebbe dare 401 secondo il problema)
+        print("   Testing resp_commessa/admin123 (reported to give 401)...")
+        success, resp_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'resp_commessa', 'password': 'admin123'}, 
+            expected_status=401, auth_required=False
+        )
+        
+        if status == 401:
+            self.log_test("❌ resp_commessa login (resp_commessa/admin123)", False, 
+                f"CONFIRMED 401 - Status: {status}, Response: {resp_response}")
+            resp_login_failed = True
+        elif status == 200 and 'access_token' in resp_response:
+            self.log_test("✅ resp_commessa login (resp_commessa/admin123)", True, 
+                f"UNEXPECTED SUCCESS - Status: {status}, Role: {resp_response['user']['role']}")
+            resp_login_failed = False
+        else:
+            self.log_test("❓ resp_commessa login (resp_commessa/admin123)", False, 
+                f"UNEXPECTED STATUS - Status: {status}, Response: {resp_response}")
+            resp_login_failed = True
+        
+        # Confrontare le response
+        print(f"\n   🔍 CONFRONTO RESPONSE:")
+        print(f"      Admin response keys: {list(admin_response.keys()) if admin_login_success else 'N/A'}")
+        print(f"      resp_commessa response keys: {list(resp_response.keys())}")
+        if admin_login_success and not resp_login_failed:
+            print(f"      Admin user data: {admin_response['user']}")
+            print(f"      resp_commessa user data: {resp_response['user']}")
+        
+        # Test altri utenti responsabile_commessa
+        print("   Testing other responsabile_commessa users...")
+        test_users = ['test_immediato', 'test2', 'debug_resp_commessa_155357']
+        for username in test_users:
+            success, test_response, status = self.make_request(
+                'POST', 'auth/login', 
+                {'username': username, 'password': 'admin123'}, 
+                expected_status=401, auth_required=False
+            )
+            
+            if status == 401:
+                self.log_test(f"❌ {username} login", False, f"401 as expected - {test_response.get('detail', 'No detail')}")
+            elif status == 200:
+                self.log_test(f"✅ {username} login", True, f"Unexpected success - Role: {test_response['user']['role']}")
+            else:
+                self.log_test(f"❓ {username} login", False, f"Status: {status}")
+        
+        # Creare un nuovo utente test_immediato per debug
+        print("\n   Creating test_immediato user for immediate testing...")
         test_immediato_data = {
             "username": "test_immediato",
             "email": "test_immediato@test.com",
@@ -177,20 +242,22 @@ class CRMAPITester:
         success, create_response, status = self.make_request('POST', 'users', test_immediato_data, 200)
         if success:
             created_user_id = create_response['id']
-            created_username = create_response['username']
-            password_hash = create_response.get('password_hash', 'N/A')
-            
             self.created_resources['users'].append(created_user_id)
-            self.log_test("✅ Creazione utente test_immediato", True, 
-                f"User ID: {created_user_id}, Username: {created_username}")
-            self.log_test("✅ Password hash salvato nel database", True, 
-                f"Hash length: {len(password_hash) if password_hash != 'N/A' else 0} chars")
+            self.log_test("✅ Created test_immediato user", True, f"User ID: {created_user_id}")
             
-            # Controllare il password_hash salvato nel database
-            print(f"   🔍 Password hash salvato: {password_hash[:20]}... (primi 20 caratteri)")
+            # Test login immediato
+            success, immediate_login, status = self.make_request(
+                'POST', 'auth/login', 
+                {'username': 'test_immediato', 'password': 'admin123'}, 
+                200, auth_required=False
+            )
             
+            if success and 'access_token' in immediate_login:
+                self.log_test("✅ test_immediato immediate login", True, "SUCCESS - Can login immediately after creation")
+            else:
+                self.log_test("❌ test_immediato immediate login", False, f"FAILED - Status: {status}, Response: {immediate_login}")
         else:
-            self.log_test("❌ Creazione utente test_immediato", False, f"Status: {status}, Response: {create_response}")
+            self.log_test("❌ Create test_immediato user", False, f"Status: {status}")
             return False
 
         # 2. **Test Login Immediato**: POST /api/auth/login con test_immediato/admin123 SUBITO dopo la creazione
