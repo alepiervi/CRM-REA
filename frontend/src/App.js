@@ -927,14 +927,8 @@ const Dashboard = () => {
     setSelectedUnit("all");
     setSelectedTipologiaContratto("all");
     
-    // Ricarica tipologie contratto per il servizio selezionato (solo per responsabile_commessa)
-    if (user.role === "responsabile_commessa") {
-      console.log("🎯 CALLING fetchTipologieContratto with:", { 
-        commessaId: selectedCommessa, 
-        servizioId: servizioId 
-      });
-      fetchTipologieContratto(selectedCommessa, servizioId);
-    }
+    // Le tipologie contratto verranno ricaricate automaticamente dal useEffect
+    console.log("🎯 SERVIZIO CHANGED: tipologie verranno ricaricate dal useEffect");
   };
 
   const [unitsSubAgenzie, setUnitsSubAgenzie] = useState([]);
