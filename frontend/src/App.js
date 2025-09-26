@@ -10582,7 +10582,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   });
 
   const [servizi, setServizi] = useState([]);
-  const [tipologieContratto, setTipologieContratto] = useState([]);
+  const [editTipologieContratto, setEditTipologieContratto] = useState([]);
   const [segmenti, setSegmenti] = useState([]);
 
   useEffect(() => {
