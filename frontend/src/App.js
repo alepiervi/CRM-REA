@@ -10637,7 +10637,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       segmento: ''
     }));
     fetchServizi(commessaId);
-    setTipologieContratto([]);
+    setEditTipologieContratto([]);
   };
 
   const handleServizioChange = (servizioId) => {
