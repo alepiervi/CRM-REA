@@ -5442,12 +5442,57 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
         </div>
       </div>
 
-      {/* Tabs Navigation */}
+      {/* Tabs Navigation - Enhanced for Mobile */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="dashboard">Dashboard Overview</TabsTrigger>
-          <TabsTrigger value="agents">Analytics Agenti</TabsTrigger>
-          <TabsTrigger value="referenti">Analytics Referenti</TabsTrigger>
+        {/* MOBILE TABS */}
+        <div className="md:hidden mb-6">
+          <div className="bg-white rounded-xl p-1 shadow-lg border-2 border-slate-200">
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                onClick={() => setActiveTab("dashboard")}
+                className={`py-4 px-4 rounded-lg font-semibold text-base transition-all ${
+                  activeTab === "dashboard" 
+                    ? "bg-blue-600 text-white shadow-md" 
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                📊 Dashboard Overview
+              </button>
+              <button
+                onClick={() => setActiveTab("agents")}
+                className={`py-4 px-4 rounded-lg font-semibold text-base transition-all ${
+                  activeTab === "agents" 
+                    ? "bg-green-600 text-white shadow-md" 
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                👥 Analytics Agenti
+              </button>
+              <button
+                onClick={() => setActiveTab("referenti")}
+                className={`py-4 px-4 rounded-lg font-semibold text-base transition-all ${
+                  activeTab === "referenti" 
+                    ? "bg-purple-600 text-white shadow-md" 
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                🎯 Analytics Referenti
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* DESKTOP TABS */}
+        <TabsList className="hidden md:grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="dashboard" className="text-base font-semibold">
+            📊 Dashboard Overview
+          </TabsTrigger>
+          <TabsTrigger value="agents" className="text-base font-semibold">
+            👥 Analytics Agenti
+          </TabsTrigger>
+          <TabsTrigger value="referenti" className="text-base font-semibold">
+            🎯 Analytics Referenti
+          </TabsTrigger>
         </TabsList>
 
         {/* Dashboard Tab */}
