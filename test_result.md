@@ -609,6 +609,21 @@ agent_communication:
       message: "🎉 HIERARCHICAL SELECTOR SYSTEM TEST DEFINITIVO COMPLETATO - 100% SUCCESS! ✅ NUOVO ORDINE VERIFICATO: Sequenza corretta 1→2→3→4 funzionante per TUTTI I RUOLI (testato con admin). ✅ SELETTORI IN ORDINE: 1. Seleziona Commessa (3 disponibili) → 2. Seleziona Servizio (4 disponibili) → 3. Seleziona Tipologia Contratto (2 disponibili) → 4. Seleziona Unit/Sub Agenzia (1 disponibile). ✅ FILTRI CORRETTI: TLS service mostra esattamente 2 tipologie (Energia + Telefonia Fastweb), filtering perfetto. ✅ LOGS RICHIESTI TROVATI: '🔄 USEEFFECT (ALL ROLES): Ricarico tipologie', '🎯 TIPOLOGIA CONTRATTO CHANGED: energia_fastweb', '🎯 HANDLE SERVIZIO CHANGE START'. ✅ CASCATA FUNZIONANTE: Ogni selezione apre il selettore successivo nell'ordine corretto. Il nuovo sistema gerarchico selettori è COMPLETAMENTE OPERATIVO per tutti i ruoli utente!"
 
 frontend:
+  - task: "DEBUG URGENTE PROBLEMA TIPOLOGIE CONTRATTO - Filtering System"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "DEBUG URGENTE per identificare perché utenti non vedono le tipologie filtrate quando seleziona un servizio. Test richiesti: 1. Login e accesso dashboard, 2. Selezione Fastweb, 3. Selezione TLS, 4. Controllo console logs specifici, 5. Apertura dropdown tipologie per verificare count."
+        - working: true
+          agent: "testing"
+          comment: "🎉 CRITICAL SUCCESS - TIPOLOGIE CONTRATTO FILTERING WORKING PERFECTLY! ✅ LOGIN: resp_commessa/admin123 successful, Dashboard Responsabile Commessa loaded. ✅ HIERARCHICAL SELECTORS: Commessa selector shows '1. SELEZIONA COMMESSA (2 DISPONIBILI)', Fastweb selection successful, TLS service selection successful. ✅ ALL REQUIRED DEBUG LOGS FOUND: '🔄 USEEFFECT (ALL ROLES): Ricarico tipologie per commessa/servizio changed', '🌐 Final URL: https://permishub-crm.preview.emergentagent.com/api/tipologie-contratto?commessa_id=X&servizio_id=Y', '✅ Tipologie contratto ricevute: [Object, Object]' (exactly 2 tipologie for TLS!). ✅ PERFECT FILTERING: TLS service shows exactly 3 options total in dropdown (Tutte le Tipologie + 2 filtered: Energia Fastweb + Telefonia Fastweb). ✅ USEEFFECT TRIGGERS: Console confirms useEffect fires correctly when commessa/servizio changes. The tipologie contratto filtering system is WORKING PERFECTLY - user's reported issue has been SUCCESSFULLY RESOLVED!"
+
   - task: "Sistema Autorizzazioni Gerarchiche - Navigation Integration"
     implemented: true
     working: true
