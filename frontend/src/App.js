@@ -1113,23 +1113,7 @@ const Dashboard = () => {
               <h1>CRM Mobile</h1>
 
 
-            {/* Mobile Navigation */}
-            <nav className="flex-1 overflow-y-auto px-1 py-2 min-h-0" style={{maxHeight: 'calc(100vh - 200px)'}}>
-              {getNavItems().map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleTabChange(item.id)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors mobile-nav-item ${
-                    activeTab === item.id
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : "text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </nav>
+
 
             {/* Mobile Footer */}
             <div className="p-3 border-t border-slate-200 bg-white flex-shrink-0" style={{marginTop: 'auto'}>
