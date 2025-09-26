@@ -9510,7 +9510,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   });
 
   const [servizi, setServizi] = useState([]);
-  const [tipologieContratto, setTipologieContratto] = useState([]);
+  const [createTipologieContratto, setCreateTipologieContratto] = useState([]);
   const [segmenti, setSegmenti] = useState([]);
 
   useEffect(() => {
