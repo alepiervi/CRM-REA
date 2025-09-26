@@ -923,12 +923,11 @@ const Dashboard = () => {
     
     setSelectedServizio(servizioId);
     
-    // Reset dei selettori successivi
-    setSelectedUnit("all");
+    // Reset dei selettori successivi (nuovo ordine: tipologie -> unit)
     setSelectedTipologiaContratto("all");
+    setSelectedUnit("all");
     
-    // Le tipologie contratto verranno ricaricate automaticamente dal useEffect
-    console.log("🎯 SERVIZIO CHANGED: tipologie verranno ricaricate dal useEffect");
+    console.log("🎯 SERVIZIO CHANGED: tipologie e unit reset, tipologie verranno ricaricate dal useEffect");
   };
 
   const [unitsSubAgenzie, setUnitsSubAgenzie] = useState([]);
