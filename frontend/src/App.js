@@ -913,6 +913,16 @@ const Dashboard = () => {
     console.log("🎯 COMMESSA CHANGED: servizi, tipologie e unit reset");
   };
 
+  const handleTipologiaContrattoChange = (tipologiaId) => {
+    console.log("🎯 TIPOLOGIA CONTRATTO CHANGED:", tipologiaId);
+    setSelectedTipologiaContratto(tipologiaId);
+    
+    // Reset solo il selettore successivo (unit/sub agenzie)
+    setSelectedUnit("all");
+    
+    console.log("🎯 TIPOLOGIA CHANGED: unit reset");
+  };
+
   const handleServizioChange = (servizioId) => {
     console.log("🎯 HANDLE SERVIZIO CHANGE START:", { 
       servizioId, 
