@@ -477,6 +477,7 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchDashboardData();
