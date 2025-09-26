@@ -6940,7 +6940,19 @@ async def get_clienti(
     
     # Handle special case "all" from frontend
     if commessa_id and commessa_id != "all":
-        if commessa_id not in accessible_commesse:
+        # CRITICAL FIX: Controlla autorizzazione con dual check pattern (same as tipologie-contratto fix)
+        has_access = False
+        
+        # Metodo 1: Controlla tabella separata (vecchia logica)
+        if commessa_id in accessible_commesse:
+            has_access = True
+        
+        # Metodo 2: Controlla campo diretto nell'utente (nuova logica) 
+        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            if commessa_id in current_user.commesse_autorizzate:
+                has_access = True
+        
+        if not has_access:
             raise HTTPException(status_code=403, detail="Access denied to this commessa")
         query["commessa_id"] = commessa_id
     else:
