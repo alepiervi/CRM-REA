@@ -800,17 +800,12 @@ const Dashboard = () => {
           selectedUnit && selectedUnit !== "all") {
         
         try {
-          const params = new URLSearchParams();
-          params.append("commessa_id", selectedCommessa);
-          if (selectedServizio !== "all") {
-            params.append("servizio_id", selectedServizio);
-          }
-          
-          const response = await axios.get(`${API}/tipologie-contratto?${params}`);
+          console.log("🔄 Loading tipologie contratto for commessa+servizio+unit...");
+          const response = await axios.get(`${API}/commesse/${selectedCommessa}/servizi/${selectedServizio}/units/${selectedUnit}/tipologie-contratto`);
+          console.log("✅ Tipologie contratto loaded:", response.data);
           setTipologieContratto(response.data);
-          console.log("Tipologie contratto caricate:", response.data);
         } catch (error) {
-          console.error("Error fetching tipologie contratto:", error);
+          console.error("❌ Error loading tipologie contratto:", error);
           setTipologieContratto([]);
         }
       } else {
