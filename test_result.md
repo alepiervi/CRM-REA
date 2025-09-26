@@ -603,9 +603,9 @@ backend:
 frontend:
   - task: "Mobile-Friendly CRM System Complete Test"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -615,6 +615,9 @@ frontend:
         - working: true
           agent: "testing"
           comment: "🎉 MOBILE-FRIENDLY CRM SYSTEM TEST COMPLETED SUCCESSFULLY! ✅ MOBILE LOGIN FORM: Working perfectly on 375x667 viewport - responsive design, proper form layout, touch-friendly input fields. ✅ MOBILE DASHBOARD: Hamburger menu (☰) visible and functional, desktop sidebar properly hidden on mobile (display: none), mobile content area with mobile-container class working correctly. ✅ MOBILE NAVIGATION: Hamburger menu opens slide-out sidebar successfully, found 17 navigation items including Dashboard/Clienti/Analytics, mobile menu overlay working for auto-close functionality. ✅ RESPONSIVE BREAKPOINTS: Mobile (375x667) - hamburger visible, sidebar hidden; Tablet (768x1024) - hamburger visible, sidebar hidden; Desktop (1920x1080) - hamburger hidden, sidebar visible. Perfect responsive behavior across all breakpoints. ✅ TOUCH INTERACTIONS: Navigation buttons are touch-friendly (>=44px height), form inputs have appropriate font-size (>=16px) to prevent zoom, smooth animations and transitions working correctly. ✅ MOBILE CLIENTI SECTION: Responsive tables with proper overflow handling, touch-friendly buttons for user interactions. ❌ CRITICAL ISSUE IDENTIFIED: resp_commessa/admin123 login returns 401 Unauthorized - this is a backend authentication issue that needs main agent attention. ✅ OVERALL: Mobile-friendly CRM system is fully functional with excellent responsive design, touch-optimized interface, and proper mobile UX patterns implemented."
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL MOBILE-FRIENDLINESS ISSUES IDENTIFIED! ✅ SUCCESSFUL TESTS: Mobile login form (44px input heights), responsive dashboard cards, hamburger menu (☰) visibility, desktop sidebar properly hidden, hierarchical selectors in mobile sidebar (Commessa, Servizi present), 14 navigation items found including Dashboard/Clienti/Analytics, responsive breakpoints working (375x667, 390x844, 768x1024). ❌ CRITICAL ISSUES FOUND: 1) LOGOUT BUTTON VIEWPORT ISSUE: 'Esci' button positioned at y=611px with 44px height, extends to y=655px but mobile viewport is only 667px - button is barely within viewport and difficult to access, 2) MOBILE SIDEBAR NAVIGATION ELEMENTS OUTSIDE VIEWPORT: Multiple navigation elements (including Clienti button) are positioned outside the 667px mobile viewport, causing 'Element is outside of the viewport' errors during testing, 3) MOBILE SIDEBAR HEIGHT OVERFLOW: The mobile sidebar content exceeds the mobile viewport height, making bottom elements (especially logout) inaccessible without scrolling, 4) TIPOLOGIE CONTRATTO SELECTOR MISSING: Not found in mobile sidebar despite being present in desktop version. ⚠️ MINOR ISSUES: Hamburger button height (32px) below recommended 44px touch target. ❌ MOBILE UX SEVERELY COMPROMISED: Users cannot access logout functionality reliably, navigation elements are not properly positioned within mobile viewport, mobile sidebar needs height constraints and proper scrolling implementation."
 
   - task: "resp_commessa Login Authentication Issue"
     implemented: true
