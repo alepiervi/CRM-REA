@@ -673,7 +673,7 @@ const Dashboard = () => {
   const [assistants, setAssistants] = useState([]);
   const [tipologieContratto, setTipologieContratto] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
 
   useEffect(() => {
     fetchUnits();
