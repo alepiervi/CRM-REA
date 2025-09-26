@@ -1224,7 +1224,7 @@ const Dashboard = () => {
                 <button
                   key={item.id}
                   onClick={() => handleTabChange(item.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-colors mobile-nav-item ${
+                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors mobile-nav-item ${
                     activeTab === item.id
                       ? "bg-blue-50 text-blue-700 border border-blue-200"
                       : "text-slate-700 hover:bg-slate-50"
