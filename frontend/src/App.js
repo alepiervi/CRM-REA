@@ -98,6 +98,7 @@ import {
   Store,
   ShieldCheck,
   Users2,
+  Briefcase,
   Settings2,
   FileUser,
   FileSpreadsheet,
