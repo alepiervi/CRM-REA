@@ -5774,7 +5774,8 @@ Duplicate,Test,+393471234567"""
         for item in tipologie_found:
             tipologia = item['tipologia']
             if isinstance(tipologia, dict):
-                name = tipologia.get('nome', str(tipologia))
+                # Try 'label' first (for the new endpoint format), then 'nome'
+                name = tipologia.get('label', tipologia.get('nome', str(tipologia)))
             else:
                 name = str(tipologia)
             all_tipologie_names.append(name)
