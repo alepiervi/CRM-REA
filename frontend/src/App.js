@@ -673,7 +673,32 @@ const Dashboard = () => {
   const [assistants, setAssistants] = useState([]);
   const [formTipologieContratto, setFormTipologieContratto] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
+  
+  // 🎯 MOBILE-FRIENDLY: Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
   const { user, logout, setUser } = useAuth();
+
+  // 🎯 MOBILE-FRIENDLY: Detect screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setIsMobileMenuOpen(false); // Close mobile menu on desktop
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 🎯 MOBILE-FRIENDLY: Close mobile menu when tab changes
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setIsMobileMenuOpen(false);
+  };
 
   useEffect(() => {
     fetchUnits();
