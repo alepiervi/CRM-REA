@@ -808,16 +808,36 @@ const Dashboard = () => {
 
   // Funzioni per il sistema gerarchico di selettori
   const getAvailableCommesse = () => {
+    console.log("🔍 getAvailableCommesse DEBUG:");
+    console.log("- User role:", user.role);
+    console.log("- User commesse_autorizzate:", user.commesse_autorizzate);
+    console.log("- Commesse array length:", commesse.length);
+    console.log("- Commesse IDs:", commesse.map(c => c.id));
+    
     if (user.role === "responsabile_commessa") {
       // Per responsabile commessa, mostra solo le commesse autorizzate
       if (!user.commesse_autorizzate || user.commesse_autorizzate.length === 0) {
+        console.log("❌ Nessuna commessa autorizzata trovata!");
+        // EMERGENCY FIX: Se user.commesse_autorizzate è vuoto, prova a ricaricare user data
+        if (user.id) {
+          console.log("🔄 Attempting to fetch fresh user data...");
+          // Forza ricaricamento dati utente
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
         return [];
       }
-      return commesse.filter(commessa => 
+      
+      const filteredCommesse = commesse.filter(commessa => 
         user.commesse_autorizzate.includes(commessa.id)
       );
+      
+      console.log("✅ Commesse filtrate:", filteredCommesse);
+      return filteredCommesse;
     } else {
       // Per admin e altri ruoli, mostra tutte le commesse
+      console.log("✅ Utente admin - tutte le commesse");
       return commesse;
     }
   };
