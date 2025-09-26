@@ -892,6 +892,12 @@ const Dashboard = () => {
     } else {
       setServizi([]);
     }
+    
+    // Ricarica tipologie contratto per la commessa selezionata (solo per responsabile_commessa)
+    if (user.role === "responsabile_commessa") {
+      console.log("🎯 COMMESSA CHANGED: Ricarico tipologie contratto per commessa:", commessaId);
+      fetchTipologieContratto(commessaId, "all"); // Reset servizio a "all" quando cambia commessa
+    }
   };
 
   const handleServizioChange = (servizioId) => {
