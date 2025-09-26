@@ -1217,6 +1217,43 @@ const Dashboard = () => {
                   </Select>
                 </div>
               )}
+
+              {/* 4. Unit/Sub Agenzia Selector - Mobile */}
+              {selectedCommessa && selectedCommessa !== "all" && 
+               selectedServizio && selectedServizio !== "all" && 
+               selectedTipologiaContratto && selectedTipologiaContratto !== "all" && (
+                <div className="mt-3">
+                  <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                    Unit/Sub Agenzia
+                    {getAvailableUnitsSubAgenzie().length > 0 && (
+                      <span className="ml-1 text-xs text-green-600">({getAvailableUnitsSubAgenzie().length})</span>
+                    )}
+                  </Label>
+                  <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                    <SelectTrigger className="mt-1 mobile-select">
+                      <SelectValue placeholder="Seleziona unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le Unit/Sub Agenzie</SelectItem>
+                      {getAvailableUnitsSubAgenzie().map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          <div className="flex items-center space-x-2">
+                            {item.type === 'unit' ? (
+                              <Building2 className="w-3 h-3" />
+                            ) : (
+                              <MapPin className="w-3 h-3" />
+                            )}
+                            <span className="text-sm">{item.nome}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {item.type === 'unit' ? 'Unit' : 'Sub Agenzia'}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* Mobile Navigation */}
