@@ -1101,7 +1101,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-slate-50 flex overflow-hidden">
       {/* 🎯 MOBILE: Mobile Menu Overlay */}
       {isMobile && (
-        <>
+        <div>
           <div 
             className={`mobile-nav-overlay ${isMobileMenuOpen ? 'active' : ''}`}
             onClick={() => setIsMobileMenuOpen(false)}
