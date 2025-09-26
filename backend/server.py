@@ -7008,51 +7008,101 @@ async def get_clienti(
     limit: int = 100,
     current_user: User = Depends(get_current_user)
 ):
-    """Get clienti accessible to current user"""
+    """Get clienti accessible to current user based on role"""
     query = {}
     
-    # Filtra per commesse accessibili
-    accessible_commesse = await get_user_accessible_commesse(current_user)
-    
-    # Handle special case "all" from frontend
-    if commessa_id and commessa_id != "all":
-        # CRITICAL FIX: Controlla autorizzazione con dual check pattern (same as tipologie-contratto fix)
-        has_access = False
+    # CRITICAL FIX: Role-based client visibility system
+    if current_user.role == UserRole.ADMIN:
+        # Admin può vedere tutti i clienti
+        print(f"🔓 ADMIN ACCESS: User {current_user.username} can see all clients")
+        pass  # No filtering for admin
         
-        # Metodo 1: Controlla tabella separata (vecchia logica)
-        if commessa_id in accessible_commesse:
-            has_access = True
-        
-        # Metodo 2: Controlla campo diretto nell'utente (nuova logica) 
-        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
-            if commessa_id in current_user.commesse_autorizzate:
-                has_access = True
-        
-        if not has_access:
-            raise HTTPException(status_code=403, detail="Access denied to this commessa")
-        query["commessa_id"] = commessa_id
-    else:
-        # If commessa_id is None or "all", filter by all accessible commesse
+    elif current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        # Responsabile Commessa: vede clienti delle commesse autorizzate (già implementato con dual check)
+        print(f"🎯 RESPONSABILE_COMMESSA ACCESS: User {current_user.username}")
+        accessible_commesse = await get_user_accessible_commesse(current_user)
         if accessible_commesse:
             query["commessa_id"] = {"$in": accessible_commesse}
         else:
-            # If user has no accessible commesse, return empty
+            print("⚠️ No accessible commesse found for responsabile_commessa")
             return []
-    
-    # Filtra per sub agenzie accessibili solo se abbiamo una commessa specifica
-    if commessa_id and commessa_id != "all":
-        accessible_sub_agenzie = await get_user_accessible_sub_agenzie(current_user, commessa_id)
-        if sub_agenzia_id:
-            if sub_agenzia_id not in accessible_sub_agenzie:
-                raise HTTPException(status_code=403, detail="Access denied to this sub agenzia")
-            query["sub_agenzia_id"] = sub_agenzia_id
+            
+    elif current_user.role == UserRole.BACKOFFICE_COMMESSA:
+        # BackOffice Commessa: vede tutti i clienti delle commesse autorizzate
+        print(f"🏢 BACKOFFICE_COMMESSA ACCESS: User {current_user.username}")
+        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
         else:
-            query["sub_agenzia_id"] = {"$in": accessible_sub_agenzie}
+            # Fallback: usa get_user_accessible_commesse
+            accessible_commesse = await get_user_accessible_commesse(current_user)
+            if accessible_commesse:
+                query["commessa_id"] = {"$in": accessible_commesse}
+            else:
+                print("⚠️ No accessible commesse found for backoffice_commessa")
+                return []
+                
+    elif current_user.role == UserRole.RESPONSABILE_SUB_AGENZIA:
+        # Responsabile Agenzia: vede tutti i clienti della propria Sub Agenzia
+        print(f"🏪 RESPONSABILE_SUB_AGENZIA ACCESS: User {current_user.username}")
+        if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
+            query["sub_agenzia_id"] = current_user.sub_agenzia_id
+        else:
+            print("⚠️ No sub_agenzia_id found for responsabile_sub_agenzia")
+            return []
+            
+    elif current_user.role == UserRole.BACKOFFICE_SUB_AGENZIA:
+        # BackOffice Sub Agenzia: vede tutti i clienti della propria agenzia
+        print(f"🏬 BACKOFFICE_SUB_AGENZIA ACCESS: User {current_user.username}")
+        if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
+            query["sub_agenzia_id"] = current_user.sub_agenzia_id
+        else:
+            print("⚠️ No sub_agenzia_id found for backoffice_sub_agenzia")
+            return []
+            
+    elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
+        # Agente Specializzato & Operatore: vedono solo clienti creati da loro
+        print(f"👤 {current_user.role} ACCESS: User {current_user.username} - only own clients")
+        query["created_by"] = current_user.id
+        
+    else:
+        # Ruolo non riconosciuto - accesso negato
+        print(f"❌ UNKNOWN ROLE: {current_user.role} for user {current_user.username}")
+        raise HTTPException(status_code=403, detail=f"Role {current_user.role} not authorized for client access")
+    
+    # Filtri aggiuntivi dai parametri della query (se forniti)
+    if commessa_id and commessa_id != "all":
+        # Se commessa_id è specificata, aggiungiamola al filtro (se autorizzata)
+        if "commessa_id" in query:
+            # Se già esiste un filtro commessa, facciamo l'intersezione
+            if isinstance(query["commessa_id"], dict) and "$in" in query["commessa_id"]:
+                if commessa_id in query["commessa_id"]["$in"]:
+                    query["commessa_id"] = commessa_id
+                else:
+                    # Commessa richiesta non autorizzata
+                    raise HTTPException(status_code=403, detail="Access denied to this commessa")
+            else:
+                query["commessa_id"] = commessa_id
+        else:
+            # Per admin o altri ruoli senza filtro commessa preimpostato
+            query["commessa_id"] = commessa_id
+    
+    if sub_agenzia_id:
+        # Se sub_agenzia_id è specificata, aggiungiamola al filtro (se autorizzata)
+        if "sub_agenzia_id" in query:
+            if query["sub_agenzia_id"] != sub_agenzia_id:
+                raise HTTPException(status_code=403, detail="Access denied to this sub agenzia")
+        else:
+            # Per admin o altri ruoli
+            query["sub_agenzia_id"] = sub_agenzia_id
     
     if status:
         query["status"] = status
     
+    print(f"🔍 FINAL QUERY for {current_user.role}: {query}")
+    
     clienti = await db.clienti.find(query).sort("created_at", -1).limit(limit).to_list(length=None)
+    print(f"📊 Found {len(clienti)} clients for user {current_user.username} ({current_user.role})")
+    
     return [Cliente(**c) for c in clienti]
 
 @api_router.get("/clienti/{cliente_id}", response_model=Cliente)
