@@ -9526,7 +9526,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
   useEffect(() => {
     if (formData.servizio_id) {
-      fetchTipologieContratto(formData.commessa_id, formData.servizio_id);
+      fetchCreateTipologieContratto(formData.commessa_id, formData.servizio_id);
     }
   }, [formData.servizio_id, formData.commessa_id]);
 
