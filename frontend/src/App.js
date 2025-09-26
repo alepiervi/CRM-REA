@@ -4574,37 +4574,95 @@ const ResponsabileCommessaAnalytics = ({ selectedUnit, selectedTipologiaContratt
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Performance per Sub Agenzia</h3>
         {analyticsData.sub_agenzie_analytics.length > 0 ? (
-          <div className="mobile-table-container">
-            <table className="w-full text-sm mobile-table">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 mobile-table">Sub Agenzia</th>
-                  <th className="text-center py-2 mobile-table">Clienti Totali</th>
-                  <th className="text-center py-2 mobile-table">Completati</th>
-                  <th className="text-center py-2 mobile-table">In Lavorazione</th>
-                  <th className="text-center py-2 mobile-table">Tasso Conversione</th>
-                </tr>
-              </thead>
-              <tbody>
-                {analyticsData.sub_agenzie_analytics.map((item, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="py-2 mobile-table">{item.nome}</td>
-                    <td className="text-center py-2 mobile-table">{item.totale_clienti}</td>
-                    <td className="text-center py-2 mobile-table">
-                      <Badge variant="default">{item.completati}</Badge>
-                    </td>
-                    <td className="text-center py-2 mobile-table">
-                      <Badge variant="secondary">{item.in_lavorazione}</Badge>
-                    </td>
-                    <td className="text-center py-2 mobile-table">
-                      <Badge variant={item.conversion_rate >= 50 ? "default" : "secondary"}>
+          <div>
+            {/* Desktop Table View */}
+            <div className="hidden md:block">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2">Sub Agenzia</th>
+                      <th className="text-center py-2">Clienti Totali</th>
+                      <th className="text-center py-2">Completati</th>
+                      <th className="text-center py-2">In Lavorazione</th>
+                      <th className="text-center py-2">Tasso Conversione</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analyticsData.sub_agenzie_analytics.map((item, index) => (
+                      <tr key={index} className="border-b">
+                        <td className="py-2">{item.nome}</td>
+                        <td className="text-center py-2">{item.totale_clienti}</td>
+                        <td className="text-center py-2">
+                          <Badge variant="default">{item.completati}</Badge>
+                        </td>
+                        <td className="text-center py-2">
+                          <Badge variant="secondary">{item.in_lavorazione}</Badge>
+                        </td>
+                        <td className="text-center py-2">
+                          <Badge variant={item.conversion_rate >= 50 ? "default" : "secondary"}>
+                            {item.conversion_rate}%
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {analyticsData.sub_agenzie_analytics.map((item, index) => (
+                <div key={index} className="bg-white border border-slate-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <Building2 className="w-4 h-4 text-blue-600" />
+                      <h3 className="font-semibold text-slate-900">{item.nome}</h3>
+                    </div>
+                    <Badge variant={item.conversion_rate >= 50 ? "default" : "secondary"} className="text-xs">
+                      {item.conversion_rate}%
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                      <div className="flex items-center space-x-2">
+                        <Users className="w-3 h-3 text-slate-400" />
+                        <span className="text-sm font-medium text-slate-600">Clienti Totali</span>
+                      </div>
+                      <span className="font-semibold text-slate-900">{item.totale_clienti}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="w-3 h-3 text-green-400" />
+                        <span className="text-sm font-medium text-green-600">Completati</span>
+                      </div>
+                      <Badge variant="default" className="text-xs">{item.completati}</Badge>
+                    </div>
+                    
+                    <div className="flex justify-between items-center p-2 bg-orange-50 rounded">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-3 h-3 text-orange-400" />
+                        <span className="text-sm font-medium text-orange-600">In Lavorazione</span>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">{item.in_lavorazione}</Badge>
+                    </div>
+                    
+                    <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                      <div className="flex items-center space-x-2">
+                        <Target className="w-3 h-3 text-blue-400" />
+                        <span className="text-sm font-medium text-blue-600">Tasso Conversione</span>
+                      </div>
+                      <Badge variant={item.conversion_rate >= 50 ? "default" : "secondary"} className="text-xs">
                         {item.conversion_rate}%
                       </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <p className="text-gray-500 text-center py-8">Nessun dato disponibile per le analytics</p>
