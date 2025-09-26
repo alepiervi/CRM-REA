@@ -682,8 +682,25 @@ const Dashboard = () => {
     
     if (user.role === "responsabile_commessa") {
       fetchTipologieContratto();
+      
+      // EMERGENCY FIX: Se commesse_autorizzate è vuoto, ricarica user data
+      if (!user.commesse_autorizzate || user.commesse_autorizzate.length === 0) {
+        console.log("⚠️ EMERGENCY FIX: user.commesse_autorizzate vuoto, ricarico dati utente...");
+        fetchCurrentUserData();
+      }
     }
   }, []);
+
+  // Funzione di emergenza per ricaricare dati utente
+  const fetchCurrentUserData = async () => {
+    try {
+      const response = await axios.get(`${API}/auth/me`);
+      console.log("🔄 Dati utente ricaricati:", response.data);
+      setUser(response.data);
+    } catch (error) {
+      console.error("❌ Errore nel ricaricare dati utente:", error);
+    }
+  };
 
   // Rimossi vecchi useEffect - ora gestiti dal sistema gerarchico
 
