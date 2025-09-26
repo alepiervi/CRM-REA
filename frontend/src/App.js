@@ -889,42 +889,34 @@ const Dashboard = () => {
     setSelectedTipologiaContratto("all");
   };
 
+  const [unitsSubAgenzie, setUnitsSubAgenzie] = useState([]);
+
   const getAvailableUnitsSubAgenzie = () => {
-    // Combina units e sub agenzie disponibili per la commessa e servizio selezionati
-    const availableItems = [];
-    
-    if (selectedCommessa && selectedCommessa !== "all") {
-      // Filtra units autorizzate per la commessa
-      const filteredUnits = units.filter(unit => 
-        unit.commesse_autorizzate?.includes(selectedCommessa) ||
-        (user.role === "admin") // Admin vede tutte
-      );
-      
-      filteredUnits.forEach(unit => {
-        availableItems.push({
-          id: unit.id,
-          nome: unit.name,
-          type: 'unit'
-        });
-      });
-      
-      // Filtra sub agenzie autorizzate per la commessa
-      const filteredSubAgenzie = subAgenzie.filter(subAgenzia => 
-        subAgenzia.commesse_autorizzate?.includes(selectedCommessa) ||
-        (user.role === "admin") // Admin vede tutte
-      );
-      
-      filteredSubAgenzie.forEach(subAgenzia => {
-        availableItems.push({
-          id: `sub-${subAgenzia.id}`,
-          nome: subAgenzia.nome,
-          type: 'sub_agenzia'
-        });
-      });
-    }
-    
-    return availableItems;
+    return unitsSubAgenzie;
   };
+
+  // Load units/sub agenzie quando cambiano commessa e servizio
+  useEffect(() => {
+    const loadUnitsSubAgenzie = async () => {
+      if (selectedCommessa && selectedCommessa !== "all" && 
+          selectedServizio && selectedServizio !== "all") {
+        
+        try {
+          console.log("🔄 Loading units/sub agenzie for commessa+servizio...");
+          const response = await axios.get(`${API}/commesse/${selectedCommessa}/servizi/${selectedServizio}/units-sub-agenzie`);
+          console.log("✅ Units/Sub Agenzie loaded:", response.data);
+          setUnitsSubAgenzie(response.data);
+        } catch (error) {
+          console.error("❌ Error loading units/sub agenzie:", error);
+          setUnitsSubAgenzie([]);
+        }
+      } else {
+        setUnitsSubAgenzie([]);
+      }
+    };
+
+    loadUnitsSubAgenzie();
+  }, [selectedCommessa, selectedServizio]);
 
   // Duplicate function removed - using the updated version above
 
