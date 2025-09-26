@@ -9023,21 +9023,35 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   };
 
   const createCliente = async (clienteData) => {
+    console.log("🚀 CREATE CLIENTE FUNCTION CALLED");
+    console.log("🚀 Cliente Data Received:", clienteData);
+    console.log("🚀 API URL:", `${API}/clienti`);
+    
     try {
+      console.log("🚀 MAKING POST REQUEST TO BACKEND...");
       const response = await axios.post(`${API}/clienti`, clienteData);
+      console.log("✅ POST REQUEST SUCCESS:", response);
+      
       setClienti([response.data, ...clienti]);
       toast({
         title: "Successo",
         description: "Cliente creato con successo",
       });
+      console.log("✅ CLIENTE CREATION COMPLETED SUCCESSFULLY");
     } catch (error) {
-      console.error("Error creating cliente:", error);
+      console.error("❌ ERROR CREATING CLIENTE:", error);
+      console.error("❌ Error Details:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
       toast({
-        title: "Errore",
+        title: "Errore", 
         description: "Errore nella creazione del cliente",
         variant: "destructive",
       });
     }
+  };
   };
 
   const updateCliente = async (clienteId, updateData) => {
