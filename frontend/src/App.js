@@ -1117,7 +1117,7 @@ const Dashboard = () => {
                     <Building2 className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-lg font-bold text-slate-800">CRM System</h1>
+                    <h1 className="text-lg font-bold text-slate-800">CRM Mobile</h1>
                     <p className="text-xs text-slate-500">Mobile</p>
                   </div>
                 </div>
