@@ -9738,7 +9738,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Seleziona Tipologia</SelectItem>
-                  {formTipologieContratto.map((tipologia) => (
+                  {createTipologieContratto.map((tipologia) => (
                     <SelectItem key={tipologia.value} value={tipologia.value}>
                       {tipologia.label}
                     </SelectItem>
