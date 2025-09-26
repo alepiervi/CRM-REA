@@ -4104,7 +4104,11 @@ const ResponsabileCommessaAnalytics = ({ selectedUnit, selectedTipologiaContratt
       setAnalyticsData(response.data);
     } catch (error) {
       console.error('Error fetching analytics data:', error);
-      toast.error('Errore nel caricamento delle analytics');
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento delle analytics",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
