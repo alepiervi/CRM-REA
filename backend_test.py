@@ -260,25 +260,84 @@ class CRMAPITester:
             self.log_test("❌ Create test_immediato user", False, f"Status: {status}")
             return False
 
-        # 2. **Test Login Immediato**: POST /api/auth/login con test_immediato/admin123 SUBITO dopo la creazione
-        print("\n🔓 2. TEST LOGIN IMMEDIATO - test_immediato/admin123...")
+        # 2. **Debug Dettagliato Login Process**
+        print("\n🔍 2. DEBUG DETTAGLIATO LOGIN PROCESS...")
         
-        success, login_response, status = self.make_request(
-            'POST', 'auth/login', 
-            {'username': 'test_immediato', 'password': 'admin123'}, 
-            200, auth_required=False
-        )
-        
-        if success and 'access_token' in login_response:
-            login_token = login_response['access_token']
-            login_user_data = login_response['user']
-            self.log_test("✅ Login immediato SUCCESSFUL", True, 
-                f"Login funziona - Role: {login_user_data['role']}")
-            print("   🎯 RISULTATO: Login funziona → problema NON è nel password hashing durante creazione")
+        # Get all users from database to analyze
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        if success:
+            users = users_response
+            self.log_test("✅ Retrieved users from database", True, f"Found {len(users)} users")
+            
+            # Find specific users for analysis
+            admin_user = None
+            resp_commessa_user = None
+            test_immediato_user = None
+            
+            for user in users:
+                if user.get('username') == 'admin':
+                    admin_user = user
+                elif user.get('username') == 'resp_commessa':
+                    resp_commessa_user = user
+                elif user.get('username') == 'test_immediato':
+                    test_immediato_user = user
+            
+            # Analyze user data
+            print(f"\n   🔍 USER DATA ANALYSIS:")
+            if admin_user:
+                print(f"      ADMIN USER:")
+                print(f"        - Username: {admin_user.get('username')}")
+                print(f"        - Role: {admin_user.get('role')}")
+                print(f"        - Is Active: {admin_user.get('is_active')}")
+                print(f"        - Password Hash: {admin_user.get('password_hash', '')[:30]}...")
+                print(f"        - Hash Length: {len(admin_user.get('password_hash', ''))}")
+                print(f"        - Commesse Autorizzate: {admin_user.get('commesse_autorizzate', [])}")
+            
+            if resp_commessa_user:
+                print(f"      RESP_COMMESSA USER:")
+                print(f"        - Username: {resp_commessa_user.get('username')}")
+                print(f"        - Role: {resp_commessa_user.get('role')}")
+                print(f"        - Is Active: {resp_commessa_user.get('is_active')}")
+                print(f"        - Password Hash: {resp_commessa_user.get('password_hash', '')[:30]}...")
+                print(f"        - Hash Length: {len(resp_commessa_user.get('password_hash', ''))}")
+                print(f"        - Commesse Autorizzate: {resp_commessa_user.get('commesse_autorizzate', [])}")
+            
+            if test_immediato_user:
+                print(f"      TEST_IMMEDIATO USER:")
+                print(f"        - Username: {test_immediato_user.get('username')}")
+                print(f"        - Role: {test_immediato_user.get('role')}")
+                print(f"        - Is Active: {test_immediato_user.get('is_active')}")
+                print(f"        - Password Hash: {test_immediato_user.get('password_hash', '')[:30]}...")
+                print(f"        - Hash Length: {len(test_immediato_user.get('password_hash', ''))}")
+                print(f"        - Commesse Autorizzate: {test_immediato_user.get('commesse_autorizzate', [])}")
+            
+            # Test different users with different passwords
+            test_scenarios = [
+                ('admin', 'admin123', 'Should work'),
+                ('resp_commessa', 'admin123', 'Reported to fail with 401'),
+                ('test_immediato', 'admin123', 'Just created, should work'),
+                ('resp_commessa', 'wrongpassword', 'Should fail with 401'),
+                ('admin', 'wrongpassword', 'Should fail with 401')
+            ]
+            
+            print(f"\n   🧪 TESTING DIFFERENT LOGIN SCENARIOS:")
+            for username, password, description in test_scenarios:
+                success, login_resp, status = self.make_request(
+                    'POST', 'auth/login', 
+                    {'username': username, 'password': password}, 
+                    expected_status=None, auth_required=False
+                )
+                
+                print(f"      {username}/{password}: Status {status} - {description}")
+                if status == 200 and 'access_token' in login_resp:
+                    print(f"        ✅ SUCCESS - Role: {login_resp['user']['role']}")
+                elif status == 401:
+                    print(f"        ❌ 401 UNAUTHORIZED - {login_resp.get('detail', 'No detail')}")
+                else:
+                    print(f"        ❓ UNEXPECTED - Response: {login_resp}")
         else:
-            self.log_test("❌ Login immediato FAILED", False, 
-                f"Login fallisce - Status: {status}, Response: {login_response}")
-            print("   🎯 RISULTATO: Login fallisce → problema nel password hashing durante creazione")
+            self.log_test("❌ Get users for analysis", False, f"Status: {status}")
+            return False
 
         # 3. **Confronto Password Hash**: Confrontare il password_hash dell'utente "resp_commessa" (funzionante) con "test_immediato"
         print("\n🔍 3. CONFRONTO PASSWORD HASH - resp_commessa vs test_immediato...")
