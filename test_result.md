@@ -593,9 +593,9 @@ metadata:
 
   - task: "Clienti Authorization Fix - Dual Check Pattern Implementation"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -605,6 +605,9 @@ metadata:
         - working: true
           agent: "testing"
           comment: "🎉 CLIENTI AUTHORIZATION FIX TEST COMPLETED - 100% SUCCESS! ✅ CRITICAL BREAKTHROUGH: The dual check pattern implementation is working perfectly for all 3 test accounts! ✅ test2/admin123 (PREVIOUSLY GAVE 403): Now works perfectly - Login successful, Clienti navigation successful, NO 403 errors found, API calls returning 200 status, Clienti loading correctly with 4 clients displayed in table. ✅ resp_commessa/admin123: Continues to work perfectly - Login successful, Clienti navigation successful, NO 403 errors, API calls successful, Clienti loading correctly. ✅ admin/admin123: Full access confirmed - Login successful, Clienti navigation successful, NO 403 errors, API calls successful, Clienti loading correctly with complete access to all clients. ✅ SPECIFIC API VERIFICATION: GET /api/clienti?commessa_id=all&limit=50 returns 200 status for all accounts (previously returned 403 for test2). ✅ ERROR ELIMINATION CONFIRMED: No more 'Failed to load resource: the server responded with a status of 403' errors, No more 'Error fetching clienti: AxiosError' errors, All console logs clean of authorization errors. ✅ DUAL CHECK PATTERN SUCCESS: Backend implementation correctly checks both user_commessa_authorizations table (Method 1) and direct commesse_autorizzate field in user (Method 2), ensuring all users with proper authorization can access clienti endpoint. OBIETTIVO RAGGIUNTO: The fix has definitively resolved the authorization problem for the clienti endpoint for ALL non-admin users, eliminating 403 errors completely!"
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL DASHBOARD VISIBILITY TEST FAILED - CLIENT CREATION ISSUES DETECTED! ❌ COMPREHENSIVE TEST RESULTS: Tested complete flow from login → dashboard → client creation → dashboard verification with both resp_commessa/admin123 and test2/admin123. ✅ LOGIN & DASHBOARD ACCESS: Both users login successfully and access Dashboard Responsabile Commessa correctly. ✅ INITIAL METRICS: Dashboard shows Clienti Oggi: 0, Clienti Totali: 0, Sub Agenzie: 2, Commesse Attive: 2. ❌ NAVIGATION ISSUES: Inconsistent navigation to Clienti section - buttons not responding reliably. ❌ CLIENT CREATION FAILURE: 'Nuovo Cliente' modal opens and form can be filled, but form submission fails completely. ❌ NO API CALLS: Backend logs show NO POST requests to /api/clienti - frontend form submission not reaching backend. ❌ NO CLIENT CREATION: No new clients created, table count remains at 4 clients, dashboard metrics unchanged. ❌ DUAL CHECK PATTERN UNTESTABLE: Cannot verify if dual check pattern works for new clients because client creation is broken. 🔍 ROOT CAUSE: Frontend client creation form has critical submission issues - form data not being sent to backend API. The dual check pattern backend fix may be working, but frontend prevents proper testing. URGENT ACTION NEEDED: Fix frontend client creation form submission process before dual check pattern can be properly verified."
 
   - task: "Servizi Endpoint Fix - Dual Check Pattern for commessa_id='all'"
     implemented: true
