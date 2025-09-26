@@ -706,6 +706,14 @@ const Dashboard = () => {
 
   // Rimossi vecchi useEffect - ora gestiti dal sistema gerarchico
 
+  // useEffect per ricaricare tipologie contratto quando cambiano commessa/servizio (solo per responsabile_commessa)
+  useEffect(() => {
+    if (user.role === "responsabile_commessa") {
+      console.log("🎯 CHANGE DETECTED: selectedCommessa o selectedServizio cambiato, ricarico tipologie contratto...");
+      fetchTipologieContratto();
+    }
+  }, [selectedCommessa, selectedServizio]);
+
   useEffect(() => {
     // Auto-select unit for non-admin users
     if (user.role !== "admin" && user.unit_id && !selectedUnit) {
