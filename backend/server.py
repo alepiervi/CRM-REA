@@ -6640,6 +6640,74 @@ async def get_servizi_by_commessa(commessa_id: str, current_user: User = Depends
     
     return [Servizio(**s) for s in servizi]
 
+@api_router.get("/commesse/{commessa_id}/servizi/{servizio_id}/units-sub-agenzie")
+async def get_units_sub_agenzie_by_commessa_servizio(
+    commessa_id: str, 
+    servizio_id: str, 
+    current_user: User = Depends(get_current_user)
+):
+    """Get units/sub agenzie for specific commessa+servizio combination"""
+    
+    # DIRECT FIX: Verifica accesso commessa e servizio
+    has_access = False
+    
+    if current_user.role == UserRole.ADMIN:
+        has_access = True
+    elif current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        # DIRECT CHECK: Verifica commessa e servizio autorizzati
+        commessa_ok = False
+        servizio_ok = False
+        
+        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            commessa_ok = commessa_id in current_user.commesse_autorizzate
+        if hasattr(current_user, 'servizi_autorizzati') and current_user.servizi_autorizzati:
+            servizio_ok = servizio_id in current_user.servizi_autorizzati
+        
+        if not (commessa_ok and servizio_ok):
+            # FALLBACK: Ricarica dal database
+            user_data = await db.users.find_one({"username": current_user.username})
+            if user_data:
+                commessa_ok = commessa_id in user_data.get("commesse_autorizzate", [])
+                servizio_ok = servizio_id in user_data.get("servizi_autorizzati", [])
+        
+        has_access = commessa_ok and servizio_ok
+    
+    if not has_access:
+        raise HTTPException(status_code=403, detail="Access denied to this commessa/servizio")
+    
+    # Get Units filtrate per commessa
+    units = await db.units.find({
+        "commesse_autorizzate": commessa_id,
+        "is_active": True
+    }).to_list(length=None)
+    
+    # Get Sub Agenzie filtrate per commessa
+    sub_agenzie = await db.sub_agenzie.find({
+        "commesse_autorizzate": commessa_id,
+        "is_active": True
+    }).to_list(length=None)
+    
+    # Format response
+    result = []
+    
+    # Add units
+    for unit in units:
+        result.append({
+            "id": unit["id"],
+            "nome": unit["name"],
+            "type": "unit"
+        })
+    
+    # Add sub agenzie
+    for sa in sub_agenzie:
+        result.append({
+            "id": f"sub-{sa['id']}",
+            "nome": sa["nome"],
+            "type": "sub_agenzia"
+        })
+    
+    return result
+
 @api_router.get("/tipologie-contratto")
 async def get_tipologie_contratto(
     commessa_id: Optional[str] = Query(None), 
