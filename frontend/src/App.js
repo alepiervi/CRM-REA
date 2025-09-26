@@ -9593,22 +9593,24 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // CRITICAL FIX: Frontend validation before submit
+    // CRITICAL FIX: Frontend validation before submit (less restrictive)
     const errors = [];
     
-    // Validate required fields
+    // Validate required basic fields
     if (!formData.nome.trim()) errors.push("Nome è obbligatorio");
     if (!formData.cognome.trim()) errors.push("Cognome è obbligatorio");  
     if (!formData.email.trim()) errors.push("Email è obbligatoria");
     if (!formData.telefono.trim()) errors.push("Telefono è obbligatorio");
-    if (!formData.commessa_id) errors.push("Commessa è obbligatoria");
-    if (!formData.sub_agenzia_id) errors.push("Sub Agenzia è obbligatoria");
-    if (!formData.servizio_id) errors.push("Servizio è obbligatorio");
-    if (!formData.tipologia_contratto || formData.tipologia_contratto === "none" || formData.tipologia_contratto === "") {
-      errors.push("Tipologia Contratto è obbligatoria");
+    if (!formData.commessa_id || formData.commessa_id === "none") errors.push("Commessa è obbligatoria");
+    if (!formData.sub_agenzia_id || formData.sub_agenzia_id === "none") errors.push("Sub Agenzia è obbligatoria");
+    
+    // FIXED: Only validate tipologia_contratto and segmento if they have real values
+    // Don't force them to be required - let backend handle validation
+    if (formData.tipologia_contratto === "none") {
+      formData.tipologia_contratto = "";
     }
-    if (!formData.segmento || formData.segmento === "none" || formData.segmento === "") {
-      errors.push("Segmento è obbligatorio");
+    if (formData.segmento === "none") {
+      formData.segmento = "";  
     }
     
     // If validation errors, show them and prevent submit
@@ -9617,16 +9619,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       return;
     }
     
-    // Create clean data object for submission
-    const cleanFormData = {
-      ...formData,
-      // Ensure no "none" values are sent
-      tipologia_contratto: formData.tipologia_contratto === "none" ? "" : formData.tipologia_contratto,
-      segmento: formData.segmento === "none" ? "" : formData.segmento
-    };
-    
-    console.log("🎯 SUBMITTING CLIENTE DATA:", cleanFormData);
-    onSubmit(cleanFormData);
+    console.log("🎯 SUBMITTING CLIENTE DATA:", formData);
+    onSubmit(formData);
     
     // Reset form after successful submit
     setFormData({
