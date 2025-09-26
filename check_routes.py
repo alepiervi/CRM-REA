@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://permishub-crm.preview.emergentagent.com"
+    base_url = "https://hier-auth-system.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:
