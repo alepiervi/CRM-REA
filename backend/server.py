@@ -6597,32 +6597,60 @@ async def create_servizio(servizio_data: ServizioCreate, current_user: User = De
 async def get_servizi_by_commessa(commessa_id: str, current_user: User = Depends(get_current_user)):
     """Get servizi for a specific commessa"""
     
-    # DIRECT FIX: Per admin sempre accesso, per responsabile_commessa verifica diretta
-    has_access = False
-    
-    if current_user.role == UserRole.ADMIN:
-        has_access = True
-    elif current_user.role == UserRole.RESPONSABILE_COMMESSA:
-        # DIRECT CHECK: Verifica se commessa_id è nelle commesse autorizzate
-        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
-            has_access = commessa_id in current_user.commesse_autorizzate
+    # CRITICAL FIX: Handle special case "all" from frontend
+    if commessa_id == "all":
+        # Per "all", restituire servizi da tutte le commesse autorizzate
+        if current_user.role == UserRole.ADMIN:
+            # Admin può vedere tutti i servizi
+            base_query = {"is_active": True}
         else:
-            # FALLBACK: Ricarica dal database
-            user_data = await db.users.find_one({"username": current_user.username})
-            if user_data and "commesse_autorizzate" in user_data:
-                has_access = commessa_id in user_data["commesse_autorizzate"]
+            # Per altri ruoli, filtra per commesse autorizzate
+            authorized_commesse = []
+            
+            # Dual check pattern: controlla campo diretto e tabella separata
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                authorized_commesse.extend(current_user.commesse_autorizzate)
+            
+            # Fallback: tabella separata
+            accessible_commesse = await get_user_accessible_commesse(current_user)
+            authorized_commesse.extend(accessible_commesse)
+            
+            # Rimuovi duplicati
+            authorized_commesse = list(set(authorized_commesse))
+            
+            if not authorized_commesse:
+                return []
+            
+            base_query = {
+                "commessa_id": {"$in": authorized_commesse},
+                "is_active": True
+            }
     else:
-        # Altri utenti: usa il sistema normale
-        has_access = await check_commessa_access(current_user, commessa_id)
-    
-    if not has_access:
-        raise HTTPException(status_code=403, detail="Access denied to this commessa")
-    
-    # Get servizi base query
-    base_query = {
-        "commessa_id": commessa_id,
-        "is_active": True
-    }
+        # Caso commessa specifica - mantieni logica esistente
+        has_access = False
+        
+        if current_user.role == UserRole.ADMIN:
+            has_access = True
+        elif current_user.role == UserRole.RESPONSABILE_COMMESSA:
+            # Dual check pattern per commessa specifica
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                has_access = commessa_id in current_user.commesse_autorizzate
+            
+            # Fallback: controlla tabella separata
+            if not has_access:
+                has_access = await check_commessa_access(current_user, commessa_id)
+        else:
+            # Altri utenti: usa il sistema normale
+            has_access = await check_commessa_access(current_user, commessa_id)
+        
+        if not has_access:
+            raise HTTPException(status_code=403, detail="Access denied to this commessa")
+        
+        # Get servizi base query per commessa specifica
+        base_query = {
+            "commessa_id": commessa_id,
+            "is_active": True
+        }
     
     # DIRECT FIX: Per responsabile_commessa filtra per servizi_autorizzati
     if current_user.role == UserRole.RESPONSABILE_COMMESSA:
