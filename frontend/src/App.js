@@ -9331,24 +9331,24 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             <TableBody>
               {clienti.map((cliente) => (
                 <TableRow key={cliente.id}>
-                  <TableCell>
+                  <TableCell className="mobile-table">
                     <span className="font-mono text-sm">{cliente.cliente_id}</span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="mobile-table">
                     <div className="flex items-center space-x-2">
                       <FileUser className="w-4 h-4 text-green-600" />
                       <span>{cliente.nome} {cliente.cognome}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{cliente.email || 'N/A'}</TableCell>
-                  <TableCell>{cliente.telefono}</TableCell>
-                  <TableCell>
+                  <TableCell className="mobile-table">{cliente.email || 'N/A'}</TableCell>
+                  <TableCell className="mobile-table">{cliente.telefono}</TableCell>
+                  <TableCell className="mobile-table">
                     {commesse.find(c => c.id === cliente.commessa_id)?.nome || 'N/A'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="mobile-table">
                     {subAgenzie.find(sa => sa.id === cliente.sub_agenzia_id)?.nome || 'N/A'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="mobile-table">
                     <Badge 
                       variant={
                         cliente.status === "completato" ? "default" :
@@ -9358,10 +9358,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                       {cliente.status.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="mobile-table">
                     {new Date(cliente.created_at).toLocaleDateString('it-IT')}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="mobile-table">
                     <div className="flex space-x-2">
                       <Button 
                         variant="outline" 
