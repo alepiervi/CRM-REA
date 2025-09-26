@@ -1111,29 +1111,9 @@ const Dashboard = () => {
           <div className={`mobile-sidebar ${isMobileMenuOpen ? 'active' : ''}`}>
             <div className="p-4">
               <h1>CRM Mobile</h1>
-            <div className="p-3 border-t border-slate-200 bg-white flex-shrink-0" style={{marginTop: 'auto'}>
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                  <Users className="w-4 h-4 text-slate-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 truncate">{user.username}</p>
-                  <p className="text-xs text-slate-500 capitalize">{user.role}</p>
-                </div>
-              </div>
-              <Button
-                onClick={() => {
-                  logout();
-                  setIsMobileMenuOpen(false);
-                }}
-                variant="outline"
-                size="sm"
-                className="w-full text-slate-600 hover:text-red-600 hover:border-red-300 mobile-button"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Esci
+              <Button onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
+                Logout
               </Button>
-            </div>
           </div>
         </div>
       )}
