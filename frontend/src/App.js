@@ -898,6 +898,12 @@ const Dashboard = () => {
   };
 
   const handleServizioChange = (servizioId) => {
+    console.log("🎯 HANDLE SERVIZIO CHANGE START:", { 
+      servizioId, 
+      currentSelectedCommessa: selectedCommessa,
+      userRole: user.role 
+    });
+    
     setSelectedServizio(servizioId);
     
     // Reset dei selettori successivi
@@ -906,7 +912,10 @@ const Dashboard = () => {
     
     // Ricarica tipologie contratto per il servizio selezionato (solo per responsabile_commessa)
     if (user.role === "responsabile_commessa") {
-      console.log("🎯 SERVIZIO CHANGED: Ricarico tipologie contratto per servizio:", servizioId);
+      console.log("🎯 CALLING fetchTipologieContratto with:", { 
+        commessaId: selectedCommessa, 
+        servizioId: servizioId 
+      });
       fetchTipologieContratto(selectedCommessa, servizioId);
     }
   };
