@@ -497,7 +497,11 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
       setDashboardData(response.data);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast.error('Errore nel caricamento della dashboard');
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento della dashboard",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
