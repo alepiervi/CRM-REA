@@ -9313,20 +9313,21 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Telefono</TableHead>
-                <TableHead>Commessa</TableHead>
-                <TableHead>Sub Agenzia</TableHead>
-                <TableHead>Stato</TableHead>
-                <TableHead>Data Creazione</TableHead>
-                <TableHead>Azioni</TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="mobile-table-container">
+            <Table className="mobile-table">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="mobile-table">ID</TableHead>
+                  <TableHead className="mobile-table">Nome</TableHead>
+                  <TableHead className="mobile-table">Email</TableHead>
+                  <TableHead className="mobile-table">Telefono</TableHead>
+                  <TableHead className="mobile-table">Commessa</TableHead>
+                  <TableHead className="mobile-table">Sub Agenzia</TableHead>
+                  <TableHead className="mobile-table">Stato</TableHead>
+                  <TableHead className="mobile-table">Data Creazione</TableHead>
+                  <TableHead className="mobile-table">Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {clienti.map((cliente) => (
                 <TableRow key={cliente.id}>
