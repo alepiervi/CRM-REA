@@ -6513,26 +6513,36 @@ async def create_commessa(commessa_data: CommessaCreate, current_user: User = De
 @api_router.get("/commesse", response_model=List[Commessa])
 async def get_commesse(current_user: User = Depends(get_current_user)):
     """Get accessible commesse for current user"""
-    print(f"🔍 get_commesse called for user: {current_user.username} (role: {current_user.role})")
     
     if current_user.role == UserRole.ADMIN:
         # Admin vede tutte le commesse
         commesse = await db.commesse.find({"is_active": True}).to_list(length=None)
-        print(f"✅ Admin - returning all commesse: {len(commesse)}")
+    elif current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        # DIRECT FIX: Per responsabile_commessa usa direttamente commesse_autorizzate dal user object
+        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            commesse = await db.commesse.find({
+                "id": {"$in": current_user.commesse_autorizzate},
+                "is_active": True
+            }).to_list(length=None)
+        else:
+            # FALLBACK: Se commesse_autorizzate non c'è, ricarica dal database
+            user_data = await db.users.find_one({"username": current_user.username})
+            if user_data and "commesse_autorizzate" in user_data:
+                commesse = await db.commesse.find({
+                    "id": {"$in": user_data["commesse_autorizzate"]},
+                    "is_active": True
+                }).to_list(length=None)
+            else:
+                commesse = []
     else:
-        # Altri utenti vedono solo commesse autorizzate
+        # Altri utenti: usa il sistema normale
         accessible_commesse_ids = await get_user_accessible_commesse(current_user)
-        print(f"🔍 Accessible commesse IDs for {current_user.username}: {accessible_commesse_ids}")
-        
         commesse = await db.commesse.find({
             "id": {"$in": accessible_commesse_ids},
             "is_active": True
         }).to_list(length=None)
-        print(f"✅ Filtered commesse found: {len(commesse)}")
     
-    result = [Commessa(**c) for c in commesse]
-    print(f"🎯 Final result count: {len(result)}")
-    return result
+    return [Commessa(**c) for c in commesse]
 
 @api_router.get("/commesse/{commessa_id}", response_model=Commessa)
 async def get_commessa(commessa_id: str, current_user: User = Depends(get_current_user)):
