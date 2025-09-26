@@ -1721,19 +1721,20 @@ const LeadsManagement = ({ selectedUnit, units }) => {
           {loading ? (
             <div className="p-8 text-center">Caricamento...</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID Lead</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Telefono</TableHead>
-                  <TableHead>Provincia</TableHead>
-                  <TableHead>Campagna</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
+            <div className="mobile-table-container">
+              <Table className="mobile-table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="mobile-table">ID Lead</TableHead>
+                    <TableHead className="mobile-table">Nome</TableHead>
+                    <TableHead className="mobile-table">Telefono</TableHead>
+                    <TableHead className="mobile-table">Provincia</TableHead>
+                    <TableHead className="mobile-table">Campagna</TableHead>
+                    <TableHead className="mobile-table">Stato</TableHead>
+                    <TableHead className="mobile-table">Data</TableHead>
+                    <TableHead className="mobile-table">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {leads.map((lead) => (
                   <TableRow key={lead.id}>
