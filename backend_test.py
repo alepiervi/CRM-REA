@@ -491,59 +491,78 @@ class CRMAPITester:
         )
         self.log_test("Missing password rejection", status == 422, f"Status: {status}")
 
-        # 5. **Verifica Funzione Hash**: Controllare che get_password_hash("admin123") generi hash valido
-        print("\n🔐 5. VERIFICA FUNZIONE HASH - Test backend password functions...")
+        # 5. **Database User Analysis**
+        print("\n🗄️ 5. DATABASE USER ANALYSIS...")
         
-        # Test creating multiple users with same password to see if hashing is consistent
-        hash_test_users = []
-        for i in range(3):
-            hash_test_data = {
-                "username": f"hash_test_{timestamp}_{i}",
-                "email": f"hash_test_{timestamp}_{i}@test.com",
-                "password": "admin123",  # Same password for all
-                "role": "agente",
-                "can_view_analytics": False
-            }
-            
-            success, hash_response, status = self.make_request('POST', 'users', hash_test_data, 200)
-            if success:
-                hash_test_users.append({
-                    'id': hash_response['id'],
-                    'username': hash_response['username'],
-                    'hash': hash_response.get('password_hash', '')
-                })
-                self.created_resources['users'].append(hash_response['id'])
+        # Show detailed analysis of users that give 401
+        print("   Detailed analysis of problematic users...")
         
-        if len(hash_test_users) >= 2:
-            # Compare hashes - they should be different (bcrypt uses salt)
-            hash1 = hash_test_users[0]['hash']
-            hash2 = hash_test_users[1]['hash']
-            
-            if hash1 != hash2:
-                self.log_test("✅ Password hashing usa salt", True, 
-                    "Hash diversi per stessa password (corretto comportamento bcrypt)")
+        problematic_usernames = ['resp_commessa', 'test2', 'debug_resp_commessa_155357']
+        working_username = 'admin'
+        
+        working_user = next((u for u in users if u.get('username') == working_username), None)
+        
+        if working_user:
+            print(f"\n   📊 WORKING USER ({working_username}) ANALYSIS:")
+            for key, value in working_user.items():
+                if key == 'password_hash':
+                    print(f"      {key}: {str(value)[:50]}... (length: {len(str(value))})")
+                else:
+                    print(f"      {key}: {value}")
+        
+        for username in problematic_usernames:
+            user = next((u for u in users if u.get('username') == username), None)
+            if user:
+                print(f"\n   📊 PROBLEMATIC USER ({username}) ANALYSIS:")
+                for key, value in user.items():
+                    if key == 'password_hash':
+                        print(f"      {key}: {str(value)[:50]}... (length: {len(str(value))})")
+                    else:
+                        print(f"      {key}: {value}")
+                
+                # Compare with working user
+                if working_user:
+                    print(f"\n   🔍 COMPARISON WITH WORKING USER:")
+                    for key in ['role', 'is_active', 'commesse_autorizzate', 'can_view_analytics']:
+                        working_val = working_user.get(key, 'MISSING')
+                        problem_val = user.get(key, 'MISSING')
+                        match = working_val == problem_val
+                        print(f"      {key}: working={working_val}, problem={problem_val}, match={match}")
+                    
+                    # Special check for password hash format
+                    working_hash = working_user.get('password_hash', '')
+                    problem_hash = user.get('password_hash', '')
+                    working_bcrypt = working_hash.startswith('$2b$') or working_hash.startswith('$2a$')
+                    problem_bcrypt = problem_hash.startswith('$2b$') or problem_hash.startswith('$2a$')
+                    
+                    print(f"      password_hash_format: working={working_bcrypt}, problem={problem_bcrypt}, match={working_bcrypt == problem_bcrypt}")
+                    print(f"      password_hash_length: working={len(working_hash)}, problem={len(problem_hash)}")
             else:
-                self.log_test("❌ Password hashing NON usa salt", False, 
-                    "Hash identici per stessa password (problema di sicurezza)")
+                print(f"\n   ❌ USER {username} NOT FOUND IN DATABASE")
+        
+        # Final comprehensive test with detailed error messages
+        print(f"\n   🧪 FINAL COMPREHENSIVE LOGIN TEST:")
+        final_test_users = ['admin', 'resp_commessa', 'test_immediato']
+        
+        for username in final_test_users:
+            print(f"\n      Testing {username}/admin123:")
+            success, final_response, status = self.make_request(
+                'POST', 'auth/login', 
+                {'username': username, 'password': 'admin123'}, 
+                expected_status=None, auth_required=False
+            )
             
-            # Test login for all hash test users
-            all_can_login = True
-            for user in hash_test_users:
-                success, login_resp, status = self.make_request(
-                    'POST', 'auth/login', 
-                    {'username': user['username'], 'password': 'admin123'}, 
-                    200, auth_required=False
-                )
-                if not (success and 'access_token' in login_resp):
-                    all_can_login = False
-                    break
+            print(f"        Status: {status}")
+            print(f"        Response keys: {list(final_response.keys())}")
             
-            if all_can_login:
-                self.log_test("✅ Tutti gli utenti hash test possono fare login", True, 
-                    "Funzione hash e verifica funzionano correttamente")
+            if status == 200 and 'access_token' in final_response:
+                user_data = final_response.get('user', {})
+                print(f"        ✅ SUCCESS - Role: {user_data.get('role')}, ID: {user_data.get('id')}")
+            elif status == 401:
+                detail = final_response.get('detail', 'No detail provided')
+                print(f"        ❌ 401 UNAUTHORIZED - Detail: {detail}")
             else:
-                self.log_test("❌ Alcuni utenti hash test NON possono fare login", False, 
-                    "Problema nella funzione hash o verifica password")
+                print(f"        ❓ UNEXPECTED STATUS - Full response: {final_response}")
 
         # SUMMARY CRITICO
         print(f"\n🚨 SUMMARY TEST CRITICO IMMEDIATO:")
