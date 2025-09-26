@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://lead-manager-crm.preview.emergentagent.com"
+    base_url = "https://permishub-crm.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:
