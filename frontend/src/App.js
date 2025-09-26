@@ -1238,7 +1238,7 @@ const Dashboard = () => {
 
             {/* Mobile Footer */}
             <div className="p-3 border-t border-slate-200 bg-white flex-shrink-0" style={{marginTop: 'auto'}>
-              <div className="flex items-center space-x-2 mb-2">
+              <div className="flex items-center space-x-3 mb-3">
                 <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
                   <Users className="w-4 h-4 text-slate-600" />
                 </div>
