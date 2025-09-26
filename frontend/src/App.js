@@ -2266,10 +2266,12 @@ const UsersManagement = ({ selectedUnit, units }) => {
 
   const fetchCommesse = async () => {
     try {
+      console.log("🔄 Fetching commesse from backend...");
       const response = await axios.get(`${API}/commesse`);
+      console.log("✅ Commesse ricevute dal backend:", response.data);
       setCommesse(response.data);
     } catch (error) {
-      console.error("Error fetching commesse:", error);
+      console.error("❌ Error fetching commesse:", error);
       setCommesse([]);
     }
   };
