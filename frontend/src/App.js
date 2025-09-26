@@ -9569,7 +9569,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       segmento: ''
     }));
     fetchServizi(commessaId);
-    setTipologieContratto([]);
+    setCreateTipologieContratto([]);
   };
 
   const handleServizioChange = (servizioId) => {
