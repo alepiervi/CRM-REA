@@ -4948,98 +4948,146 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
     return (
       <div>
         {/* 📱 MOBILE VIEW */}
-        <div className="md:hidden space-y-4">
+        <div className="md:hidden p-4 space-y-6 bg-slate-50 min-h-screen">
           {/* Mobile Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4 text-white">
-            <h2 className="text-lg font-bold mb-1">Analytics Overview</h2>
-            <p className="text-blue-100 text-sm">Reports & Performance</p>
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white shadow-lg">
+            <h2 className="text-xl font-bold mb-2">📊 Analytics</h2>
+            <p className="text-blue-100 text-base">Reports & Performance</p>
           </div>
 
-          {/* Mobile Stats - Stacked */}
-          <div className="space-y-3">
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-4">
+          {/* Mobile Export Button */}
+          <Card className="bg-white shadow-md border-2 border-slate-200">
+            <CardContent className="p-4">
+              <Button 
+                onClick={exportAnalytics}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 text-base"
+              >
+                <Download className="w-5 h-5 mr-2" />
+                Esporta Dati Excel
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Mobile Stats - Enhanced */}
+          <div className="space-y-4">
+            <Card className="bg-gradient-to-r from-blue-500 to-blue-600 border-none shadow-lg">
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-700">Totale Lead</p>
-                    <p className="text-2xl font-bold text-blue-900">{dashboardData.totalLeads}</p>
-                    <p className="text-xs text-blue-600">Lead generati nel periodo</p>
+                    <p className="text-white/90 text-base font-medium mb-1">📈 Totale Lead</p>
+                    <p className="text-3xl font-bold text-white">{dashboardData.totalLeads}</p>
+                    <p className="text-blue-100 text-sm">Lead generati nel periodo</p>
                   </div>
-                  <Users className="h-8 w-8 text-blue-500" />
+                  <div className="bg-white/20 rounded-full p-3">
+                    <Users className="h-8 w-8 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-green-50 border-green-200">
-              <CardContent className="p-4">
+            <Card className="bg-gradient-to-r from-green-500 to-green-600 border-none shadow-lg">
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-green-700">Totale Clienti</p>
-                    <p className="text-2xl font-bold text-green-900">{dashboardData.totalClients}</p>
-                    <p className="text-xs text-green-600">Clienti acquisiti</p>
+                    <p className="text-white/90 text-base font-medium mb-1">👥 Totale Clienti</p>
+                    <p className="text-3xl font-bold text-white">{dashboardData.totalClients}</p>
+                    <p className="text-green-100 text-sm">Clienti acquisiti</p>
                   </div>
-                  <Building2 className="h-8 w-8 text-green-500" />
+                  <div className="bg-white/20 rounded-full p-3">
+                    <Building2 className="h-8 w-8 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-purple-50 border-purple-200">
-              <CardContent className="p-4">
+            <Card className="bg-gradient-to-r from-purple-500 to-purple-600 border-none shadow-lg">
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-purple-700">Tasso Conversione</p>
-                    <p className="text-2xl font-bold text-purple-900">{dashboardData.conversionRate}%</p>
-                    <p className="text-xs text-purple-600">Lead convertiti</p>
+                    <p className="text-white/90 text-base font-medium mb-1">🎯 Tasso Conversione</p>
+                    <p className="text-3xl font-bold text-white">{dashboardData.conversionRate}%</p>
+                    <p className="text-purple-100 text-sm">Lead convertiti</p>
                   </div>
-                  <Target className="h-8 w-8 text-purple-500" />
+                  <div className="bg-white/20 rounded-full p-3">
+                    <Target className="h-8 w-8 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-orange-50 border-orange-200">
-              <CardContent className="p-4">
+            <Card className="bg-gradient-to-r from-orange-500 to-orange-600 border-none shadow-lg">
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-orange-700">Commesse Attive</p>
-                    <p className="text-2xl font-bold text-orange-900">{dashboardData.totalCommesse}</p>
-                    <p className="text-xs text-orange-600">Progetti in corso</p>
+                    <p className="text-white/90 text-base font-medium mb-1">💼 Commesse Attive</p>
+                    <p className="text-3xl font-bold text-white">{dashboardData.totalCommesse}</p>
+                    <p className="text-orange-100 text-sm">Progetti in corso</p>
                   </div>
-                  <Briefcase className="h-8 w-8 text-orange-500" />
+                  <div className="bg-white/20 rounded-full p-3">
+                    <Briefcase className="h-8 w-8 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Mobile Charts - Stacked */}
-          <Card>
+          {/* Mobile Date Range Filters */}
+          <Card className="bg-white shadow-md border-2 border-slate-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Andamento Lead</CardTitle>
+              <CardTitle className="text-lg font-bold text-slate-800">📅 Filtri Periodo</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold text-slate-700 mb-2 block">Data Inizio:</Label>
+                <input
+                  type="date"
+                  value={dateRange.startDate}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="w-full p-3 border-2 border-slate-300 rounded-lg text-base font-medium"
+                />
+              </div>
+              <div>
+                <Label className="text-base font-semibold text-slate-700 mb-2 block">Data Fine:</Label>
+                <input
+                  type="date"
+                  value={dateRange.endDate}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="w-full p-3 border-2 border-slate-300 rounded-lg text-base font-medium"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Mobile Charts - Enhanced */}
+          <Card className="bg-white shadow-md border-2 border-slate-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-bold text-slate-800">📈 Andamento Lead</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" fontSize={10} />
-                  <YAxis fontSize={10} />
+                  <XAxis dataKey="date" fontSize={12} />
+                  <YAxis fontSize={12} />
                   <Tooltip />
                   <Line 
                     type="monotone" 
                     dataKey="leads" 
                     stroke="#3B82F6" 
-                    strokeWidth={2}
-                    dot={{ fill: '#3B82F6', r: 3 }}
+                    strokeWidth={3}
+                    dot={{ fill: '#3B82F6', r: 4 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white shadow-md border-2 border-slate-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Distribuzione Esiti</CardTitle>
+              <CardTitle className="text-lg font-bold text-slate-800">📊 Distribuzione Esiti</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
                     data={Object.entries(dashboardData.esitoBreakdown).map(([esito, count]) => ({
@@ -5048,10 +5096,10 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
                     }))}
                     cx="50%"
                     cy="50%"
-                    outerRadius={70}
+                    outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                   >
                     {Object.entries(dashboardData.esitoBreakdown).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -5065,24 +5113,27 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
 
           {/* Mobile Performance Chart */}
           {dashboardData.agentPerformance.length > 0 && (
-            <Card>
+            <Card className="bg-white shadow-md border-2 border-slate-200">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Top Agenti</CardTitle>
+                <CardTitle className="text-lg font-bold text-slate-800">🏆 Top 5 Agenti</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={dashboardData.agentPerformance.slice(0, 5)}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" fontSize={10} />
-                    <YAxis fontSize={10} />
+                    <XAxis dataKey="name" fontSize={12} />
+                    <YAxis fontSize={12} />
                     <Tooltip />
-                    <Bar dataKey="leads" fill="#3B82F6" />
-                    <Bar dataKey="conversions" fill="#10B981" />
+                    <Bar dataKey="leads" fill="#3B82F6" name="Lead" />
+                    <Bar dataKey="conversions" fill="#10B981" name="Conversioni" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
           )}
+
+          {/* Mobile Bottom Spacing */}
+          <div className="pb-6"></div>
         </div>
 
         {/* 🖥️ DESKTOP VIEW */}
