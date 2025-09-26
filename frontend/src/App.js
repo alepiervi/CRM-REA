@@ -1111,7 +1111,7 @@ const Dashboard = () => {
           <div className={`mobile-sidebar ${isMobileMenuOpen ? 'active' : ''}`}>
             <div className="p-4">
               <h1>CRM Mobile</h1>
-            {/* Mobile Footer */}
+
             <div className="p-3 border-t border-slate-200 bg-white flex-shrink-0" style={{marginTop: 'auto'}>
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
