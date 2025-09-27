@@ -1028,13 +1028,26 @@ const Dashboard = () => {
       );
     } else if (user.role === "referente") {
       items.push(
+        { id: "documents", label: "Documenti", icon: FileText },
         { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
-    } else if (user.role === "responsabile_commessa") {
+    } else if (user.role === "responsabile_commessa" || user.role === "backoffice_commessa") {
       items.push(
         { id: "clienti", label: "Clienti", icon: UserCheck },
+        { id: "documents", label: "Documenti", icon: FileText },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
+      );
+    } else if (user.role === "responsabile_sub_agenzia" || user.role === "backoffice_sub_agenzia") {
+      items.push(
+        { id: "clienti", label: "Clienti", icon: UserCheck },
+        { id: "documents", label: "Documenti", icon: FileText },
+        { id: "analytics", label: "Analytics", icon: TrendingUp }
+      );
+    } else if (user.role === "agente_specializzato" || user.role === "operatore" || user.role === "agente") {
+      items.push(
+        { id: "clienti", label: "Clienti", icon: UserCheck },
+        { id: "documents", label: "Documenti", icon: FileText }
       );
     }
 
