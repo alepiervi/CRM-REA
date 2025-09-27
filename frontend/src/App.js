@@ -6187,20 +6187,6 @@ const DocumentsManagement = ({
     </div>
   );
 };
-      console.log("Documents response:", response.data);
-      
-      setDocuments(response.data.documents || []);
-    } catch (error) {
-      console.error("Error fetching documents:", error);
-      toast({
-        title: "Errore",
-        description: "Errore nel caricamento dei documenti",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDownload = async (documentId, filename) => {
     try {
