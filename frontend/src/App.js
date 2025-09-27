@@ -6188,6 +6188,7 @@ const DocumentsManagement = ({
   );
 };
 
+const AIConfigurationManagement = () => {
   const [config, setConfig] = useState(null);
   const [assistants, setAssistants] = useState([]);
   const [loading, setLoading] = useState(true);
