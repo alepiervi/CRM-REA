@@ -7851,6 +7851,311 @@ async def startup_event():
         await db.servizi.insert_many(servizi_fastweb)
         logger.info("Default servizi created for Fastweb")
 
+# ===== DOCUMENTS MANAGEMENT ENDPOINTS =====
+
+# Pydantic models for document management
+class DocumentBase(BaseModel):
+    entity_type: str  # "clienti" or "lead"
+    entity_id: str
+    filename: str
+    file_size: Optional[int] = None
+    file_type: Optional[str] = None
+
+class DocumentResponse(DocumentBase):
+    id: str
+    uploaded_by: str
+    uploaded_by_name: Optional[str] = None
+    entity_name: Optional[str] = None
+    created_at: datetime
+
+@api_router.get("/documents", response_model=List[DocumentResponse])
+async def get_documents(
+    document_type: Optional[str] = Query(None),
+    entity_id: Optional[str] = Query(None),
+    commessa_ids: Optional[List[str]] = Query(None),
+    sub_agenzia_ids: Optional[List[str]] = Query(None),
+    created_by: Optional[str] = Query(None),
+    nome: Optional[str] = Query(None),
+    cognome: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Get documents based on user role and filters"""
+    
+    try:
+        # Build query based on role permissions
+        query = {}
+        
+        # Filter by document type
+        if document_type:
+            query["entity_type"] = document_type
+        
+        # Apply role-based filtering
+        if current_user.role == UserRole.ADMIN:
+            # Admin sees everything
+            pass
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            # Filter by authorized commesse
+            if commessa_ids:
+                authorized_commesse = list(set(commessa_ids) & set(current_user.commesse_autorizzate))
+            else:
+                authorized_commesse = current_user.commesse_autorizzate
+            
+            if document_type == "clienti":
+                # Get clienti from authorized commesse
+                clienti_query = {"commessa_id": {"$in": authorized_commesse}}
+                clienti = await db.clienti.find(clienti_query, {"id": 1}).to_list(length=None)
+                client_ids = [c["id"] for c in clienti]
+                query["$and"] = [
+                    {"entity_type": "clienti"},
+                    {"entity_id": {"$in": client_ids}}
+                ]
+            else:
+                # For leads, filter by commessa if available
+                query["commessa_id"] = {"$in": authorized_commesse}
+                
+        elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+            # Filter by authorized commesse and their sub agenzia
+            authorized_commesse = current_user.commesse_autorizzate
+            
+            if document_type == "clienti":
+                clienti_query = {
+                    "commessa_id": {"$in": authorized_commesse},
+                    "sub_agenzia_id": current_user.sub_agenzia_id
+                }
+                clienti = await db.clienti.find(clienti_query, {"id": 1}).to_list(length=None)
+                client_ids = [c["id"] for c in clienti]
+                query["$and"] = [
+                    {"entity_type": "clienti"},
+                    {"entity_id": {"$in": client_ids}}
+                ]
+            else:
+                query["$and"] = [
+                    {"commessa_id": {"$in": authorized_commesse}},
+                    {"sub_agenzia_id": current_user.sub_agenzia_id}
+                ]
+                
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.AGENTE]:
+            # Only documents they created
+            query["created_by"] = current_user.id
+        
+        # Additional filters
+        if entity_id:
+            query["entity_id"] = entity_id
+        if created_by:
+            query["created_by"] = created_by
+        if date_from:
+            query["created_at"] = {"$gte": datetime.fromisoformat(date_from)}
+        if date_to:
+            if "created_at" in query:
+                query["created_at"]["$lte"] = datetime.fromisoformat(date_to)
+            else:
+                query["created_at"] = {"$lte": datetime.fromisoformat(date_to)}
+        
+        # Get documents
+        documents = await db.documents.find(query).to_list(length=None)
+        
+        # Enrich with entity and user information
+        enriched_docs = []
+        for doc in documents:
+            # Get entity name
+            entity_name = None
+            if doc["entity_type"] == "clienti":
+                entity = await db.clienti.find_one({"id": doc["entity_id"]})
+                if entity:
+                    entity_name = f"{entity.get('nome', '')} {entity.get('cognome', '')}"
+            else:
+                entity = await db.leads.find_one({"id": doc["entity_id"]})
+                if entity:
+                    entity_name = f"{entity.get('nome', '')} {entity.get('cognome', '')}"
+            
+            # Get uploader name
+            uploader = await db.users.find_one({"id": doc["created_by"]})
+            uploader_name = uploader.get("username") if uploader else None
+            
+            enriched_docs.append(DocumentResponse(
+                id=doc["id"],
+                entity_type=doc["entity_type"],
+                entity_id=doc["entity_id"],
+                filename=doc["filename"],
+                file_size=doc.get("file_size"),
+                file_type=doc.get("file_type"),
+                uploaded_by=doc["created_by"],
+                uploaded_by_name=uploader_name,
+                entity_name=entity_name,
+                created_at=doc["created_at"]
+            ))
+        
+        return enriched_docs
+        
+    except Exception as e:
+        logger.error(f"Error fetching documents: {e}")
+        raise HTTPException(status_code=500, detail=f"Error fetching documents: {str(e)}")
+
+@api_router.post("/documents/upload")
+async def upload_document(
+    entity_type: str = Form(...),
+    entity_id: str = Form(...),
+    uploaded_by: str = Form(...),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload document with role-based authorization"""
+    
+    try:
+        # Check if user can upload for this entity
+        can_upload = False
+        
+        if current_user.role == UserRole.ADMIN:
+            can_upload = True
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            # Check if entity belongs to authorized commesse
+            if entity_type == "clienti":
+                entity = await db.clienti.find_one({"id": entity_id})
+                if entity and entity.get("commessa_id") in current_user.commesse_autorizzate:
+                    can_upload = True
+            else:
+                entity = await db.leads.find_one({"id": entity_id})
+                if entity and entity.get("commessa_id") in current_user.commesse_autorizzate:
+                    can_upload = True
+        elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+            # Check if entity belongs to authorized commesse and their sub agenzia
+            if entity_type == "clienti":
+                entity = await db.clienti.find_one({"id": entity_id})
+                if (entity and 
+                    entity.get("commessa_id") in current_user.commesse_autorizzate and
+                    entity.get("sub_agenzia_id") == current_user.sub_agenzia_id):
+                    can_upload = True
+            else:
+                entity = await db.leads.find_one({"id": entity_id})
+                if (entity and 
+                    entity.get("commessa_id") in current_user.commesse_autorizzate and
+                    entity.get("sub_agenzia_id") == current_user.sub_agenzia_id):
+                    can_upload = True
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.AGENTE]:
+            # Check if they created this entity
+            if entity_type == "clienti":
+                entity = await db.clienti.find_one({"id": entity_id})
+                if entity and entity.get("created_by") == current_user.id:
+                    can_upload = True
+            else:
+                entity = await db.leads.find_one({"id": entity_id})
+                if entity and entity.get("created_by") == current_user.id:
+                    can_upload = True
+        
+        if not can_upload:
+            raise HTTPException(status_code=403, detail="Non autorizzato a caricare documenti per questa anagrafica")
+        
+        # Create documents directory
+        documents_dir = Path("/app/documents")
+        documents_dir.mkdir(exist_ok=True)
+        
+        # Generate unique filename
+        file_extension = Path(file.filename).suffix
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = documents_dir / unique_filename
+        
+        # Save file
+        content = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(content)
+        
+        # Save document metadata
+        document_data = {
+            "id": str(uuid.uuid4()),
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "filename": file.filename,
+            "file_path": str(file_path),
+            "file_size": len(content),
+            "file_type": file.content_type,
+            "created_by": current_user.id,
+            "created_at": datetime.now(timezone.utc)
+        }
+        
+        await db.documents.insert_one(document_data)
+        
+        return {
+            "success": True,
+            "message": "Documento caricato con successo",
+            "document_id": document_data["id"],
+            "filename": file.filename
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading document: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento: {str(e)}")
+
+@api_router.get("/documents/{document_id}/download")
+async def download_document(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Download document with role-based authorization"""
+    
+    try:
+        # Get document
+        document = await db.documents.find_one({"id": document_id})
+        if not document:
+            raise HTTPException(status_code=404, detail="Documento non trovato")
+        
+        # Check authorization
+        can_download = False
+        
+        if current_user.role == UserRole.ADMIN:
+            can_download = True
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            # Check if entity belongs to authorized commesse
+            if document["entity_type"] == "clienti":
+                entity = await db.clienti.find_one({"id": document["entity_id"]})
+                if entity and entity.get("commessa_id") in current_user.commesse_autorizzate:
+                    can_download = True
+            else:
+                entity = await db.leads.find_one({"id": document["entity_id"]})
+                if entity and entity.get("commessa_id") in current_user.commesse_autorizzate:
+                    can_download = True
+        elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+            # Check if entity belongs to authorized commesse and their sub agenzia
+            if document["entity_type"] == "clienti":
+                entity = await db.clienti.find_one({"id": document["entity_id"]})
+                if (entity and 
+                    entity.get("commessa_id") in current_user.commesse_autorizzate and
+                    entity.get("sub_agenzia_id") == current_user.sub_agenzia_id):
+                    can_download = True
+            else:
+                entity = await db.leads.find_one({"id": document["entity_id"]})
+                if (entity and 
+                    entity.get("commessa_id") in current_user.commesse_autorizzate and
+                    entity.get("sub_agenzia_id") == current_user.sub_agenzia_id):
+                    can_download = True
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.AGENTE]:
+            # Check if they created the document
+            if document["created_by"] == current_user.id:
+                can_download = True
+        
+        if not can_download:
+            raise HTTPException(status_code=403, detail="Non autorizzato a scaricare questo documento")
+        
+        # Check if file exists
+        file_path = Path(document["file_path"])
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="File non trovato sul server")
+        
+        return FileResponse(
+            path=file_path,
+            filename=document["filename"],
+            media_type=document.get("file_type", "application/octet-stream")
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading document: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel download: {str(e)}")
+
 # Include the router in the main app (MUST be after all endpoints are defined)
 app.include_router(api_router)
 
