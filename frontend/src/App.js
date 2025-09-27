@@ -5629,49 +5629,129 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   );
 };
 
-// Documents Management Component
-const DocumentsManagement = ({ selectedUnit, units }) => {
-  const [activeTab, setActiveTab] = useState("lead"); // "lead" or "cliente"
+// Documents Management Component with Role-Based Access Control
+const DocumentsManagement = ({ 
+  selectedUnit, 
+  selectedCommessa, 
+  selectedTipologiaContratto, 
+  units, 
+  commesse, 
+  subAgenzie, 
+  userRole, 
+  userId 
+}) => {
+  const [activeTab, setActiveTab] = useState("clienti"); // "clienti" or "lead"
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState(null);
-  const [commesse, setCommesse] = useState([]);
-  const [subAgenzie, setSubAgenzie] = useState([]);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [entityList, setEntityList] = useState([]); // Clienti o Lead disponibili
+  const [selectedEntity, setSelectedEntity] = useState("");
   const [filters, setFilters] = useState({
     entity_id: "",
     nome: "",
     cognome: "",
-    commessa_id: "",
-    sub_agenzia_id: "",
-    uploaded_by: "",
     date_from: "",
-    date_to: "",
+    date_to: ""
   });
   const { toast } = useToast();
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchDocuments();
-    fetchCommesse();
-    fetchSubAgenzie();
-  }, [selectedUnit, filters, activeTab]);
-
-  const fetchCommesse = async () => {
-    try {
-      const response = await axios.get(`${API}/commesse`);
-      setCommesse(response.data);
-    } catch (error) {
-      console.error("Error fetching commesse:", error);
+  // Determina le autorizzazioni basate sul ruolo
+  const getPermissions = () => {
+    switch (userRole) {
+      case "admin":
+        return {
+          canViewAll: true,
+          canUpload: true,
+          canDownload: true,
+          commesseFilter: null, // Vede tutte le commesse
+          subAgenzieFilter: null, // Vede tutte le sub agenzie
+          entityFilter: null // Vede tutti i clienti/lead
+        };
+      
+      case "responsabile_commessa":
+      case "backoffice_commessa":
+        return {
+          canViewAll: false,
+          canUpload: true,
+          canDownload: true,
+          commesseFilter: user.commesse_autorizzate, // Solo commesse autorizzate
+          subAgenzieFilter: null, // Tutte le sub agenzie delle sue commesse
+          entityFilter: "commessa" // Filtra per commessa
+        };
+      
+      case "responsabile_sub_agenzia":
+      case "backoffice_sub_agenzia":
+        return {
+          canViewAll: false,
+          canUpload: true,
+          canDownload: true,
+          commesseFilter: user.commesse_autorizzate,
+          subAgenzieFilter: [user.sub_agenzia_id], // Solo la sua sub agenzia
+          entityFilter: "sub_agenzia"
+        };
+      
+      case "agente_specializzato":
+      case "operatore":
+      case "agente":
+        return {
+          canViewAll: false,
+          canUpload: true,
+          canDownload: true,
+          commesseFilter: user.commesse_autorizzate,
+          subAgenzieFilter: user.sub_agenzie_autorizzate,
+          entityFilter: "created_by", // Solo le sue anagrafiche
+          createdByFilter: userId
+        };
+      
+      default:
+        return {
+          canViewAll: false,
+          canUpload: false,
+          canDownload: false,
+          commesseFilter: [],
+          subAgenzieFilter: [],
+          entityFilter: null
+        };
     }
   };
 
-  const fetchSubAgenzie = async () => {
+  const permissions = getPermissions();
+
+  useEffect(() => {
+    fetchDocuments();
+    fetchEntityList();
+  }, [selectedCommessa, selectedUnit, filters, activeTab]);
+
+  const fetchEntityList = async () => {
     try {
-      const response = await axios.get(`${API}/sub-agenzie`);
-      setSubAgenzie(response.data);
+      const params = new URLSearchParams();
+      
+      // Applica filtri basati sui permessi
+      if (!permissions.canViewAll) {
+        if (permissions.commesseFilter) {
+          permissions.commesseFilter.forEach(commessaId => {
+            params.append('commessa_ids', commessaId);
+          });
+        }
+        if (permissions.subAgenzieFilter) {
+          permissions.subAgenzieFilter.forEach(subAgenziaId => {
+            params.append('sub_agenzia_ids', subAgenziaId);
+          });
+        }
+        if (permissions.createdByFilter) {
+          params.append('created_by', permissions.createdByFilter);
+        }
+      }
+
+      // Seleziona l'endpoint appropriato
+      const endpoint = activeTab === "clienti" ? "/clienti" : "/leads";
+      const response = await axios.get(`${API}${endpoint}?${params}`);
+      setEntityList(response.data);
     } catch (error) {
-      console.error("Error fetching sub agenzie:", error);
+      console.error(`Error fetching ${activeTab}:`, error);
+      setEntityList([]);
     }
   };
 
@@ -5680,24 +5760,433 @@ const DocumentsManagement = ({ selectedUnit, units }) => {
       setLoading(true);
       const params = new URLSearchParams();
       
-      // Add document type filter
+      // Tipo di documento
       params.append('document_type', activeTab);
       
-      // Add all filter parameters
+      // Filtri di autorizzazione
+      if (!permissions.canViewAll) {
+        if (permissions.commesseFilter) {
+          permissions.commesseFilter.forEach(commessaId => {
+            params.append('commessa_ids', commessaId);
+          });
+        }
+        if (permissions.subAgenzieFilter) {
+          permissions.subAgenzieFilter.forEach(subAgenziaId => {
+            params.append('sub_agenzia_ids', subAgenziaId);
+          });
+        }
+        if (permissions.createdByFilter) {
+          params.append('created_by', permissions.createdByFilter);
+        }
+      }
+
+      // Filtri aggiuntivi
       Object.entries(filters).forEach(([key, value]) => {
         if (value && value.trim()) {
           params.append(key, value.trim());
         }
       });
-      
-      // Add unit filter if selected (only for lead documents)
-      if (selectedUnit && selectedUnit !== "all" && activeTab === "lead") {
-        params.append('unit_id', selectedUnit);
-      }
-      
-      console.log("Fetching documents with params:", params.toString());
-      
+
       const response = await axios.get(`${API}/documents?${params}`);
+      setDocuments(response.data);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento documenti",
+        variant: "destructive",
+      });
+      setDocuments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpload = async (entityId, file) => {
+    if (!permissions.canUpload) {
+      toast({
+        title: "Non autorizzato",
+        description: "Non hai i permessi per caricare documenti",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('entity_type', activeTab);
+      formData.append('entity_id', entityId);
+      formData.append('uploaded_by', userId);
+
+      await axios.post(`${API}/documents/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      toast({
+        title: "Successo",
+        description: "Documento caricato con successo",
+      });
+
+      fetchDocuments();
+      setShowUploadModal(false);
+      setUploadFile(null);
+      setSelectedEntity("");
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento del documento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownload = async (documentId, filename) => {
+    if (!permissions.canDownload) {
+      toast({
+        title: "Non autorizzato",
+        description: "Non hai i permessi per scaricare documenti",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${API}/documents/${documentId}/download`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel download del documento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getRoleDisplayText = () => {
+    switch (userRole) {
+      case "admin":
+        return "Puoi gestire documenti di tutti i clienti e lead";
+      case "responsabile_commessa":
+      case "backoffice_commessa":
+        return "Puoi gestire documenti delle commesse autorizzate e relative Sub Agenzie/Unit";
+      case "responsabile_sub_agenzia":
+      case "backoffice_sub_agenzia":
+        return "Puoi gestire documenti della tua Sub Agenzia nelle commesse autorizzate";
+      case "agente_specializzato":
+      case "operatore":
+      case "agente":
+        return "Puoi gestire documenti solo delle anagrafiche create da te";
+      default:
+        return "Accesso limitato ai documenti";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* 🖥️ DESKTOP VIEW */}
+      <div className="hidden md:block">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg p-6 text-white mb-6">
+          <h1 className="text-2xl font-bold mb-2">📁 Gestione Documenti</h1>
+          <p className="text-blue-100">{getRoleDisplayText()}</p>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex space-x-1 bg-slate-100 rounded-lg p-1 mb-6">
+          <button
+            onClick={() => setActiveTab("clienti")}
+            className={`flex-1 py-3 px-4 rounded-md font-semibold transition-all ${
+              activeTab === "clienti"
+                ? "bg-blue-600 text-white shadow-md"
+                : "text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            👥 Documenti Clienti
+          </button>
+          <button
+            onClick={() => setActiveTab("lead")}
+            className={`flex-1 py-3 px-4 rounded-md font-semibold transition-all ${
+              activeTab === "lead"
+                ? "bg-green-600 text-white shadow-md"
+                : "text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            📞 Documenti Lead
+          </button>
+        </div>
+
+        {/* Upload Button */}
+        {permissions.canUpload && (
+          <div className="mb-6">
+            <Button
+              onClick={() => setShowUploadModal(true)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Carica Nuovo Documento
+            </Button>
+          </div>
+        )}
+
+        {/* Documents Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {activeTab === "clienti" ? "📁 Documenti Clienti" : "📁 Documenti Lead"}
+              <Badge variant="secondary" className="ml-2">
+                {documents.length} documenti
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {documents.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                <p className="text-slate-500">Nessun documento trovato</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome File</TableHead>
+                      <TableHead>{activeTab === "clienti" ? "Cliente" : "Lead"}</TableHead>
+                      <TableHead>Dimensione</TableHead>
+                      <TableHead>Caricato da</TableHead>
+                      <TableHead>Data Upload</TableHead>
+                      <TableHead>Azioni</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {documents.map((doc) => (
+                      <TableRow key={doc.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <FileText className="w-4 h-4 text-blue-600" />
+                            <span className="font-medium">{doc.filename}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {doc.entity_name || `${activeTab} ID: ${doc.entity_id}`}
+                        </TableCell>
+                        <TableCell>{doc.file_size || 'N/A'}</TableCell>
+                        <TableCell>{doc.uploaded_by_name || 'N/A'}</TableCell>
+                        <TableCell>
+                          {doc.created_at ? new Date(doc.created_at).toLocaleDateString('it-IT') : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {permissions.canDownload && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownload(doc.id, doc.filename)}
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              Scarica
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 📱 MOBILE VIEW */}
+      <div className="md:hidden p-4 space-y-6 bg-slate-50 min-h-screen">
+        {/* Mobile Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white">
+          <h2 className="text-xl font-bold mb-2">📁 Documenti</h2>
+          <p className="text-blue-100 text-sm">{getRoleDisplayText()}</p>
+        </div>
+
+        {/* Mobile Tab Navigation */}
+        <div className="bg-white rounded-xl p-1 shadow-lg">
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              onClick={() => setActiveTab("clienti")}
+              className={`py-4 px-4 rounded-lg font-semibold text-sm transition-all ${
+                activeTab === "clienti"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              👥 Clienti
+            </button>
+            <button
+              onClick={() => setActiveTab("lead")}
+              className={`py-4 px-4 rounded-lg font-semibold text-sm transition-all ${
+                activeTab === "lead"
+                  ? "bg-green-600 text-white shadow-md"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              📞 Lead
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Upload Button */}
+        {permissions.canUpload && (
+          <Button
+            onClick={() => setShowUploadModal(true)}
+            className="w-full bg-green-600 hover:bg-green-700 py-4 text-base font-semibold"
+          >
+            <Upload className="w-5 h-5 mr-2" />
+            Carica Nuovo Documento
+          </Button>
+        )}
+
+        {/* Mobile Documents List */}
+        <div className="space-y-4">
+          {documents.length === 0 ? (
+            <Card className="p-8 text-center">
+              <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <p className="text-slate-500">Nessun documento trovato</p>
+            </Card>
+          ) : (
+            documents.map((doc) => (
+              <Card key={doc.id} className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      <h3 className="font-semibold text-slate-900 text-sm truncate">
+                        {doc.filename}
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {doc.entity_name || `${activeTab} ID: ${doc.entity_id}`}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-2 mb-3 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Dimensione:</span>
+                    <span className="text-slate-700">{doc.file_size || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Caricato da:</span>
+                    <span className="text-slate-700">{doc.uploaded_by_name || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Data:</span>
+                    <span className="text-slate-700">
+                      {doc.created_at ? new Date(doc.created_at).toLocaleDateString('it-IT') : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+                
+                {permissions.canDownload && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(doc.id, doc.filename)}
+                    className="w-full"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Scarica Documento
+                  </Button>
+                )}
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Carica Documento</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Seleziona {activeTab === "clienti" ? "Cliente" : "Lead"}:</Label>
+                <Select value={selectedEntity} onValueChange={setSelectedEntity}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={`Seleziona ${activeTab === "clienti" ? "cliente" : "lead"}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {entityList.map((entity) => (
+                      <SelectItem key={entity.id} value={entity.id}>
+                        {entity.nome} {entity.cognome} ({entity.id})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label>File:</Label>
+                <input
+                  type="file"
+                  onChange={(e) => setUploadFile(e.target.files[0])}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                />
+              </div>
+              
+              <div className="flex space-x-2">
+                <Button
+                  onClick={() => {
+                    if (selectedEntity && uploadFile) {
+                      handleUpload(selectedEntity, uploadFile);
+                    }
+                  }}
+                  disabled={!selectedEntity || !uploadFile}
+                  className="flex-1"
+                >
+                  Carica
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowUploadModal(false);
+                    setUploadFile(null);
+                    setSelectedEntity("");
+                  }}
+                  className="flex-1"
+                >
+                  Annulla
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
       console.log("Documents response:", response.data);
       
       setDocuments(response.data.documents || []);
