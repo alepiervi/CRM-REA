@@ -6189,8 +6189,6 @@ const DocumentsManagement = ({
 };
 
 // AI Configuration Management Component
-const AIConfigurationManagement = () => {
-  const [config, setConfig] = useState(null);
 
   const handleDelete = async (documentId) => {
     if (!window.confirm("Sei sicuro di voler eliminare questo documento?")) {
