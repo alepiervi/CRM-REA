@@ -6188,7 +6188,7 @@ const DocumentsManagement = ({
   );
 };
 
-  const handleDownload = async (documentId, filename) => {
+// AI Configuration Management Component
     try {
       const response = await axios.get(`${API}/documents/download/${documentId}`, {
         responseType: 'blob'
