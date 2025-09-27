@@ -6190,23 +6190,7 @@ const DocumentsManagement = ({
 
 // AI Configuration Management Component
 const AIConfigurationManagement = () => {
-      
-      toast({
-        title: "Successo",
-        description: "Download completato",
-      });
-      
-      // Refresh documents to update download count
-      fetchDocuments();
-    } catch (error) {
-      console.error("Error downloading document:", error);
-      toast({
-        title: "Errore",
-        description: "Errore nel download del documento",
-        variant: "destructive",
-      });
-    }
-  };
+  const [config, setConfig] = useState(null);
 
   const handleDelete = async (documentId) => {
     if (!window.confirm("Sei sicuro di voler eliminare questo documento?")) {
