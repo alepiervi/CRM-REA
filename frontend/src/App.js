@@ -6190,36 +6190,6 @@ const DocumentsManagement = ({
 
 // AI Configuration Management Component
 
-  const handleDelete = async (documentId) => {
-    if (!window.confirm("Sei sicuro di voler eliminare questo documento?")) {
-      return;
-    }
-
-    try {
-      await axios.delete(`${API}/documents/${documentId}`);
-      toast({
-        title: "Successo",
-        description: "Documento eliminato con successo",
-      });
-      fetchDocuments();
-    } catch (error) {
-      console.error("Error deleting document:", error);
-      toast({
-        title: "Errore",
-        description: error.response?.data?.detail || "Errore nell'eliminazione del documento",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
