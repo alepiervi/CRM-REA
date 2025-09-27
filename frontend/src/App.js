@@ -1066,7 +1066,17 @@ const Dashboard = () => {
         case "leads":
           return <LeadsManagement selectedUnit={selectedUnit} units={units} />;
         case "documents":
-          return <DocumentsManagement selectedUnit={selectedUnit} units={units} />;
+          // Tutti i ruoli hanno accesso alla sezione documenti con autorizzazioni specifiche
+          return <DocumentsManagement 
+            selectedUnit={selectedUnit} 
+            selectedCommessa={selectedCommessa}
+            selectedTipologiaContratto={selectedTipologiaContratto}
+            units={units} 
+            commesse={commesse}
+            subAgenzie={subAgenzie}
+            userRole={user.role}
+            userId={user.id}
+          />;
         case "users":
           return user.role === "admin" ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "containers":
