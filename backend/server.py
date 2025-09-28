@@ -8089,7 +8089,8 @@ async def upload_multiple_documents(
                 continue
         
         # TODO: Integrate with Aruba Drive when credentials are available
-        # await create_aruba_drive_folder_and_upload(entity_type, entity_id, results)
+        if successful_uploads > 0:
+            await create_aruba_drive_folder_and_upload(entity_type, entity_id, results)
         
         return {
             "success": True,
