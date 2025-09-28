@@ -1022,6 +1022,57 @@ const Dashboard = () => {
     }
   };
 
+  const saveArubaDriveConfig = async (configData) => {
+    try {
+      if (editingConfig) {
+        // Update existing config
+        await axios.put(`${API}/admin/aruba-drive-configs/${editingConfig.id}`, configData);
+        // Note: toast will be handled by modal component
+      } else {
+        // Create new config
+        await axios.post(`${API}/admin/aruba-drive-configs`, configData);
+        // Note: toast will be handled by modal component
+      }
+      
+      fetchArubaDriveConfigs();
+      setShowConfigModal(false);
+      setEditingConfig(null);
+    } catch (error) {
+      console.error("Error saving Aruba Drive config:", error);
+      throw error; // Let modal handle the error
+    }
+  };
+
+  const deleteArubaDriveConfig = async (configId) => {
+    if (!confirm("Sei sicuro di voler eliminare questa configurazione?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/admin/aruba-drive-configs/${configId}`);
+      fetchArubaDriveConfigs();
+    } catch (error) {
+      console.error("Error deleting Aruba Drive config:", error);
+    }
+  };
+
+  const testArubaDriveConfig = async (configId) => {
+    setTestingConfigId(configId);
+    
+    try {
+      const response = await axios.post(`${API}/admin/aruba-drive-configs/${configId}/test`);
+      
+      // Log result (toast will be handled by component)
+      console.log('Test result:', response.data.success ? 'Success' : 'Failed', response.data.message);
+      
+      fetchArubaDriveConfigs(); // Refresh to show test results
+    } catch (error) {
+      console.error("Error testing Aruba Drive config:", error);
+    } finally {
+      setTestingConfigId(null);
+    }
+  };
+
   // Load Aruba Drive configurations quando si entra nella sezione configurazioni
   useEffect(() => {
     if (activeTab === 'configurazioni' && user?.role === 'admin') {
