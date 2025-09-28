@@ -5804,7 +5804,7 @@ const DocumentsManagement = ({
     }
   };
 
-  const handleUpload = async (entityId, file) => {
+  const handleMultipleUpload = async (entityId, files) => {
     if (!permissions.canUpload) {
       toast({
         title: "Non autorizzato",
@@ -5814,33 +5814,98 @@ const DocumentsManagement = ({
       return;
     }
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('entity_type', activeTab);
-      formData.append('entity_id', entityId);
-      formData.append('uploaded_by', userId);
-
-      await axios.post(`${API}/documents/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      toast({
-        title: "Successo",
-        description: "Documento caricato con successo",
-      });
-
-      fetchDocuments();
-      setShowUploadModal(false);
-      setUploadFile(null);
-      setSelectedEntity("");
-    } catch (error) {
-      console.error("Error uploading document:", error);
+    if (!files || files.length === 0) {
       toast({
         title: "Errore",
-        description: "Errore nel caricamento del documento",
+        description: "Seleziona almeno un file da caricare",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const uploadPromises = files.map(async (file, index) => {
+        const fileId = `${file.name}-${index}-${Date.now()}`;
+        
+        // Initialize progress for this file
+        setUploadProgress(prev => ({
+          ...prev,
+          [fileId]: { progress: 0, status: 'uploading', filename: file.name }
+        }));
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('entity_type', activeTab);
+        formData.append('entity_id', entityId);
+        formData.append('uploaded_by', userId);
+
+        try {
+          const response = await axios.post(`${API}/documents/upload`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(prev => ({
+                ...prev,
+                [fileId]: { ...prev[fileId], progress: percentCompleted }
+              }));
+            }
+          });
+
+          // Update progress to completed
+          setUploadProgress(prev => ({
+            ...prev,
+            [fileId]: { ...prev[fileId], progress: 100, status: 'completed' }
+          }));
+
+          return { success: true, filename: file.name, data: response.data };
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error);
+          setUploadProgress(prev => ({
+            ...prev,
+            [fileId]: { ...prev[fileId], status: 'error', error: error.message }
+          }));
+          return { success: false, filename: file.name, error: error.message };
+        }
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const successful = results.filter(r => r.success);
+      const failed = results.filter(r => !r.success);
+
+      // Show results
+      if (successful.length > 0) {
+        toast({
+          title: "Upload Completato",
+          description: `${successful.length} file caricati con successo${failed.length > 0 ? `, ${failed.length} falliti` : ''}`,
+        });
+      }
+
+      if (failed.length > 0) {
+        toast({
+          title: "Alcuni upload falliti",
+          description: `${failed.length} file non sono stati caricati: ${failed.map(f => f.filename).join(', ')}`,
+          variant: "destructive",
+        });
+      }
+
+      // Refresh documents list
+      fetchDocuments();
+
+      // Close modal and reset state
+      setTimeout(() => {
+        setShowUploadModal(false);
+        setUploadFiles([]);
+        setUploadProgress({});
+        setSelectedEntity("");
+      }, 2000);
+
+    } catch (error) {
+      console.error("Error in multiple upload:", error);
+      toast({
+        title: "Errore",
+        description: "Errore durante l'upload multiplo",
         variant: "destructive",
       });
     }
