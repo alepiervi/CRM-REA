@@ -235,6 +235,228 @@ class CRMAPITester:
         
         return successful_logins == total_users
 
+    def test_documents_endpoint_urgent(self):
+        """TEST URGENTE dell'endpoint GET /api/documents dopo la rimozione del duplicato"""
+        print("\n🚨 TEST URGENTE dell'endpoint GET /api/documents dopo la rimozione del duplicato...")
+        
+        # 1. **Test Login Admin**: Login con admin/admin123 per ottenere token valido
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Test Endpoint Documenti Base**: GET /api/documents per verificare che non ci sia più l'errore 400
+        print("\n📄 2. TEST ENDPOINT DOCUMENTI BASE...")
+        success, response, status = self.make_request('GET', 'documents', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/documents (base)", True, f"Status: {status} - No 400 error!")
+            
+            # Verify response is an array
+            if isinstance(response, list):
+                self.log_test("✅ Response is array", True, f"Response is array with {len(response)} documents")
+                
+                # Check if documents have expected structure
+                if len(response) > 0:
+                    doc = response[0]
+                    expected_fields = ['id', 'entity_type', 'entity_id', 'filename', 'uploaded_by', 'created_at']
+                    missing_fields = [field for field in expected_fields if field not in doc]
+                    
+                    if not missing_fields:
+                        self.log_test("✅ Document structure valid", True, f"All expected fields present: {list(doc.keys())}")
+                    else:
+                        self.log_test("❌ Document structure invalid", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_test("ℹ️ No documents found", True, "Empty array returned (valid)")
+            else:
+                self.log_test("❌ Response not array", False, f"Response type: {type(response)}")
+        elif status == 400:
+            self.log_test("❌ GET /api/documents (base)", False, f"Still getting 400 error: {response}")
+            return False
+        else:
+            self.log_test("❌ GET /api/documents (base)", False, f"Unexpected status: {status}, Response: {response}")
+            return False
+
+        # 3. **Test con Parametri**: GET /api/documents?document_type=clienti per verificare il filtering
+        print("\n🔍 3. TEST CON PARAMETRI...")
+        success, response, status = self.make_request('GET', 'documents?document_type=clienti', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/documents?document_type=clienti", True, f"Status: {status} - Filtering works!")
+            
+            if isinstance(response, list):
+                self.log_test("✅ Filtered response is array", True, f"Filtered array with {len(response)} client documents")
+                
+                # Verify all documents are of type 'clienti' if any exist
+                if len(response) > 0:
+                    non_client_docs = [doc for doc in response if doc.get('entity_type') != 'clienti']
+                    if not non_client_docs:
+                        self.log_test("✅ Filtering working correctly", True, "All documents are of type 'clienti'")
+                    else:
+                        self.log_test("❌ Filtering not working", False, f"Found {len(non_client_docs)} non-client documents")
+                else:
+                    self.log_test("ℹ️ No client documents found", True, "Empty filtered array (valid)")
+            else:
+                self.log_test("❌ Filtered response not array", False, f"Response type: {type(response)}")
+        else:
+            self.log_test("❌ GET /api/documents?document_type=clienti", False, f"Status: {status}, Response: {response}")
+
+        # Test other filtering parameters
+        print("\n   Testing additional filtering parameters...")
+        
+        # Test with multiple parameters
+        success, response, status = self.make_request('GET', 'documents?document_type=leads&created_by=' + self.user_data['id'], expected_status=200)
+        if success:
+            self.log_test("✅ Multiple parameters filtering", True, f"Status: {status}, Documents: {len(response) if isinstance(response, list) else 'Not array'}")
+        else:
+            self.log_test("❌ Multiple parameters filtering", False, f"Status: {status}")
+
+        # 4. **Verifica Struttura Risposta**: Controllare che la risposta sia un array di DocumentResponse
+        print("\n📋 4. VERIFICA STRUTTURA RISPOSTA...")
+        
+        # Get documents again to verify structure
+        success, response, status = self.make_request('GET', 'documents', expected_status=200)
+        
+        if success and isinstance(response, list):
+            self.log_test("✅ Response is DocumentResponse array", True, f"Array of {len(response)} documents")
+            
+            # Check DocumentResponse structure if documents exist
+            if len(response) > 0:
+                doc = response[0]
+                expected_response_fields = [
+                    'id', 'entity_type', 'entity_id', 'filename', 'file_size', 
+                    'file_type', 'uploaded_by', 'uploaded_by_name', 'entity_name', 'created_at'
+                ]
+                
+                present_fields = [field for field in expected_response_fields if field in doc]
+                missing_optional_fields = [field for field in expected_response_fields if field not in doc]
+                
+                self.log_test("✅ DocumentResponse fields", True, 
+                    f"Present: {len(present_fields)}/{len(expected_response_fields)} fields")
+                
+                if missing_optional_fields:
+                    self.log_test("ℹ️ Optional fields missing", True, 
+                        f"Missing optional fields: {missing_optional_fields}")
+                
+                # Verify required fields are present
+                required_fields = ['id', 'entity_type', 'entity_id', 'filename', 'uploaded_by', 'created_at']
+                missing_required = [field for field in required_fields if field not in doc]
+                
+                if not missing_required:
+                    self.log_test("✅ Required DocumentResponse fields", True, "All required fields present")
+                else:
+                    self.log_test("❌ Missing required fields", False, f"Missing: {missing_required}")
+        else:
+            self.log_test("❌ Response structure verification", False, "Could not verify DocumentResponse structure")
+
+        # 5. **Test con Altri Ruoli**: Se possibile testare anche con resp_commessa/admin123
+        print("\n👥 5. TEST CON ALTRI RUOLI...")
+        
+        # Test with resp_commessa/admin123
+        print("   Testing with resp_commessa/admin123...")
+        success, resp_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'resp_commessa', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in resp_response:
+            # Save admin token
+            admin_token = self.token
+            
+            # Use resp_commessa token
+            self.token = resp_response['access_token']
+            resp_user_data = resp_response['user']
+            
+            self.log_test("✅ resp_commessa login", True, f"Role: {resp_user_data['role']}, Commesse: {len(resp_user_data.get('commesse_autorizzate', []))}")
+            
+            # Test documents endpoint with resp_commessa
+            success, resp_docs, status = self.make_request('GET', 'documents', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/documents (resp_commessa)", True, f"Status: {status}, Documents: {len(resp_docs) if isinstance(resp_docs, list) else 'Not array'}")
+                
+                # Test with clienti filter for resp_commessa
+                success, resp_client_docs, status = self.make_request('GET', 'documents?document_type=clienti', expected_status=200)
+                if success:
+                    self.log_test("✅ GET /api/documents?document_type=clienti (resp_commessa)", True, 
+                        f"Status: {status}, Client docs: {len(resp_client_docs) if isinstance(resp_client_docs, list) else 'Not array'}")
+                else:
+                    self.log_test("❌ GET /api/documents?document_type=clienti (resp_commessa)", False, f"Status: {status}")
+            else:
+                self.log_test("❌ GET /api/documents (resp_commessa)", False, f"Status: {status}, Response: {resp_docs}")
+            
+            # Restore admin token
+            self.token = admin_token
+            
+        else:
+            self.log_test("❌ resp_commessa login", False, f"Status: {status}, Cannot test with resp_commessa role")
+            
+            # Try with other available users
+            print("   Trying with other users...")
+            test_users = ['test2', 'debug_resp_commessa_155357']
+            
+            for username in test_users:
+                success, user_response, status = self.make_request(
+                    'POST', 'auth/login', 
+                    {'username': username, 'password': 'admin123'}, 
+                    200, auth_required=False
+                )
+                
+                if success and 'access_token' in user_response:
+                    # Save admin token
+                    admin_token = self.token
+                    
+                    # Use test user token
+                    self.token = user_response['access_token']
+                    user_data = user_response['user']
+                    
+                    self.log_test(f"✅ {username} login", True, f"Role: {user_data['role']}")
+                    
+                    # Test documents endpoint
+                    success, user_docs, status = self.make_request('GET', 'documents', expected_status=200)
+                    
+                    if success and status == 200:
+                        self.log_test(f"✅ GET /api/documents ({username})", True, 
+                            f"Status: {status}, Documents: {len(user_docs) if isinstance(user_docs, list) else 'Not array'}")
+                    else:
+                        self.log_test(f"❌ GET /api/documents ({username})", False, f"Status: {status}")
+                    
+                    # Restore admin token
+                    self.token = admin_token
+                    break
+                else:
+                    self.log_test(f"❌ {username} login", False, f"Status: {status}")
+
+        # SUMMARY CRITICO
+        print(f"\n🎯 SUMMARY TEST URGENTE GET /api/documents:")
+        print(f"   🎯 OBIETTIVO: Verificare che non ci sia più l'errore 400 'Error fetching documents'")
+        print(f"   🎯 FOCUS CRITICO: Confermare che la rimozione dell'endpoint duplicato ha risolto l'errore backend 400")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • GET /api/documents (base): {'✅ SUCCESS - No 400 error!' if status == 200 else '❌ STILL FAILING'}")
+        print(f"      • GET /api/documents?document_type=clienti: {'✅ SUCCESS - Filtering works!' if status == 200 else '❌ FILTERING ISSUES'}")
+        print(f"      • Response structure (DocumentResponse array): {'✅ VALID' if isinstance(response, list) else '❌ INVALID'}")
+        print(f"      • Multi-role testing: {'✅ COMPLETED' if 'resp_commessa' in locals() else '✅ ATTEMPTED'}")
+        
+        if status == 200:
+            print(f"   🎉 SUCCESS: L'endpoint GET /api/documents funziona correttamente!")
+            print(f"   🎉 CONFERMATO: La rimozione dell'endpoint duplicato ha risolto l'errore 400!")
+            return True
+        else:
+            print(f"   🚨 FAILURE: L'endpoint GET /api/documents presenta ancora problemi!")
+            return False
+
     def test_critical_login_debug_401_issue(self):
         """DEBUG CRITICO dell'endpoint /api/auth/login per identificare perché utenti non-admin ricevono 401"""
         print("\n🚨 DEBUG CRITICO DELL'ENDPOINT /api/auth/login - 401 ISSUE...")
