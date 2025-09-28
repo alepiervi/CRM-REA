@@ -1003,6 +1003,13 @@ const Dashboard = () => {
     loadUnitsSubAgenzie();
   }, [selectedCommessa, selectedServizio]);
 
+  // Load Aruba Drive configurations quando si entra nella sezione configurazioni
+  useEffect(() => {
+    if (activeTab === 'configurazioni' && user?.role === 'admin') {
+      fetchArubaDriveConfigs();
+    }
+  }, [activeTab]);
+
   // Duplicate function removed - using the updated version above
 
   const getNavItems = () => {
