@@ -5649,6 +5649,11 @@ const DocumentsManagement = ({
   const [isDragging, setIsDragging] = useState(false);
   const [entityList, setEntityList] = useState([]); // Clienti o Lead disponibili
   const [selectedEntity, setSelectedEntity] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState(null);
   const [filters, setFilters] = useState({
     entity_id: "",
     nome: "",
