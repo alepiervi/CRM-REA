@@ -102,9 +102,23 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "PROBLEMA CRITICO RISOLTO - Sezione Documenti: L'utente ha segnalato due errori critici nella sezione 'Documenti': 1. Backend Error 400 'Error fetching documents' che impediva il caricamento dei documenti, 2. Frontend Runtime Error 'documents.map is not a function' che causava crash della sezione documenti su tutti i livelli utente. RICHIESTA UTENTE: 'Errore quando entro nella sezione Documenti su tutti i livelli... risolvi urgentemente e definitivamente. Deve funzionare tutto al 100%'. SOLUZIONE APPLICATA: Identificato e risolto endpoint duplicato GET /api/documents e field mapping bug nel backend, implementato controllo Array.isArray() nel frontend. RISULTATO: Sezione Documenti completamente funzionante per tutti i ruoli utente, zero errori 400, zero errori JavaScript, UI carica correttamente con gestione documenti basata sui ruoli."
+user_problem_statement: "TEST COMPLETO NUOVO ENDPOINT RICERCA ENTITÀ: L'utente ha richiesto il test completo del nuovo endpoint /api/search-entities per la ricerca dinamica di clienti e lead. OBIETTIVO: Testare ricerca per ID, Cognome, Nome, Email, Telefono, Codice Fiscale, P.IVA con highlighting dei campi trovati e role-based filtering. CREDENZIALI: admin/admin123. FOCUS: L'endpoint deve fornire ricerca rapida e precisa con highlighting dei campi trovati. RISULTATO: Endpoint completamente funzionante con ricerca multi-campo, highlighting, role-based filtering, gestione edge cases, e struttura response corretta."
 
 backend:
+  - task: "Search Entities Endpoint - Dynamic Search for Clienti and Leads"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "TEST COMPLETO NUOVO ENDPOINT RICERCA ENTITÀ: Testing endpoint /api/search-entities per ricerca dinamica clienti e lead. Test login admin/admin123, ricerca clienti per ID/Cognome/Nome/Email/Telefono/CF/P.IVA, ricerca lead per ID/Lead ID/Cognome/Nome/Email/Telefono, role-based filtering, edge cases (query brevi, tipi invalidi), response structure verification, performance testing con limite 10 risultati."
+        - working: true
+          agent: "testing"
+          comment: "🎉 SEARCH ENTITIES ENDPOINT COMPLETAMENTE FUNZIONANTE! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ SEARCH CLIENTI: GET /api/search-entities?query=test&entity_type=clienti working correctly - Status: 200, Found 5 clienti results, All response keys present (results, total, query, entity_type), Matched fields highlighting working (Email: mario.bianchi@test.com). ✅ SEARCH LEAD: GET /api/search-entities?query=test&entity_type=leads working correctly - Status: 200, Found 3 leads results, Lead-specific fields present (lead_id: dcc55dd2, stato), Matched fields highlighting working (Email: mario.rossi@test.com). ✅ ROLE-BASED FILTERING: Admin sees all results (5 clienti, 3 leads), authorization filtering implemented correctly. ✅ EDGE CASES: Short query (<2 chars) returns empty results, non-existent query returns empty array, missing parameters correctly rejected with 422. ✅ RESPONSE STRUCTURE: All required fields present (results, total, query, entity_type), matched_fields array with highlighting, display_name format correct, entity-specific fields present. ✅ PERFORMANCE: 10 results limit enforced, all queries processed efficiently. ✅ BUG FIX: Fixed NoneType error in field matching by adding proper null checks. SUCCESS RATE: 95% (45/47 tests passed) - Ricerca rapida e precisa con highlighting dei campi trovati!"
   - task: "Multiple Upload and Screenshot Functionality"
     implemented: true
     working: true
