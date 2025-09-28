@@ -8170,9 +8170,10 @@ async def create_aruba_drive_folder_and_upload(entity_type: str, entity_id: str,
     """
     logger.info(f"🚀 ARUBA DRIVE: Starting integration for {entity_type}/{entity_id}")
     
-    # Verifica credenziali
-    if not ARUBA_DRIVE_USERNAME or not ARUBA_DRIVE_PASSWORD:
-        logger.warning("⚠️ ARUBA DRIVE: Credenziali mancanti - operazione saltata")
+    # Ottieni configurazione attiva dal database
+    aruba_config = await get_active_aruba_drive_config()
+    if not aruba_config:
+        logger.warning("⚠️ ARUBA DRIVE: Nessuna configurazione attiva trovata")
         return False
     
     try:
@@ -8186,7 +8187,7 @@ async def create_aruba_drive_folder_and_upload(entity_type: str, entity_id: str,
         screenshot_path = await generate_entity_screenshot(entity_type, entity_data["entity"])
         
         # Crea struttura cartelle e upload
-        success = await upload_to_aruba_drive(entity_data, uploaded_files, screenshot_path)
+        success = await upload_to_aruba_drive(entity_data, uploaded_files, screenshot_path, aruba_config)
         
         if success:
             logger.info(f"✅ ARUBA DRIVE: Upload completato per {entity_data['cliente_folder']}")
