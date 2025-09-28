@@ -6520,6 +6520,7 @@ const DocumentsManagement = ({
                     setUploadProgress({});
                     setSelectedEntity("");
                     setIsDragging(false);
+                    clearSearch();
                   }}
                   className="flex-1"
                   disabled={Object.keys(uploadProgress).length > 0}
