@@ -5954,6 +5954,12 @@ const DocumentsManagement = ({
       // Refresh documents list
       fetchDocuments();
 
+      // Integrazione Aruba Drive per upload completati
+      if (successful.length > 0) {
+        // TODO: Chiamata API per integrazione Aruba Drive
+        console.log('🌐 ARUBA DRIVE: Preparando upload per', entityId);
+      }
+
       // Close modal and reset state
       setTimeout(() => {
         setShowUploadModal(false);
