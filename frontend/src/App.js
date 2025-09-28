@@ -6912,11 +6912,10 @@ const ConfigurazioniManagement = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    if (onFetchConfigs) {
-      onFetchConfigs();
-    }
+    // ConfigurazioniManagement non deve chiamare direttamente fetchArubaDriveConfigs
+    // Viene gestito dal useEffect del Dashboard quando activeTab cambia
     setLoading(false);
-  }, [onFetchConfigs]);
+  }, []);
 
   const handleSaveConfig = async (configData) => {
     if (onSaveConfig) {
