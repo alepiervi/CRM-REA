@@ -8106,6 +8106,11 @@ async def upload_multiple_documents(
         logger.error(f"Error in multiple upload: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nell'upload multiplo: {str(e)}")
 
+# Import per screenshot
+from playwright.async_api import async_playwright
+from jinja2 import Template
+import base64
+
 # Placeholder per integrazione Aruba Drive
 async def create_aruba_drive_folder_and_upload(entity_type: str, entity_id: str, uploaded_files: List[dict]):
     """
@@ -8129,13 +8134,324 @@ async def create_aruba_drive_folder_and_upload(entity_type: str, entity_id: str,
         folder_name = f"{entity.get('nome', 'Unknown')}_{entity.get('cognome', 'Unknown')}_{entity_id}"
         logger.info(f"[ARUBA DRIVE PLACEHOLDER] Folder would be: {folder_name}")
         
+        # Genera screenshot dei dettagli
+        screenshot_path = await generate_entity_screenshot(entity_type, entity)
+        logger.info(f"[ARUBA DRIVE PLACEHOLDER] Screenshot generated: {screenshot_path}")
+        
         # TODO: Implementare quando disponibili credenziali:
         # 1. Creare cartella Aruba Drive
         # 2. Upload documenti
-        # 3. Generare screenshot cliente
-        # 4. Upload screenshot
+        # 3. Upload screenshot
     
     return True
+
+async def generate_entity_screenshot(entity_type: str, entity: dict) -> str:
+    """Genera screenshot HTML dei dettagli cliente/lead"""
+    
+    try:
+        # Template HTML per i dettagli
+        html_template = Template("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Dettagli {{ entity_type|title }}</title>
+            <style>
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    background-color: #f8f9fa;
+                }
+                .container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    padding: 30px;
+                }
+                .header {
+                    border-bottom: 3px solid #3b82f6;
+                    padding-bottom: 15px;
+                    margin-bottom: 25px;
+                }
+                .header h1 {
+                    color: #1e40af;
+                    margin: 0;
+                    font-size: 28px;
+                    font-weight: 600;
+                }
+                .header .subtitle {
+                    color: #64748b;
+                    font-size: 14px;
+                    margin-top: 5px;
+                }
+                .section {
+                    margin-bottom: 25px;
+                }
+                .section-title {
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #374151;
+                    margin-bottom: 15px;
+                    padding-bottom: 8px;
+                    border-bottom: 2px solid #e5e7eb;
+                }
+                .field-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 15px;
+                }
+                .field {
+                    background: #f8fafc;
+                    padding: 12px;
+                    border-radius: 8px;
+                    border-left: 4px solid #3b82f6;
+                }
+                .field-label {
+                    font-weight: 600;
+                    color: #475569;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                }
+                .field-value {
+                    color: #1e293b;
+                    font-size: 15px;
+                    word-wrap: break-word;
+                }
+                .footer {
+                    margin-top: 30px;
+                    padding-top: 20px;
+                    border-top: 1px solid #e5e7eb;
+                    text-align: center;
+                    color: #64748b;
+                    font-size: 12px;
+                }
+                .status-badge {
+                    display: inline-block;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                }
+                .status-active { background: #dcfce7; color: #166534; }
+                .status-inactive { background: #fef3c7; color: #92400e; }
+                .status-pending { background: #dbeafe; color: #1e40af; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>{{ entity.nome }} {{ entity.cognome }}</h1>
+                    <div class="subtitle">
+                        Dettagli {{ entity_type|title }} - Generato il {{ timestamp }}
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">🔍 Informazioni Anagrafiche</div>
+                    <div class="field-grid">
+                        <div class="field">
+                            <div class="field-label">Nome</div>
+                            <div class="field-value">{{ entity.nome or 'N/A' }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Cognome</div>
+                            <div class="field-value">{{ entity.cognome or 'N/A' }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Email</div>
+                            <div class="field-value">{{ entity.email or 'N/A' }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Telefono</div>
+                            <div class="field-value">{{ entity.telefono or 'N/A' }}</div>
+                        </div>
+                        {% if entity_type == 'clienti' %}
+                        <div class="field">
+                            <div class="field-label">Codice Fiscale</div>
+                            <div class="field-value">{{ entity.codice_fiscale or 'N/A' }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Partita IVA</div>
+                            <div class="field-value">{{ entity.partita_iva or 'N/A' }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if entity_type == 'clienti' %}
+                <div class="section">
+                    <div class="section-title">🏢 Informazioni Aziendali</div>
+                    <div class="field-grid">
+                        <div class="field">
+                            <div class="field-label">Commessa</div>
+                            <div class="field-value">{{ commessa_nome or entity.commessa_id or 'N/A' }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Sub Agenzia</div>
+                            <div class="field-value">{{ sub_agenzia_nome or entity.sub_agenzia_id or 'N/A' }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Status</div>
+                            <div class="field-value">
+                                <span class="status-badge status-{{ 'active' if entity.is_active else 'inactive' }}">
+                                    {{ 'Attivo' if entity.is_active else 'Inattivo' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if entity.indirizzo %}
+                <div class="section">
+                    <div class="section-title">📍 Indirizzo</div>
+                    <div class="field-grid">
+                        <div class="field">
+                            <div class="field-label">Indirizzo Completo</div>
+                            <div class="field-value">{{ entity.indirizzo or 'N/A' }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Città</div>
+                            <div class="field-value">{{ entity.citta or 'N/A' }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">CAP</div>
+                            <div class="field-value">{{ entity.cap or 'N/A' }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Provincia</div>
+                            <div class="field-value">{{ entity.provincia or 'N/A' }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if entity.dati_aggiuntivi %}
+                <div class="section">
+                    <div class="section-title">📋 Dati Aggiuntivi</div>
+                    <div class="field">
+                        <div class="field-value">{{ entity.dati_aggiuntivi }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+
+                {% if entity_type == 'leads' %}
+                <div class="section">
+                    <div class="section-title">🎯 Informazioni Lead</div>
+                    <div class="field-grid">
+                        <div class="field">
+                            <div class="field-label">Lead ID</div>
+                            <div class="field-value">{{ entity.lead_id or entity.id[:8] }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Stato</div>
+                            <div class="field-value">
+                                <span class="status-badge status-pending">{{ entity.stato or 'In Lavorazione' }}</span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Sorgente</div>
+                            <div class="field-value">{{ entity.sorgente or 'N/A' }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Gruppo</div>
+                            <div class="field-value">{{ entity.gruppo or 'N/A' }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="section">
+                    <div class="section-title">⏰ Informazioni Sistema</div>
+                    <div class="field-grid">
+                        <div class="field">
+                            <div class="field-label">ID Interno</div>
+                            <div class="field-value">{{ entity.id }}</div>
+                        </div>
+                        <div class="field">
+                            <div class="field-label">Data Creazione</div>
+                            <div class="field-value">{{ entity.created_at.strftime('%d/%m/%Y %H:%M') if entity.created_at else 'N/A' }}</div>
+                        </div>
+                        {% if entity.updated_at %}
+                        <div class="field">
+                            <div class="field-label">Ultimo Aggiornamento</div>
+                            <div class="field-value">{{ entity.updated_at.strftime('%d/%m/%Y %H:%M') if entity.updated_at else 'N/A' }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="footer">
+                    CRM Lead Manager - Screenshot generato automaticamente<br>
+                    Documento riservato e confidenziale
+                </div>
+            </div>
+        </body>
+        </html>
+        """)
+
+        # Ottieni informazioni aggiuntive se è un cliente
+        commessa_nome = None
+        sub_agenzia_nome = None
+        
+        if entity_type == "clienti":
+            if entity.get("commessa_id"):
+                commessa = await db.commesse.find_one({"id": entity["commessa_id"]})
+                if commessa:
+                    commessa_nome = commessa.get("nome")
+            
+            if entity.get("sub_agenzia_id"):
+                sub_agenzia = await db.sub_agenzie.find_one({"id": entity["sub_agenzia_id"]})
+                if sub_agenzia:
+                    sub_agenzia_nome = sub_agenzia.get("nome")
+
+        # Render HTML
+        html_content = html_template.render(
+            entity=entity,
+            entity_type=entity_type,
+            commessa_nome=commessa_nome,
+            sub_agenzia_nome=sub_agenzia_nome,
+            timestamp=datetime.now().strftime('%d/%m/%Y alle %H:%M')
+        )
+
+        # Crea directory per screenshot se non esistente
+        screenshots_dir = Path("screenshots")
+        screenshots_dir.mkdir(exist_ok=True)
+        
+        # Genera screenshot usando Playwright
+        screenshot_filename = f"{entity_type}_{entity['id']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        screenshot_path = screenshots_dir / screenshot_filename
+        
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+            
+            # Imposta dimensioni per screenshot ottimale
+            await page.set_viewport_size({"width": 1200, "height": 800})
+            
+            # Carica HTML
+            await page.set_content(html_content)
+            
+            # Attendi che tutto sia renderizzato
+            await page.wait_for_timeout(1000)
+            
+            # Prendi screenshot
+            await page.screenshot(path=str(screenshot_path), full_page=True, quality=90)
+            
+            await browser.close()
+        
+        logger.info(f"Screenshot generato: {screenshot_path}")
+        return str(screenshot_path)
+        
+    except Exception as e:
+        logger.error(f"Errore nella generazione screenshot: {e}")
+        return None
 
 # Include the router in the main app (MUST be after all endpoints are defined)
 app.include_router(api_router)
