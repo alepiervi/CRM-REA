@@ -104,7 +104,10 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Progress,
-  Cog
+  Cog,
+  Edit,
+  Trash2,
+  Badge
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
