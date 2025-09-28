@@ -6892,26 +6892,26 @@ Duplicate,Test,+393471234567"""
         return True
 
     def run_all_tests(self):
-        """Run test for multiple upload and screenshot functionality as requested"""
-        print("🚀 Starting CRM API Testing - Multiple Upload and Screenshot Test...")
+        """Run test for search-entities endpoint as requested"""
+        print("🚀 Starting CRM API Testing - Search Entities Endpoint Test...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 80)
         
-        # PRIORITY TEST: Multiple upload and screenshot functionality (as requested in review)
-        print("\n🚨 PRIORITY TEST: MULTIPLE UPLOAD AND SCREENSHOT FUNCTIONALITY...")
-        upload_test_success = self.test_multiple_upload_and_screenshot_functionality()
+        # PRIORITY TEST: Search entities endpoint functionality (as requested in review)
+        print("\n🚨 PRIORITY TEST: SEARCH ENTITIES ENDPOINT FUNCTIONALITY...")
+        search_test_success = self.test_search_entities_endpoint_complete()
         
         # Print summary
         print("\n" + "=" * 80)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
-        print(f"📤 Multiple Upload Status: {'✅ SUCCESS - Upload multiplo funzionante!' if upload_test_success else '❌ ISSUES FOUND'}")
+        print(f"🔍 Search Entities Status: {'✅ SUCCESS - Endpoint funzionante!' if search_test_success else '❌ ISSUES FOUND'}")
         
-        if upload_test_success:
-            print("🎉 PRIORITY TEST PASSED: Multiple upload and screenshot functionality working!")
-            print("🎉 CONFIRMED: Upload multiplo pronto per integrazione Aruba Drive!")
+        if search_test_success:
+            print("🎉 PRIORITY TEST PASSED: Search entities endpoint working!")
+            print("🎉 CONFIRMED: Ricerca rapida e precisa con highlighting dei campi trovati!")
             return True
         else:
-            print("🚨 PRIORITY TEST FAILED: Multiple upload functionality has issues!")
+            print("🚨 PRIORITY TEST FAILED: Search entities endpoint has issues!")
             return False
 
     def test_document_endpoints_with_authorization(self):
