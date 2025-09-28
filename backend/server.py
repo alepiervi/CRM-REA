@@ -8453,6 +8453,170 @@ async def generate_entity_screenshot(entity_type: str, entity: dict) -> str:
         logger.error(f"Errore nella generazione screenshot: {e}")
         return None
 
+@api_router.get("/search-entities")
+async def search_entities(
+    query: str,
+    entity_type: str,  # "clienti" or "leads"
+    current_user: User = Depends(get_current_user)
+):
+    """Search for clienti or leads by multiple fields"""
+    
+    try:
+        if not query or len(query.strip()) < 2:
+            return {"results": []}
+        
+        query = query.strip()
+        
+        # Build search criteria
+        search_conditions = []
+        
+        if entity_type == "clienti":
+            # Search in clienti collection
+            search_conditions = [
+                {"id": {"$regex": query, "$options": "i"}},
+                {"cognome": {"$regex": query, "$options": "i"}},
+                {"nome": {"$regex": query, "$options": "i"}},
+                {"email": {"$regex": query, "$options": "i"}},
+                {"telefono": {"$regex": query, "$options": "i"}},
+                {"codice_fiscale": {"$regex": query, "$options": "i"}},
+                {"partita_iva": {"$regex": query, "$options": "i"}}
+            ]
+            
+            # Apply role-based filtering for clienti
+            base_query = {}
+            if current_user.role != UserRole.ADMIN:
+                if current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+                    # Filter by authorized commesse
+                    base_query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+                elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+                    # Filter by authorized commesse and sub agenzia
+                    base_query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+                    base_query["sub_agenzia_id"] = current_user.sub_agenzia_id
+                elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
+                    # Only entities they created
+                    base_query["created_by"] = current_user.id
+            
+            final_query = {
+                "$and": [
+                    base_query,
+                    {"$or": search_conditions}
+                ]
+            }
+            
+            collection = db.clienti
+            
+        else:
+            # Search in leads collection
+            search_conditions = [
+                {"id": {"$regex": query, "$options": "i"}},
+                {"cognome": {"$regex": query, "$options": "i"}},
+                {"nome": {"$regex": query, "$options": "i"}},
+                {"email": {"$regex": query, "$options": "i"}},
+                {"telefono": {"$regex": query, "$options": "i"}},
+                {"lead_id": {"$regex": query, "$options": "i"}}
+            ]
+            
+            # Apply role-based filtering for leads
+            base_query = {}
+            if current_user.role != UserRole.ADMIN:
+                if current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+                    # Filter by authorized commesse (gruppo field in leads)
+                    base_query["gruppo"] = {"$in": current_user.commesse_autorizzate}
+                elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+                    # Filter by authorized commesse and sub agenzia
+                    base_query["gruppo"] = {"$in": current_user.commesse_autorizzate}
+                    if hasattr(current_user, 'sub_agenzia_id'):
+                        base_query["sub_agenzia_id"] = current_user.sub_agenzia_id
+                elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
+                    # Only leads they created
+                    base_query["created_by"] = current_user.id
+            
+            final_query = {
+                "$and": [
+                    base_query,
+                    {"$or": search_conditions}
+                ]
+            }
+            
+            collection = db.leads
+        
+        # Execute search with limit
+        entities = await collection.find(final_query).limit(10).to_list(length=None)
+        
+        # Format results with match highlighting
+        results = []
+        for entity in entities:
+            # Determine which field matched
+            matched_fields = []
+            query_lower = query.lower()
+            
+            if entity_type == "clienti":
+                if query_lower in entity.get("id", "").lower():
+                    matched_fields.append(f"ID: {entity.get('id', '')}")
+                if query_lower in entity.get("cognome", "").lower():
+                    matched_fields.append(f"Cognome: {entity.get('cognome', '')}")
+                if query_lower in entity.get("nome", "").lower():
+                    matched_fields.append(f"Nome: {entity.get('nome', '')}")
+                if query_lower in entity.get("codice_fiscale", "").lower():
+                    matched_fields.append(f"CF: {entity.get('codice_fiscale', '')}")
+                if query_lower in entity.get("partita_iva", "").lower():
+                    matched_fields.append(f"P.IVA: {entity.get('partita_iva', '')}")
+                if query_lower in entity.get("telefono", "").lower():
+                    matched_fields.append(f"Tel: {entity.get('telefono', '')}")
+                if query_lower in entity.get("email", "").lower():
+                    matched_fields.append(f"Email: {entity.get('email', '')}")
+            else:
+                if query_lower in entity.get("id", "").lower():
+                    matched_fields.append(f"ID: {entity.get('id', '')}")
+                if query_lower in entity.get("lead_id", "").lower():
+                    matched_fields.append(f"Lead ID: {entity.get('lead_id', '')}")
+                if query_lower in entity.get("cognome", "").lower():
+                    matched_fields.append(f"Cognome: {entity.get('cognome', '')}")
+                if query_lower in entity.get("nome", "").lower():
+                    matched_fields.append(f"Nome: {entity.get('nome', '')}")
+                if query_lower in entity.get("telefono", "").lower():
+                    matched_fields.append(f"Tel: {entity.get('telefono', '')}")
+                if query_lower in entity.get("email", "").lower():
+                    matched_fields.append(f"Email: {entity.get('email', '')}")
+            
+            result = {
+                "id": entity.get("id"),
+                "nome": entity.get("nome", ""),
+                "cognome": entity.get("cognome", ""),
+                "display_name": f"{entity.get('nome', '')} {entity.get('cognome', '')}".strip(),
+                "matched_fields": matched_fields[:2],  # Show max 2 matched fields
+                "entity_type": entity_type
+            }
+            
+            # Add specific fields based on entity type
+            if entity_type == "clienti":
+                result.update({
+                    "codice_fiscale": entity.get("codice_fiscale", ""),
+                    "partita_iva": entity.get("partita_iva", ""),
+                    "telefono": entity.get("telefono", ""),
+                    "email": entity.get("email", "")
+                })
+            else:
+                result.update({
+                    "lead_id": entity.get("lead_id", entity.get("id", "")[:8]),
+                    "telefono": entity.get("telefono", ""),
+                    "email": entity.get("email", ""),
+                    "stato": entity.get("stato", "")
+                })
+            
+            results.append(result)
+        
+        return {
+            "results": results,
+            "total": len(results),
+            "query": query,
+            "entity_type": entity_type
+        }
+        
+    except Exception as e:
+        logger.error(f"Error searching entities: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nella ricerca: {str(e)}")
+
 # Include the router in the main app (MUST be after all endpoints are defined)
 app.include_router(api_router)
 
