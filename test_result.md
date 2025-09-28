@@ -792,7 +792,7 @@ frontend:
 
 test_plan:
   current_focus:
-    - "Multiple Upload Frontend UI with Drag & Drop and Progress Bar"
+    - "Aruba Drive Configuration Management System - Complete CRUD Endpoints"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
