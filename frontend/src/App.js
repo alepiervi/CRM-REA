@@ -104,7 +104,6 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Progress,
-  Trash2,
   Badge
 } from "lucide-react";
 
