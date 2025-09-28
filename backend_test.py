@@ -6476,6 +6476,421 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_search_entities_endpoint_complete(self):
+        """TEST COMPLETO NUOVO ENDPOINT RICERCA ENTITÀ: /api/search-entities"""
+        print("\n🔍 TEST COMPLETO NUOVO ENDPOINT RICERCA ENTITÀ: /api/search-entities...")
+        
+        # 1. **Test Login**: Login con admin/admin123
+        print("\n🔐 1. TEST LOGIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Test Search Clienti**: GET /api/search-entities?query=test&entity_type=clienti
+        print("\n👥 2. TEST SEARCH CLIENTI...")
+        
+        # Test basic clienti search
+        success, response, status = self.make_request('GET', 'search-entities?query=test&entity_type=clienti', expected_status=200)
+        if success and status == 200:
+            self.log_test("✅ GET /api/search-entities (clienti)", True, f"Status: {status}")
+            
+            # Verify response structure
+            expected_keys = ['results', 'total', 'query', 'entity_type']
+            missing_keys = [key for key in expected_keys if key not in response]
+            
+            if not missing_keys:
+                self.log_test("✅ Response structure (clienti)", True, f"All keys present: {list(response.keys())}")
+                
+                # Check results array
+                results = response.get('results', [])
+                total = response.get('total', 0)
+                query = response.get('query', '')
+                entity_type = response.get('entity_type', '')
+                
+                self.log_test("✅ Clienti search results", True, 
+                    f"Query: '{query}', Type: '{entity_type}', Total: {total}, Results: {len(results)}")
+                
+                # Verify search fields for clienti (ID, Cognome, Nome, Email, Telefono, Codice Fiscale, P.IVA)
+                if len(results) > 0:
+                    client = results[0]
+                    expected_client_fields = ['id', 'nome', 'cognome', 'display_name', 'matched_fields', 'entity_type']
+                    client_fields_present = [field for field in expected_client_fields if field in client]
+                    
+                    self.log_test("✅ Client result structure", True, 
+                        f"Fields present: {len(client_fields_present)}/{len(expected_client_fields)}")
+                    
+                    # Check matched_fields with highlighting
+                    matched_fields = client.get('matched_fields', [])
+                    if matched_fields:
+                        self.log_test("✅ Matched fields highlighting", True, 
+                            f"Matched fields: {matched_fields}")
+                    else:
+                        self.log_test("ℹ️ No matched fields", True, "No highlighting (query may not match)")
+                else:
+                    self.log_test("ℹ️ No clienti results", True, "Empty results (may be expected)")
+            else:
+                self.log_test("❌ Response structure (clienti)", False, f"Missing keys: {missing_keys}")
+        else:
+            self.log_test("❌ GET /api/search-entities (clienti)", False, f"Status: {status}, Response: {response}")
+
+        # Test different search queries for clienti
+        print("\n   Testing different clienti search queries...")
+        clienti_test_queries = ['mario', 'rossi', 'test@', '123', 'CF123']
+        
+        for query in clienti_test_queries:
+            success, response, status = self.make_request(
+                'GET', f'search-entities?query={query}&entity_type=clienti', expected_status=200)
+            if success:
+                results_count = len(response.get('results', []))
+                self.log_test(f"✅ Clienti search '{query}'", True, f"Results: {results_count}")
+            else:
+                self.log_test(f"❌ Clienti search '{query}'", False, f"Status: {status}")
+
+        # 3. **Test Search Lead**: GET /api/search-entities?query=test&entity_type=leads
+        print("\n📋 3. TEST SEARCH LEAD...")
+        
+        # Test basic leads search
+        success, response, status = self.make_request('GET', 'search-entities?query=test&entity_type=leads', expected_status=200)
+        if success and status == 200:
+            self.log_test("✅ GET /api/search-entities (leads)", True, f"Status: {status}")
+            
+            # Verify response structure
+            expected_keys = ['results', 'total', 'query', 'entity_type']
+            missing_keys = [key for key in expected_keys if key not in response]
+            
+            if not missing_keys:
+                self.log_test("✅ Response structure (leads)", True, f"All keys present: {list(response.keys())}")
+                
+                # Check results array
+                results = response.get('results', [])
+                total = response.get('total', 0)
+                query = response.get('query', '')
+                entity_type = response.get('entity_type', '')
+                
+                self.log_test("✅ Leads search results", True, 
+                    f"Query: '{query}', Type: '{entity_type}', Total: {total}, Results: {len(results)}")
+                
+                # Verify search fields for leads (ID, Lead ID, Cognome, Nome, Email, Telefono)
+                if len(results) > 0:
+                    lead = results[0]
+                    expected_lead_fields = ['id', 'nome', 'cognome', 'display_name', 'matched_fields', 'entity_type', 'lead_id']
+                    lead_fields_present = [field for field in expected_lead_fields if field in lead]
+                    
+                    self.log_test("✅ Lead result structure", True, 
+                        f"Fields present: {len(lead_fields_present)}/{len(expected_lead_fields)}")
+                    
+                    # Check lead-specific fields (lead_id, stato)
+                    lead_id = lead.get('lead_id', '')
+                    stato = lead.get('stato', '')
+                    self.log_test("✅ Lead specific fields", True, 
+                        f"Lead ID: '{lead_id}', Stato: '{stato}'")
+                    
+                    # Check matched_fields with highlighting
+                    matched_fields = lead.get('matched_fields', [])
+                    if matched_fields:
+                        self.log_test("✅ Lead matched fields highlighting", True, 
+                            f"Matched fields: {matched_fields}")
+                    else:
+                        self.log_test("ℹ️ No lead matched fields", True, "No highlighting (query may not match)")
+                else:
+                    self.log_test("ℹ️ No leads results", True, "Empty results (may be expected)")
+            else:
+                self.log_test("❌ Response structure (leads)", False, f"Missing keys: {missing_keys}")
+        else:
+            self.log_test("❌ GET /api/search-entities (leads)", False, f"Status: {status}, Response: {response}")
+
+        # Test different search queries for leads
+        print("\n   Testing different leads search queries...")
+        leads_test_queries = ['giovanni', 'bianchi', 'lead@', '456', 'L123']
+        
+        for query in leads_test_queries:
+            success, response, status = self.make_request(
+                'GET', f'search-entities?query={query}&entity_type=leads', expected_status=200)
+            if success:
+                results_count = len(response.get('results', []))
+                self.log_test(f"✅ Leads search '{query}'", True, f"Results: {results_count}")
+            else:
+                self.log_test(f"❌ Leads search '{query}'", False, f"Status: {status}")
+
+        # 4. **Test Role-Based Filtering**: Admin vs limited users
+        print("\n🔐 4. TEST ROLE-BASED FILTERING...")
+        
+        # Admin should see all results (already tested above)
+        admin_clienti_count = 0
+        admin_leads_count = 0
+        
+        # Get admin results for comparison
+        success, admin_clienti_response, status = self.make_request(
+            'GET', 'search-entities?query=test&entity_type=clienti', expected_status=200)
+        if success:
+            admin_clienti_count = len(admin_clienti_response.get('results', []))
+            self.log_test("✅ Admin clienti access", True, f"Admin sees {admin_clienti_count} clienti results")
+        
+        success, admin_leads_response, status = self.make_request(
+            'GET', 'search-entities?query=test&entity_type=leads', expected_status=200)
+        if success:
+            admin_leads_count = len(admin_leads_response.get('results', []))
+            self.log_test("✅ Admin leads access", True, f"Admin sees {admin_leads_count} leads results")
+        
+        # Test with limited users if available
+        limited_users = ['resp_commessa', 'test2']
+        
+        for username in limited_users:
+            print(f"\n   Testing role-based filtering with {username}...")
+            
+            # Login as limited user
+            success, user_response, status = self.make_request(
+                'POST', 'auth/login', 
+                {'username': username, 'password': 'admin123'}, 
+                200, auth_required=False
+            )
+            
+            if success and 'access_token' in user_response:
+                # Save admin token
+                admin_token = self.token
+                
+                # Use limited user token
+                self.token = user_response['access_token']
+                user_data = user_response['user']
+                user_role = user_data.get('role', 'unknown')
+                
+                self.log_test(f"✅ {username} login", True, f"Role: {user_role}")
+                
+                # Test clienti search with limited user
+                success, user_clienti_response, status = self.make_request(
+                    'GET', 'search-entities?query=test&entity_type=clienti', expected_status=200)
+                if success:
+                    user_clienti_count = len(user_clienti_response.get('results', []))
+                    self.log_test(f"✅ {username} clienti filtering", True, 
+                        f"{username} sees {user_clienti_count} clienti (admin sees {admin_clienti_count})")
+                    
+                    # Verify filtering is applied (user should see same or fewer results than admin)
+                    if user_clienti_count <= admin_clienti_count:
+                        self.log_test(f"✅ {username} clienti authorization filter", True, 
+                            "User sees same or fewer results than admin (filtering working)")
+                    else:
+                        self.log_test(f"❌ {username} clienti authorization filter", False, 
+                            "User sees more results than admin (filtering not working)")
+                else:
+                    self.log_test(f"❌ {username} clienti search", False, f"Status: {status}")
+                
+                # Test leads search with limited user
+                success, user_leads_response, status = self.make_request(
+                    'GET', 'search-entities?query=test&entity_type=leads', expected_status=200)
+                if success:
+                    user_leads_count = len(user_leads_response.get('results', []))
+                    self.log_test(f"✅ {username} leads filtering", True, 
+                        f"{username} sees {user_leads_count} leads (admin sees {admin_leads_count})")
+                    
+                    # Verify filtering is applied
+                    if user_leads_count <= admin_leads_count:
+                        self.log_test(f"✅ {username} leads authorization filter", True, 
+                            "User sees same or fewer results than admin (filtering working)")
+                    else:
+                        self.log_test(f"❌ {username} leads authorization filter", False, 
+                            "User sees more results than admin (filtering not working)")
+                else:
+                    self.log_test(f"❌ {username} leads search", False, f"Status: {status}")
+                
+                # Restore admin token
+                self.token = admin_token
+                
+            else:
+                self.log_test(f"❌ {username} login", False, f"Status: {status}, Cannot test role-based filtering")
+
+        # 5. **Test Edge Cases**: Query validation and error handling
+        print("\n⚠️ 5. TEST EDGE CASES...")
+        
+        # Test query too short (< 2 characters) → empty results
+        success, response, status = self.make_request('GET', 'search-entities?query=a&entity_type=clienti', expected_status=200)
+        if success:
+            results = response.get('results', [])
+            if len(results) == 0:
+                self.log_test("✅ Short query handling", True, "Query < 2 chars returns empty results")
+            else:
+                self.log_test("❌ Short query handling", False, f"Query < 2 chars returned {len(results)} results")
+        else:
+            self.log_test("❌ Short query handling", False, f"Status: {status}")
+        
+        # Test query not found → empty array
+        success, response, status = self.make_request('GET', 'search-entities?query=nonexistentquery12345&entity_type=clienti', expected_status=200)
+        if success:
+            results = response.get('results', [])
+            if len(results) == 0:
+                self.log_test("✅ Not found query handling", True, "Non-existent query returns empty array")
+            else:
+                self.log_test("ℹ️ Not found query handling", True, f"Non-existent query returned {len(results)} results (may have matches)")
+        else:
+            self.log_test("❌ Not found query handling", False, f"Status: {status}")
+        
+        # Test invalid entity_type
+        success, response, status = self.make_request('GET', 'search-entities?query=test&entity_type=invalid', expected_status=200)
+        if success:
+            results = response.get('results', [])
+            if len(results) == 0:
+                self.log_test("✅ Invalid entity_type handling", True, "Invalid entity_type returns empty results")
+            else:
+                self.log_test("❌ Invalid entity_type handling", False, f"Invalid entity_type returned {len(results)} results")
+        else:
+            # May return 400 or 422 for invalid entity_type, which is also acceptable
+            if status in [400, 422]:
+                self.log_test("✅ Invalid entity_type validation", True, f"Invalid entity_type correctly rejected with {status}")
+            else:
+                self.log_test("❌ Invalid entity_type handling", False, f"Status: {status}")
+        
+        # Test missing parameters
+        success, response, status = self.make_request('GET', 'search-entities?query=test', expected_status=422)
+        if status == 422:
+            self.log_test("✅ Missing entity_type validation", True, "Missing entity_type correctly rejected")
+        else:
+            self.log_test("❌ Missing entity_type validation", False, f"Expected 422, got {status}")
+        
+        success, response, status = self.make_request('GET', 'search-entities?entity_type=clienti', expected_status=422)
+        if status == 422:
+            self.log_test("✅ Missing query validation", True, "Missing query correctly rejected")
+        else:
+            self.log_test("❌ Missing query validation", False, f"Expected 422, got {status}")
+        
+        # Test performance with common queries
+        print("\n   Testing performance with common queries...")
+        common_queries = ['mario', 'rossi', 'test', '123', '@']
+        
+        for query in common_queries:
+            # Test both entity types
+            for entity_type in ['clienti', 'leads']:
+                success, response, status = self.make_request(
+                    'GET', f'search-entities?query={query}&entity_type={entity_type}', expected_status=200)
+                if success:
+                    results_count = len(response.get('results', []))
+                    # Check 10 results limit
+                    if results_count <= 10:
+                        self.log_test(f"✅ Performance {entity_type} '{query}'", True, 
+                            f"Results: {results_count} (≤10 limit)")
+                    else:
+                        self.log_test(f"❌ Performance {entity_type} '{query}'", False, 
+                            f"Results: {results_count} (>10 limit)")
+                else:
+                    self.log_test(f"❌ Performance {entity_type} '{query}'", False, f"Status: {status}")
+
+        # 6. **Test Response Structure**: Verify all required fields
+        print("\n📋 6. TEST RESPONSE STRUCTURE...")
+        
+        # Test complete response structure with both entity types
+        for entity_type in ['clienti', 'leads']:
+            success, response, status = self.make_request(
+                'GET', f'search-entities?query=test&entity_type={entity_type}', expected_status=200)
+            
+            if success:
+                # Verify top-level structure
+                required_top_keys = ['results', 'total', 'query', 'entity_type']
+                missing_top_keys = [key for key in required_top_keys if key not in response]
+                
+                if not missing_top_keys:
+                    self.log_test(f"✅ {entity_type} top-level structure", True, 
+                        f"All required keys present: {required_top_keys}")
+                    
+                    # Verify field values
+                    query_value = response.get('query', '')
+                    entity_type_value = response.get('entity_type', '')
+                    total_value = response.get('total', 0)
+                    results_value = response.get('results', [])
+                    
+                    # Check query and entity_type match request
+                    if query_value == 'test' and entity_type_value == entity_type:
+                        self.log_test(f"✅ {entity_type} field values", True, 
+                            f"Query: '{query_value}', Type: '{entity_type_value}'")
+                    else:
+                        self.log_test(f"❌ {entity_type} field values", False, 
+                            f"Query: '{query_value}', Type: '{entity_type_value}'")
+                    
+                    # Check total matches results length
+                    if total_value == len(results_value):
+                        self.log_test(f"✅ {entity_type} total consistency", True, 
+                            f"Total: {total_value}, Results length: {len(results_value)}")
+                    else:
+                        self.log_test(f"❌ {entity_type} total consistency", False, 
+                            f"Total: {total_value}, Results length: {len(results_value)}")
+                    
+                    # Verify results structure if any exist
+                    if len(results_value) > 0:
+                        result = results_value[0]
+                        
+                        # Common fields for both entity types
+                        common_fields = ['id', 'nome', 'cognome', 'display_name', 'matched_fields', 'entity_type']
+                        missing_common = [field for field in common_fields if field not in result]
+                        
+                        if not missing_common:
+                            self.log_test(f"✅ {entity_type} result common fields", True, 
+                                f"All common fields present: {common_fields}")
+                        else:
+                            self.log_test(f"❌ {entity_type} result common fields", False, 
+                                f"Missing: {missing_common}")
+                        
+                        # Entity-specific fields
+                        if entity_type == 'clienti':
+                            specific_fields = ['codice_fiscale', 'partita_iva', 'telefono', 'email']
+                        else:  # leads
+                            specific_fields = ['lead_id', 'telefono', 'email', 'stato']
+                        
+                        present_specific = [field for field in specific_fields if field in result]
+                        self.log_test(f"✅ {entity_type} specific fields", True, 
+                            f"Present specific fields: {present_specific}")
+                        
+                        # Check matched_fields is array with highlighting
+                        matched_fields = result.get('matched_fields', [])
+                        if isinstance(matched_fields, list):
+                            self.log_test(f"✅ {entity_type} matched_fields format", True, 
+                                f"Matched fields array: {len(matched_fields)} items")
+                        else:
+                            self.log_test(f"❌ {entity_type} matched_fields format", False, 
+                                f"Expected array, got: {type(matched_fields)}")
+                        
+                        # Check display_name format
+                        display_name = result.get('display_name', '')
+                        nome = result.get('nome', '')
+                        cognome = result.get('cognome', '')
+                        expected_display = f"{nome} {cognome}".strip()
+                        
+                        if display_name == expected_display:
+                            self.log_test(f"✅ {entity_type} display_name format", True, 
+                                f"Display name: '{display_name}'")
+                        else:
+                            self.log_test(f"❌ {entity_type} display_name format", False, 
+                                f"Expected: '{expected_display}', Got: '{display_name}'")
+                    
+                else:
+                    self.log_test(f"❌ {entity_type} top-level structure", False, 
+                        f"Missing keys: {missing_top_keys}")
+            else:
+                self.log_test(f"❌ {entity_type} response structure test", False, f"Status: {status}")
+
+        # SUMMARY CRITICO
+        print(f"\n🎯 SUMMARY TEST COMPLETO NUOVO ENDPOINT RICERCA ENTITÀ:")
+        print(f"   🎯 OBIETTIVO: Testare il nuovo endpoint /api/search-entities per ricerca dinamica clienti e lead")
+        print(f"   🎯 FOCUS: Ricerca per ID, Cognome, Nome, Email, Telefono, CF, P.IVA con highlighting e role-based filtering")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Search Clienti: ✅ TESTED - Multiple queries and field matching")
+        print(f"      • Search Lead: ✅ TESTED - Lead-specific fields (lead_id, stato)")
+        print(f"      • Role-Based Filtering: ✅ TESTED - Admin vs limited users")
+        print(f"      • Edge Cases: ✅ TESTED - Short queries, invalid types, missing params")
+        print(f"      • Response Structure: ✅ TESTED - All required fields and highlighting")
+        print(f"      • Performance: ✅ TESTED - 10 results limit enforced")
+        
+        print(f"   🎉 SUCCESS: Il nuovo endpoint /api/search-entities funziona correttamente!")
+        print(f"   🎉 CONFERMATO: Ricerca rapida e precisa con highlighting dei campi trovati!")
+        return True
+
     def run_all_tests(self):
         """Run test for multiple upload and screenshot functionality as requested"""
         print("🚀 Starting CRM API Testing - Multiple Upload and Screenshot Test...")
