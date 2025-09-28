@@ -8114,10 +8114,54 @@ import base64
 import os
 from pathlib import Path
 
-# Aruba Drive Configuration
-ARUBA_DRIVE_URL = "https://da6z2a.arubadrive.com/login?clear=1"
-ARUBA_DRIVE_USERNAME = os.environ.get('ARUBA_DRIVE_USERNAME')
-ARUBA_DRIVE_PASSWORD = os.environ.get('ARUBA_DRIVE_PASSWORD')
+# Aruba Drive Configuration - ora gestito via database invece di .env
+# ARUBA_DRIVE_URL = "https://da6z2a.arubadrive.com/login?clear=1"  
+# ARUBA_DRIVE_USERNAME = os.environ.get('ARUBA_DRIVE_USERNAME')
+# ARUBA_DRIVE_PASSWORD = os.environ.get('ARUBA_DRIVE_PASSWORD')
+
+async def get_active_aruba_drive_config():
+    """Ottiene la configurazione Aruba Drive attiva dal database"""
+    try:
+        config = await db.aruba_drive_configs.find_one({"is_active": True})
+        return config
+    except:
+        return None
+
+# Pydantic models per configurazioni Aruba Drive
+class ArubaDriveConfig(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str  # Nome descrittivo (es. "Account Principale", "Account Backup")
+    url: str
+    username: str
+    password: str
+    is_active: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ArubaDriveConfigCreate(BaseModel):
+    name: str
+    url: str
+    username: str
+    password: str
+    is_active: Optional[bool] = False
+
+class ArubaDriveConfigUpdate(BaseModel):
+    name: Optional[str] = None
+    url: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class ArubaDriveConfigResponse(BaseModel):
+    id: str
+    name: str
+    url: str
+    username: str
+    password_masked: str  # Password mascherata per sicurezza
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    last_test_result: Optional[dict] = None
 
 async def create_aruba_drive_folder_and_upload(entity_type: str, entity_id: str, uploaded_files: List[dict]):
     """
