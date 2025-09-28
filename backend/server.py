@@ -8278,7 +8278,7 @@ def sanitize_folder_name(name: str) -> str:
     
     return name if name else "Unknown"
 
-async def upload_to_aruba_drive(entity_data: dict, uploaded_files: List[dict], screenshot_path: str) -> bool:
+async def upload_to_aruba_drive(entity_data: dict, uploaded_files: List[dict], screenshot_path: str, aruba_config: dict) -> bool:
     """Upload con browser automation su Aruba Drive"""
     
     async with async_playwright() as p:
@@ -8291,11 +8291,11 @@ async def upload_to_aruba_drive(entity_data: dict, uploaded_files: List[dict], s
             
             # Login
             logger.info("🔐 ARUBA DRIVE: Eseguendo login...")
-            await page.goto(ARUBA_DRIVE_URL, wait_until="networkidle")
+            await page.goto(aruba_config["url"], wait_until="networkidle")
             
             # Compila form login
-            await page.fill('input[name="username"], input[type="text"]', ARUBA_DRIVE_USERNAME)
-            await page.fill('input[name="password"], input[type="password"]', ARUBA_DRIVE_PASSWORD)
+            await page.fill('input[name="username"], input[type="text"]', aruba_config["username"])
+            await page.fill('input[name="password"], input[type="password"]', aruba_config["password"])
             
             # Submit login
             login_button = page.locator('button[type="submit"], input[type="submit"], button:has-text("Login"), button:has-text("Accedi")')
