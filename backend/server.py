@@ -7705,7 +7705,10 @@ async def get_documents(
         
         # Filter by document type
         if document_type:
-            query["entity_type"] = document_type
+            if document_type == "clienti":
+                query["document_type"] = "cliente"
+            else:
+                query["document_type"] = "lead"
         
         # Apply role-based filtering
         if current_user.role == UserRole.ADMIN:
