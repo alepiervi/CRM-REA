@@ -6547,6 +6547,9 @@ const AIConfigurationManagement = () => {
   const [assistants, setAssistants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [arubaDriveConfigs, setArubaDriveConfigs] = useState([]);
+  const [editingConfig, setEditingConfig] = useState(null);
+  const [testingConfigId, setTestingConfigId] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
