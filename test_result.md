@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "TEST COMPLETO NUOVO ENDPOINT RICERCA ENTITÀ: L'utente ha richiesto il test completo del nuovo endpoint /api/search-entities per la ricerca dinamica di clienti e lead. OBIETTIVO: Testare ricerca per ID, Cognome, Nome, Email, Telefono, Codice Fiscale, P.IVA con highlighting dei campi trovati e role-based filtering. CREDENZIALI: admin/admin123. FOCUS: L'endpoint deve fornire ricerca rapida e precisa con highlighting dei campi trovati. RISULTATO: Endpoint completamente funzionante con ricerca multi-campo, highlighting, role-based filtering, gestione edge cases, e struttura response corretta."
+user_problem_statement: "TEST COMPLETO GESTIONE CONFIGURAZIONI ARUBA DRIVE: L'utente ha richiesto il test completo del nuovo sistema di gestione configurazioni Aruba Drive. OBIETTIVO: Testare tutti i nuovi endpoint per la gestione delle configurazioni Aruba Drive (GET, POST, PUT, DELETE, TEST), validazioni accesso admin-only, campi obbligatori, password masking, configurazione attiva unica, struttura database, e browser automation simulato. CREDENZIALI: admin/admin123. FOCUS: Sistema completo CRUD per configurazioni Aruba Drive con validazioni e test connessione. RISULTATO: Sistema completamente funzionante con tutti gli endpoint implementati e testati con successo."
 
 backend:
   - task: "Search Entities Endpoint - Dynamic Search for Clienti and Leads"
