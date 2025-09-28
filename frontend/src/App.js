@@ -6296,21 +6296,89 @@ const DocumentsManagement = ({
               <p className="text-sm text-slate-600">Carica uno o più documenti contemporaneamente</p>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Entity Selection */}
+              {/* Entity Search */}
               <div>
-                <Label>Seleziona {activeTab === "clienti" ? "Cliente" : "Lead"}:</Label>
-                <Select value={selectedEntity} onValueChange={setSelectedEntity}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={`Seleziona ${activeTab === "clienti" ? "cliente" : "lead"}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {entityList.map((entity) => (
-                      <SelectItem key={entity.id} value={entity.id}>
-                        {entity.nome} {entity.cognome} ({entity.id})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Cerca {activeTab === "clienti" ? "Cliente" : "Lead"}:</Label>
+                <p className="text-xs text-slate-600 mb-2">
+                  Cerca per: ID, Cognome, {activeTab === "clienti" ? "Codice Fiscale, P.IVA, " : ""}Telefono, Email
+                </p>
+                <div className="relative">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder={`Digita per cercare ${activeTab === "clienti" ? "cliente" : "lead"}...`}
+                      value={searchQuery}
+                      onChange={(e) => handleSearchInput(e.target.value)}
+                      className="w-full p-3 pr-10 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={clearSearch}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Search Results Dropdown */}
+                  {showSearchResults && searchResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-64 overflow-y-auto">
+                      {searchResults.map((entity, index) => (
+                        <div
+                          key={entity.id}
+                          onClick={() => handleEntitySelect(entity)}
+                          className="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-b-0"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <p className="font-medium text-slate-900">
+                                {entity.display_name}
+                              </p>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {entity.matched_fields.map((field, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded"
+                                  >
+                                    {field}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="ml-2 text-xs text-slate-500">
+                              {entity.entity_type === "clienti" ? "Cliente" : "Lead"}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* No Results Message */}
+                  {showSearchResults && searchResults.length === 0 && searchQuery.length >= 2 && !isSearching && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg p-3">
+                      <p className="text-slate-500 text-sm">
+                        Nessun {activeTab === "clienti" ? "cliente" : "lead"} trovato per "{searchQuery}"
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Search Instructions */}
+                  {searchQuery.length > 0 && searchQuery.length < 2 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg p-3">
+                      <p className="text-slate-500 text-sm">
+                        Digita almeno 2 caratteri per iniziare la ricerca
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
               
               {/* Drag & Drop Area */}
