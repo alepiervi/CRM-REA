@@ -1067,6 +1067,20 @@ const Dashboard = () => {
           return <DashboardStats selectedUnit={selectedUnit} />;
         case "leads":
           return <LeadsManagement selectedUnit={selectedUnit} units={units} />;
+        case "configurazioni":
+          return <ConfigurazioniManagement 
+            onFetchConfigs={fetchArubaDriveConfigs}
+            arubaDriveConfigs={arubaDriveConfigs}
+            onSaveConfig={saveArubaDriveConfig}
+            onDeleteConfig={deleteArubaDriveConfig}
+            onTestConfig={testArubaDriveConfig}
+            testingConfigId={testingConfigId}
+            editingConfig={editingConfig}
+            setEditingConfig={setEditingConfig}
+            showConfigModal={showConfigModal}
+            setShowConfigModal={setShowConfigModal}
+          />;
+
         case "documents":
           // Tutti i ruoli hanno accesso alla sezione documenti con autorizzazioni specifiche
           return <DocumentsManagement 
