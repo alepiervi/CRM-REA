@@ -1,86 +1,77 @@
 <analysis>
-The AI engineer's work involved an iterative process of debugging and implementing complex features, primarily focused on refining role-based access control and hierarchical data filtering in the frontend, coupled with backend authorization fixes. Initially, the engineer resolved Pydantic validation errors and implemented a specialized Responsabile Commessa dashboard. A significant portion of the trajectory addressed a persistent issue with the Tipologia Contratto selector, which evolved from being entirely hidden due to incorrect rendering conditions, to displaying unfiltered data due to React state and function name collisions, and finally to authorization failures for non-admin users. The  proved crucial in diagnosing subtle React state timing issues and identifying repeated backend authorization flaws. The latest task involved implementing mobile-friendliness, which quickly revealed several UI/UX problems that are currently being addressed.
+The AI engineer's trajectory chronicles an intricate, iterative process focused on enhancing an existing CRM application's mobile-friendliness and implementing a robust document management system with granular role-based access. Initially, significant effort was dedicated to fixing pervasive JSX compilation errors, rectifying mobile UI components like responsive tables and sidebar navigation, and ensuring all hierarchical selectors were correctly displayed and functional. A key challenge involved resolving duplicate code and ensuring a clean, dedicated mobile experience for various sections, particularly Analytics. The recent focus shifted to integrating a document management feature, which exposed backend authorization complexities and frontend rendering issues, including a critical  error. The engineer is currently in the process of resolving duplicate backend API endpoints to address a 400 error.
 </analysis>
 
 <product_requirements>
-The application is a comprehensive CRM for lead distribution, administration, and analytics, supporting various roles (Admin, Referente, Agente, Responsabile Commessa, BackOffice Commessa, Responsabile Sub Agenzia, BackOffice Sub Agenzia, Agente Specializzato, Operatore). It includes dashboards, Excel export, mobile-friendliness, email notifications, an OpenAI GPT-4o Mini chatbot, Aruba Drive integration, and advanced lead qualification.
+The application is a comprehensive CRM designed for lead distribution, administration, and analytics, supporting diverse user roles (Admin, Referente, Agente, Responsabile Commessa, BackOffice Commessa, Responsabile Sub Agenzia, BackOffice Sub Agenzia, Agente Specializzato, Operatore). It features dashboards, Excel export, email notifications, an OpenAI GPT-4o Mini chatbot, Aruba Drive integration, and advanced lead qualification.
 
-Previous work established user management with granular permissions (multiple commesse/sub agenzie/services) and analytical viewing flags. Recent focus included:
-- Resolving login/user visibility issues.
-- Implementing a Responsabile Commessa Dashboard with client summaries, sub-agencies, client CRUD, document management, and basic analytics.
-- Refining the dashboard by removing redundant sections and adding a filtered Tipologia Contratto selector.
-- Fixing  bugs related to  and  visibility.
-- Ensuring correct loading and hierarchical filtering for , , , and  selectors.
-- **Specific requirements addressed in this trajectory**: Tipologia Contratto must show only authorized types for the selected service. Hierarchical selectors (Commesse → Servizi → Tipologia Contratto → Sub Agenzie/Unit) must work for all account levels. Clients must be visible to users based on their roles and associated authorizations. The entire system must be mobile-friendly and functional across all sections.
+**Previous work** focused on granular user permissions, resolving login/user visibility, implementing a Responsabile Commessa Dashboard (client summaries, sub-agencies, client CRUD, document management, analytics), and refining dashboard selectors (Tipologia Contratto).
+
+**Specific requirements addressed in this trajectory**:
+1.  **Tipologia Contratto selector**: Must show only authorized types for the selected service.
+2.  **Hierarchical Selectors**: Commesse → Servizi → Tipologia Contratto → Sub Agenzie/Unit must function for all account levels.
+3.  **Client Visibility**: Must be restricted based on user roles and associated authorizations.
+4.  **Mobile-friendliness (initial)**: The entire system must be mobile-friendly and functional across all sections, including responsive tables, visible Logout button, and all necessary sections.
+5.  **Mobile UI refinement**: Clienti and Lead lists must show name, surname, and action buttons on mobile, not just IDs. Analytics section requires distinct mobile and desktop views, with perfectly visible and touch-friendly internal navigation tabs, and removal of any duplicated/refused elements on mobile.
+6.  **Document Management**: A new section enabling all users to upload/download documents associated with clients/leads based on their commessa authorizations. Admin can see all documents; Responsabile Commessa/BackOffice Commessa can access documents for their authorized commesse/sub-agenzie; Responsabile Sub Agenzie/Backoffice Agenzia for their agency's authorized commesse; Agente Specializzato/Operatore for documents of anagrafiche they created. This system needs robust backend authorization and frontend rendering.
 </product_requirements>
 
 <key_technical_concepts>
-- **Full-stack**: React (frontend), FastAPI (backend), MongoDB (database).
-- **UI/UX**: Shadcn UI, Tailwind CSS, Recharts, Lucide React (icons).
-- **Data Management**: Pydantic for validation, UUIDs for IDs.
-- **API Communication**: Axios for API calls, explicit logging.
-- **Authentication/Authorization**: JWT-based, role-based access control, granular permissions for , , , implemented with a dual check pattern in backend.
-- **React State Management**: ,  for asynchronous data fetching and dependency management, handling state and function name collisions.
+-   **Full-stack**: React (frontend), FastAPI (backend), MongoDB (database).
+-   **UI/UX**: Tailwind CSS for responsive design, Shadcn UI components.
+-   **Authorization**: Role-based access control with granular permissions (, , ) and dual check pattern in the backend.
+-   **React State Management**: ,  for data fetching, handling component lifecycle.
+-   **API Communication**:  for HTTP requests,  for backend data validation.
+-   **File Handling**: Document upload/download capabilities.
 </key_technical_concepts>
 
 <code_architecture>
-The application maintains a full-stack architecture with React, FastAPI, and MongoDB.
+The application follows a full-stack architecture, utilizing React for the frontend, FastAPI for the backend, and MongoDB as the database.
 
 
 
 -   
-    -   **Importance**: Central for API endpoints, database models, and business logic.
+    -   **Importance**: Handles API endpoints, database interactions, and business logic, including authorization.
     -   **Changes Made**:
-        -   **Authorization Fixes**: Modified  and direct inline authorization checks in , , , and  to implement a dual check pattern. This ensures that user authorizations are correctly verified against  (direct field) in addition to (or instead of) checking a separate  collection, resolving numerous 403 Forbidden errors for non-admin users across various endpoints.
-        -   **Endpoint Logic**: For , modified to handle  by returning services from *all* authorized commesse, rather than failing due to literal string matching.
-        -   **Client Management**: Adjusted authorization logic in  and  for role-based visibility.
+        -   **Document Management Endpoints**: Added  GET endpoint for fetching documents with role-based filtering, and  POST endpoint for uploading documents.
+        -   **Authorization Logic**: Modified existing authorization logic to enforce role-based access for document visibility and actions.
+        -   **Error**: Currently contains a duplicate  endpoint (at line 3748 and 7871), causing a 400 error due to validation conflicts during document fetching, and requiring removal of the old endpoint.
 
 -   
-    -   **Importance**: Main React component managing routing, state, and UI.
+    -   **Importance**: The main React component, managing routing, global state, and the application's UI structure. Most frontend logic and UI rendering for various sections reside here.
     -   **Changes Made**:
-        -   **Hierarchical Selectors & Filtering**:
-            -   Refactored the order of sidebar selectors to: Commesse → Servizi → Tipologia Contratto → Sub Agenzie/Unit.
-            -   Modified rendering conditions for selectors to appear in the new hierarchical order.
-            -   Implemented  to trigger  when  and  change.
-            -   Addressed React timing issues by adding direct calls to  within  and .
-            -   Removed an initial  call on login that was fetching all types unfiltered.
-        -   **State/Function Naming Conflicts**:
-            -   Renamed multiple  state variables (e.g., , , ) and their corresponding setter functions to resolve state collision issues.
-            -   Renamed multiple  functions (e.g., , ) to resolve function collision issues where the wrong function was being invoked by .
-        -   **UI & Data Handling**:
-            -   Resolved ESLint errors related to  and  by ensuring proper import and usage.
-            -   **Client Creation ()**:
-                -   Adjusted  to set  and  to  (or a valid default) instead of empty strings  when none is selected, preventing 422 validation errors.
-                -   Temporarily removed some frontend form validations to debug submission issues.
-                -   Fixed a syntax error () in the  function.
-        -   **Mobile-Friendly UI**:
-            -   Added  for  and  for responsive navigation.
-            -   Modified the main Dashboard JSX layout to include a mobile sidebar with a hamburger menu button.
-            -   Added missing selectors (Servizio, Tipologia Contratto) to the mobile sidebar.
-            -   Implemented initial responsive CSS for the main layout.
+        -   **Mobile-friendliness (General)**:
+            -   Extensively modified mobile sidebar ( state) to ensure all hierarchical selectors (Commesse, Servizi, Tipologia Contratto, Unit/Sub Agenzia) are present and functional, with correct cascading behavior.
+            -   Implemented responsive card layouts for  and  tables on mobile, displaying detailed information (name, surname, actions) instead of just IDs.
+            -   Refined the  section to have separate, dedicated mobile (vertical card-based) and desktop (grid-based) views, with clear navigation tabs, enhanced contrast, and removal of duplicate/refused header elements and date filters on mobile.
+            -   Corrected numerous JSX syntax errors, unclosed  tags, and adjacent JSX elements during UI modifications.
+            -   Ensured the Logout button is visible and functional within the mobile sidebar.
+        -   **Documents Management**:
+            -   Integrated  component: added to  and  for appropriate role access.
+            -   Extensive debugging and refactoring to completely replace old, malformed  code with a new, role-aware implementation. This involved removing large blocks of outdated code and fixing return outside of function and similar JSX compilation errors.
+            -   Imported necessary Lucide React icons (, , ).
+
 -   
-    -   **Importance**: Styles for the frontend application.
-    -   **Changes Made**: Added responsive styling for mobile layouts, including a mobile menu and sidebar visibility.
+    -   **Importance**: Provides global and component-specific styling for the React application.
+    -   **Changes Made**:
+        -   Added responsive CSS for mobile layouts, including mobile menu, sidebar visibility, and tables (, ) to manage horizontal scroll.
+        -   Adjusted padding and heights for mobile UI elements to optimize space and visibility.
 </code_architecture>
 
 <pending_tasks>
-- Fix remaining mobile-friendliness issues:
-  - Ensure tables are mobile-responsive using appropriate CSS.
-  - Make the Logout button visible and functional on mobile.
-  - Verify that all necessary sections are visible on mobile devices.
-- Re-enable and refine frontend form validations in  (temporarily removed for debugging).
+-   **Frontend  Fix**: Resolve the  error, indicating the  state is not an array.
+-   **Backend  Endpoint Fix**: Remove the duplicate  GET endpoint in  to resolve the 400 error and  validation issues.
+-   **Frontend Form Validations**: Re-enable and refine frontend form validations in  (temporarily removed for debugging).
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer was addressing a new set of mobile-friendliness issues reported by the user after the initial mobile UI implementation. The user specifically stated that Mancano delle sezioni inoltre non funzionano i selettori. La lista dei clienti o dei Lead sì vede scorrendo e non va bene. Inoltre manca tasto Logout (Sections are missing, selectors don't work. Client/Lead list scrolls, which is bad. Also, Logout button is missing).
+Immediately prior to this summary, the AI engineer was addressing two critical issues reported by the user regarding the newly implemented Documenti section:
+1.  **Backend Error 400**: An  message, indicating a server-side problem.
+2.  **Frontend Runtime Error**:  in the  component, preventing the documents section from rendering correctly on all user levels. The user explicitly stated, Errore quando entro nella sezione Documenti su tutti i livelli... risolvi urgentemente e definitivamente. Deve funzionare tutto al 100%.
 
-The  was invoked and identified four critical issues: missing Servizio and Tipologia Contratto selectors on mobile, non-responsive tables, a hidden Logout button, and potentially missing sections.
-
-The very last action taken was to add the missing Servizio and Tipologia Contratto selectors to the mobile sidebar in , completing the first of the four identified mobile-friendliness issues.
-
-The next immediate sub-task identified by the  is to fix the mobile-friendly tables.
+The engineer diagnosed the backend 400 error as stemming from a **duplicate  GET endpoint** in . One endpoint exists at line 3748, which is old and problematic, and a new, correct one at line 7871. The current task involves removing the older, problematic endpoint to resolve the validation conflicts and the 400 error it causes. The engineer is in the process of identifying the exact extent of the old endpoint to remove it cleanly.
 </current_work>
 
 <optional_next_step>
-Address the mobile-friendliness of tables by applying responsive CSS classes.
+Complete the removal of the old, duplicate  GET endpoint in .
 </optional_next_step>

@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://hier-auth-system.preview.emergentagent.com"
+    base_url = "https://mobile-crm-fix-2.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:
