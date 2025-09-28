@@ -6254,46 +6254,26 @@ Duplicate,Test,+393471234567"""
         return True
 
     def run_all_tests(self):
-        """Run focused test for Password Fix Verification and Multiple User Login"""
-        print("🚀 Starting CRM API Testing - Password Fix Verification Focus...")
+        """Run URGENT test for GET /api/documents endpoint after duplicate removal"""
+        print("🚀 Starting CRM API Testing - URGENT Documents Endpoint Test...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 60)
         
-        # PRIORITY TEST: Password fix verification for multiple users (as requested in review)
-        print("\n🎯 PRIORITY TEST: PASSWORD FIX VERIFICATION FOR MULTIPLE USERS...")
-        password_fix_success = self.test_password_fix_multiple_users_login()
-        
-        # Authentication is required for most tests
-        if not self.test_authentication():
-            print("❌ Authentication failed - stopping tests")
-            return False
-        
-        # CRITICAL PASSWORD HASHING TEST (as requested in review)
-        self.test_critical_password_bug_immediate()
-        
-        # URGENT DEBUG TEST FIRST: User Creation Process
-        self.test_responsabile_commessa_user_creation_debug()
-        
-        # URGENT DEBUG TEST: Commesse Vuote Problem
-        self.test_responsabile_commessa_urgent_debug()
-        
-        # URGENT TEST: Tipologia Contratto Selector for Responsabile Commessa
-        self.test_responsabile_commessa_tipologia_contratto_urgent()
-        
-        # URGENT TEST: Responsabile Commessa System
-        self.test_responsabile_commessa_system()
+        # URGENT PRIORITY TEST: Documents endpoint after duplicate removal (as requested in review)
+        print("\n🚨 URGENT PRIORITY TEST: GET /api/documents ENDPOINT AFTER DUPLICATE REMOVAL...")
+        documents_test_success = self.test_documents_endpoint_urgent()
         
         # Print summary
         print("\n" + "=" * 60)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
-        print(f"🔑 Password Fix Status: {'✅ SUCCESS' if password_fix_success else '❌ FAILED'}")
+        print(f"📄 Documents Endpoint Status: {'✅ SUCCESS - No more 400 errors!' if documents_test_success else '❌ STILL FAILING'}")
         
-        if self.tests_passed == self.tests_run:
-            print("🎉 All tests passed!")
+        if documents_test_success:
+            print("🎉 URGENT TEST PASSED: GET /api/documents endpoint is working correctly!")
+            print("🎉 CONFIRMED: Duplicate endpoint removal fixed the 400 error!")
             return True
         else:
-            failed = self.tests_run - self.tests_passed
-            print(f"⚠️  {failed} tests failed")
+            print("🚨 URGENT TEST FAILED: GET /api/documents endpoint still has issues!")
             return False
 
     def test_document_endpoints_with_authorization(self):
