@@ -5911,6 +5911,43 @@ const DocumentsManagement = ({
     }
   };
 
+  // Drag & Drop handlers
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      setUploadFiles(droppedFiles);
+    }
+  };
+
+  // File input handler
+  const handleFileSelect = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length > 0) {
+      setUploadFiles(selectedFiles);
+    }
+  };
+
   const handleDownload = async (documentId, filename) => {
     if (!permissions.canDownload) {
       toast({
