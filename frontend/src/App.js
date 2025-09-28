@@ -679,6 +679,7 @@ const Dashboard = () => {
   const [arubaDriveConfigs, setArubaDriveConfigs] = useState([]);
   const [editingConfig, setEditingConfig] = useState(null);
   const [testingConfigId, setTestingConfigId] = useState(null);
+  const [showConfigModal, setShowConfigModal] = useState(false);
   
   // 🎯 MOBILE-FRIENDLY: Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
