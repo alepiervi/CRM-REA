@@ -675,6 +675,11 @@ const Dashboard = () => {
   const [formTipologieContratto, setFormTipologieContratto] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
   
+  // Aruba Drive Configuration state
+  const [arubaDriveConfigs, setArubaDriveConfigs] = useState([]);
+  const [editingConfig, setEditingConfig] = useState(null);
+  const [testingConfigId, setTestingConfigId] = useState(null);
+  
   // 🎯 MOBILE-FRIENDLY: Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
