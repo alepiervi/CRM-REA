@@ -167,11 +167,11 @@ class UrgentDocumentsTest:
         # 5. **Test con Altri Ruoli**: Se possibile testare anche con resp_commessa/admin123
         print("\n👥 5. TEST CON ALTRI RUOLI...")
         
-        # Test with resp_commessa/admin123
-        print("   Testing with resp_commessa/admin123...")
+        # Test with test_immediato/admin123 (working responsabile_commessa user)
+        print("   Testing with test_immediato/admin123...")
         success, resp_response, status = self.make_request(
             'POST', 'auth/login', 
-            {'username': 'resp_commessa', 'password': 'admin123'}, 
+            {'username': 'test_immediato', 'password': 'admin123'}, 
             200, auth_required=False
         )
         
