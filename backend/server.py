@@ -9046,6 +9046,104 @@ async def search_entities(
         logger.error(f"Error searching entities: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nella ricerca: {str(e)}")
 
+@api_router.post("/aruba-drive/test-connection")
+async def test_aruba_drive_connection(current_user: User = Depends(get_current_user)):
+    """Test connessione Aruba Drive"""
+    
+    if not ARUBA_DRIVE_USERNAME or not ARUBA_DRIVE_PASSWORD:
+        raise HTTPException(
+            status_code=400, 
+            detail="Credenziali Aruba Drive mancanti. Configurare ARUBA_DRIVE_USERNAME e ARUBA_DRIVE_PASSWORD in .env"
+        )
+    
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context()
+            page = await context.new_page()
+            
+            # Test login
+            await page.goto(ARUBA_DRIVE_URL, wait_until="networkidle")
+            await page.fill('input[name="username"], input[type="text"]', ARUBA_DRIVE_USERNAME)
+            await page.fill('input[name="password"], input[type="password"]', ARUBA_DRIVE_PASSWORD)
+            
+            login_button = page.locator('button[type="submit"], input[type="submit"], button:has-text("Login"), button:has-text("Accedi")')
+            await login_button.click()
+            await page.wait_for_timeout(3000)
+            
+            # Verifica login
+            success = "login" not in page.url.lower()
+            
+            await browser.close()
+            
+            if success:
+                return {
+                    "success": True,
+                    "message": "Connessione Aruba Drive riuscita",
+                    "url": ARUBA_DRIVE_URL,
+                    "username": ARUBA_DRIVE_USERNAME
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": "Login Aruba Drive fallito - verificare credenziali",
+                    "url": ARUBA_DRIVE_URL
+                }
+                
+    except Exception as e:
+        logger.error(f"Aruba Drive test error: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore test Aruba Drive: {str(e)}")
+
+@api_router.post("/aruba-drive/manual-upload/{entity_type}/{entity_id}")
+async def manual_aruba_drive_upload(
+    entity_type: str,
+    entity_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Upload manuale documenti esistenti su Aruba Drive"""
+    
+    try:
+        # Verifica entità
+        if entity_type not in ["clienti", "leads"]:
+            raise HTTPException(status_code=400, detail="Tipo entità non valido")
+        
+        # Ottieni documenti esistenti per questa entità
+        existing_docs = await db.documents.find({
+            f"{entity_type.rstrip('i')}_id" if entity_type == "clienti" else "lead_id": entity_id,
+            "is_active": True
+        }).to_list(length=None)
+        
+        if not existing_docs:
+            return {
+                "success": True,
+                "message": "Nessun documento da caricare",
+                "uploaded_count": 0
+            }
+        
+        # Prepara lista file per Aruba Drive
+        file_list = []
+        for doc in existing_docs:
+            file_list.append({
+                "success": True,
+                "file_path": doc.get("file_path"),
+                "filename": doc.get("filename", doc.get("original_filename"))
+            })
+        
+        # Esegui upload Aruba Drive
+        success = await create_aruba_drive_folder_and_upload(entity_type, entity_id, file_list)
+        
+        return {
+            "success": success,
+            "message": f"Upload Aruba Drive {'completato' if success else 'fallito'}",
+            "uploaded_count": len(file_list) if success else 0,
+            "entity_type": entity_type,
+            "entity_id": entity_id
+        }
+        
+    except Exception as e:
+        logger.error(f"Manual Aruba Drive upload error: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore upload Aruba Drive: {str(e)}")
+
 # Include the router in the main app (MUST be after all endpoints are defined)
 app.include_router(api_router)
 
