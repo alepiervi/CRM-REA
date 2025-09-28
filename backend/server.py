@@ -9091,15 +9091,201 @@ async def search_entities(
         logger.error(f"Error searching entities: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nella ricerca: {str(e)}")
 
-@api_router.post("/aruba-drive/test-connection")
-async def test_aruba_drive_connection(current_user: User = Depends(get_current_user)):
-    """Test connessione Aruba Drive"""
+@api_router.get("/admin/aruba-drive-configs", response_model=List[ArubaDriveConfigResponse])
+async def get_aruba_drive_configs(current_user: User = Depends(get_current_user)):
+    """Ottieni tutte le configurazioni Aruba Drive (solo Admin)"""
     
-    if not ARUBA_DRIVE_USERNAME or not ARUBA_DRIVE_PASSWORD:
-        raise HTTPException(
-            status_code=400, 
-            detail="Credenziali Aruba Drive mancanti. Configurare ARUBA_DRIVE_USERNAME e ARUBA_DRIVE_PASSWORD in .env"
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Accesso negato - solo Admin")
+    
+    try:
+        configs = await db.aruba_drive_configs.find().to_list(length=None)
+        
+        result = []
+        for config in configs:
+            # Maschera la password per sicurezza
+            masked_password = "*" * len(config.get("password", "")) if config.get("password") else ""
+            
+            result.append(ArubaDriveConfigResponse(
+                id=config["id"],
+                name=config["name"],
+                url=config["url"],
+                username=config["username"],
+                password_masked=masked_password,
+                is_active=config.get("is_active", False),
+                created_at=config["created_at"],
+                updated_at=config.get("updated_at", config["created_at"]),
+                last_test_result=config.get("last_test_result")
+            ))
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error getting Aruba Drive configs: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero configurazioni: {str(e)}")
+
+@api_router.post("/admin/aruba-drive-configs")
+async def create_aruba_drive_config(
+    config_data: ArubaDriveConfigCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Crea nuova configurazione Aruba Drive (solo Admin)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Accesso negato - solo Admin")
+    
+    try:
+        # Se questa è attiva, disattiva le altre
+        if config_data.is_active:
+            await db.aruba_drive_configs.update_many(
+                {"is_active": True},
+                {"$set": {"is_active": False, "updated_at": datetime.now(timezone.utc)}}
+            )
+        
+        # Crea nuova configurazione
+        new_config = ArubaDriveConfig(
+            name=config_data.name,
+            url=config_data.url,
+            username=config_data.username,
+            password=config_data.password,
+            is_active=config_data.is_active
         )
+        
+        await db.aruba_drive_configs.insert_one(new_config.dict())
+        
+        return {
+            "success": True,
+            "message": "Configurazione Aruba Drive creata",
+            "config_id": new_config.id
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating Aruba Drive config: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nella creazione configurazione: {str(e)}")
+
+@api_router.put("/admin/aruba-drive-configs/{config_id}")
+async def update_aruba_drive_config(
+    config_id: str,
+    config_data: ArubaDriveConfigUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Aggiorna configurazione Aruba Drive (solo Admin)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Accesso negato - solo Admin")
+    
+    try:
+        # Verifica che la configurazione esista
+        existing_config = await db.aruba_drive_configs.find_one({"id": config_id})
+        if not existing_config:
+            raise HTTPException(status_code=404, detail="Configurazione non trovata")
+        
+        # Se si sta attivando questa configurazione, disattiva le altre
+        if config_data.is_active:
+            await db.aruba_drive_configs.update_many(
+                {"is_active": True, "id": {"$ne": config_id}},
+                {"$set": {"is_active": False, "updated_at": datetime.now(timezone.utc)}}
+            )
+        
+        # Prepara aggiornamento
+        update_data = {"updated_at": datetime.now(timezone.utc)}
+        for field, value in config_data.dict(exclude_unset=True).items():
+            if value is not None:
+                update_data[field] = value
+        
+        # Aggiorna configurazione
+        result = await db.aruba_drive_configs.update_one(
+            {"id": config_id},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Configurazione non trovata")
+        
+        return {
+            "success": True,
+            "message": "Configurazione aggiornata",
+            "config_id": config_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating Aruba Drive config: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'aggiornamento configurazione: {str(e)}")
+
+@api_router.delete("/admin/aruba-drive-configs/{config_id}")
+async def delete_aruba_drive_config(
+    config_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Elimina configurazione Aruba Drive (solo Admin)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Accesso negato - solo Admin")
+    
+    try:
+        result = await db.aruba_drive_configs.delete_one({"id": config_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Configurazione non trovata")
+        
+        return {
+            "success": True,
+            "message": "Configurazione eliminata",
+            "config_id": config_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting Aruba Drive config: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione configurazione: {str(e)}")
+
+@api_router.post("/admin/aruba-drive-configs/{config_id}/test")
+async def test_aruba_drive_config(
+    config_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Test specifico di una configurazione Aruba Drive"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Accesso negato - solo Admin")
+    
+    try:
+        # Ottieni configurazione
+        config = await db.aruba_drive_configs.find_one({"id": config_id})
+        if not config:
+            raise HTTPException(status_code=404, detail="Configurazione non trovata")
+        
+        # Test connessione
+        test_result = await test_aruba_drive_connection_with_config(config)
+        
+        # Salva risultato del test
+        await db.aruba_drive_configs.update_one(
+            {"id": config_id},
+            {
+                "$set": {
+                    "last_test_result": {
+                        "success": test_result["success"],
+                        "message": test_result["message"],
+                        "tested_at": datetime.now(timezone.utc).isoformat()
+                    },
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        return test_result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error testing Aruba Drive config: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel test configurazione: {str(e)}")
+
+async def test_aruba_drive_connection_with_config(config: dict) -> dict:
+    """Test connessione con una configurazione specifica"""
     
     try:
         async with async_playwright() as p:
@@ -9108,9 +9294,9 @@ async def test_aruba_drive_connection(current_user: User = Depends(get_current_u
             page = await context.new_page()
             
             # Test login
-            await page.goto(ARUBA_DRIVE_URL, wait_until="networkidle")
-            await page.fill('input[name="username"], input[type="text"]', ARUBA_DRIVE_USERNAME)
-            await page.fill('input[name="password"], input[type="password"]', ARUBA_DRIVE_PASSWORD)
+            await page.goto(config["url"], wait_until="networkidle")
+            await page.fill('input[name="username"], input[type="text"]', config["username"])
+            await page.fill('input[name="password"], input[type="password"]', config["password"])
             
             login_button = page.locator('button[type="submit"], input[type="submit"], button:has-text("Login"), button:has-text("Accedi")')
             await login_button.click()
@@ -9124,20 +9310,23 @@ async def test_aruba_drive_connection(current_user: User = Depends(get_current_u
             if success:
                 return {
                     "success": True,
-                    "message": "Connessione Aruba Drive riuscita",
-                    "url": ARUBA_DRIVE_URL,
-                    "username": ARUBA_DRIVE_USERNAME
+                    "message": f"Connessione riuscita per {config['name']}",
+                    "url": config["url"],
+                    "username": config["username"]
                 }
             else:
                 return {
                     "success": False,
-                    "message": "Login Aruba Drive fallito - verificare credenziali",
-                    "url": ARUBA_DRIVE_URL
+                    "message": f"Login fallito per {config['name']} - verificare credenziali",
+                    "url": config["url"]
                 }
                 
     except Exception as e:
-        logger.error(f"Aruba Drive test error: {e}")
-        raise HTTPException(status_code=500, detail=f"Errore test Aruba Drive: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Errore connessione: {str(e)}",
+            "url": config.get("url", "unknown")
+        }
 
 @api_router.post("/aruba-drive/manual-upload/{entity_type}/{entity_id}")
 async def manual_aruba_drive_upload(
