@@ -7727,12 +7727,18 @@ async def get_documents(
                 clienti = await db.clienti.find(clienti_query, {"id": 1}).to_list(length=None)
                 client_ids = [c["id"] for c in clienti]
                 query["$and"] = [
-                    {"entity_type": "clienti"},
-                    {"entity_id": {"$in": client_ids}}
+                    {"document_type": "cliente"},
+                    {"cliente_id": {"$in": client_ids}}
                 ]
             else:
-                # For leads, filter by commessa if available
-                query["commessa_id"] = {"$in": authorized_commesse}
+                # For leads, we need to get leads from authorized commesse first
+                leads_query = {"gruppo": {"$in": authorized_commesse}}  # assuming gruppo is the commessa
+                leads = await db.leads.find(leads_query, {"id": 1}).to_list(length=None)
+                lead_ids = [l["id"] for l in leads]
+                query["$and"] = [
+                    {"document_type": "lead"},
+                    {"lead_id": {"$in": lead_ids}}
+                ]
                 
         elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
             # Filter by authorized commesse and their sub agenzia
