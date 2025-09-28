@@ -1003,6 +1003,23 @@ const Dashboard = () => {
     loadUnitsSubAgenzie();
   }, [selectedCommessa, selectedServizio]);
 
+  // Aruba Drive Configuration functions - MOVED UP before useEffect
+  const fetchArubaDriveConfigs = async () => {
+    console.log('🔧 fetchArubaDriveConfigs called');
+    try {
+      const response = await axios.get(`${API}/admin/aruba-drive-configs`);
+      console.log('✅ Aruba Drive configs fetched:', response.data);
+      setArubaDriveConfigs(response.data || []);
+    } catch (error) {
+      console.error("Error fetching Aruba Drive configs:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento configurazioni Aruba Drive",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Load Aruba Drive configurations quando si entra nella sezione configurazioni
   useEffect(() => {
     if (activeTab === 'configurazioni' && user?.role === 'admin') {
