@@ -6887,6 +6887,190 @@ const AIConfigModal = ({ onClose, onSuccess, existingConfig }) => {
   );
 };
 
+// Configurazioni Management Component
+const ConfigurazioniManagement = ({ 
+  onFetchConfigs,
+  arubaDriveConfigs,
+  onSaveConfig,
+  onDeleteConfig,
+  onTestConfig,
+  testingConfigId,
+  editingConfig,
+  setEditingConfig,
+  showConfigModal,
+  setShowConfigModal
+}) => {
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (onFetchConfigs) {
+      onFetchConfigs();
+    }
+    setLoading(false);
+  }, [onFetchConfigs]);
+
+  const handleSaveConfig = async (configData) => {
+    if (onSaveConfig) {
+      await onSaveConfig(configData);
+    }
+  };
+
+  const handleDeleteConfig = async (configId) => {
+    if (onDeleteConfig) {
+      await onDeleteConfig(configId);
+    }
+  };
+
+  const handleTestConfig = async (configId) => {
+    if (onTestConfig) {
+      await onTestConfig(configId);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Caricamento configurazioni...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Gestione Configurazioni</h1>
+          <p className="text-gray-600">Gestisci le configurazioni del sistema</p>
+        </div>
+        
+        <Button
+          onClick={() => setShowConfigModal && setShowConfigModal(true)}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nuova Configurazione
+        </Button>
+      </div>
+
+      {/* Aruba Drive Configurations */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Cog className="w-5 h-5" />
+            <span>Configurazioni Aruba Drive</span>
+          </CardTitle>
+          <CardDescription>
+            Gestisci le configurazioni per l'integrazione con Aruba Drive
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {arubaDriveConfigs && arubaDriveConfigs.length > 0 ? (
+            <div className="space-y-4">
+              {arubaDriveConfigs.map((config) => (
+                <div key={config.id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900">{config.name}</h3>
+                      <p className="text-sm text-gray-600 mt-1">{config.description}</p>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-gray-500">
+                          <strong>Server:</strong> {config.server_url}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          <strong>Username:</strong> {config.username}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          <strong>Cartella:</strong> {config.folder_path}
+                        </p>
+                      </div>
+                      {config.test_result && (
+                        <div className="mt-2">
+                          <Badge 
+                            variant={config.test_result.success ? "default" : "destructive"}
+                            className="text-xs"
+                          >
+                            {config.test_result.success ? "✓ Test OK" : "✗ Test Fallito"}
+                          </Badge>
+                          {config.test_result.message && (
+                            <p className="text-xs text-gray-600 mt-1">{config.test_result.message}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestConfig(config.id)}
+                        disabled={testingConfigId === config.id}
+                      >
+                        {testingConfigId === config.id ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2" />
+                            Test...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Test
+                          </>
+                        )}
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingConfig && setEditingConfig(config);
+                          setShowConfigModal && setShowConfigModal(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Modifica
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteConfig(config.id)}
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Elimina
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Cog className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Nessuna configurazione trovata
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Inizia creando la tua prima configurazione Aruba Drive
+              </p>
+              <Button
+                onClick={() => setShowConfigModal && setShowConfigModal(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Crea Configurazione
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 
 // WhatsApp Management Component
 const WhatsAppManagement = ({ selectedUnit, units }) => {
