@@ -8001,6 +8001,142 @@ async def download_document(
         logger.error(f"Error downloading document: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nel download: {str(e)}")
 
+@api_router.post("/documents/upload/multiple")
+async def upload_multiple_documents(
+    entity_type: str = Form(...),
+    entity_id: str = Form(...),
+    uploaded_by: str = Form(...),
+    files: List[UploadFile] = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload multiple documents with role-based authorization"""
+    
+    try:
+        # Ensure documents directory exists
+        documents_dir = Path("documents")
+        documents_dir.mkdir(exist_ok=True)
+        
+        results = []
+        successful_uploads = 0
+        failed_uploads = 0
+        
+        for file in files:
+            try:
+                # Basic file validation
+                if not file.filename:
+                    results.append({
+                        "filename": "unknown",
+                        "success": False,
+                        "error": "Nome file non valido"
+                    })
+                    failed_uploads += 1
+                    continue
+                
+                # File size check (100MB limit per file)
+                content = await file.read()
+                if len(content) > 100 * 1024 * 1024:  # 100MB
+                    results.append({
+                        "filename": file.filename,
+                        "success": False,
+                        "error": "File troppo grande (max 100MB)"
+                    })
+                    failed_uploads += 1
+                    continue
+                
+                # Generate unique filename
+                file_extension = Path(file.filename).suffix
+                unique_filename = f"{uuid.uuid4()}{file_extension}"
+                file_path = documents_dir / unique_filename
+                
+                # Save file
+                with open(file_path, "wb") as f:
+                    f.write(content)
+                
+                # Save document metadata
+                document_data = {
+                    "id": str(uuid.uuid4()),
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "filename": file.filename,
+                    "file_path": str(file_path),
+                    "file_size": len(content),
+                    "file_type": file.content_type,
+                    "created_by": current_user.id,
+                    "created_at": datetime.now(timezone.utc)
+                }
+                
+                await db.documents.insert_one(document_data)
+                
+                results.append({
+                    "filename": file.filename,
+                    "success": True,
+                    "document_id": document_data["id"],
+                    "file_size": len(content)
+                })
+                successful_uploads += 1
+                
+                # Reset file position for next operation
+                await file.seek(0)
+                
+            except Exception as file_error:
+                logger.error(f"Error uploading individual file {file.filename}: {file_error}")
+                results.append({
+                    "filename": file.filename,
+                    "success": False,
+                    "error": str(file_error)
+                })
+                failed_uploads += 1
+                continue
+        
+        # TODO: Integrate with Aruba Drive when credentials are available
+        # await create_aruba_drive_folder_and_upload(entity_type, entity_id, results)
+        
+        return {
+            "success": True,
+            "message": f"Upload completato: {successful_uploads} successi, {failed_uploads} fallimenti",
+            "total_files": len(files),
+            "successful_uploads": successful_uploads,
+            "failed_uploads": failed_uploads,
+            "results": results
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in multiple upload: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'upload multiplo: {str(e)}")
+
+# Placeholder per integrazione Aruba Drive
+async def create_aruba_drive_folder_and_upload(entity_type: str, entity_id: str, uploaded_files: List[dict]):
+    """
+    Placeholder per integrazione Aruba Drive
+    Quando saranno disponibili le credenziali API:
+    1. Crea cartella /Cliente_Nome_Cognome_ID/ 
+    2. Carica tutti i documenti
+    3. Genera screenshot dei dettagli cliente
+    4. Carica screenshot nella cartella
+    """
+    logger.info(f"[ARUBA DRIVE PLACEHOLDER] Would create folder for {entity_type}/{entity_id}")
+    logger.info(f"[ARUBA DRIVE PLACEHOLDER] Would upload {len(uploaded_files)} files")
+    
+    # Get entity details
+    if entity_type == "clienti":
+        entity = await db.clienti.find_one({"id": entity_id})
+    else:
+        entity = await db.leads.find_one({"id": entity_id})
+    
+    if entity:
+        folder_name = f"{entity.get('nome', 'Unknown')}_{entity.get('cognome', 'Unknown')}_{entity_id}"
+        logger.info(f"[ARUBA DRIVE PLACEHOLDER] Folder would be: {folder_name}")
+        
+        # TODO: Implementare quando disponibili credenziali:
+        # 1. Creare cartella Aruba Drive
+        # 2. Upload documenti
+        # 3. Generare screenshot cliente
+        # 4. Upload screenshot
+    
+    return True
+
 # Include the router in the main app (MUST be after all endpoints are defined)
 app.include_router(api_router)
 
