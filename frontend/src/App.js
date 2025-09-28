@@ -1012,11 +1012,7 @@ const Dashboard = () => {
       setArubaDriveConfigs(response.data || []);
     } catch (error) {
       console.error("Error fetching Aruba Drive configs:", error);
-      toast({
-        title: "Errore",
-        description: "Errore nel caricamento configurazioni Aruba Drive",
-        variant: "destructive",
-      });
+      // toast will be handled by individual components that call this function
     }
   };
 
