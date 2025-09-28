@@ -7083,6 +7083,17 @@ const ConfigurazioniManagement = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Aruba Drive Configuration Modal */}
+      <ArubaDriveConfigModal 
+        isOpen={showConfigModal}
+        onClose={() => {
+          setShowConfigModal(false);
+          setEditingConfig && setEditingConfig(null);
+        }}
+        onSave={handleSaveConfig}
+        editingConfig={editingConfig}
+      />
     </div>
   );
 };
