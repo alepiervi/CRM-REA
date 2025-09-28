@@ -8106,10 +8106,438 @@ async def upload_multiple_documents(
         logger.error(f"Error in multiple upload: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nell'upload multiplo: {str(e)}")
 
-# Import per screenshot
+# Import per Aruba Drive integration
 from playwright.async_api import async_playwright
 from jinja2 import Template
 import base64
+import os
+from pathlib import Path
+
+# Aruba Drive Configuration
+ARUBA_DRIVE_URL = "https://da6z2a.arubadrive.com/login?clear=1"
+ARUBA_DRIVE_USERNAME = os.environ.get('ARUBA_DRIVE_USERNAME')
+ARUBA_DRIVE_PASSWORD = os.environ.get('ARUBA_DRIVE_PASSWORD')
+
+async def create_aruba_drive_folder_and_upload(entity_type: str, entity_id: str, uploaded_files: List[dict]):
+    """
+    Integrazione completa Aruba Drive con struttura gerarchica:
+    Commessa → Servizio → Tipologia Contratto → Sub Agenzia/Unit → Cliente
+    """
+    logger.info(f"🚀 ARUBA DRIVE: Starting integration for {entity_type}/{entity_id}")
+    
+    # Verifica credenziali
+    if not ARUBA_DRIVE_USERNAME or not ARUBA_DRIVE_PASSWORD:
+        logger.warning("⚠️ ARUBA DRIVE: Credenziali mancanti - operazione saltata")
+        return False
+    
+    try:
+        # Get entity details con dati gerarchici
+        entity_data = await get_entity_hierarchical_data(entity_type, entity_id)
+        if not entity_data:
+            logger.error(f"❌ ARUBA DRIVE: Impossibile ottenere dati per {entity_type}/{entity_id}")
+            return False
+        
+        # Genera screenshot prima dell'upload
+        screenshot_path = await generate_entity_screenshot(entity_type, entity_data["entity"])
+        
+        # Crea struttura cartelle e upload
+        success = await upload_to_aruba_drive(entity_data, uploaded_files, screenshot_path)
+        
+        if success:
+            logger.info(f"✅ ARUBA DRIVE: Upload completato per {entity_data['cliente_folder']}")
+        else:
+            logger.error(f"❌ ARUBA DRIVE: Upload fallito per {entity_data['cliente_folder']}")
+        
+        return success
+        
+    except Exception as e:
+        logger.error(f"❌ ARUBA DRIVE ERROR: {str(e)}")
+        return False
+
+async def get_entity_hierarchical_data(entity_type: str, entity_id: str) -> dict:
+    """Ottiene tutti i dati gerarchici necessari per creare la struttura cartelle"""
+    
+    try:
+        if entity_type == "clienti":
+            entity = await db.clienti.find_one({"id": entity_id})
+        else:
+            entity = await db.leads.find_one({"id": entity_id})
+        
+        if not entity:
+            return None
+        
+        # Ottieni dati gerarchici
+        commessa_data = None
+        servizio_data = None
+        tipologia_data = None
+        sub_agenzia_data = None
+        
+        if entity_type == "clienti":
+            # Per clienti abbiamo la struttura completa
+            if entity.get("commessa_id"):
+                commessa_data = await db.commesse.find_one({"id": entity["commessa_id"]})
+            
+            if entity.get("servizio_id"):
+                servizio_data = await db.servizi.find_one({"id": entity["servizio_id"]})
+            
+            if entity.get("tipologia_contratto_id"):
+                tipologia_data = await db.tipologie_contratto.find_one({"id": entity["tipologia_contratto_id"]})
+            
+            if entity.get("sub_agenzia_id"):
+                sub_agenzia_data = await db.sub_agenzie.find_one({"id": entity["sub_agenzia_id"]})
+        
+        else:
+            # Per lead usiamo il gruppo come commessa
+            if entity.get("gruppo"):
+                commessa_data = await db.commesse.find_one({"nome": entity["gruppo"]})
+        
+        # Costruisci struttura cartelle
+        folder_structure = {
+            "commessa": sanitize_folder_name(commessa_data.get("nome", "Commessa_Sconosciuta") if commessa_data else "Lead_Default"),
+            "servizio": sanitize_folder_name(servizio_data.get("nome", "Servizio_Default") if servizio_data else "Servizio_Default"),
+            "tipologia": sanitize_folder_name(tipologia_data.get("nome", "Tipologia_Default") if tipologia_data else "Tipologia_Default"),
+            "sub_agenzia": sanitize_folder_name(sub_agenzia_data.get("nome", "SubAgenzia_Default") if sub_agenzia_data else "SubAgenzia_Default"),
+            "cliente_folder": sanitize_folder_name(f"{entity.get('nome', 'Unknown')}_{entity.get('cognome', 'Unknown')}_{entity_id}")
+        }
+        
+        return {
+            "entity": entity,
+            "entity_type": entity_type,
+            "folder_structure": folder_structure,
+            **folder_structure  # Per backward compatibility
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting hierarchical data: {e}")
+        return None
+
+def sanitize_folder_name(name: str) -> str:
+    """Sanitizza i nomi delle cartelle per Aruba Drive"""
+    if not name:
+        return "Unknown"
+    
+    # Rimuovi caratteri problematici
+    name = str(name)
+    forbidden_chars = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+    for char in forbidden_chars:
+        name = name.replace(char, '_')
+    
+    # Rimuovi spazi multipli e trimma
+    name = ' '.join(name.split())
+    name = name.strip()
+    
+    # Lunghezza massima
+    if len(name) > 100:
+        name = name[:97] + "..."
+    
+    return name if name else "Unknown"
+
+async def upload_to_aruba_drive(entity_data: dict, uploaded_files: List[dict], screenshot_path: str) -> bool:
+    """Upload con browser automation su Aruba Drive"""
+    
+    async with async_playwright() as p:
+        browser = None
+        try:
+            # Launch browser
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context()
+            page = await context.new_page()
+            
+            # Login
+            logger.info("🔐 ARUBA DRIVE: Eseguendo login...")
+            await page.goto(ARUBA_DRIVE_URL, wait_until="networkidle")
+            
+            # Compila form login
+            await page.fill('input[name="username"], input[type="text"]', ARUBA_DRIVE_USERNAME)
+            await page.fill('input[name="password"], input[type="password"]', ARUBA_DRIVE_PASSWORD)
+            
+            # Submit login
+            login_button = page.locator('button[type="submit"], input[type="submit"], button:has-text("Login"), button:has-text("Accedi")')
+            await login_button.click()
+            
+            # Attendi login
+            await page.wait_for_timeout(3000)
+            
+            # Verifica login riuscito
+            if "login" in page.url.lower():
+                logger.error("❌ ARUBA DRIVE: Login fallito")
+                return False
+            
+            logger.info("✅ ARUBA DRIVE: Login riuscito")
+            
+            # Naviga e crea struttura cartelle
+            folder_path = await create_folder_structure(page, entity_data["folder_structure"])
+            if not folder_path:
+                return False
+            
+            # Upload files
+            success = await upload_files_to_aruba(page, uploaded_files, screenshot_path, folder_path)
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"❌ ARUBA DRIVE Upload Error: {str(e)}")
+            return False
+        
+        finally:
+            if browser:
+                await browser.close()
+
+async def create_folder_structure(page, folder_structure: dict) -> str:
+    """Crea la struttura gerarchica di cartelle su Aruba Drive"""
+    
+    try:
+        current_path = ""
+        
+        # Sequenza cartelle: Commessa → Servizio → Tipologia → Sub Agenzia → Cliente
+        folders_sequence = [
+            ("commessa", "Commessa"),
+            ("servizio", "Servizio"),
+            ("tipologia", "Tipologia Contratto"),
+            ("sub_agenzia", "Sub Agenzia/Unit"),
+            ("cliente_folder", "Cliente")
+        ]
+        
+        for folder_key, folder_description in folders_sequence:
+            folder_name = folder_structure[folder_key]
+            logger.info(f"📁 ARUBA DRIVE: Creando/navigando {folder_description}: {folder_name}")
+            
+            # Cerca se la cartella esiste già
+            folder_exists = await check_folder_exists(page, folder_name)
+            
+            if not folder_exists:
+                # Crea nuova cartella
+                success = await create_new_folder(page, folder_name)
+                if not success:
+                    logger.error(f"❌ ARUBA DRIVE: Impossibile creare cartella {folder_name}")
+                    return None
+                logger.info(f"✅ ARUBA DRIVE: Cartella {folder_name} creata")
+            else:
+                logger.info(f"📂 ARUBA DRIVE: Cartella {folder_name} già esistente")
+            
+            # Entra nella cartella
+            success = await navigate_to_folder(page, folder_name)
+            if not success:
+                logger.error(f"❌ ARUBA DRIVE: Impossibile entrare in cartella {folder_name}")
+                return None
+            
+            current_path = f"{current_path}/{folder_name}" if current_path else folder_name
+        
+        logger.info(f"✅ ARUBA DRIVE: Struttura cartelle completata: {current_path}")
+        return current_path
+        
+    except Exception as e:
+        logger.error(f"❌ ARUBA DRIVE Folder Structure Error: {str(e)}")
+        return None
+
+async def check_folder_exists(page, folder_name: str) -> bool:
+    """Controlla se una cartella esiste già"""
+    try:
+        # Vari selettori possibili per le cartelle
+        folder_selectors = [
+            f'a:has-text("{folder_name}")',
+            f'div:has-text("{folder_name}")',
+            f'[title="{folder_name}"]',
+            f'span:has-text("{folder_name}")'
+        ]
+        
+        for selector in folder_selectors:
+            if await page.locator(selector).count() > 0:
+                return True
+        
+        return False
+    except:
+        return False
+
+async def create_new_folder(page, folder_name: str) -> bool:
+    """Crea una nuova cartella"""
+    try:
+        # Cerca pulsanti per creare cartella
+        create_buttons = [
+            'button:has-text("Nuova cartella")',
+            'button:has-text("New folder")',
+            'button:has-text("Crea cartella")',
+            '[title*="cartella"]',
+            'button[data-action="create-folder"]',
+            '.create-folder',
+            '#create-folder'
+        ]
+        
+        button_found = False
+        for button_selector in create_buttons:
+            if await page.locator(button_selector).count() > 0:
+                await page.click(button_selector)
+                button_found = True
+                break
+        
+        if not button_found:
+            # Prova click destro per menu contestuale
+            await page.click('body', button='right')
+            await page.wait_for_timeout(1000)
+            
+            context_menu_items = [
+                'text="Nuova cartella"',
+                'text="New folder"',
+                '[data-action="create-folder"]'
+            ]
+            
+            for menu_item in context_menu_items:
+                if await page.locator(menu_item).count() > 0:
+                    await page.click(menu_item)
+                    button_found = True
+                    break
+        
+        if not button_found:
+            logger.warning(f"⚠️ ARUBA DRIVE: Pulsante crea cartella non trovato")
+            return False
+        
+        # Attendi dialog o campo input
+        await page.wait_for_timeout(1000)
+        
+        # Cerca campo input per nome cartella
+        name_inputs = [
+            'input[placeholder*="nome"]',
+            'input[placeholder*="name"]',
+            'input[type="text"]',
+            '.folder-name-input',
+            '#folder-name'
+        ]
+        
+        input_found = False
+        for input_selector in name_inputs:
+            if await page.locator(input_selector).count() > 0:
+                await page.fill(input_selector, folder_name)
+                input_found = True
+                break
+        
+        if not input_found:
+            logger.error(f"❌ ARUBA DRIVE: Campo nome cartella non trovato")
+            return False
+        
+        # Conferma creazione
+        confirm_buttons = [
+            'button:has-text("OK")',
+            'button:has-text("Conferma")',
+            'button:has-text("Crea")',
+            'button[type="submit"]'
+        ]
+        
+        for confirm_button in confirm_buttons:
+            if await page.locator(confirm_button).count() > 0:
+                await page.click(confirm_button)
+                break
+        
+        # Attendi creazione
+        await page.wait_for_timeout(2000)
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ ARUBA DRIVE Create Folder Error: {str(e)}")
+        return False
+
+async def navigate_to_folder(page, folder_name: str) -> bool:
+    """Naviga in una cartella"""
+    try:
+        # Vari modi per entrare in una cartella
+        folder_selectors = [
+            f'a:has-text("{folder_name}")',
+            f'div:has-text("{folder_name}")',
+            f'[title="{folder_name}"]',
+            f'span:has-text("{folder_name}")'
+        ]
+        
+        for selector in folder_selectors:
+            if await page.locator(selector).count() > 0:
+                await page.double_click(selector)  # Double click per entrare
+                await page.wait_for_timeout(2000)
+                return True
+        
+        # Se non funziona double click, prova single click + Enter
+        for selector in folder_selectors:
+            if await page.locator(selector).count() > 0:
+                await page.click(selector)
+                await page.keyboard.press('Enter')
+                await page.wait_for_timeout(2000)
+                return True
+        
+        return False
+        
+    except Exception as e:
+        logger.error(f"❌ ARUBA DRIVE Navigate Error: {str(e)}")
+        return False
+
+async def upload_files_to_aruba(page, uploaded_files: List[dict], screenshot_path: str, folder_path: str) -> bool:
+    """Upload dei file nella cartella cliente"""
+    try:
+        files_to_upload = []
+        
+        # Aggiungi documenti caricati
+        for file_info in uploaded_files:
+            if file_info.get("success") and "file_path" in file_info:
+                files_to_upload.append(file_info["file_path"])
+        
+        # Aggiungi screenshot se disponibile
+        if screenshot_path and os.path.exists(screenshot_path):
+            files_to_upload.append(screenshot_path)
+        
+        if not files_to_upload:
+            logger.warning("⚠️ ARUBA DRIVE: Nessun file da caricare")
+            return True
+        
+        logger.info(f"📤 ARUBA DRIVE: Caricando {len(files_to_upload)} file in {folder_path}")
+        
+        # Cerca input file upload
+        upload_selectors = [
+            'input[type="file"]',
+            'input[accept]',
+            '.file-upload-input',
+            '#file-upload'
+        ]
+        
+        file_input = None
+        for selector in upload_selectors:
+            if await page.locator(selector).count() > 0:
+                file_input = page.locator(selector)
+                break
+        
+        if not file_input:
+            # Prova a cercare pulsante upload
+            upload_buttons = [
+                'button:has-text("Upload")',
+                'button:has-text("Carica")',
+                '[data-action="upload"]',
+                '.upload-button'
+            ]
+            
+            for button_selector in upload_buttons:
+                if await page.locator(button_selector).count() > 0:
+                    await page.click(button_selector)
+                    await page.wait_for_timeout(1000)
+                    
+                    # Riprova a cercare input file
+                    for selector in upload_selectors:
+                        if await page.locator(selector).count() > 0:
+                            file_input = page.locator(selector)
+                            break
+                    break
+        
+        if not file_input:
+            logger.error("❌ ARUBA DRIVE: Input file upload non trovato")
+            return False
+        
+        # Upload files
+        await file_input.set_input_files(files_to_upload)
+        
+        # Attendi upload
+        await page.wait_for_timeout(5000)
+        
+        logger.info(f"✅ ARUBA DRIVE: Upload completato - {len(files_to_upload)} file caricati")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ ARUBA DRIVE Upload Files Error: {str(e)}")
+        return False
 
 # Placeholder per integrazione Aruba Drive
 async def create_aruba_drive_folder_and_upload(entity_type: str, entity_id: str, uploaded_files: List[dict]):
