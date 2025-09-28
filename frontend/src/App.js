@@ -104,7 +104,6 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Progress,
-  Cog,
   Edit,
   Trash2,
   Badge
