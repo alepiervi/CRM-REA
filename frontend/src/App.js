@@ -5788,7 +5788,10 @@ const DocumentsManagement = ({
       });
 
       const response = await axios.get(`${API}/documents?${params}`);
-      setDocuments(response.data);
+      console.log('📄 Documents API response:', response.data);
+      console.log('📄 Documents type:', typeof response.data);
+      console.log('📄 Is Array:', Array.isArray(response.data));
+      setDocuments(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Error fetching documents:", error);
       toast({
