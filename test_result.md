@@ -105,6 +105,27 @@
 user_problem_statement: "PROBLEMA CRITICO RISOLTO - Sezione Documenti: L'utente ha segnalato due errori critici nella sezione 'Documenti': 1. Backend Error 400 'Error fetching documents' che impediva il caricamento dei documenti, 2. Frontend Runtime Error 'documents.map is not a function' che causava crash della sezione documenti su tutti i livelli utente. RICHIESTA UTENTE: 'Errore quando entro nella sezione Documenti su tutti i livelli... risolvi urgentemente e definitivamente. Deve funzionare tutto al 100%'. SOLUZIONE APPLICATA: Identificato e risolto endpoint duplicato GET /api/documents e field mapping bug nel backend, implementato controllo Array.isArray() nel frontend. RISULTATO: Sezione Documenti completamente funzionante per tutti i ruoli utente, zero errori 400, zero errori JavaScript, UI carica correttamente con gestione documenti basata sui ruoli."
 
 backend:
+  - task: "Documents Section Critical Fix - Backend 400 and Frontend documents.map Error"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py and /app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "main"
+          comment: "PROBLEMA CRITICO IDENTIFICATO: L'utente ha segnalato due errori nella sezione Documenti: 1) Backend Error 400 'Error fetching documents' causato da endpoint duplicato GET /api/documents (linea 3748 e 7871), 2) Frontend Runtime Error 'documents.map is not a function' causato da risposta API non array. Richiesta utente: 'risolvi urgentemente e definitivamente. Deve funzionare tutto al 100%'."
+        - working: true
+          agent: "main" 
+          comment: "✅ ENDPOINT DUPLICATO RIMOSSO: Rimosso l'endpoint duplicato GET /api/documents alla linea 3748, mantenuto solo quello corretto alla linea 7687 con DocumentResponse response_model. Aggiunto logging frontend per debugging: console.log per API response, type check, Array.isArray() verification."
+        - working: true
+          agent: "testing"
+          comment: "🎉 BACKEND FIX COMPLETO: Testing agent ha identificato e risolto il field mapping bug nell'endpoint documenti. Problema: codice cercava campi 'entity_type' e 'entity_id' ma il modello Document usa 'document_type', 'lead_id', 'cliente_id'. Fix applicato: aggiornato mapping campi, query building, role-based filtering. Endpoint ora restituisce 200 invece di 500, array di 8 documenti valido."
+        - working: true
+          agent: "testing"
+          comment: "🎯 FRONTEND VERIFICATION COMPLETA: Confermato che documents.map error è risolto definitivamente. Debug logs mostrano '📄 Is Array: true', zero errori JavaScript, UI carica correttamente con 'Nessun documento trovato' o lista documenti. Tab switching Clienti/Lead funzionante. Sezione Documenti ora completamente operativa per tutti i ruoli utente."
+
   - task: "Responsabile Commessa Hierarchical Selectors - Tipologie Contratto Focus"
     implemented: true
     working: true
