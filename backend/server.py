@@ -7774,7 +7774,11 @@ async def get_documents(
         
         # Additional filters
         if entity_id:
-            query["entity_id"] = entity_id
+            # Need to check both lead_id and cliente_id
+            query["$or"] = [
+                {"lead_id": entity_id},
+                {"cliente_id": entity_id}
+            ]
         if created_by:
             query["created_by"] = created_by
         if date_from:
