@@ -6226,14 +6226,16 @@ const DocumentsManagement = ({
         </div>
       </div>
 
-      {/* Upload Modal */}
+      {/* Upload Modal - Multiplo con Progress Bar */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader>
-              <CardTitle>Carica Documento</CardTitle>
+              <CardTitle>Carica Documenti</CardTitle>
+              <p className="text-sm text-slate-600">Carica uno o più documenti contemporaneamente</p>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Entity Selection */}
               <div>
                 <Label>Seleziona {activeTab === "clienti" ? "Cliente" : "Lead"}:</Label>
                 <Select value={selectedEntity} onValueChange={setSelectedEntity}>
@@ -6250,36 +6252,148 @@ const DocumentsManagement = ({
                 </Select>
               </div>
               
+              {/* Drag & Drop Area */}
               <div>
                 <Label>File:</Label>
-                <input
-                  type="file"
-                  onChange={(e) => setUploadFile(e.target.files[0])}
-                  className="w-full p-2 border border-slate-300 rounded-md"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
-                />
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    isDragging 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-slate-300 hover:border-slate-400'
+                  }`}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                >
+                  <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-slate-700 mb-2">
+                    {isDragging ? 'Rilascia i file qui' : 'Trascina i file qui o clicca per selezionare'}
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-4">
+                    Supporta: PDF, DOC, DOCX, JPG, JPEG, PNG, TXT
+                  </p>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="file-upload"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Seleziona File
+                  </label>
+                </div>
               </div>
+
+              {/* Selected Files List */}
+              {uploadFiles.length > 0 && (
+                <div>
+                  <Label>File Selezionati ({uploadFiles.length}):</Label>
+                  <div className="space-y-2 mt-2 max-h-48 overflow-y-auto">
+                    {uploadFiles.map((file, index) => (
+                      <div key={`${file.name}-${index}`} className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="w-4 h-4 text-blue-600" />
+                          <div>
+                            <p className="text-sm font-medium text-slate-900">{file.name}</p>
+                            <p className="text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setUploadFiles(files => files.filter((_, i) => i !== index));
+                          }}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Progress */}
+              {Object.keys(uploadProgress).length > 0 && (
+                <div>
+                  <Label>Progresso Upload:</Label>
+                  <div className="space-y-3 mt-2">
+                    {Object.entries(uploadProgress).map(([fileId, progress]) => (
+                      <div key={fileId} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{progress.filename}</span>
+                          <span className="text-sm text-slate-500">
+                            {progress.status === 'uploading' && `${progress.progress}%`}
+                            {progress.status === 'completed' && (
+                              <span className="text-green-600 flex items-center">
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Completato
+                              </span>
+                            )}
+                            {progress.status === 'error' && (
+                              <span className="text-red-600 flex items-center">
+                                <AlertCircle className="w-4 h-4 mr-1" />
+                                Errore
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        {progress.status === 'uploading' && (
+                          <div className="w-full bg-slate-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${progress.progress}%` }}
+                            ></div>
+                          </div>
+                        )}
+                        {progress.status === 'completed' && (
+                          <div className="w-full bg-green-200 rounded-full h-2">
+                            <div className="bg-green-600 h-2 rounded-full w-full"></div>
+                          </div>
+                        )}
+                        {progress.status === 'error' && (
+                          <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                            {progress.error}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
+              {/* Action Buttons */}
               <div className="flex space-x-2">
                 <Button
                   onClick={() => {
-                    if (selectedEntity && uploadFile) {
-                      handleUpload(selectedEntity, uploadFile);
+                    if (selectedEntity && uploadFiles.length > 0) {
+                      handleMultipleUpload(selectedEntity, uploadFiles);
                     }
                   }}
-                  disabled={!selectedEntity || !uploadFile}
+                  disabled={!selectedEntity || uploadFiles.length === 0 || Object.keys(uploadProgress).length > 0}
                   className="flex-1"
                 >
-                  Carica
+                  <Upload className="w-4 h-4 mr-2" />
+                  Carica {uploadFiles.length > 1 ? `${uploadFiles.length} File` : 'File'}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
                     setShowUploadModal(false);
-                    setUploadFile(null);
+                    setUploadFiles([]);
+                    setUploadProgress({});
                     setSelectedEntity("");
+                    setIsDragging(false);
                   }}
                   className="flex-1"
+                  disabled={Object.keys(uploadProgress).length > 0}
                 >
                   Annulla
                 </Button>
