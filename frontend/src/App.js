@@ -104,7 +104,6 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Progress,
-  Upload,
   Plus,
   X,
   CheckCircle,
