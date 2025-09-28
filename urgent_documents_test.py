@@ -205,7 +205,7 @@ class UrgentDocumentsTest:
             self.token = admin_token
             
         else:
-            self.log_test("resp_commessa login", False, f"Status: {status}, Cannot test with resp_commessa role")
+            self.log_test("test_immediato login", False, f"Status: {status}, Cannot test with responsabile_commessa role")
 
         # SUMMARY CRITICO
         print(f"\n🎯 SUMMARY TEST URGENTE GET /api/documents:")
