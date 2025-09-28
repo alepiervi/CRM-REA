@@ -5811,8 +5811,10 @@ const DocumentsManagement = ({
 
   // Aruba Drive Configuration functions
   const fetchArubaDriveConfigs = async () => {
+    console.log('🔧 fetchArubaDriveConfigs called');
     try {
       const response = await axios.get(`${API}/admin/aruba-drive-configs`);
+      console.log('✅ Aruba Drive configs fetched:', response.data);
       setArubaDriveConfigs(response.data || []);
     } catch (error) {
       console.error("Error fetching Aruba Drive configs:", error);
