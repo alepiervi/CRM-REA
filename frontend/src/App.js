@@ -5826,22 +5826,7 @@ const DocumentsManagement = ({
     }
   };
 
-  // Aruba Drive Configuration functions
-  const fetchArubaDriveConfigs = async () => {
-    console.log('🔧 fetchArubaDriveConfigs called');
-    try {
-      const response = await axios.get(`${API}/admin/aruba-drive-configs`);
-      console.log('✅ Aruba Drive configs fetched:', response.data);
-      setArubaDriveConfigs(response.data || []);
-    } catch (error) {
-      console.error("Error fetching Aruba Drive configs:", error);
-      toast({
-        title: "Errore",
-        description: "Errore nel caricamento configurazioni Aruba Drive",
-        variant: "destructive",
-      });
-    }
-  };
+  // Other Aruba Drive Configuration functions (fetchArubaDriveConfigs moved up)
 
   const saveArubaDriveConfig = async (configData) => {
     try {
