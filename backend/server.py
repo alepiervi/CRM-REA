@@ -7775,29 +7775,38 @@ async def get_documents(
         # Enrich with entity and user information
         enriched_docs = []
         for doc in documents:
+            # Map document_type to entity_type and get entity_id
+            document_type = doc.get("document_type", "lead")
+            if document_type == "cliente":
+                entity_type = "clienti"
+                entity_id = doc.get("cliente_id")
+            else:
+                entity_type = "lead"
+                entity_id = doc.get("lead_id")
+            
             # Get entity name
             entity_name = None
-            if doc["entity_type"] == "clienti":
-                entity = await db.clienti.find_one({"id": doc["entity_id"]})
+            if entity_type == "clienti" and entity_id:
+                entity = await db.clienti.find_one({"id": entity_id})
                 if entity:
                     entity_name = f"{entity.get('nome', '')} {entity.get('cognome', '')}"
-            else:
-                entity = await db.leads.find_one({"id": doc["entity_id"]})
+            elif entity_type == "lead" and entity_id:
+                entity = await db.leads.find_one({"id": entity_id})
                 if entity:
                     entity_name = f"{entity.get('nome', '')} {entity.get('cognome', '')}"
             
             # Get uploader name
-            uploader = await db.users.find_one({"id": doc["created_by"]})
+            uploader = await db.users.find_one({"id": doc.get("uploaded_by", doc.get("created_by"))})
             uploader_name = uploader.get("username") if uploader else None
             
             enriched_docs.append(DocumentResponse(
                 id=doc["id"],
-                entity_type=doc["entity_type"],
-                entity_id=doc["entity_id"],
+                entity_type=entity_type,
+                entity_id=entity_id or "",
                 filename=doc["filename"],
                 file_size=doc.get("file_size"),
-                file_type=doc.get("file_type"),
-                uploaded_by=doc["created_by"],
+                file_type=doc.get("file_type", doc.get("content_type")),
+                uploaded_by=doc.get("uploaded_by", doc.get("created_by", "")),
                 uploaded_by_name=uploader_name,
                 entity_name=entity_name,
                 created_at=doc["created_at"]
