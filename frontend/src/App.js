@@ -6977,28 +6977,41 @@ const ConfigurazioniManagement = ({
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{config.name}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{config.description}</p>
+                      <p className="text-sm text-gray-600 mt-1">{config.name}</p>
                       <div className="mt-2 space-y-1">
                         <p className="text-xs text-gray-500">
-                          <strong>Server:</strong> {config.server_url}
+                          <strong>URL:</strong> {config.url}
                         </p>
                         <p className="text-xs text-gray-500">
                           <strong>Username:</strong> {config.username}
                         </p>
                         <p className="text-xs text-gray-500">
-                          <strong>Cartella:</strong> {config.folder_path}
+                          <strong>Password:</strong> {config.password_masked}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          <strong>Stato:</strong> 
+                          <span className={`ml-1 px-2 py-1 rounded text-xs ${
+                            config.is_active 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {config.is_active ? 'Attiva' : 'Inattiva'}
+                          </span>
                         </p>
                       </div>
-                      {config.test_result && (
+                      {config.last_test_result && (
                         <div className="mt-2">
-                          <Badge 
-                            variant={config.test_result.success ? "default" : "destructive"}
-                            className="text-xs"
+                          <span 
+                            className={`inline-block px-2 py-1 rounded text-xs ${
+                              config.last_test_result.success 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}
                           >
-                            {config.test_result.success ? "✓ Test OK" : "✗ Test Fallito"}
-                          </Badge>
-                          {config.test_result.message && (
-                            <p className="text-xs text-gray-600 mt-1">{config.test_result.message}</p>
+                            {config.last_test_result.success ? "✓ Test OK" : "✗ Test Fallito"}
+                          </span>
+                          {config.last_test_result.message && (
+                            <p className="text-xs text-gray-600 mt-1">{config.last_test_result.message}</p>
                           )}
                         </div>
                       )}
