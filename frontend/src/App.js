@@ -12146,4 +12146,193 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   );
 };
 
+// Aruba Drive Configuration Modal
+const ArubaDriveConfigModal = ({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  editingConfig 
+}) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    url: "https://da6z2a.arubadrive.com/login?clear=1",
+    username: "",
+    password: "",
+    is_active: false
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (editingConfig) {
+      setFormData({
+        name: editingConfig.name || "",
+        url: editingConfig.url || "https://da6z2a.arubadrive.com/login?clear=1",
+        username: editingConfig.username || "",
+        password: "", // Non pre-compilare password per sicurezza
+        is_active: editingConfig.is_active || false
+      });
+    } else {
+      // Reset per nuova configurazione
+      setFormData({
+        name: "",
+        url: "https://da6z2a.arubadrive.com/login?clear=1",
+        username: "",
+        password: "",
+        is_active: false
+      });
+    }
+  }, [editingConfig, isOpen]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.url || !formData.username || (!editingConfig && !formData.password)) {
+      toast({
+        title: "Errore",
+        description: "Compila tutti i campi obbligatori",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const dataToSave = { ...formData };
+      // Se stiamo modificando e password è vuota, non includerla nell'update
+      if (editingConfig && !formData.password) {
+        delete dataToSave.password;
+      }
+
+      await onSave(dataToSave);
+      onClose();
+    } catch (error) {
+      console.error("Error saving config:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>
+            {editingConfig ? "Modifica" : "Nuova"} Configurazione Aruba Drive
+          </CardTitle>
+          <p className="text-sm text-gray-600">
+            Configura l'accesso al tuo account Aruba Drive
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nome Configurazione *</Label>
+              <input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="es. Account Principale"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="url">URL Aruba Drive *</Label>
+              <input
+                id="url"
+                type="url"
+                value={formData.url}
+                onChange={(e) => setFormData({...formData, url: e.target.value})}
+                placeholder="https://da6z2a.arubadrive.com/login?clear=1"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="username">Username *</Label>
+              <input
+                id="username"
+                type="text"
+                value={formData.username}
+                onChange={(e) => setFormData({...formData, username: e.target.value})}
+                placeholder="Il tuo username Aruba Drive"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="password">
+                Password {editingConfig ? "(lascia vuoto per mantenere)" : "*"}
+              </Label>
+              <input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                placeholder="La tua password Aruba Drive"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required={!editingConfig}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                id="is_active"
+                type="checkbox"
+                checked={formData.is_active}
+                onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                className="rounded"
+              />
+              <Label htmlFor="is_active">Imposta come configurazione attiva</Label>
+            </div>
+
+            <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
+              <p><strong>Note:</strong></p>
+              <p>• Solo una configurazione può essere attiva alla volta</p>
+              <p>• La configurazione attiva verrà usata per gli upload automatici</p>
+              <p>• Puoi testare la connessione dopo aver salvato</p>
+            </div>
+
+            <div className="flex space-x-2 pt-4">
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    {editingConfig ? "Aggiorna" : "Salva"}
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                Annulla
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 export default AppWithAuth;
