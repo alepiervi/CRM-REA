@@ -5728,8 +5728,64 @@ const DocumentsManagement = ({
 
   useEffect(() => {
     fetchDocuments();
-    fetchEntityList();
   }, [selectedCommessa, selectedUnit, filters, activeTab]);
+
+  // Search entities function with debouncing
+  const searchEntities = async (query, entityType) => {
+    if (!query || query.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const response = await axios.get(`${API}/search-entities?query=${encodeURIComponent(query)}&entity_type=${entityType}`);
+      setSearchResults(response.data.results || []);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error("Error searching entities:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search
+  const handleSearchInput = (query) => {
+    setSearchQuery(query);
+    
+    // Clear previous timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    // Set new timeout for debounced search
+    const timeout = setTimeout(() => {
+      searchEntities(query, activeTab);
+    }, 300); // 300ms debounce
+
+    setSearchTimeout(timeout);
+  };
+
+  // Handle entity selection from search results
+  const handleEntitySelect = (entity) => {
+    setSelectedEntity(entity.id);
+    setSearchQuery(`${entity.display_name} (${entity.matched_fields.join(', ')})`);
+    setShowSearchResults(false);
+    setSearchResults([]);
+  };
+
+  // Clear search
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSelectedEntity("");
+    setSearchResults([]);
+    setShowSearchResults(false);
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+  };
 
   const fetchEntityList = async () => {
     try {
