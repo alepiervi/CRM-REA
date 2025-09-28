@@ -8551,32 +8551,32 @@ async def search_entities(
             query_lower = query.lower()
             
             if entity_type == "clienti":
-                if query_lower in entity.get("id", "").lower():
+                if query_lower in (entity.get("id") or "").lower():
                     matched_fields.append(f"ID: {entity.get('id', '')}")
-                if query_lower in entity.get("cognome", "").lower():
+                if query_lower in (entity.get("cognome") or "").lower():
                     matched_fields.append(f"Cognome: {entity.get('cognome', '')}")
-                if query_lower in entity.get("nome", "").lower():
+                if query_lower in (entity.get("nome") or "").lower():
                     matched_fields.append(f"Nome: {entity.get('nome', '')}")
-                if query_lower in entity.get("codice_fiscale", "").lower():
+                if query_lower in (entity.get("codice_fiscale") or "").lower():
                     matched_fields.append(f"CF: {entity.get('codice_fiscale', '')}")
-                if query_lower in entity.get("partita_iva", "").lower():
+                if query_lower in (entity.get("partita_iva") or "").lower():
                     matched_fields.append(f"P.IVA: {entity.get('partita_iva', '')}")
-                if query_lower in entity.get("telefono", "").lower():
+                if query_lower in (entity.get("telefono") or "").lower():
                     matched_fields.append(f"Tel: {entity.get('telefono', '')}")
-                if query_lower in entity.get("email", "").lower():
+                if query_lower in (entity.get("email") or "").lower():
                     matched_fields.append(f"Email: {entity.get('email', '')}")
             else:
-                if query_lower in entity.get("id", "").lower():
+                if query_lower in (entity.get("id") or "").lower():
                     matched_fields.append(f"ID: {entity.get('id', '')}")
-                if query_lower in entity.get("lead_id", "").lower():
+                if query_lower in (entity.get("lead_id") or "").lower():
                     matched_fields.append(f"Lead ID: {entity.get('lead_id', '')}")
-                if query_lower in entity.get("cognome", "").lower():
+                if query_lower in (entity.get("cognome") or "").lower():
                     matched_fields.append(f"Cognome: {entity.get('cognome', '')}")
-                if query_lower in entity.get("nome", "").lower():
+                if query_lower in (entity.get("nome") or "").lower():
                     matched_fields.append(f"Nome: {entity.get('nome', '')}")
-                if query_lower in entity.get("telefono", "").lower():
+                if query_lower in (entity.get("telefono") or "").lower():
                     matched_fields.append(f"Tel: {entity.get('telefono', '')}")
-                if query_lower in entity.get("email", "").lower():
+                if query_lower in (entity.get("email") or "").lower():
                     matched_fields.append(f"Email: {entity.get('email', '')}")
             
             result = {
