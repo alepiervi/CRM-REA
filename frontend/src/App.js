@@ -1075,7 +1075,7 @@ const Dashboard = () => {
           return <LeadsManagement selectedUnit={selectedUnit} units={units} />;
         case "configurazioni":
           return <ConfigurazioniManagement 
-            onFetchConfigs={fetchArubaDriveConfigs}
+            onFetchConfigs={() => {}} // Placeholder - useEffect nel Dashboard gestisce il caricamento
             arubaDriveConfigs={arubaDriveConfigs}
             onSaveConfig={saveArubaDriveConfig}
             onDeleteConfig={deleteArubaDriveConfig}
