@@ -6667,10 +6667,7 @@ const AIConfigurationManagement = () => {
   const [config, setConfig] = useState(null);
   const [assistants, setAssistants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [arubaDriveConfigs, setArubaDriveConfigs] = useState([]);
-  const [editingConfig, setEditingConfig] = useState(null);
-  const [testingConfigId, setTestingConfigId] = useState(null);
+  const [showConfigModal, setShowConfigModal] = useState(false); // Per AI config
   const { toast } = useToast();
 
   useEffect(() => {
