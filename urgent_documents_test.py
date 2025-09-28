@@ -183,23 +183,23 @@ class UrgentDocumentsTest:
             self.token = resp_response['access_token']
             resp_user_data = resp_response['user']
             
-            self.log_test("resp_commessa login", True, f"Role: {resp_user_data['role']}, Commesse: {len(resp_user_data.get('commesse_autorizzate', []))}")
+            self.log_test("test_immediato login", True, f"Role: {resp_user_data['role']}, Commesse: {len(resp_user_data.get('commesse_autorizzate', []))}")
             
-            # Test documents endpoint with resp_commessa
+            # Test documents endpoint with test_immediato
             success, resp_docs, status = self.make_request('GET', 'documents', expected_status=200)
             
             if success and status == 200:
-                self.log_test("GET /api/documents (resp_commessa)", True, f"Status: {status}, Documents: {len(resp_docs) if isinstance(resp_docs, list) else 'Not array'}")
+                self.log_test("GET /api/documents (test_immediato)", True, f"Status: {status}, Documents: {len(resp_docs) if isinstance(resp_docs, list) else 'Not array'}")
                 
-                # Test with clienti filter for resp_commessa
+                # Test with clienti filter for test_immediato
                 success, resp_client_docs, status = self.make_request('GET', 'documents?document_type=clienti', expected_status=200)
                 if success:
-                    self.log_test("GET /api/documents?document_type=clienti (resp_commessa)", True, 
+                    self.log_test("GET /api/documents?document_type=clienti (test_immediato)", True, 
                         f"Status: {status}, Client docs: {len(resp_client_docs) if isinstance(resp_client_docs, list) else 'Not array'}")
                 else:
-                    self.log_test("GET /api/documents?document_type=clienti (resp_commessa)", False, f"Status: {status}")
+                    self.log_test("GET /api/documents?document_type=clienti (test_immediato)", False, f"Status: {status}")
             else:
-                self.log_test("GET /api/documents (resp_commessa)", False, f"Status: {status}, Response: {resp_docs}")
+                self.log_test("GET /api/documents (test_immediato)", False, f"Status: {status}, Response: {resp_docs}")
             
             # Restore admin token
             self.token = admin_token
