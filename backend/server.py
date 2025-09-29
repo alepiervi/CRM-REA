@@ -694,10 +694,17 @@ class CallAnalytics(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Sistema Autorizzazioni Gerarchiche Models
+# Entity Type Enum for Commesse and Users
+class EntityType(str, Enum):
+    CLIENTI = "clienti"
+    LEAD = "lead"
+    BOTH = "both"
+
 class Commessa(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     nome: str
     descrizione: Optional[str] = None
+    entity_type: EntityType = EntityType.CLIENTI  # NEW: what entity type this commessa manages
     is_active: bool = True
     responsabile_id: Optional[str] = None  # User ID del Responsabile Commessa
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -706,11 +713,13 @@ class Commessa(BaseModel):
 class CommessaCreate(BaseModel):
     nome: str
     descrizione: Optional[str] = None
+    entity_type: EntityType = EntityType.CLIENTI  # NEW: specify what this commessa will manage
     responsabile_id: Optional[str] = None
 
 class CommessaUpdate(BaseModel):
     nome: Optional[str] = None
     descrizione: Optional[str] = None
+    entity_type: Optional[EntityType] = None  # NEW: allow updating entity type
     responsabile_id: Optional[str] = None
     is_active: Optional[bool] = None
 
