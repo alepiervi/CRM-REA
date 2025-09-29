@@ -810,14 +810,14 @@ frontend:
 
 test_plan:
   current_focus:
-    - "Fix Fotovoltaico Tipologie Filtering Logic - Backend Implementation"
+    - "Extend Hierarchy: Segmenti and Offerte Management System"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-      message: "CRITICAL FIX IMPLEMENTED: Sistemato il bug di filtering delle tipologie per Fotovoltaico. Modificato l'endpoint /api/tipologie-contratto per distinguere tra Fastweb (tipologie hardcoded) e Fotovoltaico (tipologie database). Aggiunto fix per JSON serialization errors. TESTING RICHIESTO: 1) Verificare che Fotovoltaico non mostri più tipologie Fastweb, 2) Confermare che le tipologie create siano visibili per Fotovoltaico, 3) Verificare che Fastweb mantenga le tipologie hardcoded, 4) Testare che non ci siano più JSON parsing errors."
+      message: "EXTENDED HIERARCHY SYSTEM IMPLEMENTED: Completato l'estensione della gerarchia da 3 a 5 colonne (Commesse → Servizi → Tipologie → Segmenti → Offerte). BACKEND: Aggiunti modelli e endpoint per segmenti e offerte con CRUD completo. FRONTEND: Esteso CommesseManagement con nuove colonne interattive, segmenti auto-creati (Privato/Business), gestione attivazione/disattivazione segmenti per tipologia, CRUD offerte con modal dedicato. TESTING RICHIESTO: 1) Verificare caricamento segmenti quando si clicca tipologia, 2) Testare creazione automatica segmenti Privato/Business, 3) Verificare attivazione/disattivazione segmenti, 4) Testare CRUD offerte completo, 5) Confermare flusso gerarchia a 5 livelli funzionante."
 
 frontend:
   - task: "FINAL STATE COLLISION RESOLUTION TEST - Tipologie Contratto Filtering"
