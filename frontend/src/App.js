@@ -9939,9 +9939,23 @@ const CommesseManagement = ({
                         )}
                       </div>
                     </div>
-                    <Badge variant={commessa.is_active ? "default" : "secondary"}>
-                      {commessa.is_active ? "Attiva" : "Inattiva"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={commessa.is_active ? "default" : "secondary"}>
+                        {commessa.is_active ? "Attiva" : "Inattiva"}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Eliminare definitivamente la commessa "${commessa.nome}"?`)) {
+                            deleteCommessa(commessa.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
