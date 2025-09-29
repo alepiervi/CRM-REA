@@ -141,6 +141,13 @@ class EntityType(str, Enum):
     LEAD = "lead"
     BOTH = "both"
 
+# Document Management Enum
+class DocumentManagement(str, Enum):
+    DISABLED = "disabled"
+    CLIENTI_ONLY = "clienti_only"
+    LEAD_ONLY = "lead_only"
+    BOTH = "both"
+
 # Models
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
