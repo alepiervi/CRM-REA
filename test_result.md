@@ -120,6 +120,18 @@ backend:
           agent: "testing"
           comment: "🎉 TESTING COMPLETO ESTENSIONE GERARCHIA SEGMENTI E OFFERTE - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ GERARCHIA NAVIGATION: Complete 5-level hierarchy tested (Commesse → Servizi → Tipologie → Segmenti → Offerte) - Found commessa Fastweb, servizio TLS, created database tipologia for testing. ✅ CREAZIONE SEGMENTI AUTOMATICI: GET /api/tipologie-contratto/{tipologia_id}/segmenti creates 2 default segments (Privato, Business) automatically on first access - segmenti automatici creati correctly. ✅ GESTIONE SEGMENTI: GET/PUT operations working - Found 2 segmenti (2 active), PUT /api/segmenti/{id} successfully deactivates segments, verification confirms is_active: false. ✅ CRUD OFFERTE COMPLETO: All operations successful - POST /api/offerte creates offerta with proper ID, GET /api/segmenti/{id}/offerte finds created offerta, PUT /api/offerte/{id} updates name and deactivates, DELETE /api/offerte/{id} removes offerta completely, verification confirms elimination. ✅ ENDPOINT VALIDATIONS: All validation tests pass - POST without segmento_id correctly rejected (422), PUT/DELETE with invalid IDs return 404 as expected. ✅ PERMISSIONS: Admin-only access enforced (non-admin users not available for testing but validation logic confirmed). SUCCESS RATE: 100% (25/25 tests passed) - Sistema a 5 livelli completamente funzionante! Gerarchia Commesse → Servizi → Tipologie → Segmenti → Offerte operativa!"
 
+  - task: "Hardcoded Elements Disable System - Admin Control Functionality"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 CRITICAL TEST: HARDCODED ELEMENTS DISABLE SYSTEM VERIFICATION COMPLETED - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ HARDCODED STATUS ENDPOINTS: GET /api/admin/hardcoded-status returns correct status (hardcoded_disabled: true), POST /api/admin/disable-hardcoded-elements successfully disables hardcoded elements with proper response message. ✅ DATABASE STATE VERIFICATION: system_settings collection correctly updated with hardcoded_elements_disabled = true flag, status persists across requests. ✅ TIPOLOGIE FILTERING VERIFICATION: GET /api/tipologie-contratto/all returns ONLY database tipologie (25 total, 0 hardcoded), GET /api/tipologie-contratto?commessa_id={fastweb_id} returns ONLY database tipologie (3 total, 0 hardcoded), hardcoded tipologie (energia_fastweb, telefonia_fastweb) have been migrated to database with source: database. ✅ FOTOVOLTAICO FUNCTIONALITY PRESERVED: GET /api/tipologie-contratto?commessa_id={fotovoltaico_id} continues to work normally returning 1 database tipologia. ✅ CRITICAL OBJECTIVE ACHIEVED: After disabling hardcoded elements, users can ONLY see and interact with database elements, making everything fully deletable and manageable. ✅ MIGRATION CONFIRMED: Previously hardcoded tipologie (Energia Fastweb, Telefonia Fastweb) are now database records with proper UUIDs and can be deleted/modified. SUCCESS RATE: 100% (22/22 tests passed) - Hardcoded elements disable system is FULLY FUNCTIONAL and working as designed!"
+
   - task: "Aruba Drive Configuration Management System - Complete CRUD Endpoints"
     implemented: true
     working: true
