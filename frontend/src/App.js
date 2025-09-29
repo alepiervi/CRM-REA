@@ -10008,9 +10008,23 @@ const CommesseManagement = ({
                         <Settings2 className="w-4 h-4 text-green-600" />
                         <span className="font-medium">{servizio.nome}</span>
                       </div>
-                      <Badge variant={servizio.is_active ? "default" : "secondary"}>
-                        {servizio.is_active ? "Attivo" : "Inattivo"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={servizio.is_active ? "default" : "secondary"}>
+                          {servizio.is_active ? "Attivo" : "Inattivo"}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Eliminare definitivamente il servizio "${servizio.nome}"?`)) {
+                              deleteServizio(servizio.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                     {servizio.descrizione && (
                       <p className="text-sm text-gray-600 mt-1">{servizio.descrizione}</p>
