@@ -7354,16 +7354,24 @@ Duplicate,Test,+393471234567"""
             self.log_test("❌ POST /api/tipologie-contratto", False, f"Status: {status}, Response: {create_response}")
             created_tipologia_id = None
 
-        # Get existing servizi for testing
+        # Get existing servizi for testing (need to get commessa first)
         print("   Getting existing servizi for testing...")
-        success, servizi_response, status = self.make_request('GET', 'servizi', expected_status=200)
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
         
         test_servizio_id = None
-        if success and isinstance(servizi_response, list) and len(servizi_response) > 0:
-            test_servizio_id = servizi_response[0].get('id')
-            self.log_test("✅ Found test servizio", True, f"Using servizio ID: {test_servizio_id}")
+        test_commessa_id = None
+        if success and isinstance(commesse_response, list) and len(commesse_response) > 0:
+            test_commessa_id = commesse_response[0].get('id')
+            # Get servizi for this commessa
+            success, servizi_response, status = self.make_request('GET', f'commesse/{test_commessa_id}/servizi', expected_status=200)
+            
+            if success and isinstance(servizi_response, list) and len(servizi_response) > 0:
+                test_servizio_id = servizi_response[0].get('id')
+                self.log_test("✅ Found test servizio", True, f"Using servizio ID: {test_servizio_id} from commessa: {test_commessa_id}")
+            else:
+                self.log_test("❌ No servizi found for testing", False, "Cannot test service-specific endpoints")
         else:
-            self.log_test("❌ No servizi found for testing", False, "Cannot test service-specific endpoints")
+            self.log_test("❌ No commesse found for testing", False, "Cannot test service-specific endpoints")
 
         # GET /api/servizi/{servizio_id}/tipologie-contratto (lista tipologie per servizio)
         if test_servizio_id:
