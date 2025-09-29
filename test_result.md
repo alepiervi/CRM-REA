@@ -927,9 +927,7 @@ frontend:
 
 test_plan:
   current_focus:
-    - "Commesse Section UI Improvements Testing"
-    - "ViewCommessaModal Functionality Testing"
-    - "Hierarchical Navigation Testing"
+    - "Layout Migliorato Cards Commesse e Pulsante Modifica"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
