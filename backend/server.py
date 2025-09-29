@@ -6779,6 +6779,60 @@ async def get_tipologie_contratto(
                                     })
                         return all_tipologie
                 
+                # FASTWEB: Return only database tipologie (hardcoded disabled)
+                elif "fastweb" in commessa_nome and not use_hardcoded:
+                    if servizio_id:
+                        # Get database tipologie for this servizio only
+                        db_tipologie = await db.tipologie_contratto.find({
+                            "servizio_id": servizio_id,
+                            "is_active": True
+                        }).to_list(length=None)
+                        
+                        formatted_tipologie = []
+                        for tipologia in db_tipologie:
+                            if "_id" in tipologia:
+                                del tipologia["_id"]
+                            if "created_at" in tipologia and hasattr(tipologia["created_at"], "isoformat"):
+                                tipologia["created_at"] = tipologia["created_at"].isoformat()
+                            if "updated_at" in tipologia and tipologia["updated_at"] and hasattr(tipologia["updated_at"], "isoformat"):
+                                tipologia["updated_at"] = tipologia["updated_at"].isoformat()
+                                
+                            formatted_tipologie.append({
+                                "value": tipologia["id"],
+                                "label": tipologia["nome"],
+                                "descrizione": tipologia.get("descrizione", ""),
+                                "source": "database"
+                            })
+                        return formatted_tipologie
+                    else:
+                        # Return all database tipologie for this Fastweb commessa
+                        fastweb_servizi = await db.servizi.find({"commessa_id": commessa_id}).to_list(length=None)
+                        all_tipologie = []
+                        
+                        for servizio in fastweb_servizi:
+                            db_tipologie = await db.tipologie_contratto.find({
+                                "servizio_id": servizio["id"],
+                                "is_active": True
+                            }).to_list(length=None)
+                            
+                            for tipologia in db_tipologie:
+                                # Avoid duplicates
+                                if not any(t["value"] == tipologia["id"] for t in all_tipologie):
+                                    if "_id" in tipologia:
+                                        del tipologia["_id"]
+                                    if "created_at" in tipologia and hasattr(tipologia["created_at"], "isoformat"):
+                                        tipologia["created_at"] = tipologia["created_at"].isoformat()
+                                    if "updated_at" in tipologia and tipologia["updated_at"] and hasattr(tipologia["updated_at"], "isoformat"):
+                                        tipologia["updated_at"] = tipologia["updated_at"].isoformat()
+                                        
+                                    all_tipologie.append({
+                                        "value": tipologia["id"],
+                                        "label": tipologia["nome"],
+                                        "descrizione": tipologia.get("descrizione", ""),
+                                        "source": "database"
+                                    })
+                        return all_tipologie
+                
                 # FASTWEB: Return hardcoded + database tipologie (combined) - BUT ONLY IF HARDCODED ENABLED
                 elif "fastweb" in commessa_nome and use_hardcoded:
                     # Get hardcoded tipologie
