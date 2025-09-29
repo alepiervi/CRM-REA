@@ -819,6 +819,12 @@ const Dashboard = () => {
     }
   };
 
+  // Force load all tipologie on component mount
+  useEffect(() => {
+    console.log('🔄 COMPONENT MOUNT: Loading all tipologie for sidebar');
+    fetchTipologieContratto();
+  }, []); // Run once on mount
+
   // Rimossi vecchi useEffect - ora gestiti dal sistema gerarchico
 
   // useEffect per ricaricare tipologie contratto quando cambiano commessa/servizio - PER TUTTI I RUOLI
