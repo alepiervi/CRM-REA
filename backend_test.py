@@ -8125,26 +8125,34 @@ Duplicate,Test,+393471234567"""
         return True
 
     def run_all_tests(self):
-        """Run test for tipologie contratto debug as requested"""
-        print("🚀 Starting CRM API Testing - Tipologie Contratto Debug...")
+        """Run test for tipologie contratto endpoint modificato as requested"""
+        print("🚀 Starting CRM API Testing - Tipologie Contratto Endpoint Modificato...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 80)
         
-        # PRIORITY TEST: Debug tipologie contratto esistenti (as requested in review)
-        print("\n🚨 PRIORITY TEST: DEBUG TIPOLOGIE CONTRATTO ESISTENTI...")
-        debug_test_success = self.test_tipologie_contratto_debug()
+        # Core authentication test
+        if not self.test_authentication():
+            print("❌ Authentication failed - stopping tests")
+            return False
+        
+        # PRIORITY TEST: Test endpoint tipologie modificato (as requested in review)
+        print("\n🚨 PRIORITY TEST: TEST ENDPOINT TIPOLOGIE MODIFICATO...")
+        endpoint_test_success = self.test_tipologie_contratto_endpoint_modificato()
+        
+        # Cleanup created resources
+        self.cleanup_resources()
         
         # Print summary
         print("\n" + "=" * 80)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
-        print(f"🔍 Tipologie Debug Status: {'✅ SUCCESS - Database structure analyzed!' if debug_test_success else '❌ ISSUES FOUND'}")
+        print(f"🔍 Tipologie Endpoint Status: {'✅ SUCCESS - All tests passed!' if endpoint_test_success else '❌ ISSUES FOUND'}")
         
-        if debug_test_success:
-            print("🎉 PRIORITY TEST PASSED: Tipologie contratto debug completed!")
-            print("🎉 CONFIRMED: Database structure and mapping analyzed successfully!")
+        if endpoint_test_success:
+            print("🎉 PRIORITY TEST PASSED: Endpoint tipologie modificato funziona correttamente!")
+            print("🎉 CONFERMATO: Le tipologie esistenti vengono mostrate correttamente quando si seleziona un servizio!")
             return True
         else:
-            print("🚨 PRIORITY TEST FAILED: Tipologie contratto debug has issues!")
+            print("🚨 PRIORITY TEST FAILED: Endpoint tipologie modificato ha problemi!")
             return False
 
     def test_document_endpoints_with_authorization(self):
