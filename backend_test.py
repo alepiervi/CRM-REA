@@ -9519,19 +9519,14 @@ Duplicate,Test,+393471234567"""
         return True
 
     def run_all_tests(self):
-        """Run test for HIERARCHY SEGMENTI E OFFERTE COMPLETE TEST"""
-        print("🚀 Starting CRM API Testing - HIERARCHY SEGMENTI E OFFERTE COMPLETE TEST...")
+        """Run CRITICAL VERIFICATION TEST: SEGMENTI AND TIPOLOGIE CONTRATTO FIXES"""
+        print("🚀 Starting CRM API Testing - CRITICAL VERIFICATION TEST: SEGMENTI AND TIPOLOGIE CONTRATTO FIXES...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 80)
         
-        # Core authentication test
-        if not self.test_authentication():
-            print("❌ Authentication failed - stopping tests")
-            return False
-        
-        # PRIORITY TEST: Complete hierarchy segmenti e offerte test
-        print("\n🚨 PRIORITY TEST: HIERARCHY SEGMENTI E OFFERTE COMPLETE...")
-        hierarchy_test_success = self.test_hierarchy_segmenti_offerte_complete()
+        # CRITICAL TEST: Segmenti and Tipologie Contratto Fixes
+        print("\n🚨 CRITICAL VERIFICATION TEST: SEGMENTI AND TIPOLOGIE CONTRATTO FIXES...")
+        segmenti_tipologie_test_success = self.test_segmenti_tipologie_contratto_fixes()
         
         # Cleanup created resources
         self.cleanup_resources()
@@ -9539,15 +9534,18 @@ Duplicate,Test,+393471234567"""
         # Print final summary
         self.print_summary()
         
-        if hierarchy_test_success:
-            print("\n🎉 HIERARCHY SEGMENTI E OFFERTE TESTING COMPLETED SUCCESSFULLY!")
-            print("🎯 OBIETTIVO RAGGIUNTO: Sistema a 5 livelli completamente funzionante")
-            print("✅ Gerarchia Commesse → Servizi → Tipologie → Segmenti → Offerte operativa")
+        if segmenti_tipologie_test_success:
+            print("\n🎉 CRITICAL VERIFICATION TEST COMPLETED SUCCESSFULLY!")
+            print("🎯 OBIETTIVO RAGGIUNTO: Segmenti and Tipologie Contratto fixes verified")
+            print("✅ All fixes working correctly - segmenti created for all tipologie")
+            print("✅ All tipologie (hardcoded + custom) accessible via /tipologie-contratto/all")
+            print("✅ Migration worked correctly and created segmenti for existing tipologie")
+            print("✅ Backend endpoints respond correctly for frontend integration")
         else:
-            print("\n🚨 HIERARCHY SEGMENTI E OFFERTE TESTING FAILED!")
-            print("❌ Problemi critici identificati - richiede ulteriore debug")
+            print("\n🚨 CRITICAL VERIFICATION TEST FAILED!")
+            print("❌ Some fixes still need attention - check detailed results above")
         
-        return hierarchy_test_success
+        return segmenti_tipologie_test_success
         
         # Print summary
         print("\n" + "=" * 80)
