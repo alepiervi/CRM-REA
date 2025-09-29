@@ -7148,12 +7148,18 @@ async def get_tipologie_by_servizio(
         if not servizio:
             raise HTTPException(status_code=404, detail="Servizio non trovato")
         
-        # First get hardcoded tipologie (existing system)
-        hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+        # Check if hardcoded elements should be used
+        use_hardcoded = await should_use_hardcoded_elements()
         
-        # Filter hardcoded tipologie based on servizio type/name
         filtered_hardcoded = []
-        servizio_name = servizio.get("nome", "").lower()
+        
+        # Only process hardcoded tipologie if not disabled
+        if use_hardcoded:
+            # First get hardcoded tipologie (existing system)
+            hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+            
+            # Filter hardcoded tipologie based on servizio type/name
+            servizio_name = servizio.get("nome", "").lower()
         
         for tipologia in hardcoded_tipologie:
             # Map tipologie to servizi based on existing logic
