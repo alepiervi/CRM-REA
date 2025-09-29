@@ -9585,6 +9585,28 @@ const CommesseManagement = ({
     }
   };
 
+  const fetchSegmenti = async (tipologiaId) => {
+    try {
+      const response = await axios.get(`${API}/tipologie-contratto/${tipologiaId}/segmenti`);
+      console.log(`Segmenti per tipologia ${tipologiaId}:`, response.data);
+      setSegmenti(response.data);
+    } catch (error) {
+      console.error("Error fetching segmenti:", error);
+      setSegmenti([]);
+    }
+  };
+
+  const fetchOfferte = async (segmentoId) => {
+    try {
+      const response = await axios.get(`${API}/segmenti/${segmentoId}/offerte`);
+      console.log(`Offerte per segmento ${segmentoId}:`, response.data);
+      setOfferte(response.data);
+    } catch (error) {
+      console.error("Error fetching offerte:", error);
+      setOfferte([]);
+    }
+  };
+
   const createCommessa = async (commessaData) => {
     try {
       const response = await axios.post(`${API}/commesse`, commessaData);
