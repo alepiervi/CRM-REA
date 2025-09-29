@@ -11418,8 +11418,9 @@ Duplicate,Test,+393471234567"""
                 tipologia_name = (tipologia.get('label') or tipologia.get('nome', '')).lower()
                 tipologia_source = tipologia.get('source', 'database')
                 
-                if tipologia_source == 'hardcoded' or any(hardcoded in tipologia_name for hardcoded in ['energia_fastweb', 'telefonia_fastweb', 'ho_mobile', 'telepass']):
-                    main_hardcoded_found.append(tipologia_name)
+                # Only count as hardcoded if source is explicitly 'hardcoded'
+                if tipologia_source == 'hardcoded':
+                    main_hardcoded_found.append(f"{tipologia_name} (source: hardcoded)")
                 else:
                     main_database_count += 1
             
