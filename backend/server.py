@@ -7216,16 +7216,20 @@ async def migrate_hardcoded_to_database(
     
     try:
         created_count = 0
+        skipped_count = 0
+        debug_info = []
         
         # 1. MIGRATE HARDCODED TIPOLOGIE TO DATABASE
         hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+        debug_info.append(f"Found {len(hardcoded_tipologie)} hardcoded tipologie")
         
         # Find a default servizio to assign hardcoded tipologie
         default_servizio = await db.servizi.find_one({})
         default_servizio_id = default_servizio["id"] if default_servizio else str(uuid.uuid4())
+        debug_info.append(f"Using default servizio: {default_servizio_id}")
         
         for tip in hardcoded_tipologie:
-            # Check if already exists in database
+            # Check if already exists in database (by exact name match)
             existing = await db.tipologie_contratto.find_one({"nome": tip["label"]})
             if not existing:
                 tipologia_dict = {
@@ -7239,7 +7243,11 @@ async def migrate_hardcoded_to_database(
                 }
                 await db.tipologie_contratto.insert_one(tipologia_dict)
                 created_count += 1
+                debug_info.append(f"✅ Migrated: {tip['label']}")
                 logger.info(f"Migrated hardcoded tipologia: {tip['label']}")
+            else:
+                skipped_count += 1
+                debug_info.append(f"⚠️ Already exists: {tip['label']} (ID: {existing['id']})")
         
         # 2. MIGRATE HARDCODED COMMESSE TO DATABASE (if needed)
         hardcoded_commesse = [
@@ -7260,15 +7268,21 @@ async def migrate_hardcoded_to_database(
                 }
                 await db.commesse.insert_one(commessa_dict)
                 created_count += 1
+                debug_info.append(f"✅ Migrated commessa: {comm['nome']}")
                 logger.info(f"Migrated hardcoded commessa: {comm['nome']}")
+            else:
+                skipped_count += 1
+                debug_info.append(f"⚠️ Commessa already exists: {comm['nome']} (ID: {existing['id']})")
         
         # 3. MIGRATE HARDCODED SERVIZI TO DATABASE (if needed)
         # This would require more complex logic to associate with commesse
         
         return {
             "success": True,
-            "message": f"Migrazione hardcoded completata. Creati {created_count} elementi nel database.",
-            "entities_created": created_count
+            "message": f"Migrazione hardcoded completata. Creati {created_count} elementi, saltati {skipped_count} già esistenti.",
+            "entities_created": created_count,
+            "entities_skipped": skipped_count,
+            "debug_info": debug_info
         }
         
     except Exception as e:
