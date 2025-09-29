@@ -12246,12 +12246,292 @@ Duplicate,Test,+393471234567"""
             print(f"⚠️  {failed} Clienti navigation tests failed")
             return False
 
+    def test_fastweb_servizio_delete_failure_analysis(self):
+        """URGENT DEBUG: FASTWEB SERVIZIO DELETE FAILURE ANALYSIS"""
+        print("\n🚨 URGENT DEBUG: FASTWEB SERVIZIO DELETE FAILURE ANALYSIS...")
+        
+        # 1. **LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **IDENTIFY FASTWEB COMMESSA**
+        print("\n🔍 2. IDENTIFY FASTWEB COMMESSA...")
+        
+        # GET /api/commesse (find Fastweb commessa ID)
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}, Response: {commesse_response}")
+            return False
+        
+        commesse = commesse_response
+        self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse)} commesse")
+        
+        # Find Fastweb commessa
+        fastweb_commessa = None
+        for commessa in commesse:
+            if 'fastweb' in commessa.get('nome', '').lower():
+                fastweb_commessa = commessa
+                break
+        
+        if not fastweb_commessa:
+            self.log_test("❌ Fastweb commessa not found", False, "Cannot proceed with testing")
+            return False
+        
+        fastweb_id = fastweb_commessa['id']
+        self.log_test("✅ Found Fastweb commessa", True, f"ID: {fastweb_id}, Nome: {fastweb_commessa['nome']}")
+
+        # 3. **IDENTIFY FASTWEB SERVIZI**
+        print("\n📋 3. IDENTIFY FASTWEB SERVIZI...")
+        
+        # GET /api/commesse/{fastweb_id}/servizi (list all Fastweb servizi)
+        success, servizi_response, status = self.make_request('GET', f"commesse/{fastweb_id}/servizi", expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/commesse/{fastweb_id}/servizi", False, f"Status: {status}")
+            return False
+        
+        servizi = servizi_response
+        self.log_test("✅ GET /api/commesse/{fastweb_id}/servizi", True, f"Found {len(servizi)} Fastweb servizi")
+        
+        if not servizi:
+            self.log_test("❌ No Fastweb servizi found", False, "Cannot proceed with testing")
+            return False
+        
+        # Record servizio IDs and names for testing
+        fastweb_servizi = []
+        expected_servizi = ['TLS', 'Agent', 'Negozi', 'Presidi']
+        
+        for servizio in servizi:
+            servizio_info = {
+                'id': servizio['id'],
+                'nome': servizio['nome'],
+                'is_active': servizio.get('is_active', True)
+            }
+            fastweb_servizi.append(servizio_info)
+            self.log_test(f"📝 Found servizio: {servizio['nome']}", True, f"ID: {servizio['id']}, Active: {servizio.get('is_active', True)}")
+        
+        # Verify we have the expected servizi
+        found_servizi_names = [s['nome'] for s in fastweb_servizi]
+        missing_servizi = [name for name in expected_servizi if name not in found_servizi_names]
+        
+        if not missing_servizi:
+            self.log_test("✅ All expected Fastweb servizi found", True, f"Found: {found_servizi_names}")
+        else:
+            self.log_test("⚠️ Some expected servizi missing", True, f"Missing: {missing_servizi}, Found: {found_servizi_names}")
+
+        # 4. **TEST SERVIZIO DELETE ATTEMPTS**
+        print("\n🗑️ 4. TEST SERVIZIO DELETE ATTEMPTS...")
+        
+        delete_results = []
+        
+        for servizio in fastweb_servizi:
+            servizio_id = servizio['id']
+            servizio_nome = servizio['nome']
+            
+            print(f"\n   Testing DELETE /api/servizi/{servizio_id} ({servizio_nome})...")
+            
+            # Try DELETE /api/servizi/{fastweb_servizio_id}
+            success, delete_response, status = self.make_request('DELETE', f'servizi/{servizio_id}', expected_status=None)
+            
+            # CAPTURE: Exact HTTP status code and error message
+            delete_result = {
+                'servizio_id': servizio_id,
+                'servizio_nome': servizio_nome,
+                'status_code': status,
+                'response': delete_response,
+                'success': success
+            }
+            delete_results.append(delete_result)
+            
+            # Analyze the result
+            if status == 400:
+                error_message = delete_response.get('detail', 'No detail provided') if isinstance(delete_response, dict) else str(delete_response)
+                self.log_test(f"🔍 DELETE {servizio_nome}", True, f"Status: 400 (dependency constraint) - {error_message}")
+                delete_result['analysis'] = 'dependency_constraint'
+            elif status == 404:
+                self.log_test(f"❌ DELETE {servizio_nome}", False, f"Status: 404 (not found) - Servizio doesn't exist in database")
+                delete_result['analysis'] = 'not_found'
+            elif status == 500:
+                error_message = delete_response.get('detail', 'No detail provided') if isinstance(delete_response, dict) else str(delete_response)
+                self.log_test(f"❌ DELETE {servizio_nome}", False, f"Status: 500 (server error) - {error_message}")
+                delete_result['analysis'] = 'server_error'
+            elif status == 200:
+                self.log_test(f"✅ DELETE {servizio_nome}", True, f"Status: 200 (successful deletion)")
+                delete_result['analysis'] = 'successful_deletion'
+            else:
+                self.log_test(f"❓ DELETE {servizio_nome}", False, f"Status: {status} (unexpected) - {delete_response}")
+                delete_result['analysis'] = 'unexpected_status'
+
+        # 5. **CHECK SERVIZIO DEPENDENCIES**
+        print("\n🔗 5. CHECK SERVIZIO DEPENDENCIES...")
+        
+        # For each Fastweb servizio, check dependencies
+        for servizio in fastweb_servizi:
+            servizio_id = servizio['id']
+            servizio_nome = servizio['nome']
+            
+            print(f"\n   Checking dependencies for {servizio_nome} ({servizio_id})...")
+            
+            # Check tipologie contratto count
+            success, tipologie_response, status = self.make_request('GET', f'servizi/{servizio_id}/tipologie-contratto', expected_status=200)
+            
+            tipologie_count = 0
+            if success and status == 200:
+                tipologie_count = len(tipologie_response)
+                self.log_test(f"📊 Tipologie count for {servizio_nome}", True, f"Found {tipologie_count} tipologie contratto")
+            else:
+                self.log_test(f"❌ Failed to get tipologie for {servizio_nome}", False, f"Status: {status}")
+            
+            # Check clienti count (if endpoint exists)
+            clienti_count = 0
+            success, clienti_response, status = self.make_request('GET', f'clienti?servizio_id={servizio_id}', expected_status=None)
+            
+            if success and status == 200:
+                if isinstance(clienti_response, list):
+                    clienti_count = len(clienti_response)
+                elif isinstance(clienti_response, dict) and 'total' in clienti_response:
+                    clienti_count = clienti_response['total']
+                self.log_test(f"📊 Clienti count for {servizio_nome}", True, f"Found {clienti_count} clienti")
+            else:
+                self.log_test(f"ℹ️ Clienti check for {servizio_nome}", True, f"Status: {status} (endpoint may not exist or no access)")
+            
+            # Update delete result with dependency info
+            for delete_result in delete_results:
+                if delete_result['servizio_id'] == servizio_id:
+                    delete_result['tipologie_count'] = tipologie_count
+                    delete_result['clienti_count'] = clienti_count
+                    
+                    # Analyze if dependencies would cause 400 error
+                    has_dependencies = tipologie_count > 0 or clienti_count > 0
+                    delete_result['has_dependencies'] = has_dependencies
+                    
+                    if has_dependencies and delete_result['status_code'] == 400:
+                        self.log_test(f"✅ Dependency analysis for {servizio_nome}", True, f"400 error is CORRECT (has {tipologie_count} tipologie, {clienti_count} clienti)")
+                    elif not has_dependencies and delete_result['status_code'] == 400:
+                        self.log_test(f"❌ Dependency analysis for {servizio_nome}", False, f"400 error but no dependencies found")
+                    elif has_dependencies and delete_result['status_code'] != 400:
+                        self.log_test(f"❌ Dependency analysis for {servizio_nome}", False, f"Has dependencies but got status {delete_result['status_code']} instead of 400")
+                    else:
+                        self.log_test(f"✅ Dependency analysis for {servizio_nome}", True, f"Status {delete_result['status_code']} is consistent with dependencies")
+
+        # **FINAL ANALYSIS AND SUMMARY**
+        print(f"\n🎯 FASTWEB SERVIZIO DELETE FAILURE ANALYSIS SUMMARY:")
+        print(f"   🎯 OBJECTIVE: Determine exact reason why Fastweb servizio deletion fails")
+        print(f"   🎯 EXPECTED RESULTS:")
+        print(f"      • 400 error with dependency message = CORRECT behavior (need to remove dependencies first)")
+        print(f"      • 404 error = servizio doesn't exist in database (unexpected)")
+        print(f"      • 500 error = server bug in delete endpoint")
+        print(f"   📊 RESULTS:")
+        
+        # Analyze results by status code
+        status_400_count = sum(1 for r in delete_results if r['status_code'] == 400)
+        status_404_count = sum(1 for r in delete_results if r['status_code'] == 404)
+        status_500_count = sum(1 for r in delete_results if r['status_code'] == 500)
+        status_200_count = sum(1 for r in delete_results if r['status_code'] == 200)
+        other_status_count = len(delete_results) - (status_400_count + status_404_count + status_500_count + status_200_count)
+        
+        print(f"      • Total servizi tested: {len(delete_results)}")
+        print(f"      • 400 errors (dependency constraint): {status_400_count} - {'✅ CORRECT BEHAVIOR' if status_400_count > 0 else 'ℹ️ None found'}")
+        print(f"      • 404 errors (not found): {status_404_count} - {'❌ UNEXPECTED' if status_404_count > 0 else '✅ Good'}")
+        print(f"      • 500 errors (server bug): {status_500_count} - {'❌ SERVER BUG' if status_500_count > 0 else '✅ Good'}")
+        print(f"      • 200 success (deleted): {status_200_count} - {'✅ Successful deletions' if status_200_count > 0 else 'ℹ️ None deleted'}")
+        print(f"      • Other status codes: {other_status_count}")
+        
+        # Detailed analysis for each servizio
+        print(f"\n   📋 DETAILED ANALYSIS PER SERVIZIO:")
+        for result in delete_results:
+            servizio_nome = result['servizio_nome']
+            status_code = result['status_code']
+            has_deps = result.get('has_dependencies', False)
+            exists_in_db = result.get('exists_in_db', True)
+            tipologie_count = result.get('tipologie_count', 0)
+            clienti_count = result.get('clienti_count', 0)
+            
+            print(f"      • {servizio_nome}:")
+            print(f"        - Status: {status_code}")
+            print(f"        - Exists in DB: {exists_in_db}")
+            print(f"        - Dependencies: {tipologie_count} tipologie, {clienti_count} clienti")
+            print(f"        - Analysis: {result.get('analysis', 'unknown')}")
+            
+            # Determine if behavior is correct
+            if status_code == 400 and has_deps:
+                print(f"        - ✅ CORRECT: 400 error due to dependencies")
+            elif status_code == 404 and not exists_in_db:
+                print(f"        - ❌ ISSUE: Servizio doesn't exist in database")
+            elif status_code == 500:
+                print(f"        - ❌ BUG: Server error in delete endpoint")
+            elif status_code == 200 and not has_deps:
+                print(f"        - ✅ CORRECT: Successful deletion (no dependencies)")
+            else:
+                print(f"        - ❓ REVIEW: Status {status_code} with deps={has_deps}, exists={exists_in_db}")
+        
+        # Final conclusion
+        if status_500_count > 0:
+            print(f"\n   🚨 CONCLUSION: SERVER BUG DETECTED - {status_500_count} servizi returned 500 errors")
+            conclusion = "server_bug"
+        elif status_404_count > 0:
+            print(f"\n   ⚠️ CONCLUSION: DATABASE INCONSISTENCY - {status_404_count} servizi don't exist in database")
+            conclusion = "database_inconsistency"
+        elif status_400_count > 0:
+            print(f"\n   ✅ CONCLUSION: CORRECT BEHAVIOR - {status_400_count} servizi correctly blocked due to dependencies")
+            conclusion = "correct_behavior"
+        elif status_200_count > 0:
+            print(f"\n   ✅ CONCLUSION: SUCCESSFUL DELETIONS - {status_200_count} servizi deleted successfully")
+            conclusion = "successful_deletions"
+        else:
+            print(f"\n   ❓ CONCLUSION: UNEXPECTED RESULTS - Review detailed analysis above")
+            conclusion = "unexpected_results"
+        
+        print(f"\n   🎯 RECOMMENDATION:")
+        if conclusion == "server_bug":
+            print(f"      • Fix server-side delete endpoint bugs")
+            print(f"      • Check backend logs for detailed error information")
+        elif conclusion == "database_inconsistency":
+            print(f"      • Verify servizi exist in database")
+            print(f"      • Check data integrity and foreign key constraints")
+        elif conclusion == "correct_behavior":
+            print(f"      • Delete dependencies first (tipologie contratto, clienti)")
+            print(f"      • Then retry servizio deletion")
+        elif conclusion == "successful_deletions":
+            print(f"      • Servizi without dependencies can be deleted successfully")
+        else:
+            print(f"      • Review detailed analysis and investigate further")
+        
+        return conclusion == "correct_behavior" or conclusion == "successful_deletions"
+
+
 def main():
     """Main test execution"""
     tester = CRMAPITester()
-    # Run hierarchy segmenti e offerte test as requested in review
-    success = tester.run_all_tests()
-    return 0 if success else 1
+    
+    # Check if specific test is requested
+    if len(sys.argv) > 1:
+        test_name = sys.argv[1]
+        
+        if test_name == "fastweb_delete":
+            success = tester.test_fastweb_servizio_delete_failure_analysis()
+            return 0 if success else 1
+        else:
+            print(f"Unknown test: {test_name}")
+            print("Available tests: fastweb_delete")
+            return 1
+    else:
+        # Run the specific test as requested
+        success = tester.test_fastweb_servizio_delete_failure_analysis()
+        return 0 if success else 1
 
 if __name__ == "__main__":
     sys.exit(main())
