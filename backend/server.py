@@ -8862,7 +8862,7 @@ async def generate_entity_screenshot(entity_type: str, entity: dict) -> str:
                 </div>
 
                 <div class="footer">
-                    CRM Lead Manager - Screenshot generato automaticamente<br>
+                    ELON - System All in One - Screenshot generato automaticamente<br>
                     Documento riservato e confidenziale
                 </div>
             </div>
