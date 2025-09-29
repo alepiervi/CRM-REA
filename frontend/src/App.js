@@ -10051,7 +10051,7 @@ const CommesseManagement = ({
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Badge className="w-4 h-4 text-orange-600" />
+                        <Tag className="w-4 h-4 text-orange-600" />
                         <span className="font-medium">{segmento.nome}</span>
                       </div>
                       <div className="flex items-center gap-2">
