@@ -6779,8 +6779,8 @@ async def get_tipologie_contratto(
                                     })
                         return all_tipologie
                 
-                # FASTWEB: Return hardcoded + database tipologie (combined)
-                elif "fastweb" in commessa_nome:
+                # FASTWEB: Return hardcoded + database tipologie (combined) - BUT ONLY IF HARDCODED ENABLED
+                elif "fastweb" in commessa_nome and use_hardcoded:
                     # Get hardcoded tipologie
                     hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
                     
