@@ -9711,18 +9711,32 @@ const CommesseManagement = ({
   const migrateSegmenti = async () => {
     try {
       console.log('🚀 Starting segmenti migration...');
+      console.log('🚀 API URL:', `${API}/admin/migrate-segmenti`);
+      console.log('🚀 User token present:', !!localStorage.getItem('token'));
+      
       const response = await axios.post(`${API}/admin/migrate-segmenti`);
-      console.log('✅ Migration response:', response.data);
+      
+      console.log('✅ Migration response status:', response.status);
+      console.log('✅ Migration response data:', response.data);
+      
       toast({
         title: "Successo",
         description: response.data.message,
       });
+      
+      // Refresh tipologie after migration to get updated count
+      console.log('🔄 Refreshing tipologie after migration...');
+      await fetchTipologieContratto();
+      
     } catch (error) {
       console.error("❌ Error migrating segmenti:", error);
+      console.error("❌ Error status:", error.response?.status);
       console.error("❌ Error response:", error.response?.data);
+      console.error("❌ Error message:", error.message);
+      
       toast({
         title: "Errore",
-        description: error.response?.data?.detail || "Errore nella migrazione dei segmenti",
+        description: error.response?.data?.detail || error.message || "Errore nella migrazione dei segmenti",
         variant: "destructive",
       });
     }
