@@ -10736,6 +10736,9 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       setClienti(clienti.map(cliente => 
         cliente.id === clienteId ? response.data : cliente
       ));
+      setAllClienti(allClienti.map(cliente => 
+        cliente.id === clienteId ? response.data : cliente
+      ));
       toast({
         title: "Successo",
         description: "Cliente aggiornato con successo",
