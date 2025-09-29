@@ -8405,8 +8405,8 @@ Duplicate,Test,+393471234567"""
 def main():
     """Main test execution"""
     tester = CRMAPITester()
-    # Run Aruba Drive configuration test as requested in review
-    success = tester.test_aruba_drive_configuration_complete()
+    # Run tipologie contratto endpoints test as requested in review
+    success = tester.test_tipologie_contratto_endpoints_complete()
     return 0 if success else 1
 
 if __name__ == "__main__":
