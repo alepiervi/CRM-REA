@@ -7900,26 +7900,26 @@ Duplicate,Test,+393471234567"""
             return False
 
     def run_all_tests(self):
-        """Run test for search-entities endpoint as requested"""
-        print("🚀 Starting CRM API Testing - Search Entities Endpoint Test...")
+        """Run test for tipologie contratto debug as requested"""
+        print("🚀 Starting CRM API Testing - Tipologie Contratto Debug...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 80)
         
-        # PRIORITY TEST: Search entities endpoint functionality (as requested in review)
-        print("\n🚨 PRIORITY TEST: SEARCH ENTITIES ENDPOINT FUNCTIONALITY...")
-        search_test_success = self.test_search_entities_endpoint_complete()
+        # PRIORITY TEST: Debug tipologie contratto esistenti (as requested in review)
+        print("\n🚨 PRIORITY TEST: DEBUG TIPOLOGIE CONTRATTO ESISTENTI...")
+        debug_test_success = self.test_tipologie_contratto_debug()
         
         # Print summary
         print("\n" + "=" * 80)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
-        print(f"🔍 Search Entities Status: {'✅ SUCCESS - Endpoint funzionante!' if search_test_success else '❌ ISSUES FOUND'}")
+        print(f"🔍 Tipologie Debug Status: {'✅ SUCCESS - Database structure analyzed!' if debug_test_success else '❌ ISSUES FOUND'}")
         
-        if search_test_success:
-            print("🎉 PRIORITY TEST PASSED: Search entities endpoint working!")
-            print("🎉 CONFIRMED: Ricerca rapida e precisa con highlighting dei campi trovati!")
+        if debug_test_success:
+            print("🎉 PRIORITY TEST PASSED: Tipologie contratto debug completed!")
+            print("🎉 CONFIRMED: Database structure and mapping analyzed successfully!")
             return True
         else:
-            print("🚨 PRIORITY TEST FAILED: Search entities endpoint has issues!")
+            print("🚨 PRIORITY TEST FAILED: Tipologie contratto debug has issues!")
             return False
 
     def test_document_endpoints_with_authorization(self):
