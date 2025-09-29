@@ -882,6 +882,29 @@ class ImportResult(BaseModel):
     errors: List[str]
     created_client_ids: List[str]
 
+# Tipologie Contratto Models
+class TipologiaContrattoModel(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    descrizione: Optional[str] = None
+    servizio_id: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+    created_by: str
+
+class TipologiaContrattoCreate(BaseModel):
+    nome: str
+    descrizione: Optional[str] = None
+    servizio_id: Optional[str] = None
+    is_active: bool = True
+
+class TipologiaContrattoUpdate(BaseModel):
+    nome: Optional[str] = None
+    descrizione: Optional[str] = None
+    servizio_id: Optional[str] = None
+    is_active: Optional[bool] = None
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
