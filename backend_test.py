@@ -10642,18 +10642,16 @@ Duplicate,Test,+393471234567"""
         success, fastweb_tipologie_after, status = self.make_request('GET', f'tipologie-contratto?commessa_id={fastweb_id}', expected_status=200)
         
         if success and status == 200:
-            fastweb_hardcoded_after = sum(1 for t in fastweb_tipologie_after 
-                                        if 'fastweb' in t.get('label', '').lower() and 
-                                        ('energia' in t.get('label', '').lower() or 'telefonia' in t.get('label', '').lower()))
+            fastweb_hardcoded_after = sum(1 for t in fastweb_tipologie_after if t.get('source') == 'hardcoded')
             
             self.log_test("✅ GET /api/tipologie-contratto?commessa_id={fastweb_id} (after disable)", True, 
-                f"Found {len(fastweb_tipologie_after)} tipologie, Hardcoded Fastweb: {fastweb_hardcoded_after}")
+                f"Found {len(fastweb_tipologie_after)} tipologie, Hardcoded: {fastweb_hardcoded_after}")
             
-            # VERIFY: Should have NO hardcoded energia_fastweb, telefonia_fastweb
+            # VERIFY: Should have NO hardcoded tipologie after disable
             if fastweb_hardcoded_after == 0:
-                self.log_test("✅ Fastweb hardcoded tipologie removed", True, "No energia_fastweb, telefonia_fastweb found")
+                self.log_test("✅ Fastweb hardcoded tipologie removed", True, "No hardcoded tipologie found")
             else:
-                self.log_test("❌ Fastweb hardcoded tipologie still present", False, f"Found {fastweb_hardcoded_after} hardcoded Fastweb tipologie")
+                self.log_test("❌ Fastweb hardcoded tipologie still present", False, f"Found {fastweb_hardcoded_after} hardcoded tipologie")
         else:
             self.log_test("❌ GET /api/tipologie-contratto?commessa_id={fastweb_id} (after disable)", False, f"Status: {status}")
 
