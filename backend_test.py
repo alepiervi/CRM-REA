@@ -10566,11 +10566,9 @@ Duplicate,Test,+393471234567"""
         success, fastweb_tipologie_before, status = self.make_request('GET', f'tipologie-contratto?commessa_id={fastweb_id}', expected_status=200)
         
         if success and status == 200:
-            fastweb_hardcoded_before = sum(1 for t in fastweb_tipologie_before 
-                                         if 'fastweb' in t.get('label', '').lower() and 
-                                         ('energia' in t.get('label', '').lower() or 'telefonia' in t.get('label', '').lower()))
+            fastweb_hardcoded_before = sum(1 for t in fastweb_tipologie_before if t.get('source') == 'hardcoded')
             self.log_test("✅ GET /api/tipologie-contratto?commessa_id={fastweb_id} (before)", True, 
-                f"Found {len(fastweb_tipologie_before)} tipologie, Hardcoded Fastweb: {fastweb_hardcoded_before}")
+                f"Found {len(fastweb_tipologie_before)} tipologie, Hardcoded: {fastweb_hardcoded_before}")
         else:
             self.log_test("❌ GET /api/tipologie-contratto?commessa_id={fastweb_id} (before)", False, f"Status: {status}")
             return False
