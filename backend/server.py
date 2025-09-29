@@ -7296,9 +7296,67 @@ async def migrate_hardcoded_to_database(
         
     except Exception as e:
         logger.error(f"Error during hardcoded migration: {e}")
-        raise HTTPException(status_code=500, detail=f"Errore durante la migrazione: {str(e)}")
+@api_router.post("/admin/disable-hardcoded-elements")
+async def disable_hardcoded_elements(
+    current_user: User = Depends(get_current_user)
+):
+    """Disable hardcoded elements completely - use only database elements"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono disabilitare elementi hardcoded")
+    
+    try:
+        # Create or update a system setting to disable hardcoded elements
+        setting = {
+            "id": "system_hardcoded_disabled",
+            "key": "hardcoded_elements_disabled",
+            "value": True,
+            "updated_at": datetime.now(timezone.utc),
+            "updated_by": current_user.id
+        }
+        
+        # Upsert the setting
+        await db.system_settings.update_one(
+            {"key": "hardcoded_elements_disabled"},
+            {"$set": setting},
+            upsert=True
+        )
+        
+        return {
+            "success": True,
+            "message": "Elementi hardcoded disabilitati. Ora verranno utilizzati solo quelli del database."
+        }
+        
+    except Exception as e:
+        logger.error(f"Error disabling hardcoded elements: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nella disabilitazione: {str(e)}")
 
-@api_router.get("/tipologie-contratto/all")
+@api_router.get("/admin/hardcoded-status")
+async def get_hardcoded_status(
+    current_user: User = Depends(get_current_user)
+):
+    """Check if hardcoded elements are disabled"""
+    
+    try:
+        setting = await db.system_settings.find_one({"key": "hardcoded_elements_disabled"})
+        disabled = setting["value"] if setting else False
+        
+        return {
+            "hardcoded_disabled": disabled,
+            "message": "Elementi hardcoded disabilitati" if disabled else "Elementi hardcoded attivi"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error checking hardcoded status: {e}")
+        return {"hardcoded_disabled": False, "message": "Errore nel controllo stato"}
+
+async def should_use_hardcoded_elements():
+    """Helper function to check if hardcoded elements should be used"""
+    try:
+        setting = await db.system_settings.find_one({"key": "hardcoded_elements_disabled"})
+        return not (setting and setting.get("value", False))
+    except:
+        return True  # Default to using hardcoded if check fails
 async def get_all_tipologie_contratto(
     current_user: User = Depends(get_current_user)
 ):
