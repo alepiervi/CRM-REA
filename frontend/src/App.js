@@ -11625,6 +11625,213 @@ const CreateCommessaModal = ({ isOpen, onClose, onSubmit }) => {
   );
 };
 
+const ViewCommessaModal = ({ isOpen, onClose, commessa }) => {
+  if (!isOpen || !commessa) return null;
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5" />
+            Dettagli Commessa: {commessa.nome}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Informazioni Base</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Nome Commessa</Label>
+                <p className="text-sm text-gray-900 mt-1">{commessa.nome}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Stato</Label>
+                <div className="mt-1">
+                  <Badge variant={commessa.is_active ? "default" : "secondary"}>
+                    {commessa.is_active ? "Attiva" : "Inattiva"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            {commessa.descrizione && (
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Descrizione</Label>
+                <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded-md">{commessa.descrizione}</p>
+              </div>
+            )}
+
+            {commessa.descrizione_interna && (
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Descrizione Interna</Label>
+                <p className="text-sm text-gray-900 mt-1 p-3 bg-yellow-50 rounded-md border-l-4 border-yellow-400">{commessa.descrizione_interna}</p>
+              </div>
+            )}
+
+            <div>
+              <Label className="text-sm font-medium text-gray-600">Gestione Entità</Label>
+              <div className="mt-1">
+                <Badge variant="outline">
+                  {commessa.entity_type === 'clienti' ? 'Solo Clienti' : 
+                   commessa.entity_type === 'lead' ? 'Solo Lead' : 'Clienti & Lead'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          {/* Webhook Configuration */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Integrazione Webhook</h3>
+            <div>
+              <Label className="text-sm font-medium text-gray-600">URL Webhook Zapier</Label>
+              <div className="mt-1 flex items-center gap-2">
+                <Input 
+                  value={commessa.webhook_zapier || 'Nessun webhook configurato'} 
+                  readOnly 
+                  className="flex-1 bg-gray-50"
+                />
+                {commessa.webhook_zapier && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => copyToClipboard(commessa.webhook_zapier)}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Configuration */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Funzionalità Abilitate</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className={`p-4 rounded-lg border-2 ${commessa.has_whatsapp ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                <div className="flex items-center justify-between">
+                  <MessageCircle className={`w-5 h-5 ${commessa.has_whatsapp ? 'text-green-600' : 'text-gray-400'}`} />
+                  {commessa.has_whatsapp ? (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-gray-400" />
+                  )}
+                </div>
+                <h4 className={`font-medium mt-2 ${commessa.has_whatsapp ? 'text-green-900' : 'text-gray-600'}`}>
+                  WhatsApp Business
+                </h4>
+                <p className={`text-xs mt-1 ${commessa.has_whatsapp ? 'text-green-700' : 'text-gray-500'}`}>
+                  {commessa.has_whatsapp ? 'Abilitato' : 'Disabilitato'}
+                </p>
+              </div>
+
+              <div className={`p-4 rounded-lg border-2 ${commessa.has_ai ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                <div className="flex items-center justify-between">
+                  <Bot className={`w-5 h-5 ${commessa.has_ai ? 'text-blue-600' : 'text-gray-400'}`} />
+                  {commessa.has_ai ? (
+                    <CheckCircle className="w-5 h-5 text-blue-600" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-gray-400" />
+                  )}
+                </div>
+                <h4 className={`font-medium mt-2 ${commessa.has_ai ? 'text-blue-900' : 'text-gray-600'}`}>
+                  Intelligenza Artificiale
+                </h4>
+                <p className={`text-xs mt-1 ${commessa.has_ai ? 'text-blue-700' : 'text-gray-500'}`}>
+                  {commessa.has_ai ? 'Abilitato' : 'Disabilitato'}
+                </p>
+              </div>
+
+              <div className={`p-4 rounded-lg border-2 ${commessa.has_call_center ? 'border-purple-200 bg-purple-50' : 'border-gray-200 bg-gray-50'}`}>
+                <div className="flex items-center justify-between">
+                  <Headphones className={`w-5 h-5 ${commessa.has_call_center ? 'text-purple-600' : 'text-gray-400'}`} />
+                  {commessa.has_call_center ? (
+                    <CheckCircle className="w-5 h-5 text-purple-600" />
+                  ) : (
+                    <XCircle className="w-5 h-5 text-gray-400" />
+                  )}
+                </div>
+                <h4 className={`font-medium mt-2 ${commessa.has_call_center ? 'text-purple-900' : 'text-gray-600'}`}>
+                  Call Center
+                </h4>
+                <p className={`text-xs mt-1 ${commessa.has_call_center ? 'text-purple-700' : 'text-gray-500'}`}>
+                  {commessa.has_call_center ? 'Abilitato' : 'Disabilitato'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Document Management */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Gestione Documenti</h3>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                {commessa.document_management === 'disabled' && (
+                  <>
+                    <XCircle className="w-5 h-5 text-gray-500" />
+                    <span className="text-gray-700">Gestione documenti disabilitata</span>
+                  </>
+                )}
+                {commessa.document_management === 'clienti_only' && (
+                  <>
+                    <UserCheck className="w-5 h-5 text-blue-500" />
+                    <span className="text-blue-700">Documenti abilitati solo per Clienti</span>
+                  </>
+                )}
+                {commessa.document_management === 'lead_only' && (
+                  <>
+                    <Users className="w-5 h-5 text-green-500" />
+                    <span className="text-green-700">Documenti abilitati solo per Lead</span>
+                  </>
+                )}
+                {commessa.document_management === 'both' && (
+                  <>
+                    <CheckCircle className="w-5 h-5 text-blue-600" />
+                    <span className="text-blue-700">Documenti abilitati per Clienti e Lead</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Timestamps */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Informazioni Sistema</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Creata il</Label>
+                <p className="text-gray-900 mt-1">
+                  {commessa.created_at ? new Date(commessa.created_at).toLocaleString('it-IT') : 'Non disponibile'}
+                </p>
+              </div>
+              {commessa.updated_at && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Ultima modifica</Label>
+                  <p className="text-gray-900 mt-1">
+                    {new Date(commessa.updated_at).toLocaleString('it-IT')}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button onClick={onClose}>
+            Chiudi
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const CreateTipologiaContrattoModal = ({ isOpen, onClose, onSubmit, servizioId }) => {
   const [formData, setFormData] = useState({
     nome: '',
