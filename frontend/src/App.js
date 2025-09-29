@@ -10416,6 +10416,21 @@ const CommesseManagement = ({
         onClose={() => setShowViewCommessaModal(false)}
         commessa={selectedCommessa}
       />
+
+      {/* Edit Commessa Modal */}
+      <EditCommessaModal 
+        isOpen={showEditCommessaModal}
+        onClose={() => {
+          setShowEditCommessaModal(false);
+          setEditingCommessa(null);
+        }}
+        onSubmit={(commessaData) => {
+          updateCommessa(editingCommessa.id, commessaData);
+          setShowEditCommessaModal(false);
+          setEditingCommessa(null);
+        }}
+        commessa={editingCommessa}
+      />
     </div>
   );
 };
