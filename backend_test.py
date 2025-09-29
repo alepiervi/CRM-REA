@@ -9193,8 +9193,8 @@ Duplicate,Test,+393471234567"""
         return True
 
     def run_all_tests(self):
-        """Run test for FOTOVOLTAICO TIPOLOGIE FILTERING CRITICAL TEST"""
-        print("🚀 Starting CRM API Testing - FOTOVOLTAICO TIPOLOGIE FILTERING CRITICAL TEST...")
+        """Run test for HIERARCHY SEGMENTI E OFFERTE COMPLETE TEST"""
+        print("🚀 Starting CRM API Testing - HIERARCHY SEGMENTI E OFFERTE COMPLETE TEST...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 80)
         
@@ -9203,9 +9203,9 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # PRIORITY TEST: Critical Fotovoltaico tipologie filtering test
-        print("\n🚨 PRIORITY TEST: FOTOVOLTAICO TIPOLOGIE FILTERING CRITICAL...")
-        critical_test_success = self.test_fotovoltaico_tipologie_filtering_critical()
+        # PRIORITY TEST: Complete hierarchy segmenti e offerte test
+        print("\n🚨 PRIORITY TEST: HIERARCHY SEGMENTI E OFFERTE COMPLETE...")
+        hierarchy_test_success = self.test_hierarchy_segmenti_offerte_complete()
         
         # Cleanup created resources
         self.cleanup_resources()
@@ -9213,15 +9213,15 @@ Duplicate,Test,+393471234567"""
         # Print final summary
         self.print_summary()
         
-        if critical_test_success:
-            print("\n🎉 FOTOVOLTAICO TIPOLOGIE FILTERING FIX VERIFICATION COMPLETED SUCCESSFULLY!")
-            print("🎯 OBIETTIVO RAGGIUNTO: Fotovoltaico non mostra più tipologie Fastweb")
-            print("✅ Sistema funziona correttamente per entrambe le commesse")
+        if hierarchy_test_success:
+            print("\n🎉 HIERARCHY SEGMENTI E OFFERTE TESTING COMPLETED SUCCESSFULLY!")
+            print("🎯 OBIETTIVO RAGGIUNTO: Sistema a 5 livelli completamente funzionante")
+            print("✅ Gerarchia Commesse → Servizi → Tipologie → Segmenti → Offerte operativa")
         else:
-            print("\n🚨 FOTOVOLTAICO TIPOLOGIE FILTERING FIX VERIFICATION FAILED!")
+            print("\n🚨 HIERARCHY SEGMENTI E OFFERTE TESTING FAILED!")
             print("❌ Problemi critici identificati - richiede ulteriore debug")
         
-        return critical_test_success
+        return hierarchy_test_success
         
         # Print summary
         print("\n" + "=" * 80)
