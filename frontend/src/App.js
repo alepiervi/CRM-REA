@@ -10771,6 +10771,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     }
   }, [selectedCommessa]);
 
+  // Re-apply search when allClienti changes
+  useEffect(() => {
+    if (searchQuery) {
+      filterClienti(searchQuery, searchType);
+    }
+  }, [allClienti]);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
