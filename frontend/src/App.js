@@ -9410,9 +9410,23 @@ const CommesseManagement = ({ selectedUnit, units }) => {
       const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
       console.log(`Servizi per commessa ${commessaId}:`, response.data);
       setServizi(response.data);
+      setTipologieContratto([]); // Reset tipologie quando cambia servizio
+      setSelectedServizio(null);
     } catch (error) {
       console.error("Error fetching servizi:", error);
       setServizi([]); // Reset servizi on error
+      setTipologieContratto([]);
+    }
+  };
+
+  const fetchTipologieContratto = async (servizioId) => {
+    try {
+      const response = await axios.get(`${API}/servizi/${servizioId}/tipologie-contratto`);
+      console.log(`Tipologie contratto per servizio ${servizioId}:`, response.data);
+      setTipologieContratto(response.data);
+    } catch (error) {
+      console.error("Error fetching tipologie contratto:", error);
+      setTipologieContratto([]);
     }
   };
 
