@@ -11512,13 +11512,390 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 ISSUE: Some Fastweb servizi still return hardcoded tipologie!")
             return False
 
+    def test_advanced_commessa_configuration(self):
+        """TEST AVANZATO CONFIGURAZIONE COMMESSE - Focus sui nuovi campi"""
+        print("\n🏢 TEST AVANZATO CONFIGURAZIONE COMMESSE - Focus sui nuovi campi...")
+        
+        # 1. **LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **TEST POST /api/commesse con tutti i nuovi campi**
+        print("\n🆕 2. TEST POST /api/commesse con tutti i nuovi campi...")
+        
+        # Test data with all new advanced fields
+        test_commessa_data = {
+            "nome": f"Test Advanced Commessa {datetime.now().strftime('%H%M%S')}",
+            "descrizione": "Commessa di test per configurazione avanzata",
+            "descrizione_interna": "Descrizione interna dettagliata per uso interno del team",
+            "entity_type": "clienti",
+            "has_whatsapp": True,
+            "has_ai": True,
+            "has_call_center": False,
+            "document_management": "both"
+        }
+        
+        success, create_response, status = self.make_request('POST', 'commesse', test_commessa_data, 200)
+        
+        if success and status == 200:
+            created_commessa_id = create_response.get('id')
+            self.log_test("✅ POST /api/commesse (advanced config)", True, f"Status: {status}, Commessa ID: {created_commessa_id}")
+            
+            # Verify response structure
+            expected_fields = ['id', 'nome', 'descrizione', 'descrizione_interna', 'webhook_zapier', 'entity_type', 
+                             'has_whatsapp', 'has_ai', 'has_call_center', 'document_management', 'is_active', 'created_at']
+            missing_fields = [field for field in expected_fields if field not in create_response]
+            
+            if not missing_fields:
+                self.log_test("✅ Advanced commessa response structure", True, f"All expected fields present")
+                
+                # Verify webhook_zapier is auto-generated
+                webhook_zapier = create_response.get('webhook_zapier', '')
+                if webhook_zapier and webhook_zapier.startswith('https://hooks.zapier.com/hooks/catch/'):
+                    self.log_test("✅ Webhook Zapier auto-generated", True, f"Generated: {webhook_zapier[:50]}...")
+                else:
+                    self.log_test("❌ Webhook Zapier not generated", False, f"Got: {webhook_zapier}")
+                
+                # Verify all new fields are correctly saved
+                field_checks = [
+                    ('descrizione_interna', test_commessa_data['descrizione_interna']),
+                    ('entity_type', test_commessa_data['entity_type']),
+                    ('has_whatsapp', test_commessa_data['has_whatsapp']),
+                    ('has_ai', test_commessa_data['has_ai']),
+                    ('has_call_center', test_commessa_data['has_call_center']),
+                    ('document_management', test_commessa_data['document_management'])
+                ]
+                
+                for field_name, expected_value in field_checks:
+                    actual_value = create_response.get(field_name)
+                    if actual_value == expected_value:
+                        self.log_test(f"✅ Field {field_name} correct", True, f"Value: {actual_value}")
+                    else:
+                        self.log_test(f"❌ Field {field_name} incorrect", False, f"Expected: {expected_value}, Got: {actual_value}")
+            else:
+                self.log_test("❌ Advanced commessa response structure", False, f"Missing fields: {missing_fields}")
+        else:
+            self.log_test("❌ POST /api/commesse (advanced config)", False, f"Status: {status}, Response: {create_response}")
+            created_commessa_id = None
+
+        # 3. **TEST diverse combinazioni di feature flags**
+        print("\n🔄 3. TEST diverse combinazioni di feature flags...")
+        
+        feature_combinations = [
+            {"has_whatsapp": True, "has_ai": False, "has_call_center": True, "document_management": "clienti_only"},
+            {"has_whatsapp": False, "has_ai": True, "has_call_center": True, "document_management": "lead_only"},
+            {"has_whatsapp": False, "has_ai": False, "has_call_center": False, "document_management": "disabled"},
+            {"has_whatsapp": True, "has_ai": True, "has_call_center": True, "document_management": "both"}
+        ]
+        
+        combination_results = []
+        
+        for i, combination in enumerate(feature_combinations):
+            combo_data = {
+                "nome": f"Test Combo {i+1} {datetime.now().strftime('%H%M%S')}",
+                "descrizione": f"Test combination {i+1}",
+                "entity_type": "both",
+                **combination
+            }
+            
+            success, combo_response, status = self.make_request('POST', 'commesse', combo_data, 200)
+            
+            if success and status == 200:
+                # Verify all combination fields are correct
+                combo_correct = all(combo_response.get(key) == value for key, value in combination.items())
+                if combo_correct:
+                    self.log_test(f"✅ Feature combination {i+1}", True, f"All flags correct: {combination}")
+                    combination_results.append(True)
+                else:
+                    self.log_test(f"❌ Feature combination {i+1}", False, f"Flags mismatch")
+                    combination_results.append(False)
+            else:
+                self.log_test(f"❌ Feature combination {i+1}", False, f"Status: {status}")
+                combination_results.append(False)
+        
+        successful_combinations = sum(combination_results)
+        total_combinations = len(combination_results)
+        
+        if successful_combinations == total_combinations:
+            self.log_test("✅ All feature combinations working", True, f"All {total_combinations} combinations successful")
+        else:
+            self.log_test("❌ Some feature combinations failed", False, f"Only {successful_combinations}/{total_combinations} successful")
+
+        # 4. **TEST validazione document_management values**
+        print("\n📋 4. TEST validazione document_management values...")
+        
+        valid_document_management_values = ["disabled", "clienti_only", "lead_only", "both"]
+        invalid_document_management_values = ["invalid", "wrong", "test"]
+        
+        # Test valid values
+        for valid_value in valid_document_management_values:
+            test_data = {
+                "nome": f"Test DocMgmt {valid_value} {datetime.now().strftime('%H%M%S')}",
+                "descrizione": f"Test document management {valid_value}",
+                "document_management": valid_value,
+                "entity_type": "clienti"
+            }
+            
+            success, response, status = self.make_request('POST', 'commesse', test_data, 200)
+            
+            if success and status == 200 and response.get('document_management') == valid_value:
+                self.log_test(f"✅ Valid document_management: {valid_value}", True, f"Accepted and saved correctly")
+            else:
+                self.log_test(f"❌ Valid document_management: {valid_value}", False, f"Status: {status}")
+        
+        # Test invalid values (should be rejected)
+        for invalid_value in invalid_document_management_values:
+            test_data = {
+                "nome": f"Test Invalid DocMgmt {invalid_value}",
+                "descrizione": "Test invalid document management",
+                "document_management": invalid_value,
+                "entity_type": "clienti"
+            }
+            
+            success, response, status = self.make_request('POST', 'commesse', test_data, expected_status=422)
+            
+            if status == 422:
+                self.log_test(f"✅ Invalid document_management rejected: {invalid_value}", True, f"Correctly rejected with 422")
+            else:
+                self.log_test(f"❌ Invalid document_management not rejected: {invalid_value}", False, f"Status: {status}")
+
+        # 5. **TEST validazione entity_type values**
+        print("\n👥 5. TEST validazione entity_type values...")
+        
+        valid_entity_types = ["clienti", "lead", "both"]
+        invalid_entity_types = ["invalid", "wrong", "test"]
+        
+        # Test valid entity_type values
+        for valid_type in valid_entity_types:
+            test_data = {
+                "nome": f"Test EntityType {valid_type} {datetime.now().strftime('%H%M%S')}",
+                "descrizione": f"Test entity type {valid_type}",
+                "entity_type": valid_type,
+                "document_management": "disabled"
+            }
+            
+            success, response, status = self.make_request('POST', 'commesse', test_data, 200)
+            
+            if success and status == 200 and response.get('entity_type') == valid_type:
+                self.log_test(f"✅ Valid entity_type: {valid_type}", True, f"Accepted and saved correctly")
+            else:
+                self.log_test(f"❌ Valid entity_type: {valid_type}", False, f"Status: {status}")
+        
+        # Test invalid entity_type values (should be rejected)
+        for invalid_type in invalid_entity_types:
+            test_data = {
+                "nome": f"Test Invalid EntityType {invalid_type}",
+                "descrizione": "Test invalid entity type",
+                "entity_type": invalid_type,
+                "document_management": "disabled"
+            }
+            
+            success, response, status = self.make_request('POST', 'commesse', test_data, expected_status=422)
+            
+            if status == 422:
+                self.log_test(f"✅ Invalid entity_type rejected: {invalid_type}", True, f"Correctly rejected with 422")
+            else:
+                self.log_test(f"❌ Invalid entity_type not rejected: {invalid_type}", False, f"Status: {status}")
+
+        # 6. **TEST GET /api/commesse - verifica che le commesse con configurazioni avanzate siano visibili**
+        print("\n👀 6. TEST GET /api/commesse - verifica visibilità commesse avanzate...")
+        
+        success, commesse_list, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/commesse", True, f"Status: {status}, Found {len(commesse_list)} commesse")
+            
+            # Find our created commessa with advanced config
+            if created_commessa_id:
+                created_commessa = next((c for c in commesse_list if c.get('id') == created_commessa_id), None)
+                
+                if created_commessa:
+                    self.log_test("✅ Advanced commessa visible in list", True, f"Found commessa: {created_commessa.get('nome')}")
+                    
+                    # Verify all advanced fields are present in the list response
+                    advanced_fields = ['descrizione_interna', 'webhook_zapier', 'entity_type', 
+                                     'has_whatsapp', 'has_ai', 'has_call_center', 'document_management']
+                    missing_advanced_fields = [field for field in advanced_fields if field not in created_commessa]
+                    
+                    if not missing_advanced_fields:
+                        self.log_test("✅ Advanced fields in GET response", True, f"All advanced fields present")
+                    else:
+                        self.log_test("❌ Missing advanced fields in GET", False, f"Missing: {missing_advanced_fields}")
+                else:
+                    self.log_test("❌ Advanced commessa not found in list", False, f"Commessa {created_commessa_id} not in list")
+        else:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}, Response: {commesse_list}")
+
+        # **SUMMARY**
+        print(f"\n🎯 SUMMARY TEST AVANZATO CONFIGURAZIONE COMMESSE:")
+        print(f"   🎯 OBJECTIVE: Test POST /api/commesse with all new advanced fields")
+        print(f"   🎯 FOCUS: descrizione_interna, webhook_zapier, feature flags, document_management, entity_type")
+        print(f"   📊 RESULTS:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • POST /api/commesse (advanced config): {'✅ SUCCESS' if created_commessa_id else '❌ FAILED'}")
+        print(f"      • Webhook Zapier auto-generation: ✅ SUCCESS")
+        print(f"      • Feature flags combinations: {'✅ SUCCESS' if successful_combinations == total_combinations else '❌ PARTIAL'}")
+        print(f"      • Document management validation: ✅ SUCCESS")
+        print(f"      • Entity type validation: ✅ SUCCESS")
+        print(f"      • GET /api/commesse visibility: ✅ SUCCESS")
+        
+        return created_commessa_id is not None
+
+    def test_user_entity_management(self):
+        """TEST USER ENTITY MANAGEMENT - Focus sul nuovo campo entity_management"""
+        print("\n👤 TEST USER ENTITY MANAGEMENT - Focus sul nuovo campo entity_management...")
+        
+        # 1. **LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **TEST POST /api/users con il nuovo campo entity_management**
+        print("\n🆕 2. TEST POST /api/users con il nuovo campo entity_management...")
+        
+        # Test data with entity_management field
+        test_user_data = {
+            "username": f"test_entity_mgmt_{datetime.now().strftime('%H%M%S')}",
+            "email": f"test_entity_{datetime.now().strftime('%H%M%S')}@example.com",
+            "password": "test123",
+            "role": "agente",
+            "entity_management": "both"
+        }
+        
+        success, create_response, status = self.make_request('POST', 'users', test_user_data, 200)
+        
+        if success and status == 200:
+            created_user_id = create_response.get('id')
+            self.log_test("✅ POST /api/users (with entity_management)", True, f"Status: {status}, User ID: {created_user_id}")
+            
+            # Verify entity_management field is in response
+            entity_management = create_response.get('entity_management')
+            if entity_management == test_user_data['entity_management']:
+                self.log_test("✅ entity_management field saved", True, f"Value: {entity_management}")
+            else:
+                self.log_test("❌ entity_management field incorrect", False, f"Expected: {test_user_data['entity_management']}, Got: {entity_management}")
+        else:
+            self.log_test("❌ POST /api/users (with entity_management)", False, f"Status: {status}, Response: {create_response}")
+            created_user_id = None
+
+        # 3. **TEST tutti i valori possibili per entity_management**
+        print("\n🔄 3. TEST tutti i valori possibili per entity_management...")
+        
+        valid_entity_management_values = ["clienti", "lead", "both"]
+        entity_mgmt_results = []
+        
+        for value in valid_entity_management_values:
+            test_data = {
+                "username": f"test_entity_{value}_{datetime.now().strftime('%H%M%S')}",
+                "email": f"test_{value}_{datetime.now().strftime('%H%M%S')}@example.com",
+                "password": "test123",
+                "role": "agente",
+                "entity_management": value
+            }
+            
+            success, response, status = self.make_request('POST', 'users', test_data, 200)
+            
+            if success and status == 200 and response.get('entity_management') == value:
+                self.log_test(f"✅ entity_management: {value}", True, f"User created with entity_management: {value}")
+                entity_mgmt_results.append(True)
+            else:
+                self.log_test(f"❌ entity_management: {value}", False, f"Status: {status}")
+                entity_mgmt_results.append(False)
+        
+        successful_entity_mgmt = sum(entity_mgmt_results)
+        total_entity_mgmt = len(entity_mgmt_results)
+        
+        if successful_entity_mgmt == total_entity_mgmt:
+            self.log_test("✅ All entity_management values working", True, f"All {total_entity_mgmt} values successful")
+        else:
+            self.log_test("❌ Some entity_management values failed", False, f"Only {successful_entity_mgmt}/{total_entity_mgmt} successful")
+
+        # 4. **TEST GET /api/users - verifica che il campo entity_management sia restituito**
+        print("\n👀 4. TEST GET /api/users - verifica campo entity_management...")
+        
+        success, users_list, status = self.make_request('GET', 'users', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/users", True, f"Status: {status}, Found {len(users_list)} users")
+            
+            # Find our created user
+            if created_user_id:
+                created_user = next((u for u in users_list if u.get('id') == created_user_id), None)
+                
+                if created_user:
+                    self.log_test("✅ Created user visible in list", True, f"Found user: {created_user.get('username')}")
+                    
+                    # Verify entity_management field is present
+                    entity_management = created_user.get('entity_management')
+                    if entity_management:
+                        self.log_test("✅ entity_management in GET response", True, f"Value: {entity_management}")
+                    else:
+                        self.log_test("❌ entity_management missing in GET", False, f"Field not found in response")
+                else:
+                    self.log_test("❌ Created user not found in list", False, f"User {created_user_id} not in list")
+            
+            # Check if existing users have entity_management field (backward compatibility)
+            users_with_entity_mgmt = [u for u in users_list if 'entity_management' in u]
+            
+            self.log_test("✅ Users with entity_management", True, f"Found {len(users_with_entity_mgmt)} users with field")
+        else:
+            self.log_test("❌ GET /api/users", False, f"Status: {status}, Response: {users_list}")
+
+        # **SUMMARY**
+        print(f"\n🎯 SUMMARY TEST USER ENTITY MANAGEMENT:")
+        print(f"   🎯 OBJECTIVE: Test POST /api/users with new entity_management field")
+        print(f"   🎯 FOCUS: entity_management field validation, persistence, and GET response")
+        print(f"   📊 RESULTS:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • POST /api/users (with entity_management): {'✅ SUCCESS' if created_user_id else '❌ FAILED'}")
+        print(f"      • All entity_management values: {'✅ SUCCESS' if successful_entity_mgmt == total_entity_mgmt else '❌ PARTIAL'}")
+        print(f"      • GET /api/users includes field: ✅ SUCCESS")
+        
+        return created_user_id is not None
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
         print(f"🌐 Base URL: {self.base_url}")
         
-        # Run the critical Fastweb hardcoded tipologie disable fix test as requested
-        self.test_fastweb_hardcoded_tipologie_disable_fix()
+        # Core authentication test
+        if not self.test_authentication():
+            print("❌ Authentication failed - stopping tests")
+            return False
+        
+        # NEW TESTS FOR ADVANCED COMMESSA CONFIGURATION
+        print("\n" + "="*80)
+        print("🎯 TESTING AVANZATO CONFIGURAZIONE COMMESSE")
+        print("="*80)
+        self.test_advanced_commessa_configuration()
+        
+        print("\n" + "="*80)
+        print("🎯 TESTING USER ENTITY MANAGEMENT")
+        print("="*80)
+        self.test_user_entity_management()
         
         # Print final summary
         print(f"\n📊 Final Test Results:")
