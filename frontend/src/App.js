@@ -744,6 +744,12 @@ const Dashboard = () => {
   const [formTipologieContratto, setFormTipologieContratto] = useState([]);
   const [unitsLoading, setUnitsLoading] = useState(true);
   
+  // Additional state for segmenti and offerte management
+  const [selectedTipologia, setSelectedTipologia] = useState(null);
+  const [selectedSegmento, setSelectedSegmento] = useState(null);
+  const [segmenti, setSegmenti] = useState([]);
+  const [offerte, setOfferte] = useState([]);
+  
   // Aruba Drive Configuration state
   const [arubaDriveConfigs, setArubaDriveConfigs] = useState([]);
   const [editingConfig, setEditingConfig] = useState(null);
