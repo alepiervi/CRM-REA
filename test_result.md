@@ -897,7 +897,8 @@ frontend:
 
 test_plan:
   current_focus:
-    - "Extend Hierarchy: Segmenti and Offerte Management System"
+    - "Advanced Commessa Configuration Frontend Implementation"
+    - "User Entity Management Configuration"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
