@@ -6631,6 +6631,22 @@ async def get_tipologie_contratto_by_commessa_servizio_unit(
     
     return tipologie_base
 
+async def get_hardcoded_tipologie_contratto():
+    """Helper function to get hardcoded tipologie contratto"""
+    # Lista base per tutti i servizi di Fastweb
+    tipologie_base = [
+        {"value": "energia_fastweb", "label": "Energia Fastweb"},
+        {"value": "telefonia_fastweb", "label": "Telefonia Fastweb"}
+    ]
+    
+    # Tipologie aggiuntive per servizi specifici
+    tipologie_aggiuntive = [
+        {"value": "ho_mobile", "label": "Ho Mobile"},
+        {"value": "telepass", "label": "Telepass"}
+    ]
+    
+    return tipologie_base + tipologie_aggiuntive
+
 @api_router.get("/tipologie-contratto")
 async def get_tipologie_contratto(
     commessa_id: Optional[str] = Query(None), 
