@@ -9712,10 +9712,20 @@ const CommesseManagement = ({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Gestione Commesse</h2>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nuova Commessa
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={migrateSegmenti}
+            title="Crea segmenti per tutte le tipologie esistenti"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Migra Segmenti
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuova Commessa
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
