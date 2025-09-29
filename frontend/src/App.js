@@ -9913,6 +9913,136 @@ const CommesseManagement = ({
             )}
           </CardContent>
         </Card>
+
+        {/* Segmenti della Tipologia Selezionata */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {selectedTipologia ? 'Segmenti' : 'Seleziona una Tipologia'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {selectedTipologia ? (
+              <div className="space-y-3">
+                {segmenti.map((segmento) => (
+                  <div 
+                    key={segmento.id} 
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedSegmento === segmento.id ? 'border-orange-500 bg-orange-50' : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => {
+                      if (selectedSegmento !== segmento.id) {
+                        setSelectedSegmento(segmento.id);
+                        fetchOfferte(segmento.id);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Badge className="w-4 h-4 text-orange-600" />
+                        <span className="font-medium">{segmento.nome}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={segmento.is_active ? "default" : "secondary"}>
+                          {segmento.is_active ? "Attivo" : "Inattivo"}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateSegmento(segmento.id, { is_active: !segmento.is_active });
+                          }}
+                        >
+                          {segmento.is_active ? 'Disattiva' : 'Attiva'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {segmenti.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">
+                    Nessun segmento disponibile per questa tipologia
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">Seleziona una tipologia per vedere i segmenti</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Offerte del Segmento Selezionato */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {selectedSegmento ? 'Offerte' : 'Seleziona un Segmento'}
+            </CardTitle>
+            {selectedSegmento && (
+              <Button 
+                size="sm" 
+                onClick={() => {
+                  setModalType('offerta');
+                  setShowCreateOffertaModal(true);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nuova Offerta
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {selectedSegmento ? (
+              <div className="space-y-3">
+                {offerte.map((offerta) => (
+                  <div key={offerta.id} className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Star className="w-4 h-4 text-yellow-600" />
+                        <span className="font-medium">{offerta.nome}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Badge variant={offerta.is_active ? "default" : "secondary"}>
+                          {offerta.is_active ? "Attiva" : "Inattiva"}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            updateOfferta(offerta.id, { is_active: !offerta.is_active });
+                          }}
+                        >
+                          {offerta.is_active ? 'Disattiva' : 'Attiva'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => {
+                            if (confirm(`Eliminare definitivamente "${offerta.nome}"?`)) {
+                              deleteOfferta(offerta.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    {offerta.descrizione && (
+                      <p className="text-sm text-gray-600 mt-1">{offerta.descrizione}</p>
+                    )}
+                  </div>
+                ))}
+                {offerte.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">
+                    Nessuna offerta configurata per questo segmento
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">Seleziona un segmento per vedere le offerte</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Create Commessa Modal */}
