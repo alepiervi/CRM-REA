@@ -7207,6 +7207,7 @@ async def migrate_segmenti_for_existing_tipologie(
 
 @api_router.post("/admin/migrate-hardcoded-to-database")
 async def migrate_hardcoded_to_database(
+    force: bool = False,  # NEW: force migration even if elements exist
     current_user: User = Depends(get_current_user)
 ):
     """Migrate ALL hardcoded entities (commesse, servizi, tipologie) to database for full management"""
