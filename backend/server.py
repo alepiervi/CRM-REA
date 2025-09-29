@@ -6694,7 +6694,7 @@ async def get_tipologie_contratto(
 # CRUD Endpoints per Tipologie di Contratto (Nuovi)
 @api_router.post("/tipologie-contratto")
 async def create_tipologia_contratto(
-    tipologia_data: dict,
+    tipologia_data: TipologiaContrattoCreate,
     current_user: User = Depends(get_current_user)
 ):
     """Create new tipologia contratto"""
