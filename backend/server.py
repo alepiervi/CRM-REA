@@ -6761,7 +6761,28 @@ async def get_tipologie_by_servizio(
         
         for tipologia in hardcoded_tipologie:
             # Map tipologie to servizi based on existing logic
-            if "energia" in servizio_name and tipologia["value"] in ["energia_fastweb"]:
+            if servizio_name in ["agent", "negozi", "presidi"]:
+                # These services get all tipologie
+                filtered_hardcoded.append({
+                    "id": tipologia["value"],
+                    "nome": tipologia["label"],
+                    "descrizione": f"Tipologia {tipologia['label']}",
+                    "servizio_id": servizio_id,
+                    "is_active": True,
+                    "source": "hardcoded"
+                })
+            elif servizio_name == "tls":
+                # TLS service gets base tipologie (Energia + Telefonia Fastweb)
+                if tipologia["value"] in ["energia_fastweb", "telefonia_fastweb"]:
+                    filtered_hardcoded.append({
+                        "id": tipologia["value"],
+                        "nome": tipologia["label"],
+                        "descrizione": f"Tipologia {tipologia['label']}",
+                        "servizio_id": servizio_id,
+                        "is_active": True,
+                        "source": "hardcoded"
+                    })
+            elif "energia" in servizio_name and tipologia["value"] in ["energia_fastweb"]:
                 filtered_hardcoded.append({
                     "id": tipologia["value"],
                     "nome": tipologia["label"],
@@ -6771,16 +6792,6 @@ async def get_tipologie_by_servizio(
                     "source": "hardcoded"
                 })
             elif "telefonia" in servizio_name and tipologia["value"] in ["telefonia_fastweb"]:
-                filtered_hardcoded.append({
-                    "id": tipologia["value"],
-                    "nome": tipologia["label"],
-                    "descrizione": f"Tipologia {tipologia['label']}",
-                    "servizio_id": servizio_id,
-                    "is_active": True,
-                    "source": "hardcoded"
-                })
-            elif servizio_name in ["agent", "negozi", "presidi"]:
-                # These services get all tipologie
                 filtered_hardcoded.append({
                     "id": tipologia["value"],
                     "nome": tipologia["label"],
