@@ -9842,9 +9842,15 @@ const CommesseManagement = ({
                       selectedTipologia === tipologia.id ? 'border-purple-500 bg-purple-50' : 'hover:bg-gray-50'
                     }`}
                     onClick={() => {
+                      console.log('🎯 Tipologia clicked:', tipologia.id, tipologia.nome);
+                      console.log('🎯 Current selectedTipologia:', selectedTipologia);
                       if (selectedTipologia !== tipologia.id) {
+                        console.log('🎯 Setting selectedTipologia to:', tipologia.id);
                         setSelectedTipologia(tipologia.id);
+                        console.log('🎯 Calling fetchSegmenti for:', tipologia.id);
                         fetchSegmenti(tipologia.id);
+                      } else {
+                        console.log('🎯 Tipologia already selected, no action needed');
                       }
                     }}
                   >
