@@ -8501,8 +8501,8 @@ Duplicate,Test,+393471234567"""
         return True
 
     def run_all_tests(self):
-        """Run test for tipologie contratto endpoint modificato as requested"""
-        print("🚀 Starting CRM API Testing - Tipologie Contratto Endpoint Modificato...")
+        """Run test for DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE"""
+        print("🚀 Starting CRM API Testing - DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 80)
         
@@ -8511,9 +8511,9 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # PRIORITY TEST: Test endpoint tipologie modificato (as requested in review)
-        print("\n🚨 PRIORITY TEST: TEST ENDPOINT TIPOLOGIE MODIFICATO...")
-        endpoint_test_success = self.test_tipologie_contratto_endpoint_modificato()
+        # PRIORITY TEST: Debug Fotovoltaico tipologie issue
+        print("\n🚨 PRIORITY TEST: DEBUG FOTOVOLTAICO TIPOLOGIE ISSUE...")
+        debug_test_success = self.test_debug_fotovoltaico_tipologie_issue()
         
         # Cleanup created resources
         self.cleanup_resources()
@@ -8521,14 +8521,14 @@ Duplicate,Test,+393471234567"""
         # Print summary
         print("\n" + "=" * 80)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
-        print(f"🔍 Tipologie Endpoint Status: {'✅ SUCCESS - All tests passed!' if endpoint_test_success else '❌ ISSUES FOUND'}")
+        print(f"🔍 Debug Status: {'✅ DEBUG COMPLETED - Check findings above!' if debug_test_success else '❌ DEBUG FAILED'}")
         
-        if endpoint_test_success:
-            print("🎉 PRIORITY TEST PASSED: Endpoint tipologie modificato funziona correttamente!")
-            print("🎉 CONFERMATO: Le tipologie esistenti vengono mostrate correttamente quando si seleziona un servizio!")
+        if debug_test_success:
+            print("🎉 DEBUG TEST COMPLETED: All debug steps executed successfully!")
+            print("🎉 CONFERMATO: Check the detailed findings above for root cause analysis!")
             return True
         else:
-            print("🚨 PRIORITY TEST FAILED: Endpoint tipologie modificato ha problemi!")
+            print("🚨 DEBUG TEST FAILED: Could not complete all debug steps!")
             return False
 
     def test_document_endpoints_with_authorization(self):
