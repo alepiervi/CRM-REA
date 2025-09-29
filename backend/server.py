@@ -6728,6 +6728,9 @@ async def get_tipologie_contratto(
             raise HTTPException(status_code=403, detail="Access denied to this commessa")
     
     try:
+        # Check if hardcoded elements should be used
+        use_hardcoded = await should_use_hardcoded_elements()
+        
         # NEW LOGIC: Check commessa to determine tipologie source
         if commessa_id:
             commessa = await db.commesse.find_one({"id": commessa_id})
