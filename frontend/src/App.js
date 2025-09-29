@@ -924,11 +924,18 @@ const Dashboard = () => {
 
   const fetchSegmenti = async (tipologiaId) => {
     try {
+      console.log('🔄 fetchSegmenti called with tipologiaId:', tipologiaId);
+      console.log('🔄 API URL:', `${API}/tipologie-contratto/${tipologiaId}/segmenti`);
+      
       const response = await axios.get(`${API}/tipologie-contratto/${tipologiaId}/segmenti`);
-      console.log(`Segmenti per tipologia ${tipologiaId}:`, response.data);
+      
+      console.log('✅ fetchSegmenti response:', response.data);
+      console.log('✅ Number of segmenti found:', response.data?.length);
+      
       setSegmenti(response.data);
     } catch (error) {
-      console.error("Error fetching segmenti:", error);
+      console.error("❌ Error fetching segmenti:", error);
+      console.error("❌ Error response:", error.response?.data);
       setSegmenti([]);
     }
   };
