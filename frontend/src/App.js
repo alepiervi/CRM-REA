@@ -10338,25 +10338,44 @@ const CommesseManagement = ({
                 {segmenti.map((segmento) => (
                   <div 
                     key={segmento.id} 
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                      selectedSegmento === segmento.id ? 'border-orange-500 bg-orange-50' : 'hover:bg-gray-50'
+                    className={`p-4 border rounded-lg transition-colors ${
+                      selectedSegmento === segmento.id ? 'border-orange-500 bg-orange-50' : 'hover:bg-gray-50 border-gray-200'
                     }`}
-                    onClick={() => {
-                      if (selectedSegmento !== segmento.id) {
-                        setSelectedSegmento(segmento.id);
-                        fetchOfferte(segmento.id);
-                      }
-                    }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Tag className="w-4 h-4 text-orange-600" />
-                        <span className="font-medium">{segmento.nome}</span>
+                    <div className="space-y-3">
+                      {/* Header con titolo e icona */}
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 bg-orange-100 rounded-lg flex-shrink-0">
+                          <Tag className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">{segmento.nome}</h3>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={segmento.is_active ? "default" : "secondary"}>
+
+                      {/* Badge */}
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant={segmento.is_active ? "default" : "secondary"} className="text-xs">
                           {segmento.is_active ? "Attivo" : "Inattivo"}
                         </Badge>
+                      </div>
+
+                      {/* Pulsanti - Layout a griglia */}
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            if (selectedSegmento !== segmento.id) {
+                              setSelectedSegmento(segmento.id);
+                              fetchOfferte(segmento.id);
+                            }
+                          }}
+                          className="p-2 h-8 w-full"
+                          title="Gestisci offerte"
+                        >
+                          <Settings className="w-3 h-3" />
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -10364,8 +10383,10 @@ const CommesseManagement = ({
                             e.stopPropagation();
                             updateSegmento(segmento.id, { is_active: !segmento.is_active });
                           }}
+                          className="p-2 h-8 w-full"
+                          title={segmento.is_active ? 'Disattiva segmento' : 'Attiva segmento'}
                         >
-                          {segmento.is_active ? 'Disattiva' : 'Attiva'}
+                          {segmento.is_active ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                         </Button>
                       </div>
                     </div>
