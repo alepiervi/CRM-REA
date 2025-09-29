@@ -9714,7 +9714,34 @@ const CommesseManagement = ({
     }
   };
 
-  const migrateSegmenti = async () => {
+  const migrateHardcodedToDatabase = async () => {
+    try {
+      console.log('🚀 Starting hardcoded to database migration...');
+      
+      const response = await axios.post(`${API}/admin/migrate-hardcoded-to-database`);
+      
+      console.log('✅ Migration response:', response.data);
+      
+      toast({
+        title: "Successo",
+        description: response.data.message,
+      });
+      
+      // Refresh all data after migration
+      console.log('🔄 Refreshing all data after migration...');
+      await fetchTipologieContratto();
+      await fetchCommesse();
+      
+    } catch (error) {
+      console.error("❌ Error migrating hardcoded to database:", error);
+      
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || error.message || "Errore nella migrazione elementi hardcoded",
+        variant: "destructive",
+      });
+    }
+  };
     try {
       console.log('🚀 Starting segmenti migration...');
       console.log('🚀 API URL:', `${API}/admin/migrate-segmenti`);
