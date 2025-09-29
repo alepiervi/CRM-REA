@@ -11071,6 +11071,12 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchType, setSearchType] = useState('all');
+  const [dateFilter, setDateFilter] = useState({
+    startDate: '',
+    endDate: '',
+    enabled: false
+  });
+  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
