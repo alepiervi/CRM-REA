@@ -11079,6 +11079,18 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
 
+  // Get filtered clients (combining search and date filters)
+  const getFilteredClients = () => {
+    let filtered = clienti;
+    
+    // Apply date filter if enabled
+    if (dateFilter.enabled) {
+      filtered = filterClientsByDate(filtered);
+    }
+    
+    return filtered;
+  };
+
   useEffect(() => {
     try {
       // Use props data when available, don't fetch if already provided
