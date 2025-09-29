@@ -620,6 +620,10 @@ backend:
     status_history:
         - working: "NA"
           agent: "testing"
+          comment: "🎯 TESTING LAYOUT MIGLIORATO CARDS COMMESSE E PULSANTE MODIFICA: Iniziando test completo delle modifiche al layout delle cards delle commesse e della nuova funzionalità di modifica. Obiettivi: 1) Verificare layout migliorato con grid 2x2 per pulsanti, header con icona e titolo separati dai badge, badge organizzati in una riga, pulsanti in griglia 2x2 con bordo superiore, 2) Testare nuovo pulsante Modifica che apre EditCommessaModal con dati precompilati, 3) Verificare modifica di nome, descrizione, descrizione_interna, toggle feature flags (WhatsApp, AI, Call Center), cambio entity_type e document_management, 4) Confermare organizzazione pulsanti: Dettagli (alto sx), Modifica (alto dx), Gestisci (basso sx), Elimina (basso dx), 5) Verificare funzionalità preservate: ViewCommessaModal, navigazione gerarchica, eliminazione commesse."
+    status_history:
+        - working: "NA"
+          agent: "testing"
           comment: "DEBUG URGENTE del processo di creazione utenti responsabile_commessa tramite interfaccia admin: 1. Verifica Utente Creato Manualmente (controllare nel database tutti gli utenti con role responsabile_commessa, confrontare i campi tra l'utente 'resp_commessa' funzionante e gli utenti creati via UI), 2. Test Creazione Nuovo Utente (POST /api/users per creare un nuovo utente responsabile_commessa di test con dati completi), 3. Verifica Endpoint Create User (testare il flusso completo di creazione utente), 4. Confronto Database (mostrare ESATTAMENTE le differenze tra utente funzionante e non funzionante)."
         - working: true
           agent: "testing"
