@@ -6870,9 +6870,17 @@ async def get_tipologie_by_servizio(
             "is_active": True
         }).to_list(length=None)
         
-        # Add source field to db tipologie
+        # Add source field to db tipologie and ensure JSON serialization
         for tipologia in db_tipologie:
             tipologia["source"] = "database"
+            # Convert ObjectId to string if present
+            if "_id" in tipologia:
+                del tipologia["_id"]
+            # Ensure all datetime fields are serializable
+            if "created_at" in tipologia and hasattr(tipologia["created_at"], "isoformat"):
+                tipologia["created_at"] = tipologia["created_at"].isoformat()
+            if "updated_at" in tipologia and hasattr(tipologia["updated_at"], "isoformat"):
+                tipologia["updated_at"] = tipologia["updated_at"].isoformat()
         
         # Combine both lists
         all_tipologie = filtered_hardcoded + db_tipologie
