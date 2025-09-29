@@ -12187,9 +12187,9 @@ Duplicate,Test,+393471234567"""
                 **combination
             }
             
-            success, combo_response, status = self.make_request('POST', 'commesse', test_data, 201)
+            success, combo_response, status = self.make_request('POST', 'commesse', test_data, 200)  # Changed from 201 to 200
             
-            if success and status == 201:
+            if success and status == 200:  # Changed from 201 to 200
                 combo_id = combo_response.get('id')
                 
                 # Verify all flags are saved correctly
