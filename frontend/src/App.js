@@ -11185,7 +11185,8 @@ const CreateCommessaModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     nome: '',
     descrizione: '',
-    responsabile_id: ''
+    responsabile_id: '',
+    entity_type: 'clienti'  // NEW: default to clienti
   });
 
   const handleSubmit = (e) => {
