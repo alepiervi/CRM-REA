@@ -9891,9 +9891,21 @@ const CommesseManagement = ({
                       selectedTipologia === tipologia.id ? 'border-purple-500 bg-purple-50' : 'hover:bg-gray-50'
                     }`}
                     onClick={() => {
-                      if (selectedTipologia !== tipologia.id) {
-                        setSelectedTipologia(tipologia.id);
-                        fetchSegmenti(tipologia.id);
+                      console.log('🎯 TIPOLOGIA CLICKED:', tipologia);
+                      console.log('🎯 tipologia.id:', tipologia.id);
+                      console.log('🎯 tipologia.value:', tipologia.value);
+                      console.log('🎯 Current selectedTipologia:', selectedTipologia);
+                      
+                      const tipologiaId = tipologia.id || tipologia.value;
+                      console.log('🎯 Using tipologiaId:', tipologiaId);
+                      
+                      if (selectedTipologia !== tipologiaId) {
+                        console.log('🎯 Setting selectedTipologia to:', tipologiaId);
+                        setSelectedTipologia(tipologiaId);
+                        console.log('🎯 Calling fetchSegmenti with:', tipologiaId);
+                        fetchSegmenti(tipologiaId);
+                      } else {
+                        console.log('🎯 Tipologia already selected');
                       }
                     }}
                   >
