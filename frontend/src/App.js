@@ -9448,6 +9448,24 @@ const CommesseManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  const createServizio = async (servizioData) => {
+    try {
+      const response = await axios.post(`${API}/servizi`, servizioData);
+      setServizi([...servizi, response.data]);
+      toast({
+        title: "Successo",
+        description: "Servizio creato con successo",
+      });
+    } catch (error) {
+      console.error("Error creating servizio:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione del servizio",
+        variant: "destructive",
+      });
+    }
+  };
+
   const createTipologiaContratto = async (tipologiaData) => {
     try {
       const response = await axios.post(`${API}/tipologie-contratto`, {
