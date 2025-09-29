@@ -7029,6 +7029,245 @@ async def delete_tipologia_contratto(
         logger.error(f"Error deleting tipologia: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione: {str(e)}")
 
+# ================================
+# SEGMENTI ENDPOINTS
+# ================================
+
+@api_router.get("/tipologie-contratto/{tipologia_id}/segmenti")
+async def get_segmenti_by_tipologia(
+    tipologia_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get segmenti for a specific tipologia contratto"""
+    
+    try:
+        # Check if tipologia exists
+        tipologia = await db.tipologie_contratto.find_one({"id": tipologia_id})
+        if not tipologia:
+            raise HTTPException(status_code=404, detail="Tipologia contratto non trovata")
+        
+        # Get segmenti for this tipologia
+        segmenti = await db.segmenti.find({
+            "tipologia_contratto_id": tipologia_id
+        }).to_list(length=None)
+        
+        # If no segmenti exist, create the default ones (Privato and Business)
+        if not segmenti:
+            default_segmenti = [
+                {
+                    "id": str(uuid.uuid4()),
+                    "tipo": "privato",
+                    "nome": "Privato",
+                    "tipologia_contratto_id": tipologia_id,
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc)
+                },
+                {
+                    "id": str(uuid.uuid4()),
+                    "tipo": "business", 
+                    "nome": "Business",
+                    "tipologia_contratto_id": tipologia_id,
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc)
+                }
+            ]
+            
+            # Insert default segmenti
+            await db.segmenti.insert_many(default_segmenti)
+            segmenti = default_segmenti
+        
+        # Clean up for JSON serialization
+        for segmento in segmenti:
+            if "_id" in segmento:
+                del segmento["_id"]
+            if "created_at" in segmento and hasattr(segmento["created_at"], "isoformat"):
+                segmento["created_at"] = segmento["created_at"].isoformat()
+            if "updated_at" in segmento and segmento["updated_at"] and hasattr(segmento["updated_at"], "isoformat"):
+                segmento["updated_at"] = segmento["updated_at"].isoformat()
+        
+        return segmenti
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching segmenti for tipologia {tipologia_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento segmenti: {str(e)}")
+
+@api_router.put("/segmenti/{segmento_id}")
+async def update_segmento(
+    segmento_id: str,
+    update_data: SegmentoUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update segmento (principalmente per attivare/disattivare)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono modificare i segmenti")
+    
+    try:
+        update_dict = update_data.dict(exclude_unset=True)
+        if update_dict:
+            update_dict["updated_at"] = datetime.now(timezone.utc)
+        
+        result = await db.segmenti.update_one(
+            {"id": segmento_id},
+            {"$set": update_dict}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Segmento non trovato")
+        
+        return {"success": True, "message": "Segmento aggiornato con successo"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating segmento: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'aggiornamento: {str(e)}")
+
+# ================================
+# OFFERTE ENDPOINTS
+# ================================
+
+@api_router.get("/segmenti/{segmento_id}/offerte")
+async def get_offerte_by_segmento(
+    segmento_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get offerte for a specific segmento"""
+    
+    try:
+        # Check if segmento exists
+        segmento = await db.segmenti.find_one({"id": segmento_id})
+        if not segmento:
+            raise HTTPException(status_code=404, detail="Segmento non trovato")
+        
+        # Get offerte for this segmento
+        offerte = await db.offerte.find({
+            "segmento_id": segmento_id
+        }).sort("created_at", -1).to_list(length=None)
+        
+        # Clean up for JSON serialization
+        for offerta in offerte:
+            if "_id" in offerta:
+                del offerta["_id"]
+            if "created_at" in offerta and hasattr(offerta["created_at"], "isoformat"):
+                offerta["created_at"] = offerta["created_at"].isoformat()
+            if "updated_at" in offerta and offerta["updated_at"] and hasattr(offerta["updated_at"], "isoformat"):
+                offerta["updated_at"] = offerta["updated_at"].isoformat()
+        
+        return offerte
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching offerte for segmento {segmento_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento offerte: {str(e)}")
+
+@api_router.post("/offerte")
+async def create_offerta(
+    offerta_data: OffertaCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create new offerta"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono creare offerte")
+    
+    try:
+        # Check if segmento exists
+        segmento = await db.segmenti.find_one({"id": offerta_data.segmento_id})
+        if not segmento:
+            raise HTTPException(status_code=404, detail="Segmento non trovato")
+        
+        # Create offerta
+        offerta_dict = offerta_data.dict()
+        offerta_dict.update({
+            "id": str(uuid.uuid4()),
+            "created_at": datetime.now(timezone.utc),
+            "created_by": current_user.id
+        })
+        
+        result = await db.offerte.insert_one(offerta_dict)
+        
+        return {
+            "success": True,
+            "message": "Offerta creata con successo",
+            "offerta_id": offerta_dict["id"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating offerta: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nella creazione: {str(e)}")
+
+@api_router.put("/offerte/{offerta_id}")
+async def update_offerta(
+    offerta_id: str,
+    update_data: OffertaUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update offerta (nome, descrizione, attivazione/disattivazione)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono modificare le offerte")
+    
+    try:
+        update_dict = update_data.dict(exclude_unset=True)
+        if update_dict:
+            update_dict["updated_at"] = datetime.now(timezone.utc)
+        
+        result = await db.offerte.update_one(
+            {"id": offerta_id},
+            {"$set": update_dict}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Offerta non trovata")
+        
+        return {"success": True, "message": "Offerta aggiornata con successo"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating offerta: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'aggiornamento: {str(e)}")
+
+@api_router.delete("/offerte/{offerta_id}")
+async def delete_offerta(
+    offerta_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete offerta permanently"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono eliminare le offerte")
+    
+    try:
+        # Check if offerta is used by any clienti (if you have such relationship)
+        # clienti_count = await db.clienti.count_documents({"offerta_id": offerta_id})
+        # 
+        # if clienti_count > 0:
+        #     raise HTTPException(
+        #         status_code=400, 
+        #         detail=f"Impossibile eliminare: offerta utilizzata da {clienti_count} clienti"
+        #     )
+        
+        # Delete offerta
+        result = await db.offerte.delete_one({"id": offerta_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Offerta non trovata")
+        
+        return {"success": True, "message": "Offerta eliminata con successo"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting offerta: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione: {str(e)}")
+
 @api_router.get("/segmenti")  
 async def get_segmenti(current_user: User = Depends(get_current_user)):
     """Get available segmenti"""
