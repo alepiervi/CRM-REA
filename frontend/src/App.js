@@ -900,18 +900,22 @@ const Dashboard = () => {
         selectedServizio
       });
       
-      const params = new URLSearchParams();
-      if (commessaId && commessaId !== "all") {
-        params.append("commessa_id", commessaId);
-        console.log("✅ Added commessa_id param:", commessaId);
-      }
-      if (servizioId && servizioId !== "all") {
-        params.append("servizio_id", servizioId);
-        console.log("✅ Added servizio_id param:", servizioId);
-      }
+      let url;
       
-      const url = `${API}/tipologie-contratto?${params}`;
-      console.log("🌐 Final URL:", url);
+      // If no specific commessa selected, get ALL tipologie for selectors
+      if (!commessaId || commessaId === "all") {
+        url = `${API}/tipologie-contratto/all`;
+        console.log("🌐 Using ALL tipologie endpoint:", url);
+      } else {
+        // Use filtered endpoint for specific commessa/servizio
+        const params = new URLSearchParams();
+        params.append("commessa_id", commessaId);
+        if (servizioId && servizioId !== "all") {
+          params.append("servizio_id", servizioId);
+        }
+        url = `${API}/tipologie-contratto?${params}`;
+        console.log("🌐 Using filtered tipologie endpoint:", url);
+      }
       
       const response = await axios.get(url);
       console.log("✅ Tipologie contratto ricevute:", response.data);
