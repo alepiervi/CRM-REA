@@ -6753,7 +6753,7 @@ async def get_tipologie_by_servizio(
             raise HTTPException(status_code=404, detail="Servizio non trovato")
         
         # First get hardcoded tipologie (existing system)
-        hardcoded_tipologie = await get_tipologie_contratto(current_user=current_user)
+        hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
         
         # Filter hardcoded tipologie based on servizio type/name
         filtered_hardcoded = []
