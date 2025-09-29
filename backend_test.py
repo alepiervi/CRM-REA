@@ -10786,6 +10786,10 @@ Duplicate,Test,+393471234567"""
             'clienti': [],
             'leads': []
         }
+        
+        # Initialize variables to avoid scope issues
+        commesse = []
+        servizi = []
 
         # 2. **TEST DELETE COMMESSA ENDPOINT**
         print("\n🏢 2. TEST DELETE COMMESSA ENDPOINT...")
