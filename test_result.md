@@ -609,6 +609,14 @@ backend:
     stuck_count: 4
     priority: "high"
     needs_retesting: false
+  
+  - task: "Layout Migliorato Cards Commesse e Pulsante Modifica"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "testing"
