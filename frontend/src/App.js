@@ -827,9 +827,9 @@ const Dashboard = () => {
       console.log("🔄 USEEFFECT (ALL ROLES): Ricarico tipologie per commessa/servizio changed:", { selectedCommessa, selectedServizio, userRole: user.role });
       fetchTipologieContratto(selectedCommessa, selectedServizio);
     } else {
-      // Se non ci sono filtri, svuoto le tipologie
-      console.log("🔄 USEEFFECT (ALL ROLES): Reset tipologie (no filters)");
-      setFormTipologieContratto([]);
+      // Se non ci sono filtri, carico TUTTE le tipologie per i selettori
+      console.log("🔄 USEEFFECT (ALL ROLES): Loading ALL tipologie (no filters)");
+      fetchTipologieContratto();
     }
   }, [selectedCommessa, selectedServizio]);
 
