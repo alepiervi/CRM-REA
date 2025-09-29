@@ -9950,33 +9950,83 @@ const CommesseManagement = ({
               {commesse.map((commessa) => (
                 <div 
                   key={commessa.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    selectedCommessa?.id === commessa.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+                  className={`p-4 border rounded-lg transition-colors ${
+                    selectedCommessa?.id === commessa.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50 border-gray-200'
                   }`}
-                  onClick={() => {
-                    if (selectedCommessa?.id !== commessa.id) {
-                      setServizi([]); // Reset servizi
-                      setTipologieContratto([]); // Reset tipologie
-                      setSelectedCommessa(commessa);
-                      setSelectedServizio(null);
-                      fetchServizi(commessa.id);
-                    }
-                  }}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
-                      <Building className="w-5 h-5 text-blue-600" />
-                      <div>
-                        <h3 className="font-medium">{commessa.nome}</h3>
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Building2 className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{commessa.nome}</h3>
                         {commessa.descrizione && (
-                          <p className="text-sm text-gray-600">{commessa.descrizione}</p>
+                          <p className="text-sm text-gray-600 mt-1">{commessa.descrizione}</p>
                         )}
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Badge variant={commessa.is_active ? "default" : "secondary"} className="text-xs">
+                            {commessa.is_active ? "Attiva" : "Inattiva"}
+                          </Badge>
+                          {commessa.entity_type && (
+                            <Badge variant="outline" className="text-xs">
+                              {commessa.entity_type === 'clienti' ? 'Solo Clienti' : 
+                               commessa.entity_type === 'lead' ? 'Solo Lead' : 'Clienti & Lead'}
+                            </Badge>
+                          )}
+                          {commessa.has_whatsapp && (
+                            <Badge variant="secondary" className="text-xs">
+                              <MessageCircle className="w-3 h-3 mr-1" />
+                              WhatsApp
+                            </Badge>
+                          )}
+                          {commessa.has_ai && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Bot className="w-3 h-3 mr-1" />
+                              AI
+                            </Badge>
+                          )}
+                          {commessa.has_call_center && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Headphones className="w-3 h-3 mr-1" />
+                              Call Center
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowViewCommessaModal(true);
+                      }}
+                      className="text-xs"
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      Dettagli
+                    </Button>
                     <div className="flex items-center gap-2">
-                      <Badge variant={commessa.is_active ? "default" : "secondary"}>
-                        {commessa.is_active ? "Attiva" : "Inattiva"}
-                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (selectedCommessa?.id !== commessa.id) {
+                            setServizi([]);
+                            setTipologieContratto([]);
+                            setSelectedCommessa(commessa);
+                            setSelectedServizio(null);
+                            fetchServizi(commessa.id);
+                          }
+                        }}
+                        className="text-xs"
+                      >
+                        <Settings className="w-3 h-3 mr-1" />
+                        Gestisci
+                      </Button>
                       <Button
                         size="sm"
                         variant="destructive"
@@ -9986,6 +10036,7 @@ const CommesseManagement = ({
                             deleteCommessa(commessa.id);
                           }
                         }}
+                        className="text-xs"
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
