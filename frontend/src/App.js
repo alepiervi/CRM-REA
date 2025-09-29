@@ -11282,6 +11282,136 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     }
   };
 
+  // Filter clients by date range
+  const filterClientsByDate = (clientsToFilter) => {
+    if (!dateFilter.enabled || (!dateFilter.startDate && !dateFilter.endDate)) {
+      return clientsToFilter;
+    }
+
+    return clientsToFilter.filter(cliente => {
+      if (!cliente.created_at) return true; // Include clients without creation date
+      
+      const clientDate = new Date(cliente.created_at);
+      const start = dateFilter.startDate ? new Date(dateFilter.startDate) : null;
+      const end = dateFilter.endDate ? new Date(dateFilter.endDate) : null;
+      
+      if (start && end) {
+        return clientDate >= start && clientDate <= end;
+      } else if (start) {
+        return clientDate >= start;
+      } else if (end) {
+        return clientDate <= end;
+      }
+      
+      return true;
+    });
+  };
+
+  // Export clients to CSV
+  const exportClients = () => {
+    if (clienti.length === 0) {
+      toast({
+        title: "Attenzione",
+        description: "Non ci sono clienti da esportare",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    
+    try {
+      // Apply date filter to current filtered clients
+      const clientsToExport = filterClientsByDate(clienti);
+      
+      if (clientsToExport.length === 0) {
+        toast({
+          title: "Attenzione", 
+          description: "Nessun cliente trovato nel periodo selezionato",
+          variant: "destructive",
+        });
+        setIsExporting(false);
+        return;
+      }
+
+      // Prepare CSV headers
+      const headers = [
+        'ID Cliente',
+        'Nome',
+        'Cognome', 
+        'Email',
+        'Telefono',
+        'Cellulare',
+        'Codice Fiscale',
+        'P. IVA',
+        'Indirizzo',
+        'Città',
+        'Provincia',
+        'CAP',
+        'Data Creazione',
+        'Commessa',
+        'Sub Agenzia'
+      ];
+
+      // Convert clients to CSV format
+      const csvContent = [
+        headers.join(','),
+        ...clientsToExport.map(cliente => [
+          cliente.cliente_id || '',
+          cliente.nome || '',
+          cliente.cognome || '',
+          cliente.email || '',
+          cliente.telefono || '',
+          cliente.cellulare || '',
+          cliente.codice_fiscale || '',
+          cliente.partita_iva || '',
+          cliente.indirizzo || '',
+          cliente.citta || '',
+          cliente.provincia || '',
+          cliente.cap || '',
+          cliente.created_at ? new Date(cliente.created_at).toLocaleDateString('it-IT') : '',
+          cliente.commessa_nome || '',
+          cliente.sub_agenzia_nome || ''
+        ].map(field => `"${field}"`).join(','))
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      
+      // Generate filename with current date and filters
+      let filename = 'clienti_export_' + new Date().toISOString().split('T')[0];
+      if (dateFilter.enabled && dateFilter.startDate && dateFilter.endDate) {
+        filename += `_${dateFilter.startDate}_${dateFilter.endDate}`;
+      }
+      filename += '.csv';
+      
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Successo",
+        description: `Esportati ${clientsToExport.length} clienti in ${filename}`,
+      });
+
+    } catch (error) {
+      console.error('Error exporting clients:', error);
+      toast({
+        title: "Errore",
+        description: "Errore durante l'esportazione dei clienti",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   useEffect(() => {
     if (selectedCommessa) {
       fetchClienti();
