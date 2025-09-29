@@ -9375,9 +9375,13 @@ const OutboundCallForm = ({ onCall, loading }) => {
 const CommesseManagement = ({ selectedUnit, units }) => {
   const [commesse, setCommesse] = useState([]);
   const [servizi, setServizi] = useState([]);
+  const [tipologieContratto, setTipologieContratto] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCommessa, setSelectedCommessa] = useState(null);
+  const [selectedServizio, setSelectedServizio] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateTipologiaModal, setShowCreateTipologiaModal] = useState(false);
+  const [modalType, setModalType] = useState(''); // 'commessa', 'servizio', 'tipologia'
   const { toast } = useToast();
 
   useEffect(() => {
