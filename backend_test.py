@@ -9999,8 +9999,13 @@ Duplicate,Test,+393471234567"""
             self.log_test("❌ Cannot get commesse/sub-agenzie for delete test", False, "Skipping delete functionality test")
             test_cliente_data = None
         
-        print("   Creating test cliente...")
-        success, cliente_response, status = self.make_request('POST', 'clienti', test_cliente_data, 200)
+        if test_cliente_data:
+            print("   Creating test cliente...")
+            success, cliente_response, status = self.make_request('POST', 'clienti', test_cliente_data, 200)
+        else:
+            success = False
+            cliente_response = {}
+            status = 400
         
         created_cliente_id = None
         if success and status == 200:
