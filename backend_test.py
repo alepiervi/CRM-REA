@@ -11518,11 +11518,8 @@ Duplicate,Test,+393471234567"""
         print("🚀 Starting CRM Backend API Testing...")
         print(f"🌐 Base URL: {self.base_url}")
         
-        # Run the critical hardcoded disable test as requested
-        self.test_hardcoded_elements_disable_system()
-        
-        # NEW: Run DELETE endpoints testing as requested in review
-        self.test_delete_endpoints_complete()
+        # Run the critical Fastweb hardcoded tipologie disable fix test as requested
+        self.test_fastweb_hardcoded_tipologie_disable_fix()
         
         # Print final summary
         print(f"\n📊 Final Test Results:")
