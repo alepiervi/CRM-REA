@@ -9730,6 +9730,95 @@ const CommesseManagement = ({
     }
   };
 
+  const updateSegmento = async (segmentoId, updateData) => {
+    try {
+      await axios.put(`${API}/segmenti/${segmentoId}`, updateData);
+      // Refresh segmenti list
+      if (selectedTipologia) {
+        fetchSegmenti(selectedTipologia);
+      }
+      toast({
+        title: "Successo",
+        description: "Segmento aggiornato con successo",
+      });
+    } catch (error) {
+      console.error("Error updating segmento:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'aggiornamento del segmento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createOfferta = async (offertaData) => {
+    try {
+      const response = await axios.post(`${API}/offerte`, {
+        ...offertaData,
+        segmento_id: selectedSegmento
+      });
+      
+      // Refresh offerte list
+      if (selectedSegmento) {
+        fetchOfferte(selectedSegmento);
+      }
+      
+      toast({
+        title: "Successo",
+        description: "Offerta creata con successo",
+      });
+    } catch (error) {
+      console.error("Error creating offerta:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione dell'offerta",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateOfferta = async (offertaId, updateData) => {
+    try {
+      await axios.put(`${API}/offerte/${offertaId}`, updateData);
+      // Refresh offerte list
+      if (selectedSegmento) {
+        fetchOfferte(selectedSegmento);
+      }
+      toast({
+        title: "Successo",
+        description: "Offerta aggiornata con successo",
+      });
+    } catch (error) {
+      console.error("Error updating offerta:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'aggiornamento dell'offerta",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteOfferta = async (offertaId) => {
+    try {
+      await axios.delete(`${API}/offerte/${offertaId}`);
+      // Refresh offerte list
+      if (selectedSegmento) {
+        fetchOfferte(selectedSegmento);
+      }
+      toast({
+        title: "Successo",
+        description: "Offerta eliminata con successo",
+      });
+    } catch (error) {
+      console.error("Error deleting offerta:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'eliminazione dell'offerta",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
