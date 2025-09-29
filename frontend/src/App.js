@@ -9692,16 +9692,19 @@ const CommesseManagement = ({
 
   const migrateSegmenti = async () => {
     try {
+      console.log('🚀 Starting segmenti migration...');
       const response = await axios.post(`${API}/admin/migrate-segmenti`);
+      console.log('✅ Migration response:', response.data);
       toast({
         title: "Successo",
         description: response.data.message,
       });
     } catch (error) {
-      console.error("Error migrating segmenti:", error);
+      console.error("❌ Error migrating segmenti:", error);
+      console.error("❌ Error response:", error.response?.data);
       toast({
         title: "Errore",
-        description: "Errore nella migrazione dei segmenti",
+        description: error.response?.data?.detail || "Errore nella migrazione dei segmenti",
         variant: "destructive",
       });
     }
