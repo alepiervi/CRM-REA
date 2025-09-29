@@ -10171,6 +10171,14 @@ const CommesseManagement = ({
         onSubmit={createTipologiaContratto}
         servizioId={selectedServizio}
       />
+
+      {/* Create Offerta Modal */}
+      <CreateOffertaModal 
+        isOpen={showCreateOffertaModal}
+        onClose={() => setShowCreateOffertaModal(false)}
+        onSubmit={createOfferta}
+        segmentoId={selectedSegmento}
+      />
     </div>
   );
 };
