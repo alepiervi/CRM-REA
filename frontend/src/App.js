@@ -9506,7 +9506,22 @@ const OutboundCallForm = ({ onCall, loading }) => {
 };
 
 // Commesse Management Component
-const CommesseManagement = ({ selectedUnit, units }) => {
+const CommesseManagement = ({ 
+  selectedUnit, 
+  units, 
+  selectedTipologia,
+  setSelectedTipologia,
+  selectedSegmento,
+  setSelectedSegmento,
+  segmenti,
+  offerte,
+  fetchSegmenti,
+  fetchOfferte,
+  updateSegmento,
+  createOfferta,
+  updateOfferta,
+  deleteOfferta 
+}) => {
   const [commesse, setCommesse] = useState([]);
   const [servizi, setServizi] = useState([]);
   const [tipologieContratto, setTipologieContratto] = useState([]);
