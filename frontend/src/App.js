@@ -9695,6 +9695,24 @@ const CommesseManagement = ({
     }
   };
 
+  const updateCommessa = async (commessaId, commessaData) => {
+    try {
+      const response = await axios.put(`${API}/commesse/${commessaId}`, commessaData);
+      setCommesse(commesse.map(c => c.id === commessaId ? response.data : c));
+      toast({
+        title: "Successo",
+        description: "Commessa aggiornata con successo",
+      });
+    } catch (error) {
+      console.error("Error updating commessa:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'aggiornamento della commessa",
+        variant: "destructive",
+      });
+    }
+  };
+
   const createServizio = async (servizioData) => {
     try {
       const response = await axios.post(`${API}/servizi`, servizioData);
