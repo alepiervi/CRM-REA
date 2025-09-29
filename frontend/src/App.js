@@ -1427,8 +1427,8 @@ const Dashboard = () => {
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-800">CRM System</h1>
-              <p className="text-xs text-slate-500">Gestione Lead Avanzata</p>
+              <h1 className="text-lg font-bold text-slate-800">ELON</h1>
+              <p className="text-xs text-slate-500">System All in One</p>
             </div>
           </div>
           
