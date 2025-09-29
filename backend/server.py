@@ -7160,22 +7160,11 @@ async def get_tipologie_by_servizio(
             
             # Filter hardcoded tipologie based on servizio type/name
             servizio_name = servizio.get("nome", "").lower()
-        
-        for tipologia in hardcoded_tipologie:
-            # Map tipologie to servizi based on existing logic
-            if servizio_name in ["agent", "negozi", "presidi"]:
-                # These Fastweb services get all Fastweb tipologie
-                filtered_hardcoded.append({
-                    "id": tipologia["value"],
-                    "nome": tipologia["label"],
-                    "descrizione": f"Tipologia {tipologia['label']}",
-                    "servizio_id": servizio_id,
-                    "is_active": True,
-                    "source": "hardcoded"
-                })
-            elif servizio_name == "tls":
-                # TLS service gets base tipologie (Energia + Telefonia Fastweb)
-                if tipologia["value"] in ["energia_fastweb", "telefonia_fastweb"]:
+            
+            for tipologia in hardcoded_tipologie:
+                # Map tipologie to servizi based on existing logic
+                if servizio_name in ["agent", "negozi", "presidi"]:
+                    # These Fastweb services get all Fastweb tipologie
                     filtered_hardcoded.append({
                         "id": tipologia["value"],
                         "nome": tipologia["label"],
@@ -7184,29 +7173,40 @@ async def get_tipologie_by_servizio(
                         "is_active": True,
                         "source": "hardcoded"
                     })
-            elif "energia" in servizio_name and tipologia["value"] in ["energia_fastweb"]:
-                # Energia services get Energia Fastweb
-                filtered_hardcoded.append({
-                    "id": tipologia["value"],
-                    "nome": tipologia["label"],
-                    "descrizione": f"Tipologia {tipologia['label']}",
-                    "servizio_id": servizio_id,
-                    "is_active": True,
-                    "source": "hardcoded"
-                })
-            elif "telefonia" in servizio_name and tipologia["value"] in ["telefonia_fastweb"]:
-                # Telefonia services get Telefonia Fastweb
-                filtered_hardcoded.append({
-                    "id": tipologia["value"],
-                    "nome": tipologia["label"],
-                    "descrizione": f"Tipologia {tipologia['label']}",
-                    "servizio_id": servizio_id,
-                    "is_active": True,
-                    "source": "hardcoded"
-                })
-            # FOTOVOLTAICO SPECIFIC - NO hardcoded tipologie for now
-            # Fotovoltaico servizi (like CER40) get NO hardcoded tipologie
-            # They should use only custom database tipologie
+                elif servizio_name == "tls":
+                    # TLS service gets base tipologie (Energia + Telefonia Fastweb)
+                    if tipologia["value"] in ["energia_fastweb", "telefonia_fastweb"]:
+                        filtered_hardcoded.append({
+                            "id": tipologia["value"],
+                            "nome": tipologia["label"],
+                            "descrizione": f"Tipologia {tipologia['label']}",
+                            "servizio_id": servizio_id,
+                            "is_active": True,
+                            "source": "hardcoded"
+                        })
+                elif "energia" in servizio_name and tipologia["value"] in ["energia_fastweb"]:
+                    # Energia services get Energia Fastweb
+                    filtered_hardcoded.append({
+                        "id": tipologia["value"],
+                        "nome": tipologia["label"],
+                        "descrizione": f"Tipologia {tipologia['label']}",
+                        "servizio_id": servizio_id,
+                        "is_active": True,
+                        "source": "hardcoded"
+                    })
+                elif "telefonia" in servizio_name and tipologia["value"] in ["telefonia_fastweb"]:
+                    # Telefonia services get Telefonia Fastweb
+                    filtered_hardcoded.append({
+                        "id": tipologia["value"],
+                        "nome": tipologia["label"],
+                        "descrizione": f"Tipologia {tipologia['label']}",
+                        "servizio_id": servizio_id,
+                        "is_active": True,
+                        "source": "hardcoded"
+                    })
+                # FOTOVOLTAICO SPECIFIC - NO hardcoded tipologie for now
+                # Fotovoltaico servizi (like CER40) get NO hardcoded tipologie
+                # They should use only custom database tipologie
         
         # Then get custom database tipologie
         db_tipologie = await db.tipologie_contratto.find({
