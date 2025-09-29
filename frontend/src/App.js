@@ -308,10 +308,10 @@ const Login = () => {
           </div>
           <div className="text-center">
             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-800 bg-clip-text text-transparent">
-              CRM Lead Manager
+              ELON
             </CardTitle>
             <CardDescription className="text-slate-600">
-              Sistema di gestione lead e smistamento
+              System All in One
             </CardDescription>
           </div>
         </CardHeader>
