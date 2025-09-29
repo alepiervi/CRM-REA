@@ -9689,6 +9689,23 @@ const CommesseManagement = ({
     }
   };
 
+  const migrateSegmenti = async () => {
+    try {
+      const response = await axios.post(`${API}/admin/migrate-segmenti`);
+      toast({
+        title: "Successo",
+        description: response.data.message,
+      });
+    } catch (error) {
+      console.error("Error migrating segmenti:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella migrazione dei segmenti",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Duplicate functions removed
 
   return (
