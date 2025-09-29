@@ -3160,6 +3160,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     commesse_autorizzate: [],
     servizi_autorizzati: [],
     sub_agenzie_autorizzate: [],
+    entity_management: "clienti", // NEW: entity management field
   });
   
   const [isLoading, setIsLoading] = useState(false);
