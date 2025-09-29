@@ -9756,6 +9756,14 @@ const CommesseManagement = ({ selectedUnit, units }) => {
         onClose={() => setShowCreateModal(false)}
         onSubmit={createCommessa}
       />
+
+      {/* Create Tipologia Contratto Modal */}
+      <CreateTipologiaContrattoModal 
+        isOpen={showCreateTipologiaModal}
+        onClose={() => setShowCreateTipologiaModal(false)}
+        onSubmit={createTipologiaContratto}
+        servizioId={selectedServizio}
+      />
     </div>
   );
 };
