@@ -1169,11 +1169,11 @@ const Dashboard = () => {
     
     // CRITICAL FIX: Chiamata diretta per bypassare React async timing issue
     if (selectedCommessa && selectedCommessa !== "all" && servizioId && servizioId !== "all") {
-      console.log("🎯 DIRECT CALL: Calling fetchTipologieContratto directly to bypass timing issue");
+      console.log("🎯 DIRECT CALL: Calling fetchTipologieContratto with filters");
       fetchTipologieContratto(selectedCommessa, servizioId);
     } else {
-      console.log("🎯 DIRECT RESET: Resetting tipologie (no valid filters)");
-      setFormTipologieContratto([]);
+      console.log("🎯 DIRECT CALL: Loading ALL tipologie for selectors (no filters)");
+      fetchTipologieContratto(); // Load all tipologie when no filters
     }
     
     console.log("🎯 SERVIZIO CHANGED: tipologie e unit reset, chiamata diretta effettuata");
