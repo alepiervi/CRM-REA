@@ -10841,6 +10841,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             <SelectItem value="cognome">Cognome</SelectItem>
             <SelectItem value="codice_fiscale">Codice Fiscale</SelectItem>
             <SelectItem value="partita_iva">Partita IVA</SelectItem>
+            <SelectItem value="telefono">Telefono</SelectItem>
+            <SelectItem value="email">Email</SelectItem>
           </SelectContent>
         </Select>
       </div>
