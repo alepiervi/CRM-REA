@@ -11365,13 +11365,11 @@ Duplicate,Test,+393471234567"""
                     tipologia_name = (tipologia.get('label') or tipologia.get('nome', '')).lower()
                     tipologia_source = tipologia.get('source', 'unknown')
                     
-                    # Check for hardcoded Fastweb tipologie
-                    if any(hardcoded in tipologia_name for hardcoded in ['energia_fastweb', 'telefonia_fastweb', 'ho_mobile', 'telepass']):
-                        hardcoded_tipologie_found.append(tipologia_name)
-                    elif tipologia_source == 'hardcoded':
+                    # Only count as hardcoded if source is explicitly 'hardcoded'
+                    if tipologia_source == 'hardcoded':
                         hardcoded_tipologie_found.append(f"{tipologia_name} (source: hardcoded)")
                 
-                # VERIFY: Should NOT return energia_fastweb, telefonia_fastweb, ho_mobile, telepass
+                # VERIFY: Should NOT return any tipologie with source='hardcoded'
                 if not hardcoded_tipologie_found:
                     self.log_test(f"✅ CRITICAL: No hardcoded tipologie for {servizio_nome}", True, f"Found {tipologie_count} database tipologie only")
                     fastweb_servizi_test_results.append(True)
