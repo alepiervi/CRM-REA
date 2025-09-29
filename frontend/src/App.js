@@ -10372,6 +10372,13 @@ const CommesseManagement = ({
         onSubmit={createOfferta}
         segmentoId={selectedSegmento}
       />
+
+      {/* View Commessa Details Modal */}
+      <ViewCommessaModal 
+        isOpen={showViewCommessaModal}
+        onClose={() => setShowViewCommessaModal(false)}
+        commessa={selectedCommessa}
+      />
     </div>
   );
 };
