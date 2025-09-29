@@ -7030,6 +7030,71 @@ async def delete_tipologia_contratto(
         raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione: {str(e)}")
 
 # ================================
+# MIGRATION ENDPOINT
+# ================================
+
+@api_router.post("/admin/migrate-segmenti")
+async def migrate_segmenti_for_existing_tipologie(
+    current_user: User = Depends(get_current_user)
+):
+    """Create default segmenti for all existing tipologie that don't have them"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono eseguire migrazioni")
+    
+    try:
+        # Get all tipologie contratto
+        all_tipologie = await db.tipologie_contratto.find({}).to_list(length=None)
+        
+        created_segmenti = 0
+        
+        for tipologia in all_tipologie:
+            tipologia_id = tipologia["id"]
+            
+            # Check if segmenti already exist for this tipologia
+            existing_segmenti = await db.segmenti.find({
+                "tipologia_contratto_id": tipologia_id
+            }).to_list(length=None)
+            
+            # If no segmenti exist, create the default ones
+            if not existing_segmenti:
+                default_segmenti = [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "tipo": "privato",
+                        "nome": "Privato",
+                        "tipologia_contratto_id": tipologia_id,
+                        "is_active": True,
+                        "created_at": datetime.now(timezone.utc)
+                    },
+                    {
+                        "id": str(uuid.uuid4()),
+                        "tipo": "business", 
+                        "nome": "Business",
+                        "tipologia_contratto_id": tipologia_id,
+                        "is_active": True,
+                        "created_at": datetime.now(timezone.utc)
+                    }
+                ]
+                
+                # Insert default segmenti
+                await db.segmenti.insert_many(default_segmenti)
+                created_segmenti += 2
+                
+                logger.info(f"Created segmenti for tipologia {tipologia.get('nome', tipologia_id)}")
+        
+        return {
+            "success": True,
+            "message": f"Migrazione completata. Creati {created_segmenti} segmenti per {len(all_tipologie)} tipologie contratto.",
+            "tipologie_processed": len(all_tipologie),
+            "segmenti_created": created_segmenti
+        }
+        
+    except Exception as e:
+        logger.error(f"Error during segmenti migration: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore durante la migrazione: {str(e)}")
+
+# ================================
 # SEGMENTI ENDPOINTS
 # ================================
 
