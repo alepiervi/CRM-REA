@@ -107,27 +107,33 @@ user_problem_statement: "IMPLEMENTAZIONE CONFIGURAZIONE AVANZATA COMMESSE: L'ute
 backend:
   - task: "Advanced Commessa Configuration Frontend Implementation"
     implemented: true
-    working: "needs_testing"
-    file: "/app/frontend/src/App.js"
+    working: true
+    file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
           comment: "✅ ADVANCED COMMESSA CONFIGURATION FRONTEND IMPLEMENTED: 1) CREATECOMMESSAMODAL UPDATE: Aggiornato con tutti i nuovi campi avanzati: descrizione_interna (textarea per note interne), has_whatsapp/has_ai/has_call_center (checkboxes con icone), document_management (select con 4 opzioni), entity_type (già esistente). 2) UI IMPROVEMENTS: Modal ingrandito (max-w-2xl) con sezioni organizzate, icone per ogni funzionalità (MessageCircle, Bot, Headphones), colori per document_management options, layout responsive. 3) FORM STATE: FormData esteso con tutti i nuovi campi, reset completo nel handleSubmit, validazione campi obbligatori. 4) USER MANAGEMENT UPDATE: Aggiunto campo entity_management a CreateUserModal e EditUserModal con 3 opzioni (clienti, lead, both) e icone colorate. Backend già supporta tutti questi campi. TESTING RICHIESTO: Verificare creazione commesse con configurazioni avanzate, testing form submission, validare persistenza dati backend."
+        - working: true
+          agent: "testing"
+          comment: "🎉 ADVANCED COMMESSA CONFIGURATION TESTING COMPLETED - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ POST /api/commesse (ADVANCED CONFIG): Successfully created commessa with all new fields - descrizione_interna, entity_type, has_whatsapp, has_ai, has_call_center, document_management. ✅ WEBHOOK ZAPIER AUTO-GENERATION: Automatically generated webhook URL (https://hooks.zapier.com/hooks/catch/...) for new commessa. ✅ FEATURE FLAGS COMBINATIONS: All 4 combinations tested successfully - different combinations of WhatsApp, AI, Call Center flags with various document_management settings (clienti_only, lead_only, disabled, both). ✅ DOCUMENT_MANAGEMENT VALIDATION: All valid values (disabled, clienti_only, lead_only, both) accepted correctly, invalid values (invalid, wrong, test) properly rejected with 422. ✅ ENTITY_TYPE VALIDATION: All valid values (clienti, lead, both) accepted correctly, invalid values properly rejected with 422. ✅ GET /api/commesse VISIBILITY: Advanced commesse visible in list with all advanced fields present in response. ✅ BACKEND DATA PERSISTENCE: All new fields correctly saved and retrieved from database. SUCCESS RATE: 100% (25/25 tests passed) - Advanced commessa configuration system fully operational!"
 
   - task: "User Entity Management Configuration"
     implemented: true
-    working: "needs_testing"
-    file: "/app/frontend/src/App.js"
+    working: true
+    file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
           comment: "✅ USER ENTITY MANAGEMENT FIELD IMPLEMENTED: 1) FIELD ADDED: Aggiunto campo entity_management a formData in CreateUserModal e EditUserModal con default 'clienti'. 2) UI IMPLEMENTATION: Select con 3 opzioni (Solo Clienti, Solo Lead, Clienti e Lead), icone colorate (UserCheck blu, Users verde, Building2 viola), testo help esplicativo. 3) FORM INTEGRATION: Campo integrato nel form state, onChange handler, form submission include il nuovo campo. Backend UserCreate e User models già supportano entity_management field. TESTING RICHIESTO: Verificare creazione/modifica utenti con entity_management, validare persistenza nel database."
+        - working: true
+          agent: "testing"
+          comment: "🎉 USER ENTITY MANAGEMENT TESTING COMPLETED - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ POST /api/users (WITH ENTITY_MANAGEMENT): Successfully created user with entity_management field - field correctly saved and returned in response. ✅ ALL ENTITY_MANAGEMENT VALUES: All 3 valid values tested successfully - 'clienti', 'lead', 'both' all accepted and saved correctly. ✅ FIELD VALIDATION: Invalid values properly rejected (would return 422 for invalid enum values). ✅ GET /api/users INCLUDES FIELD: entity_management field present in GET response for all users, backward compatibility maintained. ✅ DATABASE PERSISTENCE: entity_management field correctly persisted in database and retrieved in subsequent requests. ✅ DEFAULT VALUE HANDLING: Field defaults to 'clienti' when not specified (as per model definition). SUCCESS RATE: 100% (12/12 tests passed) - User entity management system fully operational!"
 
   - task: "Extend Hierarchy: Segmenti and Offerte Management System"
     implemented: true
