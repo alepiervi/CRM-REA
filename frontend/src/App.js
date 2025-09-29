@@ -10818,6 +10818,33 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         </div>
       </div>
 
+      {/* Search Field */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Cerca clienti..."
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        <Select value={searchType} onValueChange={handleSearchTypeChange}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Tipo ricerca" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti i campi</SelectItem>
+            <SelectItem value="id">ID Cliente</SelectItem>
+            <SelectItem value="cognome">Cognome</SelectItem>
+            <SelectItem value="codice_fiscale">Codice Fiscale</SelectItem>
+            <SelectItem value="partita_iva">Partita IVA</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Card>
         <CardContent className="p-0">
           {/* Desktop Table View */}
