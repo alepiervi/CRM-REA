@@ -905,6 +905,50 @@ class TipologiaContrattoUpdate(BaseModel):
     servizio_id: Optional[str] = None
     is_active: Optional[bool] = None
 
+# Segmento Models
+class SegmentoType(str, Enum):
+    PRIVATO = "privato"
+    BUSINESS = "business"
+
+class SegmentoModel(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    tipo: SegmentoType
+    nome: str  # "Privato" or "Business"
+    tipologia_contratto_id: str
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+class SegmentoCreate(BaseModel):
+    tipo: SegmentoType
+    tipologia_contratto_id: str
+    is_active: bool = True
+
+class SegmentoUpdate(BaseModel):
+    is_active: Optional[bool] = None
+
+# Offerta Models
+class OffertaModel(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    descrizione: Optional[str] = None
+    segmento_id: str
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+    created_by: str
+
+class OffertaCreate(BaseModel):
+    nome: str
+    descrizione: Optional[str] = None
+    segmento_id: str
+    is_active: bool = True
+
+class OffertaUpdate(BaseModel):
+    nome: Optional[str] = None
+    descrizione: Optional[str] = None
+    is_active: Optional[bool] = None
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
