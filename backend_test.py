@@ -11239,6 +11239,9 @@ Duplicate,Test,+393471234567"""
         # Run the critical hardcoded disable test as requested
         self.test_hardcoded_elements_disable_system()
         
+        # NEW: Run DELETE endpoints testing as requested in review
+        self.test_delete_endpoints_complete()
+        
         # Print final summary
         print(f"\n📊 Final Test Results:")
         print(f"   Tests Run: {self.tests_run}")
