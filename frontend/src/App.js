@@ -51,6 +51,7 @@ import {
   Plus,
   UserPlus,
   Eye,
+  EyeOff,
   Search,
   Download,
   Cog,
