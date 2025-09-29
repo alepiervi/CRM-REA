@@ -713,7 +713,18 @@ class Commessa(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     nome: str
     descrizione: Optional[str] = None
+    descrizione_interna: Optional[str] = None  # NEW: Internal detailed description
+    webhook_zapier: str = Field(default_factory=lambda: f"https://hooks.zapier.com/hooks/catch/{uuid.uuid4().hex[:8]}/{uuid.uuid4().hex[:8]}/")  # NEW: Auto-generated webhook
     entity_type: EntityType = EntityType.CLIENTI  # NEW: what entity type this commessa manages
+    
+    # NEW: Feature flags
+    has_whatsapp: bool = False  # NEW: Can use WhatsApp functionality
+    has_ai: bool = False  # NEW: Can use AI features
+    has_call_center: bool = False  # NEW: Can use call center
+    
+    # NEW: Document management configuration
+    document_management: DocumentManagement = DocumentManagement.DISABLED  # NEW: Document access control
+    
     is_active: bool = True
     responsabile_id: Optional[str] = None  # User ID del Responsabile Commessa
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -722,13 +733,29 @@ class Commessa(BaseModel):
 class CommessaCreate(BaseModel):
     nome: str
     descrizione: Optional[str] = None
-    entity_type: EntityType = EntityType.CLIENTI  # NEW: specify what this commessa will manage
+    descrizione_interna: Optional[str] = None  # NEW
+    entity_type: EntityType = EntityType.CLIENTI  # NEW
+    
+    # NEW: Feature configurations
+    has_whatsapp: bool = False
+    has_ai: bool = False
+    has_call_center: bool = False
+    document_management: DocumentManagement = DocumentManagement.DISABLED
+    
     responsabile_id: Optional[str] = None
 
 class CommessaUpdate(BaseModel):
     nome: Optional[str] = None
     descrizione: Optional[str] = None
-    entity_type: Optional[EntityType] = None  # NEW: allow updating entity type
+    descrizione_interna: Optional[str] = None  # NEW
+    entity_type: Optional[EntityType] = None  # NEW
+    
+    # NEW: Feature updates
+    has_whatsapp: Optional[bool] = None
+    has_ai: Optional[bool] = None
+    has_call_center: Optional[bool] = None
+    document_management: Optional[DocumentManagement] = None
+    
     responsabile_id: Optional[str] = None
     is_active: Optional[bool] = None
 
