@@ -6480,6 +6480,56 @@ async def update_commessa(commessa_id: str, commessa_update: CommessaUpdate, cur
     commessa_doc = await db.commesse.find_one({"id": commessa_id})
     return Commessa(**commessa_doc)
 
+@api_router.delete("/commesse/{commessa_id}")
+async def delete_commessa(
+    commessa_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete commessa completely"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Check if commessa exists
+        commessa_doc = await db.commesse.find_one({"id": commessa_id})
+        if not commessa_doc:
+            raise HTTPException(status_code=404, detail="Commessa not found")
+        
+        commessa = Commessa(**commessa_doc)
+        
+        # Check if there are associated servizi
+        servizi_count = await db.servizi.count_documents({"commessa_id": commessa_id})
+        if servizi_count > 0:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Impossibile eliminare: commessa ha {servizi_count} servizi associati"
+            )
+        
+        # Check if there are associated clienti/lead
+        clienti_count = await db.clienti.count_documents({"commessa_id": commessa_id})
+        lead_count = await db.lead.count_documents({"campagna": commessa.nome})
+        
+        if clienti_count > 0 or lead_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Impossibile eliminare: commessa ha {clienti_count} clienti e {lead_count} lead associati"
+            )
+        
+        # Delete commessa
+        result = await db.commesse.delete_one({"id": commessa_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Commessa not found")
+        
+        return {"success": True, "message": f"Commessa '{commessa.nome}' eliminata con successo"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting commessa: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione della commessa: {str(e)}")
+
 # Gestione Servizi
 @api_router.post("/servizi", response_model=Servizio)
 async def create_servizio(servizio_data: ServizioCreate, current_user: User = Depends(get_current_user)):
