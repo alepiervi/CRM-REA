@@ -9717,11 +9717,11 @@ const CommesseManagement = ({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Lista Commesse */}
         <Card>
           <CardHeader>
-            <CardTitle>Commesse Attive</CardTitle>
+            <CardTitle>Commesse</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
