@@ -9977,15 +9977,27 @@ Duplicate,Test,+393471234567"""
         # 4. **TEST DELETE FUNCTIONALITY**
         print("\n🗑️ 4. TEST DELETE FUNCTIONALITY...")
         
-        # First, create a test cliente
-        test_cliente_data = {
-            "nome": "Test",
-            "cognome": "Cliente Delete",
-            "telefono": "+39123456789",
-            "email": "test.delete@example.com",
-            "commessa_id": created_commessa_id or "test-commessa-id",
-            "sub_agenzia_id": "test-sub-agenzia-id"
-        }
+        # First, get existing commesse and sub agenzie to use real IDs
+        success, commesse_list, status = self.make_request('GET', 'commesse', expected_status=200)
+        success2, sub_agenzie_list, status2 = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        if success and success2 and commesse_list and sub_agenzie_list:
+            # Use first available commessa and sub agenzia
+            test_commessa_id = commesse_list[0]['id']
+            test_sub_agenzia_id = sub_agenzie_list[0]['id']
+            
+            test_cliente_data = {
+                "nome": "Test",
+                "cognome": "Cliente Delete",
+                "telefono": "+39123456789",
+                "email": "test.delete@example.com",
+                "commessa_id": test_commessa_id,
+                "sub_agenzia_id": test_sub_agenzia_id
+            }
+        else:
+            # Skip this test if we can't get proper IDs
+            self.log_test("❌ Cannot get commesse/sub-agenzie for delete test", False, "Skipping delete functionality test")
+            test_cliente_data = None
         
         print("   Creating test cliente...")
         success, cliente_response, status = self.make_request('POST', 'clienti', test_cliente_data, 200)
