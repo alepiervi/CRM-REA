@@ -9860,7 +9860,8 @@ const CommesseManagement = ({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             if (confirm(`Rimuovere "${tipologia.nome}" da questo servizio?`)) {
                               rimuoviTipologiaDaServizio(tipologia.id, selectedServizio);
                             }
@@ -9871,7 +9872,8 @@ const CommesseManagement = ({
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             if (confirm(`Eliminare definitivamente "${tipologia.nome}"?`)) {
                               deleteTipologiaContratto(tipologia.id);
                             }
