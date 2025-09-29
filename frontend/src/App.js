@@ -11222,6 +11222,19 @@ const CreateCommessaModal = ({ isOpen, onClose, onSubmit }) => {
               onChange={(e) => setFormData({...formData, descrizione: e.target.value})}
             />
           </div>
+          <div>
+            <Label htmlFor="entity_type">Gestisce *</Label>
+            <Select value={formData.entity_type} onValueChange={(value) => setFormData({...formData, entity_type: value})}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona tipo entità" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="clienti">Clienti</SelectItem>
+                <SelectItem value="lead">Lead</SelectItem>
+                <SelectItem value="both">Entrambi</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Annulla
