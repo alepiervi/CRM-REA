@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_documents_with_real_data():
-    base_url = "https://elon-all-in-one.preview.emergentagent.com/api"
+    base_url = "https://crm-hierarchy.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     

@@ -1,108 +1,70 @@
 <analysis>
-The AI engineer's work traversed multiple critical phases: initial mobile-friendliness fixes, document management implementation, and extensive system enhancements. Initially, the focus was on resolving JSX errors, responsive UI for tables and sidebar, and distinct mobile/desktop analytics views. A significant part involved fixing a  error and a 400 backend error due to a duplicate  endpoint. Subsequently, new features were added: multi-file upload with progress bars, client detail screenshots, and preparation for Aruba Drive integration. The application was rebranded to ELON - System All in One, including login and dashboard screens. An automatic 15-minute inactivity logout system was implemented. The latest work centered on implementing hierarchical Commesse → Servizi → Tipologie Contratto management, including CRUD operations, and integrating existing hardcoded contract types. The current challenge involves displaying correctly associated contract types, especially for the 'Fotovoltaico' commessa, and handling newly created types.
+The previous AI engineer successfully stabilized the core application features (rebranding, security, document management) and then focused heavily on iterating the hierarchical management system. The primary challenges revolved around state management inconsistencies in , handling the co-existence of hardcoded business logic (Fastweb types) alongside database-driven models, and implementing full data deletion capabilities. Key accomplishments include resolving 'Fotovoltaico' filtering bugs, expanding the hierarchy to five levels (Commesse -> ... -> Segmento -> Offerta) with full CRUD backend implementation, adding universal search to Clienti Management, and integrating Admin tools for migrating/disabling hardcoded elements. The current work halted mid-feature implementation after the user requested advanced configuration options for the  model, involving webhooks, internal descriptions, and feature flags (AI, Whatsapp, Call Center). The codebase is stable from a compilation perspective, but the new Commessa configuration feature is incomplete.
 </analysis>
 
 <product_requirements>
-The CRM supports lead distribution, administration, and analytics for various user roles, featuring dashboards, Excel export, email notifications, an OpenAI GPT-4o Mini chatbot, and Aruba Drive integration.
+The application, branded as ELON - System All in One, is a CRM supporting lead distribution, administration, and analytics.
 
-**Requirements addressed:**
-*   **Hierarchical Selectors**: Commesse → Servizi → Tipologia Contratto → Sub Agenzie/Unit must function for all account levels.  must show authorized types for the selected service.
-*   **Mobile-friendliness**: Responsive tables, visible Logout button, and all sections functional. Clienti/Lead lists must show name, surname, and action buttons. Analytics requires distinct mobile/desktop views.
-*   **Document Management**: New section for role-based document upload/download. Admin sees all, others based on  authorization.
-    *   **Enhancements**: Multi-file upload with progress bar, automatic client/lead detail screenshots, Aruba Drive integration (via browser automation for folder creation/file upload), search for client/lead (by ID, Cognome, Codice Fiscale, Partita IVA, Telefono, Cellulare) instead of a dropdown.
-    *   **Aruba Drive Configuration**: Admin dashboard section to manage Aruba Drive credentials and URLs.
-*   **Rebranding**: Application name changed to ELON - System All in One across login, dashboard, and browser tabs.
-*   **Security**: Automatic logout after 15 minutes of inactivity.
-*   **Commesse Management**: Admin can manage Commesse, Servizi, and Tipologie di Contratto.
-    *   **Hierarchical CRUD**: Commessa → Servizio → Tipologia Contratto selection with ability to add/remove/create new contract types, and display existing hardcoded ones.
+**Implemented Feature Requirements:**
+1.  **Hierarchical Management:** Extended structure: Commessa → Servizio → Tipologia Contratto → Segmento → Nome Offerta. Segmenti (Privato, Business) must be auto-created and toggleable.
+2.  **Hardcoded Element Migration:** Ability for Admins to migrate hardcoded Commesse, Servizi, and Tipologie (primarily Fastweb/Fotovoltaico) to the database for full cancellability, and to globally disable hardcoded elements from being displayed.
+3.  **Full CRUD/Deletion:** Admin must be able to delete all entities (Commesse, Servizi, Tipologie, Clienti, Lead), including associated documents, while maintaining data integrity (deletion is blocked if dependencies exist).
+4.  **Clienti Search:** Universal search in Clienti/Lead sections filtering by ID, Cognome, Codice Fiscale, P.IVA, Telefono (Cellulare included), and Email.
+5.  **Role/Entity Management:**  and  models must specify whether they manage  or .
+
+**Pending Requirements (Currently being implemented):**
+1.  **Advanced Commessa Configuration:** Add fields to  for internal descriptions, Zapier  integration, and feature flags (, , ). Control document access based on .
 </product_requirements>
 
 <key_technical_concepts>
--   **Full-stack**: React (frontend), FastAPI (backend), MongoDB (database).
--   **UI/UX**: Tailwind CSS, Shadcn UI, Lucide React icons.
--   **Authorization**: Role-based access control (RBAC).
--   **React State Management**: , .
--   **API Communication**: , Pydantic for data validation.
--   **Browser Automation**: Playwright for screenshots and Aruba Drive integration.
--   **File Handling**: Multi-file upload, progress tracking.
+-   **Stack:** React (Frontend), FastAPI (Backend), MongoDB (Database).
+-   **Data Management:** Extensive use of UUIDs for MongoDB keys. Pydantic models for data validation.
+-   **Frontend:** React hooks (, ), Tailwind CSS, Lucide Icons, Shadcn UI components.
+-   **Architecture:** Backend API routes prefixed with . Global state managed in  (Dashboard component) and passed down to children (e.g., ).
 </key_technical_concepts>
 
 <code_architecture>
-The application uses React for the frontend, FastAPI for the backend, and MongoDB as the database.
 
 
-
--   
-    -   **Importance**: Core of the backend, handles API endpoints, database interactions, business logic, and authorization.
+-   :
+    -   **Importance**: Defines all API routes and database models.
     -   **Changes Made**:
-        -   **Document Management**:
-            -   Removed duplicate  GET endpoint (lines 3748-3932).
-            -   Added  POST endpoint for multiple file uploads, including  for screenshots.
-            -   Added  endpoint for testing Aruba Drive integration.
-        -   **Aruba Drive Configuration**:
-            -   Added endpoints for  (create),  (fetch all/active),  (update),  (delete), and  (activate).
-        -   **Client/Lead Search**: Added  GET endpoint for dynamic search (ID, Cognome, Codice Fiscale, Partita IVA, Telefono, Cellulare).
-        -   **Commesse & Tipologie Contratto**:
-            -   Added CRUD endpoints for  (create, get by ID, update, delete).
-            -   Added endpoints to link/unlink  to .
-            -   Modified  to return hardcoded types and database types.
-            -   Added  helper function.
-        -   **Screenshot HTML Template**: Updated footer in the screenshot HTML template to ELON - System All in One.
-        -   **Dependencies**: Added , ,  to .
+        -   **Models Added**:  and  models.
+        -   **Models Modified**:
+            -   : Added  (Clienti/Lead), , , , , , .
+            -   : Added .
+        -   **Endpoints Added/Modified**:
+            -   CRUD endpoints for Segmenti and Offerte.
+            -   DELETE endpoints for , , , and  (includes document removal logic).
+            -   Admin endpoints: , .
+            -   Filtering logic updated in  and  to respect the hardcoded disable flag and correctly handle Fastweb/Fotovoltaico specificity.
 
--   
-    -   **Importance**: Main React component, managing routing, global state, UI structure, and most frontend logic.
+-   :
+    -   **Importance**: Manages all components, including the main  and complex sections like  and .
     -   **Changes Made**:
-        -   **Document Management UI**:
-            -   Replaced single file upload modal with a new  supporting multiple file selection, drag & drop, and progress bars.
-            -   Replaced dropdown for client/lead selection with a dynamic search input field ().
-        -   **Mobile-friendliness**: Maintained previous mobile UI refinements for sidebar, tables, and analytics.
-        -   **Rebranding**:
-            -   Changed application title from CRM System to ELON and System All in One in header and mobile navigation.
-            -   Updated Login screen title and welcome messages.
-            -   Modified browser tab title in .
-        -   **Auto-logout**: Implemented a global 15-minute inactivity timer with activity detection (mouse, keyboard, scroll, touch events) in .
-        -   **Aruba Drive Configuration UI**:
-            -   Added Configurazioni menu item for admin role.
-            -   Implemented  component for viewing, creating, updating, and deleting Aruba Drive configurations.
-            -   Added  for managing configuration details.
-            -   Refactored , , ,  functions and their states to the main Dashboard component for correct scope and lifecycle management.
-            -   Fixed multiple  errors by correcting hoisting and prop passing, and ensuring  and  are available in context.
-        -   **Commesse Management UI**:
-            -   Modified  to include a 3-column layout for Commessa → Servizio → Tipologie di Contratto.
-            -   Added states and functions (, , , , , ) for managing contract types.
-            -   Integrated  for adding new contract types.
-            -   Ensured existing hardcoded tipologie are displayed and manageable.
-            -   Added new Lucide React icons: , , , , . Fixed duplicate icon imports.
-
--   
-    -   **Importance**: Global and component-specific styling.
-    -   **Changes Made**: Added responsive CSS for new UI elements, mobile menu, sidebar visibility, and tables. No recent explicit changes in the trajectory, but previously refined for mobile layouts.
-
--   
-    -   **Importance**: Stores environment variables like .
-    -   **Changes Made**: No direct modification of existing values, but the AI intended to add , ,  for testing (later changed to admin UI management).
+        -   **Commesse Management**: Layout changed to . Local component state for  moved up to the main  component to ensure correct state propagation across new hierarchy levels. Added UI for Segmenti and Offerte management. Added Admin buttons (Migra Hardcoded, Disable Hardcoded).
+        -   **Clienti Management**: Implemented state and UI for universal search filter (ID, Cognome, CF, P.IVA, Telefono, Email). Added  function and delete buttons to the client list (desktop/mobile views).
+        -   **Error Fixes**: Addressed multiple syntax errors (e.g.,  icon duplication,  in non-async function) and runtime errors (e.g., , missing functions in ).
 </code_architecture>
 
 <pending_tasks>
--   **Fix Filtering Bug for Fotovoltaico**: Address the issue where the 'Fotovoltaico' commessa displays incorrect contract types (Fastweb types) in the sidebar selectors.
--   **Display Created Tipologie**: Ensure newly created contract types are visible in the Commesse → Servizi → Tipologie di Contratto hierarchy.
--   **Resolve JSON Parse Error**: Investigate and fix JSON parsing errors in backend endpoints related to specific services.
+-   Implement the frontend UI changes for the advanced  configuration (internal descriptions, webhook, feature flags for AI/Whatsapp/Call Center) in the .
+-   Update user management UI to include the  field.
+-   Ensure all deletion flows and dependency protections work as expected (Servizi/Commesse deletion remains a user testing concern).
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer was addressing two critical issues with the Commesse section:
-1.  **Tipologie create non visibili**: Newly created contract types were not appearing.
-2.  **Fotovoltaico mostra tipologie sbagliate**: When selecting the 'Fotovoltaico' commessa and its services, incorrect contract types (specifically, Fastweb-related ones) were being displayed instead of the appropriate ones. This issue extends to the sidebar selectors.
+Immediately prior to this summary, the AI engineer was addressing the user's report that hardcoded Fastweb services/commesse were not deletable. The engineer confirmed this was due to data integrity protection (services had associated Tipologie) and hardcoded elements were still visible when they shouldn't be (a caching/display logic bug).
 
-The AI engineer has identified the root causes through testing:
-*   The 'CER40' service under 'Fotovoltaico' does not match any condition in the hardcoded filtering logic.
-*   There are JSON parsing errors in the backend endpoint responsible for fetching service-specific contract types.
-*   A general filtering bug causes 'Fotovoltaico' to receive Fastweb tipologie.
+The user then provided a new, large feature request: enhancing the  model with advanced configuration options, regardless of the pending deletion issue status.
 
-The current task is to implement solutions for these problems, starting with fixing the filtering logic for 'Fotovoltaico' and then addressing the JSON parsing and visibility of created tipologie. The agent has received a procedi command from the user to continue.
+The current work started to implement this new request:
+1.  Defined new fields for the  model in  to support , , , , , and  (Chat Message 655).
+2.  The engineer's immediate next step (Chat Message 656) was to update the frontend form () to support these new fields.
+
+The application is stable and compiling, but the new  feature is only partially implemented (backend model updated, frontend update pending).
 </current_work>
 
 <optional_next_step>
-Implement the fix for the filtering logic specific to the 'Fotovoltaico' commessa.
+Update the  component in  to include the advanced configuration fields for .
 </optional_next_step>
