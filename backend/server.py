@@ -6622,6 +6622,54 @@ async def get_servizi_by_commessa(commessa_id: str, current_user: User = Depends
     
     return [Servizio(**s) for s in servizi]
 
+@api_router.delete("/servizi/{servizio_id}")
+async def delete_servizio(
+    servizio_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete servizio completely"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Check if servizio exists
+        servizio_doc = await db.servizi.find_one({"id": servizio_id})
+        if not servizio_doc:
+            raise HTTPException(status_code=404, detail="Servizio not found")
+        
+        servizio = Servizio(**servizio_doc)
+        
+        # Check if there are associated tipologie contratto
+        tipologie_count = await db.tipologie_contratto.count_documents({"servizio_id": servizio_id})
+        if tipologie_count > 0:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Impossibile eliminare: servizio ha {tipologie_count} tipologie contratto associate"
+            )
+        
+        # Check if there are associated clienti
+        clienti_count = await db.clienti.count_documents({"servizio_id": servizio_id})
+        if clienti_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Impossibile eliminare: servizio ha {clienti_count} clienti associati"
+            )
+        
+        # Delete servizio
+        result = await db.servizi.delete_one({"id": servizio_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Servizio not found")
+        
+        return {"success": True, "message": f"Servizio '{servizio.nome}' eliminato con successo"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting servizio: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione del servizio: {str(e)}")
+
 @api_router.get("/commesse/{commessa_id}/servizi/{servizio_id}/units-sub-agenzie")
 async def get_units_sub_agenzie_by_commessa_servizio(
     commessa_id: str, 
