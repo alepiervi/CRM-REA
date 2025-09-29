@@ -9791,14 +9791,24 @@ const CommesseManagement = ({
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Gestione Commesse</h2>
         <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={migrateHardcodedToDatabase}
-            title="Migra elementi hardcoded nel database per renderli modificabili"
-          >
-            <Database className="w-4 h-4 mr-2" />
-            Migra Hardcoded
-          </Button>
+          <div className="flex gap-1">
+            <Button 
+              variant="outline"
+              onClick={() => migrateHardcodedToDatabase(false)}
+              title="Migra elementi hardcoded nel database per renderli modificabili"
+            >
+              <Database className="w-4 h-4 mr-2" />
+              Migra Hardcoded
+            </Button>
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => migrateHardcodedToDatabase(true)}
+              title="Forza migrazione anche se esistono duplicati"
+            >
+              Force
+            </Button>
+          </div>
           <Button 
             variant="outline"
             onClick={migrateSegmenti}
