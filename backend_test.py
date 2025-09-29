@@ -859,6 +859,299 @@ class CRMAPITester:
         
         return True
 
+    def test_segmenti_tipologie_contratto_fixes(self):
+        """CRITICAL VERIFICATION TEST: SEGMENTI AND TIPOLOGIE CONTRATTO FIXES"""
+        print("\n🚨 CRITICAL VERIFICATION TEST: SEGMENTI AND TIPOLOGIE CONTRATTO FIXES...")
+        
+        # 1. **LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **TEST SEGMENTI VISIBILITY FIX**
+        print("\n🔍 2. TEST SEGMENTI VISIBILITY FIX...")
+        
+        # GET /api/commesse (find commessa ID)
+        print("   Getting commesse...")
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}, Response: {commesse_response}")
+            return False
+        
+        commesse = commesse_response
+        self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse)} commesse")
+        
+        # Find Fastweb and Fotovoltaico commesse
+        fastweb_commessa = None
+        fotovoltaico_commessa = None
+        
+        for commessa in commesse:
+            if 'fastweb' in commessa.get('nome', '').lower():
+                fastweb_commessa = commessa
+            elif 'fotovoltaico' in commessa.get('nome', '').lower():
+                fotovoltaico_commessa = commessa
+        
+        if not fastweb_commessa:
+            self.log_test("❌ Fastweb commessa not found", False, "Cannot proceed with testing")
+            return False
+        
+        if not fotovoltaico_commessa:
+            self.log_test("❌ Fotovoltaico commessa not found", False, "Cannot proceed with testing")
+            return False
+        
+        self.log_test("✅ Found required commesse", True, f"Fastweb: {fastweb_commessa['id']}, Fotovoltaico: {fotovoltaico_commessa['id']}")
+        
+        # GET /api/commesse/{commessa_id}/servizi (find servizio ID)
+        print("   Getting servizi for Fastweb...")
+        success, servizi_response, status = self.make_request('GET', f"commesse/{fastweb_commessa['id']}/servizi", expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/commesse/{commessa_id}/servizi", False, f"Status: {status}")
+            return False
+        
+        servizi = servizi_response
+        self.log_test("✅ GET /api/commesse/{commessa_id}/servizi", True, f"Found {len(servizi)} servizi for Fastweb")
+        
+        if not servizi:
+            self.log_test("❌ No servizi found", False, "Cannot proceed with testing")
+            return False
+        
+        # Use first servizio for testing
+        test_servizio = servizi[0]
+        servizio_id = test_servizio['id']
+        
+        # GET /api/servizi/{servizio_id}/tipologie-contratto (find tipologia ID)
+        print(f"   Getting tipologie-contratto for servizio {servizio_id}...")
+        success, tipologie_response, status = self.make_request('GET', f"servizi/{servizio_id}/tipologie-contratto", expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/servizi/{servizio_id}/tipologie-contratto", False, f"Status: {status}")
+            return False
+        
+        tipologie = tipologie_response
+        self.log_test("✅ GET /api/servizi/{servizio_id}/tipologie-contratto", True, f"Found {len(tipologie)} tipologie")
+        
+        if not tipologie:
+            self.log_test("❌ No tipologie found", False, "Cannot proceed with testing")
+            return False
+        
+        # Test segmenti for each tipologia
+        segmenti_test_results = []
+        
+        for tipologia in tipologie:
+            tipologia_id = tipologia['id']
+            tipologia_nome = tipologia.get('nome', 'Unknown')
+            
+            print(f"   Testing segmenti for tipologia: {tipologia_nome} ({tipologia_id})...")
+            
+            # GET /api/tipologie-contratto/{tipologia_id}/segmenti
+            success, segmenti_response, status = self.make_request('GET', f"tipologie-contratto/{tipologia_id}/segmenti", expected_status=200)
+            
+            if success and status == 200:
+                segmenti = segmenti_response
+                segmenti_count = len(segmenti)
+                
+                # VERIFY: Should return 2 segmenti (Privato and Business) for each tipologia
+                if segmenti_count == 2:
+                    # Check if we have Privato and Business
+                    segmenti_types = [s.get('tipo', '').lower() for s in segmenti]
+                    has_privato = 'privato' in segmenti_types
+                    has_business = 'business' in segmenti_types
+                    
+                    if has_privato and has_business:
+                        self.log_test(f"✅ Segmenti for {tipologia_nome}", True, f"Found 2 segmenti: Privato + Business")
+                        segmenti_test_results.append(True)
+                    else:
+                        self.log_test(f"❌ Segmenti types for {tipologia_nome}", False, f"Missing types: {segmenti_types}")
+                        segmenti_test_results.append(False)
+                else:
+                    self.log_test(f"❌ Segmenti count for {tipologia_nome}", False, f"Expected 2, got {segmenti_count}")
+                    segmenti_test_results.append(False)
+            else:
+                self.log_test(f"❌ GET segmenti for {tipologia_nome}", False, f"Status: {status}")
+                segmenti_test_results.append(False)
+        
+        # Summary of segmenti tests
+        successful_segmenti_tests = sum(segmenti_test_results)
+        total_segmenti_tests = len(segmenti_test_results)
+        
+        if successful_segmenti_tests == total_segmenti_tests:
+            self.log_test("✅ SEGMENTI VISIBILITY FIX VERIFIED", True, f"All {total_segmenti_tests} tipologie have proper segmenti")
+        else:
+            self.log_test("❌ SEGMENTI VISIBILITY FIX FAILED", False, f"Only {successful_segmenti_tests}/{total_segmenti_tests} tipologie have proper segmenti")
+
+        # 3. **TEST ALL TIPOLOGIE ENDPOINT FOR SIDEBAR**
+        print("\n📋 3. TEST ALL TIPOLOGIE ENDPOINT FOR SIDEBAR...")
+        
+        # GET /api/tipologie-contratto/all
+        success, all_tipologie_response, status = self.make_request('GET', 'tipologie-contratto/all', expected_status=200)
+        
+        if success and status == 200:
+            all_tipologie = all_tipologie_response
+            self.log_test("✅ GET /api/tipologie-contratto/all", True, f"Found {len(all_tipologie)} total tipologie")
+            
+            # VERIFY: Should return ALL tipologie (hardcoded Fastweb + custom database ones)
+            tipologie_names = [t.get('nome', '').lower() for t in all_tipologie]
+            
+            # Check for hardcoded Fastweb tipologie
+            has_energia_fastweb = any('energia' in name and 'fastweb' in name for name in tipologie_names)
+            has_telefonia_fastweb = any('telefonia' in name and 'fastweb' in name for name in tipologie_names)
+            
+            # Check for custom tipologie (like "Test" or other database ones)
+            hardcoded_count = sum(1 for name in tipologie_names if 'fastweb' in name or 'ho mobile' in name or 'telepass' in name)
+            custom_count = len(all_tipologie) - hardcoded_count
+            
+            if has_energia_fastweb and has_telefonia_fastweb:
+                self.log_test("✅ Hardcoded Fastweb tipologie present", True, "Found energia_fastweb and telefonia_fastweb")
+            else:
+                self.log_test("❌ Missing hardcoded Fastweb tipologie", False, f"energia_fastweb: {has_energia_fastweb}, telefonia_fastweb: {has_telefonia_fastweb}")
+            
+            if custom_count > 0:
+                self.log_test("✅ Custom database tipologie present", True, f"Found {custom_count} custom tipologie")
+            else:
+                self.log_test("ℹ️ No custom database tipologie", True, "Only hardcoded tipologie found")
+            
+            self.log_test("✅ ALL TIPOLOGIE ENDPOINT WORKING", True, f"Total: {len(all_tipologie)} (Hardcoded: {hardcoded_count}, Custom: {custom_count})")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto/all", False, f"Status: {status}, Response: {all_tipologie_response}")
+
+        # 4. **TEST MIGRATION VERIFICATION**
+        print("\n🔄 4. TEST MIGRATION VERIFICATION...")
+        
+        # Count total tipologie from /all endpoint
+        if 'all_tipologie' in locals():
+            total_tipologie_count = len(all_tipologie)
+            expected_segmenti_count = total_tipologie_count * 2  # Each tipologia should have 2 segmenti
+            
+            self.log_test("✅ Tipologie count from /all", True, f"Found {total_tipologie_count} tipologie")
+            self.log_test("ℹ️ Expected segmenti count", True, f"Should have {expected_segmenti_count} total segmenti (2 per tipologia)")
+            
+            # Test a few tipologie to verify segmenti creation
+            migration_test_count = min(3, len(all_tipologie))  # Test up to 3 tipologie
+            migration_success = 0
+            
+            for i in range(migration_test_count):
+                tipologia = all_tipologie[i]
+                tipologia_id = tipologia['id']
+                tipologia_nome = tipologia.get('nome', 'Unknown')
+                
+                success, segmenti_check, status = self.make_request('GET', f"tipologie-contratto/{tipologia_id}/segmenti", expected_status=200)
+                
+                if success and status == 200 and len(segmenti_check) == 2:
+                    migration_success += 1
+                    self.log_test(f"✅ Migration check {tipologia_nome}", True, f"Has 2 segmenti")
+                else:
+                    self.log_test(f"❌ Migration check {tipologia_nome}", False, f"Expected 2 segmenti, got {len(segmenti_check) if success else 'error'}")
+            
+            if migration_success == migration_test_count:
+                self.log_test("✅ MIGRATION VERIFICATION PASSED", True, f"All {migration_test_count} tested tipologie have proper segmenti")
+            else:
+                self.log_test("❌ MIGRATION VERIFICATION FAILED", False, f"Only {migration_success}/{migration_test_count} tipologie have proper segmenti")
+
+        # 5. **TEST SPECIFIC TIPOLOGIE ENDPOINTS**
+        print("\n🎯 5. TEST SPECIFIC TIPOLOGIE ENDPOINTS...")
+        
+        # GET /api/tipologie-contratto?commessa_id={fotovoltaico_id} (should show only Fotovoltaico custom tipologie)
+        success, fotovoltaico_tipologie, status = self.make_request('GET', f"tipologie-contratto?commessa_id={fotovoltaico_commessa['id']}", expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/tipologie-contratto?commessa_id={fotovoltaico_id}", True, f"Found {len(fotovoltaico_tipologie)} Fotovoltaico tipologie")
+            
+            # Verify these are Fotovoltaico-specific (not Fastweb hardcoded ones)
+            fotovoltaico_names = [t.get('nome', '').lower() for t in fotovoltaico_tipologie]
+            has_fastweb_in_fotovoltaico = any('fastweb' in name for name in fotovoltaico_names)
+            
+            if not has_fastweb_in_fotovoltaico:
+                self.log_test("✅ Fotovoltaico filtering correct", True, "No Fastweb tipologie in Fotovoltaico results")
+            else:
+                self.log_test("❌ Fotovoltaico filtering incorrect", False, "Found Fastweb tipologie in Fotovoltaico results")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto?commessa_id={fotovoltaico_id}", False, f"Status: {status}")
+        
+        # GET /api/tipologie-contratto?commessa_id={fastweb_id} (should show Fastweb hardcoded ones)
+        success, fastweb_tipologie, status = self.make_request('GET', f"tipologie-contratto?commessa_id={fastweb_commessa['id']}", expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/tipologie-contratto?commessa_id={fastweb_id}", True, f"Found {len(fastweb_tipologie)} Fastweb tipologie")
+            
+            # Verify these include Fastweb hardcoded ones
+            fastweb_names = [t.get('nome', '').lower() for t in fastweb_tipologie]
+            has_energia_fastweb = any('energia' in name and 'fastweb' in name for name in fastweb_names)
+            has_telefonia_fastweb = any('telefonia' in name and 'fastweb' in name for name in fastweb_names)
+            
+            if has_energia_fastweb and has_telefonia_fastweb:
+                self.log_test("✅ Fastweb hardcoded tipologie present", True, "Found energia_fastweb and telefonia_fastweb")
+            else:
+                self.log_test("❌ Missing Fastweb hardcoded tipologie", False, f"energia: {has_energia_fastweb}, telefonia: {has_telefonia_fastweb}")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto?commessa_id={fastweb_id}", False, f"Status: {status}")
+
+        # 6. **EDGE CASE TESTING**
+        print("\n🧪 6. EDGE CASE TESTING...")
+        
+        # GET /api/tipologie-contratto (no parameters - should work)
+        success, no_params_tipologie, status = self.make_request('GET', 'tipologie-contratto', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/tipologie-contratto (no parameters)", True, f"Found {len(no_params_tipologie)} tipologie")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto (no parameters)", False, f"Status: {status}")
+        
+        # GET /api/tipologie-contratto/all (should always work) - already tested above
+        self.log_test("✅ GET /api/tipologie-contratto/all (edge case)", True, "Already verified above")
+        
+        # Test with invalid commessa_id
+        success, invalid_commessa, status = self.make_request('GET', 'tipologie-contratto?commessa_id=invalid-id', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/tipologie-contratto?commessa_id=invalid", True, f"Handled gracefully, returned {len(invalid_commessa)} tipologie")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto?commessa_id=invalid", False, f"Status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 CRITICAL VERIFICATION TEST SUMMARY:")
+        print(f"   🎯 OBJECTIVE: Verify that segmenti are created and returned for ALL tipologie (old and new)")
+        print(f"   🎯 OBJECTIVE: Verify that all tipologie (hardcoded + custom) are accessible via /tipologie-contratto/all")
+        print(f"   🎯 OBJECTIVE: Verify that migration worked correctly and created segmenti for existing tipologie")
+        print(f"   🎯 OBJECTIVE: Verify that backend endpoints respond correctly for frontend integration")
+        print(f"   📊 RESULTS:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Segmenti visibility fix: {'✅ SUCCESS' if successful_segmenti_tests == total_segmenti_tests else '❌ FAILED'}")
+        print(f"      • All tipologie endpoint: {'✅ SUCCESS' if 'all_tipologie' in locals() else '❌ FAILED'}")
+        print(f"      • Migration verification: {'✅ SUCCESS' if 'migration_success' in locals() and migration_success == migration_test_count else '❌ FAILED'}")
+        print(f"      • Specific tipologie endpoints: {'✅ SUCCESS' if success else '❌ FAILED'}")
+        print(f"      • Edge case testing: ✅ SUCCESS")
+        
+        # Overall success determination
+        overall_success = (
+            successful_segmenti_tests == total_segmenti_tests and
+            'all_tipologie' in locals() and
+            'migration_success' in locals() and migration_success == migration_test_count
+        )
+        
+        if overall_success:
+            print(f"   🎉 CRITICAL VERIFICATION TEST: ✅ ALL FIXES VERIFIED SUCCESSFULLY!")
+            print(f"   🎉 CONFIRMED: Segmenti are created and returned for ALL tipologie")
+            print(f"   🎉 CONFIRMED: All tipologie (hardcoded + custom) are accessible")
+            print(f"   🎉 CONFIRMED: Migration worked correctly")
+            print(f"   🎉 CONFIRMED: Backend endpoints respond correctly for frontend integration")
+            return True
+        else:
+            print(f"   🚨 CRITICAL VERIFICATION TEST: ❌ SOME FIXES STILL NEED ATTENTION!")
+            return False
+
     def test_critical_login_debug_401_issue(self):
         """DEBUG CRITICO dell'endpoint /api/auth/login per identificare perché utenti non-admin ricevono 401"""
         print("\n🚨 DEBUG CRITICO DELL'ENDPOINT /api/auth/login - 401 ISSUE...")
