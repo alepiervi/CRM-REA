@@ -7899,6 +7899,84 @@ async def update_cliente(
     cliente_doc = await db.clienti.find_one({"id": cliente_id})
     return Cliente(**cliente_doc)
 
+@api_router.delete("/clienti/{cliente_id}")
+async def delete_cliente(
+    cliente_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete cliente completely from system"""
+    
+    # Only admin and responsabile_commessa can delete clienti
+    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions to delete clienti")
+    
+    # Check if cliente exists
+    cliente_doc = await db.clienti.find_one({"id": cliente_id})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente not found")
+    
+    cliente = Cliente(**cliente_doc)
+    
+    # Verify user can modify this cliente (same permission check as update)
+    if not await can_user_modify_cliente(current_user, cliente):
+        raise HTTPException(status_code=403, detail="No permission to delete this cliente")
+    
+    try:
+        # Delete associated documents
+        await db.documents.delete_many({"cliente_id": cliente_id})
+        
+        # Delete cliente
+        result = await db.clienti.delete_one({"id": cliente_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Cliente not found")
+        
+        return {"success": True, "message": f"Cliente {cliente.nome} {cliente.cognome} eliminato completamente dal sistema"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting cliente: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione del cliente: {str(e)}")
+
+@api_router.delete("/lead/{lead_id}")
+async def delete_lead(
+    lead_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete lead completely from system"""
+    
+    # Only admin and responsabile_commessa can delete lead
+    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions to delete lead")
+    
+    # Check if lead exists
+    lead_doc = await db.lead.find_one({"id": lead_id})
+    if not lead_doc:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    lead = Lead(**lead_doc)
+    
+    # Verify user can access this lead (similar permission check)
+    if current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        # Check commessa access based on lead's campagna/gruppo
+        # This would need more sophisticated logic based on your requirements
+        pass
+    
+    try:
+        # Delete associated documents
+        await db.documents.delete_many({"lead_id": lead_id})
+        
+        # Delete lead
+        result = await db.lead.delete_one({"id": lead_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        
+        return {"success": True, "message": f"Lead {lead.nome} {lead.cognome} eliminato completamente dal sistema"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting lead: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione del lead: {str(e)}")
+
 # Gestione Autorizzazioni Utenti
 @api_router.post("/user-commessa-authorizations", response_model=UserCommessaAuthorization)
 async def create_user_authorization(
