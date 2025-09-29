@@ -671,6 +671,18 @@ backend:
           agent: "testing"
           comment: "🎉 HIERARCHICAL SELECTOR SYSTEM TEST DEFINITIVO COMPLETATO - 100% SUCCESS! ✅ NUOVO ORDINE VERIFICATO: Sequenza corretta 1→2→3→4 funzionante per TUTTI I RUOLI (testato con admin/admin123). ✅ SELETTORI IN ORDINE PERFETTO: 1. Seleziona Commessa (3 disponibili) → 2. Seleziona Servizio (4 disponibili) → 3. Seleziona Tipologia Contratto (2 disponibili) → 4. Seleziona Unit/Sub Agenzia (1 disponibile). ✅ FILTRI CORRETTI: TLS service mostra esattamente 2 tipologie (Energia + Telefonia Fastweb), filtering perfetto come richiesto. ✅ LOGS RICHIESTI TROVATI: '🔄 USEEFFECT (ALL ROLES): Ricarico tipologie per commessa/servizio changed', '🎯 TIPOLOGIA CONTRATTO CHANGED: energia_fastweb', '🎯 HANDLE SERVIZIO CHANGE START'. ✅ CASCATA FUNZIONANTE: Ogni selezione apre il selettore successivo nell'ordine corretto. ✅ CONSOLE VERIFICATION: Tutti i debug logs richiesti presenti, API calls con parametri corretti, filtering logic operativa. Il nuovo sistema gerarchico selettori è COMPLETAMENTE OPERATIVO per tutti i ruoli utente come richiesto nel test definitivo!"
 
+  - task: "CRITICAL FASTWEB TIPOLOGIE CONTRATTO FIX VERIFICATION"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 CRITICAL FASTWEB TIPOLOGIE CONTRATTO FIX VERIFICATION COMPLETED - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ FASTWEB TIPOLOGIE ENDPOINT: GET /api/tipologie-contratto?commessa_id={fastweb_id} returns 6 tipologie total - Found all 4 hardcoded tipologie (energia_fastweb, telefonia_fastweb, ho_mobile, telepass) + 2 database tipologie (prova, Test Fastweb Tipologia). ✅ FASTWEB SERVICE SPECIFIC: GET /api/tipologie-contratto?commessa_id={fastweb_id}&servizio_id={tls_id} returns 4 tipologie for TLS service - Found energia_fastweb + telefonia_fastweb (2 hardcoded) + 2 database tipologie as expected. ✅ TIPOLOGIE CREATION FOR FASTWEB: POST /api/tipologie-contratto successfully creates new tipologia, verification shows hardcoded + newly created tipologia combination working correctly. ✅ FOTOVOLTAICO COMPARISON: GET /api/tipologie-contratto?commessa_id={fotovoltaico_id} returns 1 Fotovoltaico tipologie - CRITICAL SUCCESS: NO hardcoded tipologie found, correctly returns only database tipologie as before. ✅ EDGE CASES: GET /api/tipologie-contratto (no parameters) returns 4 tipologie, GET /api/tipologie-contratto/all returns 27 total tipologie (4 hardcoded + 23 database). ✅ CRITICAL SUCCESS: Fastweb commesse now return hardcoded + database tipologie correctly, Fotovoltaico behavior preserved (database only), all functionality works without breaking other features. SUCCESS RATE: 100% (20/20 tests passed) - Fastweb tipologie contratto fix is working correctly!"
+
   - task: "CRITICAL VERIFICATION TEST: SEGMENTI AND TIPOLOGIE CONTRATTO FIXES"
     implemented: true
     working: true
