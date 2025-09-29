@@ -10700,13 +10700,13 @@ Duplicate,Test,+393471234567"""
             print(f"      • Total tipologie: {len(all_tipologie_before)}")
             print(f"      • Hardcoded tipologie: {hardcoded_count_before}")
             print(f"      • Database tipologie: {database_count_before}")
-            print(f"      • Fastweb hardcoded (energia/telefonia): {fastweb_hardcoded_before}")
+            print(f"      • Fastweb hardcoded: {fastweb_hardcoded_before}")
             
             print(f"   AFTER DISABLE:")
             print(f"      • Total tipologie: {len(all_tipologie_after)}")
             print(f"      • Hardcoded tipologie: {hardcoded_count_after}")
             print(f"      • Database tipologie: {database_count_after}")
-            print(f"      • Fastweb hardcoded (energia/telefonia): {fastweb_hardcoded_after}")
+            print(f"      • Fastweb hardcoded: {fastweb_hardcoded_after}")
             
             # Calculate reduction
             hardcoded_reduction = hardcoded_count_before - hardcoded_count_after
