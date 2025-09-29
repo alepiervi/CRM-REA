@@ -9743,6 +9743,8 @@ const CommesseManagement = ({
       });
     }
   };
+
+  const migrateSegmenti = async () => {
     try {
       console.log('🚀 Starting segmenti migration...');
       console.log('🚀 API URL:', `${API}/admin/migrate-segmenti`);
