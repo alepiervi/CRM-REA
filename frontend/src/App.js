@@ -10709,6 +10709,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       console.log("✅ POST REQUEST SUCCESS:", response);
       
       setClienti([response.data, ...clienti]);
+      setAllClienti([response.data, ...allClienti]); // Update all clients too
       toast({
         title: "Successo",
         description: "Cliente creato con successo",
