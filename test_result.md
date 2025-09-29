@@ -105,20 +105,20 @@
 user_problem_statement: "FIX FOTOVOLTAICO TIPOLOGIE FILTERING BUG: L'utente ha riportato due problemi critici nella sezione Commesse: 1) 'Tipologie create non visibili' - le tipologie di contratto create non appaiono nell'UI, 2) 'Fotovoltaico mostra tipologie sbagliate' - quando si seleziona la commessa 'Fotovoltaico' e i suoi servizi, vengono mostrate tipologie Fastweb invece di quelle appropriate. OBIETTIVO: Sistemare la logica di filtering nell'endpoint /api/tipologie-contratto per distinguere correttamente tra Fastweb (tipologie hardcoded) e Fotovoltaico (tipologie database), risolvere JSON parsing errors, e assicurarsi che le tipologie create siano visibili."
 
 backend:
-  - task: "Debug Fotovoltaico Tipologie Issue - Root Cause Analysis"
+  - task: "Fix Fotovoltaico Tipologie Filtering Logic - Backend Implementation"
     implemented: true
-    working: false
+    working: "needs_testing"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-        - working: "NA"
-          agent: "testing"
-          comment: "DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE: Testing debug completo per identificare perché Fotovoltaico mostra tipologie sbagliate e perché le tipologie create non sono visibili. Test login admin/admin123, debug commessa Fotovoltaico (GET /api/commesse, GET /api/commesse/{fotovoltaico_id}/servizi, GET /api/servizi/{fotovoltaico_servizio_id}/tipologie-contratto), debug tipologie create in database (controllare collection tipologie_contratto), debug logica filtering hardcoded (verificare mapping servizi), test creazione tipologia (POST /api/tipologie-contratto)."
         - working: false
           agent: "testing"
           comment: "🚨 CRITICAL ISSUES IDENTIFIED IN FOTOVOLTAICO TIPOLOGIE SYSTEM! ❌ ROOT CAUSE FOUND: Fotovoltaico service 'CER40' doesn't match any hardcoded filtering conditions in get_tipologie_by_servizio function (lines 6764-6802 in server.py). The service falls through all conditions (agent/negozi/presidi, tls, energia, telefonia) and gets NO hardcoded tipologie, but base endpoint /api/tipologie-contratto still returns all Fastweb tipologie. ❌ FILTERING LOGIC BUG: GET /api/tipologie-contratto?commessa_id=fotovoltaico returns ALL 4 Fastweb tipologie (energia_fastweb, telefonia_fastweb, ho_mobile, telepass) instead of Fotovoltaico-specific ones. ❌ SERVICE ENDPOINT ERROR: GET /api/servizi/{fotovoltaico_servizio_id}/tipologie-contratto returns JSON parse error (Status: 0, 'Expecting value: line 1 column 1 (char 0)'). ✅ TIPOLOGIE CREATION WORKS: POST /api/tipologie-contratto successfully creates tipologie and saves to database. ✅ DATABASE ACCESS: tipologie_contratto collection accessible and working. KEY FINDINGS: Fotovoltaico ID: 4f90875a-9820-41bc-b4bb-4119594772c1, Service ID: 9276de1d-f46c-40b1-a564-cfd75d75cf33 (CER40), Hardcoded filtering logic missing Fotovoltaico case, Service-specific endpoint has JSON parsing issues."
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ FOTOVOLTAICO FILTERING BUG FIX IMPLEMENTED: 1) Completamente riscritta la logica dell'endpoint /api/tipologie-contratto (linee 6650-6709) per distinguere tra commesse Fastweb e Fotovoltaico. 2) FOTOVOLTAICO: Ora restituisce SOLO tipologie dal database (custom create), nessuna tipologia hardcoded Fastweb. 3) FASTWEB: Mantiene la logica esistente con tipologie hardcoded filtrate per servizio. 4) Aggiunta gestione commessa_id per determinare la sorgente delle tipologie. 5) Fix JSON serialization: aggiunto controllo ObjectId e datetime serialization nell'endpoint /servizi/{servizio_id}/tipologie-contratto per prevenire JSON parsing errors. 6) Logica robusta con fallback per compatibilità con sistema esistente. RISULTATO: Fotovoltaico ora mostra solo tipologie create dagli utenti, Fastweb mantiene tipologie hardcoded, JSON parsing errors risolti."
 
   - task: "Aruba Drive Configuration Management System - Complete CRUD Endpoints"
     implemented: true
