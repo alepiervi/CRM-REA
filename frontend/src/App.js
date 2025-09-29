@@ -11192,7 +11192,7 @@ const CreateCommessaModal = ({ isOpen, onClose, onSubmit }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
-    setFormData({ nome: '', descrizione: '', responsabile_id: '' });
+    setFormData({ nome: '', descrizione: '', responsabile_id: '', entity_type: 'clienti' });
     onClose();
   };
 
