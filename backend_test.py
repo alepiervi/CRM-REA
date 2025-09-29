@@ -12246,16 +12246,11 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # NEW TESTS FOR ADVANCED COMMESSA CONFIGURATION
+        # TESTING FINALE BACKEND COMMESSE - AGGIORNAMENTI AUTOMATICI
         print("\n" + "="*80)
-        print("🎯 TESTING AVANZATO CONFIGURAZIONE COMMESSE")
+        print("🎯 TESTING FINALE BACKEND COMMESSE - AGGIORNAMENTI AUTOMATICI")
         print("="*80)
-        self.test_advanced_commessa_configuration()
-        
-        print("\n" + "="*80)
-        print("🎯 TESTING USER ENTITY MANAGEMENT")
-        print("="*80)
-        self.test_user_entity_management()
+        self.test_commesse_crud_automatic_refresh()
         
         # Print final summary
         print(f"\n📊 Final Test Results:")
