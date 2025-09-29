@@ -10477,7 +10477,7 @@ Duplicate,Test,+393471234567"""
 
     def run_all_tests(self):
         """Run all test suites"""
-        print("🚀 Starting CRM Backend API Tests...")
+        print("🚀 Starting CRM Backend API Testing...")
         print(f"🌐 Base URL: {self.base_url}")
         
         # Core authentication test
@@ -10485,19 +10485,19 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return
         
-        # Run the comprehensive system flexibility test as requested
-        self.test_comprehensive_system_flexibility()
+        # Run the specific test requested in the review
+        self.test_enhanced_migration_endpoint_with_debug_info()
         
         # Print final summary
-        print(f"\n📊 Test Summary:")
-        print(f"   Tests run: {self.tests_run}")
-        print(f"   Tests passed: {self.tests_passed}")
-        print(f"   Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        print(f"\n📊 Final Test Results:")
+        print(f"   Tests Run: {self.tests_run}")
+        print(f"   Tests Passed: {self.tests_passed}")
+        print(f"   Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
         if self.tests_passed == self.tests_run:
             print("🎉 All tests passed!")
         else:
-            print(f"❌ {self.tests_run - self.tests_passed} tests failed")
+            print(f"⚠️  {self.tests_run - self.tests_passed} tests failed")
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
