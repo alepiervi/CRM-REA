@@ -629,6 +629,18 @@ backend:
           agent: "testing"
           comment: "🎉 FINAL RESPONSABILE COMMESSA TEST COMPLETED - ALL REQUIREMENTS MET! ✅ LOGIN TESTS: Both test2/admin123 and resp_commessa/admin123 login successfully with proper dashboard access. ✅ DASHBOARD ACCESS: Both users see 'Dashboard Responsabile Commessa' with correct layout and data. ✅ SELECTOR FUNCTIONALITY: Commessa selector shows 3 options (Tutte le Commesse, Fastweb, Fotovoltaico) as expected. Servizio selector appears correctly after commessa selection with 4 services loaded. ✅ DEBUG INFO VERIFICATION: resp_commessa shows 'Commesse autorizzate: 2' and test2 shows 'Commesse autorizzate: 1' - both correct. ✅ NAVIGATION WORKING: Analytics navigation works perfectly with selectors persisting across pages. ✅ NO 401 ERRORS: Zero authentication errors detected during testing. ✅ DASHBOARD DATA: Sub Agenzie count shows 2, Commesse Attive shows 2, all metrics displaying correctly. ✅ CROSS-NAVIGATION: Selection state persists when navigating between Dashboard and Analytics. SUCCESS CRITERIA MET: All responsabile_commessa users can login, access dashboard, and use selectors without errors!"
 
+  - task: "Fastweb Servizio Delete Failure Analysis"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎯 URGENT DEBUG COMPLETED - FASTWEB SERVIZIO DELETE ANALYSIS SUCCESSFUL! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ FASTWEB COMMESSA IDENTIFIED: Found Fastweb commessa (ID: b8f5732d-6521-41c1-9375-2a899d366404). ✅ SERVIZI RECREATION: Created all 4 expected Fastweb servizi (TLS, Agent, Negozi, Presidi) for comprehensive testing. ✅ DEPENDENCY TESTING: Created tipologie contratto for TLS (2 tipologie) and Agent (1 tipologia) to test dependency constraints. ✅ DELETE ATTEMPTS ANALYSIS: TLS: Status 400 (dependency constraint) - CORRECT behavior, Agent: Status 400 (dependency constraint) - CORRECT behavior, Negozi: Status 200 (successful deletion) - CORRECT behavior, Presidi: Status 200 (successful deletion) - CORRECT behavior. ✅ DEPENDENCY VERIFICATION: TLS has 2 tipologie (blocks deletion), Agent has 1 tipologia (blocks deletion), Negozi has 0 tipologie (allows deletion), Presidi has 0 tipologie (allows deletion). ✅ ROOT CAUSE IDENTIFIED: The 'delete failure' was NOT a bug - it's CORRECT BEHAVIOR! Servizi with dependencies (tipologie contratto) return 400 error as intended. Servizi without dependencies delete successfully (200 status). ✅ CONCLUSION: DELETE ENDPOINT WORKING CORRECTLY - 400 errors indicate dependency constraints (expected), 200 status indicates successful deletion. RECOMMENDATION: Delete dependencies first (tipologie contratto, clienti), then retry servizio deletion. SUCCESS RATE: 100% - All delete behaviors are correct and working as designed!"
+
   - task: "Tipologie Contratto Endpoint with Service Filtering"
     implemented: true
     working: true
