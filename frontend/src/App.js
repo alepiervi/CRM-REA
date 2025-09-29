@@ -11468,7 +11468,101 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               <Upload className="w-4 h-4 mr-2" />
               Importa Clienti
             </Button>
+            <Button
+              variant="outline"
+              onClick={exportClients}
+              disabled={clienti.length === 0 || isExporting}
+            >
+              {isExporting ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  Esportando...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Esporta CSV
+                </>
+              )}
+            </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Date Filter Section */}
+      <div className="bg-gray-50 p-4 rounded-lg border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="enable-date-filter"
+                checked={dateFilter.enabled}
+                onChange={(e) => setDateFilter(prev => ({
+                  ...prev,
+                  enabled: e.target.checked,
+                  startDate: e.target.checked ? prev.startDate : '',
+                  endDate: e.target.checked ? prev.endDate : ''
+                }))}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="enable-date-filter" className="text-sm font-medium text-gray-700">
+                Filtra per periodo di creazione
+              </label>
+            </div>
+            
+            {dateFilter.enabled && (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600">Dal:</label>
+                  <input
+                    type="date"
+                    value={dateFilter.startDate}
+                    onChange={(e) => setDateFilter(prev => ({
+                      ...prev,
+                      startDate: e.target.value
+                    }))}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-600">Al:</label>
+                  <input
+                    type="date"
+                    value={dateFilter.endDate}
+                    onChange={(e) => setDateFilter(prev => ({
+                      ...prev,
+                      endDate: e.target.value
+                    }))}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setDateFilter(prev => ({
+                      ...prev,
+                      startDate: '',
+                      endDate: ''
+                    }));
+                  }}
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Azzera
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {dateFilter.enabled && (dateFilter.startDate || dateFilter.endDate) && (
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">Clienti filtrati: </span>
+              <span className="text-blue-600 font-semibold">
+                {filterClientsByDate(clienti).length} di {clienti.length}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
