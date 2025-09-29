@@ -9038,7 +9038,7 @@ Duplicate,Test,+393471234567"""
             success, create_offerta_response, status = self.make_request('POST', 'offerte', create_offerta_data, expected_status=200)
             
             if success and status == 200:
-                offerta_id = create_offerta_response.get('id')
+                offerta_id = create_offerta_response.get('offerta_id')
                 self.log_test("✅ POST /api/offerte", True, f"Offerta creata: {offerta_id}")
                 self.created_resources.setdefault('offerte', []).append(offerta_id)
             else:
