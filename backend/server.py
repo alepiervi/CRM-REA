@@ -152,6 +152,7 @@ class User(BaseModel):
     servizi_autorizzati: List[str] = []   # IDs servizi specifici per la commessa
     sub_agenzie_autorizzate: List[str] = []  # IDs sub agenzie per responsabile/backoffice sub agenzia
     can_view_analytics: bool = False      # Se può vedere analytics (responsabili sì, backoffice no)
+    entity_management: EntityType = EntityType.CLIENTI  # NEW: what entities this user can manage
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login: Optional[datetime] = None
 
@@ -169,6 +170,7 @@ class UserCreate(BaseModel):
     servizi_autorizzati: List[str] = []
     sub_agenzie_autorizzate: List[str] = []
     can_view_analytics: Optional[bool] = None  # Auto-impostato in base al ruolo
+    entity_management: EntityType = EntityType.CLIENTI  # NEW: specify what entities user can manage
 
 class UserLogin(BaseModel):
     username: str
