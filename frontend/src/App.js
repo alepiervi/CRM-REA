@@ -124,6 +124,64 @@ const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
+  const [activityTimer, setActivityTimer] = useState(null);
+
+  // Activity timeout system - 14 minute timer like the other app
+  const INACTIVITY_TIME = 14 * 60 * 1000; // 14 minutes in milliseconds
+
+  const startActivityTimer = () => {
+    console.log('Starting 14 minute timer');
+    
+    // Clear existing timer
+    if (activityTimer) {
+      clearTimeout(activityTimer);
+    }
+
+    // Start new timer
+    const timer = setTimeout(() => {
+      console.log('Inactivity timeout - logging out user');
+      logout();
+    }, INACTIVITY_TIME);
+
+    setActivityTimer(timer);
+  };
+
+  const resetActivityTimer = () => {
+    console.log('Activity detected - resetting timer');
+    if (token && user) {
+      startActivityTimer();
+    }
+  };
+
+  // Activity listeners
+  useEffect(() => {
+    if (!token || !user) return;
+
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    
+    // Add event listeners for user activity
+    const handleActivity = () => {
+      resetActivityTimer();
+    };
+
+    activityEvents.forEach(event => {
+      document.addEventListener(event, handleActivity, true);
+    });
+
+    // Start initial timer
+    startActivityTimer();
+
+    // Cleanup function
+    return () => {
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, handleActivity, true);
+      });
+      
+      if (activityTimer) {
+        clearTimeout(activityTimer);
+      }
+    };
+  }, [token, user]);
 
   useEffect(() => {
     if (token) {
@@ -239,11 +297,22 @@ const AuthProvider = ({ children }) => {
     }
   };
 
+  // Clear timer on logout
   const logout = () => {
+    console.log('Logging out user');
+    
+    if (activityTimer) {
+      clearTimeout(activityTimer);
+      setActivityTimer(null);
+    }
+    
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");
     delete axios.defaults.headers.common["Authorization"];
+    
+    // Force page reload to ensure clean state
+    window.location.reload();
   };
 
   const checkAuth = async () => {
