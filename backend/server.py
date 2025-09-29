@@ -6668,6 +6668,152 @@ async def get_tipologie_contratto(
         logging.error(f"Error getting tipologie contratto: {e}")
         return tipologie_base
 
+# CRUD Endpoints per Tipologie di Contratto (Nuovi)
+@api_router.post("/tipologie-contratto")
+async def create_tipologia_contratto(
+    tipologia_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Create new tipologia contratto"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono creare tipologie di contratto")
+    
+    try:
+        new_tipologia = {
+            "id": str(uuid.uuid4()),
+            "nome": tipologia_data["nome"],
+            "descrizione": tipologia_data.get("descrizione", ""),
+            "servizio_id": tipologia_data.get("servizio_id"),
+            "is_active": tipologia_data.get("is_active", True),
+            "created_at": datetime.now(timezone.utc),
+            "created_by": current_user.id
+        }
+        
+        await db.tipologie_contratto.insert_one(new_tipologia)
+        
+        return {
+            "success": True,
+            "message": "Tipologia contratto creata con successo",
+            "tipologia": new_tipologia
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating tipologia contratto: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nella creazione: {str(e)}")
+
+@api_router.get("/servizi/{servizio_id}/tipologie-contratto")
+async def get_tipologie_by_servizio(
+    servizio_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get tipologie contratto for specific servizio"""
+    
+    try:
+        # Get tipologie associate al servizio
+        tipologie = await db.tipologie_contratto.find({
+            "servizio_id": servizio_id,
+            "is_active": True
+        }).to_list(length=None)
+        
+        return tipologie
+        
+    except Exception as e:
+        logger.error(f"Error fetching tipologie for servizio {servizio_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento: {str(e)}")
+
+@api_router.post("/servizi/{servizio_id}/tipologie-contratto/{tipologia_id}")
+async def associate_tipologia_to_servizio(
+    servizio_id: str,
+    tipologia_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Associate existing tipologia to servizio"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono associare tipologie")
+    
+    try:
+        # Update tipologia to associate with servizio
+        result = await db.tipologie_contratto.update_one(
+            {"id": tipologia_id},
+            {"$set": {"servizio_id": servizio_id, "updated_at": datetime.now(timezone.utc)}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Tipologia non trovata")
+        
+        return {"success": True, "message": "Tipologia associata al servizio"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error associating tipologia: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'associazione: {str(e)}")
+
+@api_router.delete("/servizi/{servizio_id}/tipologie-contratto/{tipologia_id}")
+async def remove_tipologia_from_servizio(
+    servizio_id: str,
+    tipologia_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Remove tipologia from servizio (set servizio_id to null)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono rimuovere tipologie")
+    
+    try:
+        # Remove association (don't delete, just unlink)
+        result = await db.tipologie_contratto.update_one(
+            {"id": tipologia_id, "servizio_id": servizio_id},
+            {"$unset": {"servizio_id": ""}, "$set": {"updated_at": datetime.now(timezone.utc)}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Associazione non trovata")
+        
+        return {"success": True, "message": "Tipologia rimossa dal servizio"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error removing tipologia: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nella rimozione: {str(e)}")
+
+@api_router.delete("/tipologie-contratto/{tipologia_id}")
+async def delete_tipologia_contratto(
+    tipologia_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete tipologia contratto permanently"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono eliminare tipologie")
+    
+    try:
+        # Check if tipologia is used by any clienti
+        clienti_count = await db.clienti.count_documents({"tipologia_contratto_id": tipologia_id})
+        
+        if clienti_count > 0:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Impossibile eliminare: tipologia utilizzata da {clienti_count} clienti"
+            )
+        
+        # Delete tipologia
+        result = await db.tipologie_contratto.delete_one({"id": tipologia_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Tipologia non trovata")
+        
+        return {"success": True, "message": "Tipologia eliminata con successo"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting tipologia: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione: {str(e)}")
+
 @api_router.get("/segmenti")  
 async def get_segmenti(current_user: User = Depends(get_current_user)):
     """Get available segmenti"""
