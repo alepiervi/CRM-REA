@@ -9715,17 +9715,23 @@ const CommesseManagement = ({
     }
   };
 
-  const migrateHardcodedToDatabase = async () => {
+  const migrateHardcodedToDatabase = async (force = false) => {
     try {
-      console.log('🚀 Starting hardcoded to database migration...');
+      console.log('🚀 Starting hardcoded to database migration...', force ? '(FORCE MODE)' : '');
       
-      const response = await axios.post(`${API}/admin/migrate-hardcoded-to-database`);
+      const response = await axios.post(`${API}/admin/migrate-hardcoded-to-database?force=${force}`);
       
       console.log('✅ Migration response:', response.data);
       
+      // Show detailed debug info
+      if (response.data.debug_info) {
+        console.log('📊 Migration details:');
+        response.data.debug_info.forEach(info => console.log(' - ' + info));
+      }
+      
       toast({
         title: "Successo",
-        description: response.data.message,
+        description: response.data.message + (response.data.debug_info ? ` (Dettagli in console)` : ''),
       });
       
       // Refresh all data after migration
