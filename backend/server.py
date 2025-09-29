@@ -6934,40 +6934,68 @@ async def get_tipologie_contratto(
                         return all_tipologie
         
         # FASTWEB LOGIC (existing hardcoded logic for backward compatibility)
-        # Use the centralized hardcoded function
-        hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
-        
-        # If no servizio_id specified, return all hardcoded tipologie
-        if not servizio_id:
-            return [{"value": tip["value"], "label": tip["label"]} for tip in hardcoded_tipologie]
-        
-        # Filter by servizio logic for Fastweb
-        servizio = await db.servizi.find_one({"id": servizio_id})
-        if not servizio:
-            # Return base tipologie if servizio not found
-            return [{"value": tip["value"], "label": tip["label"]} for tip in hardcoded_tipologie[:2]]
-        
-        servizio_nome = servizio.get("nome", "").lower()
-        
-        # Filter hardcoded tipologie based on servizio
-        filtered_tipologie = []
-        for tipologia in hardcoded_tipologie:
-            # Map tipologie to servizi based on existing logic
-            if servizio_nome in ["agent", "negozi", "presidi"]:
-                # These Fastweb services get all Fastweb tipologie
-                filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
-            elif servizio_nome == "tls":
-                # TLS service gets base tipologie (Energia + Telefonia Fastweb)
-                if tipologia["value"] in ["energia_fastweb", "telefonia_fastweb"]:
+        # Use the centralized hardcoded function - BUT ONLY IF HARDCODED ENABLED
+        if use_hardcoded:
+            hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+            
+            # If no servizio_id specified, return all hardcoded tipologie
+            if not servizio_id:
+                return [{"value": tip["value"], "label": tip["label"]} for tip in hardcoded_tipologie]
+            
+            # Filter by servizio logic for Fastweb
+            servizio = await db.servizi.find_one({"id": servizio_id})
+            if not servizio:
+                # Return base tipologie if servizio not found
+                return [{"value": tip["value"], "label": tip["label"]} for tip in hardcoded_tipologie[:2]]
+            
+            servizio_nome = servizio.get("nome", "").lower()
+            
+            # Filter hardcoded tipologie based on servizio
+            filtered_tipologie = []
+            for tipologia in hardcoded_tipologie:
+                # Map tipologie to servizi based on existing logic
+                if servizio_nome in ["agent", "negozi", "presidi"]:
+                    # These Fastweb services get all Fastweb tipologie
                     filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
-            elif "energia" in servizio_nome and tipologia["value"] in ["energia_fastweb"]:
-                # Energia services get Energia Fastweb
-                filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
-            elif "telefonia" in servizio_nome and tipologia["value"] in ["telefonia_fastweb"]:
-                # Telefonia services get Telefonia Fastweb
-                filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
-        
-        return filtered_tipologie
+                elif servizio_nome == "tls":
+                    # TLS service gets base tipologie (Energia + Telefonia Fastweb)
+                    if tipologia["value"] in ["energia_fastweb", "telefonia_fastweb"]:
+                        filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
+                elif "energia" in servizio_nome and tipologia["value"] in ["energia_fastweb"]:
+                    # Energia services get Energia Fastweb
+                    filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
+                elif "telefonia" in servizio_nome and tipologia["value"] in ["telefonia_fastweb"]:
+                    # Telefonia services get Telefonia Fastweb
+                    filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
+            
+            return filtered_tipologie
+        else:
+            # HARDCODED DISABLED: Return only database tipologie
+            if servizio_id:
+                db_tipologie = await db.tipologie_contratto.find({
+                    "servizio_id": servizio_id,
+                    "is_active": True
+                }).to_list(length=None)
+                
+                formatted_tipologie = []
+                for tipologia in db_tipologie:
+                    if "_id" in tipologia:
+                        del tipologia["_id"]
+                    if "created_at" in tipologia and hasattr(tipologia["created_at"], "isoformat"):
+                        tipologia["created_at"] = tipologia["created_at"].isoformat()
+                    if "updated_at" in tipologia and tipologia["updated_at"] and hasattr(tipologia["updated_at"], "isoformat"):
+                        tipologia["updated_at"] = tipologia["updated_at"].isoformat()
+                        
+                    formatted_tipologie.append({
+                        "value": tipologia["id"],
+                        "label": tipologia["nome"],
+                        "descrizione": tipologia.get("descrizione", ""),
+                        "source": "database"
+                    })
+                return formatted_tipologie
+            else:
+                # Return all database tipologie
+                return await get_all_tipologie_contratto(current_user)
             
     except Exception as e:
         logger.error(f"Error getting tipologie contratto: {e}")
