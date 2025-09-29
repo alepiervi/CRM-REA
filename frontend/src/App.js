@@ -9376,12 +9376,17 @@ const CommesseManagement = ({ selectedUnit, units }) => {
   const [commesse, setCommesse] = useState([]);
   const [servizi, setServizi] = useState([]);
   const [tipologieContratto, setTipologieContratto] = useState([]);
+  const [segmenti, setSegmenti] = useState([]);
+  const [offerte, setOfferte] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCommessa, setSelectedCommessa] = useState(null);
   const [selectedServizio, setSelectedServizio] = useState(null);
+  const [selectedTipologia, setSelectedTipologia] = useState(null);
+  const [selectedSegmento, setSelectedSegmento] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCreateTipologiaModal, setShowCreateTipologiaModal] = useState(false);
-  const [modalType, setModalType] = useState(''); // 'commessa', 'servizio', 'tipologia'
+  const [showCreateOffertaModal, setShowCreateOffertaModal] = useState(false);
+  const [modalType, setModalType] = useState(''); // 'commessa', 'servizio', 'tipologia', 'offerta'
   const { toast } = useToast();
 
   useEffect(() => {
