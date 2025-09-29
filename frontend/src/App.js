@@ -11626,7 +11626,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clienti.map((cliente) => (
+                {getFilteredClients().map((cliente) => (
                   <TableRow key={cliente.id}>
                     <TableCell>
                       <span className="font-mono text-sm">{cliente.cliente_id}</span>
