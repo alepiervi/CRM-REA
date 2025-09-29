@@ -284,7 +284,7 @@ const Login = () => {
     if (result.success) {
       toast({
         title: "Accesso effettuato",
-        description: "Benvenuto nel CRM!",
+        description: "Benvenuto in ELON!",
       });
     } else {
       toast({
