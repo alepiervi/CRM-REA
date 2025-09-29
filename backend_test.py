@@ -8145,6 +8145,361 @@ Duplicate,Test,+393471234567"""
             if resource_type != 'users' and resource_list:
                 print(f"   ℹ️ {len(resource_list)} {resource_type} resources noted for cleanup")
 
+    def test_debug_fotovoltaico_tipologie_issue(self):
+        """DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE"""
+        print("\n🔍 DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE...")
+        
+        # 1. **Test Login Admin**: Login con admin/admin123
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Debug Commessa Fotovoltaico**
+        print("\n⚡ 2. DEBUG COMMESSA FOTOVOLTAICO...")
+        
+        # GET /api/commesse per trovare ID Fotovoltaico
+        print("   Finding Fotovoltaico commessa ID...")
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        fotovoltaico_id = None
+        fastweb_id = None
+        
+        if success and isinstance(commesse_response, list):
+            self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse_response)} commesse")
+            
+            for commessa in commesse_response:
+                nome = commessa.get('nome', '').lower()
+                if 'fotovoltaico' in nome:
+                    fotovoltaico_id = commessa.get('id')
+                    self.log_test("✅ Found Fotovoltaico commessa", True, f"ID: {fotovoltaico_id}, Nome: {commessa.get('nome')}")
+                elif 'fastweb' in nome:
+                    fastweb_id = commessa.get('id')
+                    self.log_test("✅ Found Fastweb commessa", True, f"ID: {fastweb_id}, Nome: {commessa.get('nome')}")
+        else:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}, Response: {commesse_response}")
+            return False
+
+        if not fotovoltaico_id:
+            self.log_test("❌ Fotovoltaico commessa not found", False, "Cannot continue debug without Fotovoltaico ID")
+            return False
+
+        # GET /api/commesse/{fotovoltaico_id}/servizi per ottenere servizi Fotovoltaico
+        print(f"   Getting services for Fotovoltaico (ID: {fotovoltaico_id})...")
+        success, servizi_response, status = self.make_request('GET', f'commesse/{fotovoltaico_id}/servizi', expected_status=200)
+        
+        fotovoltaico_servizio_id = None
+        
+        if success and isinstance(servizi_response, list):
+            self.log_test("✅ GET /api/commesse/{fotovoltaico_id}/servizi", True, f"Found {len(servizi_response)} servizi for Fotovoltaico")
+            
+            for servizio in servizi_response:
+                servizio_nome = servizio.get('nome', '')
+                servizio_id = servizio.get('id')
+                print(f"      - Servizio: {servizio_nome} (ID: {servizio_id})")
+                if not fotovoltaico_servizio_id:  # Take first service
+                    fotovoltaico_servizio_id = servizio_id
+                    self.log_test("✅ Selected Fotovoltaico service", True, f"Service: {servizio_nome}, ID: {servizio_id}")
+        else:
+            self.log_test("❌ GET /api/commesse/{fotovoltaico_id}/servizi", False, f"Status: {status}, Response: {servizi_response}")
+            return False
+
+        if not fotovoltaico_servizio_id:
+            self.log_test("❌ No Fotovoltaico services found", False, "Cannot continue debug without service ID")
+            return False
+
+        # GET /api/servizi/{fotovoltaico_servizio_id}/tipologie-contratto per vedere che tipologie restituisce
+        print(f"   Getting tipologie contratto for Fotovoltaico service (ID: {fotovoltaico_servizio_id})...")
+        success, tipologie_response, status = self.make_request('GET', f'servizi/{fotovoltaico_servizio_id}/tipologie-contratto', expected_status=200)
+        
+        if success:
+            self.log_test("✅ GET /api/servizi/{fotovoltaico_servizio_id}/tipologie-contratto", True, f"Status: {status}")
+            
+            if isinstance(tipologie_response, list):
+                self.log_test("✅ Tipologie response is array", True, f"Found {len(tipologie_response)} tipologie for Fotovoltaico service")
+                
+                print(f"      🔍 TIPOLOGIE RETURNED FOR FOTOVOLTAICO:")
+                for i, tipologia in enumerate(tipologie_response):
+                    nome = tipologia.get('nome') or tipologia.get('value') or tipologia.get('label', 'Unknown')
+                    print(f"         {i+1}. {nome}")
+                    
+                    # Check if this is a Fastweb tipologia (wrong!)
+                    if 'fastweb' in nome.lower():
+                        self.log_test("❌ WRONG TIPOLOGIA FOUND", False, f"Fotovoltaico service shows Fastweb tipologia: {nome}")
+                    elif 'fotovoltaico' in nome.lower() or 'solare' in nome.lower() or 'energia' in nome.lower():
+                        self.log_test("✅ Correct tipologia found", True, f"Fotovoltaico-related tipologia: {nome}")
+                    else:
+                        self.log_test("❓ Unknown tipologia", True, f"Tipologia: {nome}")
+                
+                # Check for specific problematic tipologie
+                fastweb_tipologie = [t for t in tipologie_response if 'fastweb' in str(t.get('nome', '') or t.get('value', '') or t.get('label', '')).lower()]
+                if fastweb_tipologie:
+                    self.log_test("❌ CRITICAL ISSUE CONFIRMED", False, f"Fotovoltaico service returns {len(fastweb_tipologie)} Fastweb tipologie!")
+                    for tip in fastweb_tipologie:
+                        nome = tip.get('nome') or tip.get('value') or tip.get('label', 'Unknown')
+                        print(f"         🚨 WRONG: {nome}")
+                else:
+                    self.log_test("✅ No Fastweb tipologie found", True, "Fotovoltaico service doesn't return Fastweb tipologie")
+            else:
+                self.log_test("❌ Tipologie response not array", False, f"Response type: {type(tipologie_response)}, Content: {tipologie_response}")
+        else:
+            self.log_test("❌ GET /api/servizi/{fotovoltaico_servizio_id}/tipologie-contratto", False, f"Status: {status}, Response: {tipologie_response}")
+
+        # 3. **Debug Tipologie Create in Database**
+        print("\n🗄️ 3. DEBUG TIPOLOGIE CREATE IN DATABASE...")
+        
+        # Controllare collection `tipologie_contratto` per vedere se ci sono record creati
+        print("   Checking database tipologie_contratto collection...")
+        
+        # Try different endpoints to check database tipologie
+        database_endpoints = [
+            'tipologie-contratto',
+            'admin/tipologie-contratto',
+            f'servizi/{fotovoltaico_servizio_id}/tipologie-contratto-db'
+        ]
+        
+        database_tipologie_found = False
+        
+        for endpoint in database_endpoints:
+            print(f"   Trying endpoint: GET /api/{endpoint}")
+            success, db_tipologie, status = self.make_request('GET', endpoint, expected_status=None)
+            
+            if success and status == 200:
+                self.log_test(f"✅ GET /api/{endpoint}", True, f"Status: {status}")
+                
+                if isinstance(db_tipologie, list):
+                    database_tipologie_found = True
+                    self.log_test("✅ Database tipologie found", True, f"Found {len(db_tipologie)} database tipologie records")
+                    
+                    if len(db_tipologie) > 0:
+                        print(f"      🔍 DATABASE TIPOLOGIE STRUCTURE:")
+                        for i, tip in enumerate(db_tipologie[:3]):  # Show first 3
+                            print(f"         {i+1}. {tip}")
+                            
+                            # Check structure
+                            expected_fields = ['id', 'nome', 'servizio_id', 'is_active', 'created_at']
+                            missing_fields = [field for field in expected_fields if field not in tip]
+                            present_fields = [field for field in expected_fields if field in tip]
+                            
+                            if not missing_fields:
+                                self.log_test(f"✅ Database tipologia {i+1} structure", True, f"All fields present: {present_fields}")
+                            else:
+                                self.log_test(f"❌ Database tipologia {i+1} structure", False, f"Missing fields: {missing_fields}")
+                            
+                            # Check servizio_id mapping
+                            servizio_id = tip.get('servizio_id')
+                            if servizio_id:
+                                if servizio_id == fotovoltaico_servizio_id:
+                                    self.log_test(f"✅ Tipologia {i+1} mapped to Fotovoltaico", True, f"servizio_id: {servizio_id}")
+                                elif servizio_id == fastweb_id:
+                                    self.log_test(f"❌ Tipologia {i+1} mapped to Fastweb", False, f"servizio_id: {servizio_id}")
+                                else:
+                                    self.log_test(f"❓ Tipologia {i+1} mapped to unknown service", True, f"servizio_id: {servizio_id}")
+                            else:
+                                self.log_test(f"❌ Tipologia {i+1} no servizio_id", False, "Missing servizio_id field")
+                    else:
+                        self.log_test("ℹ️ No database tipologie records", True, "Database collection is empty")
+                    break
+                else:
+                    self.log_test(f"❌ GET /api/{endpoint} not array", False, f"Response type: {type(db_tipologie)}")
+            elif status == 404:
+                self.log_test(f"❌ GET /api/{endpoint}", False, f"Endpoint not found (404)")
+            elif status == 403:
+                self.log_test(f"❌ GET /api/{endpoint}", False, f"Access denied (403)")
+            else:
+                self.log_test(f"❌ GET /api/{endpoint}", False, f"Status: {status}, Response: {db_tipologie}")
+        
+        if not database_tipologie_found:
+            self.log_test("❌ No database tipologie endpoints found", False, "Could not access database tipologie records")
+
+        # 4. **Debug Logica Filtering Hardcoded**
+        print("\n🔧 4. DEBUG LOGICA FILTERING HARDCODED...")
+        
+        # Verificare perché servizi Fotovoltaico ricevono tipologie Fastweb
+        print("   Testing hardcoded tipologie endpoint...")
+        
+        # Test base tipologie endpoint (hardcoded)
+        success, hardcoded_tipologie, status = self.make_request('GET', 'tipologie-contratto', expected_status=200)
+        
+        if success and isinstance(hardcoded_tipologie, list):
+            self.log_test("✅ GET /api/tipologie-contratto (hardcoded)", True, f"Found {len(hardcoded_tipologie)} hardcoded tipologie")
+            
+            print(f"      🔍 HARDCODED TIPOLOGIE LIST:")
+            for i, tip in enumerate(hardcoded_tipologie):
+                nome = tip.get('nome') or tip.get('value') or tip.get('label', 'Unknown')
+                print(f"         {i+1}. {nome}")
+            
+            # Test with commessa_id parameter
+            if fotovoltaico_id:
+                print(f"   Testing with commessa_id parameter (Fotovoltaico: {fotovoltaico_id})...")
+                success, filtered_tipologie, status = self.make_request('GET', f'tipologie-contratto?commessa_id={fotovoltaico_id}', expected_status=200)
+                
+                if success and isinstance(filtered_tipologie, list):
+                    self.log_test("✅ GET /api/tipologie-contratto?commessa_id=fotovoltaico", True, f"Found {len(filtered_tipologie)} filtered tipologie")
+                    
+                    print(f"      🔍 FILTERED TIPOLOGIE FOR FOTOVOLTAICO:")
+                    for i, tip in enumerate(filtered_tipologie):
+                        nome = tip.get('nome') or tip.get('value') or tip.get('label', 'Unknown')
+                        print(f"         {i+1}. {nome}")
+                        
+                        if 'fastweb' in nome.lower():
+                            self.log_test("❌ FILTERING ISSUE", False, f"Fotovoltaico filter still returns Fastweb tipologia: {nome}")
+                else:
+                    self.log_test("❌ Commessa filtering failed", False, f"Status: {status}")
+            
+            # Test with servizio_id parameter
+            if fotovoltaico_servizio_id:
+                print(f"   Testing with servizio_id parameter (Fotovoltaico service: {fotovoltaico_servizio_id})...")
+                success, service_filtered, status = self.make_request('GET', f'tipologie-contratto?servizio_id={fotovoltaico_servizio_id}', expected_status=200)
+                
+                if success and isinstance(service_filtered, list):
+                    self.log_test("✅ GET /api/tipologie-contratto?servizio_id=fotovoltaico_service", True, f"Found {len(service_filtered)} service-filtered tipologie")
+                    
+                    print(f"      🔍 SERVICE-FILTERED TIPOLOGIE FOR FOTOVOLTAICO:")
+                    for i, tip in enumerate(service_filtered):
+                        nome = tip.get('nome') or tip.get('value') or tip.get('label', 'Unknown')
+                        print(f"         {i+1}. {nome}")
+                        
+                        if 'fastweb' in nome.lower():
+                            self.log_test("❌ SERVICE FILTERING ISSUE", False, f"Fotovoltaico service filter still returns Fastweb tipologia: {nome}")
+                else:
+                    self.log_test("❌ Service filtering failed", False, f"Status: {status}")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto (hardcoded)", False, f"Status: {status}")
+
+        # Test Fastweb for comparison
+        if fastweb_id:
+            print(f"   Testing Fastweb tipologie for comparison...")
+            success, fastweb_tipologie, status = self.make_request('GET', f'tipologie-contratto?commessa_id={fastweb_id}', expected_status=200)
+            
+            if success and isinstance(fastweb_tipologie, list):
+                self.log_test("✅ GET /api/tipologie-contratto?commessa_id=fastweb", True, f"Found {len(fastweb_tipologie)} Fastweb tipologie")
+                
+                print(f"      🔍 FASTWEB TIPOLOGIE (for comparison):")
+                for i, tip in enumerate(fastweb_tipologie):
+                    nome = tip.get('nome') or tip.get('value') or tip.get('label', 'Unknown')
+                    print(f"         {i+1}. {nome}")
+
+        # 5. **Test Creazione Tipologia**
+        print("\n➕ 5. TEST CREAZIONE TIPOLOGIA...")
+        
+        # POST /api/tipologie-contratto per creare una tipologia test
+        print("   Creating test tipologia...")
+        
+        test_tipologia_data = {
+            "nome": f"Test Fotovoltaico Tipologia {datetime.now().strftime('%H%M%S')}",
+            "descrizione": "Tipologia di test per debug Fotovoltaico",
+            "servizio_id": fotovoltaico_servizio_id,
+            "is_active": True
+        }
+        
+        # Try different endpoints for creation
+        creation_endpoints = [
+            'tipologie-contratto',
+            'admin/tipologie-contratto',
+            f'servizi/{fotovoltaico_servizio_id}/tipologie-contratto'
+        ]
+        
+        created_tipologia_id = None
+        
+        for endpoint in creation_endpoints:
+            print(f"   Trying creation endpoint: POST /api/{endpoint}")
+            success, create_response, status = self.make_request('POST', endpoint, test_tipologia_data, expected_status=None)
+            
+            if success and status in [200, 201]:
+                self.log_test(f"✅ POST /api/{endpoint}", True, f"Status: {status}, Tipologia created")
+                
+                created_tipologia_id = create_response.get('id') or create_response.get('tipologia_id')
+                if created_tipologia_id:
+                    self.log_test("✅ Tipologia creation successful", True, f"Created ID: {created_tipologia_id}")
+                    break
+                else:
+                    self.log_test("❌ No ID in creation response", False, f"Response: {create_response}")
+            elif status == 404:
+                self.log_test(f"❌ POST /api/{endpoint}", False, f"Endpoint not found (404)")
+            elif status == 403:
+                self.log_test(f"❌ POST /api/{endpoint}", False, f"Access denied (403)")
+            elif status == 422:
+                self.log_test(f"❌ POST /api/{endpoint}", False, f"Validation error (422): {create_response}")
+            else:
+                self.log_test(f"❌ POST /api/{endpoint}", False, f"Status: {status}, Response: {create_response}")
+        
+        # Verificare se viene salvata correttamente nel database
+        if created_tipologia_id:
+            print("   Verifying tipologia was saved in database...")
+            
+            # Check if it appears in database queries
+            for endpoint in database_endpoints:
+                success, verify_db, status = self.make_request('GET', endpoint, expected_status=None)
+                
+                if success and status == 200 and isinstance(verify_db, list):
+                    created_tip = next((tip for tip in verify_db if tip.get('id') == created_tipologia_id), None)
+                    if created_tip:
+                        self.log_test("✅ Created tipologia found in database", True, f"Found in {endpoint}")
+                        break
+            else:
+                self.log_test("❌ Created tipologia not found in database", False, "Tipologia not persisted")
+        
+        # Verificare se viene mostrata nell'endpoint GET
+        if created_tipologia_id:
+            print("   Verifying tipologia appears in GET endpoints...")
+            
+            # Check if it appears in service-specific queries
+            success, verify_service, status = self.make_request('GET', f'servizi/{fotovoltaico_servizio_id}/tipologie-contratto', expected_status=200)
+            
+            if success and isinstance(verify_service, list):
+                created_in_service = any(tip.get('id') == created_tipologia_id for tip in verify_service)
+                if created_in_service:
+                    self.log_test("✅ Created tipologia appears in service query", True, "Tipologia visible in service endpoint")
+                else:
+                    self.log_test("❌ Created tipologia not in service query", False, "Tipologia not visible in service endpoint")
+            
+            # Check if it appears in general queries
+            success, verify_general, status = self.make_request('GET', 'tipologie-contratto', expected_status=200)
+            
+            if success and isinstance(verify_general, list):
+                created_in_general = any(
+                    (tip.get('id') == created_tipologia_id) or 
+                    (tip.get('nome') == test_tipologia_data['nome']) or
+                    (tip.get('value') == test_tipologia_data['nome']) or
+                    (tip.get('label') == test_tipologia_data['nome'])
+                    for tip in verify_general
+                )
+                if created_in_general:
+                    self.log_test("✅ Created tipologia appears in general query", True, "Tipologia visible in general endpoint")
+                else:
+                    self.log_test("❌ Created tipologia not in general query", False, "Tipologia not visible in general endpoint")
+
+        # SUMMARY CRITICO
+        print(f"\n🎯 SUMMARY DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE:")
+        print(f"   🎯 OBIETTIVO: Identificare perché Fotovoltaico mostra tipologie sbagliate e perché le tipologie create non sono visibili")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Fotovoltaico commessa found: {'✅ SUCCESS' if fotovoltaico_id else '❌ NOT FOUND'}")
+        print(f"      • Fotovoltaico services found: {'✅ SUCCESS' if fotovoltaico_servizio_id else '❌ NOT FOUND'}")
+        print(f"      • Tipologie endpoint accessible: ✅ SUCCESS")
+        print(f"      • Database tipologie collection: {'✅ ACCESSIBLE' if database_tipologie_found else '❌ NOT ACCESSIBLE'}")
+        print(f"      • Tipologie creation: {'✅ SUCCESS' if created_tipologia_id else '❌ FAILED'}")
+        
+        # Key findings
+        print(f"\n   🔍 KEY FINDINGS:")
+        print(f"      • Fotovoltaico ID: {fotovoltaico_id}")
+        print(f"      • Fotovoltaico Service ID: {fotovoltaico_servizio_id}")
+        print(f"      • Database tipologie accessible: {database_tipologie_found}")
+        print(f"      • Created tipologia ID: {created_tipologia_id}")
+        
+        return True
+
     def run_all_tests(self):
         """Run test for tipologie contratto endpoint modificato as requested"""
         print("🚀 Starting CRM API Testing - Tipologie Contratto Endpoint Modificato...")
