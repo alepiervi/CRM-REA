@@ -11884,6 +11884,202 @@ const ViewCommessaModal = ({ isOpen, onClose, commessa }) => {
   );
 };
 
+const EditCommessaModal = ({ isOpen, onClose, onSubmit, commessa }) => {
+  const [formData, setFormData] = useState({
+    nome: '',
+    descrizione: '',
+    descrizione_interna: '',
+    entity_type: 'clienti',
+    has_whatsapp: false,
+    has_ai: false,
+    has_call_center: false,
+    document_management: 'disabled'
+  });
+
+  // Inizializza il form con i dati della commessa quando si apre il modal
+  useEffect(() => {
+    if (commessa && isOpen) {
+      setFormData({
+        nome: commessa.nome || '',
+        descrizione: commessa.descrizione || '',
+        descrizione_interna: commessa.descrizione_interna || '',
+        entity_type: commessa.entity_type || 'clienti',
+        has_whatsapp: commessa.has_whatsapp || false,
+        has_ai: commessa.has_ai || false,
+        has_call_center: commessa.has_call_center || false,
+        document_management: commessa.document_management || 'disabled'
+      });
+    }
+  }, [commessa, isOpen]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const handleClose = () => {
+    setFormData({
+      nome: '',
+      descrizione: '',
+      descrizione_interna: '',
+      entity_type: 'clienti',
+      has_whatsapp: false,
+      has_ai: false,
+      has_call_center: false,
+      document_management: 'disabled'
+    });
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Modifica Commessa: {commessa?.nome}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Informazioni Base</h3>
+            <div>
+              <Label htmlFor="nome">Nome Commessa *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="descrizione">Descrizione</Label>
+              <Textarea
+                id="descrizione"
+                value={formData.descrizione}
+                onChange={(e) => setFormData({...formData, descrizione: e.target.value})}
+                placeholder="Descrizione pubblica della commessa"
+              />
+            </div>
+            <div>
+              <Label htmlFor="descrizione_interna">Descrizione Interna</Label>
+              <Textarea
+                id="descrizione_interna"
+                value={formData.descrizione_interna}
+                onChange={(e) => setFormData({...formData, descrizione_interna: e.target.value})}
+                placeholder="Note interne e dettagli operativi per il team"
+                className="min-h-20"
+              />
+            </div>
+            <div>
+              <Label htmlFor="entity_type">Gestisce *</Label>
+              <Select value={formData.entity_type} onValueChange={(value) => setFormData({...formData, entity_type: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona tipo entità" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="clienti">Clienti</SelectItem>
+                  <SelectItem value="lead">Lead</SelectItem>
+                  <SelectItem value="both">Entrambi</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Feature Configuration */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Configurazione Funzionalità</h3>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="has_whatsapp"
+                  checked={formData.has_whatsapp}
+                  onCheckedChange={(checked) => setFormData({...formData, has_whatsapp: checked})}
+                />
+                <Label htmlFor="has_whatsapp" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <MessageCircle className="w-4 h-4 inline mr-2" />
+                  Abilita WhatsApp Business
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="has_ai"
+                  checked={formData.has_ai}
+                  onCheckedChange={(checked) => setFormData({...formData, has_ai: checked})}
+                />
+                <Label htmlFor="has_ai" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <Bot className="w-4 h-4 inline mr-2" />
+                  Abilita Funzionalità AI
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="has_call_center"
+                  checked={formData.has_call_center}
+                  onCheckedChange={(checked) => setFormData({...formData, has_call_center: checked})}
+                />
+                <Label htmlFor="has_call_center" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <Headphones className="w-4 h-4 inline mr-2" />
+                  Abilita Call Center
+                </Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Document Management */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Gestione Documenti</h3>
+            <div>
+              <Label htmlFor="document_management">Accesso Documenti</Label>
+              <Select value={formData.document_management} onValueChange={(value) => setFormData({...formData, document_management: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona configurazione documenti" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="disabled">
+                    <div className="flex items-center">
+                      <XCircle className="w-4 h-4 mr-2 text-gray-500" />
+                      Disabilitato
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="clienti_only">
+                    <div className="flex items-center">
+                      <UserCheck className="w-4 h-4 mr-2 text-blue-500" />
+                      Solo Clienti
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="lead_only">
+                    <div className="flex items-center">
+                      <Users className="w-4 h-4 mr-2 text-green-500" />
+                      Solo Lead
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="both">
+                    <div className="flex items-center">
+                      <CheckCircle className="w-4 h-4 mr-2 text-blue-600" />
+                      Clienti e Lead
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Annulla
+            </Button>
+            <Button type="submit">
+              <Save className="w-4 h-4 mr-2" />
+              Salva Modifiche
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const CreateTipologiaContrattoModal = ({ isOpen, onClose, onSubmit, servizioId }) => {
   const [formData, setFormData] = useState({
     nome: '',
