@@ -762,6 +762,7 @@ const Dashboard = () => {
   const [isMobile, setIsMobile] = useState(false);
   
   const { user, logout, setUser } = useAuth();
+  const { toast } = useToast();
 
   // 🎯 MOBILE-FRIENDLY: Detect screen size
   useEffect(() => {
