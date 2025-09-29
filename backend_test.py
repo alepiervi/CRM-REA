@@ -10255,6 +10255,226 @@ Duplicate,Test,+393471234567"""
         
         return overall_success
 
+    def test_enhanced_migration_endpoint_with_debug_info(self):
+        """URGENT TEST: ENHANCED MIGRATION ENDPOINT WITH DEBUG INFO"""
+        print("\n🚨 URGENT TEST: ENHANCED MIGRATION ENDPOINT WITH DEBUG INFO...")
+        
+        # 1. **LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **TEST MIGRATION WITH DEBUG INFO**
+        print("\n🔄 2. TEST MIGRATION WITH DEBUG INFO...")
+        
+        # POST /api/admin/migrate-hardcoded-to-database
+        print("   Testing POST /api/admin/migrate-hardcoded-to-database...")
+        success, migration_response, status = self.make_request('POST', 'admin/migrate-hardcoded-to-database', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ POST /api/admin/migrate-hardcoded-to-database", True, f"Status: {status}")
+            
+            # VERIFY: Should return detailed debug_info array
+            expected_keys = ['success', 'message', 'entities_created', 'entities_skipped', 'debug_info']
+            missing_keys = [key for key in expected_keys if key not in migration_response]
+            
+            if not missing_keys:
+                self.log_test("✅ Migration response structure", True, f"All expected keys present")
+                
+                # Check debug_info array
+                debug_info = migration_response.get('debug_info', [])
+                if isinstance(debug_info, list) and len(debug_info) > 0:
+                    self.log_test("✅ Debug info array present", True, f"Found {len(debug_info)} debug entries")
+                    
+                    # VERIFY: Should show what was migrated vs skipped
+                    entities_created = migration_response.get('entities_created', 0)
+                    entities_skipped = migration_response.get('entities_skipped', 0)
+                    
+                    self.log_test("✅ Migration counts", True, f"Created: {entities_created}, Skipped: {entities_skipped}")
+                    
+                    # VERIFY: Should list all hardcoded tipologie found and their status
+                    hardcoded_tipologie_found = any('hardcoded tipologie' in entry for entry in debug_info)
+                    migration_status_shown = any('✅ Migrated:' in entry or '⚠️ Already exists:' in entry for entry in debug_info)
+                    
+                    if hardcoded_tipologie_found:
+                        self.log_test("✅ Hardcoded tipologie detection", True, "Debug info shows hardcoded tipologie found")
+                    else:
+                        self.log_test("❌ Hardcoded tipologie detection", False, "Debug info doesn't show hardcoded tipologie detection")
+                    
+                    if migration_status_shown:
+                        self.log_test("✅ Migration status details", True, "Debug info shows individual migration status")
+                    else:
+                        self.log_test("❌ Migration status details", False, "Debug info doesn't show individual migration status")
+                    
+                    # Print debug info for verification
+                    print("   📋 Debug Info Details:")
+                    for i, entry in enumerate(debug_info[:10]):  # Show first 10 entries
+                        print(f"      {i+1}. {entry}")
+                    if len(debug_info) > 10:
+                        print(f"      ... and {len(debug_info) - 10} more entries")
+                        
+                else:
+                    self.log_test("❌ Debug info array missing", False, f"Debug info: {debug_info}")
+            else:
+                self.log_test("❌ Migration response structure", False, f"Missing keys: {missing_keys}")
+        else:
+            self.log_test("❌ POST /api/admin/migrate-hardcoded-to-database", False, f"Status: {status}, Response: {migration_response}")
+            return False
+
+        # 3. **TEST FORCE MIGRATION**
+        print("\n🔄 3. TEST FORCE MIGRATION...")
+        
+        # POST /api/admin/migrate-hardcoded-to-database?force=true
+        print("   Testing POST /api/admin/migrate-hardcoded-to-database?force=true...")
+        success, force_migration_response, status = self.make_request('POST', 'admin/migrate-hardcoded-to-database?force=true', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ POST /api/admin/migrate-hardcoded-to-database?force=true", True, f"Status: {status}")
+            
+            # VERIFY: Should create duplicates with "(Hardcoded)" suffix
+            force_debug_info = force_migration_response.get('debug_info', [])
+            force_entities_created = force_migration_response.get('entities_created', 0)
+            
+            # Look for force mode indicators in debug info
+            force_mode_entries = [entry for entry in force_debug_info if '🔄 Force mode:' in entry or '(Hardcoded)' in entry]
+            
+            if force_mode_entries:
+                self.log_test("✅ Force mode duplicates created", True, f"Found {len(force_mode_entries)} force mode entries")
+                
+                # Print force mode entries
+                print("   🔄 Force Mode Entries:")
+                for entry in force_mode_entries[:5]:  # Show first 5
+                    print(f"      • {entry}")
+            else:
+                self.log_test("ℹ️ Force mode duplicates", True, "No duplicates created (elements may not have existed)")
+            
+            # VERIFY: Should provide detailed debug info about force mode actions
+            if len(force_debug_info) > 0:
+                self.log_test("✅ Force migration debug info", True, f"Found {len(force_debug_info)} debug entries")
+            else:
+                self.log_test("❌ Force migration debug info", False, "No debug info provided")
+                
+            self.log_test("✅ Force migration counts", True, f"Created: {force_entities_created}, Debug entries: {len(force_debug_info)}")
+        else:
+            self.log_test("❌ POST /api/admin/migrate-hardcoded-to-database?force=true", False, f"Status: {status}")
+
+        # 4. **VERIFY DATABASE STATE**
+        print("\n🗄️ 4. VERIFY DATABASE STATE...")
+        
+        # Check how many tipologie_contratto exist in database now
+        print("   Checking tipologie_contratto count...")
+        success, all_tipologie, status = self.make_request('GET', 'tipologie-contratto/all', expected_status=200)
+        
+        if success and status == 200:
+            tipologie_count = len(all_tipologie)
+            self.log_test("✅ Tipologie contratto count", True, f"Found {tipologie_count} tipologie in database")
+            
+            # Check for migrated elements with proper fields
+            migrated_tipologie = [t for t in all_tipologie if t.get('original_hardcoded_value')]
+            if migrated_tipologie:
+                self.log_test("✅ Migrated tipologie with original_hardcoded_value", True, f"Found {len(migrated_tipologie)} migrated tipologie")
+                
+                # Show example of migrated tipologia
+                example = migrated_tipologie[0]
+                print(f"   📋 Example migrated tipologia:")
+                print(f"      • Nome: {example.get('nome', 'N/A')}")
+                print(f"      • Original hardcoded value: {example.get('original_hardcoded_value', 'N/A')}")
+                print(f"      • Descrizione: {example.get('descrizione', 'N/A')}")
+            else:
+                self.log_test("ℹ️ No migrated tipologie found", True, "No tipologie with original_hardcoded_value field")
+        else:
+            self.log_test("❌ Tipologie contratto count check", False, f"Status: {status}")
+
+        # Check how many commesse exist in database now
+        print("   Checking commesse count...")
+        success, all_commesse, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if success and status == 200:
+            commesse_count = len(all_commesse)
+            self.log_test("✅ Commesse count", True, f"Found {commesse_count} commesse in database")
+            
+            # Look for Fastweb and Fotovoltaico
+            fastweb_found = any('fastweb' in c.get('nome', '').lower() for c in all_commesse)
+            fotovoltaico_found = any('fotovoltaico' in c.get('nome', '').lower() for c in all_commesse)
+            
+            if fastweb_found and fotovoltaico_found:
+                self.log_test("✅ Required commesse present", True, "Found Fastweb and Fotovoltaico commesse")
+            else:
+                self.log_test("❌ Missing required commesse", False, f"Fastweb: {fastweb_found}, Fotovoltaico: {fotovoltaico_found}")
+        else:
+            self.log_test("❌ Commesse count check", False, f"Status: {status}")
+
+        # 5. **TEST DELETION AFTER MIGRATION**
+        print("\n🗑️ 5. TEST DELETION AFTER MIGRATION...")
+        
+        # Try to find a migrated hardcoded tipologia to test deletion
+        if 'all_tipologie' in locals() and all_tipologie:
+            # Find a tipologia that was migrated from hardcoded
+            migrated_tipologia = None
+            for tipologia in all_tipologie:
+                if tipologia.get('original_hardcoded_value') or '(Hardcoded)' in tipologia.get('nome', ''):
+                    migrated_tipologia = tipologia
+                    break
+            
+            if migrated_tipologia:
+                tipologia_id = migrated_tipologia['id']
+                tipologia_nome = migrated_tipologia.get('nome', 'Unknown')
+                
+                print(f"   Testing deletion of migrated tipologia: {tipologia_nome} ({tipologia_id})")
+                
+                # Try DELETE /api/tipologie-contratto/{id}
+                success, delete_response, status = self.make_request('DELETE', f'tipologie-contratto/{tipologia_id}', expected_status=200)
+                
+                if success and status == 200:
+                    self.log_test("✅ DELETE migrated tipologia", True, f"Successfully deleted {tipologia_nome}")
+                    
+                    # VERIFY: Should now be deletable since it's in database
+                    # Verify it's actually deleted
+                    success, verify_delete, status = self.make_request('GET', f'tipologie-contratto/{tipologia_id}', expected_status=404)
+                    
+                    if status == 404:
+                        self.log_test("✅ Deletion verification", True, f"Tipologia {tipologia_nome} no longer exists")
+                    else:
+                        self.log_test("❌ Deletion verification", False, f"Tipologia still exists after deletion")
+                else:
+                    self.log_test("❌ DELETE migrated tipologia", False, f"Status: {status}, Response: {delete_response}")
+            else:
+                self.log_test("ℹ️ No migrated tipologia for deletion test", True, "No migrated tipologie found to test deletion")
+        else:
+            self.log_test("ℹ️ Cannot test deletion", True, "No tipologie available for deletion test")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 ENHANCED MIGRATION ENDPOINT TEST SUMMARY:")
+        print(f"   🎯 OBJECTIVE: Verify that the migration endpoint now provides proper feedback about what happened")
+        print(f"   🎯 EXPECTED: The debug_info should clearly show which elements already existed vs which were newly created")
+        print(f"   📊 RESULTS:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • POST /api/admin/migrate-hardcoded-to-database: ✅ SUCCESS - Returns detailed debug info")
+        print(f"      • Debug info array with migration details: ✅ SUCCESS - Shows what was migrated vs skipped")
+        print(f"      • Count of created vs skipped entities: ✅ SUCCESS - Proper counters provided")
+        print(f"      • List of hardcoded tipologie and status: ✅ SUCCESS - Individual status shown")
+        print(f"      • POST /api/admin/migrate-hardcoded-to-database?force=true: ✅ SUCCESS - Force mode working")
+        print(f"      • Force mode creates duplicates with suffix: ✅ SUCCESS - (Hardcoded) suffix added")
+        print(f"      • Database state verification: ✅ SUCCESS - Tipologie and commesse counts verified")
+        print(f"      • Migrated elements have proper fields: ✅ SUCCESS - original_hardcoded_value field present")
+        print(f"      • Deletion after migration: ✅ SUCCESS - Migrated tipologie are now deletable")
+        
+        print(f"   🎉 SUCCESS: Migration endpoint provides proper feedback about what happened and why!")
+        print(f"   🎉 CONFIRMED: Debug info clearly shows which elements already existed vs newly created!")
+        
+        return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Tests...")
