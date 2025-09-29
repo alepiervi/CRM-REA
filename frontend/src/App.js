@@ -10140,25 +10140,47 @@ const CommesseManagement = ({
                 {servizi.map((servizio) => (
                   <div 
                     key={servizio.id} 
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                      selectedServizio === servizio.id ? 'border-green-500 bg-green-50' : 'hover:bg-gray-50'
+                    className={`p-4 border rounded-lg transition-colors ${
+                      selectedServizio === servizio.id ? 'border-green-500 bg-green-50' : 'hover:bg-gray-50 border-gray-200'
                     }`}
-                    onClick={() => {
-                      if (selectedServizio !== servizio.id) {
-                        setSelectedServizio(servizio.id);
-                        fetchTipologieContratto(servizio.id);
-                      }
-                    }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Settings2 className="w-4 h-4 text-green-600" />
-                        <span className="font-medium">{servizio.nome}</span>
+                    <div className="space-y-3">
+                      {/* Header con titolo e icona */}
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                          <Settings2 className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">{servizio.nome}</h3>
+                          {servizio.descrizione && (
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{servizio.descrizione}</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={servizio.is_active ? "default" : "secondary"}>
+
+                      {/* Badge */}
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant={servizio.is_active ? "default" : "secondary"} className="text-xs">
                           {servizio.is_active ? "Attivo" : "Inattivo"}
                         </Badge>
+                      </div>
+
+                      {/* Pulsanti - Layout a griglia */}
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            if (selectedServizio !== servizio.id) {
+                              setSelectedServizio(servizio.id);
+                              fetchTipologieContratto(servizio.id);
+                            }
+                          }}
+                          className="p-2 h-8 w-full"
+                          title="Gestisci tipologie contratto"
+                        >
+                          <Settings className="w-3 h-3" />
+                        </Button>
                         <Button
                           size="sm"
                           variant="destructive"
@@ -10168,14 +10190,13 @@ const CommesseManagement = ({
                               deleteServizio(servizio.id);
                             }
                           }}
+                          className="p-2 h-8 w-full"
+                          title="Elimina servizio"
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
-                    {servizio.descrizione && (
-                      <p className="text-sm text-gray-600 mt-1">{servizio.descrizione}</p>
-                    )}
                   </div>
                 ))}
                 {servizi.length === 0 && (
