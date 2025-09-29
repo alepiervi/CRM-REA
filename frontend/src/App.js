@@ -9707,11 +9707,22 @@ const CommesseManagement = ({
   const updateCommessa = async (commessaId, commessaData) => {
     try {
       const response = await axios.put(`${API}/commesse/${commessaId}`, commessaData);
-      setCommesse(commesse.map(c => c.id === commessaId ? response.data : c));
+      
+      // Aggiorna la lista delle commesse
+      await fetchCommesse();
+      
+      // Se la commessa modificata è quella selezionata, aggiorna anche quella
+      if (selectedCommessa && selectedCommessa.id === commessaId) {
+        setSelectedCommessa(response.data);
+        // Ricarica anche i servizi se necessario per aggiornare i dati correlati
+        await fetchServizi(commessaId);
+      }
+      
       toast({
         title: "Successo",
         description: "Commessa aggiornata con successo",
       });
+      
     } catch (error) {
       console.error("Error updating commessa:", error);
       toast({
