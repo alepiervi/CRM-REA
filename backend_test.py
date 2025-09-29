@@ -1010,7 +1010,7 @@ class CRMAPITester:
             self.log_test("✅ GET /api/tipologie-contratto/all", True, f"Found {len(all_tipologie)} total tipologie")
             
             # VERIFY: Should return ALL tipologie (hardcoded Fastweb + custom database ones)
-            tipologie_names = [t.get('nome', '').lower() for t in all_tipologie]
+            tipologie_names = [(t.get('label') or t.get('nome', '')).lower() for t in all_tipologie]
             
             # Check for hardcoded Fastweb tipologie
             has_energia_fastweb = any('energia' in name and 'fastweb' in name for name in tipologie_names)
