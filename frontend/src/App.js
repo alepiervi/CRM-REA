@@ -11001,6 +11001,28 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     setShowEditModal(true);
   };
 
+  const deleteCliente = async (clienteId) => {
+    try {
+      await axios.delete(`${API}/clienti/${clienteId}`);
+      
+      // Remove from both states
+      setClienti(clienti.filter(c => c.id !== clienteId));
+      setAllClienti(allClienti.filter(c => c.id !== clienteId));
+      
+      toast({
+        title: "Successo",
+        description: "Cliente eliminato con successo",
+      });
+    } catch (error) {
+      console.error("Error deleting cliente:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione del cliente",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (selectedCommessa) {
       fetchClienti();
