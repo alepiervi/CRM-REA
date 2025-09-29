@@ -10045,9 +10045,11 @@ Duplicate,Test,+393471234567"""
         print("\n👤 5. TEST USER MODEL ENHANCEMENTS...")
         
         # POST /api/users with entity_management field
+        import time
+        timestamp = str(int(time.time()))
         test_user_data = {
-            "username": "test_entity_user",
-            "email": "test@example.com",
+            "username": f"test_entity_user_{timestamp}",
+            "email": f"test_{timestamp}@example.com",
             "password": "test123",
             "role": "agente",
             "entity_management": "lead"
