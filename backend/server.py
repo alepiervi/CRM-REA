@@ -7194,6 +7194,76 @@ async def migrate_segmenti_for_existing_tipologie(
         logger.error(f"Error during segmenti migration: {e}")
         raise HTTPException(status_code=500, detail=f"Errore durante la migrazione: {str(e)}")
 
+@api_router.post("/admin/migrate-hardcoded-to-database")
+async def migrate_hardcoded_to_database(
+    current_user: User = Depends(get_current_user)
+):
+    """Migrate ALL hardcoded entities (commesse, servizi, tipologie) to database for full management"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono eseguire migrazioni")
+    
+    try:
+        created_count = 0
+        
+        # 1. MIGRATE HARDCODED TIPOLOGIE TO DATABASE
+        hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+        
+        # Find a default servizio to assign hardcoded tipologie
+        default_servizio = await db.servizi.find_one({})
+        default_servizio_id = default_servizio["id"] if default_servizio else str(uuid.uuid4())
+        
+        for tip in hardcoded_tipologie:
+            # Check if already exists in database
+            existing = await db.tipologie_contratto.find_one({"nome": tip["label"]})
+            if not existing:
+                tipologia_dict = {
+                    "id": str(uuid.uuid4()),
+                    "nome": tip["label"],
+                    "descrizione": f"Migrated from hardcoded: {tip['value']}",
+                    "servizio_id": default_servizio_id,
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc),
+                    "original_hardcoded_value": tip["value"]  # Keep reference
+                }
+                await db.tipologie_contratto.insert_one(tipologia_dict)
+                created_count += 1
+                logger.info(f"Migrated hardcoded tipologia: {tip['label']}")
+        
+        # 2. MIGRATE HARDCODED COMMESSE TO DATABASE (if needed)
+        hardcoded_commesse = [
+            {"nome": "Fastweb", "descrizione": "Commessa Fastweb", "entity_type": "clienti"},
+            {"nome": "Fotovoltaico", "descrizione": "Commessa Fotovoltaico", "entity_type": "lead"}
+        ]
+        
+        for comm in hardcoded_commesse:
+            existing = await db.commesse.find_one({"nome": comm["nome"]})
+            if not existing:
+                commessa_dict = {
+                    "id": str(uuid.uuid4()),
+                    "nome": comm["nome"],
+                    "descrizione": comm["descrizione"],
+                    "entity_type": comm["entity_type"],  # NEW: clienti or lead
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc)
+                }
+                await db.commesse.insert_one(commessa_dict)
+                created_count += 1
+                logger.info(f"Migrated hardcoded commessa: {comm['nome']}")
+        
+        # 3. MIGRATE HARDCODED SERVIZI TO DATABASE (if needed)
+        # This would require more complex logic to associate with commesse
+        
+        return {
+            "success": True,
+            "message": f"Migrazione hardcoded completata. Creati {created_count} elementi nel database.",
+            "entities_created": created_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Error during hardcoded migration: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore durante la migrazione: {str(e)}")
+
 @api_router.get("/tipologie-contratto/all")
 async def get_all_tipologie_contratto(
     current_user: User = Depends(get_current_user)
