@@ -7629,7 +7629,7 @@ Duplicate,Test,+393471234567"""
 
         # Get servizi for Fastweb if found
         if fastweb_commessa_id:
-            success, fastweb_servizi, status = self.make_request('GET', f'servizi?commessa_id={fastweb_commessa_id}', expected_status=200)
+            success, fastweb_servizi, status = self.make_request('GET', f'commesse/{fastweb_commessa_id}/servizi', expected_status=200)
             
             if success and isinstance(fastweb_servizi, list) and len(fastweb_servizi) > 0:
                 energia_servizio = next((s for s in fastweb_servizi if 'energia' in s.get('nome', '').lower()), None)
