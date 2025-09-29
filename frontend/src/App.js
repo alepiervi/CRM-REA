@@ -9972,11 +9972,15 @@ const CommesseManagement = ({
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 {segmenti.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">
-                    Nessun segmento disponibile per questa tipologia
-                  </p>
+                  <div>
+                    {console.log('🎯 No segmenti to display, showing empty state')}
+                    <p className="text-gray-500 text-center py-4">
+                      Nessun segmento disponibile per questa tipologia
+                    </p>
+                  </div>
                 )}
               </div>
             ) : (
