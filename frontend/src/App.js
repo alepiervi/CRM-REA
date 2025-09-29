@@ -11157,6 +11157,17 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => {
+                            if (confirm(`Eliminare definitivamente il cliente "${cliente.nome} ${cliente.cognome}"?`)) {
+                              deleteCliente(cliente.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
