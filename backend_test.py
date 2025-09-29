@@ -8124,6 +8124,27 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def cleanup_resources(self):
+        """Clean up any resources created during testing"""
+        print("\n🧹 Cleaning up test resources...")
+        
+        # Clean up users
+        if self.created_resources.get('users'):
+            for user_id in self.created_resources['users']:
+                try:
+                    success, response, status = self.make_request('DELETE', f'users/{user_id}', expected_status=200)
+                    if success:
+                        print(f"   ✅ Cleaned up user: {user_id}")
+                    else:
+                        print(f"   ⚠️ Could not clean up user: {user_id}")
+                except:
+                    pass
+        
+        # Clean up other resources as needed
+        for resource_type, resource_list in self.created_resources.items():
+            if resource_type != 'users' and resource_list:
+                print(f"   ℹ️ {len(resource_list)} {resource_type} resources noted for cleanup")
+
     def run_all_tests(self):
         """Run test for tipologie contratto endpoint modificato as requested"""
         print("🚀 Starting CRM API Testing - Tipologie Contratto Endpoint Modificato...")
