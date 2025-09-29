@@ -9619,6 +9619,8 @@ const CommesseManagement = ({
   const [showCreateTipologiaModal, setShowCreateTipologiaModal] = useState(false);
   const [showCreateOffertaModal, setShowCreateOffertaModal] = useState(false);
   const [showViewCommessaModal, setShowViewCommessaModal] = useState(false);
+  const [showEditCommessaModal, setShowEditCommessaModal] = useState(false);
+  const [editingCommessa, setEditingCommessa] = useState(null);
   const [modalType, setModalType] = useState(''); // 'commessa', 'servizio', 'tipologia', 'offerta'
   const { toast } = useToast();
 
