@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "FIX FOTOVOLTAICO TIPOLOGIE FILTERING BUG: L'utente ha riportato due problemi critici nella sezione Commesse: 1) 'Tipologie create non visibili' - le tipologie di contratto create non appaiono nell'UI, 2) 'Fotovoltaico mostra tipologie sbagliate' - quando si seleziona la commessa 'Fotovoltaico' e i suoi servizi, vengono mostrate tipologie Fastweb invece di quelle appropriate. OBIETTIVO: Sistemare la logica di filtering nell'endpoint /api/tipologie-contratto per distinguere correttamente tra Fastweb (tipologie hardcoded) e Fotovoltaico (tipologie database), risolvere JSON parsing errors, e assicurarsi che le tipologie create siano visibili."
+user_problem_statement: "IMPLEMENTAZIONE CONFIGURAZIONE AVANZATA COMMESSE: L'utente richiede l'implementazione delle funzionalità avanzate per la configurazione delle Commesse, incluso: 1) Aggiunta di descrizione interna, 2) Configurazione webhook Zapier, 3) Feature flags per WhatsApp, AI e Call Center, 4) Gestione documenti configurabile. Inoltre aggiornamento UI gestione utenti per includere il campo entity_management. OBIETTIVO: Completare l'implementazione frontend per supportare tutti i campi avanzati già disponibili nel backend e testare la creazione delle commesse con le nuove funzionalità."
 
 backend:
   - task: "Extend Hierarchy: Segmenti and Offerte Management System"
