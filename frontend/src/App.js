@@ -9926,15 +9926,9 @@ const CommesseManagement = ({
                       selectedSegmento === segmento.id ? 'border-orange-500 bg-orange-50' : 'hover:bg-gray-50'
                     }`}
                     onClick={() => {
-                      console.log('🎯 Segmento clicked:', segmento.id, segmento.nome);
-                      console.log('🎯 Current selectedSegmento:', selectedSegmento);
                       if (selectedSegmento !== segmento.id) {
-                        console.log('🎯 Setting selectedSegmento to:', segmento.id);
                         setSelectedSegmento(segmento.id);
-                        console.log('🎯 Calling fetchOfferte for:', segmento.id);
                         fetchOfferte(segmento.id);
-                      } else {
-                        console.log('🎯 Segmento already selected, no action needed');
                       }
                     }}
                   >
