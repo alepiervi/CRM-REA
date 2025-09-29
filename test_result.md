@@ -927,7 +927,7 @@ frontend:
 
 test_plan:
   current_focus:
-    - "Layout Migliorato Cards Commesse e Pulsante Modifica"
+    - "Pulsanti Solo Icone e Aggiornamento Automatico Commesse"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
