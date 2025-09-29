@@ -105,6 +105,21 @@
 user_problem_statement: "DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE: L'utente ha richiesto il debug completo per identificare perché Fotovoltaico mostra tipologie sbagliate e perché le tipologie create non sono visibili. OBIETTIVO: Identificare perché Fotovoltaico mostra tipologie sbagliate e perché le tipologie create non sono visibili. TESTS DA ESEGUIRE: 1. Test Login Admin (admin/admin123), 2. Debug Commessa Fotovoltaico (GET /api/commesse per trovare ID, GET /api/commesse/{fotovoltaico_id}/servizi, GET /api/servizi/{fotovoltaico_servizio_id}/tipologie-contratto), 3. Debug Tipologie Create in Database (controllare collection tipologie_contratto), 4. Debug Logica Filtering Hardcoded (verificare perché servizi Fotovoltaico ricevono tipologie Fastweb), 5. Test Creazione Tipologia (POST /api/tipologie-contratto). CREDENZIALI: admin/admin123. FOCUS: Capire perché Fotovoltaico ha tipologie sbagliate e se le tipologie create vengono salvate/mostrate correttamente."
 
 backend:
+  - task: "Debug Fotovoltaico Tipologie Issue - Root Cause Analysis"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE: Testing debug completo per identificare perché Fotovoltaico mostra tipologie sbagliate e perché le tipologie create non sono visibili. Test login admin/admin123, debug commessa Fotovoltaico (GET /api/commesse, GET /api/commesse/{fotovoltaico_id}/servizi, GET /api/servizi/{fotovoltaico_servizio_id}/tipologie-contratto), debug tipologie create in database (controllare collection tipologie_contratto), debug logica filtering hardcoded (verificare mapping servizi), test creazione tipologia (POST /api/tipologie-contratto)."
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL ISSUES IDENTIFIED IN FOTOVOLTAICO TIPOLOGIE SYSTEM! ❌ ROOT CAUSE FOUND: Fotovoltaico service 'CER40' doesn't match any hardcoded filtering conditions in get_tipologie_by_servizio function (lines 6764-6802 in server.py). The service falls through all conditions (agent/negozi/presidi, tls, energia, telefonia) and gets NO hardcoded tipologie, but base endpoint /api/tipologie-contratto still returns all Fastweb tipologie. ❌ FILTERING LOGIC BUG: GET /api/tipologie-contratto?commessa_id=fotovoltaico returns ALL 4 Fastweb tipologie (energia_fastweb, telefonia_fastweb, ho_mobile, telepass) instead of Fotovoltaico-specific ones. ❌ SERVICE ENDPOINT ERROR: GET /api/servizi/{fotovoltaico_servizio_id}/tipologie-contratto returns JSON parse error (Status: 0, 'Expecting value: line 1 column 1 (char 0)'). ✅ TIPOLOGIE CREATION WORKS: POST /api/tipologie-contratto successfully creates tipologie and saves to database. ✅ DATABASE ACCESS: tipologie_contratto collection accessible and working. KEY FINDINGS: Fotovoltaico ID: 4f90875a-9820-41bc-b4bb-4119594772c1, Service ID: 9276de1d-f46c-40b1-a564-cfd75d75cf33 (CER40), Hardcoded filtering logic missing Fotovoltaico case, Service-specific endpoint has JSON parsing issues."
+
   - task: "Aruba Drive Configuration Management System - Complete CRUD Endpoints"
     implemented: true
     working: true
