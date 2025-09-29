@@ -9784,6 +9784,14 @@ const CommesseManagement = ({
         <div className="flex gap-2">
           <Button 
             variant="outline"
+            onClick={migrateHardcodedToDatabase}
+            title="Migra elementi hardcoded nel database per renderli modificabili"
+          >
+            <Database className="w-4 h-4 mr-2" />
+            Migra Hardcoded
+          </Button>
+          <Button 
+            variant="outline"
             onClick={migrateSegmenti}
             title="Crea segmenti per tutte le tipologie esistenti"
           >
