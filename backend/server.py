@@ -7357,30 +7357,34 @@ async def should_use_hardcoded_elements():
         return not (setting and setting.get("value", False))
     except:
         return True  # Default to using hardcoded if check fails
+@api_router.get("/tipologie-contratto/all")
 async def get_all_tipologie_contratto(
     current_user: User = Depends(get_current_user)
 ):
     """Get ALL tipologie contratto (hardcoded + database) for UI selectors"""
     
     try:
-        # Get hardcoded tipologie
-        hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+        all_tipologie = []
         
-        # Get database tipologie
+        # Check if hardcoded elements should be included
+        use_hardcoded = await should_use_hardcoded_elements()
+        
+        if use_hardcoded:
+            # Get hardcoded tipologie
+            hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+            
+            # Add hardcoded tipologie
+            for tipologia in hardcoded_tipologie:
+                all_tipologie.append({
+                    "value": tipologia["value"],
+                    "label": tipologia["label"],
+                    "source": "hardcoded"
+                })
+        
+        # Get database tipologie (always include)
         db_tipologie = await db.tipologie_contratto.find({
             "is_active": True
         }).to_list(length=None)
-        
-        # Format all tipologie for UI selectors
-        all_tipologie = []
-        
-        # Add hardcoded tipologie
-        for tipologia in hardcoded_tipologie:
-            all_tipologie.append({
-                "value": tipologia["value"],
-                "label": tipologia["label"],
-                "source": "hardcoded"
-            })
         
         # Add database tipologie
         for tipologia in db_tipologie:
@@ -7402,11 +7406,15 @@ async def get_all_tipologie_contratto(
         
     except Exception as e:
         logger.error(f"Error getting all tipologie contratto: {e}")
-        # Fallback to basic hardcoded tipologie
-        return [
-            {"value": "energia_fastweb", "label": "Energia Fastweb", "source": "hardcoded"},
-            {"value": "telefonia_fastweb", "label": "Telefonia Fastweb", "source": "hardcoded"}
-        ]
+        # Fallback to basic hardcoded tipologie only if hardcoded are enabled
+        use_hardcoded = await should_use_hardcoded_elements()
+        if use_hardcoded:
+            return [
+                {"value": "energia_fastweb", "label": "Energia Fastweb", "source": "hardcoded"},
+                {"value": "telefonia_fastweb", "label": "Telefonia Fastweb", "source": "hardcoded"}
+            ]
+        else:
+            return []
 
 # ================================
 # SEGMENTI ENDPOINTS
