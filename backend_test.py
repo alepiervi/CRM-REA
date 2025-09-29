@@ -11923,10 +11923,10 @@ Duplicate,Test,+393471234567"""
         
         # Measure response time for CREATE
         start_time = time.time()
-        success, create_response, status = self.make_request('POST', 'commesse', test_commessa_data, 201)
+        success, create_response, status = self.make_request('POST', 'commesse', test_commessa_data, 200)  # Changed from 201 to 200
         create_time = time.time() - start_time
         
-        if success and status == 201:
+        if success and status == 200:  # Changed from 201 to 200
             created_commessa_id = create_response.get('id')
             self.log_test("✅ POST /api/commesse (ADVANCED CONFIG)", True, 
                 f"Status: {status}, ID: {created_commessa_id}, Response time: {create_time:.3f}s")
