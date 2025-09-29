@@ -6703,26 +6703,20 @@ async def create_tipologia_contratto(
         raise HTTPException(status_code=403, detail="Solo gli admin possono creare tipologie di contratto")
     
     try:
-        new_tipologia = {
-            "id": str(uuid.uuid4()),
-            "nome": tipologia_data["nome"],
-            "descrizione": tipologia_data.get("descrizione", ""),
-            "servizio_id": tipologia_data.get("servizio_id"),
-            "is_active": tipologia_data.get("is_active", True),
-            "created_at": datetime.now(timezone.utc),
-            "created_by": current_user.id
-        }
+        new_tipologia = TipologiaContrattoModel(
+            nome=tipologia_data.nome,
+            descrizione=tipologia_data.descrizione,
+            servizio_id=tipologia_data.servizio_id,
+            is_active=tipologia_data.is_active,
+            created_by=current_user.id
+        )
         
-        await db.tipologie_contratto.insert_one(new_tipologia)
-        
-        # Convert datetime to string for JSON serialization
-        response_tipologia = new_tipologia.copy()
-        response_tipologia["created_at"] = response_tipologia["created_at"].isoformat()
+        await db.tipologie_contratto.insert_one(new_tipologia.dict())
         
         return {
             "success": True,
             "message": "Tipologia contratto creata con successo",
-            "tipologia": response_tipologia
+            "tipologia": new_tipologia.dict()
         }
         
     except Exception as e:
