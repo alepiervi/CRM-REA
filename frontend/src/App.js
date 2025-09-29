@@ -9692,6 +9692,50 @@ const CommesseManagement = ({
     }
   };
 
+  const deleteCommessa = async (commessaId) => {
+    try {
+      await axios.delete(`${API}/commesse/${commessaId}`);
+      
+      // Refresh commesse list
+      await fetchCommesse();
+      
+      toast({
+        title: "Successo",
+        description: "Commessa eliminata con successo",
+      });
+    } catch (error) {
+      console.error("Error deleting commessa:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione della commessa",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteServizio = async (servizioId) => {
+    try {
+      await axios.delete(`${API}/servizi/${servizioId}`);
+      
+      // Refresh servizi list
+      if (selectedCommessa) {
+        fetchServiziPerCommessa(selectedCommessa);
+      }
+      
+      toast({
+        title: "Successo",
+        description: "Servizio eliminato con successo",
+      });
+    } catch (error) {
+      console.error("Error deleting servizio:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione del servizio",
+        variant: "destructive",
+      });
+    }
+  };
+
   const rimuoviTipologiaDaServizio = async (tipologiaId, servizioId) => {
     try {
       await axios.delete(`${API}/servizi/${servizioId}/tipologie-contratto/${tipologiaId}`);
