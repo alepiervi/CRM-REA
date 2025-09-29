@@ -10259,19 +10259,6 @@ Duplicate,Test,+393471234567"""
             print("🎉 All tests passed!")
         else:
             print(f"❌ {self.tests_run - self.tests_passed} tests failed")
-        
-        # Print summary
-        print("\n" + "=" * 80)
-        print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
-        print(f"🔍 Debug Status: {'✅ DEBUG COMPLETED - Check findings above!' if debug_test_success else '❌ DEBUG FAILED'}")
-        
-        if debug_test_success:
-            print("🎉 DEBUG TEST COMPLETED: All debug steps executed successfully!")
-            print("🎉 CONFERMATO: Check the detailed findings above for root cause analysis!")
-            return True
-        else:
-            print("🚨 DEBUG TEST FAILED: Could not complete all debug steps!")
-            return False
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
