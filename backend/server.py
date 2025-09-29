@@ -7232,10 +7232,18 @@ async def migrate_hardcoded_to_database(
         for tip in hardcoded_tipologie:
             # Check if already exists in database (by exact name match)
             existing = await db.tipologie_contratto.find_one({"nome": tip["label"]})
-            if not existing:
+            
+            if not existing or force:
+                if existing and force:
+                    # If forcing and exists, create with a different name
+                    nome = f"{tip['label']} (Hardcoded)"
+                    debug_info.append(f"🔄 Force mode: Creating duplicate as '{nome}'")
+                else:
+                    nome = tip["label"]
+                
                 tipologia_dict = {
                     "id": str(uuid.uuid4()),
-                    "nome": tip["label"],
+                    "nome": nome,
                     "descrizione": f"Migrated from hardcoded: {tip['value']}",
                     "servizio_id": default_servizio_id,
                     "is_active": True,
@@ -7244,8 +7252,8 @@ async def migrate_hardcoded_to_database(
                 }
                 await db.tipologie_contratto.insert_one(tipologia_dict)
                 created_count += 1
-                debug_info.append(f"✅ Migrated: {tip['label']}")
-                logger.info(f"Migrated hardcoded tipologia: {tip['label']}")
+                debug_info.append(f"✅ Migrated: {nome}")
+                logger.info(f"Migrated hardcoded tipologia: {nome}")
             else:
                 skipped_count += 1
                 debug_info.append(f"⚠️ Already exists: {tip['label']} (ID: {existing['id']})")
