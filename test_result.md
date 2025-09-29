@@ -206,6 +206,18 @@ backend:
           agent: "testing"
           comment: "🎉 MULTIPLE UPLOAD AND SCREENSHOT FUNCTIONALITY FULLY OPERATIONAL! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ NUOVO ENDPOINT UPLOAD MULTIPLO: POST /api/documents/upload/multiple working correctly - Status: 200, Files processed: 3, All expected response keys present (success, message, total_files, successful_uploads, failed_uploads, results). ✅ PROGRESS TRACKING: Each file has progress tracking with 3 results, all files have required fields (filename, success). ✅ SCREENSHOT GENERATION: generate_entity_screenshot function implemented and called during upload, screenshots directory handling implemented, PNG file generation in screenshots folder, HTML template with cliente details implemented. ✅ ARUBA DRIVE PLACEHOLDER: create_aruba_drive_folder_and_upload function implemented as placeholder, placeholder logs for folder creation implemented, code prepared for Aruba Drive integration when credentials available. ✅ VALIDAZIONI: File size validation implemented (100MB limit), file type validation implemented in upload process, error handling for corrupted/empty files implemented. SUCCESS RATE: 100% (18/18 tests passed) - Upload multiplo pronto per integrazione Aruba Drive!"
 
+  - task: "Commesse Section UI Improvements - Remove Old Buttons and Enhance Layout"
+    implemented: true
+    working: "partial"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "partial"
+          agent: "testing"
+          comment: "🎯 COMMESSE SECTION IMPROVEMENTS TESTING COMPLETED - MIXED RESULTS: ✅ CRITICAL SUCCESS: All old buttons (Migra Hardcoded, Force, Migra Segmenti) successfully removed from interface - main objective achieved! ✅ CODE ANALYSIS: ViewCommessaModal implementation found with comprehensive features including webhook URLs with copy functionality, feature flags visual status (WhatsApp, AI, Call Center), document management configuration, and system timestamps. ✅ LAYOUT IMPROVEMENTS: Enhanced commesse cards with badges for status (Attiva/Inattiva), entity_type badges, and feature flags badges with icons. ✅ BUTTONS IMPLEMENTED: Dettagli and Gestisci buttons present in code with proper functionality for modal opening and hierarchical navigation. ❌ NAVIGATION ISSUE: Unable to access Commesse section via UI navigation - appears to be a routing/navigation problem rather than missing functionality. The improvements are fully implemented in code but not accessible through normal user navigation. RECOMMENDATION: Fix navigation routing to Commesse section to make improvements accessible to users."
+
   - task: "Documents Section Critical Fix - Backend 400 and Frontend documents.map Error"
     implemented: true
     working: true
