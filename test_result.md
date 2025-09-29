@@ -105,6 +105,30 @@
 user_problem_statement: "IMPLEMENTAZIONE CONFIGURAZIONE AVANZATA COMMESSE: L'utente richiede l'implementazione delle funzionalità avanzate per la configurazione delle Commesse, incluso: 1) Aggiunta di descrizione interna, 2) Configurazione webhook Zapier, 3) Feature flags per WhatsApp, AI e Call Center, 4) Gestione documenti configurabile. Inoltre aggiornamento UI gestione utenti per includere il campo entity_management. OBIETTIVO: Completare l'implementazione frontend per supportare tutti i campi avanzati già disponibili nel backend e testare la creazione delle commesse con le nuove funzionalità."
 
 backend:
+  - task: "Advanced Commessa Configuration Frontend Implementation"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ ADVANCED COMMESSA CONFIGURATION FRONTEND IMPLEMENTED: 1) CREATECOMMESSAMODAL UPDATE: Aggiornato con tutti i nuovi campi avanzati: descrizione_interna (textarea per note interne), has_whatsapp/has_ai/has_call_center (checkboxes con icone), document_management (select con 4 opzioni), entity_type (già esistente). 2) UI IMPROVEMENTS: Modal ingrandito (max-w-2xl) con sezioni organizzate, icone per ogni funzionalità (MessageCircle, Bot, Headphones), colori per document_management options, layout responsive. 3) FORM STATE: FormData esteso con tutti i nuovi campi, reset completo nel handleSubmit, validazione campi obbligatori. 4) USER MANAGEMENT UPDATE: Aggiunto campo entity_management a CreateUserModal e EditUserModal con 3 opzioni (clienti, lead, both) e icone colorate. Backend già supporta tutti questi campi. TESTING RICHIESTO: Verificare creazione commesse con configurazioni avanzate, testing form submission, validare persistenza dati backend."
+
+  - task: "User Entity Management Configuration"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ USER ENTITY MANAGEMENT FIELD IMPLEMENTED: 1) FIELD ADDED: Aggiunto campo entity_management a formData in CreateUserModal e EditUserModal con default 'clienti'. 2) UI IMPLEMENTATION: Select con 3 opzioni (Solo Clienti, Solo Lead, Clienti e Lead), icone colorate (UserCheck blu, Users verde, Building2 viola), testo help esplicativo. 3) FORM INTEGRATION: Campo integrato nel form state, onChange handler, form submission include il nuovo campo. Backend UserCreate e User models già supportano entity_management field. TESTING RICHIESTO: Verificare creazione/modifica utenti con entity_management, validare persistenza nel database."
+
   - task: "Extend Hierarchy: Segmenti and Offerte Management System"
     implemented: true
     working: true
