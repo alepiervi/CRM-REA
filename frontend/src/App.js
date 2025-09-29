@@ -9837,6 +9837,14 @@ const CommesseManagement = ({
             >
               Force
             </Button>
+            <Button 
+              variant="destructive"
+              size="sm"
+              onClick={disableHardcodedElements}
+              title="Disabilita completamente elementi hardcoded (usa solo database)"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </div>
           <Button 
             variant="outline"
