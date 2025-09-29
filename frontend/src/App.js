@@ -10238,27 +10238,49 @@ const CommesseManagement = ({
                 {tipologieContratto.map((tipologia) => (
                   <div 
                     key={tipologia.id} 
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                      selectedTipologia === tipologia.id ? 'border-purple-500 bg-purple-50' : 'hover:bg-gray-50'
+                    className={`p-4 border rounded-lg transition-colors ${
+                      selectedTipologia === tipologia.id ? 'border-purple-500 bg-purple-50' : 'hover:bg-gray-50 border-gray-200'
                     }`}
-                    onClick={() => {
-                      const tipologiaId = tipologia.id || tipologia.value;
-                      
-                      if (selectedTipologia !== tipologiaId) {
-                        setSelectedTipologia(tipologiaId);
-                        fetchSegmenti(tipologiaId);
-                      }
-                    }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <FileText className="w-4 h-4 text-purple-600" />
-                        <span className="font-medium">{tipologia.nome || tipologia.label}</span>
+                    <div className="space-y-3">
+                      {/* Header con titolo e icona */}
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                          <FileText className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">{tipologia.nome || tipologia.label}</h3>
+                          {tipologia.descrizione && (
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{tipologia.descrizione}</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex gap-1">
-                        <Badge variant={tipologia.is_active ? "default" : "secondary"}>
+
+                      {/* Badge */}
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant={tipologia.is_active ? "default" : "secondary"} className="text-xs">
                           {tipologia.is_active ? "Attiva" : "Inattiva"}
                         </Badge>
+                      </div>
+
+                      {/* Pulsanti - Layout a griglia */}
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            const tipologiaId = tipologia.id || tipologia.value;
+                            
+                            if (selectedTipologia !== tipologiaId) {
+                              setSelectedTipologia(tipologiaId);
+                              fetchSegmenti(tipologiaId);
+                            }
+                          }}
+                          className="p-2 h-8 w-full"
+                          title="Gestisci segmenti"
+                        >
+                          <Settings className="w-3 h-3" />
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -10268,6 +10290,8 @@ const CommesseManagement = ({
                               rimuoviTipologiaDaServizio(tipologia.id, selectedServizio);
                             }
                           }}
+                          className="p-2 h-8 w-full"
+                          title="Rimuovi da servizio"
                         >
                           <X className="w-3 h-3" />
                         </Button>
@@ -10280,14 +10304,13 @@ const CommesseManagement = ({
                               deleteTipologiaContratto(tipologia.id);
                             }
                           }}
+                          className="p-2 h-8 w-full"
+                          title="Elimina tipologia"
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
-                    {tipologia.descrizione && (
-                      <p className="text-sm text-gray-600 mt-1">{tipologia.descrizione}</p>
-                    )}
                   </div>
                 ))}
                 {tipologieContratto.length === 0 && (
