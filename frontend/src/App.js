@@ -9852,7 +9852,18 @@ const CommesseManagement = ({
             {selectedServizio ? (
               <div className="space-y-3">
                 {tipologieContratto.map((tipologia) => (
-                  <div key={tipologia.id} className="p-3 border rounded-lg">
+                  <div 
+                    key={tipologia.id} 
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedTipologia === tipologia.id ? 'border-purple-500 bg-purple-50' : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => {
+                      if (selectedTipologia !== tipologia.id) {
+                        setSelectedTipologia(tipologia.id);
+                        fetchSegmenti(tipologia.id);
+                      }
+                    }}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <FileText className="w-4 h-4 text-purple-600" />
