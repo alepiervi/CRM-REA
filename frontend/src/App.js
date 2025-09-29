@@ -1298,7 +1298,6 @@ const Dashboard = () => {
         { id: "leads", label: "Lead", icon: Phone },
         { id: "documents", label: "Documenti", icon: FileText },
         { id: "users", label: "Utenti", icon: Users },
-        { id: "containers", label: "Contenitori", icon: Home },
         { id: "workflow-builder", label: "Workflow Builder", icon: Workflow },
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
         { id: "configurazioni", label: "Configurazioni", icon: Cog },
