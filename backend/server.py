@@ -135,6 +135,12 @@ class HouseType(str, Enum):
     CASA_INDIPENDENTE = "casa_indipendente"
     ALTRO = "altro"
 
+# Entity Type Enum for Commesse and Users
+class EntityType(str, Enum):
+    CLIENTI = "clienti"
+    LEAD = "lead"
+    BOTH = "both"
+
 # Models
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
