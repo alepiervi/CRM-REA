@@ -10735,6 +10735,85 @@ const CreateCommessaModal = ({ isOpen, onClose, onSubmit }) => {
   );
 };
 
+const CreateTipologiaContrattoModal = ({ isOpen, onClose, onSubmit, servizioId }) => {
+  const [formData, setFormData] = useState({
+    nome: '',
+    descrizione: '',
+    is_active: true
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit({ 
+      ...formData, 
+      servizio_id: servizioId 
+    });
+    setFormData({ nome: '', descrizione: '', is_active: true });
+    onClose();
+  };
+
+  const handleClose = () => {
+    setFormData({ nome: '', descrizione: '', is_active: true });
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Nuova Tipologia di Contratto</DialogTitle>
+          <p className="text-sm text-gray-600">
+            Crea una nuova tipologia di contratto per il servizio selezionato
+          </p>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="nome">Nome Tipologia *</Label>
+            <Input
+              id="nome"
+              value={formData.nome}
+              onChange={(e) => setFormData({...formData, nome: e.target.value})}
+              placeholder="es. Contratto Business, Contratto Premium..."
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="descrizione">Descrizione</Label>
+            <Textarea
+              id="descrizione"
+              value={formData.descrizione}
+              onChange={(e) => setFormData({...formData, descrizione: e.target.value})}
+              placeholder="Descrizione opzionale della tipologia..."
+              rows={3}
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+              className="rounded"
+            />
+            <Label htmlFor="is_active">Tipologia attiva</Label>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Annulla
+            </Button>
+            <Button type="submit">
+              <Plus className="w-4 h-4 mr-2" />
+              Crea Tipologia
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse }) => {
   const [formData, setFormData] = useState({
     nome: '',
