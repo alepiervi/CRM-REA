@@ -8145,6 +8145,16 @@ Duplicate,Test,+393471234567"""
             if resource_type != 'users' and resource_list:
                 print(f"   ℹ️ {len(resource_list)} {resource_type} resources noted for cleanup")
 
+    def print_summary(self):
+        """Print test summary"""
+        print("\n" + "=" * 80)
+        print("📊 FINAL TEST RESULTS")
+        print("=" * 80)
+        print(f"Tests Run: {self.tests_run}")
+        print(f"Tests Passed: {self.tests_passed}")
+        print(f"Tests Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%" if self.tests_run > 0 else "No tests run")
+
     def test_debug_fotovoltaico_tipologie_issue(self):
         """DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE"""
         print("\n🔍 DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE...")
