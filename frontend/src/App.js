@@ -9547,6 +9547,13 @@ const CommesseManagement = ({
   const [modalType, setModalType] = useState(''); // 'commessa', 'servizio', 'tipologia', 'offerta'
   const { toast } = useToast();
 
+  console.log('🎯 CommesseManagement props:', { 
+    selectedTipologia, 
+    selectedSegmento, 
+    segmenti: segmenti?.length,
+    offerte: offerte?.length 
+  });
+
   useEffect(() => {
     fetchCommesse();
   }, [selectedUnit]);
