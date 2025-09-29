@@ -8857,8 +8857,8 @@ Duplicate,Test,+393471234567"""
             return False
 
     def run_all_tests(self):
-        """Run test for DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE"""
-        print("🚀 Starting CRM API Testing - DEBUG PROBLEMI TIPOLOGIE - FOTOVOLTAICO E TIPOLOGIE CREATE...")
+        """Run test for FOTOVOLTAICO TIPOLOGIE FILTERING CRITICAL TEST"""
+        print("🚀 Starting CRM API Testing - FOTOVOLTAICO TIPOLOGIE FILTERING CRITICAL TEST...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 80)
         
@@ -8867,12 +8867,25 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # PRIORITY TEST: Debug Fotovoltaico tipologie issue
-        print("\n🚨 PRIORITY TEST: DEBUG FOTOVOLTAICO TIPOLOGIE ISSUE...")
-        debug_test_success = self.test_debug_fotovoltaico_tipologie_issue()
+        # PRIORITY TEST: Critical Fotovoltaico tipologie filtering test
+        print("\n🚨 PRIORITY TEST: FOTOVOLTAICO TIPOLOGIE FILTERING CRITICAL...")
+        critical_test_success = self.test_fotovoltaico_tipologie_filtering_critical()
         
         # Cleanup created resources
         self.cleanup_resources()
+        
+        # Print final summary
+        self.print_summary()
+        
+        if critical_test_success:
+            print("\n🎉 FOTOVOLTAICO TIPOLOGIE FILTERING FIX VERIFICATION COMPLETED SUCCESSFULLY!")
+            print("🎯 OBIETTIVO RAGGIUNTO: Fotovoltaico non mostra più tipologie Fastweb")
+            print("✅ Sistema funziona correttamente per entrambe le commesse")
+        else:
+            print("\n🚨 FOTOVOLTAICO TIPOLOGIE FILTERING FIX VERIFICATION FAILED!")
+            print("❌ Problemi critici identificati - richiede ulteriore debug")
+        
+        return critical_test_success
         
         # Print summary
         print("\n" + "=" * 80)
