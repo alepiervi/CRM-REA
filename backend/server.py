@@ -6728,17 +6728,69 @@ async def get_tipologie_by_servizio(
     servizio_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get tipologie contratto for specific servizio"""
+    """Get tipologie contratto for specific servizio (combination of hardcoded + database)"""
     
     try:
-        # Get tipologie associate al servizio
-        tipologie = await db.tipologie_contratto.find({
+        # Get servizio details to understand which tipologie to show
+        servizio = await db.servizi.find_one({"id": servizio_id})
+        if not servizio:
+            raise HTTPException(status_code=404, detail="Servizio non trovato")
+        
+        # First get hardcoded tipologie (existing system)
+        hardcoded_tipologie = await get_tipologie_contratto()
+        
+        # Filter hardcoded tipologie based on servizio type/name
+        filtered_hardcoded = []
+        servizio_name = servizio.get("nome", "").lower()
+        
+        for tipologia in hardcoded_tipologie:
+            # Map tipologie to servizi based on existing logic
+            if "energia" in servizio_name and tipologia["value"] in ["energia_fastweb"]:
+                filtered_hardcoded.append({
+                    "id": tipologia["value"],
+                    "nome": tipologia["label"],
+                    "descrizione": f"Tipologia {tipologia['label']}",
+                    "servizio_id": servizio_id,
+                    "is_active": True,
+                    "source": "hardcoded"
+                })
+            elif "telefonia" in servizio_name and tipologia["value"] in ["telefonia_fastweb"]:
+                filtered_hardcoded.append({
+                    "id": tipologia["value"],
+                    "nome": tipologia["label"],
+                    "descrizione": f"Tipologia {tipologia['label']}",
+                    "servizio_id": servizio_id,
+                    "is_active": True,
+                    "source": "hardcoded"
+                })
+            elif servizio_name in ["agent", "negozi", "presidi"]:
+                # These services get all tipologie
+                filtered_hardcoded.append({
+                    "id": tipologia["value"],
+                    "nome": tipologia["label"],
+                    "descrizione": f"Tipologia {tipologia['label']}",
+                    "servizio_id": servizio_id,
+                    "is_active": True,
+                    "source": "hardcoded"
+                })
+        
+        # Then get custom database tipologie
+        db_tipologie = await db.tipologie_contratto.find({
             "servizio_id": servizio_id,
             "is_active": True
         }).to_list(length=None)
         
-        return tipologie
+        # Add source field to db tipologie
+        for tipologia in db_tipologie:
+            tipologia["source"] = "database"
         
+        # Combine both lists
+        all_tipologie = filtered_hardcoded + db_tipologie
+        
+        return all_tipologie
+        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error fetching tipologie for servizio {servizio_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nel caricamento: {str(e)}")
