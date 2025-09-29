@@ -903,8 +903,9 @@ frontend:
 
 test_plan:
   current_focus:
-    - "Advanced Commessa Configuration Frontend Implementation"
-    - "User Entity Management Configuration"
+    - "Commesse Section UI Improvements Testing"
+    - "ViewCommessaModal Functionality Testing"
+    - "Hierarchical Navigation Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -912,6 +913,8 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: "EXTENDED HIERARCHY SYSTEM IMPLEMENTED: Completato l'estensione della gerarchia da 3 a 5 colonne (Commesse → Servizi → Tipologie → Segmenti → Offerte). BACKEND: Aggiunti modelli e endpoint per segmenti e offerte con CRUD completo. FRONTEND: Esteso CommesseManagement con nuove colonne interattive, segmenti auto-creati (Privato/Business), gestione attivazione/disattivazione segmenti per tipologia, CRUD offerte con modal dedicato. TESTING RICHIESTO: 1) Verificare caricamento segmenti quando si clicca tipologia, 2) Testare creazione automatica segmenti Privato/Business, 3) Verificare attivazione/disattivazione segmenti, 4) Testare CRUD offerte completo, 5) Confermare flusso gerarchia a 5 livelli funzionante."
+    - agent: "testing"
+      message: "🎯 STARTING COMPREHENSIVE COMMESSE SECTION IMPROVEMENTS TESTING: Testing removed buttons (Migra Hardcoded, Force, X, Migra Segmenti), improved layout with badges and icons, ViewCommessaModal functionality with webhook URLs and feature flags, hierarchical navigation (Commesse → Servizi → Tipologie), and existing functionality (creation, deletion, navigation). Login: admin/admin123."
     - agent: "testing"
       message: "🎉 CRITICAL TEST COMPLETED: HARDCODED ELEMENTS DISABLE SYSTEM VERIFICATION - 100% SUCCESS! ✅ OBJECTIVE ACHIEVED: Verified that after disabling hardcoded elements, users can ONLY see and interact with database elements, making everything fully deletable and manageable. ✅ KEY FINDINGS: 1) GET /api/admin/hardcoded-status correctly shows hardcoded_disabled: true, 2) POST /api/admin/disable-hardcoded-elements works perfectly with proper response messages, 3) All tipologie endpoints return ONLY database tipologie (0 hardcoded), 4) Previously hardcoded tipologie (Energia Fastweb, Telefonia Fastweb) have been migrated to database with source: database, 5) Fotovoltaico functionality preserved (returns 1 database tipologia), 6) system_settings collection correctly updated with disable flag. ✅ CRITICAL SUCCESS: The hardcoded elements disable system is FULLY FUNCTIONAL and working exactly as designed. Users can now delete/modify all tipologie since they are database records with proper UUIDs. SUCCESS RATE: 100% (22/22 tests passed). NO FURTHER BACKEND TESTING NEEDED - system is production ready!"
 
