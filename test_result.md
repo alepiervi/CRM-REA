@@ -171,11 +171,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "EyeOff Icon Error Resolution and Segmenti Cards Testing"
+    - "Calendar Filter and Client Export Functionality"
   stuck_tasks:
     - "EyeOff Icon Error Resolution and Segmenti Cards Testing"
   test_all: false
-  test_priority: "critical_first"
+  test_priority: "high_first"
 
 agent_communication:
     - agent: "testing"
