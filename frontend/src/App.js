@@ -9804,6 +9804,14 @@ const CommesseManagement = ({
     try {
       await axios.delete(`${API}/commesse/${commessaId}`);
       
+      // Se la commessa eliminata era quella selezionata, resetta la selezione
+      if (selectedCommessa && selectedCommessa.id === commessaId) {
+        setSelectedCommessa(null);
+        setSelectedServizio(null);
+        setServizi([]);
+        setTipologieContratto([]);
+      }
+      
       // Refresh commesse list
       await fetchCommesse();
       
