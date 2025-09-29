@@ -9680,11 +9680,20 @@ const CommesseManagement = ({
   const createCommessa = async (commessaData) => {
     try {
       const response = await axios.post(`${API}/commesse`, commessaData);
-      setCommesse([...commesse, response.data]);
+      // Aggiorna la lista delle commesse
+      await fetchCommesse();
+      
       toast({
         title: "Successo",
         description: "Commessa creata con successo",
       });
+      
+      // Se non c'è una commessa selezionata, seleziona automaticamente quella appena creata
+      if (!selectedCommessa) {
+        setSelectedCommessa(response.data);
+        await fetchServizi(response.data.id);
+      }
+      
     } catch (error) {
       console.error("Error creating commessa:", error);
       toast({
