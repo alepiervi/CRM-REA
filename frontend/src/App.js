@@ -9563,7 +9563,7 @@ const CommesseManagement = ({ selectedUnit, units }) => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lista Commesse */}
         <Card>
           <CardHeader>
@@ -9580,7 +9580,9 @@ const CommesseManagement = ({ selectedUnit, units }) => {
                   onClick={() => {
                     if (selectedCommessa?.id !== commessa.id) {
                       setServizi([]); // Reset servizi
+                      setTipologieContratto([]); // Reset tipologie
                       setSelectedCommessa(commessa);
+                      setSelectedServizio(null);
                       fetchServizi(commessa.id);
                     }
                   }}
@@ -9605,7 +9607,7 @@ const CommesseManagement = ({ selectedUnit, units }) => {
           </CardContent>
         </Card>
 
-        {/* Dettagli Commessa e Servizi */}
+        {/* Servizi della Commessa Selezionata */}
         <Card>
           <CardHeader>
             <CardTitle>
@@ -9633,7 +9635,18 @@ const CommesseManagement = ({ selectedUnit, units }) => {
             {selectedCommessa ? (
               <div className="space-y-3">
                 {servizi.map((servizio) => (
-                  <div key={servizio.id} className="p-3 border rounded-lg">
+                  <div 
+                    key={servizio.id} 
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedServizio === servizio.id ? 'border-green-500 bg-green-50' : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => {
+                      if (selectedServizio !== servizio.id) {
+                        setSelectedServizio(servizio.id);
+                        fetchTipologieContratto(servizio.id);
+                      }
+                    }}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <Settings2 className="w-4 h-4 text-green-600" />
@@ -9655,9 +9668,83 @@ const CommesseManagement = ({ selectedUnit, units }) => {
                 )}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8">
-                Seleziona una commessa per vedere i servizi
-              </p>
+              <p className="text-gray-500 text-center py-8">Seleziona una commessa per vedere i servizi</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Tipologie di Contratto del Servizio Selezionato */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {selectedServizio ? 'Tipologie di Contratto' : 'Seleziona un Servizio'}
+            </CardTitle>
+            {selectedServizio && (
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  onClick={() => {
+                    setModalType('tipologia');
+                    setShowCreateTipologiaModal(true);
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuova Tipologia
+                </Button>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent>
+            {selectedServizio ? (
+              <div className="space-y-3">
+                {tipologieContratto.map((tipologia) => (
+                  <div key={tipologia.id} className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-4 h-4 text-purple-600" />
+                        <span className="font-medium">{tipologia.nome}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Badge variant={tipologia.is_active ? "default" : "secondary"}>
+                          {tipologia.is_active ? "Attiva" : "Inattiva"}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (confirm(`Rimuovere "${tipologia.nome}" da questo servizio?`)) {
+                              rimuoviTipologiaDaServizio(tipologia.id, selectedServizio);
+                            }
+                          }}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => {
+                            if (confirm(`Eliminare definitivamente "${tipologia.nome}"?`)) {
+                              deleteTipologiaContratto(tipologia.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    {tipologia.descrizione && (
+                      <p className="text-sm text-gray-600 mt-1">{tipologia.descrizione}</p>
+                    )}
+                  </div>
+                ))}
+                {tipologieContratto.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">
+                    Nessuna tipologia di contratto configurata per questo servizio
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">Seleziona un servizio per vedere le tipologie di contratto</p>
             )}
           </CardContent>
         </Card>
