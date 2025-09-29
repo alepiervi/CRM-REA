@@ -10427,24 +10427,43 @@ const CommesseManagement = ({
             {selectedSegmento ? (
               <div className="space-y-3">
                 {offerte.map((offerta) => (
-                  <div key={offerta.id} className="p-3 border rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Star className="w-4 h-4 text-yellow-600" />
-                        <span className="font-medium">{offerta.nome}</span>
+                  <div 
+                    key={offerta.id} 
+                    className="p-4 border rounded-lg border-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="space-y-3">
+                      {/* Header con titolo e icona */}
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
+                          <Star className="w-5 h-5 text-yellow-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">{offerta.nome}</h3>
+                          {offerta.descrizione && (
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{offerta.descrizione}</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex gap-1">
-                        <Badge variant={offerta.is_active ? "default" : "secondary"}>
+
+                      {/* Badge */}
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant={offerta.is_active ? "default" : "secondary"} className="text-xs">
                           {offerta.is_active ? "Attiva" : "Inattiva"}
                         </Badge>
+                      </div>
+
+                      {/* Pulsanti - Layout a griglia */}
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => {
                             updateOfferta(offerta.id, { is_active: !offerta.is_active });
                           }}
+                          className="p-2 h-8 w-full"
+                          title={offerta.is_active ? 'Disattiva offerta' : 'Attiva offerta'}
                         >
-                          {offerta.is_active ? 'Disattiva' : 'Attiva'}
+                          {offerta.is_active ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                         </Button>
                         <Button
                           size="sm"
@@ -10454,14 +10473,13 @@ const CommesseManagement = ({
                               deleteOfferta(offerta.id);
                             }
                           }}
+                          className="p-2 h-8 w-full"
+                          title="Elimina offerta"
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
-                    {offerta.descrizione && (
-                      <p className="text-sm text-gray-600 mt-1">{offerta.descrizione}</p>
-                    )}
                   </div>
                 ))}
                 {offerte.length === 0 && (
