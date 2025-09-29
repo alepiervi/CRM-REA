@@ -6692,10 +6692,14 @@ async def create_tipologia_contratto(
         
         await db.tipologie_contratto.insert_one(new_tipologia)
         
+        # Convert datetime to string for JSON serialization
+        response_tipologia = new_tipologia.copy()
+        response_tipologia["created_at"] = response_tipologia["created_at"].isoformat()
+        
         return {
             "success": True,
             "message": "Tipologia contratto creata con successo",
-            "tipologia": new_tipologia
+            "tipologia": response_tipologia
         }
         
     except Exception as e:
