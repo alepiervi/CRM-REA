@@ -9581,6 +9581,114 @@ const CommesseManagement = ({
     }
   };
 
+  const createCommessa = async (commessaData) => {
+    try {
+      const response = await axios.post(`${API}/commesse`, commessaData);
+      setCommesse([...commesse, response.data]);
+      toast({
+        title: "Successo",
+        description: "Commessa creata con successo",
+      });
+    } catch (error) {
+      console.error("Error creating commessa:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione della commessa",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createServizio = async (servizioData) => {
+    try {
+      const response = await axios.post(`${API}/servizi`, servizioData);
+      setServizi([...servizi, response.data]);
+      toast({
+        title: "Successo",
+        description: "Servizio creato con successo",
+      });
+    } catch (error) {
+      console.error("Error creating servizio:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione del servizio",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createTipologiaContratto = async (tipologiaData) => {
+    try {
+      const response = await axios.post(`${API}/tipologie-contratto`, {
+        ...tipologiaData,
+        servizio_id: selectedServizio
+      });
+      
+      // Refresh tipologie list
+      if (selectedServizio) {
+        fetchTipologieContratto(selectedServizio);
+      }
+      
+      toast({
+        title: "Successo",
+        description: "Tipologia contratto creata con successo",
+      });
+    } catch (error) {
+      console.error("Error creating tipologia contratto:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella creazione della tipologia contratto",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteTipologiaContratto = async (tipologiaId) => {
+    try {
+      await axios.delete(`${API}/tipologie-contratto/${tipologiaId}`);
+      
+      // Refresh tipologie list
+      if (selectedServizio) {
+        fetchTipologieContratto(selectedServizio);
+      }
+      
+      toast({
+        title: "Successo",
+        description: "Tipologia contratto eliminata con successo",
+      });
+    } catch (error) {
+      console.error("Error deleting tipologia contratto:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'eliminazione della tipologia contratto",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const rimuoviTipologiaDaServizio = async (tipologiaId, servizioId) => {
+    try {
+      await axios.delete(`${API}/servizi/${servizioId}/tipologie-contratto/${tipologiaId}`);
+      
+      // Refresh tipologie list
+      if (selectedServizio) {
+        fetchTipologieContratto(selectedServizio);
+      }
+      
+      toast({
+        title: "Successo",
+        description: "Tipologia rimossa dal servizio",
+      });
+    } catch (error) {
+      console.error("Error removing tipologia:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella rimozione della tipologia",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Duplicate functions removed
 
   return (
