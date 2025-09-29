@@ -57,8 +57,8 @@
 ##   test_priority: "high_first"  # or "sequential" or "stuck_first"
 ##
 ## agent_communication:
-##     -agent: "main"  # or "testing" or "user"
-##     -message: "Communication message between agents"
+##    - agent: "main"
+##      message: "✅ IMPLEMENTAZIONE CONFIGURAZIONE AVANZATA COMMESSE COMPLETATA! Ho implementato con successo: 1) CREATECOMMESSAMODAL: Aggiornato con descrizione_interna, feature flags (WhatsApp, AI, Call Center), document_management selector. 2) USER MANAGEMENT: Aggiunto campo entity_management per controllo accesso entità. 3) UI MIGLIORAMENTI: Modal responsive, icone, sezioni organizzate, colori. Backend già supportava tutti i campi. PRONTO PER TESTING: Verificare creazione commesse con configurazioni avanzate e gestione utenti con entity_management field."
 
 # Protocol Guidelines for Main agent
 #
