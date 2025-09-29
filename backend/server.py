@@ -7094,6 +7094,58 @@ async def migrate_segmenti_for_existing_tipologie(
         logger.error(f"Error during segmenti migration: {e}")
         raise HTTPException(status_code=500, detail=f"Errore durante la migrazione: {str(e)}")
 
+@api_router.get("/tipologie-contratto/all")
+async def get_all_tipologie_contratto(
+    current_user: User = Depends(get_current_user)
+):
+    """Get ALL tipologie contratto (hardcoded + database) for UI selectors"""
+    
+    try:
+        # Get hardcoded tipologie
+        hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+        
+        # Get database tipologie
+        db_tipologie = await db.tipologie_contratto.find({
+            "is_active": True
+        }).to_list(length=None)
+        
+        # Format all tipologie for UI selectors
+        all_tipologie = []
+        
+        # Add hardcoded tipologie
+        for tipologia in hardcoded_tipologie:
+            all_tipologie.append({
+                "value": tipologia["value"],
+                "label": tipologia["label"],
+                "source": "hardcoded"
+            })
+        
+        # Add database tipologie
+        for tipologia in db_tipologie:
+            # Clean up for JSON serialization
+            if "_id" in tipologia:
+                del tipologia["_id"]
+            if "created_at" in tipologia and hasattr(tipologia["created_at"], "isoformat"):
+                tipologia["created_at"] = tipologia["created_at"].isoformat()
+            if "updated_at" in tipologia and tipologia["updated_at"] and hasattr(tipologia["updated_at"], "isoformat"):
+                tipologia["updated_at"] = tipologia["updated_at"].isoformat()
+                
+            all_tipologie.append({
+                "value": tipologia["id"],
+                "label": tipologia["nome"],
+                "source": "database"
+            })
+        
+        return all_tipologie
+        
+    except Exception as e:
+        logger.error(f"Error getting all tipologie contratto: {e}")
+        # Fallback to basic hardcoded tipologie
+        return [
+            {"value": "energia_fastweb", "label": "Energia Fastweb", "source": "hardcoded"},
+            {"value": "telefonia_fastweb", "label": "Telefonia Fastweb", "source": "hardcoded"}
+        ]
+
 # ================================
 # SEGMENTI ENDPOINTS
 # ================================
