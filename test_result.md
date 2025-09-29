@@ -610,11 +610,11 @@ backend:
     priority: "high"
     needs_retesting: false
   
-  - task: "Pulsanti Solo Icone e Aggiornamento Automatico Commesse"
+  - task: "Rimozione Sezione Contenitori e Miglioramento Cards Gerarchia Commesse"
     implemented: true
-    working: true
+    working: "partial"
     file: "/app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -627,6 +627,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "🎉 TESTING FINALE BACKEND COMMESSE COMPLETATO - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ CREATE COMMESSA CON REFRESH AUTOMATICO: Successfully created commessa with all advanced fields (descrizione_interna, entity_type, has_whatsapp, has_ai, has_call_center, document_management) in 0.055s. ✅ WEBHOOK ZAPIER AUTO-GENERATION: Automatically generated webhook URL (https://hooks.zapier.com/hooks/catch/...) for new commessa. ✅ FEATURE FLAGS COMBINATIONS: All 4 combinations tested successfully - different combinations of WhatsApp, AI, Call Center flags with various document_management settings (disabled, lead_only, clienti_only, both). ✅ UPDATE IN TEMPO REALE: PUT /api/commesse/{id} successfully updates all fields in 0.059s, changes immediately visible via GET /api/commesse/{id} in 0.056s. ✅ DELETE CON CLEANUP AUTOMATICO: DELETE /api/commesse/{id} removes commessa in 0.055s, immediate removal from list verified in 0.055s, GET returns 404 as expected. ✅ DATA CONSISTENCY: Timestamps (created_at, updated_at) working correctly, updated_at > created_at verified, all required fields present. ✅ RESPONSE TIME PERFORMANCE: Average response time 0.381s (Min: 0.053s, Max: 1.034s) - well under 2.0s threshold for optimal UI performance. ✅ IMMEDIATE AVAILABILITY: All CRUD operations support automatic UI refresh without page reload. SUCCESS RATE: 100% (25/25 tests passed) - Backend supporta completamente l'aggiornamento automatico dell'UI!"
+        - working: "partial"
+          agent: "testing"
+          comment: "🎯 TESTING FINALE RIMOZIONE CONTENITORI E MIGLIORAMENTO CARDS - RISULTATI MISTI: ✅ OBIETTIVO 1 - RIMOZIONE SEZIONE CONTENITORI: COMPLETAMENTE RIUSCITO! Verificato che 'Contenitori' NON è più presente nella sidebar di navigazione. Sidebar pulita con 14 voci (Dashboard, Lead, Documenti, Utenti, Workflow Builder, Configurazione AI, Configurazioni, WhatsApp, Qualificazione Lead, Call Center, Commesse, Unit & Sub Agenzie, Clienti, Analytics) - nessuna traccia di 'Contenitori'. ✅ BACKEND DATA LOADING: Console logs confermano caricamento corretto di 2 commesse (IDs: 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1, 5ef3ae82-645a-43d4-82e0-a3b27da77a7c) e 23 tipologie contratto. ❌ OBIETTIVO 2 - CARDS GERARCHIA COMMESSE: NON TESTABILE per problema di navigazione. Il pulsante 'Commesse' è visibile nella sidebar ma il click non attiva la sezione Commesse - rimane sulla Dashboard. Tentati 3 metodi diversi (selector diretto, ricerca manuale, JavaScript) ma tutti falliscono nel cambiare la vista. ❌ PROBLEMA CRITICO: Navigation routing non funziona per la sezione Commesse, impedendo la verifica del layout cards migliorato con pulsanti solo icone (Eye, Edit, Settings, Trash2) e gerarchia completa (Commesse → Servizi → Tipologie → Segmenti → Offerte). RICHIEDE FIX: Problema di routing/state management che impedisce l'accesso alla sezione Commesse dall'interfaccia utente."
     status_history:
         - working: "NA"
           agent: "testing"
