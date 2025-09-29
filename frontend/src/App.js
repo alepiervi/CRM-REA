@@ -11333,13 +11333,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     setIsExporting(true);
     
     try {
-      // Apply date filter to current filtered clients
-      const clientsToExport = filterClientsByDate(clienti);
+      // Get filtered clients using the unified function
+      const clientsToExport = getFilteredClients();
       
       if (clientsToExport.length === 0) {
         toast({
           title: "Attenzione", 
-          description: "Nessun cliente trovato nel periodo selezionato",
+          description: "Nessun cliente trovato con i filtri applicati",
           variant: "destructive",
         });
         setIsExporting(false);
