@@ -9896,7 +9896,7 @@ Duplicate,Test,+393471234567"""
             print("\n🚨 CRITICAL FASTWEB FIX VERIFICATION FAILED!")
             print("❌ Fastweb tipologie contratto fix has issues - check detailed results above")
         
-        return segmenti_tipologie_test_success
+        return fastweb_fix_success
         
         # Print summary
         print("\n" + "=" * 80)
