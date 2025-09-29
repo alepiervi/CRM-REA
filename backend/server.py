@@ -6672,40 +6672,98 @@ async def get_tipologie_contratto(
         if not has_access:
             raise HTTPException(status_code=403, detail="Access denied to this commessa")
     
-    # Lista base per tutti i servizi di Fastweb
-    tipologie_base = [
-        {"value": "energia_fastweb", "label": "Energia Fastweb"},
-        {"value": "telefonia_fastweb", "label": "Telefonia Fastweb"}
-    ]
-    
-    # Tipologie aggiuntive per servizi specifici
-    tipologie_aggiuntive = [
-        {"value": "ho_mobile", "label": "Ho Mobile"},
-        {"value": "telepass", "label": "Telepass"}
-    ]
-    
-    # Se non specificato, restituisci tutte
-    if not servizio_id:
-        return tipologie_base + tipologie_aggiuntive
-    
-    # Logica basata sul servizio
     try:
+        # NEW LOGIC: Check commessa to determine tipologie source
+        if commessa_id:
+            commessa = await db.commesse.find_one({"id": commessa_id})
+            if commessa:
+                commessa_nome = commessa.get("nome", "").lower()
+                
+                # FOTOVOLTAICO: Return only database tipologie (no hardcoded ones)
+                if "fotovoltaico" in commessa_nome:
+                    if servizio_id:
+                        # Get tipologie for specific servizio from database
+                        db_tipologie = await db.tipologie_contratto.find({
+                            "servizio_id": servizio_id,
+                            "is_active": True
+                        }).to_list(length=None)
+                        
+                        # Transform to expected format
+                        formatted_tipologie = []
+                        for tipologia in db_tipologie:
+                            formatted_tipologie.append({
+                                "value": tipologia["id"],
+                                "label": tipologia["nome"],
+                                "descrizione": tipologia.get("descrizione", ""),
+                                "source": "database"
+                            })
+                        return formatted_tipologie
+                    else:
+                        # Get all Fotovoltaico tipologie from database
+                        # First find all Fotovoltaico servizi
+                        fotovoltaico_servizi = await db.servizi.find({"commessa_id": commessa_id}).to_list(length=None)
+                        all_tipologie = []
+                        
+                        for servizio in fotovoltaico_servizi:
+                            db_tipologie = await db.tipologie_contratto.find({
+                                "servizio_id": servizio["id"],
+                                "is_active": True
+                            }).to_list(length=None)
+                            
+                            for tipologia in db_tipologie:
+                                # Avoid duplicates
+                                if not any(t["value"] == tipologia["id"] for t in all_tipologie):
+                                    all_tipologie.append({
+                                        "value": tipologia["id"],
+                                        "label": tipologia["nome"],
+                                        "descrizione": tipologia.get("descrizione", ""),
+                                        "source": "database"
+                                    })
+                        return all_tipologie
+        
+        # FASTWEB LOGIC (existing hardcoded logic for backward compatibility)
+        # Use the centralized hardcoded function
+        hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+        
+        # If no servizio_id specified, return all hardcoded tipologie
+        if not servizio_id:
+            return [{"value": tip["value"], "label": tip["label"]} for tip in hardcoded_tipologie]
+        
+        # Filter by servizio logic for Fastweb
         servizio = await db.servizi.find_one({"id": servizio_id})
         if not servizio:
-            return tipologie_base
+            # Return base tipologie if servizio not found
+            return [{"value": tip["value"], "label": tip["label"]} for tip in hardcoded_tipologie[:2]]
         
         servizio_nome = servizio.get("nome", "").lower()
         
-        # Per servizi Negozi, Presidi e Agent: aggiunge Ho Mobile e Telepass
-        if any(nome in servizio_nome for nome in ["negozi", "presidi", "agent"]):
-            return tipologie_base + tipologie_aggiuntive
-        else:
-            # Per tutti gli altri servizi: solo Energia e Telefonia Fastweb
-            return tipologie_base
+        # Filter hardcoded tipologie based on servizio
+        filtered_tipologie = []
+        for tipologia in hardcoded_tipologie:
+            # Map tipologie to servizi based on existing logic
+            if servizio_nome in ["agent", "negozi", "presidi"]:
+                # These Fastweb services get all Fastweb tipologie
+                filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
+            elif servizio_nome == "tls":
+                # TLS service gets base tipologie (Energia + Telefonia Fastweb)
+                if tipologia["value"] in ["energia_fastweb", "telefonia_fastweb"]:
+                    filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
+            elif "energia" in servizio_nome and tipologia["value"] in ["energia_fastweb"]:
+                # Energia services get Energia Fastweb
+                filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
+            elif "telefonia" in servizio_nome and tipologia["value"] in ["telefonia_fastweb"]:
+                # Telefonia services get Telefonia Fastweb
+                filtered_tipologie.append({"value": tipologia["value"], "label": tipologia["label"]})
+        
+        return filtered_tipologie
             
     except Exception as e:
-        logging.error(f"Error getting tipologie contratto: {e}")
-        return tipologie_base
+        logger.error(f"Error getting tipologie contratto: {e}")
+        # Fallback to hardcoded base tipologie
+        return [
+            {"value": "energia_fastweb", "label": "Energia Fastweb"},
+            {"value": "telefonia_fastweb", "label": "Telefonia Fastweb"}
+        ]
 
 # CRUD Endpoints per Tipologie di Contratto (Nuovi)
 @api_router.post("/tipologie-contratto")
