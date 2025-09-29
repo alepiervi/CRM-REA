@@ -8926,10 +8926,40 @@ Duplicate,Test,+393471234567"""
         print("   Step 3: GET /api/servizi/{servizio_id}/tipologie-contratto (trova tipologia)...")
         success, tipologie_response, status = self.make_request('GET', f'servizi/{servizio_id}/tipologie-contratto', expected_status=200)
         
-        if success and status == 200 and len(tipologie_response) > 0:
-            tipologia_id = tipologie_response[0]['id']
-            tipologia_nome = tipologie_response[0]['nome']
-            self.log_test("✅ GET /api/servizi/{servizio_id}/tipologie-contratto", True, f"Found tipologia: {tipologia_nome} (ID: {tipologia_id})")
+        if success and status == 200:
+            self.log_test("✅ GET /api/servizi/{servizio_id}/tipologie-contratto", True, f"Status: {status}, Found {len(tipologie_response)} tipologie")
+            
+            # Check if we have database tipologie, if not create one for testing
+            if len(tipologie_response) > 0:
+                # Use existing tipologia
+                tipologia_id = tipologie_response[0]['id']
+                tipologia_nome = tipologie_response[0]['nome']
+                self.log_test("✅ Found existing tipologia", True, f"Using tipologia: {tipologia_nome} (ID: {tipologia_id})")
+            else:
+                # Create a test tipologia for segmenti testing
+                print("   Creating test tipologia for segmenti testing...")
+                create_tipologia_data = {
+                    "nome": "Test Tipologia per Segmenti",
+                    "descrizione": "Tipologia di test per verificare funzionalità segmenti",
+                    "servizio_id": servizio_id
+                }
+                success, create_response, status = self.make_request('POST', 'tipologie-contratto', create_tipologia_data, expected_status=200)
+                
+                if success and status == 200:
+                    tipologia_id = create_response['tipologia']['id']
+                    tipologia_nome = create_response['tipologia']['nome']
+                    self.log_test("✅ Created test tipologia", True, f"Created tipologia: {tipologia_nome} (ID: {tipologia_id})")
+                    self.created_resources.setdefault('tipologie', []).append(tipologia_id)
+                    
+                    # Associate tipologia with servizio
+                    success, assoc_response, status = self.make_request('POST', f'servizi/{servizio_id}/tipologie-contratto/{tipologia_id}', expected_status=200)
+                    if success:
+                        self.log_test("✅ Associated tipologia with servizio", True, f"Association successful")
+                    else:
+                        self.log_test("❌ Failed to associate tipologia", False, f"Status: {status}")
+                else:
+                    self.log_test("❌ Failed to create test tipologia", False, f"Status: {status}, Response: {create_response}")
+                    return False
         else:
             self.log_test("❌ GET /api/servizi/{servizio_id}/tipologie-contratto", False, f"Status: {status}, No tipologie found")
             return False
