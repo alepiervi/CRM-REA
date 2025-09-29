@@ -10632,7 +10632,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       params.append('limit', '50');
       
       const response = await axios.get(`${API}/clienti?${params}`);
-      setClienti(response.data);
+      setAllClienti(response.data); // Store all clients
+      setClienti(response.data); // Display all initially
     } catch (error) {
       console.error("Error fetching clienti:", error);
       toast({
@@ -10643,6 +10644,58 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filter clients based on search query and type
+  const filterClienti = (query, type) => {
+    if (!query.trim()) {
+      setClienti(allClienti);
+      return;
+    }
+
+    const searchQuery = query.toLowerCase().trim();
+    const filtered = allClienti.filter(cliente => {
+      switch (type) {
+        case 'id':
+          return cliente.cliente_id?.toLowerCase().includes(searchQuery);
+        case 'cognome':
+          return cliente.cognome?.toLowerCase().includes(searchQuery);
+        case 'codice_fiscale':
+          return cliente.codice_fiscale?.toLowerCase().includes(searchQuery);
+        case 'partita_iva':
+          return cliente.partita_iva?.toLowerCase().includes(searchQuery);
+        case 'telefono':
+          return cliente.telefono?.includes(searchQuery) || cliente.cellulare?.includes(searchQuery);
+        case 'email':
+          return cliente.email?.toLowerCase().includes(searchQuery);
+        case 'all':
+        default:
+          return (
+            cliente.cliente_id?.toLowerCase().includes(searchQuery) ||
+            cliente.cognome?.toLowerCase().includes(searchQuery) ||
+            cliente.nome?.toLowerCase().includes(searchQuery) ||
+            cliente.codice_fiscale?.toLowerCase().includes(searchQuery) ||
+            cliente.partita_iva?.toLowerCase().includes(searchQuery) ||
+            cliente.telefono?.includes(searchQuery) ||
+            cliente.cellulare?.includes(searchQuery) ||
+            cliente.email?.toLowerCase().includes(searchQuery)
+          );
+      }
+    });
+    
+    setClienti(filtered);
+  };
+
+  // Handle search input change
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+    filterClienti(query, searchType);
+  };
+
+  // Handle search type change
+  const handleSearchTypeChange = (type) => {
+    setSearchType(type);
+    filterClienti(searchQuery, type);
   };
 
   const createCliente = async (clienteData) => {
