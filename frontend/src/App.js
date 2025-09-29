@@ -3385,6 +3385,39 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Entity Management Configuration */}
+            <div>
+              <Label htmlFor="entity_management">Gestione Entità</Label>
+              <Select value={formData.entity_management} onValueChange={(value) => setFormData({ ...formData, entity_management: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona tipo entità gestite" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="clienti">
+                    <div className="flex items-center">
+                      <UserCheck className="w-4 h-4 mr-2 text-blue-500" />
+                      Solo Clienti
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="lead">
+                    <div className="flex items-center">
+                      <Users className="w-4 h-4 mr-2 text-green-500" />
+                      Solo Lead
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="both">
+                    <div className="flex items-center">
+                      <Building2 className="w-4 h-4 mr-2 text-purple-500" />
+                      Clienti e Lead
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500 mt-1">
+                Definisce quali tipi di entità l'utente può visualizzare e gestire
+              </p>
+            </div>
           </div>
 
           {/* Scelta tipo assegnazione - Non per responsabile/backoffice commessa */}
