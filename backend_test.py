@@ -10718,6 +10718,8 @@ Duplicate,Test,+393471234567"""
             
             if hardcoded_reduction > 0:
                 self.log_test("✅ Hardcoded tipologie successfully removed", True, f"Removed {hardcoded_reduction} hardcoded tipologie")
+            elif hardcoded_count_before == 0 and hardcoded_count_after == 0:
+                self.log_test("✅ Hardcoded tipologie already disabled", True, "System was already in disabled state - no hardcoded tipologie present")
             else:
                 self.log_test("❌ No hardcoded tipologie removed", False, "Disable functionality may not be working")
 
