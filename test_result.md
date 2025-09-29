@@ -671,6 +671,18 @@ backend:
           agent: "testing"
           comment: "🎉 HIERARCHICAL SELECTOR SYSTEM TEST DEFINITIVO COMPLETATO - 100% SUCCESS! ✅ NUOVO ORDINE VERIFICATO: Sequenza corretta 1→2→3→4 funzionante per TUTTI I RUOLI (testato con admin/admin123). ✅ SELETTORI IN ORDINE PERFETTO: 1. Seleziona Commessa (3 disponibili) → 2. Seleziona Servizio (4 disponibili) → 3. Seleziona Tipologia Contratto (2 disponibili) → 4. Seleziona Unit/Sub Agenzia (1 disponibile). ✅ FILTRI CORRETTI: TLS service mostra esattamente 2 tipologie (Energia + Telefonia Fastweb), filtering perfetto come richiesto. ✅ LOGS RICHIESTI TROVATI: '🔄 USEEFFECT (ALL ROLES): Ricarico tipologie per commessa/servizio changed', '🎯 TIPOLOGIA CONTRATTO CHANGED: energia_fastweb', '🎯 HANDLE SERVIZIO CHANGE START'. ✅ CASCATA FUNZIONANTE: Ogni selezione apre il selettore successivo nell'ordine corretto. ✅ CONSOLE VERIFICATION: Tutti i debug logs richiesti presenti, API calls con parametri corretti, filtering logic operativa. Il nuovo sistema gerarchico selettori è COMPLETAMENTE OPERATIVO per tutti i ruoli utente come richiesto nel test definitivo!"
 
+  - task: "CRITICAL VERIFICATION TEST: SEGMENTI AND TIPOLOGIE CONTRATTO FIXES"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 CRITICAL VERIFICATION TEST COMPLETED - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ SEGMENTI VISIBILITY FIX VERIFIED: All 4 tipologie have proper segmenti - Found 2 segmenti (Privato + Business) for each database tipologia, hardcoded tipologie correctly skipped. ✅ ALL TIPOLOGIE ENDPOINT WORKING: GET /api/tipologie-contratto/all returns 26 total tipologie (Hardcoded: 4, Custom: 22) - Found energia_fastweb and telefonia_fastweb hardcoded tipologie, Found 22 custom database tipologie. ✅ MIGRATION VERIFICATION PASSED: All 3 tested tipologie have proper segmenti - Hardcoded tipologie don't need segmenti (expected), Database tipologie automatically get 2 segmenti created. ✅ SPECIFIC TIPOLOGIE ENDPOINTS: GET /api/tipologie-contratto?commessa_id={fotovoltaico_id} returns 1 Fotovoltaico tipologie with no Fastweb tipologie (correct filtering), GET /api/tipologie-contratto?commessa_id={fastweb_id} returns 4 Fastweb tipologie including energia_fastweb and telefonia_fastweb. ✅ EDGE CASE TESTING: GET /api/tipologie-contratto (no parameters) returns 4 tipologie, GET /api/tipologie-contratto?commessa_id=invalid handled gracefully. SUCCESS RATE: 100% (27/27 tests passed) - ALL CRITICAL FIXES VERIFIED SUCCESSFULLY!"
+
   - task: "Sistema Visibilità Clienti Basato sui Ruoli - Multi-Account Test"
     implemented: true
     working: true
