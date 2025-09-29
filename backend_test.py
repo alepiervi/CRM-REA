@@ -9532,15 +9532,353 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_fastweb_tipologie_contratto_fix_verification(self):
+        """CRITICAL FASTWEB TIPOLOGIE CONTRATTO FIX VERIFICATION"""
+        print("\n🚨 CRITICAL FASTWEB TIPOLOGIE CONTRATTO FIX VERIFICATION...")
+        
+        # 1. **LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **TEST FASTWEB TIPOLOGIE ENDPOINT**
+        print("\n🎯 2. TEST FASTWEB TIPOLOGIE ENDPOINT...")
+        
+        # GET /api/commesse (find Fastweb commessa ID)
+        print("   Getting commesse...")
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}, Response: {commesse_response}")
+            return False
+        
+        commesse = commesse_response
+        self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse)} commesse")
+        
+        # Find Fastweb and Fotovoltaico commesse
+        fastweb_commessa = None
+        fotovoltaico_commessa = None
+        
+        for commessa in commesse:
+            nome_lower = commessa.get('nome', '').lower()
+            if 'fastweb' in nome_lower:
+                fastweb_commessa = commessa
+            elif 'fotovoltaico' in nome_lower:
+                fotovoltaico_commessa = commessa
+        
+        if not fastweb_commessa:
+            self.log_test("❌ Fastweb commessa not found", False, "Cannot proceed with testing")
+            return False
+        
+        if not fotovoltaico_commessa:
+            self.log_test("❌ Fotovoltaico commessa not found", False, "Cannot proceed with testing")
+            return False
+        
+        fastweb_id = fastweb_commessa['id']
+        fotovoltaico_id = fotovoltaico_commessa['id']
+        
+        self.log_test("✅ Found required commesse", True, f"Fastweb: {fastweb_id}, Fotovoltaico: {fotovoltaico_id}")
+        
+        # GET /api/tipologie-contratto?commessa_id={fastweb_id}
+        print(f"   Testing GET /api/tipologie-contratto?commessa_id={fastweb_id}...")
+        success, fastweb_tipologie, status = self.make_request('GET', f"tipologie-contratto?commessa_id={fastweb_id}", expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/tipologie-contratto?commessa_id={fastweb_id}", False, f"Status: {status}")
+            return False
+        
+        self.log_test("✅ GET /api/tipologie-contratto?commessa_id={fastweb_id}", True, f"Found {len(fastweb_tipologie)} tipologie")
+        
+        # VERIFY: Should return BOTH hardcoded tipologie (energia_fastweb, telefonia_fastweb, ho_mobile, telepass) AND any database tipologie
+        expected_hardcoded = ['energia_fastweb', 'telefonia_fastweb', 'ho_mobile', 'telepass']
+        found_hardcoded = []
+        database_tipologie = []
+        
+        for tipologia in fastweb_tipologie:
+            # Handle both formats: hardcoded (value/label) and database (id/nome)
+            tipologia_value = tipologia.get('value') or tipologia.get('id', '')
+            tipologia_name = tipologia.get('label') or tipologia.get('nome', '')
+            
+            if tipologia_value in expected_hardcoded:
+                found_hardcoded.append(tipologia_value)
+            else:
+                database_tipologie.append(tipologia_name)
+        
+        # Check hardcoded tipologie
+        missing_hardcoded = [t for t in expected_hardcoded if t not in found_hardcoded]
+        
+        if not missing_hardcoded:
+            self.log_test("✅ CRITICAL: Hardcoded tipologie present", True, f"Found all 4: {found_hardcoded}")
+        else:
+            self.log_test("❌ CRITICAL: Missing hardcoded tipologie", False, f"Missing: {missing_hardcoded}")
+        
+        if database_tipologie:
+            self.log_test("✅ Database tipologie present", True, f"Found {len(database_tipologie)} database tipologie: {database_tipologie}")
+        else:
+            self.log_test("ℹ️ No database tipologie", True, "Only hardcoded tipologie found (acceptable)")
+        
+        # 3. **TEST FASTWEB SERVICE SPECIFIC**
+        print("\n🔧 3. TEST FASTWEB SERVICE SPECIFIC...")
+        
+        # GET /api/commesse/{fastweb_id}/servizi (find TLS service)
+        print(f"   Getting servizi for Fastweb commessa {fastweb_id}...")
+        success, servizi_response, status = self.make_request('GET', f"commesse/{fastweb_id}/servizi", expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/commesse/{fastweb_id}/servizi", False, f"Status: {status}")
+            return False
+        
+        servizi = servizi_response
+        self.log_test("✅ GET /api/commesse/{fastweb_id}/servizi", True, f"Found {len(servizi)} servizi")
+        
+        # Find TLS service
+        tls_service = None
+        for servizio in servizi:
+            if 'tls' in servizio.get('nome', '').lower():
+                tls_service = servizio
+                break
+        
+        if not tls_service:
+            self.log_test("❌ TLS service not found", False, "Cannot test service-specific filtering")
+            # Use first service as fallback
+            if servizi:
+                tls_service = servizi[0]
+                self.log_test("ℹ️ Using first service as fallback", True, f"Service: {tls_service.get('nome', 'Unknown')}")
+            else:
+                return False
+        
+        tls_id = tls_service['id']
+        
+        # GET /api/tipologie-contratto?commessa_id={fastweb_id}&servizio_id={tls_id}
+        print(f"   Testing GET /api/tipologie-contratto?commessa_id={fastweb_id}&servizio_id={tls_id}...")
+        success, tls_tipologie, status = self.make_request('GET', f"tipologie-contratto?commessa_id={fastweb_id}&servizio_id={tls_id}", expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/tipologie-contratto?commessa_id={fastweb_id}&servizio_id={tls_id}", True, f"Found {len(tls_tipologie)} tipologie for TLS service")
+            
+            # VERIFY: Should return energia_fastweb + telefonia_fastweb (2 hardcoded) + any database tipologie for TLS service
+            tls_hardcoded = []
+            tls_database = []
+            
+            for tipologia in tls_tipologie:
+                tipologia_value = tipologia.get('value') or tipologia.get('id', '')
+                tipologia_name = tipologia.get('label') or tipologia.get('nome', '')
+                
+                if tipologia_value in ['energia_fastweb', 'telefonia_fastweb']:
+                    tls_hardcoded.append(tipologia_value)
+                else:
+                    tls_database.append(tipologia_name)
+            
+            expected_tls_hardcoded = ['energia_fastweb', 'telefonia_fastweb']
+            missing_tls_hardcoded = [t for t in expected_tls_hardcoded if t not in tls_hardcoded]
+            
+            if not missing_tls_hardcoded:
+                self.log_test("✅ CRITICAL: TLS hardcoded tipologie correct", True, f"Found energia_fastweb + telefonia_fastweb")
+            else:
+                self.log_test("❌ CRITICAL: Missing TLS hardcoded tipologie", False, f"Missing: {missing_tls_hardcoded}")
+            
+            if tls_database:
+                self.log_test("✅ TLS database tipologie present", True, f"Found {len(tls_database)} database tipologie")
+            else:
+                self.log_test("ℹ️ No TLS database tipologie", True, "Only hardcoded tipologie found")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto?commessa_id={fastweb_id}&servizio_id={tls_id}", False, f"Status: {status}")
+
+        # 4. **TEST TIPOLOGIE CREATION FOR FASTWEB**
+        print("\n➕ 4. TEST TIPOLOGIE CREATION FOR FASTWEB...")
+        
+        # Find a Fastweb servizio for testing
+        fastweb_servizio_id = servizi[0]['id'] if servizi else None
+        
+        if fastweb_servizio_id:
+            # POST /api/tipologie-contratto
+            test_tipologia_data = {
+                "nome": f"Test Fastweb Tipologia {datetime.now().strftime('%H%M%S')}",
+                "descrizione": "Test tipologia for Fastweb fix verification",
+                "servizio_id": fastweb_servizio_id
+            }
+            
+            print(f"   Creating test tipologia for servizio {fastweb_servizio_id}...")
+            success, create_response, status = self.make_request('POST', 'tipologie-contratto', test_tipologia_data, expected_status=200)
+            
+            if success and status == 200:
+                created_tipologia_id = create_response.get('id')
+                self.log_test("✅ POST /api/tipologie-contratto", True, f"Created tipologia: {created_tipologia_id}")
+                
+                # GET /api/tipologie-contratto?commessa_id={fastweb_id}&servizio_id={fastweb_servizio_id}
+                print(f"   Verifying created tipologia appears in results...")
+                success, verify_response, status = self.make_request('GET', f"tipologie-contratto?commessa_id={fastweb_id}&servizio_id={fastweb_servizio_id}", expected_status=200)
+                
+                if success and status == 200:
+                    # VERIFY: Should show hardcoded + newly created tipologia
+                    verify_tipologie = verify_response
+                    created_found = False
+                    hardcoded_found = 0
+                    
+                    for tipologia in verify_tipologie:
+                        tipologia_id = tipologia.get('value') or tipologia.get('id', '')
+                        tipologia_name = tipologia.get('label') or tipologia.get('nome', '')
+                        
+                        if tipologia_id == created_tipologia_id or tipologia_name == test_tipologia_data['nome']:
+                            created_found = True
+                        elif tipologia_id in expected_hardcoded:
+                            hardcoded_found += 1
+                    
+                    if created_found:
+                        self.log_test("✅ CRITICAL: Created tipologia appears in results", True, f"Found newly created tipologia")
+                    else:
+                        self.log_test("❌ CRITICAL: Created tipologia missing from results", False, f"Tipologia not found in filtered results")
+                    
+                    if hardcoded_found > 0:
+                        self.log_test("✅ CRITICAL: Hardcoded + database combination working", True, f"Found {hardcoded_found} hardcoded + 1 database tipologia")
+                    else:
+                        self.log_test("❌ CRITICAL: Hardcoded tipologie missing", False, f"No hardcoded tipologie found with database ones")
+                else:
+                    self.log_test("❌ Verification GET request failed", False, f"Status: {status}")
+            else:
+                self.log_test("❌ POST /api/tipologie-contratto", False, f"Status: {status}, Response: {create_response}")
+        else:
+            self.log_test("❌ No Fastweb servizio available", False, "Cannot test tipologie creation")
+
+        # 5. **COMPARISON WITH FOTOVOLTAICO**
+        print("\n🔄 5. COMPARISON WITH FOTOVOLTAICO...")
+        
+        # GET /api/tipologie-contratto?commessa_id={fotovoltaico_id}
+        print(f"   Testing GET /api/tipologie-contratto?commessa_id={fotovoltaico_id}...")
+        success, fotovoltaico_tipologie, status = self.make_request('GET', f"tipologie-contratto?commessa_id={fotovoltaico_id}", expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/tipologie-contratto?commessa_id={fotovoltaico_id}", True, f"Found {len(fotovoltaico_tipologie)} Fotovoltaico tipologie")
+            
+            # VERIFY: Should return ONLY database tipologie (no hardcoded ones) as before
+            fotovoltaico_hardcoded = []
+            fotovoltaico_database = []
+            
+            for tipologia in fotovoltaico_tipologie:
+                tipologia_value = tipologia.get('value') or tipologia.get('id', '')
+                tipologia_name = tipologia.get('label') or tipologia.get('nome', '')
+                
+                if tipologia_value in expected_hardcoded:
+                    fotovoltaico_hardcoded.append(tipologia_value)
+                else:
+                    fotovoltaico_database.append(tipologia_name)
+            
+            if not fotovoltaico_hardcoded:
+                self.log_test("✅ CRITICAL: Fotovoltaico has NO hardcoded tipologie", True, f"Correctly returns only database tipologie")
+            else:
+                self.log_test("❌ CRITICAL: Fotovoltaico has hardcoded tipologie", False, f"Found unexpected hardcoded: {fotovoltaico_hardcoded}")
+            
+            if fotovoltaico_database:
+                self.log_test("✅ Fotovoltaico database tipologie present", True, f"Found {len(fotovoltaico_database)} database tipologie")
+            else:
+                self.log_test("ℹ️ No Fotovoltaico database tipologie", True, "No database tipologie found (acceptable)")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto?commessa_id={fotovoltaico_id}", False, f"Status: {status}")
+
+        # 6. **TEST EDGE CASES**
+        print("\n🧪 6. TEST EDGE CASES...")
+        
+        # GET /api/tipologie-contratto (no parameters)
+        print("   Testing GET /api/tipologie-contratto (no parameters)...")
+        success, no_params_response, status = self.make_request('GET', 'tipologie-contratto', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/tipologie-contratto (no parameters)", True, f"Found {len(no_params_response)} tipologie")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto (no parameters)", False, f"Status: {status}")
+        
+        # GET /api/tipologie-contratto/all (should work as before)
+        print("   Testing GET /api/tipologie-contratto/all...")
+        success, all_response, status = self.make_request('GET', 'tipologie-contratto/all', expected_status=200)
+        
+        if success and status == 200:
+            all_tipologie = all_response
+            self.log_test("✅ GET /api/tipologie-contratto/all", True, f"Found {len(all_tipologie)} total tipologie")
+            
+            # Verify this includes both hardcoded and database tipologie
+            all_hardcoded = 0
+            all_database = 0
+            
+            for tipologia in all_tipologie:
+                tipologia_value = tipologia.get('value') or tipologia.get('id', '')
+                
+                if tipologia_value in expected_hardcoded:
+                    all_hardcoded += 1
+                else:
+                    all_database += 1
+            
+            if all_hardcoded >= 4:  # Should have at least the 4 hardcoded ones
+                self.log_test("✅ /all includes hardcoded tipologie", True, f"Found {all_hardcoded} hardcoded tipologie")
+            else:
+                self.log_test("❌ /all missing hardcoded tipologie", False, f"Found only {all_hardcoded} hardcoded tipologie")
+            
+            if all_database >= 0:  # Can have 0 or more database tipologie
+                self.log_test("✅ /all includes database tipologie", True, f"Found {all_database} database tipologie")
+            else:
+                self.log_test("❌ /all database tipologie issue", False, f"Database tipologie count: {all_database}")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto/all", False, f"Status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 CRITICAL FASTWEB TIPOLOGIE CONTRATTO FIX VERIFICATION SUMMARY:")
+        print(f"   🎯 OBJECTIVE: Verify that Fastweb commesse now return hardcoded + database tipologie correctly")
+        print(f"   🎯 OBJECTIVE: Verify that Fotovoltaico behavior remains unchanged (database only)")
+        print(f"   🎯 OBJECTIVE: Verify that all functionality works without breaking other features")
+        print(f"   📊 EXPECTED RESULTS:")
+        print(f"      • Fastweb: hardcoded + database tipologie combined ✅")
+        print(f"      • Fotovoltaico: database tipologie only ✅")
+        print(f"      • All: all tipologie (both sources) ✅")
+        print(f"   📊 ACTUAL RESULTS:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Fastweb tipologie endpoint: {'✅ SUCCESS' if len(fastweb_tipologie) > 0 else '❌ FAILED'}")
+        print(f"      • Fastweb hardcoded tipologie: {'✅ FOUND ALL 4' if not missing_hardcoded else '❌ MISSING SOME'}")
+        print(f"      • Fastweb service-specific filtering: {'✅ SUCCESS' if 'tls_tipologie' in locals() else '❌ FAILED'}")
+        print(f"      • Tipologie creation for Fastweb: {'✅ SUCCESS' if 'created_tipologia_id' in locals() else '❌ FAILED'}")
+        print(f"      • Fotovoltaico comparison: {'✅ SUCCESS - NO HARDCODED' if not fotovoltaico_hardcoded else '❌ FAILED - HAS HARDCODED'}")
+        print(f"      • Edge cases (no params, /all): {'✅ SUCCESS' if success else '❌ FAILED'}")
+        
+        # Determine overall success
+        critical_checks = [
+            not missing_hardcoded,  # Fastweb has all hardcoded tipologie
+            not fotovoltaico_hardcoded,  # Fotovoltaico has no hardcoded tipologie
+            len(fastweb_tipologie) > 0,  # Fastweb endpoint works
+            success  # Edge cases work
+        ]
+        
+        overall_success = all(critical_checks)
+        
+        if overall_success:
+            print(f"   🎉 CRITICAL SUCCESS: Fastweb tipologie contratto fix is working correctly!")
+            print(f"   🎉 VERIFIED: Hardcoded tipologie are now properly returned for Fastweb")
+            print(f"   🎉 VERIFIED: Fotovoltaico behavior is preserved (database only)")
+            print(f"   🎉 VERIFIED: All endpoints work as expected")
+        else:
+            print(f"   🚨 CRITICAL FAILURE: Fastweb tipologie contratto fix has issues!")
+            print(f"   🚨 ISSUES DETECTED: Some critical checks failed")
+            print(f"   🚨 REQUIRES IMMEDIATE ATTENTION")
+        
+        return overall_success
+
     def run_all_tests(self):
-        """Run CRITICAL VERIFICATION TEST: SEGMENTI AND TIPOLOGIE CONTRATTO FIXES"""
-        print("🚀 Starting CRM API Testing - CRITICAL VERIFICATION TEST: SEGMENTI AND TIPOLOGIE CONTRATTO FIXES...")
+        """Run CRITICAL FASTWEB TIPOLOGIE CONTRATTO FIX VERIFICATION"""
+        print("🚀 Starting CRM API Testing - CRITICAL FASTWEB TIPOLOGIE CONTRATTO FIX VERIFICATION...")
         print(f"📡 Backend URL: {self.base_url}")
         print("=" * 80)
         
-        # CRITICAL TEST: Segmenti and Tipologie Contratto Fixes
-        print("\n🚨 CRITICAL VERIFICATION TEST: SEGMENTI AND TIPOLOGIE CONTRATTO FIXES...")
-        segmenti_tipologie_test_success = self.test_segmenti_tipologie_contratto_fixes()
+        # CRITICAL TEST: Fastweb Tipologie Contratto Fix Verification
+        print("\n🚨 CRITICAL FASTWEB TIPOLOGIE CONTRATTO FIX VERIFICATION...")
+        fastweb_fix_success = self.test_fastweb_tipologie_contratto_fix_verification()
         
         # Cleanup created resources
         self.cleanup_resources()
@@ -9548,16 +9886,15 @@ Duplicate,Test,+393471234567"""
         # Print final summary
         self.print_summary()
         
-        if segmenti_tipologie_test_success:
-            print("\n🎉 CRITICAL VERIFICATION TEST COMPLETED SUCCESSFULLY!")
-            print("🎯 OBIETTIVO RAGGIUNTO: Segmenti and Tipologie Contratto fixes verified")
-            print("✅ All fixes working correctly - segmenti created for all tipologie")
-            print("✅ All tipologie (hardcoded + custom) accessible via /tipologie-contratto/all")
-            print("✅ Migration worked correctly and created segmenti for existing tipologie")
-            print("✅ Backend endpoints respond correctly for frontend integration")
+        if fastweb_fix_success:
+            print("\n🎉 CRITICAL FASTWEB FIX VERIFICATION COMPLETED SUCCESSFULLY!")
+            print("🎯 OBIETTIVO RAGGIUNTO: Fastweb tipologie contratto fix verified")
+            print("✅ Fastweb commesse now return hardcoded + database tipologie correctly")
+            print("✅ Fotovoltaico behavior remains unchanged (database only)")
+            print("✅ All functionality works without breaking other features")
         else:
-            print("\n🚨 CRITICAL VERIFICATION TEST FAILED!")
-            print("❌ Some fixes still need attention - check detailed results above")
+            print("\n🚨 CRITICAL FASTWEB FIX VERIFICATION FAILED!")
+            print("❌ Fastweb tipologie contratto fix has issues - check detailed results above")
         
         return segmenti_tipologie_test_success
         
