@@ -11786,7 +11786,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             ))}
           </div>
           
-          {clienti.length === 0 && (
+          {getFilteredClients().length === 0 && (
             <div className="text-center py-8">
               <p className="text-gray-500">
                 {selectedCommessaLocal ? 'Nessun cliente trovato per questa commessa' : 'Seleziona una commessa per vedere i clienti'}
