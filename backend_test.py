@@ -7672,6 +7672,233 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_tipologie_contratto_debug(self):
+        """DEBUG TIPOLOGIE CONTRATTO ESISTENTI - Verifica struttura database e mapping"""
+        print("\n🔍 DEBUG TIPOLOGIE CONTRATTO ESISTENTI...")
+        
+        # 1. **Test Login Admin**: Login con admin/admin123
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Debug Database Tipologie**
+        print("\n🗄️ 2. DEBUG DATABASE TIPOLOGIE...")
+        
+        # GET /api/tipologie-contratto (endpoint generico per vedere tutte)
+        print("   Testing GET /api/tipologie-contratto...")
+        success, tipologie_response, status = self.make_request('GET', 'tipologie-contratto', expected_status=200)
+        
+        if success and status == 200:
+            tipologie_list = tipologie_response
+            self.log_test("✅ GET /api/tipologie-contratto", True, f"Status: {status}, Found {len(tipologie_list)} tipologie")
+            
+            # Verify response structure
+            if isinstance(tipologie_list, list):
+                self.log_test("✅ Response is array", True, f"Tipologie array with {len(tipologie_list)} items")
+                
+                # Check structure of tipologie
+                if len(tipologie_list) > 0:
+                    print(f"\n   🔍 STRUTTURA TIPOLOGIE CONTRATTO:")
+                    for i, tipologia in enumerate(tipologie_list):
+                        print(f"      Tipologia {i+1}:")
+                        print(f"        - ID: {tipologia.get('id', 'MISSING')}")
+                        print(f"        - Nome: {tipologia.get('nome', 'MISSING')}")
+                        print(f"        - Descrizione: {tipologia.get('descrizione', 'MISSING')}")
+                        print(f"        - servizio_id: {tipologia.get('servizio_id', 'MISSING')}")
+                        print(f"        - is_active: {tipologia.get('is_active', 'MISSING')}")
+                        print(f"        - created_at: {tipologia.get('created_at', 'MISSING')}")
+                        print(f"        - All fields: {list(tipologia.keys())}")
+                        
+                        # Check if servizio_id is properly set
+                        servizio_id = tipologia.get('servizio_id')
+                        if servizio_id:
+                            self.log_test(f"✅ Tipologia {i+1} has servizio_id", True, f"servizio_id: {servizio_id}")
+                        else:
+                            self.log_test(f"❌ Tipologia {i+1} missing servizio_id", False, f"servizio_id: {servizio_id}")
+                else:
+                    self.log_test("❌ No tipologie found", False, "Empty array returned - no tipologie in database")
+                    return False
+            else:
+                self.log_test("❌ Response not array", False, f"Response type: {type(tipologie_response)}")
+                return False
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto", False, f"Status: {status}, Response: {tipologie_response}")
+            return False
+
+        # 3. **Test Servizi Fastweb**
+        print("\n🏢 3. TEST SERVIZI FASTWEB...")
+        
+        # GET /api/commesse per trovare ID Fastweb
+        print("   Testing GET /api/commesse...")
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        fastweb_id = None
+        if success and status == 200:
+            commesse_list = commesse_response
+            self.log_test("✅ GET /api/commesse", True, f"Status: {status}, Found {len(commesse_list)} commesse")
+            
+            # Find Fastweb commessa
+            for commessa in commesse_list:
+                if 'fastweb' in commessa.get('nome', '').lower():
+                    fastweb_id = commessa.get('id')
+                    self.log_test("✅ Found Fastweb commessa", True, f"Fastweb ID: {fastweb_id}, Nome: {commessa.get('nome')}")
+                    break
+            
+            if not fastweb_id:
+                self.log_test("❌ Fastweb commessa not found", False, f"Available commesse: {[c.get('nome') for c in commesse_list]}")
+                return False
+        else:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}")
+            return False
+
+        # GET /api/commesse/{fastweb_id}/servizi per ottenere servizi
+        if fastweb_id:
+            print(f"   Testing GET /api/commesse/{fastweb_id}/servizi...")
+            success, servizi_response, status = self.make_request('GET', f'commesse/{fastweb_id}/servizi', expected_status=200)
+            
+            energia_id = None
+            telefonia_id = None
+            
+            if success and status == 200:
+                servizi_list = servizi_response
+                self.log_test("✅ GET /api/commesse/{fastweb_id}/servizi", True, f"Status: {status}, Found {len(servizi_list)} servizi")
+                
+                print(f"\n   🔍 SERVIZI FASTWEB:")
+                for i, servizio in enumerate(servizi_list):
+                    nome = servizio.get('nome', '')
+                    servizio_id = servizio.get('id', '')
+                    print(f"      Servizio {i+1}: {nome} (ID: {servizio_id})")
+                    
+                    # Identify Energia and Telefonia services
+                    if 'energia' in nome.lower():
+                        energia_id = servizio_id
+                        self.log_test("✅ Found Energia Fastweb service", True, f"Energia ID: {energia_id}")
+                    elif 'telefonia' in nome.lower():
+                        telefonia_id = servizio_id
+                        self.log_test("✅ Found Telefonia Fastweb service", True, f"Telefonia ID: {telefonia_id}")
+            else:
+                self.log_test("❌ GET /api/commesse/{fastweb_id}/servizi", False, f"Status: {status}")
+                return False
+
+        # 4. **Test Tipologie per Servizio**
+        print("\n🔗 4. TEST TIPOLOGIE PER SERVIZIO...")
+        
+        # Test with energia service if found
+        if energia_id:
+            print(f"   Testing GET /api/servizi/{energia_id}/tipologie-contratto...")
+            success, energia_tipologie, status = self.make_request('GET', f'servizi/{energia_id}/tipologie-contratto', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/servizi/{energia_id}/tipologie-contratto", True, 
+                    f"Status: {status}, Found {len(energia_tipologie)} tipologie for Energia")
+                
+                print(f"      Energia Fastweb tipologie: {[t.get('nome') for t in energia_tipologie]}")
+            else:
+                self.log_test("❌ GET /api/servizi/{energia_id}/tipologie-contratto", False, f"Status: {status}")
+        
+        # Test with telefonia service if found
+        if telefonia_id:
+            print(f"   Testing GET /api/servizi/{telefonia_id}/tipologie-contratto...")
+            success, telefonia_tipologie, status = self.make_request('GET', f'servizi/{telefonia_id}/tipologie-contratto', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/servizi/{telefonia_id}/tipologie-contratto", True, 
+                    f"Status: {status}, Found {len(telefonia_tipologie)} tipologie for Telefonia")
+                
+                print(f"      Telefonia Fastweb tipologie: {[t.get('nome') for t in telefonia_tipologie]}")
+            else:
+                self.log_test("❌ GET /api/servizi/{telefonia_id}/tipologie-contratto", False, f"Status: {status}")
+
+        # 5. **Debug Campo servizio_id**
+        print("\n🔍 5. DEBUG CAMPO servizio_id...")
+        
+        # Analyze if existing tipologie have servizio_id field
+        if len(tipologie_list) > 0:
+            tipologie_with_servizio = [t for t in tipologie_list if t.get('servizio_id')]
+            tipologie_without_servizio = [t for t in tipologie_list if not t.get('servizio_id')]
+            
+            print(f"   📊 ANALISI servizio_id:")
+            print(f"      • Tipologie con servizio_id: {len(tipologie_with_servizio)}")
+            print(f"      • Tipologie senza servizio_id: {len(tipologie_without_servizio)}")
+            
+            if tipologie_with_servizio:
+                self.log_test("✅ Some tipologie have servizio_id", True, 
+                    f"{len(tipologie_with_servizio)} tipologie have servizio_id field")
+                
+                print(f"      Tipologie con servizio_id:")
+                for tip in tipologie_with_servizio:
+                    print(f"        - {tip.get('nome')}: servizio_id={tip.get('servizio_id')}")
+            else:
+                self.log_test("❌ No tipologie have servizio_id", False, 
+                    "All tipologie are missing servizio_id field")
+            
+            if tipologie_without_servizio:
+                self.log_test("❌ Some tipologie missing servizio_id", False, 
+                    f"{len(tipologie_without_servizio)} tipologie missing servizio_id")
+                
+                print(f"      Tipologie senza servizio_id:")
+                for tip in tipologie_without_servizio:
+                    print(f"        - {tip.get('nome')}: servizio_id={tip.get('servizio_id')}")
+
+        # 6. **Test con Filtri**
+        print("\n🔍 6. TEST CON FILTRI...")
+        
+        # Test filtering by commessa_id
+        if fastweb_id:
+            print(f"   Testing GET /api/tipologie-contratto?commessa_id={fastweb_id}...")
+            success, filtered_tipologie, status = self.make_request('GET', f'tipologie-contratto?commessa_id={fastweb_id}', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/tipologie-contratto?commessa_id=fastweb", True, 
+                    f"Status: {status}, Found {len(filtered_tipologie)} tipologie for Fastweb")
+                
+                print(f"      Filtered tipologie for Fastweb: {[t.get('nome') for t in filtered_tipologie]}")
+            else:
+                self.log_test("❌ GET /api/tipologie-contratto?commessa_id=fastweb", False, f"Status: {status}")
+        
+        # Test filtering by servizio_id
+        if energia_id:
+            print(f"   Testing GET /api/tipologie-contratto?servizio_id={energia_id}...")
+            success, servizio_filtered, status = self.make_request('GET', f'tipologie-contratto?servizio_id={energia_id}', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/tipologie-contratto?servizio_id=energia", True, 
+                    f"Status: {status}, Found {len(servizio_filtered)} tipologie for Energia service")
+                
+                print(f"      Filtered tipologie for Energia service: {[t.get('nome') for t in servizio_filtered]}")
+            else:
+                self.log_test("❌ GET /api/tipologie-contratto?servizio_id=energia", False, f"Status: {status}")
+
+        # SUMMARY
+        print(f"\n🎯 SUMMARY DEBUG TIPOLOGIE CONTRATTO:")
+        print(f"   🎯 OBIETTIVO: Verificare le tipologie di contratto esistenti nel database e come sono strutturate")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • GET /api/tipologie-contratto: {'✅ SUCCESS' if status == 200 else '❌ FAILED'} - Found {len(tipologie_list) if 'tipologie_list' in locals() else 0} tipologie")
+        print(f"      • Fastweb commessa found: {'✅ YES' if fastweb_id else '❌ NO'}")
+        print(f"      • Energia/Telefonia services found: {'✅ YES' if energia_id or telefonia_id else '❌ NO'}")
+        print(f"      • Tipologie with servizio_id: {'✅ YES' if tipologie_with_servizio else '❌ NO'}")
+        print(f"      • Filtering by commessa/servizio: {'✅ TESTED' if fastweb_id else '❌ NOT TESTED'}")
+        
+        if len(tipologie_list) > 0 and fastweb_id:
+            print(f"   🎉 SUCCESS: Found existing tipologie contratto in database!")
+            print(f"   🔍 FOCUS: Capire perché le tipologie esistenti non vengono mostrate nel frontend")
+            return True
+        else:
+            print(f"   🚨 ISSUE: No tipologie found or Fastweb commessa missing!")
+            return False
+
     def run_all_tests(self):
         """Run test for search-entities endpoint as requested"""
         print("🚀 Starting CRM API Testing - Search Entities Endpoint Test...")
