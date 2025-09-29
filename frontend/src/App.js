@@ -9925,7 +9925,13 @@ const CommesseManagement = ({
           <CardContent>
             {selectedTipologia ? (
               <div className="space-y-3">
-                {segmenti.map((segmento) => (
+                {console.log('🎯 Rendering segmenti section. selectedTipologia:', selectedTipologia)}
+                {console.log('🎯 segmenti array:', segmenti)}
+                {console.log('🎯 segmenti length:', segmenti?.length)}
+                
+                {segmenti.map((segmento) => {
+                  console.log('🎯 Rendering segmento:', segmento);
+                  return (
                   <div 
                     key={segmento.id} 
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
