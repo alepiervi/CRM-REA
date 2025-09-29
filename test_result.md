@@ -151,6 +151,17 @@ backend:
           comment: "🎉 TESTING COMPLETO ESTENSIONE GERARCHIA SEGMENTI E OFFERTE - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ GERARCHIA NAVIGATION: Complete 5-level hierarchy tested (Commesse → Servizi → Tipologie → Segmenti → Offerte) - Found commessa Fastweb, servizio TLS, created database tipologia for testing. ✅ CREAZIONE SEGMENTI AUTOMATICI: GET /api/tipologie-contratto/{tipologia_id}/segmenti creates 2 default segments (Privato, Business) automatically on first access - segmenti automatici creati correctly. ✅ GESTIONE SEGMENTI: GET/PUT operations working - Found 2 segmenti (2 active), PUT /api/segmenti/{id} successfully deactivates segments, verification confirms is_active: false. ✅ CRUD OFFERTE COMPLETO: All operations successful - POST /api/offerte creates offerta with proper ID, GET /api/segmenti/{id}/offerte finds created offerta, PUT /api/offerte/{id} updates name and deactivates, DELETE /api/offerte/{id} removes offerta completely, verification confirms elimination. ✅ ENDPOINT VALIDATIONS: All validation tests pass - POST without segmento_id correctly rejected (422), PUT/DELETE with invalid IDs return 404 as expected. ✅ PERMISSIONS: Admin-only access enforced (non-admin users not available for testing but validation logic confirmed). SUCCESS RATE: 100% (25/25 tests passed) - Sistema a 5 livelli completamente funzionante! Gerarchia Commesse → Servizi → Tipologie → Segmenti → Offerte operativa!"
 
 frontend:
+  - task: "Calendar Filter and Client Export Functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "🎯 NUOVO TESTING RICHIESTO: Filtro calendario e esportazione clienti nella sezione Clienti. Funzionalità da testare: 1) Sezione 'Filtra per periodo di creazione' con checkbox, campi Dal/Al, pulsante Azzera, conteggio filtrati, 2) Pulsante 'Esporta CSV' con icona Download, stati disabilitato/loading, 3) Integrazione filtri con aggiornamento real-time lista clienti, 4) UI layout pulito e responsive, 5) Toast notifications e messaggi feedback. Login: admin/admin123. TESTING IN CORSO."
   - task: "EyeOff Icon Error Resolution and Segmenti Cards Testing"
     implemented: true
     working: false
