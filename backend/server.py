@@ -702,12 +702,6 @@ class CallAnalytics(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Sistema Autorizzazioni Gerarchiche Models
-# Entity Type Enum for Commesse and Users
-class EntityType(str, Enum):
-    CLIENTI = "clienti"
-    LEAD = "lead"
-    BOTH = "both"
-
 class Commessa(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     nome: str
