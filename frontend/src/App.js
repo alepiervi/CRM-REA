@@ -11571,7 +11571,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             <div className="text-sm text-gray-600">
               <span className="font-medium">Clienti filtrati: </span>
               <span className="text-blue-600 font-semibold">
-                {filterClientsByDate(clienti).length} di {clienti.length}
+                {getFilteredClients().length} di {clienti.length}
               </span>
             </div>
           )}
