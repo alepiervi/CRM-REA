@@ -1101,7 +1101,7 @@ class CRMAPITester:
             self.log_test("✅ GET /api/tipologie-contratto?commessa_id={fastweb_id}", True, f"Found {len(fastweb_tipologie)} Fastweb tipologie")
             
             # Verify these include Fastweb hardcoded ones
-            fastweb_names = [t.get('nome', '').lower() for t in fastweb_tipologie]
+            fastweb_names = [(t.get('label') or t.get('nome', '')).lower() for t in fastweb_tipologie]
             has_energia_fastweb = any('energia' in name and 'fastweb' in name for name in fastweb_names)
             has_telefonia_fastweb = any('telefonia' in name and 'fastweb' in name for name in fastweb_names)
             
