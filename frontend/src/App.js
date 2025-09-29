@@ -9750,6 +9750,35 @@ const CommesseManagement = ({
     }
   };
 
+  const disableHardcodedElements = async () => {
+    try {
+      console.log('🚫 Disabling hardcoded elements...');
+      
+      const response = await axios.post(`${API}/admin/disable-hardcoded-elements`);
+      
+      console.log('✅ Disable response:', response.data);
+      
+      toast({
+        title: "Successo",
+        description: response.data.message,
+      });
+      
+      // Refresh all data after disabling
+      console.log('🔄 Refreshing all data after disabling hardcoded...');
+      await fetchTipologieContratto();
+      await fetchCommesse();
+      
+    } catch (error) {
+      console.error("❌ Error disabling hardcoded elements:", error);
+      
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || error.message || "Errore nella disabilitazione elementi hardcoded",
+        variant: "destructive",
+      });
+    }
+  };
+
   const migrateSegmenti = async () => {
     try {
       console.log('🚀 Starting segmenti migration...');
