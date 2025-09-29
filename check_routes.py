@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://mobile-crm-fix-2.preview.emergentagent.com"
+    base_url = "https://elon-all-in-one.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:

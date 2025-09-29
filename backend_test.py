@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 class CRMAPITester:
-    def __init__(self, base_url="https://mobile-crm-fix-2.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://elon-all-in-one.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None

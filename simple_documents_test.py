@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_documents_endpoint():
-    base_url = "https://mobile-crm-fix-2.preview.emergentagent.com/api"
+    base_url = "https://elon-all-in-one.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     

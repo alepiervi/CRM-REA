@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_login(username, password):
-    url = "https://mobile-crm-fix-2.preview.emergentagent.com/api/auth/login"
+    url = "https://elon-all-in-one.preview.emergentagent.com/api/auth/login"
     data = {'username': username, 'password': password}
     
     try:
@@ -27,7 +27,7 @@ def test_login(username, password):
         return None
 
 def test_documents(token):
-    url = "https://mobile-crm-fix-2.preview.emergentagent.com/api/documents"
+    url = "https://elon-all-in-one.preview.emergentagent.com/api/documents"
     headers = {'Authorization': f'Bearer {token}'}
     
     try:
