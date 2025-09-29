@@ -10570,6 +10570,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
 // Clienti Management Component
 const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: commesseFromParent, subAgenzie: subAgenzieFromParent }) => {
   const [clienti, setClienti] = useState([]);
+  const [allClienti, setAllClienti] = useState([]); // Store all clients for filtering
   const [commesse, setCommesse] = useState(commesseFromParent || []);
   const [subAgenzie, setSubAgenzie] = useState(subAgenzieFromParent || []);
   const [selectedCommessaLocal, setSelectedCommessaLocal] = useState(selectedCommessa || null);
@@ -10579,6 +10580,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchType, setSearchType] = useState('all');
   const { toast } = useToast();
 
   useEffect(() => {
