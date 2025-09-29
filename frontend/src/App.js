@@ -10020,7 +10020,7 @@ const CommesseManagement = ({
                     </div>
 
                     {/* Pulsanti - Layout a griglia per miglior controllo */}
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                    <div className="grid grid-cols-4 gap-2 pt-2 border-t border-gray-100">
                       <Button
                         size="sm"
                         variant="outline"
@@ -10028,10 +10028,10 @@ const CommesseManagement = ({
                           e.stopPropagation();
                           setShowViewCommessaModal(true);
                         }}
-                        className="text-xs justify-start"
+                        className="p-2 h-8 w-full"
+                        title="Visualizza dettagli"
                       >
-                        <Eye className="w-3 h-3 mr-1" />
-                        Dettagli
+                        <Eye className="w-3 h-3" />
                       </Button>
                       <Button
                         size="sm"
@@ -10041,10 +10041,10 @@ const CommesseManagement = ({
                           setEditingCommessa(commessa);
                           setShowEditCommessaModal(true);
                         }}
-                        className="text-xs justify-start"
+                        className="p-2 h-8 w-full"
+                        title="Modifica commessa"
                       >
-                        <Edit className="w-3 h-3 mr-1" />
-                        Modifica
+                        <Edit className="w-3 h-3" />
                       </Button>
                       <Button
                         size="sm"
@@ -10058,10 +10058,10 @@ const CommesseManagement = ({
                             fetchServizi(commessa.id);
                           }
                         }}
-                        className="text-xs justify-start"
+                        className="p-2 h-8 w-full"
+                        title="Gestisci servizi e tipologie"
                       >
-                        <Settings className="w-3 h-3 mr-1" />
-                        Gestisci
+                        <Settings className="w-3 h-3" />
                       </Button>
                       <Button
                         size="sm"
@@ -10072,10 +10072,10 @@ const CommesseManagement = ({
                             deleteCommessa(commessa.id);
                           }
                         }}
-                        className="text-xs justify-start"
+                        className="p-2 h-8 w-full"
+                        title="Elimina commessa"
                       >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Elimina
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>
