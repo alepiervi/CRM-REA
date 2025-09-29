@@ -1084,7 +1084,7 @@ class CRMAPITester:
             self.log_test("✅ GET /api/tipologie-contratto?commessa_id={fotovoltaico_id}", True, f"Found {len(fotovoltaico_tipologie)} Fotovoltaico tipologie")
             
             # Verify these are Fotovoltaico-specific (not Fastweb hardcoded ones)
-            fotovoltaico_names = [t.get('nome', '').lower() for t in fotovoltaico_tipologie]
+            fotovoltaico_names = [(t.get('label') or t.get('nome', '')).lower() for t in fotovoltaico_tipologie]
             has_fastweb_in_fotovoltaico = any('fastweb' in name for name in fotovoltaico_names)
             
             if not has_fastweb_in_fotovoltaico:
