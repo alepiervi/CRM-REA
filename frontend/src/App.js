@@ -9912,7 +9912,7 @@ const CommesseManagement = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <FileText className="w-4 h-4 text-purple-600" />
-                        <span className="font-medium">{tipologia.nome}</span>
+                        <span className="font-medium">{tipologia.nome || tipologia.label}</span>
                       </div>
                       <div className="flex gap-1">
                         <Badge variant={tipologia.is_active ? "default" : "secondary"}>
