@@ -10816,6 +10816,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   const [subAgenzie, setSubAgenzie] = useState(subAgenzieFromParent || []);
   const [commesse, setCommesse] = useState(commesseFromParent || []);
   const [servizi, setServizi] = useState([]); // NEW: Add servizi state
+  const [responsabili, setResponsabili] = useState([]); // NEW: Add responsabili state for Sub Agenzia
   
   const [showCreateUnitModal, setShowCreateUnitModal] = useState(false);
   const [showEditUnitModal, setShowEditUnitModal] = useState(false);
