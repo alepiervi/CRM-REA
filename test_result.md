@@ -268,6 +268,7 @@ test_plan:
   test_all: false
   test_priority: "critical_first"
   completed_tasks:
+    - "GET /api/servizi Endpoint Fix - 405 Method Not Allowed Resolution"
     - "Sub Agenzie Problems Diagnosis - Deletion, Commesse Visibility, and Flagging"
     - "AI-Based Lead Routing System Implementation"
     - "Auto-refresh Dashboard System Implementation"
