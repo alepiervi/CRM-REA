@@ -201,6 +201,9 @@ test_plan:
     - "EyeOff Icon Error Resolution and Segmenti Cards Testing"
   test_all: false
   test_priority: "critical_first"
+  completed_tasks:
+    - "Auto-refresh Dashboard System Implementation"
+    - "Calendar Filter and Client Export Functionality"
 
 agent_communication:
     - agent: "testing"
