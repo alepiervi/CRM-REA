@@ -460,9 +460,14 @@ const DashboardStats = ({ selectedUnit }) => {
     return () => clearInterval(interval);
   }, [selectedUnit, autoRefresh]);
 
-  const fetchStats = async () => {
+  const fetchStats = async (isAutoRefresh = false) => {
     try {
-      setLoading(true);
+      if (!isAutoRefresh) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
+      
       const params = new URLSearchParams();
       if (selectedUnit && selectedUnit !== "all") {
         params.append('unit_id', selectedUnit);
@@ -470,11 +475,22 @@ const DashboardStats = ({ selectedUnit }) => {
       
       const response = await axios.get(`${API}/dashboard/stats?${params}`);
       setStats(response.data);
+      setLastUpdated(new Date());
+      
     } catch (error) {
       console.error("Error fetching stats:", error);
     } finally {
-      setLoading(false);
+      if (!isAutoRefresh) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
+  };
+
+  // Manual refresh function
+  const handleManualRefresh = () => {
+    fetchStats(false);
   };
 
   const getStatsCards = () => {
