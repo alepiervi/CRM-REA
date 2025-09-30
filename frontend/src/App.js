@@ -12926,13 +12926,14 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi }) => {
 };
 
 // Edit Sub Agenzia Modal Component
-const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse }) => {
+const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi }) => {
   const [formData, setFormData] = useState({
     nome: subAgenzia?.nome || '',
     descrizione: subAgenzia?.descrizione || '',
     responsabile: subAgenzia?.responsabile || '',
     email: subAgenzia?.email || '',
-    commesse_autorizzate: subAgenzia?.commesse_autorizzate || []
+    commesse_autorizzate: subAgenzia?.commesse_autorizzate || [],
+    servizi_autorizzati: subAgenzia?.servizi_autorizzati || []
   });
 
   const toggleCommessa = (commessaId) => {
@@ -12944,6 +12945,15 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse }) => {
     });
   };
 
+  const toggleServizio = (servizioId) => {
+    setFormData({
+      ...formData,
+      servizi_autorizzati: formData.servizi_autorizzati.includes(servizioId)
+        ? formData.servizi_autorizzati.filter(id => id !== servizioId)
+        : [...formData.servizi_autorizzati, servizioId]
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSuccess(formData);
@@ -12951,64 +12961,113 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse }) => {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifica Sub Agenzia</DialogTitle>
+          <DialogDescription>
+            Modifica i dati della sub agenzia "{subAgenzia.nome}"
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="nome">Nome *</Label>
-            <Input
-              id="nome"
-              value={formData.nome}
-              onChange={(e) => setFormData({...formData, nome: e.target.value})}
-              required
-            />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nome">Nome Sub Agenzia *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="responsabile">Responsabile</Label>
+              <Input
+                id="responsabile"
+                value={formData.responsabile}
+                onChange={(e) => setFormData({...formData, responsabile: e.target.value})}
+                placeholder="Nome del responsabile"
+              />
+            </div>
           </div>
+          
           <div>
             <Label htmlFor="descrizione">Descrizione</Label>
             <Textarea
               id="descrizione"
               value={formData.descrizione}
               onChange={(e) => setFormData({...formData, descrizione: e.target.value})}
+              rows={3}
             />
           </div>
-          <div>
-            <Label htmlFor="responsabile">Responsabile</Label>
-            <Input
-              id="responsabile"
-              value={formData.responsabile}
-              onChange={(e) => setFormData({...formData, responsabile: e.target.value})}
-            />
-          </div>
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-            />
-          </div>
-          <div>
-            <Label>Commesse Autorizzate</Label>
-            <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-3">
-              {commesse.map((commessa) => (
-                <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
-                    onChange={() => toggleCommessa(commessa.id)}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">{commessa.nome}</span>
-                </label>
-              ))}
+
+          {/* Sub Agenzia Info Display */}
+          <div className="bg-slate-50 p-3 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <Label className="text-xs font-medium text-slate-600">ID Sub Agenzia</Label>
+                <p className="font-mono bg-white p-1 rounded">{subAgenzia.id}</p>
+              </div>
+              <div>
+                <Label className="text-xs font-medium text-slate-600">Creata il</Label>
+                <p className="bg-white p-1 rounded">
+                  {subAgenzia.created_at ? new Date(subAgenzia.created_at).toLocaleString('it-IT') : 'N/A'}
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Selezionate: {formData.commesse_autorizzate.length} commesse
-            </p>
           </div>
+
+          {/* Commesse e Servizi Selection */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Commesse Selection */}
+            <div>
+              <Label>Commesse Autorizzate</Label>
+              <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-3 bg-gray-50">
+                {commesse?.map((commessa) => (
+                  <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
+                      onChange={() => toggleCommessa(commessa.id)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">{commessa.nome}</span>
+                  </label>
+                ))}
+                {(!commesse || commesse.length === 0) && (
+                  <p className="text-sm text-gray-500 italic">Nessuna commessa disponibile</p>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Selezionate: {formData.commesse_autorizzate.length} commesse
+              </p>
+            </div>
+
+            {/* Servizi Selection */}
+            <div>
+              <Label>Servizi Autorizzati</Label>
+              <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-3 bg-blue-50">
+                {servizi?.map((servizio) => (
+                  <label key={servizio.id} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
+                      onChange={() => toggleServizio(servizio.id)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">{servizio.nome}</span>
+                    <span className="text-xs text-gray-500 ml-2">({commesse?.find(c => c.id === servizio.commessa_id)?.nome || 'N/A'})</span>
+                  </label>
+                ))}
+                {(!servizi || servizi.length === 0) && (
+                  <p className="text-sm text-gray-500 italic">Nessun servizio disponibile</p>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Selezionati: {formData.servizi_autorizzati.length} servizi
+              </p>
+            </div>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Annulla
