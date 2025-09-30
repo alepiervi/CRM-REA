@@ -10827,6 +10827,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   const [editingSubAgenzia, setEditingSubAgenzia] = useState(null);
   
   const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false); // NEW: Track if commesse and servizi are loaded
   const { toast } = useToast();
 
   useEffect(() => {
