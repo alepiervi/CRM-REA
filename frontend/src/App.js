@@ -11200,6 +11200,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
             }}
             onSuccess={(updateData) => updateSubAgenzia(editingSubAgenzia.id, updateData)}
             commesse={commesse}
+            servizi={servizi}
           />
         )}
       </div>
