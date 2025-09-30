@@ -10881,6 +10881,26 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
     }
   };
 
+  const deleteSubAgenzia = async (subAgenziaId) => {
+    if (window.confirm("Sei sicuro di voler eliminare questa Sub Agenzia?")) {
+      try {
+        await axios.delete(`${API}/sub-agenzie/${subAgenziaId}`);
+        setSubAgenzie(subAgenzie.filter(sa => sa.id !== subAgenziaId));
+        toast({
+          title: "Successo",
+          description: "Sub Agenzia eliminata con successo",
+        });
+      } catch (error) {
+        console.error("Error deleting sub agenzia:", error);
+        toast({
+          title: "Errore",
+          description: "Errore nell'eliminazione della sub agenzia",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const handleEditSubAgenzia = (subAgenzia) => {
     setEditingSubAgenzia(subAgenzia);
     setShowEditSubModal(true);
