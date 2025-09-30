@@ -440,11 +440,25 @@ const Login = () => {
 const DashboardStats = ({ selectedUnit }) => {
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
     fetchStats();
   }, [selectedUnit]);
+
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      fetchStats(true); // true indica che è un refresh automatico
+    }, 30000); // Aggiorna ogni 30 secondi
+
+    return () => clearInterval(interval);
+  }, [selectedUnit, autoRefresh]);
 
   const fetchStats = async () => {
     try {
