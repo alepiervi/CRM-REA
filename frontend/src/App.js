@@ -10858,6 +10858,22 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
     }
   };
 
+  // NEW: Fetch responsabili (users with role responsabile_sub_agenzia)
+  const fetchResponsabili = async () => {
+    try {
+      console.log('🔄 SubAgenzieManagement: Fetching responsabili...');
+      const response = await axios.get(`${API}/users`);
+      // Filter only responsabile_sub_agenzia users
+      const responsabiliUsers = response.data.filter(user => 
+        user.role === 'responsabile_sub_agenzia'
+      );
+      console.log('✅ SubAgenzieManagement: Responsabili loaded:', responsabiliUsers.length, 'items');
+      setResponsabili(responsabiliUsers);
+    } catch (error) {
+      console.error("❌ SubAgenzieManagement: Error fetching responsabili:", error);
+    }
+  };
+
   // Units functions
   const fetchUnits = async () => {
     try {
