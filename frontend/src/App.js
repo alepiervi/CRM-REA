@@ -4563,13 +4563,14 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse, servizi }) => {
 };
 
 // Edit Unit Modal Component  
-const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
+const EditUnitModal = ({ unit, onClose, onSuccess, commesse, servizi }) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: unit?.name || "",
     description: unit?.description || "",
     assistant_id: unit?.assistant_id || "",
-    commesse_autorizzate: unit?.commesse_autorizzate || []
+    commesse_autorizzate: unit?.commesse_autorizzate || [],
+    servizi_autorizzati: unit?.servizi_autorizzati || []
   });
 
   const toggleCommessa = (commessaId) => {
@@ -4581,6 +4582,15 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
     });
   };
 
+  const toggleServizio = (servizioId) => {
+    setFormData({
+      ...formData,
+      servizi_autorizzati: formData.servizi_autorizzati.includes(servizioId)
+        ? formData.servizi_autorizzati.filter(id => id !== servizioId)
+        : [...formData.servizi_autorizzati, servizioId]
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSuccess(formData);
@@ -4588,7 +4598,7 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifica Unit</DialogTitle>
           <DialogDescription>
@@ -4596,7 +4606,7 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <Label htmlFor="edit-name">Nome Unit *</Label>
             <Input
@@ -4619,29 +4629,6 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
             />
           </div>
 
-          {/* Commesse Selection */}
-          <div>
-            <Label>Commesse Autorizzate</Label>
-            <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-3">
-              {commesse?.map((commessa) => (
-                <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
-                    onChange={() => toggleCommessa(commessa.id)}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">{commessa.nome}</span>
-                </label>
-              ))}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Selezionate: {formData.commesse_autorizzate.length} commesse
-            </p>
-          </div>
-
-          {/* Assistant selection removed as requested */}
-
           {/* Unit Info Display */}
           <div className="bg-slate-50 p-3 rounded-lg space-y-2">
             <div className="grid grid-cols-2 gap-4 text-xs">
@@ -4657,6 +4644,58 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
                 <Label className="text-slate-600">Creata il</Label>
                 <div className="mt-1">{new Date(unit.created_at).toLocaleDateString("it-IT")}</div>
               </div>
+            </div>
+          </div>
+
+          {/* Commesse e Servizi Selection */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Commesse Selection */}
+            <div>
+              <Label>Commesse Autorizzate</Label>
+              <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-3 bg-gray-50">
+                {commesse?.map((commessa) => (
+                  <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
+                      onChange={() => toggleCommessa(commessa.id)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">{commessa.nome}</span>
+                  </label>
+                ))}
+                {(!commesse || commesse.length === 0) && (
+                  <p className="text-sm text-gray-500 italic">Nessuna commessa disponibile</p>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Selezionate: {formData.commesse_autorizzate.length} commesse
+              </p>
+            </div>
+
+            {/* Servizi Selection */}
+            <div>
+              <Label>Servizi Autorizzati</Label>
+              <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-3 bg-blue-50">
+                {servizi?.map((servizio) => (
+                  <label key={servizio.id} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
+                      onChange={() => toggleServizio(servizio.id)}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">{servizio.nome}</span>
+                    <span className="text-xs text-gray-500 ml-2">({commesse?.find(c => c.id === servizio.commessa_id)?.nome || 'N/A'})</span>
+                  </label>
+                ))}
+                {(!servizi || servizi.length === 0) && (
+                  <p className="text-sm text-gray-500 italic">Nessun servizio disponibile</p>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Selezionati: {formData.servizi_autorizzati.length} servizi
+              </p>
             </div>
           </div>
 
