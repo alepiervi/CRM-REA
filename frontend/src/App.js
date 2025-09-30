@@ -664,9 +664,14 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
     return () => clearInterval(interval);
   }, [dateFrom, dateTo, selectedTipologiaContratto, autoRefresh]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isAutoRefresh = false) => {
     try {
-      setLoading(true);
+      if (!isAutoRefresh) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
+      
       const params = new URLSearchParams();
       if (dateFrom) params.append('date_from', dateFrom);
       if (dateTo) params.append('date_to', dateTo);
@@ -676,6 +681,8 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
       
       const response = await axios.get(`${API}/responsabile-commessa/dashboard?${params}`);
       setDashboardData(response.data);
+      setLastUpdated(new Date());
+      
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast({
@@ -684,8 +691,17 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      if (!isAutoRefresh) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
+  };
+
+  // Manual refresh function per responsabile commessa
+  const handleManualRefresh = () => {
+    fetchDashboardData(false);
   };
 
   const handleDateReset = () => {
