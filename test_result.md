@@ -250,14 +250,21 @@ metadata:
 
 test_plan:
   current_focus:
-    - "AI-Based Lead Routing System Implementation"
-  stuck_tasks: []
+    - "Sub Agenzie Problems Diagnosis - Deletion, Commesse Visibility, and Flagging"
+  stuck_tasks: 
+    - "Sub Agenzie Problems Diagnosis - Deletion, Commesse Visibility, and Flagging"
   test_all: false
   test_priority: "critical_first"
   completed_tasks:
     - "AI-Based Lead Routing System Implementation"
     - "Auto-refresh Dashboard System Implementation"
     - "Calendar Filter and Client Export Functionality"
+    - "Lead Data Inconsistency Investigation - Dashboard vs Lista"
+    - "Advanced Commessa Configuration Frontend Implementation"
+    - "User Entity Management Configuration"
+    - "Extend Hierarchy: Segmenti and Offerte Management System"
+    - "Lead Qualification API Datetime Error Fix"
+    - "Complete Webhook Removal from Unit & Sub Agenzie Section"
     - "Lead Data Inconsistency Investigation - Dashboard vs Lista"
     - "Advanced Commessa Configuration Frontend Implementation"
     - "User Entity Management Configuration"
