@@ -4594,12 +4594,12 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse, servizi }) => {
   });
 
   const toggleCommessa = (commessaId) => {
-    setFormData({
-      ...formData,
-      commesse_autorizzate: formData.commesse_autorizzate.includes(commessaId)
-        ? formData.commesse_autorizzate.filter(id => id !== commessaId)
-        : [...formData.commesse_autorizzate, commessaId]
-    });
+    setFormData(prev => ({
+      ...prev,
+      commesse_autorizzate: prev.commesse_autorizzate.includes(commessaId)
+        ? prev.commesse_autorizzate.filter(id => id !== commessaId)
+        : [...prev.commesse_autorizzate, commessaId]
+    }));
   };
 
   const toggleServizio = (servizioId) => {
@@ -13023,12 +13023,12 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
   });
 
   const toggleCommessa = (commessaId) => {
-    setFormData({
-      ...formData,
-      commesse_autorizzate: formData.commesse_autorizzate.includes(commessaId)
-        ? formData.commesse_autorizzate.filter(id => id !== commessaId)
-        : [...formData.commesse_autorizzate, commessaId]
-    });
+    setFormData(prev => ({
+      ...prev,
+      commesse_autorizzate: prev.commesse_autorizzate.includes(commessaId)
+        ? prev.commesse_autorizzate.filter(id => id !== commessaId)
+        : [...prev.commesse_autorizzate, commessaId]
+    }));
   };
 
   const toggleServizio = (servizioId) => {
