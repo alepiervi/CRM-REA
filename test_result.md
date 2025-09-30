@@ -149,6 +149,18 @@ backend:
           agent: "testing"
           comment: "🎉 USER ENTITY MANAGEMENT TESTING COMPLETED - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ POST /api/users (WITH ENTITY_MANAGEMENT): Successfully created user with entity_management field - field correctly saved and returned in response. ✅ ALL ENTITY_MANAGEMENT VALUES: All 3 valid values tested successfully - 'clienti', 'lead', 'both' all accepted and saved correctly. ✅ FIELD VALIDATION: Invalid values properly rejected (would return 422 for invalid enum values). ✅ GET /api/users INCLUDES FIELD: entity_management field present in GET response for all users, backward compatibility maintained. ✅ DATABASE PERSISTENCE: entity_management field correctly persisted in database and retrieved in subsequent requests. ✅ DEFAULT VALUE HANDLING: Field defaults to 'clienti' when not specified (as per model definition). SUCCESS RATE: 100% (12/12 tests passed) - User entity management system fully operational!"
 
+  - task: "Lead Qualification API Datetime Error Fix"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL DATETIME COMPARISON ERROR IDENTIFIED: GET /api/lead-qualification/active endpoint returns 500 Internal Server Error due to 'can't compare offset-naive and offset-aware datetimes' error. ROOT CAUSE: Line 5188 in server.py compares qual['timeout_at'] (naive datetime) with datetime.now(timezone.utc) (timezone-aware). EXACT ERROR: qual['timeout_at'] > datetime.now(timezone.utc) fails because qual['timeout_at'] is stored as naive datetime in database while comparison uses timezone-aware datetime. IMPACT: Completely blocks Lead Qualification functionality - both Active and Analytics tabs show errors. FIX REQUIRED: Either convert qual['timeout_at'] to timezone-aware before comparison OR ensure consistent timezone handling in database storage. Backend logs show repeated 'Get active qualifications error: can't compare offset-naive and offset-aware datetimes' errors."
+
   - task: "Extend Hierarchy: Segmenti and Offerte Management System"
     implemented: true
     working: true
