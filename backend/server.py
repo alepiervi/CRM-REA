@@ -263,12 +263,12 @@ class LeadCreate(BaseModel):
     cognome: str
     telefono: str
     email: Optional[EmailStr] = None
-    provincia: str
-    tipologia_abitazione: HouseType
+    provincia: Optional[str] = None  # Made optional to fix validation errors
+    tipologia_abitazione: Optional[HouseType] = None  # Made optional to fix validation errors
     ip_address: Optional[str] = None
-    campagna: str
-    gruppo: str
-    contenitore: str
+    campagna: Optional[str] = None  # Made optional to fix validation errors
+    gruppo: Optional[str] = None  # Made optional to fix validation errors
+    contenitore: Optional[str] = None  # Made optional to fix validation errors
     privacy_consent: bool = False
     marketing_consent: bool = False
     custom_fields: Dict[str, Any] = {}
