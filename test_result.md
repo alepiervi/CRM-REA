@@ -252,6 +252,7 @@ test_plan:
     - "User Entity Management Configuration"
     - "Extend Hierarchy: Segmenti and Offerte Management System"
     - "Lead Qualification API Datetime Error Fix"
+    - "Complete Webhook Removal from Unit & Sub Agenzie Section"
 
 agent_communication:
     - agent: "testing"
