@@ -218,6 +218,7 @@ class Unit(BaseModel):
     webhook_url: str = Field(default_factory=lambda: f"/api/webhook/{str(uuid.uuid4())}")
     assistant_id: Optional[str] = None  # OpenAI Assistant ID for this unit
     commesse_autorizzate: List[str] = Field(default_factory=list)  # Lista ID commesse autorizzate
+    servizi_autorizzati: List[str] = Field(default_factory=list)   # NEW: Lista ID servizi autorizzati
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
@@ -227,12 +228,14 @@ class UnitCreate(BaseModel):
     description: Optional[str] = None
     assistant_id: Optional[str] = None
     commesse_autorizzate: List[str] = Field(default_factory=list)
+    servizi_autorizzati: List[str] = Field(default_factory=list)   # NEW: Lista ID servizi autorizzati
 
 class UnitUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     assistant_id: Optional[str] = None
     commesse_autorizzate: Optional[List[str]] = None
+    servizi_autorizzati: Optional[List[str]] = None               # NEW: Lista ID servizi autorizzati
 
 class Lead(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
