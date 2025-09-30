@@ -4512,15 +4512,19 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse, servizi }) => {
               <Label>Commesse Autorizzate</Label>
               <div className="space-y-2 max-h-48 overflow-y-auto border rounded p-3 bg-gray-50">
                 {commesse?.map((commessa) => (
-                  <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
+                  <div key={commessa.id} className="flex items-center space-x-2 cursor-pointer" onClick={() => toggleCommessa(commessa.id)}>
                     <input
                       type="checkbox"
                       checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
-                      onChange={() => toggleCommessa(commessa.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleCommessa(commessa.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{commessa.nome}</span>
-                  </label>
+                  </div>
                 ))}
                 {(!commesse || commesse.length === 0) && (
                   <p className="text-sm text-gray-500 italic">Nessuna commessa disponibile</p>
@@ -4678,15 +4682,19 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse, servizi }) => {
               <Label>Commesse Autorizzate</Label>
               <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-3 bg-gray-50">
                 {commesse?.map((commessa) => (
-                  <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
+                  <div key={commessa.id} className="flex items-center space-x-2 cursor-pointer" onClick={() => toggleCommessa(commessa.id)}>
                     <input
                       type="checkbox"
                       checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
-                      onChange={() => toggleCommessa(commessa.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleCommessa(commessa.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{commessa.nome}</span>
-                  </label>
+                  </div>
                 ))}
                 {(!commesse || commesse.length === 0) && (
                   <p className="text-sm text-gray-500 italic">Nessuna commessa disponibile</p>
@@ -12923,15 +12931,19 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi }) => {
               <Label>Commesse Autorizzate</Label>
               <div className="space-y-2 max-h-48 overflow-y-auto border rounded p-3 bg-gray-50">
                 {commesse?.map((commessa) => (
-                  <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
+                  <div key={commessa.id} className="flex items-center space-x-2 cursor-pointer" onClick={() => toggleCommessa(commessa.id)}>
                     <input
                       type="checkbox"
                       checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
-                      onChange={() => toggleCommessa(commessa.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleCommessa(commessa.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{commessa.nome}</span>
-                  </label>
+                  </div>
                 ))}
                 {(!commesse || commesse.length === 0) && (
                   <p className="text-sm text-gray-500 italic">Nessuna commessa disponibile</p>
@@ -13097,15 +13109,19 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
               <Label>Commesse Autorizzate</Label>
               <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-3 bg-gray-50">
                 {commesse?.map((commessa) => (
-                  <label key={commessa.id} className="flex items-center space-x-2 cursor-pointer">
+                  <div key={commessa.id} className="flex items-center space-x-2 cursor-pointer" onClick={() => toggleCommessa(commessa.id)}>
                     <input
                       type="checkbox"
                       checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
-                      onChange={() => toggleCommessa(commessa.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleCommessa(commessa.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{commessa.nome}</span>
-                  </label>
+                  </div>
                 ))}
                 {(!commesse || commesse.length === 0) && (
                   <p className="text-sm text-gray-500 italic">Nessuna commessa disponibile</p>
