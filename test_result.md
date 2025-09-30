@@ -258,15 +258,18 @@ frontend:
 
   - task: "React State Closure Bug Fix - Unit & Sub Agenzie Checkboxes"
     implemented: true
-    working: "needs_testing"
+    working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
           comment: "🔧 STALE CLOSURE BUG FIX IMPLEMENTATO: Ho identificato e risolto il problema di 'stale closure' nei checkbox delle modali Unit e Sub Agenzie. PROBLEMA: Le funzioni toggleCommessa e toggleServizio usavano setFormData({ ...formData, ... }) che causa il riferimento a una versione obsoleta dello stato. SOLUZIONE: Convertito tutte le funzioni al pattern funzionale setFormData(prev => ({ ...prev, ... })) per garantire l'uso dello stato più recente. MODALI CORRETTE: 1) CreateUnitModal - toggleServizio corretto (toggleCommessa era già corretto), 2) EditUnitModal - toggleCommessa e toggleServizio corretti, 3) CreateSubAgenziaModal - già corretto (non modificato), 4) EditSubAgenziaModal - toggleCommessa e toggleServizio corretti. TESTING RICHIESTO: Verificare che i checkbox nelle 4 modali ora aggiornino correttamente lo stato React e che la lista servizi si filtri dinamicamente in base alle commesse selezionate. Login: admin/admin123."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL CHECKBOX FUNCTIONALITY FAILURE IDENTIFIED: Comprehensive testing reveals that the stale closure fix did NOT resolve the checkbox functionality issue. ROOT CAUSE FOUND: The modals are not receiving commesse and servizi data properly - console logs show 'User commesse_autorizzate: undefined' indicating a data loading problem. TESTING RESULTS: ✅ MODAL ACCESS: Successfully opened CreateUnitModal with admin login (admin/admin123), modal displays correctly with Fastweb and Fotovoltaico checkboxes visible. ❌ CHECKBOX FUNCTIONALITY: All checkbox clicks FAILED - checkboxes remain unchecked after clicking, counter stays at '0 commesse', servizi section shows 'Seleziona prima una commessa per vedere i servizi'. ❌ STATE UPDATES: No state updates detected in React - toggleCommessa functions are not being called or not updating formData properly. 🔍 TECHNICAL ANALYSIS: While the functional pattern setFormData(prev => ({...prev, ...})) is correctly implemented in the code, the actual checkbox clicks are not triggering state updates. This suggests either: 1) Event handlers not properly attached, 2) Data props (commesse, servizi) not being passed to modals, 3) Component re-rendering issues preventing state updates. IMPACT: Complete checkbox functionality failure in all Unit & Sub Agenzie modals - users cannot select commesse or servizi. REQUIRES IMMEDIATE INVESTIGATION: Data flow from parent component to modals, event handler attachment, and component prop passing."
 
 metadata:
   created_by: "testing_agent"
