@@ -4422,6 +4422,8 @@ const UnitsManagement = ({ selectedUnit }) => {
 
 // Create Unit Modal Component
 const CreateUnitModal = ({ onClose, onSuccess, commesse, servizi }) => {
+  console.log("🔧 CreateUnitModal received:", { commesse: commesse?.length, servizi: servizi?.length });
+  
   const [formData, setFormData] = useState({
     name: "",
     description: "",
