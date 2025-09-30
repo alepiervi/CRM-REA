@@ -150,16 +150,19 @@ backend:
           comment: "🎉 USER ENTITY MANAGEMENT TESTING COMPLETED - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ POST /api/users (WITH ENTITY_MANAGEMENT): Successfully created user with entity_management field - field correctly saved and returned in response. ✅ ALL ENTITY_MANAGEMENT VALUES: All 3 valid values tested successfully - 'clienti', 'lead', 'both' all accepted and saved correctly. ✅ FIELD VALIDATION: Invalid values properly rejected (would return 422 for invalid enum values). ✅ GET /api/users INCLUDES FIELD: entity_management field present in GET response for all users, backward compatibility maintained. ✅ DATABASE PERSISTENCE: entity_management field correctly persisted in database and retrieved in subsequent requests. ✅ DEFAULT VALUE HANDLING: Field defaults to 'clienti' when not specified (as per model definition). SUCCESS RATE: 100% (12/12 tests passed) - User entity management system fully operational!"
 
   - task: "Lead Qualification API Datetime Error Fix"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ CRITICAL DATETIME COMPARISON ERROR IDENTIFIED: GET /api/lead-qualification/active endpoint returns 500 Internal Server Error due to 'can't compare offset-naive and offset-aware datetimes' error. ROOT CAUSE: Line 5188 in server.py compares qual['timeout_at'] (naive datetime) with datetime.now(timezone.utc) (timezone-aware). EXACT ERROR: qual['timeout_at'] > datetime.now(timezone.utc) fails because qual['timeout_at'] is stored as naive datetime in database while comparison uses timezone-aware datetime. IMPACT: Completely blocks Lead Qualification functionality - both Active and Analytics tabs show errors. FIX REQUIRED: Either convert qual['timeout_at'] to timezone-aware before comparison OR ensure consistent timezone handling in database storage. Backend logs show repeated 'Get active qualifications error: can't compare offset-naive and offset-aware datetimes' errors."
+        - working: true
+          agent: "testing"
+          comment: "🎉 LEAD QUALIFICATION DATETIME FIX VERIFIED - 100% SUCCESS! ✅ DATETIME COMPARISON ERROR RESOLVED: The timezone-aware datetime handling fix has completely resolved the 500 Internal Server Error. 🔧 FIX IMPLEMENTATION CONFIRMED: 1) Line 5188 fix working - Added timezone check for qual['timeout_at'] before comparison with datetime.now(timezone.utc). 2) Line 2548 fix working - Added timezone check for qualification['timeout_at'] in process_lead_response function. 3) Timezone awareness implemented - Automatic conversion from naive datetime to timezone-aware using timeout_at_utc.replace(tzinfo=timezone.utc). ✅ ENDPOINT TESTING PASSED: GET /api/lead-qualification/active returns 200 OK (was 500 before), found 5 active qualifications with proper structure, time_remaining_seconds calculated correctly without datetime errors. ✅ ANALYTICS ENDPOINT WORKING: GET /api/lead-qualification/analytics returns 200 OK with proper analytics data (total: 5, active: 5, completed: 0). ✅ BACKEND LOGS CLEAN: No more 'can't compare offset-naive and offset-aware datetimes' errors in recent logs, all requests returning 200 OK status. ✅ STABILITY VERIFIED: Multiple consecutive requests successful, timeout logic working with query parameters, existing data compatibility maintained. 🎯 FINAL VERIFICATION: Both endpoints now handle timezone-aware datetime comparisons correctly, qualification timeout logic functional, Lead Qualification functionality fully restored. FIX COMPLETE AND VERIFIED!"
 
   - task: "Extend Hierarchy: Segmenti and Offerte Management System"
     implemented: true
