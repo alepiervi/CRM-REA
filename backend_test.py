@@ -13978,6 +13978,313 @@ Duplicate,Test,+393471234567"""
             print(f"⚠️  {failed} Clienti navigation tests failed")
             return False
 
+    def test_sub_agenzie_problems_diagnosis(self):
+        """DIAGNOSI PROBLEMI SUB AGENZIE - Cancellazione, Commesse e Flagging"""
+        print("\n🏢 DIAGNOSI PROBLEMI SUB AGENZIE - Cancellazione, Commesse e Flagging...")
+        
+        # 1. **LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **VERIFICA SUB AGENZIE ESISTENTI**
+        print("\n🏢 2. VERIFICA SUB AGENZIE ESISTENTI...")
+        
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/sub-agenzie", False, f"Status: {status}, Response: {sub_agenzie_response}")
+            return False
+        
+        sub_agenzie = sub_agenzie_response
+        self.log_test("✅ GET /api/sub-agenzie", True, f"Found {len(sub_agenzie)} sub agenzie")
+        
+        # Analyze sub agenzie data structure
+        if len(sub_agenzie) > 0:
+            sample_sub_agenzia = sub_agenzie[0]
+            sub_agenzia_id = sample_sub_agenzia.get('id')
+            commesse_autorizzate = sample_sub_agenzia.get('commesse_autorizzate', [])
+            
+            self.log_test("✅ Sub Agenzia data structure", True, 
+                f"ID: {sub_agenzia_id}, Commesse autorizzate: {len(commesse_autorizzate)} items")
+            
+            # Check commesse_autorizzate field details
+            if commesse_autorizzate:
+                self.log_test("✅ Commesse autorizzate populated", True, 
+                    f"Found {len(commesse_autorizzate)} authorized commesse: {commesse_autorizzate}")
+            else:
+                self.log_test("⚠️ Commesse autorizzate empty", True, 
+                    f"No authorized commesse found for sub agenzia {sub_agenzia_id}")
+        else:
+            self.log_test("⚠️ No sub agenzie found", True, "No sub agenzie in system - will create test data")
+            sub_agenzia_id = None
+
+        # 3. **VERIFICA COMMESSE DISPONIBILI**
+        print("\n📋 3. VERIFICA COMMESSE DISPONIBILI...")
+        
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if success and status == 200:
+            commesse = commesse_response
+            self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse)} commesse available")
+            
+            # Show available commesse for reference
+            if len(commesse) > 0:
+                commesse_names = [c.get('nome', 'Unknown') for c in commesse[:3]]  # Show first 3
+                self.log_test("✅ Available commesse sample", True, f"Examples: {commesse_names}")
+                
+                # Store commesse IDs for testing
+                available_commesse_ids = [c.get('id') for c in commesse if c.get('id')]
+                self.log_test("✅ Commesse IDs available", True, f"Found {len(available_commesse_ids)} valid commesse IDs")
+            else:
+                self.log_test("⚠️ No commesse found", True, "No commesse available - this may cause issues")
+                available_commesse_ids = []
+        else:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}, Response: {commesse_response}")
+            available_commesse_ids = []
+
+        # 4. **TEST PROBLEMA 1: SUB AGENZIE NON CANCELLABILI**
+        print("\n🗑️ 4. TEST PROBLEMA 1: SUB AGENZIE NON CANCELLABILI...")
+        
+        # Create a test sub agenzia for deletion testing if none exist
+        test_sub_agenzia_id = None
+        if not sub_agenzia_id and available_commesse_ids:
+            print("   Creating test sub agenzia for deletion testing...")
+            
+            # First, get a user to be responsabile
+            success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+            if success and len(users_response) > 0:
+                responsabile_id = users_response[0].get('id')
+                
+                test_sub_agenzia_data = {
+                    "nome": f"Test Sub Agenzia Delete {datetime.now().strftime('%H%M%S')}",
+                    "descrizione": "Test sub agenzia for deletion testing",
+                    "responsabile_id": responsabile_id,
+                    "commesse_autorizzate": available_commesse_ids[:1]  # Use first available commessa
+                }
+                
+                success, create_response, status = self.make_request('POST', 'sub-agenzie', test_sub_agenzia_data, 200)
+                if success:
+                    test_sub_agenzia_id = create_response.get('id')
+                    self.log_test("✅ Created test sub agenzia", True, f"ID: {test_sub_agenzia_id}")
+                else:
+                    self.log_test("❌ Failed to create test sub agenzia", False, f"Status: {status}")
+        else:
+            test_sub_agenzia_id = sub_agenzia_id
+
+        # Test DELETE endpoint
+        if test_sub_agenzia_id:
+            print(f"   Testing DELETE /api/sub-agenzie/{test_sub_agenzia_id}...")
+            
+            success, delete_response, status = self.make_request('DELETE', f'sub-agenzie/{test_sub_agenzia_id}', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ DELETE /api/sub-agenzie/{id} SUCCESS", True, f"Status: {status}, Response: {delete_response}")
+                
+                # Verify deletion by trying to get the sub agenzia
+                success, verify_response, verify_status = self.make_request('GET', f'sub-agenzie/{test_sub_agenzia_id}', expected_status=404)
+                
+                if verify_status == 404:
+                    self.log_test("✅ Sub agenzia actually deleted", True, f"GET returns 404 as expected")
+                else:
+                    self.log_test("❌ Sub agenzia not actually deleted", False, f"GET still returns {verify_status}")
+                    
+            elif status == 400:
+                # Check for constraint violations
+                error_detail = delete_response.get('detail', 'No detail provided') if isinstance(delete_response, dict) else str(delete_response)
+                self.log_test("❌ DELETE BLOCKED - Constraint violation", False, 
+                    f"Status: {status}, Error: {error_detail}")
+                
+                # Check if there are users assigned to this sub agenzia
+                success, users_check, status = self.make_request('GET', 'users', expected_status=200)
+                if success:
+                    assigned_users = [u for u in users_check if u.get('sub_agenzia_id') == test_sub_agenzia_id]
+                    if assigned_users:
+                        self.log_test("🔍 ROOT CAUSE: Users assigned", True, 
+                            f"Found {len(assigned_users)} users assigned to this sub agenzia")
+                    else:
+                        self.log_test("🔍 No users assigned", True, "Constraint violation not due to user assignment")
+                        
+            elif status == 403:
+                self.log_test("❌ DELETE FORBIDDEN", False, f"Status: {status}, Access denied")
+            elif status == 404:
+                self.log_test("❌ DELETE NOT FOUND", False, f"Status: {status}, Sub agenzia not found")
+            else:
+                self.log_test("❌ DELETE UNEXPECTED ERROR", False, f"Status: {status}, Response: {delete_response}")
+        else:
+            self.log_test("⚠️ Cannot test deletion", True, "No sub agenzia available for deletion testing")
+
+        # 5. **TEST PROBLEMA 2: COMMESSE ATTIVE MA NON VISIBILI**
+        print("\n👁️ 5. TEST PROBLEMA 2: COMMESSE ATTIVE MA NON VISIBILI...")
+        
+        # Re-get sub agenzie to check commesse_autorizzate consistency
+        success, current_sub_agenzie, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        if success and len(current_sub_agenzie) > 0:
+            for i, sub_agenzia in enumerate(current_sub_agenzie[:3]):  # Check first 3
+                sub_id = sub_agenzia.get('id')
+                nome = sub_agenzia.get('nome', 'Unknown')
+                commesse_autorizzate = sub_agenzia.get('commesse_autorizzate', [])
+                
+                self.log_test(f"🔍 Sub Agenzia {i+1} analysis", True, 
+                    f"'{nome}' has {len(commesse_autorizzate)} authorized commesse")
+                
+                # Check if referenced commesse actually exist
+                if commesse_autorizzate:
+                    existing_commesse_count = 0
+                    missing_commesse = []
+                    
+                    for commessa_id in commesse_autorizzate:
+                        # Check if this commessa exists
+                        commessa_exists = any(c.get('id') == commessa_id for c in commesse)
+                        if commessa_exists:
+                            existing_commesse_count += 1
+                        else:
+                            missing_commesse.append(commessa_id)
+                    
+                    if existing_commesse_count == len(commesse_autorizzate):
+                        self.log_test(f"✅ All commesse exist for {nome}", True, 
+                            f"All {len(commesse_autorizzate)} referenced commesse found")
+                    else:
+                        self.log_test(f"❌ Missing commesse for {nome}", False, 
+                            f"Found {existing_commesse_count}/{len(commesse_autorizzate)}, Missing: {missing_commesse}")
+                        
+                        # This could be the root cause of "2 commesse attive ma non visibili"
+                        self.log_test("🔍 POTENTIAL ROOT CAUSE", False, 
+                            f"Sub agenzia references non-existent commesse IDs: {missing_commesse}")
+                else:
+                    self.log_test(f"⚠️ No authorized commesse for {nome}", True, 
+                        f"Sub agenzia has empty commesse_autorizzate array")
+        else:
+            self.log_test("⚠️ No sub agenzie to analyze", True, "Cannot check commesse visibility issue")
+
+        # 6. **TEST PROBLEMA 3: COMMESSE NON FLAGGABILI NEL MODAL**
+        print("\n🏷️ 6. TEST PROBLEMA 3: COMMESSE NON FLAGGABILI NEL MODAL...")
+        
+        # Test PUT endpoint for updating commesse_autorizzate
+        if len(current_sub_agenzie) > 0 and available_commesse_ids:
+            test_sub_for_update = current_sub_agenzie[0]
+            update_sub_id = test_sub_for_update.get('id')
+            current_commesse = test_sub_for_update.get('commesse_autorizzate', [])
+            
+            # Prepare update data with different commesse
+            new_commesse_list = available_commesse_ids[:2] if len(available_commesse_ids) >= 2 else available_commesse_ids
+            
+            update_data = {
+                "nome": test_sub_for_update.get('nome'),
+                "descrizione": test_sub_for_update.get('descrizione'),
+                "responsabile_id": test_sub_for_update.get('responsabile_id'),
+                "commesse_autorizzate": new_commesse_list
+            }
+            
+            print(f"   Testing PUT /api/sub-agenzie/{update_sub_id} with new commesse...")
+            self.log_test("🔍 Update attempt", True, 
+                f"Current: {len(current_commesse)} commesse, New: {len(new_commesse_list)} commesse")
+            
+            success, update_response, status = self.make_request('PUT', f'sub-agenzie/{update_sub_id}', update_data, expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ PUT /api/sub-agenzie/{id} SUCCESS", True, f"Status: {status}, Update successful")
+                
+                # Verify the update was persisted
+                success, verify_update, verify_status = self.make_request('GET', f'sub-agenzie/{update_sub_id}', expected_status=200)
+                
+                if success and verify_status == 200:
+                    updated_commesse = verify_update.get('commesse_autorizzate', [])
+                    
+                    if set(updated_commesse) == set(new_commesse_list):
+                        self.log_test("✅ Commesse update persisted", True, 
+                            f"Successfully updated to {len(updated_commesse)} commesse")
+                    else:
+                        self.log_test("❌ Commesse update not persisted", False, 
+                            f"Expected: {new_commesse_list}, Got: {updated_commesse}")
+                else:
+                    self.log_test("❌ Cannot verify update", False, f"GET after update failed: {verify_status}")
+                    
+            elif status == 400:
+                error_detail = update_response.get('detail', 'No detail provided') if isinstance(update_response, dict) else str(update_response)
+                self.log_test("❌ PUT VALIDATION ERROR", False, f"Status: {status}, Error: {error_detail}")
+                
+                # Check if it's a validation issue with commesse_autorizzate field
+                if 'commesse_autorizzate' in str(error_detail).lower():
+                    self.log_test("🔍 ROOT CAUSE: commesse_autorizzate validation", False, 
+                        f"Field validation issue: {error_detail}")
+                        
+            elif status == 422:
+                self.log_test("❌ PUT UNPROCESSABLE ENTITY", False, f"Status: {status}, Data validation failed")
+                
+            elif status == 404:
+                self.log_test("❌ PUT NOT FOUND", False, f"Status: {status}, Sub agenzia not found")
+                
+            else:
+                self.log_test("❌ PUT UNEXPECTED ERROR", False, f"Status: {status}, Response: {update_response}")
+        else:
+            self.log_test("⚠️ Cannot test commesse flagging", True, "No sub agenzie or commesse available for update testing")
+
+        # 7. **DATA CONSISTENCY DEEP DIVE**
+        print("\n🔍 7. DATA CONSISTENCY DEEP DIVE...")
+        
+        # Check for orphaned references
+        if len(current_sub_agenzie) > 0 and len(commesse) > 0:
+            all_referenced_commesse = []
+            for sub_agenzia in current_sub_agenzie:
+                commesse_autorizzate = sub_agenzia.get('commesse_autorizzate', [])
+                all_referenced_commesse.extend(commesse_autorizzate)
+            
+            unique_referenced = list(set(all_referenced_commesse))
+            existing_commesse_ids = [c.get('id') for c in commesse]
+            
+            orphaned_references = [ref_id for ref_id in unique_referenced if ref_id not in existing_commesse_ids]
+            
+            if orphaned_references:
+                self.log_test("❌ ORPHANED COMMESSE REFERENCES FOUND", False, 
+                    f"Found {len(orphaned_references)} orphaned references: {orphaned_references}")
+                self.log_test("🔍 ROOT CAUSE IDENTIFIED", False, 
+                    f"Sub agenzie reference non-existent commesse - this causes '2 commesse attive ma non visibili'")
+            else:
+                self.log_test("✅ No orphaned references", True, "All referenced commesse exist")
+                
+            # Check for missing names vs IDs issue
+            commesse_with_names = [c for c in commesse if c.get('nome')]
+            commesse_without_names = [c for c in commesse if not c.get('nome')]
+            
+            if commesse_without_names:
+                self.log_test("❌ COMMESSE WITHOUT NAMES", False, 
+                    f"Found {len(commesse_without_names)} commesse without names - may cause display issues")
+            else:
+                self.log_test("✅ All commesse have names", True, "No display name issues")
+
+        # **FINAL DIAGNOSIS SUMMARY**
+        print(f"\n🎯 SUB AGENZIE PROBLEMS DIAGNOSIS SUMMARY:")
+        print(f"   🎯 OBJECTIVE: Investigate Sub Agenzie deletion, commesse visibility, and flagging issues")
+        print(f"   📊 FINDINGS:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Sub agenzie data access: ✅ SUCCESS - Found {len(sub_agenzie) if 'sub_agenzie' in locals() else 0} sub agenzie")
+        print(f"      • Commesse data access: ✅ SUCCESS - Found {len(commesse) if 'commesse' in locals() else 0} commesse")
+        print(f"      • DELETE endpoint test: {'✅ WORKING' if 'delete_response' in locals() and status == 200 else '❌ BLOCKED/FAILING'}")
+        print(f"      • PUT endpoint test: {'✅ WORKING' if 'update_response' in locals() and status == 200 else '❌ BLOCKED/FAILING'}")
+        print(f"      • Data consistency: {'❌ ISSUES FOUND' if 'orphaned_references' in locals() and orphaned_references else '✅ CONSISTENT'}")
+        
+        if 'orphaned_references' in locals() and orphaned_references:
+            print(f"   🚨 CRITICAL ISSUE IDENTIFIED:")
+            print(f"      • ROOT CAUSE: Sub agenzie reference non-existent commesse IDs")
+            print(f"      • IMPACT: '2 commesse attive ma non visibili' - referenced commesse don't exist")
+            print(f"      • SOLUTION NEEDED: Clean up orphaned references or restore missing commesse")
+            print(f"      • ORPHANED IDs: {orphaned_references}")
+        
+        return True
+
     def test_fastweb_servizio_delete_failure_analysis(self):
         """URGENT DEBUG: FASTWEB SERVIZIO DELETE FAILURE ANALYSIS"""
         print("\n🚨 URGENT DEBUG: FASTWEB SERVIZIO DELETE FAILURE ANALYSIS...")
