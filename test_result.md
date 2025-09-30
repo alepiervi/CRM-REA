@@ -207,7 +207,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "EyeOff Icon Error Resolution and Segmenti Cards Testing"
+    - "Lead Data Inconsistency Investigation - Dashboard vs Lista"
   stuck_tasks:
     - "EyeOff Icon Error Resolution and Segmenti Cards Testing"
   test_all: false
@@ -215,6 +215,7 @@ test_plan:
   completed_tasks:
     - "Auto-refresh Dashboard System Implementation"
     - "Calendar Filter and Client Export Functionality"
+    - "Lead Data Inconsistency Investigation - Dashboard vs Lista"
 
 agent_communication:
     - agent: "testing"
