@@ -11082,6 +11082,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
             onClose={() => setShowCreateUnitModal(false)}
             onSuccess={createUnit}
             commesse={commesse}
+            servizi={servizi}
           />
         )}
         
@@ -11095,6 +11096,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
             }}
             onSuccess={(updateData) => updateUnit(editingUnit.id, updateData)}
             commesse={commesse}
+            servizi={servizi}
           />
         )}
       </div>
