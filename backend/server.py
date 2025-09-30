@@ -5185,8 +5185,13 @@ async def get_active_qualifications(
             if lead:
                 # Calculate time remaining
                 time_remaining = None
-                if qual["timeout_at"] > datetime.now(timezone.utc):
-                    time_remaining = int((qual["timeout_at"] - datetime.now(timezone.utc)).total_seconds())
+                timeout_at_utc = qual["timeout_at"]
+                # Ensure timeout_at is timezone-aware
+                if timeout_at_utc.tzinfo is None:
+                    timeout_at_utc = timeout_at_utc.replace(tzinfo=timezone.utc)
+                
+                if timeout_at_utc > datetime.now(timezone.utc):
+                    time_remaining = int((timeout_at_utc - datetime.now(timezone.utc)).total_seconds())
                 
                 enriched_qualifications.append({
                     "qualification_id": qual["id"],
