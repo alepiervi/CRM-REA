@@ -15177,10 +15177,10 @@ def main():
         return 0 if success else 1
 
 if __name__ == "__main__":
-    # Run the Sub Agenzie Problems Diagnosis test as requested
+    # Run the Servizi Endpoint Fix Verification test as requested
     tester = CRMAPITester()
     
-    print("🚀 Starting Sub Agenzie Problems Diagnosis...")
+    print("🚀 Starting Servizi Endpoint Fix Verification...")
     print(f"🌐 Base URL: {tester.base_url}")
     
     # Run authentication test first
@@ -15188,8 +15188,8 @@ if __name__ == "__main__":
         print("❌ Authentication failed, stopping tests")
         sys.exit(1)
     
-    # Run the specific Sub Agenzie diagnosis test
-    tester.test_sub_agenzie_problems_diagnosis()
+    # Run the specific Servizi endpoint test
+    success = tester.test_servizi_endpoint_fix_verification()
     
     # Print final summary
     print(f"\n📊 Final Test Summary:")
@@ -15197,7 +15197,7 @@ if __name__ == "__main__":
     print(f"   Tests passed: {tester.tests_passed}")
     print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
     
-    if tester.tests_passed == tester.tests_run:
+    if success and tester.tests_passed == tester.tests_run:
         print("🎉 All tests passed!")
         sys.exit(0)
     else:
