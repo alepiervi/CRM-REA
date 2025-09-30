@@ -107,7 +107,7 @@ user_problem_statement: "INVESTIGAZIONE INCONSISTENZA DATI LEAD - Dashboard vs L
 backend:
   - task: "Lead Data Inconsistency Investigation - Dashboard vs Lista"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "critical"
@@ -116,6 +116,9 @@ backend:
         - working: false
           agent: "testing"
           comment: "❌ CRITICAL LEAD DATA INCONSISTENCY CONFIRMED: Investigazione completa ha identificato la causa esatta della discrepanza tra dashboard e lista lead. 🔍 PROBLEMA CONFERMATO: Dashboard mostra 5 lead (GET /api/dashboard/stats: total_leads=5) ma lista lead è vuota (GET /api/leads: 0 lead). 🚨 ROOT CAUSE IDENTIFICATA: Tutti i 5 lead nel database hanno errori di validazione Pydantic che li escludono dalla lista ma non dal conteggio dashboard. 📋 ERRORI SPECIFICI TROVATI: 1) Invalid esito values: Lead hanno valori 'In Qualificazione Bot', 'Da Contattare' ma enum accetta solo 'FISSATO APPUNTAMENTO', 'KO', 'NR', 'RICHIAMARE', 'CONTRATTUALIZATO'. 2) Missing required fields: Lead mancano campi obbligatori come provincia, tipologia_abitazione, campagna, gruppo, contenitore. 3) Invalid email format: Email 'whatsapp_39 123 456 7890@generated.com' non valida. 🔧 CAUSA TECNICA: Dashboard usa db.leads.count_documents({}) che conta TUTTI i lead, mentre GET /api/leads filtra lead con errori Pydantic (righe 3514-3524 server.py). 🚨 AZIONE RICHIESTA: 1) Aggiornare enum CallOutcome per includere valori esistenti, 2) Rendere opzionali campi mancanti o fornire valori default, 3) Validare/correggere email format, 4) Allineare logica conteggio dashboard con filtri lista."
+        - working: true
+          agent: "testing"
+          comment: "🎉 LEAD DATA INCONSISTENCY FIX VERIFIED - 100% SUCCESS! ✅ CONSISTENCY RESTORED: Dashboard (5) = List (5) - Perfect match achieved! 🔧 FIX IMPLEMENTATION CONFIRMED: 1) CallOutcome enum updated with 'In Qualificazione Bot' and 'Da Contattare' values - all 5 leads now visible with these outcomes. 2) Optional fields fix working - found 1 lead with missing optional fields (provincia, tipologia_abitazione, campagna, gruppo, contenitore) now properly handled. 3) Email validation relaxed - changed from EmailStr to str, now handles invalid formats like 'whatsapp_39 123 456 7890@generated.com'. ✅ VALIDATION TESTS PASSED: New CallOutcome values visible (5 leads), missing optional fields handled (1 lead), invalid email formats accepted (1 lead). ✅ REGRESSION TESTING: Successfully created and updated lead with new CallOutcome 'In Qualificazione Bot', lead remains visible in list. ✅ BACKEND LOGS CLEAN: No more 'Skipping lead due to validation error' warnings. 🎯 FINAL VERIFICATION: Dashboard (6) = List (6) after regression test - consistency maintained. FIX COMPLETE AND VERIFIED!"
   - task: "Advanced Commessa Configuration Frontend Implementation"
     implemented: true
     working: true
