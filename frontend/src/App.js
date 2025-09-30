@@ -12982,15 +12982,40 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsa
                 required
               />
             </div>
-            <div>
-              <Label htmlFor="responsabile_id">ID Responsabile *</Label>
+            <div className="relative">
+              <Label htmlFor="responsabile">Responsabile *</Label>
               <Input
-                id="responsabile_id"
-                value={formData.responsabile_id}
-                onChange={(e) => setFormData({...formData, responsabile_id: e.target.value})}
-                placeholder="Inserisci l'ID dell'utente responsabile"
-                required
+                id="responsabile"
+                value={searchTerm || getSelectedResponsabileName()}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowResponsabiliDropdown(true);
+                  if (!e.target.value) {
+                    setFormData(prev => ({ ...prev, responsabile_id: '' }));
+                  }
+                }}
+                onFocus={() => setShowResponsabiliDropdown(true)}
+                placeholder="Cerca per nome, cognome o username..."
+                required={!formData.responsabile_id}
               />
+              {showResponsabiliDropdown && getFilteredResponsabili().length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {getFilteredResponsabili().map((resp) => (
+                    <div
+                      key={resp.id}
+                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+                      onClick={() => selectResponsabile(resp)}
+                    >
+                      <div className="font-medium text-slate-800">
+                        {resp.nome} {resp.cognome}
+                      </div>
+                      <div className="text-sm text-slate-500">
+                        {resp.username} • {resp.email}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           
