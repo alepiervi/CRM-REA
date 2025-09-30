@@ -4415,23 +4415,7 @@ const UnitsManagement = ({ selectedUnit }) => {
         )}
       </div>
 
-      {showCreateModal && (
-        <CreateUnitModal
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={createUnit}
-        />
-      )}
-
-      {showEditModal && selectedUnitForEdit && (
-        <EditUnitModal
-          unit={selectedUnitForEdit}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedUnitForEdit(null);
-          }}
-          onSubmit={(unitData) => updateUnit(selectedUnitForEdit.id, unitData)}
-        />
-      )}
+      {/* REMOVED: Old Unit Modals - using the ones in SubAgenzieManagement instead */}
     </div>
   );
 };
