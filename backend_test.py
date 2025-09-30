@@ -14266,9 +14266,29 @@ def main():
         return 0 if success else 1
 
 if __name__ == "__main__":
-    # Run the AI Lead Routing System test as requested
+    # Run the Sub Agenzie Problems Diagnosis test as requested
     tester = CRMAPITester()
-    tester.test_ai_lead_routing_system()
     
-    # Uncomment to run all tests
-    # sys.exit(main())
+    print("🚀 Starting Sub Agenzie Problems Diagnosis...")
+    print(f"🌐 Base URL: {tester.base_url}")
+    
+    # Run authentication test first
+    if not tester.test_authentication():
+        print("❌ Authentication failed, stopping tests")
+        sys.exit(1)
+    
+    # Run the specific Sub Agenzie diagnosis test
+    tester.test_sub_agenzie_problems_diagnosis()
+    
+    # Print final summary
+    print(f"\n📊 Final Test Summary:")
+    print(f"   Tests run: {tester.tests_run}")
+    print(f"   Tests passed: {tester.tests_passed}")
+    print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+    
+    if tester.tests_passed == tester.tests_run:
+        print("🎉 All tests passed!")
+        sys.exit(0)
+    else:
+        print("❌ Some tests failed!")
+        sys.exit(1)
