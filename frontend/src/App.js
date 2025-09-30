@@ -13107,15 +13107,17 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsa
 };
 
 // Edit Sub Agenzia Modal Component
-const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi }) => {
+const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi, responsabili }) => {
   const [formData, setFormData] = useState({
     nome: subAgenzia?.nome || '',
     descrizione: subAgenzia?.descrizione || '',
-    responsabile: subAgenzia?.responsabile || '',
-    email: subAgenzia?.email || '',
+    responsabile_id: subAgenzia?.responsabile_id || '',
     commesse_autorizzate: subAgenzia?.commesse_autorizzate || [],
     servizi_autorizzati: subAgenzia?.servizi_autorizzati || []
   });
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showResponsabiliDropdown, setShowResponsabiliDropdown] = useState(false);
 
   const toggleCommessa = (commessaId) => {
     setFormData(prev => ({
