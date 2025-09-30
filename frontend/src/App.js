@@ -12988,10 +12988,19 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsa
                 id="responsabile"
                 value={searchTerm || getSelectedResponsabileName()}
                 onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setShowResponsabiliDropdown(true);
-                  if (!e.target.value) {
-                    setFormData(prev => ({ ...prev, responsabile_id: '' }));
+                  const value = e.target.value;
+                  setSearchTerm(value);
+                  
+                  // If no responsabili available, use the input value directly as ID
+                  if (!responsabili || responsabili.length === 0) {
+                    setFormData(prev => ({ ...prev, responsabile_id: value }));
+                    setShowResponsabiliDropdown(false);
+                  } else {
+                    // Otherwise, show dropdown for search
+                    setShowResponsabiliDropdown(true);
+                    if (!value) {
+                      setFormData(prev => ({ ...prev, responsabile_id: '' }));
+                    }
                   }
                 }}
                 onFocus={() => setShowResponsabiliDropdown(true)}
@@ -13239,10 +13248,19 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
                 id="responsabile"
                 value={searchTerm || getSelectedResponsabileName()}
                 onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setShowResponsabiliDropdown(true);
-                  if (!e.target.value) {
-                    setFormData(prev => ({ ...prev, responsabile_id: '' }));
+                  const value = e.target.value;
+                  setSearchTerm(value);
+                  
+                  // If no responsabili available, use the input value directly as ID
+                  if (!responsabili || responsabili.length === 0) {
+                    setFormData(prev => ({ ...prev, responsabile_id: value }));
+                    setShowResponsabiliDropdown(false);
+                  } else {
+                    // Otherwise, show dropdown for search
+                    setShowResponsabiliDropdown(true);
+                    if (!value) {
+                      setFormData(prev => ({ ...prev, responsabile_id: '' }));
+                    }
                   }
                 }}
                 onFocus={() => setShowResponsabiliDropdown(true)}
