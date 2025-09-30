@@ -4449,12 +4449,12 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse, servizi }) => {
   };
 
   const toggleServizio = (servizioId) => {
-    setFormData({
-      ...formData,
-      servizi_autorizzati: formData.servizi_autorizzati.includes(servizioId)
-        ? formData.servizi_autorizzati.filter(id => id !== servizioId)
-        : [...formData.servizi_autorizzati, servizioId]
-    });
+    setFormData(prev => ({
+      ...prev,
+      servizi_autorizzati: prev.servizi_autorizzati.includes(servizioId)
+        ? prev.servizi_autorizzati.filter(id => id !== servizioId)
+        : [...prev.servizi_autorizzati, servizioId]
+    }));
   };
 
   // Filter servizi based on selected commesse
@@ -4603,12 +4603,12 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse, servizi }) => {
   };
 
   const toggleServizio = (servizioId) => {
-    setFormData({
-      ...formData,
-      servizi_autorizzati: formData.servizi_autorizzati.includes(servizioId)
-        ? formData.servizi_autorizzati.filter(id => id !== servizioId)
-        : [...formData.servizi_autorizzati, servizioId]
-    });
+    setFormData(prev => ({
+      ...prev,
+      servizi_autorizzati: prev.servizi_autorizzati.includes(servizioId)
+        ? prev.servizi_autorizzati.filter(id => id !== servizioId)
+        : [...prev.servizi_autorizzati, servizioId]
+    }));
   };
   // Filter servizi based on selected commesse
   const getFilteredServizi = () => {
@@ -13032,12 +13032,12 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
   };
 
   const toggleServizio = (servizioId) => {
-    setFormData({
-      ...formData,
-      servizi_autorizzati: formData.servizi_autorizzati.includes(servizioId)
-        ? formData.servizi_autorizzati.filter(id => id !== servizioId)
-        : [...formData.servizi_autorizzati, servizioId]
-    });
+    setFormData(prev => ({
+      ...prev,
+      servizi_autorizzati: prev.servizi_autorizzati.includes(servizioId)
+        ? prev.servizi_autorizzati.filter(id => id !== servizioId)
+        : [...prev.servizi_autorizzati, servizioId]
+    }));
   };
   // Filter servizi based on selected commesse
   const getFilteredServizi = () => {
