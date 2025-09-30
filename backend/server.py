@@ -2545,7 +2545,12 @@ Il nostro team è qui per aiutarti! 😊"""
                 return False
                 
             # Check if still within timeout
-            if datetime.now(timezone.utc) > qualification["timeout_at"]:
+            timeout_at_utc = qualification["timeout_at"]
+            # Ensure timeout_at is timezone-aware
+            if timeout_at_utc.tzinfo is None:
+                timeout_at_utc = timeout_at_utc.replace(tzinfo=timezone.utc)
+                
+            if datetime.now(timezone.utc) > timeout_at_utc:
                 await self.handle_qualification_timeout(lead_id)
                 return False
                 
