@@ -7983,6 +7983,43 @@ async def update_sub_agenzia(
     sub_agenzia_doc = await db.sub_agenzie.find_one({"id": sub_agenzia_id})
     return SubAgenzia(**sub_agenzia_doc)
 
+@api_router.delete("/sub-agenzie/{sub_agenzia_id}")
+async def delete_sub_agenzia(
+    sub_agenzia_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete sub agenzia"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    # Get current sub agenzia to check permissions
+    sub_agenzia = await db.sub_agenzie.find_one({"id": sub_agenzia_id})
+    if not sub_agenzia:
+        raise HTTPException(status_code=404, detail="Sub Agenzia not found")
+    
+    # Check if user has access to this sub agenzia's commesse
+    if current_user.role != UserRole.ADMIN:
+        accessible_commesse = await get_user_accessible_commesse(current_user)
+        sub_agenzia_commesse = set(sub_agenzia.get("commesse_autorizzate", []))
+        if not sub_agenzia_commesse.intersection(accessible_commesse):
+            raise HTTPException(status_code=403, detail="No access to this sub agenzia")
+    
+    # Check if there are users assigned to this sub agenzia
+    users_count = await db.users.count_documents({"sub_agenzia_id": sub_agenzia_id})
+    if users_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete sub agenzia: {users_count} users are still assigned to it"
+        )
+    
+    # Proceed with deletion
+    result = await db.sub_agenzie.delete_one({"id": sub_agenzia_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Sub Agenzia not found")
+    
+    return {"success": True, "message": f"Sub Agenzia '{sub_agenzia['nome']}' eliminata con successo"}
+
 # Gestione Clienti
 @api_router.post("/clienti", response_model=Cliente)
 async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depends(get_current_user)):
