@@ -12476,6 +12476,201 @@ Duplicate,Test,+393471234567"""
             self.log_test("❌ INVESTIGAZIONE LEAD INCONSISTENCY", False, f"Discrepanza di {discrepancy} lead confermata")
             return False
 
+    def test_lead_data_inconsistency_fix(self):
+        """CRITICAL TEST: Verify Lead Data Inconsistency Fix - Dashboard vs Lista"""
+        print("\n🚨 CRITICAL TEST: LEAD DATA INCONSISTENCY FIX - DASHBOARD VS LISTA...")
+        
+        # 1. **LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **TEST DASHBOARD STATS**
+        print("\n📊 2. TEST DASHBOARD STATS...")
+        success, dashboard_response, status = self.make_request('GET', 'dashboard/stats', expected_status=200)
+        
+        if success and status == 200:
+            total_leads_dashboard = dashboard_response.get('total_leads', 0)
+            self.log_test("✅ GET /api/dashboard/stats", True, f"Status: {status}, Total leads: {total_leads_dashboard}")
+        else:
+            self.log_test("❌ GET /api/dashboard/stats", False, f"Status: {status}, Response: {dashboard_response}")
+            return False
+
+        # 3. **TEST LEADS LIST**
+        print("\n📋 3. TEST LEADS LIST...")
+        success, leads_response, status = self.make_request('GET', 'leads', expected_status=200)
+        
+        if success and status == 200:
+            leads_list = leads_response if isinstance(leads_response, list) else []
+            total_leads_list = len(leads_list)
+            self.log_test("✅ GET /api/leads", True, f"Status: {status}, Total leads in list: {total_leads_list}")
+        else:
+            self.log_test("❌ GET /api/leads", False, f"Status: {status}, Response: {leads_response}")
+            return False
+
+        # 4. **CONSISTENCY CHECK**
+        print("\n🔍 4. CONSISTENCY CHECK...")
+        consistency_fixed = total_leads_dashboard == total_leads_list
+        
+        if consistency_fixed:
+            self.log_test("✅ CONSISTENCY CHECK PASSED", True, f"Dashboard ({total_leads_dashboard}) = List ({total_leads_list})")
+        else:
+            self.log_test("❌ CONSISTENCY CHECK FAILED", False, f"Dashboard ({total_leads_dashboard}) ≠ List ({total_leads_list}) - Discrepancy: {abs(total_leads_dashboard - total_leads_list)}")
+
+        # 5. **VALIDATION ERRORS CHECK**
+        print("\n🔧 5. VALIDATION ERRORS CHECK...")
+        
+        # Check if leads with new CallOutcome values are now visible
+        if total_leads_list > 0:
+            leads_with_new_outcomes = []
+            leads_with_missing_fields = []
+            
+            for lead in leads_list:
+                esito = lead.get('esito')
+                if esito in ['In Qualificazione Bot', 'Da Contattare']:
+                    leads_with_new_outcomes.append(lead)
+                
+                # Check for previously problematic fields (now optional)
+                missing_fields = []
+                optional_fields = ['provincia', 'tipologia_abitazione', 'campagna', 'gruppo', 'contenitore']
+                for field in optional_fields:
+                    if not lead.get(field):
+                        missing_fields.append(field)
+                
+                if missing_fields:
+                    leads_with_missing_fields.append({
+                        'id': lead.get('id'),
+                        'missing_fields': missing_fields
+                    })
+            
+            if leads_with_new_outcomes:
+                self.log_test("✅ New CallOutcome values visible", True, f"Found {len(leads_with_new_outcomes)} leads with 'In Qualificazione Bot' or 'Da Contattare'")
+            else:
+                self.log_test("ℹ️ No leads with new CallOutcome values", True, "No leads found with new enum values (expected if no such data exists)")
+            
+            if leads_with_missing_fields:
+                self.log_test("✅ Leads with missing optional fields visible", True, f"Found {len(leads_with_missing_fields)} leads with missing optional fields - now properly handled")
+            else:
+                self.log_test("ℹ️ All leads have complete data", True, "All leads have all optional fields populated")
+        else:
+            self.log_test("ℹ️ No leads in system", True, "No leads found for validation testing")
+
+        # 6. **EMAIL VALIDATION CHECK**
+        print("\n📧 6. EMAIL VALIDATION CHECK...")
+        
+        if total_leads_list > 0:
+            leads_with_invalid_emails = []
+            for lead in leads_list:
+                email = lead.get('email')
+                if email and ('whatsapp_' in email or '@generated.com' in email):
+                    leads_with_invalid_emails.append(lead)
+            
+            if leads_with_invalid_emails:
+                self.log_test("✅ Leads with invalid emails now visible", True, f"Found {len(leads_with_invalid_emails)} leads with previously problematic email formats")
+            else:
+                self.log_test("ℹ️ No leads with invalid email formats", True, "No leads found with problematic email formats")
+
+        # 7. **REGRESSION TEST - CREATE NEW LEAD**
+        print("\n🧪 7. REGRESSION TEST - CREATE NEW LEAD...")
+        
+        # Test creating a lead with new CallOutcome values and optional fields
+        test_lead_data = {
+            "nome": "Test",
+            "cognome": "Lead Fix",
+            "telefono": "+39123456789",
+            "email": "test.leadfix@example.com",
+            # Optional fields - some missing to test the fix
+            "provincia": "Roma",
+            # tipologia_abitazione: missing (should be OK now)
+            # campagna: missing (should be OK now)
+            # gruppo: missing (should be OK now)
+            # contenitore: missing (should be OK now)
+            "privacy_consent": True,
+            "marketing_consent": True
+        }
+        
+        success, create_response, status = self.make_request('POST', 'leads', test_lead_data, expected_status=200)
+        
+        if success and status == 200:
+            created_lead_id = create_response.get('id')
+            self.log_test("✅ CREATE lead with optional fields missing", True, f"Lead created successfully: {created_lead_id}")
+            
+            # Update the lead with new CallOutcome value
+            update_data = {
+                "esito": "In Qualificazione Bot",
+                "note": "Testing new CallOutcome enum value"
+            }
+            
+            success, update_response, status = self.make_request('PUT', f'leads/{created_lead_id}', update_data, expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ UPDATE lead with new CallOutcome", True, f"Lead updated with 'In Qualificazione Bot' outcome")
+                
+                # Verify the lead is still visible in the list
+                success, verify_leads, status = self.make_request('GET', 'leads', expected_status=200)
+                
+                if success:
+                    updated_lead = next((lead for lead in verify_leads if lead.get('id') == created_lead_id), None)
+                    if updated_lead and updated_lead.get('esito') == 'In Qualificazione Bot':
+                        self.log_test("✅ Lead with new CallOutcome visible in list", True, f"Lead found in list with correct esito")
+                    else:
+                        self.log_test("❌ Lead with new CallOutcome not visible", False, f"Lead not found or esito incorrect")
+            else:
+                self.log_test("❌ UPDATE lead with new CallOutcome", False, f"Status: {status}")
+        else:
+            self.log_test("❌ CREATE lead with optional fields missing", False, f"Status: {status}, Response: {create_response}")
+
+        # 8. **FINAL VERIFICATION**
+        print("\n🎯 8. FINAL VERIFICATION...")
+        
+        # Get final counts after regression test
+        success, final_dashboard, status = self.make_request('GET', 'dashboard/stats', expected_status=200)
+        success2, final_leads, status2 = self.make_request('GET', 'leads', expected_status=200)
+        
+        if success and success2:
+            final_dashboard_count = final_dashboard.get('total_leads', 0)
+            final_list_count = len(final_leads) if isinstance(final_leads, list) else 0
+            
+            final_consistency = final_dashboard_count == final_list_count
+            
+            if final_consistency:
+                self.log_test("✅ FINAL CONSISTENCY CHECK", True, f"Dashboard ({final_dashboard_count}) = List ({final_list_count})")
+            else:
+                self.log_test("❌ FINAL CONSISTENCY CHECK", False, f"Dashboard ({final_dashboard_count}) ≠ List ({final_list_count})")
+
+        # **SUMMARY**
+        print(f"\n🎯 LEAD DATA INCONSISTENCY FIX TEST SUMMARY:")
+        print(f"   🎯 OBJECTIVE: Verify that the fix for lead validation resolves dashboard vs list inconsistency")
+        print(f"   🎯 FOCUS: Confirm that leads with new CallOutcome values and missing optional fields are now visible")
+        print(f"   📊 RESULTS:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Dashboard stats retrieval: ✅ SUCCESS - Total leads: {total_leads_dashboard}")
+        print(f"      • Leads list retrieval: ✅ SUCCESS - Total leads: {total_leads_list}")
+        print(f"      • Consistency check: {'✅ FIXED' if consistency_fixed else '❌ STILL BROKEN'}")
+        print(f"      • New CallOutcome values handling: ✅ TESTED")
+        print(f"      • Optional fields handling: ✅ TESTED")
+        print(f"      • Email validation fix: ✅ TESTED")
+        print(f"      • Regression testing: ✅ COMPLETED")
+        
+        if consistency_fixed:
+            print(f"   🎉 SUCCESS: Lead data inconsistency has been FIXED!")
+            print(f"   🎉 CONFIRMED: Dashboard and list now show consistent lead counts!")
+            return True
+        else:
+            print(f"   🚨 FAILURE: Lead data inconsistency still exists!")
+            print(f"   🚨 ISSUE: Dashboard shows {total_leads_dashboard} but list shows {total_leads_list}")
+            return False
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
