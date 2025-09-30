@@ -10837,7 +10837,8 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
         fetchUnits(),
         fetchSubAgenzie(),
         fetchCommesse(),
-        fetchServizi()
+        fetchServizi(),
+        fetchResponsabili()
       ]);
       setDataLoaded(true); // Set dataLoaded to true when all data is fetched
     };
