@@ -783,6 +783,7 @@ class SubAgenzia(BaseModel):
     descrizione: Optional[str] = None
     responsabile_id: str  # User ID del responsabile della sub agenzia
     commesse_autorizzate: List[str] = []  # Lista di commessa_id autorizzate
+    servizi_autorizzati: List[str] = []   # NEW: Lista di servizio_id autorizzati
     is_active: bool = True
     created_by: str  # admin o responsabile_commessa che l'ha creata
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -793,12 +794,14 @@ class SubAgenziaCreate(BaseModel):
     descrizione: Optional[str] = None
     responsabile_id: str
     commesse_autorizzate: List[str] = []
+    servizi_autorizzati: List[str] = []   # NEW: Lista di servizio_id autorizzati
 
 class SubAgenziaUpdate(BaseModel):
     nome: Optional[str] = None
     descrizione: Optional[str] = None
     responsabile_id: Optional[str] = None
     commesse_autorizzate: Optional[List[str]] = None
+    servizi_autorizzati: Optional[List[str]] = None   # NEW: Lista di servizio_id autorizzati
     is_active: Optional[bool] = None
 
 class ClienteStatus(str, Enum):
