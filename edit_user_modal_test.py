@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 class EditUserModalTester:
-    def __init__(self, base_url="https://elon-crm-app.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://crm-checkbox-fix.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
