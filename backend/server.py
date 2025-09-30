@@ -3475,16 +3475,6 @@ async def create_lead(lead_data: LeadCreate):
         # Immediately assign to agent since commessa doesn't have AI enabled
         await assign_lead_to_agent(lead_obj)
     
-    # If qualification is not started, proceed with traditional auto-assignment
-    qualification = await db.lead_qualifications.find_one({
-        "lead_id": lead_obj.id,
-        "status": "active"
-    })
-    
-    if not qualification:
-        # Auto-assign to agent using traditional method
-        await assign_lead_to_agent(lead_obj)
-    
     return lead_obj
 
 @api_router.get("/leads", response_model=List[Lead])
