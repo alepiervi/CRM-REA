@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_documents_endpoint():
-    base_url = "https://crm-checkbox-fix.preview.emergentagent.com/api"
+    base_url = "https://agency-checkbox-fix.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     
