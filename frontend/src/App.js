@@ -4540,15 +4540,19 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse, servizi }) => {
               <Label>Servizi Autorizzati</Label>
               <div className="space-y-2 max-h-48 overflow-y-auto border rounded p-3 bg-blue-50">
                 {getFilteredServizi().map((servizio) => (
-                  <label key={servizio.id} className="flex items-center space-x-2 cursor-pointer">
+                  <div key={servizio.id} className="flex items-center space-x-2 cursor-pointer" onClick={() => toggleServizio(servizio.id)}>
                     <input
                       type="checkbox"
                       checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
-                      onChange={() => toggleServizio(servizio.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleServizio(servizio.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{servizio.nome}</span>
-                  </label>
+                  </div>
                 ))}
                 {getFilteredServizi().length === 0 && (
                   <p className="text-sm text-gray-500 italic">
@@ -4710,15 +4714,19 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse, servizi }) => {
               <Label>Servizi Autorizzati</Label>
               <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-3 bg-blue-50">
                 {getFilteredServizi().map((servizio) => (
-                  <label key={servizio.id} className="flex items-center space-x-2 cursor-pointer">
+                  <div key={servizio.id} className="flex items-center space-x-2 cursor-pointer" onClick={() => toggleServizio(servizio.id)}>
                     <input
                       type="checkbox"
                       checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
-                      onChange={() => toggleServizio(servizio.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleServizio(servizio.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{servizio.nome}</span>
-                  </label>
+                  </div>
                 ))}
                 {getFilteredServizi().length === 0 && (
                   <p className="text-sm text-gray-500 italic">
@@ -12959,15 +12967,19 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi }) => {
               <Label>Servizi Autorizzati</Label>
               <div className="space-y-2 max-h-48 overflow-y-auto border rounded p-3 bg-blue-50">
                 {getFilteredServizi().map((servizio) => (
-                  <label key={servizio.id} className="flex items-center space-x-2 cursor-pointer">
+                  <div key={servizio.id} className="flex items-center space-x-2 cursor-pointer" onClick={() => toggleServizio(servizio.id)}>
                     <input
                       type="checkbox"
                       checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
-                      onChange={() => toggleServizio(servizio.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleServizio(servizio.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{servizio.nome}</span>
-                  </label>
+                  </div>
                 ))}
                 {getFilteredServizi().length === 0 && (
                   <p className="text-sm text-gray-500 italic">
@@ -13137,15 +13149,19 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
               <Label>Servizi Autorizzati</Label>
               <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-3 bg-blue-50">
                 {getFilteredServizi().map((servizio) => (
-                  <label key={servizio.id} className="flex items-center space-x-2 cursor-pointer">
+                  <div key={servizio.id} className="flex items-center space-x-2 cursor-pointer" onClick={() => toggleServizio(servizio.id)}>
                     <input
                       type="checkbox"
                       checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
-                      onChange={() => toggleServizio(servizio.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleServizio(servizio.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{servizio.nome}</span>
-                  </label>
+                  </div>
                 ))}
                 {getFilteredServizi().length === 0 && (
                   <p className="text-sm text-gray-500 italic">
