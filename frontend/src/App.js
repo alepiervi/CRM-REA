@@ -4455,9 +4455,9 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse, servizi }) => {
   const getFilteredServizi = () => {
     if (!servizi || servizi.length === 0) return [];
     
-    // If no commesse selected, show all servizi
+    // If no commesse selected, show NO servizi (must select commessa first)
     if (formData.commesse_autorizzate.length === 0) {
-      return servizi;
+      return [];
     }
     
     // Filter servizi to show only those belonging to selected commesse
@@ -4600,9 +4600,9 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse, servizi }) => {
   const getFilteredServizi = () => {
     if (!servizi || servizi.length === 0) return [];
     
-    // If no commesse selected, show all servizi
+    // If no commesse selected, show NO servizi (must select commessa first)
     if (formData.commesse_autorizzate.length === 0) {
-      return servizi;
+      return [];
     }
     
     // Filter servizi to show only those belonging to selected commesse
@@ -12862,9 +12862,9 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi }) => {
   const getFilteredServizi = () => {
     if (!servizi || servizi.length === 0) return [];
     
-    // If no commesse selected, show all servizi
+    // If no commesse selected, show NO servizi (must select commessa first)
     if (formData.commesse_autorizzate.length === 0) {
-      return servizi;
+      return [];
     }
     
     // Filter servizi to show only those belonging to selected commesse
@@ -13013,9 +13013,9 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
   const getFilteredServizi = () => {
     if (!servizi || servizi.length === 0) return [];
     
-    // If no commesse selected, show all servizi
+    // If no commesse selected, show NO servizi (must select commessa first)
     if (formData.commesse_autorizzate.length === 0) {
-      return servizi;
+      return [];
     }
     
     // Filter servizi to show only those belonging to selected commesse
