@@ -10846,10 +10846,12 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   // NEW: Fetch servizi function
   const fetchServizi = async () => {
     try {
+      console.log('🔄 SubAgenzieManagement: Fetching servizi...');
       const response = await axios.get(`${API}/servizi`);
+      console.log('✅ SubAgenzieManagement: Servizi loaded:', response.data.length, 'items');
       setServizi(response.data);
     } catch (error) {
-      console.error("Error fetching servizi:", error);
+      console.error("❌ SubAgenzieManagement: Error fetching servizi:", error);
       // Don't show error toast for servizi to avoid noise
     }
   };
