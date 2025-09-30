@@ -529,17 +529,34 @@ const DashboardStats = ({ selectedUnit }) => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="border-0 shadow-lg bg-white">
-            <CardContent className="p-6">
-              <div className="animate-pulse space-y-4">
-                <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                <div className="h-8 bg-slate-200 rounded w-1/2"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="bg-white p-4 rounded-lg shadow-sm border">
+          <div className="animate-pulse flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <div className="h-6 bg-slate-200 rounded w-32"></div>
+              <div className="h-4 bg-slate-200 rounded w-40"></div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="h-4 bg-slate-200 rounded w-24"></div>
+              <div className="h-8 bg-slate-200 rounded w-24"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="border-0 shadow-lg bg-white">
+              <CardContent className="p-6">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                  <div className="h-8 bg-slate-200 rounded w-1/2"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
