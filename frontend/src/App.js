@@ -4606,26 +4606,6 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
 
           {/* Unit Info Display */}
           <div className="bg-slate-50 p-3 rounded-lg space-y-2">
-            <div>
-              <Label className="text-xs font-medium text-slate-600">Webhook URL (Read-only)</Label>
-              <div className="flex items-center space-x-2 mt-1">
-                <code className="text-xs bg-white px-2 py-1 rounded flex-1 border">
-                  {BACKEND_URL}{unit.webhook_url}
-                </code>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${BACKEND_URL}${unit.webhook_url}`);
-                    toast({ title: "URL copiato negli appunti!" });
-                  }}
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-            
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
                 <Label className="text-slate-600">Stato</Label>
