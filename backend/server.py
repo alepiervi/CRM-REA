@@ -241,12 +241,12 @@ class Lead(BaseModel):
     cognome: str
     telefono: str
     email: Optional[EmailStr] = None
-    provincia: str
-    tipologia_abitazione: HouseType
+    provincia: Optional[str] = None  # Made optional to fix validation errors
+    tipologia_abitazione: Optional[HouseType] = None  # Made optional to fix validation errors
     ip_address: Optional[str] = None
-    campagna: str
-    gruppo: str  # unit id
-    contenitore: str
+    campagna: Optional[str] = None  # Made optional to fix validation errors
+    gruppo: Optional[str] = None  # Made optional to fix validation errors (unit_id)
+    contenitore: Optional[str] = None  # Made optional to fix validation errors
     privacy_consent: bool = False
     marketing_consent: bool = False
     assigned_agent_id: Optional[str] = None
