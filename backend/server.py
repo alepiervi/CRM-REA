@@ -6603,6 +6603,36 @@ async def create_servizio(servizio_data: ServizioCreate, current_user: User = De
     
     return servizio
 
+@api_router.get("/servizi", response_model=List[Servizio])
+async def get_all_servizi(current_user: User = Depends(get_current_user)):
+    """Get all servizi for admin/management purposes"""
+    
+    try:
+        # Only admin and management roles can access all servizi
+        if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA, UserRole.RESPONSABILE_SUB_AGENZIA]:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        
+        # Get all active servizi
+        servizi = await db.servizi.find({"is_active": True}).to_list(length=None)
+        
+        # Convert to Servizio models for response
+        servizi_models = []
+        for servizio in servizi:
+            try:
+                servizi_models.append(Servizio(**servizio))
+            except Exception as e:
+                logging.warning(f"Error converting servizio {servizio.get('id', 'unknown')}: {e}")
+                continue
+        
+        logging.info(f"Returning {len(servizi_models)} servizi for user {current_user.username}")
+        return servizi_models
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error fetching all servizi: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento dei servizi: {str(e)}")
+
 @api_router.get("/commesse/{commessa_id}/servizi", response_model=List[Servizio])
 async def get_servizi_by_commessa(commessa_id: str, current_user: User = Depends(get_current_user)):
     """Get servizi for a specific commessa"""
