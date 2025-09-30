@@ -10831,10 +10831,16 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchUnits();
-    fetchSubAgenzie();
-    fetchCommesse();
-    fetchServizi(); // NEW: Fetch servizi
+    const loadData = async () => {
+      await Promise.all([
+        fetchUnits(),
+        fetchSubAgenzie(),
+        fetchCommesse(),
+        fetchServizi()
+      ]);
+      setDataLoaded(true); // Set dataLoaded to true when all data is fetched
+    };
+    loadData();
   }, []);
 
   // NEW: Fetch servizi function
