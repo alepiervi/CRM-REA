@@ -11037,9 +11037,12 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
             <h3 className="text-lg font-medium text-slate-800">Gestione Unit</h3>
             <p className="text-sm text-slate-600">Gestisci le unit organizzative del sistema</p>
           </div>
-          <Button onClick={() => setShowCreateUnitModal(true)}>
+          <Button 
+            onClick={() => setShowCreateUnitModal(true)}
+            disabled={!dataLoaded}
+          >
             <Plus className="w-4 h-4 mr-2" />
-            Nuova Unit
+            {dataLoaded ? 'Nuova Unit' : 'Caricamento...'}
           </Button>
         </div>
 
