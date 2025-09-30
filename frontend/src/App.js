@@ -545,24 +545,71 @@ const DashboardStats = ({ selectedUnit }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {getStatsCards().map((stat, index) => (
-        <Card key={index} className="border-0 shadow-lg bg-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-600 mb-1">{stat.title}</p>
-                <p className={`${stat.isText ? 'text-lg' : 'text-3xl'} font-bold text-slate-800`}>
-                  {stat.value}
-                </p>
-              </div>
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
-                <stat.icon className="w-6 h-6 text-white" />
-              </div>
+    <div className="space-y-6">
+      {/* Dashboard Header with Refresh Controls */}
+      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-bold text-gray-900">Dashboard Admin</h1>
+          {lastUpdated && (
+            <div className="text-sm text-gray-500">
+              Ultimo aggiornamento: {lastUpdated.toLocaleTimeString('it-IT')}
             </div>
-          </CardContent>
-        </Card>
-      ))}
+          )}
+          {isRefreshing && (
+            <div className="flex items-center text-sm text-blue-600">
+              <Clock className="w-4 h-4 mr-1 animate-spin" />
+              Aggiornamento...
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="auto-refresh"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="auto-refresh" className="text-sm text-gray-700">
+              Auto refresh (30s)
+            </label>
+          </div>
+          
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleManualRefresh}
+            disabled={loading || isRefreshing}
+            className="flex items-center space-x-2"
+          >
+            <Clock className={`w-4 h-4 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
+            <span>Aggiorna ora</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {getStatsCards().map((stat, index) => (
+          <Card key={index} className="border-0 shadow-lg bg-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 mb-1">{stat.title}</p>
+                  <p className={`${stat.isText ? 'text-lg' : 'text-3xl'} font-bold text-slate-800`}>
+                    {stat.value}
+                  </p>
+                </div>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}>
+                  <stat.icon className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
