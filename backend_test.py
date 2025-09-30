@@ -986,7 +986,12 @@ class CRMAPITester:
             # Check lead_qualifications collection directly
             success, active_quals, status = self.make_request('GET', 'lead-qualification/active', expected_status=200)
             if success:
-                ai_qual_found = any(q.get('lead_id') == ai_lead_id for q in active_quals)
+                # Handle both list and dict response formats
+                if isinstance(active_quals, list):
+                    ai_qual_found = any(q.get('lead_id') == ai_lead_id for q in active_quals if isinstance(q, dict))
+                else:
+                    ai_qual_found = False
+                    
                 if ai_qual_found:
                     self.log_test("✅ Lead found in active qualifications", True, f"Lead {ai_lead_id} in qualification queue")
                 else:
