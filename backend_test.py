@@ -13506,4 +13506,9 @@ def main():
         return 0 if success else 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Run the specific lead inconsistency investigation
+    tester = CRMAPITester()
+    tester.test_lead_data_inconsistency_investigation()
+    
+    # Uncomment to run all tests
+    # sys.exit(main())
