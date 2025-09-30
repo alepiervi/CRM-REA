@@ -10931,16 +10931,10 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <Label className="text-xs text-slate-500">ID</Label>
                       <p className="font-mono text-xs">{unit.id}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-slate-500">Webhook URL</Label>
-                      <p className="font-mono text-xs break-all">
-                        {unit.webhook_url || "Non configurato"}
-                      </p>
                     </div>
                     <div>
                       <Label className="text-xs text-slate-500">Creata il</Label>
