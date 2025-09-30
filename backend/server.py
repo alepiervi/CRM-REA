@@ -262,7 +262,7 @@ class LeadCreate(BaseModel):
     nome: str
     cognome: str
     telefono: str
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None  # Changed from EmailStr to str to handle invalid email formats
     provincia: Optional[str] = None  # Made optional to fix validation errors
     tipologia_abitazione: Optional[HouseType] = None  # Made optional to fix validation errors
     ip_address: Optional[str] = None
