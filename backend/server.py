@@ -8020,6 +8020,51 @@ async def delete_sub_agenzia(
     
     return {"success": True, "message": f"Sub Agenzia '{sub_agenzia['nome']}' eliminata con successo"}
 
+@api_router.post("/admin/cleanup-orphaned-references")
+async def cleanup_orphaned_references(current_user: User = Depends(get_current_user)):
+    """Admin utility to clean up orphaned commesse references in sub agenzie"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Get all existing commesse IDs
+        commesse = await db.commesse.find({}, {"id": 1}).to_list(length=None)
+        existing_commesse_ids = set(c["id"] for c in commesse)
+        
+        # Get all sub agenzie
+        sub_agenzie = await db.sub_agenzie.find({}).to_list(length=None)
+        
+        cleaned_count = 0
+        for sub_agenzia in sub_agenzie:
+            original_commesse = sub_agenzia.get("commesse_autorizzate", [])
+            # Filter out orphaned references
+            cleaned_commesse = [c_id for c_id in original_commesse if c_id in existing_commesse_ids]
+            
+            if len(cleaned_commesse) != len(original_commesse):
+                # Update the sub agenzia with cleaned references
+                await db.sub_agenzie.update_one(
+                    {"id": sub_agenzia["id"]},
+                    {"$set": {"commesse_autorizzate": cleaned_commesse, "updated_at": datetime.now(timezone.utc)}}
+                )
+                cleaned_count += 1
+                
+                orphaned = set(original_commesse) - set(cleaned_commesse)
+                logging.info(f"Cleaned {len(orphaned)} orphaned commesse from sub agenzia {sub_agenzia['nome']}: {orphaned}")
+        
+        return {
+            "success": True, 
+            "message": f"Cleanup completed. {cleaned_count} sub agenzie cleaned",
+            "details": {
+                "existing_commesse": len(existing_commesse_ids),
+                "sub_agenzie_processed": len(sub_agenzie),
+                "sub_agenzie_cleaned": cleaned_count
+            }
+        }
+    
+    except Exception as e:
+        logging.error(f"Error during cleanup: {e}")
+        raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
+
 # Gestione Clienti
 @api_router.post("/clienti", response_model=Cliente)
 async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depends(get_current_user)):
