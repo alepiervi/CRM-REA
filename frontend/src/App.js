@@ -13003,7 +13003,12 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsa
                     }
                   }
                 }}
-                onFocus={() => setShowResponsabiliDropdown(true)}
+                onFocus={() => {
+                  // Only show dropdown if responsabili exist
+                  if (responsabili && responsabili.length > 0) {
+                    setShowResponsabiliDropdown(true);
+                  }
+                }}
                 placeholder={responsabili && responsabili.length > 0 
                   ? "Cerca per nome, cognome o username..." 
                   : "Inserisci ID responsabile manualmente..."}
@@ -13263,7 +13268,12 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
                     }
                   }
                 }}
-                onFocus={() => setShowResponsabiliDropdown(true)}
+                onFocus={() => {
+                  // Only show dropdown if responsabili exist
+                  if (responsabili && responsabili.length > 0) {
+                    setShowResponsabiliDropdown(true);
+                  }
+                }}
                 placeholder={responsabili && responsabili.length > 0 
                   ? "Cerca per nome, cognome o username..." 
                   : "Inserisci ID responsabile manualmente..."}
