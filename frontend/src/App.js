@@ -725,6 +725,17 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard Responsabile Commessa</h1>
           <p className="text-gray-600">Panoramica delle tue commesse e clienti</p>
+          {lastUpdated && (
+            <p className="text-sm text-gray-500 mt-1">
+              Ultimo aggiornamento: {lastUpdated.toLocaleTimeString('it-IT')}
+            </p>
+          )}
+          {isRefreshing && (
+            <div className="flex items-center text-sm text-blue-600 mt-1">
+              <Clock className="w-4 h-4 mr-1 animate-spin" />
+              Aggiornamento in corso...
+            </div>
+          )}
         </div>
         
         <div className="flex items-center space-x-4">
@@ -749,6 +760,32 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
           <Button onClick={handleDateReset} variant="outline" size="sm">
             Reset
           </Button>
+          
+          <div className="border-l pl-4 flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="auto-refresh-resp"
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="auto-refresh-resp" className="text-sm text-gray-700">
+                Auto refresh (45s)
+              </label>
+            </div>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleManualRefresh}
+              disabled={loading || isRefreshing}
+              className="flex items-center space-x-2"
+            >
+              <Clock className={`w-4 h-4 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
+              <span>Aggiorna</span>
+            </Button>
+          </div>
         </div>
       </div>
 
