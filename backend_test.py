@@ -12236,6 +12236,246 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_lead_data_inconsistency_investigation(self):
+        """INVESTIGAZIONE INCONSISTENZA DATI LEAD - Dashboard vs Lista"""
+        print("\n🔍 INVESTIGAZIONE INCONSISTENZA DATI LEAD - Dashboard vs Lista...")
+        
+        # 1. **LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **TEST DASHBOARD STATS - CONTEGGIO LEAD**
+        print("\n📊 2. TEST DASHBOARD STATS - CONTEGGIO LEAD...")
+        
+        success, dashboard_response, status = self.make_request('GET', 'dashboard/stats', expected_status=200)
+        
+        if success and status == 200:
+            total_leads_dashboard = dashboard_response.get('total_leads', 0)
+            total_users = dashboard_response.get('total_users', 0)
+            total_units = dashboard_response.get('total_units', 0)
+            leads_today = dashboard_response.get('leads_today', 0)
+            
+            self.log_test("✅ GET /api/dashboard/stats", True, 
+                f"total_leads: {total_leads_dashboard}, total_users: {total_users}, total_units: {total_units}, leads_today: {leads_today}")
+            
+            print(f"   🎯 DASHBOARD MOSTRA: {total_leads_dashboard} lead totali")
+        else:
+            self.log_test("❌ GET /api/dashboard/stats", False, f"Status: {status}, Response: {dashboard_response}")
+            return False
+
+        # 3. **TEST GET LEADS - LISTA EFFETTIVA**
+        print("\n📋 3. TEST GET LEADS - LISTA EFFETTIVA...")
+        
+        success, leads_response, status = self.make_request('GET', 'leads', expected_status=200)
+        
+        if success and status == 200:
+            leads_list = leads_response if isinstance(leads_response, list) else []
+            actual_leads_count = len(leads_list)
+            
+            self.log_test("✅ GET /api/leads", True, f"Returned {actual_leads_count} leads in list")
+            
+            print(f"   🎯 LISTA LEAD MOSTRA: {actual_leads_count} lead effettivi")
+            
+            # Log details of each lead for debugging
+            if leads_list:
+                print(f"   📝 DETTAGLI LEAD TROVATI:")
+                for i, lead in enumerate(leads_list[:5]):  # Show first 5 leads
+                    lead_id = lead.get('id', 'N/A')
+                    nome = lead.get('nome', 'N/A')
+                    cognome = lead.get('cognome', 'N/A')
+                    assigned_agent = lead.get('assigned_agent_id', 'N/A')
+                    gruppo = lead.get('gruppo', 'N/A')
+                    created_at = lead.get('created_at', 'N/A')
+                    print(f"      {i+1}. ID: {lead_id}, Nome: {nome} {cognome}, Agent: {assigned_agent}, Gruppo: {gruppo}, Created: {created_at}")
+            else:
+                print(f"   ❌ NESSUN LEAD TROVATO NELLA LISTA!")
+        else:
+            self.log_test("❌ GET /api/leads", False, f"Status: {status}, Response: {leads_response}")
+            actual_leads_count = 0
+
+        # 4. **CONFRONTO DISCREPANZA**
+        print("\n⚖️ 4. CONFRONTO DISCREPANZA...")
+        
+        discrepancy = total_leads_dashboard - actual_leads_count
+        
+        if discrepancy == 0:
+            self.log_test("✅ NESSUNA DISCREPANZA", True, f"Dashboard e lista concordano: {total_leads_dashboard} lead")
+        else:
+            self.log_test("❌ DISCREPANZA RILEVATA", False, 
+                f"Dashboard: {total_leads_dashboard} lead, Lista: {actual_leads_count} lead, Differenza: {discrepancy}")
+            
+            print(f"   🚨 PROBLEMA CONFERMATO: Dashboard mostra {total_leads_dashboard} lead ma lista ne mostra {actual_leads_count}")
+
+        # 5. **TEST CON PARAMETRI DIVERSI**
+        print("\n🔍 5. TEST CON PARAMETRI DIVERSI...")
+        
+        # Test with different parameters to see if filtering is the issue
+        test_params = [
+            "?limit=100",  # Increase limit
+            "?skip=0&limit=100",  # Explicit pagination
+            f"?assigned_agent_id={self.user_data['id']}",  # Filter by admin user
+            "?status=nuovo",  # Filter by status
+        ]
+        
+        for param in test_params:
+            print(f"   Testing GET /api/leads{param}...")
+            success, param_response, status = self.make_request('GET', f'leads{param}', expected_status=200)
+            
+            if success and status == 200:
+                param_leads = param_response if isinstance(param_response, list) else []
+                param_count = len(param_leads)
+                self.log_test(f"✅ GET /api/leads{param}", True, f"Returned {param_count} leads")
+                
+                if param_count > actual_leads_count:
+                    print(f"      🎯 TROVATI PIÙ LEAD CON PARAMETRI: {param_count} vs {actual_leads_count}")
+            else:
+                self.log_test(f"❌ GET /api/leads{param}", False, f"Status: {status}")
+
+        # 6. **TEST ACCESSO DIRETTO DATABASE (SIMULATO)**
+        print("\n🗄️ 6. TEST ACCESSO DIRETTO DATABASE (SIMULATO)...")
+        
+        # Test with different user roles if available
+        test_users = [
+            {'username': 'resp_commessa', 'password': 'admin123'},
+            {'username': 'test2', 'password': 'admin123'},
+        ]
+        
+        for user_info in test_users:
+            username = user_info['username']
+            password = user_info['password']
+            
+            print(f"   Testing lead access with {username}...")
+            
+            # Login as different user
+            success, user_response, status = self.make_request(
+                'POST', 'auth/login', 
+                {'username': username, 'password': password}, 
+                200, auth_required=False
+            )
+            
+            if success and 'access_token' in user_response:
+                # Save admin token
+                admin_token = self.token
+                
+                # Use test user token
+                self.token = user_response['access_token']
+                test_user_data = user_response['user']
+                
+                # Get leads with this user
+                success, user_leads_response, status = self.make_request('GET', 'leads', expected_status=200)
+                
+                if success and status == 200:
+                    user_leads = user_leads_response if isinstance(user_leads_response, list) else []
+                    user_leads_count = len(user_leads)
+                    
+                    self.log_test(f"✅ GET /api/leads ({username})", True, 
+                        f"Role: {test_user_data['role']}, Leads: {user_leads_count}")
+                    
+                    if user_leads_count != actual_leads_count:
+                        print(f"      🎯 DIFFERENZA CON RUOLO {test_user_data['role']}: {user_leads_count} vs {actual_leads_count} (admin)")
+                else:
+                    self.log_test(f"❌ GET /api/leads ({username})", False, f"Status: {status}")
+                
+                # Restore admin token
+                self.token = admin_token
+            else:
+                self.log_test(f"❌ Login {username}", False, f"Status: {status}")
+
+        # 7. **TEST FILTRI SPECIFICI**
+        print("\n🎯 7. TEST FILTRI SPECIFICI...")
+        
+        # Test specific filters that might be hiding leads
+        specific_filters = [
+            "?gruppo=",  # Empty gruppo filter
+            "?assigned_agent_id=null",  # Null assigned agent
+            "?assigned_agent_id=",  # Empty assigned agent
+            "?status=",  # Empty status
+        ]
+        
+        for filter_param in specific_filters:
+            print(f"   Testing filter: {filter_param}...")
+            success, filter_response, status = self.make_request('GET', f'leads{filter_param}', expected_status=200)
+            
+            if success and status == 200:
+                filter_leads = filter_response if isinstance(filter_response, list) else []
+                filter_count = len(filter_leads)
+                self.log_test(f"✅ Filter test {filter_param}", True, f"Found {filter_count} leads")
+                
+                if filter_count > actual_leads_count:
+                    print(f"      🎯 FILTRO RIVELA PIÙ LEAD: {filter_count} vs {actual_leads_count}")
+            else:
+                self.log_test(f"❌ Filter test {filter_param}", False, f"Status: {status}")
+
+        # 8. **ANALISI POSSIBILI CAUSE**
+        print("\n🔬 8. ANALISI POSSIBILI CAUSE...")
+        
+        possible_causes = []
+        
+        # Check if discrepancy exists
+        if discrepancy > 0:
+            possible_causes.append(f"Lead senza assigned_agent_id (potrebbero essere filtrati)")
+            possible_causes.append(f"Lead con unit_id/gruppo non validi")
+            possible_causes.append(f"Lead con errori di validazione Pydantic")
+            possible_causes.append(f"Lead con created_at format errato")
+            possible_causes.append(f"Filtri frontend che nascondono i lead")
+            possible_causes.append(f"Autorizzazioni ruolo che limitano visibilità")
+            
+            print(f"   🚨 POSSIBILI CAUSE DELLA DISCREPANZA:")
+            for i, cause in enumerate(possible_causes, 1):
+                print(f"      {i}. {cause}")
+        else:
+            print(f"   ✅ NESSUNA DISCREPANZA RILEVATA - Dashboard e lista concordano")
+
+        # 9. **RACCOMANDAZIONI DEBUG**
+        print("\n💡 9. RACCOMANDAZIONI DEBUG...")
+        
+        if discrepancy > 0:
+            recommendations = [
+                "Verificare lead con assigned_agent_id NULL nel database",
+                "Controllare lead con gruppo/unit_id non esistenti",
+                "Verificare log di validazione per lead scartati",
+                "Testare endpoint /api/leads con admin user per vedere tutti i lead",
+                "Controllare filtri applicati nel frontend",
+                "Verificare query MongoDB per conteggio dashboard vs lista"
+            ]
+            
+            print(f"   📋 RACCOMANDAZIONI PER IL DEBUG:")
+            for i, rec in enumerate(recommendations, 1):
+                print(f"      {i}. {rec}")
+        else:
+            print(f"   ✅ NESSUN DEBUG NECESSARIO - Sistema funziona correttamente")
+
+        # **SUMMARY FINALE**
+        print(f"\n🎯 INVESTIGAZIONE INCONSISTENZA DATI LEAD - SUMMARY:")
+        print(f"   🎯 PROBLEMA SEGNALATO: Dashboard mostra 5 lead ma lista lead è vuota")
+        print(f"   📊 RISULTATI INVESTIGAZIONE:")
+        print(f"      • Dashboard total_leads: {total_leads_dashboard}")
+        print(f"      • Lista lead effettivi: {actual_leads_count}")
+        print(f"      • Discrepanza rilevata: {discrepancy}")
+        
+        if discrepancy == 0:
+            print(f"   ✅ CONCLUSIONE: Nessuna inconsistenza rilevata - Dashboard e lista concordano")
+            self.log_test("✅ INVESTIGAZIONE LEAD INCONSISTENCY", True, "Nessuna discrepanza trovata")
+            return True
+        else:
+            print(f"   ❌ CONCLUSIONE: Inconsistenza confermata - {discrepancy} lead mancanti dalla lista")
+            print(f"   🔍 CAUSA PROBABILE: Lead esistono nel database ma vengono filtrati dalla query GET /api/leads")
+            print(f"   🚨 AZIONE RICHIESTA: Investigare filtri, autorizzazioni e validazione lead")
+            self.log_test("❌ INVESTIGAZIONE LEAD INCONSISTENCY", False, f"Discrepanza di {discrepancy} lead confermata")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
