@@ -11283,6 +11283,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
             onSuccess={createSubAgenzia}
             commesse={commesse}
             servizi={servizi}
+            responsabili={responsabili}
           />
         )}
         
@@ -11297,6 +11298,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
             onSuccess={(updateData) => updateSubAgenzia(editingSubAgenzia.id, updateData)}
             commesse={commesse}
             servizi={servizi}
+            responsabili={responsabili}
           />
         )}
       </div>
