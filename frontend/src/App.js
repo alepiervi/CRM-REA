@@ -10788,7 +10788,19 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
     fetchUnits();
     fetchSubAgenzie();
     fetchCommesse();
+    fetchServizi(); // NEW: Fetch servizi
   }, []);
+
+  // NEW: Fetch servizi function
+  const fetchServizi = async () => {
+    try {
+      const response = await axios.get(`${API}/servizi`);
+      setServizi(response.data);
+    } catch (error) {
+      console.error("Error fetching servizi:", error);
+      // Don't show error toast for servizi to avoid noise
+    }
+  };
 
   // Units functions
   const fetchUnits = async () => {
