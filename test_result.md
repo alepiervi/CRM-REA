@@ -225,7 +225,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Lead Qualification API Datetime Error Fix"
     - "EyeOff Icon Error Resolution and Segmenti Cards Testing"
   stuck_tasks:
     - "EyeOff Icon Error Resolution and Segmenti Cards Testing"
@@ -238,6 +237,7 @@ test_plan:
     - "Advanced Commessa Configuration Frontend Implementation"
     - "User Entity Management Configuration"
     - "Extend Hierarchy: Segmenti and Offerte Management System"
+    - "Lead Qualification API Datetime Error Fix"
 
 agent_communication:
     - agent: "testing"
