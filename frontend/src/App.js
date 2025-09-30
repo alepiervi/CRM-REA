@@ -643,12 +643,26 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchDashboardData();
   }, [dateFrom, dateTo, selectedTipologiaContratto]);
+
+  // Auto-refresh effect per responsabile commessa
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      fetchDashboardData(true); // true indica che è un refresh automatico
+    }, 45000); // Aggiorna ogni 45 secondi per non sovraccaricare
+
+    return () => clearInterval(interval);
+  }, [dateFrom, dateTo, selectedTipologiaContratto, autoRefresh]);
 
   const fetchDashboardData = async () => {
     try {
