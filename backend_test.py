@@ -13223,6 +13223,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # NEW TEST: AI Lead Routing System
+        print("\n" + "="*80)
+        print("🎯 NEW TEST: AI LEAD ROUTING SYSTEM")
+        print("="*80)
+        self.test_ai_lead_routing_system()
+        
         # CRITICAL TEST: Lead Data Inconsistency Fix
         print("\n" + "="*80)
         print("🎯 CRITICAL TEST: LEAD DATA INCONSISTENCY FIX")
