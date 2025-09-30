@@ -11187,6 +11187,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
             onClose={() => setShowCreateSubModal(false)}
             onSuccess={createSubAgenzia}
             commesse={commesse}
+            servizi={servizi}
           />
         )}
         
