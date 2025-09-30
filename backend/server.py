@@ -128,6 +128,8 @@ class CallOutcome(str, Enum):
     NR = "NR"
     RICHIAMARE = "RICHIAMARE"
     CONTRATTUALIZATO = "CONTRATTUALIZATO"
+    IN_QUALIFICAZIONE_BOT = "In Qualificazione Bot"
+    DA_CONTATTARE = "Da Contattare"
 
 class HouseType(str, Enum):
     APPARTAMENTO = "appartamento"
