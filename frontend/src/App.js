@@ -10955,10 +10955,12 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
 
   const fetchCommesse = async () => {
     try {
+      console.log('🔄 SubAgenzieManagement: Fetching commesse...');
       const response = await axios.get(`${API}/commesse`);
+      console.log('✅ SubAgenzieManagement: Commesse loaded:', response.data.length, 'items');
       setCommesse(response.data);
     } catch (error) {
-      console.error("Error fetching commesse:", error);
+      console.error("❌ SubAgenzieManagement: Error fetching commesse:", error);
     }
   };
 
