@@ -4694,7 +4694,7 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse, servizi }) => {
             <div>
               <Label>Servizi Autorizzati</Label>
               <div className="space-y-2 max-h-64 overflow-y-auto border rounded p-3 bg-blue-50">
-                {servizi?.map((servizio) => (
+                {getFilteredServizi().map((servizio) => (
                   <label key={servizio.id} className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -4703,11 +4703,14 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse, servizi }) => {
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{servizio.nome}</span>
-                    <span className="text-xs text-gray-500 ml-2">({commesse?.find(c => c.id === servizio.commessa_id)?.nome || 'N/A'})</span>
                   </label>
                 ))}
-                {(!servizi || servizi.length === 0) && (
-                  <p className="text-sm text-gray-500 italic">Nessun servizio disponibile</p>
+                {getFilteredServizi().length === 0 && (
+                  <p className="text-sm text-gray-500 italic">
+                    {formData.commesse_autorizzate.length === 0 
+                      ? "Seleziona prima una commessa per vedere i servizi" 
+                      : "Nessun servizio disponibile per le commesse selezionate"}
+                  </p>
                 )}
               </div>
               <p className="text-xs text-slate-500 mt-1">
