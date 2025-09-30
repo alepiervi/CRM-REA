@@ -256,6 +256,18 @@ frontend:
           agent: "testing"
           comment: "🎉 TESTING AGGIORNAMENTO AUTOMATICO DASHBOARD ADMIN COMPLETATO CON SUCCESSO! ✅ DASHBOARD ADMIN (30s AUTO-REFRESH): Header 'Dashboard Admin' presente con controlli refresh completi, checkbox 'Auto refresh (30s)' funzionante con toggle corretto, pulsante 'Aggiorna ora' con icona Clock operativo, indicatore 'Ultimo aggiornamento' con orario preciso visibile, manual refresh aggiorna timestamp correttamente (09:49:39 → 09:49:44), statistiche cards (4) presenti con dati corretti (Totale Lead: 5, Totale Utenti: 2, Totale Unit: 1, Lead Oggi: 0). ✅ UI INTEGRATION: Layout responsive senza overflow orizzontale, controlli non interferiscono con funzionalità esistenti, design pulito e professionale. ✅ PERFORMANCE: Memory usage ottimale (23MB/38MB), sistema di auto-refresh implementato correttamente con intervallo 30s. ⚠️ RESPONSABILE COMMESSA: Non testato per mancanza di utente test disponibile, ma codice implementato correttamente con intervallo 45s. SISTEMA AUTO-REFRESH COMPLETAMENTE FUNZIONANTE!"
 
+  - task: "React State Closure Bug Fix - Unit & Sub Agenzie Checkboxes"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "main"
+          comment: "🔧 STALE CLOSURE BUG FIX IMPLEMENTATO: Ho identificato e risolto il problema di 'stale closure' nei checkbox delle modali Unit e Sub Agenzie. PROBLEMA: Le funzioni toggleCommessa e toggleServizio usavano setFormData({ ...formData, ... }) che causa il riferimento a una versione obsoleta dello stato. SOLUZIONE: Convertito tutte le funzioni al pattern funzionale setFormData(prev => ({ ...prev, ... })) per garantire l'uso dello stato più recente. MODALI CORRETTE: 1) CreateUnitModal - toggleServizio corretto (toggleCommessa era già corretto), 2) EditUnitModal - toggleCommessa e toggleServizio corretti, 3) CreateSubAgenziaModal - già corretto (non modificato), 4) EditSubAgenziaModal - toggleCommessa e toggleServizio corretti. TESTING RICHIESTO: Verificare che i checkbox nelle 4 modali ora aggiornino correttamente lo stato React e che la lista servizi si filtri dinamicamente in base alle commesse selezionate. Login: admin/admin123."
+
 metadata:
   created_by: "testing_agent"
   version: "1.1"
