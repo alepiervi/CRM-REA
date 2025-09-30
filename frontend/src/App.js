@@ -12782,8 +12782,6 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
 };
 
 const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi }) => {
-  console.log("🔧 CreateSubAgenziaModal received:", { commesse: commesse?.length, servizi: servizi?.length });
-  
   const [formData, setFormData] = useState({
     nome: '',
     descrizione: '',
