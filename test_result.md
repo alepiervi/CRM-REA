@@ -296,8 +296,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "Responsabile Field UX Enhancement - Sub Agenzie Modals"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -314,6 +313,7 @@ test_plan:
     - "Lead Qualification API Datetime Error Fix"
     - "Complete Webhook Removal from Unit & Sub Agenzie Section"
     - "React State Closure Bug Fix - Unit & Sub Agenzie Checkboxes"
+    - "Responsabile Field UX Enhancement - Sub Agenzie Modals"
 
 agent_communication:
     - agent: "main"
