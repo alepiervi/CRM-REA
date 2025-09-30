@@ -105,6 +105,17 @@
 user_problem_statement: "INVESTIGAZIONE INCONSISTENZA DATI LEAD - Dashboard vs Lista: L'utente richiede l'investigazione della discrepanza tra il conteggio dashboard e la lista lead per identificare la causa dell'inconsistenza. Dashboard mostra 5 lead ma lista lead è vuota. Focus su: 1) Conteggio Dashboard vs Lista - testare GET /api/dashboard/stats e verificare il valore 'total_leads', testare GET /api/leads e verificare quanti lead vengono effettivamente restituiti, confrontare i due risultati, 2) Query Database Diretta - verificare quanti lead esistono realmente nel database, identificare se ci sono lead con problemi di validazione, controllare lo stato dei lead nel database (campi mancanti, formati errati), 3) Filtri e Validazione - testare l'endpoint /api/leads con diversi parametri per identificare quali filtri stanno escludendo i lead, verificare se ci sono lead che falliscono la validazione Pydantic, controllare i campi assigned_agent_id, gruppo (unit_id), created_at, 4) Debug Specifico - testare con admin user per vedere tutti i lead senza filtri di ruolo, verificare log di validazione per lead scartati, identificare lead 'orfani' o con dati corrupted, 5) Possibili Cause da Investigare - lead senza assigned_agent_id (non visibili nella lista), lead con unit_id/gruppo non validi, lead con errori di validazione del modello, lead con created_at format errato, filtri frontend che nascondono i lead. Login: admin/admin123."
 
 backend:
+  - task: "Lead Data Inconsistency Investigation - Dashboard vs Lista"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL LEAD DATA INCONSISTENCY CONFIRMED: Investigazione completa ha identificato la causa esatta della discrepanza tra dashboard e lista lead. 🔍 PROBLEMA CONFERMATO: Dashboard mostra 5 lead (GET /api/dashboard/stats: total_leads=5) ma lista lead è vuota (GET /api/leads: 0 lead). 🚨 ROOT CAUSE IDENTIFICATA: Tutti i 5 lead nel database hanno errori di validazione Pydantic che li escludono dalla lista ma non dal conteggio dashboard. 📋 ERRORI SPECIFICI TROVATI: 1) Invalid esito values: Lead hanno valori 'In Qualificazione Bot', 'Da Contattare' ma enum accetta solo 'FISSATO APPUNTAMENTO', 'KO', 'NR', 'RICHIAMARE', 'CONTRATTUALIZATO'. 2) Missing required fields: Lead mancano campi obbligatori come provincia, tipologia_abitazione, campagna, gruppo, contenitore. 3) Invalid email format: Email 'whatsapp_39 123 456 7890@generated.com' non valida. 🔧 CAUSA TECNICA: Dashboard usa db.leads.count_documents({}) che conta TUTTI i lead, mentre GET /api/leads filtra lead con errori Pydantic (righe 3514-3524 server.py). 🚨 AZIONE RICHIESTA: 1) Aggiornare enum CallOutcome per includere valori esistenti, 2) Rendere opzionali campi mancanti o fornire valori default, 3) Validare/correggere email format, 4) Allineare logica conteggio dashboard con filtri lista."
   - task: "Advanced Commessa Configuration Frontend Implementation"
     implemented: true
     working: true
