@@ -12897,6 +12897,12 @@ Duplicate,Test,+393471234567"""
         print("="*80)
         self.test_lead_data_inconsistency_fix()
         
+        # CRITICAL TEST: Lead Qualification Datetime Fix
+        print("\n" + "="*80)
+        print("🎯 CRITICAL TEST: LEAD QUALIFICATION DATETIME FIX")
+        print("="*80)
+        self.test_lead_qualification_datetime_fix()
+        
         # TESTING FINALE BACKEND COMMESSE - AGGIORNAMENTI AUTOMATICI
         print("\n" + "="*80)
         print("🎯 TESTING FINALE BACKEND COMMESSE - AGGIORNAMENTI AUTOMATICI")
