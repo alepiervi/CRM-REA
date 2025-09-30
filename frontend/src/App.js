@@ -12879,7 +12879,7 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
   );
 };
 
-const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi }) => {
+const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsabili }) => {
   const [formData, setFormData] = useState({
     nome: '',
     descrizione: '',
@@ -12887,6 +12887,9 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi }) => {
     commesse_autorizzate: [],
     servizi_autorizzati: []
   });
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showResponsabiliDropdown, setShowResponsabiliDropdown] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
