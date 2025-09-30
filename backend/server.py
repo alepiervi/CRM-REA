@@ -3432,34 +3432,48 @@ async def create_lead(lead_data: LeadCreate):
     lead_obj = Lead(**lead_data.dict())
     await db.leads.insert_one(lead_obj.dict())
     
-    # Start automatic lead qualification if phone number is provided
-    if lead_obj.telefono and lead_obj.telefono.strip():
+    # Check if qualification should be started based on commessa settings
+    should_start_qualification = False
+    
+    try:
+        # Find the commessa associated with this lead
+        commessa = None
+        if lead_obj.campagna:
+            commessa = await db.commesse.find_one({"nome": lead_obj.campagna})
+        elif lead_obj.gruppo:
+            # Fallback: try to find by gruppo field if campagna is not set
+            commessa = await db.commesse.find_one({"nome": lead_obj.gruppo})
+        
+        if commessa:
+            # Check if AI (bot) is enabled for this commessa
+            should_start_qualification = commessa.get("has_ai", False)
+            logging.info(f"Found commessa '{commessa.get('nome')}' for lead {lead_obj.id}. has_ai: {should_start_qualification}")
+        else:
+            logging.warning(f"No commessa found for lead {lead_obj.id} (campagna: {lead_obj.campagna}, gruppo: {lead_obj.gruppo})")
+            # Default behavior if no commessa found: no qualification (immediate assignment)
+            should_start_qualification = False
+            
+    except Exception as e:
+        logging.error(f"Error checking commessa AI settings for lead {lead_obj.id}: {e}")
+        # Default behavior on error: no qualification (immediate assignment)
+        should_start_qualification = False
+    
+    # Start qualification process only if commessa has AI enabled
+    if should_start_qualification:
         try:
-            # First validate WhatsApp availability
-            validation_result = await whatsapp_service.validate_phone_number(lead_obj.telefono)
-            
-            # Store validation result
-            if validation_result.get("is_whatsapp"):
-                validation_data = {
-                    "id": str(uuid.uuid4()),
-                    "lead_id": lead_obj.id,
-                    "phone_number": lead_obj.telefono,
-                    "is_whatsapp": validation_result["is_whatsapp"],
-                    "validation_status": validation_result["validation_status"],
-                    "validation_date": datetime.now(timezone.utc),
-                    "created_at": datetime.now(timezone.utc)
-                }
-                await db.lead_whatsapp_validations.insert_one(validation_data)
-            
             # Start qualification process
             await lead_qualification_bot.start_qualification_process(lead_obj.id)
             
-            logging.info(f"Started automatic qualification for new lead {lead_obj.id}")
+            logging.info(f"Started automatic qualification for new lead {lead_obj.id} (commessa has AI enabled)")
             
         except Exception as e:
             logging.error(f"Error starting qualification for new lead {lead_obj.id}: {e}")
-            # Continue with normal flow even if qualification fails
-            pass
+            # If qualification fails, proceed with immediate assignment
+            await assign_lead_to_agent(lead_obj)
+    else:
+        logging.info(f"Skipping qualification for lead {lead_obj.id} - commessa does not have AI enabled. Proceeding with immediate assignment.")
+        # Immediately assign to agent since commessa doesn't have AI enabled
+        await assign_lead_to_agent(lead_obj)
     
     # If qualification is not started, proceed with traditional auto-assignment
     qualification = await db.lead_qualifications.find_one({
