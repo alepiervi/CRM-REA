@@ -11167,9 +11167,12 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
             <h3 className="text-lg font-medium text-slate-800">Gestione Sub Agenzie</h3>
             <p className="text-sm text-slate-600">Gestisci le sub agenzie e le loro autorizzazioni</p>
           </div>
-          <Button onClick={() => setShowCreateSubModal(true)}>
+          <Button 
+            onClick={() => setShowCreateSubModal(true)}
+            disabled={!dataLoaded}
+          >
             <Plus className="w-4 h-4 mr-2" />
-            Nuova Sub Agenzia
+            {dataLoaded ? 'Nuova Sub Agenzia' : 'Caricamento...'}
           </Button>
         </div>
 
