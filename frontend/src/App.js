@@ -12901,6 +12901,36 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsa
       commesse_autorizzate: [],
       servizi_autorizzati: []
     });
+    setSearchTerm('');
+  };
+
+  // Filter responsabili based on search term
+  const getFilteredResponsabili = () => {
+    if (!responsabili || responsabili.length === 0) return [];
+    if (!searchTerm) return responsabili;
+    
+    const lowerSearch = searchTerm.toLowerCase();
+    return responsabili.filter(resp => 
+      resp.username?.toLowerCase().includes(lowerSearch) ||
+      resp.nome?.toLowerCase().includes(lowerSearch) ||
+      resp.cognome?.toLowerCase().includes(lowerSearch) ||
+      resp.email?.toLowerCase().includes(lowerSearch)
+    );
+  };
+
+  // Select a responsabile
+  const selectResponsabile = (responsabile) => {
+    setFormData(prev => ({ ...prev, responsabile_id: responsabile.id }));
+    setSearchTerm(`${responsabile.nome || ''} ${responsabile.cognome || ''} (${responsabile.username})`);
+    setShowResponsabiliDropdown(false);
+  };
+
+  // Get selected responsabile display name
+  const getSelectedResponsabileName = () => {
+    if (!formData.responsabile_id || !responsabili) return '';
+    const selected = responsabili.find(r => r.id === formData.responsabile_id);
+    if (!selected) return '';
+    return `${selected.nome || ''} ${selected.cognome || ''} (${selected.username})`;
   };
 
   const toggleCommessa = (commessaId) => {
