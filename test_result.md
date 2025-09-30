@@ -275,7 +275,8 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "React State Closure Bug Fix - Unit & Sub Agenzie Checkboxes"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
