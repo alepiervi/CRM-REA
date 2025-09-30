@@ -4435,14 +4435,16 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse, servizi }) => {
 
   const toggleCommessa = (commessaId) => {
     console.log('🔄 toggleCommessa called for:', commessaId);
-    console.log('📊 Current commesse_autorizzate:', formData.commesse_autorizzate);
-    const newCommesse = formData.commesse_autorizzate.includes(commessaId)
-      ? formData.commesse_autorizzate.filter(id => id !== commessaId)
-      : [...formData.commesse_autorizzate, commessaId];
-    console.log('✅ New commesse_autorizzate:', newCommesse);
-    setFormData({
-      ...formData,
-      commesse_autorizzate: newCommesse
+    setFormData(prev => {
+      console.log('📊 Current commesse_autorizzate:', prev.commesse_autorizzate);
+      const newCommesse = prev.commesse_autorizzate.includes(commessaId)
+        ? prev.commesse_autorizzate.filter(id => id !== commessaId)
+        : [...prev.commesse_autorizzate, commessaId];
+      console.log('✅ New commesse_autorizzate:', newCommesse);
+      return {
+        ...prev,
+        commesse_autorizzate: newCommesse
+      };
     });
   };
 
