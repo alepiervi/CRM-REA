@@ -12995,25 +12995,53 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsa
                   }
                 }}
                 onFocus={() => setShowResponsabiliDropdown(true)}
-                placeholder="Cerca per nome, cognome o username..."
+                placeholder={responsabili && responsabili.length > 0 
+                  ? "Cerca per nome, cognome o username..." 
+                  : "Inserisci ID responsabile manualmente..."}
                 required={!formData.responsabile_id}
               />
-              {showResponsabiliDropdown && getFilteredResponsabili().length > 0 && (
+              
+              {/* Show dropdown with results or no-results message */}
+              {showResponsabiliDropdown && responsabili && responsabili.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {getFilteredResponsabili().map((resp) => (
-                    <div
-                      key={resp.id}
-                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
-                      onClick={() => selectResponsabile(resp)}
-                    >
-                      <div className="font-medium text-slate-800">
-                        {resp.nome} {resp.cognome}
+                  {getFilteredResponsabili().length > 0 ? (
+                    getFilteredResponsabili().map((resp) => (
+                      <div
+                        key={resp.id}
+                        className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+                        onClick={() => selectResponsabile(resp)}
+                      >
+                        <div className="font-medium text-slate-800">
+                          {resp.nome} {resp.cognome}
+                        </div>
+                        <div className="text-sm text-slate-500">
+                          {resp.username} • {resp.email}
+                        </div>
                       </div>
-                      <div className="text-sm text-slate-500">
-                        {resp.username} • {resp.email}
-                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-center text-slate-500">
+                      <p className="text-sm">Nessun responsabile trovato con questi criteri</p>
                     </div>
-                  ))}
+                  )}
+                </div>
+              )}
+              
+              {/* Show warning if no managers available */}
+              {(!responsabili || responsabili.length === 0) && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-amber-800">Nessun responsabile disponibile</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Non ci sono utenti con ruolo "Responsabile Sub Agenzia" nel sistema. 
+                        Puoi inserire manualmente l'ID di un responsabile nel campo sopra.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -13218,25 +13246,53 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
                   }
                 }}
                 onFocus={() => setShowResponsabiliDropdown(true)}
-                placeholder="Cerca per nome, cognome o username..."
+                placeholder={responsabili && responsabili.length > 0 
+                  ? "Cerca per nome, cognome o username..." 
+                  : "Inserisci ID responsabile manualmente..."}
                 required={!formData.responsabile_id}
               />
-              {showResponsabiliDropdown && getFilteredResponsabili().length > 0 && (
+              
+              {/* Show dropdown with results or no-results message */}
+              {showResponsabiliDropdown && responsabili && responsabili.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {getFilteredResponsabili().map((resp) => (
-                    <div
-                      key={resp.id}
-                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
-                      onClick={() => selectResponsabile(resp)}
-                    >
-                      <div className="font-medium text-slate-800">
-                        {resp.nome} {resp.cognome}
+                  {getFilteredResponsabili().length > 0 ? (
+                    getFilteredResponsabili().map((resp) => (
+                      <div
+                        key={resp.id}
+                        className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+                        onClick={() => selectResponsabile(resp)}
+                      >
+                        <div className="font-medium text-slate-800">
+                          {resp.nome} {resp.cognome}
+                        </div>
+                        <div className="text-sm text-slate-500">
+                          {resp.username} • {resp.email}
+                        </div>
                       </div>
-                      <div className="text-sm text-slate-500">
-                        {resp.username} • {resp.email}
-                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-center text-slate-500">
+                      <p className="text-sm">Nessun responsabile trovato con questi criteri</p>
                     </div>
-                  ))}
+                  )}
+                </div>
+              )}
+              
+              {/* Show warning if no managers available */}
+              {(!responsabili || responsabili.length === 0) && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-amber-800">Nessun responsabile disponibile</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Non ci sono utenti con ruolo "Responsabile Sub Agenzia" nel sistema. 
+                        Puoi inserire manualmente l'ID di un responsabile nel campo sopra.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
