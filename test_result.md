@@ -222,6 +222,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Lead Qualification API Datetime Error Fix"
     - "EyeOff Icon Error Resolution and Segmenti Cards Testing"
   stuck_tasks:
     - "EyeOff Icon Error Resolution and Segmenti Cards Testing"
