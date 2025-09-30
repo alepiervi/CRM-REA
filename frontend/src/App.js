@@ -4448,6 +4448,21 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse, servizi }) => {
     });
   };
 
+  // Filter servizi based on selected commesse
+  const getFilteredServizi = () => {
+    if (!servizi || servizi.length === 0) return [];
+    
+    // If no commesse selected, show all servizi
+    if (formData.commesse_autorizzate.length === 0) {
+      return servizi;
+    }
+    
+    // Filter servizi to show only those belonging to selected commesse
+    return servizi.filter(servizio => 
+      formData.commesse_autorizzate.includes(servizio.commessa_id)
+    );
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSuccess(formData);
