@@ -14261,9 +14261,9 @@ def main():
         return 0 if success else 1
 
 if __name__ == "__main__":
-    # Run the specific lead inconsistency investigation
+    # Run the AI Lead Routing System test as requested
     tester = CRMAPITester()
-    tester.test_lead_data_inconsistency_investigation()
+    tester.test_ai_lead_routing_system()
     
     # Uncomment to run all tests
     # sys.exit(main())
