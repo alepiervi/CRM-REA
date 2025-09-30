@@ -10961,30 +10961,6 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
                     </div>
                   )}
                   
-                  {unit.webhook_url && (
-                    <div className="mt-4 p-3 bg-slate-50 rounded-lg">
-                      <Label className="text-xs font-medium text-slate-700">Webhook Endpoint</Label>
-                      <div className="mt-1 flex items-center space-x-2">
-                        <code className="text-xs bg-white px-2 py-1 rounded border font-mono break-all">
-                          {unit.webhook_url}
-                        </code>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            navigator.clipboard.writeText(unit.webhook_url);
-                            toast({
-                              title: "Copiato!",
-                              description: "URL webhook copiato negli appunti"
-                            });
-                          }}
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
                   {/* Actions */}
                   <div className="flex justify-end space-x-2 mt-4">
                     <Button
