@@ -12681,6 +12681,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # CRITICAL TEST: Lead Data Inconsistency Fix
+        print("\n" + "="*80)
+        print("🎯 CRITICAL TEST: LEAD DATA INCONSISTENCY FIX")
+        print("="*80)
+        self.test_lead_data_inconsistency_fix()
+        
         # TESTING FINALE BACKEND COMMESSE - AGGIORNAMENTI AUTOMATICI
         print("\n" + "="*80)
         print("🎯 TESTING FINALE BACKEND COMMESSE - AGGIORNAMENTI AUTOMATICI")
