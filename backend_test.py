@@ -13820,6 +13820,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # CRITICAL TEST: SERVIZI ENDPOINT FIX VERIFICATION
+        print("\n" + "="*80)
+        print("🎯 CRITICAL TEST: SERVIZI ENDPOINT FIX VERIFICATION")
+        print("="*80)
+        self.test_servizi_endpoint_fix_verification()
+        
         # CRITICAL TEST: Sub Agenzie Fixes Verification
         print("\n" + "="*80)
         print("🎯 CRITICAL TEST: SUB AGENZIE FIXES VERIFICATION")
