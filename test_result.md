@@ -294,10 +294,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "React State Closure Bug Fix - Unit & Sub Agenzie Checkboxes"
+    - "Responsabile Field UX Enhancement - Sub Agenzie Modals"
   stuck_tasks: []
   test_all: false
-  test_priority: "critical_first"
+  test_priority: "high_first"
   completed_tasks:
     - "GET /api/servizi Endpoint Fix - 405 Method Not Allowed Resolution"
     - "Sub Agenzie Problems Diagnosis - Deletion, Commesse Visibility, and Flagging"
@@ -310,7 +310,7 @@ test_plan:
     - "Extend Hierarchy: Segmenti and Offerte Management System"
     - "Lead Qualification API Datetime Error Fix"
     - "Complete Webhook Removal from Unit & Sub Agenzie Section"
-    - "Complete Webhook Removal from Unit & Sub Agenzie Section"
+    - "React State Closure Bug Fix - Unit & Sub Agenzie Checkboxes"
 
 agent_communication:
     - agent: "testing"
