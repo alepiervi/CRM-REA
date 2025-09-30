@@ -13564,6 +13564,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # CRITICAL TEST: Sub Agenzie Fixes Verification
+        print("\n" + "="*80)
+        print("🎯 CRITICAL TEST: SUB AGENZIE FIXES VERIFICATION")
+        print("="*80)
+        self.test_sub_agenzie_fixes_verification()
+        
         # NEW TEST: AI Lead Routing System
         print("\n" + "="*80)
         print("🎯 NEW TEST: AI LEAD ROUTING SYSTEM")
