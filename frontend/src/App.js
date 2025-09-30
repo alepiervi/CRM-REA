@@ -11076,37 +11076,12 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
                   </div>
                 )}
 
-                {/* Webhook URL per Sub Agenzia */}
-                {subAgenzia.webhook_url && (
-                  <div className="p-3 bg-slate-50 rounded-lg">
-                    <Label className="text-xs font-medium text-slate-700">Webhook Sub Agenzia</Label>
-                    <div className="mt-1 flex items-center space-x-2">
-                      <code className="text-xs bg-white px-2 py-1 rounded border font-mono break-all">
-                        {subAgenzia.webhook_url}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          navigator.clipboard.writeText(subAgenzia.webhook_url);
-                          toast({
-                            title: "Copiato!",
-                            description: "URL webhook Sub Agenzia copiato negli appunti"
-                          });
-                        }}
-                      >
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
                 <div className="text-xs text-slate-400 mt-2">
                   Creata il: {new Date(subAgenzia.created_at).toLocaleDateString('it-IT')}
                 </div>
                 
                 {/* Actions */}
-                <div className="flex justify-end mt-4">
+                <div className="flex justify-end space-x-2 mt-4">
                   <Button
                     variant="outline"
                     size="sm"
@@ -11114,6 +11089,14 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
                   >
                     <Edit className="w-4 h-4 mr-1" />
                     Modifica
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deleteSubAgenzia(subAgenzia.id)}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Elimina
                   </Button>
                 </div>
               </CardContent>
