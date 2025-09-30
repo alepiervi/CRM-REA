@@ -10770,6 +10770,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   const [unitsData, setUnitsData] = useState(units || []);
   const [subAgenzie, setSubAgenzie] = useState(subAgenzieFromParent || []);
   const [commesse, setCommesse] = useState(commesseFromParent || []);
+  const [servizi, setServizi] = useState([]); // NEW: Add servizi state
   
   const [showCreateUnitModal, setShowCreateUnitModal] = useState(false);
   const [showEditUnitModal, setShowEditUnitModal] = useState(false);
