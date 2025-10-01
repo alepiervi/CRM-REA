@@ -16174,83 +16174,116 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
                   </div>
                 </div>
 
-                {/* Selected Files List */}
+                {/* Selected Files List - Mobile Optimized */}
                 {selectedFiles.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-slate-700">File Selezionati:</h4>
-                    <div className="max-h-32 overflow-y-auto space-y-1">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-slate-700 text-sm sm:text-base">
+                        File Selezionati ({selectedFiles.length})
+                      </h4>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedFiles([])}
+                        disabled={uploading}
+                        className="text-xs"
+                      >
+                        Rimuovi Tutti
+                      </Button>
+                    </div>
+                    
+                    <div className="max-h-40 sm:max-h-48 overflow-y-auto space-y-2">
                       {selectedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded border">
-                          <div className="flex items-center space-x-2 flex-1">
-                            <FileText className="w-4 h-4 text-blue-600" />
-                            <span className="text-sm font-medium truncate">{file.name}</span>
-                            <span className="text-xs text-slate-500">
-                              ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                            </span>
-                          </div>
-                          
-                          {/* Progress Bar */}
-                          {uploadProgress[file.name] && (
-                            <div className="flex items-center space-x-2 mr-2">
-                              {uploadProgress[file.name].status === 'uploading' && (
-                                <div className="w-16 bg-slate-200 rounded-full h-2">
-                                  <div 
-                                    className="bg-blue-600 h-2 rounded-full transition-all" 
-                                    style={{ width: `${uploadProgress[file.name].progress}%` }}
-                                  ></div>
-                                </div>
+                        <div key={index} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                          <div className="flex items-start justify-between space-x-3">
+                            <div className="flex items-start space-x-3 min-w-0 flex-1">
+                              <FileText className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-slate-900 truncate">{file.name}</p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                  {(file.size / 1024 / 1024).toFixed(2)} MB • {file.type || 'Documento'}
+                                </p>
+                                
+                                {/* Progress Bar - Mobile Friendly */}
+                                {uploadProgress[file.name] && (
+                                  <div className="mt-2 space-y-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs text-slate-600">
+                                        {uploadProgress[file.name].status === 'uploading' && 'Caricamento...'}
+                                        {uploadProgress[file.name].status === 'completed' && 'Completato'}
+                                        {uploadProgress[file.name].status === 'error' && 'Errore'}
+                                      </span>
+                                      {uploadProgress[file.name].status === 'uploading' && (
+                                        <span className="text-xs text-slate-500">
+                                          {uploadProgress[file.name].progress}%
+                                        </span>
+                                      )}
+                                    </div>
+                                    {uploadProgress[file.name].status === 'uploading' && (
+                                      <div className="w-full bg-slate-200 rounded-full h-1.5">
+                                        <div 
+                                          className="bg-blue-600 h-1.5 rounded-full transition-all duration-300" 
+                                          style={{ width: `${uploadProgress[file.name].progress}%` }}
+                                        ></div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Status Icon & Remove Button */}
+                            <div className="flex items-center space-x-2 flex-shrink-0">
+                              {uploadProgress[file.name] && (
+                                <>
+                                  {uploadProgress[file.name].status === 'completed' && (
+                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                  )}
+                                  {uploadProgress[file.name].status === 'error' && (
+                                    <XCircle className="w-4 h-4 text-red-600" />
+                                  )}
+                                  {uploadProgress[file.name].status === 'uploading' && (
+                                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                  )}
+                                </>
                               )}
-                              {uploadProgress[file.name].status === 'completed' && (
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                              )}
-                              {uploadProgress[file.name].status === 'error' && (
-                                <XCircle className="w-4 h-4 text-red-600" />
+                              
+                              {!uploading && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => removeFile(index)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
                               )}
                             </div>
-                          )}
-                          
-                          {!uploading && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => removeFile(index)}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          )}
+                          </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* Upload Controls */}
-                {selectedFiles.length > 0 && (
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedFiles([])}
-                      disabled={uploading}
-                    >
-                      Azzera Selezione
-                    </Button>
-                    <Button
-                      onClick={handleMultipleUpload}
-                      disabled={uploading}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {uploading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                          Caricamento su Aruba Drive...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4 mr-2" />
-                          Carica {selectedFiles.length} File su Aruba Drive
-                        </>
-                      )}
-                    </Button>
+                    
+                    {/* Upload Button - Prominent */}
+                    <div className="pt-3 border-t border-slate-200">
+                      <Button
+                        onClick={handleMultipleUpload}
+                        disabled={uploading}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3"
+                      >
+                        {uploading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                            Caricamento su Aruba Drive...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Carica {selectedFiles.length} File su Aruba Drive
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
