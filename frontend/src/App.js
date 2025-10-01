@@ -16091,16 +16091,23 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <FileText className="w-5 h-5" />
-            <span>Gestione Documenti - {clientName}</span>
-          </DialogTitle>
-          <DialogDescription>
-            Carica, gestisci e scarica documenti specifici per questo cliente. I file vengono automaticamente sincronizzati con Aruba Drive.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[95vh] overflow-y-auto p-0">
+        <div className="sticky top-0 bg-white border-b border-slate-200 p-4 sm:p-6 z-10">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="flex items-center space-x-3 text-lg sm:text-xl">
+              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <FileText className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-semibold text-slate-900 truncate">Documenti Cliente</h2>
+                <p className="text-sm text-slate-600 truncate">{clientName}</p>
+              </div>
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500 leading-relaxed">
+              Gestisci documenti per questo cliente. I file vengono organizzati automaticamente su Aruba Drive.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
         
         <div className="space-y-6">
           {/* Multi-File Upload Section */}
