@@ -9709,8 +9709,10 @@ async def get_client_documents(
             ]
         }).sort("created_at", -1).to_list(length=None)
         
-        # Add client information to each document for display
+        # Convert ObjectId to string and add client information
         for doc in documents:
+            if "_id" in doc:
+                doc["_id"] = str(doc["_id"])
             doc["client_name"] = f"{client.get('nome', '')} {client.get('cognome', '')}"
         
         return {
