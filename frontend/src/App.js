@@ -3376,20 +3376,38 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       console.log('🔄 Fetching servizi for sub agenzia:', subAgenziaId);
       // Find the selected sub agenzia
       const selectedSubAgenzia = subAgenzie.find(sa => sa.id === subAgenziaId);
-      if (!selectedSubAgenzia || !selectedSubAgenzia.servizi_autorizzati || selectedSubAgenzia.servizi_autorizzati.length === 0) {
+      if (!selectedSubAgenzia) {
+        console.log('⚠️ Sub agenzia not found');
         setServiziDisponibili([]);
         return;
       }
       
-      // Fetch all servizi
-      const response = await axios.get(`${API}/servizi`);
-      const allServizi = response.data;
+      console.log('✅ Sub agenzia found:', selectedSubAgenzia.nome);
+      console.log('📋 Sub agenzia commesse_autorizzate:', selectedSubAgenzia.commesse_autorizzate);
+      console.log('📋 Sub agenzia servizi_autorizzati:', selectedSubAgenzia.servizi_autorizzati);
       
-      // Filter only the servizi authorized for this sub agenzia
-      const filteredServizi = allServizi.filter(s => selectedSubAgenzia.servizi_autorizzati.includes(s.id));
+      // Fetch servizi based on the commesse authorized for this sub agenzia
+      const allServizi = [];
+      if (selectedSubAgenzia.commesse_autorizzate && selectedSubAgenzia.commesse_autorizzate.length > 0) {
+        for (const commessaId of selectedSubAgenzia.commesse_autorizzate) {
+          try {
+            const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+            allServizi.push(...response.data);
+          } catch (error) {
+            console.error(`Error fetching servizi for commessa ${commessaId}:`, error);
+          }
+        }
+      }
       
-      console.log('✅ Servizi loaded for sub agenzia:', filteredServizi.length);
-      setServiziDisponibili(filteredServizi);
+      // If servizi_autorizzati exists, filter to show only those
+      let finalServizi = allServizi;
+      if (selectedSubAgenzia.servizi_autorizzati && selectedSubAgenzia.servizi_autorizzati.length > 0) {
+        finalServizi = allServizi.filter(s => selectedSubAgenzia.servizi_autorizzati.includes(s.id));
+        console.log(`✅ Filtered servizi from ${allServizi.length} to ${finalServizi.length} based on servizi_autorizzati`);
+      }
+      
+      console.log('✅ Servizi loaded for sub agenzia:', finalServizi.length);
+      setServiziDisponibili(finalServizi);
     } catch (error) {
       console.error("Error fetching servizi for sub agenzia:", error);
       setServiziDisponibili([]);
