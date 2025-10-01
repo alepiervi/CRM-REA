@@ -14,4 +14,4 @@ Segmento: residenziale
 Data Creazione: 2025-10-01 12:07:53.701000
 Note: 
 
-Generato il: 2025-10-01 14:10:17
+Generato il: 2025-10-01 14:42:18
