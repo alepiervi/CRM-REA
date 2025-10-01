@@ -3313,7 +3313,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     email: "",
     password: "",
     role: "",
-    assignment_type: "unit", // "unit" o "sub_agenzia" 
+    assignment_type: "", // "unit" o "sub_agenzia" - vuoto fino a selezione esplicita
     unit_id: selectedUnit && selectedUnit !== "all" ? selectedUnit : "",
     sub_agenzia_id: "",
     referente_id: "",
