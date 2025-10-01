@@ -3692,7 +3692,10 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
           {formData.assignment_type === "unit" && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
             <div>
               <Label htmlFor="unit_id">Unit *</Label>
-              <Select value={formData.unit_id} onValueChange={(value) => setFormData({ ...formData, unit_id: value })}>
+              <Select value={formData.unit_id} onValueChange={(value) => {
+                setFormData({ ...formData, unit_id: value, servizi_autorizzati: [] });
+                handleUnitChange(value);
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona unit" />
                 </SelectTrigger>
@@ -3711,7 +3714,10 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
           {formData.assignment_type === "sub_agenzia" && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
             <div>
               <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
-              <Select value={formData.sub_agenzia_id} onValueChange={(value) => setFormData({ ...formData, sub_agenzia_id: value })}>
+              <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
+                setFormData({ ...formData, sub_agenzia_id: value, servizi_autorizzati: [] });
+                handleSubAgenziaChange(value);
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona sub agenzia" />
                 </SelectTrigger>
@@ -3723,6 +3729,47 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {/* NEW: Servizi Autorizzati per UNIT/SUB AGENZIA - Per TUTTI gli utenti con assignment */}
+          {!(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" || 
+             formData.role === "responsabile_sub_agenzia" || formData.role === "backoffice_sub_agenzia") && 
+           ((formData.assignment_type === "unit" && formData.unit_id) || 
+            (formData.assignment_type === "sub_agenzia" && formData.sub_agenzia_id)) && (
+            <div>
+              <Label>Servizi Autorizzati *</Label>
+              {serviziDisponibili.length > 0 ? (
+                <>
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                    <div className="grid grid-cols-2 gap-2">
+                      {serviziDisponibili.map((servizio) => (
+                        <div key={servizio.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`servizio-generale-${servizio.id}`}
+                            checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
+                            onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
+                          />
+                          <Label htmlFor={`servizio-generale-${servizio.id}`} className="text-sm font-normal cursor-pointer">
+                            {servizio.nome}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Selezionati: {formData.servizi_autorizzati?.length || 0} servizi
+                  </p>
+                </>
+              ) : (
+                <div className="border rounded-lg p-4 bg-amber-50 border-amber-200">
+                  <p className="text-sm text-amber-800">
+                    {formData.assignment_type === "unit" 
+                      ? "Nessun servizio disponibile per questa Unit. Assicurati che la Unit abbia commesse autorizzate con servizi."
+                      : "Nessun servizio disponibile per questa Sub Agenzia. Assicurati che la Sub Agenzia abbia servizi autorizzati."}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
