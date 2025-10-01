@@ -16287,29 +16287,44 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Documents List */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>📋 Documenti Cliente ({documents.length})</span>
+          {/* Documents List - Mobile Optimized */}
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
+            <div className="border-b border-slate-200 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">Documenti Cliente</h3>
+                    <p className="text-sm text-slate-600">{documents.length} file caricati</p>
+                  </div>
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={fetchClientDocuments}
                   disabled={loading}
+                  className="self-start sm:self-center"
                 >
                   {loading ? (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-600" />
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-600 mr-2" />
                   ) : (
-                    "🔄 Aggiorna"
+                    <>
+                      <svg className="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Aggiorna
+                    </>
                   )}
                 </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </div>
+            </div>
+            
+            <div className="p-4 sm:p-6">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
