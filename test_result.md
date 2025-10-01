@@ -308,10 +308,11 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "User Creation Enhancement - UNIT/SUB AGENZIA Assignment with Services"
   stuck_tasks: []
   test_all: false
-  test_priority: "high_first"
+  test_priority: "critical_first"
   completed_tasks:
     - "GET /api/servizi Endpoint Fix - 405 Method Not Allowed Resolution"
     - "Sub Agenzie Problems Diagnosis - Deletion, Commesse Visibility, and Flagging"
