@@ -12709,6 +12709,15 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                   <Button 
                     variant="outline" 
                     size="sm"
+                    onClick={() => handleViewDocuments(cliente)}
+                    className="flex-1"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Documenti
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
                     onClick={() => handleEditCliente(cliente)}
                     className="flex-1"
                   >
