@@ -10413,39 +10413,7 @@ async def upload_files_to_aruba(page, uploaded_files: List[dict], screenshot_pat
         logger.error(f"❌ ARUBA DRIVE Upload Files Error: {str(e)}")
         return False
 
-# Placeholder per integrazione Aruba Drive
-async def create_aruba_drive_folder_and_upload(entity_type: str, entity_id: str, uploaded_files: List[dict]):
-    """
-    Placeholder per integrazione Aruba Drive
-    Quando saranno disponibili le credenziali API:
-    1. Crea cartella /Cliente_Nome_Cognome_ID/ 
-    2. Carica tutti i documenti
-    3. Genera screenshot dei dettagli cliente
-    4. Carica screenshot nella cartella
-    """
-    logger.info(f"[ARUBA DRIVE PLACEHOLDER] Would create folder for {entity_type}/{entity_id}")
-    logger.info(f"[ARUBA DRIVE PLACEHOLDER] Would upload {len(uploaded_files)} files")
-    
-    # Get entity details
-    if entity_type == "clienti":
-        entity = await db.clienti.find_one({"id": entity_id})
-    else:
-        entity = await db.leads.find_one({"id": entity_id})
-    
-    if entity:
-        folder_name = f"{entity.get('nome', 'Unknown')}_{entity.get('cognome', 'Unknown')}_{entity_id}"
-        logger.info(f"[ARUBA DRIVE PLACEHOLDER] Folder would be: {folder_name}")
-        
-        # Genera screenshot dei dettagli
-        screenshot_path = await generate_entity_screenshot(entity_type, entity)
-        logger.info(f"[ARUBA DRIVE PLACEHOLDER] Screenshot generated: {screenshot_path}")
-        
-        # TODO: Implementare quando disponibili credenziali:
-        # 1. Creare cartella Aruba Drive
-        # 2. Upload documenti
-        # 3. Upload screenshot
-    
-    return True
+# PLACEHOLDER RIMOSSO - Utilizzata implementazione Aruba Drive con Playwright automation
 
 async def generate_entity_screenshot(entity_type: str, entity: dict) -> str:
     """Genera screenshot HTML dei dettagli cliente/lead"""
