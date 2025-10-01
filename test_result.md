@@ -296,6 +296,13 @@ frontend:
     stuck_count: 1
     priority: "critical"
     needs_retesting: false
+  - task: "Cliente Creation Payload Validation - Enum Format Issue"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py, /app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
   - task: "CreateClienteModal Dropdown Population Bug Fix"
     implemented: true
     working: true
