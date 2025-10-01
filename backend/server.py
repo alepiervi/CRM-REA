@@ -9392,73 +9392,199 @@ class ArubaWebAutomation:
             logging.error(f"Aruba login failed: {e}")
             return False
             
-    async def upload_file_to_aruba(self, local_file_path, remote_folder_path):
-        """Upload file to Aruba Drive via web interface"""
+    async def navigate_to_commessa_folder(self, commessa_name, servizio_name):
+        """Navigate to specific commessa/servizio folder on Aruba Drive"""
         try:
-            # Navigate to upload area or create folder structure
-            if remote_folder_path and remote_folder_path != "/":
-                await self.create_folders(remote_folder_path)
+            # Navigate to the commessa folder (e.g., FASTWEB)
+            commessa_folder_selector = f'a:has-text("{commessa_name}"), [title*="{commessa_name}"]'
             
-            # Look for upload button or drag-drop area
-            upload_selectors = [
-                'input[type="file"]',
-                'button:has-text("Upload"), button:has-text("Carica")',
-                '.upload-button, .btn-upload',
-                '[data-action="upload"]'
-            ]
+            try:
+                await self.page.click(commessa_folder_selector, timeout=5000)
+                await self.page.wait_for_timeout(2000)
+                logging.info(f"✅ Navigated to commessa folder: {commessa_name}")
+            except:
+                # If folder doesn't exist, create it
+                await self.create_folder(commessa_name)
+                await self.page.click(commessa_folder_selector, timeout=5000)
+                await self.page.wait_for_timeout(2000)
             
-            # Try file input first
-            file_input = None
-            for selector in upload_selectors:
-                try:
-                    if 'input[type="file"]' in selector:
-                        file_input = await self.page.wait_for_selector(selector, timeout=5000)
-                        break
-                except:
-                    continue
+            # Navigate to the servizio folder (e.g., TLS)
+            servizio_folder_selector = f'a:has-text("{servizio_name}"), [title*="{servizio_name}"]'
             
-            if file_input:
-                # Direct file input upload
-                await file_input.set_input_files(local_file_path)
-            else:
-                # Try clicking upload button then selecting file
-                for selector in upload_selectors[1:]:
-                    try:
-                        await self.page.click(selector)
-                        await self.page.wait_for_timeout(1000)
-                        
-                        # Look for file input that appears after clicking
-                        file_input = await self.page.wait_for_selector('input[type="file"]', timeout=3000)
-                        await file_input.set_input_files(local_file_path)
-                        break
-                    except:
-                        continue
+            try:
+                await self.page.click(servizio_folder_selector, timeout=5000)
+                await self.page.wait_for_timeout(2000)
+                logging.info(f"✅ Navigated to servizio folder: {servizio_name}")
+            except:
+                # If folder doesn't exist, create it
+                await self.create_folder(servizio_name)
+                await self.page.click(servizio_folder_selector, timeout=5000)
+                await self.page.wait_for_timeout(2000)
             
-            # Wait for upload completion
-            await self.page.wait_for_timeout(5000)
-            
-            # Look for success indicators
-            success_indicators = [
-                'text=Upload successful', 'text=Caricamento completato',
-                'text=File uploaded', 'text=Success',
-                '.success, .uploaded, .complete'
-            ]
-            
-            upload_success = False
-            for indicator in success_indicators:
-                try:
-                    await self.page.wait_for_selector(indicator, timeout=3000)
-                    upload_success = True
-                    break
-                except:
-                    continue
-            
-            filename = Path(local_file_path).name
-            logging.info(f"Aruba upload completed for: {filename}")
             return True
             
         except Exception as e:
-            logging.error(f"Aruba upload failed: {e}")
+            logging.error(f"Failed to navigate to commessa/servizio folder: {e}")
+            return False
+    
+    async def create_client_folder(self, client_name, client_surname):
+        """Create client nominal folder (Nome_Cognome)"""
+        try:
+            folder_name = f"{client_name}_{client_surname}"
+            
+            # Check if folder already exists
+            existing_folder = f'a:has-text("{folder_name}"), [title*="{folder_name}"]'
+            
+            try:
+                await self.page.wait_for_selector(existing_folder, timeout=3000)
+                logging.info(f"✅ Client folder already exists: {folder_name}")
+            except:
+                # Create new folder
+                await self.create_folder(folder_name)
+                logging.info(f"✅ Created client folder: {folder_name}")
+            
+            # Navigate into the client folder
+            await self.page.click(existing_folder)
+            await self.page.wait_for_timeout(2000)
+            
+            return folder_name
+            
+        except Exception as e:
+            logging.error(f"Failed to create client folder: {e}")
+            return None
+
+    async def create_folder(self, folder_name):
+        """Create a new folder in current Aruba Drive location"""
+        try:
+            # Look for "New Folder" or "+" button
+            new_folder_selectors = [
+                'button:has-text("New Folder")', 'button:has-text("Nuova Cartella")',
+                'button:has-text("Crea cartella")', '[title*="New folder"]',
+                '.new-folder', '.create-folder', '[data-action="new-folder"]',
+                'button[title*="folder"]', 'button:contains("+")'
+            ]
+            
+            folder_created = False
+            for selector in new_folder_selectors:
+                try:
+                    await self.page.click(selector, timeout=3000)
+                    await self.page.wait_for_timeout(1000)
+                    
+                    # Fill folder name in input field
+                    name_input_selectors = [
+                        'input[placeholder*="folder"], input[placeholder*="cartella"]',
+                        'input[type="text"]:visible', 
+                        'input.folder-name', 
+                        '.name-input input'
+                    ]
+                    
+                    for input_selector in name_input_selectors:
+                        try:
+                            await self.page.fill(input_selector, folder_name, timeout=3000)
+                            await self.page.keyboard.press('Enter')
+                            await self.page.wait_for_timeout(2000)
+                            folder_created = True
+                            break
+                        except:
+                            continue
+                    
+                    if folder_created:
+                        break
+                        
+                except Exception as e:
+                    continue
+            
+            if not folder_created:
+                raise Exception(f"Could not create folder: {folder_name}")
+                
+            logging.info(f"✅ Folder created: {folder_name}")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Failed to create folder {folder_name}: {e}")
+            return False
+
+    async def upload_files_to_aruba(self, file_paths, commessa_name, servizio_name, client_name, client_surname):
+        """Upload multiple files to Aruba Drive in organized structure"""
+        try:
+            # Navigate to commessa/servizio folder
+            if not await self.navigate_to_commessa_folder(commessa_name, servizio_name):
+                raise Exception(f"Could not navigate to {commessa_name}/{servizio_name}")
+            
+            # Create and navigate to client folder
+            client_folder = await self.create_client_folder(client_name, client_surname)
+            if not client_folder:
+                raise Exception(f"Could not create client folder for {client_name} {client_surname}")
+            
+            # Upload all files
+            successful_uploads = 0
+            
+            for file_path in file_paths:
+                try:
+                    if await self.upload_single_file(file_path):
+                        successful_uploads += 1
+                        logging.info(f"✅ Uploaded: {Path(file_path).name}")
+                    else:
+                        logging.error(f"❌ Failed to upload: {Path(file_path).name}")
+                except Exception as e:
+                    logging.error(f"❌ Error uploading {Path(file_path).name}: {e}")
+            
+            logging.info(f"📁 Upload completed: {successful_uploads}/{len(file_paths)} files uploaded to {commessa_name}/{servizio_name}/{client_folder}")
+            return successful_uploads > 0
+            
+        except Exception as e:
+            logging.error(f"❌ Batch upload failed: {e}")
+            return False
+
+    async def upload_single_file(self, local_file_path):
+        """Upload single file to current Aruba Drive location"""
+        try:
+            # Look for file input or upload area
+            upload_selectors = [
+                'input[type="file"]',
+                'input[multiple]',
+                '.file-input',
+                '[data-upload="files"]'
+            ]
+            
+            # Try direct file input upload
+            for selector in upload_selectors:
+                try:
+                    file_input = await self.page.wait_for_selector(selector, timeout=3000)
+                    await file_input.set_input_files(local_file_path)
+                    
+                    # Wait for upload to complete
+                    await self.page.wait_for_timeout(3000)
+                    
+                    return True
+                except:
+                    continue
+            
+            # If direct input failed, try upload button approach
+            upload_button_selectors = [
+                'button:has-text("Upload")', 'button:has-text("Carica")',
+                '.upload-btn', '[data-action="upload"]',
+                'button[title*="upload"]'
+            ]
+            
+            for selector in upload_button_selectors:
+                try:
+                    await self.page.click(selector)
+                    await self.page.wait_for_timeout(1000)
+                    
+                    # Look for file input that appears
+                    file_input = await self.page.wait_for_selector('input[type="file"]', timeout=3000)
+                    await file_input.set_input_files(local_file_path)
+                    
+                    await self.page.wait_for_timeout(3000)
+                    return True
+                except:
+                    continue
+            
+            raise Exception("No upload method worked")
+            
+        except Exception as e:
+            logging.error(f"Single file upload failed: {e}")
             return False
     
     async def create_folders(self, folder_path):
