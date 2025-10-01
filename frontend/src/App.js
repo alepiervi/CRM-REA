@@ -16328,72 +16328,137 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                  <p className="text-slate-500 mt-3">Caricamento documenti...</p>
                 </div>
               ) : documents.length === 0 ? (
                 <div className="text-center py-12">
-                  <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-700 mb-2">
+                  <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-10 h-10 text-slate-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-700 mb-2">
                     Nessun documento caricato
                   </h3>
-                  <p className="text-slate-500">
-                    Usa la sezione di caricamento sopra per aggiungere documenti per questo cliente
+                  <p className="text-slate-500 max-w-sm mx-auto">
+                    Usa la sezione di caricamento sopra per aggiungere i primi documenti per questo cliente
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse border border-slate-300">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="border border-slate-300 px-4 py-2 text-left">File</th>
-                        <th className="border border-slate-300 px-4 py-2 text-left">Tipo</th>
-                        <th className="border border-slate-300 px-4 py-2 text-left">Dimensione</th>
-                        <th className="border border-slate-300 px-4 py-2 text-left">Aruba Drive</th>
-                        <th className="border border-slate-300 px-4 py-2 text-left">Data Upload</th>
-                        <th className="border border-slate-300 px-4 py-2 text-center">Azioni</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {documents.map((doc) => (
-                        <tr key={doc.id} className="hover:bg-slate-50">
-                          <td className="border border-slate-300 px-4 py-3">
-                            <div className="flex items-center space-x-2">
-                              <FileText className="w-5 h-5 text-blue-600" />
-                              <span className="font-medium">{doc.filename}</span>
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden lg:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-slate-200">
+                            <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">File</th>
+                            <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Tipo</th>
+                            <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Dimensione</th>
+                            <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Aruba Drive</th>
+                            <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Data</th>
+                            <th className="text-center py-3 px-4 font-semibold text-slate-700 text-sm">Azioni</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {documents.map((doc, index) => (
+                            <tr key={doc.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                              <td className="py-4 px-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-4 h-4 text-blue-600" />
+                                  </div>
+                                  <span className="font-medium text-slate-900 text-sm">{doc.filename}</span>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4">
+                                <Badge variant="secondary" className="text-xs">
+                                  {doc.file_type?.split('/')[1]?.toUpperCase() || 'DOC'}
+                                </Badge>
+                              </td>
+                              <td className="py-4 px-4 text-sm text-slate-600">
+                                {doc.file_size ? `${(doc.file_size / 1024 / 1024).toFixed(1)} MB` : 'N/A'}
+                              </td>
+                              <td className="py-4 px-4">
+                                {doc.aruba_drive_path ? (
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span className="text-xs text-slate-600 max-w-xs truncate">
+                                      {doc.aruba_drive_path}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                                    <span className="text-xs text-slate-600">Solo locale</span>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-4 px-4 text-sm text-slate-600">
+                                {new Date(doc.created_at).toLocaleDateString('it-IT', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: '2-digit'
+                                })}
+                              </td>
+                              <td className="py-4 px-4">
+                                <div className="flex items-center justify-center space-x-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDownload(doc.id, doc.filename)}
+                                    className="h-8 w-8 p-0"
+                                    title="Scarica documento"
+                                  >
+                                    <Download className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDeleteDocument(doc.id, doc.filename)}
+                                    className="h-8 w-8 p-0 hover:bg-red-50 hover:border-red-200"
+                                    title="Rimuovi dalla lista"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  
+                  {/* Mobile/Tablet Card View */}
+                  <div className="lg:hidden space-y-3">
+                    {documents.map((doc, index) => (
+                      <div key={doc.id} className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <div className="space-y-3">
+                          {/* File Header */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start space-x-3 min-w-0 flex-1">
+                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <FileText className="w-5 h-5 text-blue-600" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-medium text-slate-900 text-sm truncate">{doc.filename}</h4>
+                                <div className="flex items-center space-x-3 mt-1">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {doc.file_type?.split('/')[1]?.toUpperCase() || 'DOC'}
+                                  </Badge>
+                                  <span className="text-xs text-slate-500">
+                                    {doc.file_size ? `${(doc.file_size / 1024 / 1024).toFixed(1)} MB` : 'N/A'}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                          </td>
-                          <td className="border border-slate-300 px-4 py-3">
-                            <Badge variant="secondary">
-                              {doc.file_type || 'application/octet-stream'}
-                            </Badge>
-                          </td>
-                          <td className="border border-slate-300 px-4 py-3">
-                            {doc.file_size ? `${(doc.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}
-                          </td>
-                          <td className="border border-slate-300 px-4 py-3">
-                            {doc.aruba_drive_path ? (
-                              <span className="text-green-600 text-sm">
-                                ✅ {doc.aruba_drive_path}
-                              </span>
-                            ) : (
-                              <span className="text-amber-600 text-sm">⏳ Solo locale</span>
-                            )}
-                          </td>
-                          <td className="border border-slate-300 px-4 py-3">
-                            {new Date(doc.created_at).toLocaleDateString('it-IT', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </td>
-                          <td className="border border-slate-300 px-4 py-3">
-                            <div className="flex items-center justify-center space-x-1">
+                            
+                            {/* Action Buttons */}
+                            <div className="flex items-center space-x-2 flex-shrink-0">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleDownload(doc.id, doc.filename)}
-                                title="Scarica da Aruba Drive"
+                                className="h-8 w-8 p-0"
                               >
                                 <Download className="w-3 h-3" />
                               </Button>
@@ -16401,17 +16466,45 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleDeleteDocument(doc.id, doc.filename)}
-                                title="Rimuovi dalla lista (mantieni su Aruba Drive)"
+                                className="h-8 w-8 p-0 hover:bg-red-50"
                               >
                                 <Trash2 className="w-3 h-3" />
                               </Button>
                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          </div>
+                          
+                          {/* File Details */}
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              {doc.aruba_drive_path ? (
+                                <>
+                                  <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                                  <span className="text-xs text-slate-600 truncate">
+                                    Aruba Drive: {doc.aruba_drive_path.split('/').slice(-2).join('/')}
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0"></div>
+                                  <span className="text-xs text-slate-600">Solo archiviazione locale</span>
+                                </>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500">
+                              Caricato il {new Date(doc.created_at).toLocaleDateString('it-IT', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
