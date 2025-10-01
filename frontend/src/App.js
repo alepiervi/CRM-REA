@@ -14427,7 +14427,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                 <SelectContent>
                   <SelectItem value="none" disabled>Seleziona Tipologia</SelectItem>
                   {createTipologieContratto.map((tipologia) => (
-                    <SelectItem key={tipologia.value} value={tipologia.value}>
+                    <SelectItem key={tipologia.value} value={tipologia.label}>
                       {tipologia.label}
                     </SelectItem>
                   ))}
