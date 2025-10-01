@@ -8106,6 +8106,18 @@ async def cleanup_orphaned_references(current_user: User = Depends(get_current_u
 async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depends(get_current_user)):
     """Create new cliente"""
     
+    # 🔍 DEBUG: Log dati ricevuti dal frontend
+    print("=" * 80)
+    print("🆕 CREATE CLIENTE - DATI RICEVUTI DAL FRONTEND:")
+    print(f"📋 Nome: {cliente_data.nome}")
+    print(f"📋 Cognome: {cliente_data.cognome}")
+    print(f"📋 Telefono: {cliente_data.telefono}")
+    print(f"📋 Commessa ID: {cliente_data.commessa_id} (type: {type(cliente_data.commessa_id)})")
+    print(f"📋 Sub Agenzia ID: {cliente_data.sub_agenzia_id} (type: {type(cliente_data.sub_agenzia_id)})")
+    print(f"📋 Servizio ID: {cliente_data.servizio_id}")
+    print(f"📋 User: {current_user.username} (role: {current_user.role})")
+    print("=" * 80)
+    
     # CRITICAL FIX: Dual check pattern per autorizzazione commessa
     has_commessa_access = False
     
