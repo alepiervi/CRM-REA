@@ -14710,9 +14710,9 @@ const ImportClientiModal = ({ isOpen, onClose, commesse, subAgenzie, selectedCom
     });
   };
 
-  const availableSubAgenzie = subAgenzie.filter(sa => 
-    sa.commesse_autorizzate.includes(config.commessa_id)
-  );
+  const availableSubAgenzie = config.commessa_id && config.commessa_id !== ''
+    ? subAgenzie.filter(sa => sa.commesse_autorizzate?.includes(config.commessa_id))
+    : subAgenzie;
 
   if (!isOpen) return null;
 
