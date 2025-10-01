@@ -16037,7 +16037,7 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
 
   const handleDownload = async (documentId, filename) => {
     try {
-      const response = await axios.get(`${API}/aruba-drive/download/${documentId}`, {
+      const response = await axios.get(`${API}/documents/download/${documentId}`, {
         responseType: 'blob',
       });
 
