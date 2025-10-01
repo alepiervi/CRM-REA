@@ -3791,7 +3791,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                   </div>
                 </div>
               )}
-            </div>
+            </>
           )}
 
           {/* RESPONSABILE COMMESSA e BACKOFFICE COMMESSA: Commesse (multi) → Servizi (multi) */}
