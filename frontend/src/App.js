@@ -14228,7 +14228,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     setFormData({
       nome: '', cognome: '', email: '', telefono: '', indirizzo: '', 
       citta: '', provincia: '', cap: '', codice_fiscale: '', partita_iva: '',
-      commessa_id: selectedCommessa || '', sub_agenzia_id: '', servizio_id: '',
+      commessa_id: (selectedCommessa && selectedCommessa !== 'all') ? selectedCommessa : '',
+      sub_agenzia_id: '', servizio_id: '',
       tipologia_contratto: '', segmento: '', note: ''
     });
     
