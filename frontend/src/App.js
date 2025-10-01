@@ -14106,6 +14106,14 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     console.log("  - Commesse:", commesse?.length || 0, "elementi");
     console.log("  - Sub Agenzie:", subAgenzie?.length || 0, "elementi");
     console.log("  - Selected Commessa:", selectedCommessa);
+    
+    // 🔍 DEBUG: Inspect actual objects
+    if (commesse && commesse.length > 0) {
+      console.log("🔍 Primo oggetto commessa:", JSON.stringify(commesse[0], null, 2));
+    }
+    if (subAgenzie && subAgenzie.length > 0) {
+      console.log("🔍 Primo oggetto sub_agenzia:", JSON.stringify(subAgenzie[0], null, 2));
+    }
   }, [commesse, subAgenzie, selectedCommessa]);
 
   useEffect(() => {
