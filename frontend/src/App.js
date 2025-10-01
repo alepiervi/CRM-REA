@@ -3667,63 +3667,12 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
           </div>
 
-          {/* Scelta tipo assegnazione - Non per responsabile/backoffice commessa */}
-          {formData.role && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
-            <div className="col-span-2">
-              <Label>Assegnazione *</Label>
-              <div className="flex space-x-4 mt-2">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="assignment_unit"
-                    name="assignment_type"
-                    value="unit"
-                    checked={formData.assignment_type === "unit"}
-                    onChange={(e) => {
-                      console.log('🔄 Changing assignment_type to:', e.target.value);
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        assignment_type: e.target.value,
-                        unit_id: "",
-                        sub_agenzia_id: "",
-                        servizi_autorizzati: []
-                      }));
-                      setServiziDisponibili([]);
-                    }}
-                  />
-                  <Label htmlFor="assignment_unit" className="cursor-pointer">Unit</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="assignment_subagenzia"
-                    name="assignment_type"
-                    value="sub_agenzia"
-                    checked={formData.assignment_type === "sub_agenzia"}
-                    onChange={(e) => {
-                      console.log('🔄 Changing assignment_type to:', e.target.value);
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        assignment_type: e.target.value,
-                        unit_id: "",
-                        sub_agenzia_id: "",
-                        servizi_autorizzati: []
-                      }));
-                      setServiziDisponibili([]);
-                    }}
-                  />
-                  <Label htmlFor="assignment_subagenzia" className="cursor-pointer">Sub Agenzia</Label>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Campo Unit - mostrato solo se assignment_type è "unit" e non è responsabile/backoffice commessa */}
-          {formData.assignment_type === "unit" && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
+          {/* AGENTE e REFERENTE: Campo Unit → Servizi */}
+          {(formData.role === "agente" || formData.role === "referente") && (
             <div>
               <Label htmlFor="unit_id">Unit *</Label>
               <Select value={formData.unit_id} onValueChange={(value) => {
-                setFormData({ ...formData, unit_id: value, servizi_autorizzati: [] });
+                setFormData(prev => ({ ...prev, unit_id: value, servizi_autorizzati: [] }));
                 handleUnitChange(value);
               }}>
                 <SelectTrigger>
@@ -3740,21 +3689,20 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
           )}
 
-          {/* Campo Sub Agenzia - mostrato solo se assignment_type è "sub_agenzia" e non è responsabile/backoffice commessa */}
-          {formData.assignment_type === "sub_agenzia" && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
+          {/* AGENTE: Campo Referente */}
+          {formData.role === "agente" && (
             <div>
-              <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
-              <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
-                setFormData({ ...formData, sub_agenzia_id: value, servizi_autorizzati: [] });
-                handleSubAgenziaChange(value);
-              }}>
+              <Label htmlFor="referente_id">Referente</Label>
+              <Select value={formData.referente_id} onValueChange={(value) => 
+                setFormData(prev => ({ ...prev, referente_id: value }))
+              }>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleziona sub agenzia" />
+                  <SelectValue placeholder="Seleziona referente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {subAgenzie.map((subAgenzia) => (
-                    <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
-                      {subAgenzia.nome}
+                  {referenti.map((ref) => (
+                    <SelectItem key={ref.id} value={ref.id}>
+                      {ref.username}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -3762,12 +3710,9 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
           )}
 
-          {/* NEW: Servizi Autorizzati per UNIT/SUB AGENZIA - Per TUTTI gli utenti con assignment */}
-          {!(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" || 
-             formData.role === "responsabile_sub_agenzia" || formData.role === "backoffice_sub_agenzia") && 
-           ((formData.assignment_type === "unit" && formData.unit_id) || 
-            (formData.assignment_type === "sub_agenzia" && formData.sub_agenzia_id)) && (
-            <div>
+          {/* AGENTE e REFERENTE: Servizi della Unit selezionata */}
+          {(formData.role === "agente" || formData.role === "referente") && formData.unit_id && (
+            <div className="col-span-2">
               <Label>Servizi Autorizzati *</Label>
               {serviziDisponibili.length > 0 ? (
                 <>
@@ -3776,11 +3721,11 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                       {serviziDisponibili.map((servizio) => (
                         <div key={servizio.id} className="flex items-center space-x-2">
                           <Checkbox
-                            id={`servizio-generale-${servizio.id}`}
+                            id={`servizio-${servizio.id}`}
                             checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
                             onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
                           />
-                          <Label htmlFor={`servizio-generale-${servizio.id}`} className="text-sm font-normal cursor-pointer">
+                          <Label htmlFor={`servizio-${servizio.id}`} className="text-sm font-normal cursor-pointer">
                             {servizio.nome}
                           </Label>
                         </div>
@@ -3794,9 +3739,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
               ) : (
                 <div className="border rounded-lg p-4 bg-amber-50 border-amber-200">
                   <p className="text-sm text-amber-800">
-                    {formData.assignment_type === "unit" 
-                      ? "Nessun servizio disponibile per questa Unit. Assicurati che la Unit abbia commesse autorizzate con servizi."
-                      : "Nessun servizio disponibile per questa Sub Agenzia. Assicurati che la Sub Agenzia abbia servizi autorizzati."}
+                    Nessun servizio disponibile per questa Unit. Assicurati che la Unit abbia commesse autorizzate con servizi.
                   </p>
                 </div>
               )}
