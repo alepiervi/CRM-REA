@@ -9741,14 +9741,15 @@ async def upload_to_aruba_drive(
             "filename": file.filename,
             "original_filename": file.filename,
             "local_path": str(local_file_path),
-            "aruba_drive_path": aruba_drive_path,
-            "aruba_config_id": aruba_config["id"],
+            "aruba_drive_path": aruba_drive_path if upload_success else None,
+            "aruba_config_id": aruba_config["id"] if upload_success else None,
             "file_size": len(content),
             "file_type": file.content_type,
             "created_by": uploaded_by,
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "storage_type": "aruba_drive",
-            "upload_status": "uploaded_to_aruba" if upload_success else "local_only"
+            "storage_type": storage_type,
+            "upload_status": "uploaded_to_aruba" if upload_success else "local_fallback",
+            "upload_attempted": aruba_upload_attempted
         }
         
         await db.documents.insert_one(document_data)
