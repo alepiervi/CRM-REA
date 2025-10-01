@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 class CRMAPITester:
-    def __init__(self, base_url="https://formdata-fix.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://crm-aruba-bridge.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
@@ -13981,7 +13981,7 @@ Duplicate,Test,+393471234567"""
         print("\n📊 7. VERIFICA API TIPOLOGIE...")
         
         # Test GET /api/tipologie-contratto with parameters
-        tipologie_url = f"tipologie-contratto?commessa_id=4cb70f28-6278-4d0f-b2b7-65f2b783f3f1&servizio_id=e000d779-2d13-4cde-afae-e498776a5493"
+        tipologie_url = f"tipologie-contratto?commessa_id=crm-aruba-bridge&servizio_id=crm-aruba-bridge"
         success, tipologie_response, status = self.make_request('GET', tipologie_url, expected_status=200)
         
         if success and status == 200:

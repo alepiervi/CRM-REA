@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_login_debug():
-    base_url = "https://formdata-fix.preview.emergentagent.com/api"
+    base_url = "https://crm-aruba-bridge.preview.emergentagent.com/api"
     
     print("🚨 FOCUSED LOGIN DEBUG TEST")
     print("=" * 50)
