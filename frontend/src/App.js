@@ -12696,32 +12696,35 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                   </div>
                 </div>
                 
-                <div className="flex space-x-2 pt-2 border-t border-slate-100">
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                  {/* Prima riga: Vista e Documenti */}
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => handleViewCliente(cliente)}
-                    className="flex-1"
+                    className="w-full"
                   >
-                    <Eye className="w-4 h-4 mr-2" />
+                    <Eye className="w-4 h-4 mr-1" />
                     Vista
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => handleViewDocuments(cliente)}
-                    className="flex-1"
+                    className="w-full"
                   >
-                    <FileText className="w-4 h-4 mr-2" />
+                    <FileText className="w-4 h-4 mr-1" />
                     Documenti
                   </Button>
+                  
+                  {/* Seconda riga: Modifica e Elimina */}
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => handleEditCliente(cliente)}
-                    className="flex-1"
+                    className="w-full"
                   >
-                    <Edit className="w-4 h-4 mr-2" />
+                    <Edit className="w-4 h-4 mr-1" />
                     Modifica
                   </Button>
                   <Button 
@@ -12732,9 +12735,9 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                         deleteCliente(cliente.id);
                       }
                     }}
-                    className="flex-1"
+                    className="w-full"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    <Trash2 className="w-4 h-4 mr-1" />
                     Elimina
                   </Button>
                 </div>
