@@ -329,7 +329,7 @@ class ContainerCreate(BaseModel):
 
 class DocumentType(str, Enum):
     LEAD = "lead"
-    CLIENTE = "cliente"
+    CLIENTE = "clienti"  # Cambiato per allinearsi al frontend che invia "clienti"
 
 class Document(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
