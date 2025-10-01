@@ -10541,6 +10541,93 @@ async def upload_files_to_aruba(page, uploaded_files: List[dict], screenshot_pat
 
 # PLACEHOLDER RIMOSSO - Utilizzata implementazione Aruba Drive con Playwright automation
 
+async def generate_client_screenshot(client_id: str, client_name: str, client_surname: str) -> str:
+    """Generate screenshot of client details page"""
+    try:
+        from playwright.async_api import async_playwright
+        
+        # Initialize browser for screenshot
+        playwright = await async_playwright().start()
+        browser = await playwright.chromium.launch(headless=True)
+        context = await browser.new_context(viewport={"width": 1920, "height": 1080})
+        page = await context.new_page()
+        
+        try:
+            # Get backend URL from environment
+            backend_url = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:3000")
+            
+            # Navigate to client details (you may need to adjust this URL)
+            client_url = f"{backend_url}/#/clienti/{client_id}"
+            
+            await page.goto(client_url, timeout=30000)
+            await page.wait_for_load_state('networkidle')
+            await page.wait_for_timeout(3000)
+            
+            # Create screenshots directory
+            screenshots_dir = Path("/app/documents/screenshots")
+            screenshots_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Generate screenshot filename
+            screenshot_filename = f"anagrafica_{client_name}_{client_surname}_{client_id[:8]}.png"
+            screenshot_path = screenshots_dir / screenshot_filename
+            
+            # Take full page screenshot
+            await page.screenshot(
+                path=str(screenshot_path),
+                full_page=True,
+                quality=90
+            )
+            
+            logging.info(f"✅ Client screenshot generated: {screenshot_path}")
+            
+            return str(screenshot_path)
+            
+        finally:
+            await context.close()
+            await browser.close()
+            await playwright.stop()
+            
+    except Exception as e:
+        logging.error(f"❌ Failed to generate client screenshot: {e}")
+        
+        # Fallback: create a simple text file with client info
+        screenshots_dir = Path("/app/documents/screenshots")
+        screenshots_dir.mkdir(parents=True, exist_ok=True)
+        
+        fallback_filename = f"anagrafica_{client_name}_{client_surname}_{client_id[:8]}.txt"
+        fallback_path = screenshots_dir / fallback_filename
+        
+        # Get client details from database
+        client = await db.clienti.find_one({"id": client_id})
+        
+        if client:
+            client_info = f"""
+ANAGRAFICA CLIENTE
+==================
+
+Nome: {client.get('nome', 'N/A')}
+Cognome: {client.get('cognome', 'N/A')}
+Email: {client.get('email', 'N/A')}
+Telefono: {client.get('telefono', 'N/A')}
+Commessa: {client.get('commessa_id', 'N/A')}
+Sub Agenzia: {client.get('sub_agenzia_id', 'N/A')}
+Servizio: {client.get('servizio_id', 'N/A')}
+Tipologia Contratto: {client.get('tipologia_contratto', 'N/A')}
+Segmento: {client.get('segmento', 'N/A')}
+Data Creazione: {client.get('created_at', 'N/A')}
+Note: {client.get('note', 'N/A')}
+
+Generato il: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}
+"""
+            
+            with open(fallback_path, 'w', encoding='utf-8') as f:
+                f.write(client_info)
+            
+            logging.info(f"✅ Client info fallback generated: {fallback_path}")
+            return str(fallback_path)
+        
+        return None
+
 async def generate_entity_screenshot(entity_type: str, entity: dict) -> str:
     """Genera screenshot HTML dei dettagli cliente/lead"""
     
