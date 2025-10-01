@@ -3663,7 +3663,7 @@ async def delete_custom_field(field_id: str, current_user: User = Depends(get_cu
 # Document management endpoints
 @api_router.post("/documents/upload")
 async def upload_document(
-    document_type: str = Form(...),
+    entity_type: str = Form(...),  # Cambiato da document_type per compatibilità frontend
     entity_id: str = Form(...),  # lead_id or cliente_id
     file: UploadFile = File(...),
     uploaded_by: str = Form(...),
