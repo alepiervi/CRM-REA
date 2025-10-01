@@ -4330,7 +4330,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
           </div>
 
           {/* Scelta tipo assegnazione - Non per responsabile/backoffice commessa */}
-          {!(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
+          {formData.role && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
             <div className="col-span-2">
               <Label>Assegnazione *</Label>
               <div className="flex space-x-4 mt-2">
@@ -4338,17 +4338,18 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                   <input
                     type="radio"
                     id="edit_assignment_unit"
+                    name="edit_assignment_type"
                     value="unit"
                     checked={formData.assignment_type === "unit"}
                     onChange={(e) => {
                       console.log('🔄 EditUser: Changing assignment_type to:', e.target.value);
-                      setFormData({ 
-                        ...formData, 
+                      setFormData(prev => ({ 
+                        ...prev, 
                         assignment_type: e.target.value,
                         unit_id: "",
                         sub_agenzia_id: "",
                         servizi_autorizzati: []
-                      });
+                      }));
                       setServiziDisponibili([]);
                     }}
                   />
@@ -4358,17 +4359,18 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                   <input
                     type="radio"
                     id="edit_assignment_subagenzia"
+                    name="edit_assignment_type"
                     value="sub_agenzia"
                     checked={formData.assignment_type === "sub_agenzia"}
                     onChange={(e) => {
                       console.log('🔄 EditUser: Changing assignment_type to:', e.target.value);
-                      setFormData({ 
-                        ...formData, 
+                      setFormData(prev => ({ 
+                        ...prev, 
                         assignment_type: e.target.value,
                         unit_id: "",
                         sub_agenzia_id: "",
                         servizi_autorizzati: []
-                      });
+                      }));
                       setServiziDisponibili([]);
                     }}
                   />
