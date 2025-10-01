@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_documents_endpoint():
-    base_url = "https://crm-userflow.preview.emergentagent.com/api"
+    base_url = "https://client-portal-fix-1.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     

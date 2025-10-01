@@ -13,7 +13,7 @@ import tempfile
 import os
 
 class DocumentAPITester:
-    def __init__(self, base_url="https://crm-userflow.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://client-portal-fix-1.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
