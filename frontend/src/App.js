@@ -4349,63 +4349,12 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
             </p>
           </div>
 
-          {/* Scelta tipo assegnazione - Non per responsabile/backoffice commessa */}
-          {formData.role && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
-            <div className="col-span-2">
-              <Label>Assegnazione *</Label>
-              <div className="flex space-x-4 mt-2">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="edit_assignment_unit"
-                    name="edit_assignment_type"
-                    value="unit"
-                    checked={formData.assignment_type === "unit"}
-                    onChange={(e) => {
-                      console.log('🔄 EditUser: Changing assignment_type to:', e.target.value);
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        assignment_type: e.target.value,
-                        unit_id: "",
-                        sub_agenzia_id: "",
-                        servizi_autorizzati: []
-                      }));
-                      setServiziDisponibili([]);
-                    }}
-                  />
-                  <Label htmlFor="edit_assignment_unit" className="cursor-pointer">Unit</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="edit_assignment_subagenzia"
-                    name="edit_assignment_type"
-                    value="sub_agenzia"
-                    checked={formData.assignment_type === "sub_agenzia"}
-                    onChange={(e) => {
-                      console.log('🔄 EditUser: Changing assignment_type to:', e.target.value);
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        assignment_type: e.target.value,
-                        unit_id: "",
-                        sub_agenzia_id: "",
-                        servizi_autorizzati: []
-                      }));
-                      setServiziDisponibili([]);
-                    }}
-                  />
-                  <Label htmlFor="edit_assignment_subagenzia" className="cursor-pointer">Sub Agenzia</Label>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Campo Unit - mostrato solo se assignment_type è "unit" e non è responsabile/backoffice commessa */}
-          {formData.assignment_type === "unit" && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
+          {/* AGENTE e REFERENTE: Campo Unit → Servizi */}
+          {(formData.role === "agente" || formData.role === "referente") && (
             <div>
               <Label htmlFor="unit_id">Unit *</Label>
               <Select value={formData.unit_id} onValueChange={(value) => {
-                setFormData({ ...formData, unit_id: value, servizi_autorizzati: [] });
+                setFormData(prev => ({ ...prev, unit_id: value, servizi_autorizzati: [] }));
                 handleUnitChange(value);
               }}>
                 <SelectTrigger>
