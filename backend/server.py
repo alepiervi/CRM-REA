@@ -9157,12 +9157,9 @@ async def get_documents(
         # Build query based on role permissions
         query = {}
         
-        # Filter by document type
+        # Filter by document type (now using entity_type)
         if document_type:
-            if document_type == "clienti":
-                query["document_type"] = "cliente"
-            else:
-                query["document_type"] = "lead"
+            query["entity_type"] = document_type  # Usa entity_type invece di document_type
         
         # Apply role-based filtering
         if current_user.role == UserRole.ADMIN:
