@@ -3982,7 +3982,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     sub_agenzie_autorizzate: user.sub_agenzie_autorizzate || [],
     can_view_analytics: user.can_view_analytics || false,
     entity_management: user.entity_management || "clienti",
-    assignment_type: user.unit_id ? "unit" : (user.sub_agenzia_id ? "sub_agenzia" : "unit")
+    assignment_type: user.unit_id ? "unit" : (user.sub_agenzia_id ? "sub_agenzia" : "")
   });
   const [isLoading, setIsLoading] = useState(false);
   const [servizi, setServizi] = useState([]);
