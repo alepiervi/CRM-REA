@@ -14100,6 +14100,14 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const [createTipologieContratto, setCreateTipologieContratto] = useState([]);
   const [segmenti, setSegmenti] = useState([]);
 
+  // Debug: Log received props
+  useEffect(() => {
+    console.log("📋 CreateClienteModal: Props ricevute:");
+    console.log("  - Commesse:", commesse?.length || 0, "elementi");
+    console.log("  - Sub Agenzie:", subAgenzie?.length || 0, "elementi");
+    console.log("  - Selected Commessa:", selectedCommessa);
+  }, [commesse, subAgenzie, selectedCommessa]);
+
   useEffect(() => {
     if (selectedCommessa) {
       setFormData(prev => ({ ...prev, commessa_id: selectedCommessa }));
