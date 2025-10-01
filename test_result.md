@@ -357,8 +357,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "Cliente Creation Payload Validation - Enum Format Issue"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
@@ -378,6 +377,7 @@ test_plan:
     - "Responsabile Field UX Enhancement - Sub Agenzie Modals"
     - "CreateClienteModal Dropdown Population Bug Fix"
     - "User Creation Enhancement - UNIT/SUB AGENZIA Assignment with Services"
+    - "Document Management System Complete Testing"
 
 agent_communication:
     - agent: "main"
