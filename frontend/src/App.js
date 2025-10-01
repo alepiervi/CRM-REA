@@ -3937,49 +3937,30 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </>
           )}
 
+          {/* Province di copertura per Agente */}
           {formData.role === "agente" && (
-            <>
-              {referenti.length > 0 && (
-                <div>
-                  <Label htmlFor="referente_id">Referente *</Label>
-                  <Select value={formData.referente_id} onValueChange={(value) => setFormData({ ...formData, referente_id: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona referente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {referenti.map((referente) => (
-                        <SelectItem key={referente.id} value={referente.id}>
-                          {referente.username} ({referente.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            <div className="col-span-2">
+              <Label>Province di Copertura *</Label>
+              <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                <div className="grid grid-cols-3 gap-2">
+                  {provinces.map((province) => (
+                    <div key={province} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`province-${province}`}
+                        checked={formData.provinces.includes(province)}
+                        onCheckedChange={(checked) => handleProvinceChange(province, checked)}
+                      />
+                      <Label htmlFor={`province-${province}`} className="text-sm font-normal cursor-pointer">
+                        {province}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
-              )}
-
-              <div>
-                <Label>Province di Copertura *</Label>
-                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
-                  <div className="grid grid-cols-3 gap-2">
-                    {provinces.map((province) => (
-                      <div key={province} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={province}
-                          checked={formData.provinces.includes(province)}
-                          onCheckedChange={(checked) => handleProvinceChange(province, checked)}
-                        />
-                        <Label htmlFor={province} className="text-sm">
-                          {province}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Selezionate: {formData.provinces.length} province
-                </p>
               </div>
-            </>
+              <p className="text-xs text-slate-500 mt-1">
+                Selezionate: {formData.provinces.length} province
+              </p>
+            </div>
           )}
 
           <DialogFooter>
