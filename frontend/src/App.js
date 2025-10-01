@@ -12044,10 +12044,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
   const fetchCommesse = async () => {
     try {
+      console.log("🔄 ClientiManagement: Caricando commesse...");
       const response = await axios.get(`${API}/commesse`);
+      console.log("✅ ClientiManagement: Commesse caricate:", response.data.length, "elementi");
       setCommesse(response.data);
     } catch (error) {
-      console.error("Error fetching commesse:", error);
+      console.error("❌ ClientiManagement: Error fetching commesse:", error);
+      setCommesse([]);
     }
   };
 
