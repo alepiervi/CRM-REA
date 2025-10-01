@@ -14206,14 +14206,44 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       return;
     }
     
-    // Clean data - remove "none" values but keep valid IDs
+    // Mappatura display values → backend enum values
+    const tipologiaMapping = {
+      'Telefonia Fastweb': 'telefonia_fastweb',
+      'Energia Fastweb': 'energia_fastweb',
+      'HO Mobile': 'ho_mobile',
+      'Telepass': 'telepass'
+    };
+    
+    const segmentoMapping = {
+      'Residenziale': 'residenziale',
+      'Business': 'business'
+    };
+    
+    // Converti i valori display agli enum backend
+    const mapTipologiaValue = (value) => {
+      if (!value || value === "none") return null;
+      // Se è già un valore enum, mantienilo
+      if (Object.values(tipologiaMapping).includes(value)) return value;
+      // Altrimenti cerca nella mappatura
+      return tipologiaMapping[value] || value;
+    };
+    
+    const mapSegmentoValue = (value) => {
+      if (!value || value === "none") return null;
+      // Se è già un valore enum, mantienilo  
+      if (Object.values(segmentoMapping).includes(value)) return value;
+      // Altrimenti cerca nella mappatura
+      return segmentoMapping[value] || value;
+    };
+    
+    // Clean data - remove "none" values but keep valid IDs, and map enum values
     const cleanFormData = {
       ...formData,
       commessa_id: formData.commessa_id === "none" ? "" : formData.commessa_id,
       sub_agenzia_id: formData.sub_agenzia_id === "none" ? "" : formData.sub_agenzia_id,
       servizio_id: (!formData.servizio_id || formData.servizio_id === "none") ? null : formData.servizio_id,
-      tipologia_contratto: (!formData.tipologia_contratto || formData.tipologia_contratto === "none") ? null : formData.tipologia_contratto,
-      segmento: (!formData.segmento || formData.segmento === "none") ? null : formData.segmento
+      tipologia_contratto: mapTipologiaValue(formData.tipologia_contratto),
+      segmento: mapSegmentoValue(formData.segmento)
     };
     
     console.log("🎯 CLEAN FORM DATA FOR SUBMISSION:", cleanFormData);
