@@ -457,9 +457,9 @@ class CRMAPITester:
             print(f"   🚨 FAILURE: L'endpoint GET /api/documents presenta ancora problemi!")
             return False
 
-    def test_aruba_drive_configuration_complete(self):
-        """TEST COMPLETO GESTIONE CONFIGURAZIONI ARUBA DRIVE"""
-        print("\n🔧 TEST COMPLETO GESTIONE CONFIGURAZIONI ARUBA DRIVE...")
+    def test_document_management_system_complete(self):
+        """TEST COMPLETO SISTEMA GESTIONE DOCUMENTI - FOCUS SU UPLOAD, DOWNLOAD, DELETE, LISTA"""
+        print("\n📄 TEST COMPLETO SISTEMA GESTIONE DOCUMENTI...")
         
         # 1. **Test Login Admin**: Login con admin/admin123
         print("\n🔐 1. TEST LOGIN ADMIN...")
