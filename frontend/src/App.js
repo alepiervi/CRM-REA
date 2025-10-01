@@ -16324,7 +16324,7 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
               </div>
             </div>
             
-            <div className="p-4 sm:p-6">
+            <CardContent className="p-4 sm:p-6">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
