@@ -303,6 +303,10 @@ frontend:
     stuck_count: 0
     priority: "critical"
     needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🚨 CLIENTE CREATION PAYLOAD VALIDATION - ROOT CAUSE IDENTIFIED! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully identified the exact cause of the 422 Unprocessable Entity error in POST /api/clienti. The issue is a format mismatch between frontend and backend enum values. 🔍 ROOT CAUSE CONFIRMED: Frontend sends 'Telefonia Fastweb' and 'Residenziale' (Title Case format) but backend expects 'telefonia_fastweb' and 'residenziale' (lowercase/underscore format). ✅ VALIDATION TESTING RESULTS: 1) Original payload (Title Case) correctly rejected with 422 - detailed Pydantic validation errors show exact enum format requirements, 2) Corrected payload (enum format) accepted with 200 - cliente creation successful when using proper enum values, 3) All valid enum combinations tested successfully, 4) Invalid enum values properly rejected with 422. ✅ API ENDPOINTS VERIFIED: GET /api/tipologie-contratto returns tipologie but with UUID values instead of enum strings (needs frontend mapping), GET /api/segmenti correctly returns 'residenziale' and 'business' values. ✅ BACKEND LOGGING CONFIRMED: Detailed validation errors logged showing exact field validation failures. 🎯 SOLUTION REQUIRED: Frontend must convert display values to backend enum format before sending POST request. ENUM MAPPINGS NEEDED: TipologiaContratto: 'Telefonia Fastweb' → 'telefonia_fastweb', Segmento: 'Residenziale' → 'residenziale', 'Business' → 'business'. SECONDARY ISSUE: Sub agenzia authorization error (400) after enum validation passes - requires investigation of commessa/sub_agenzia relationship."
   - task: "CreateClienteModal Dropdown Population Bug Fix"
     implemented: true
     working: true
