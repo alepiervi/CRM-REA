@@ -4719,6 +4719,162 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
               </p>
             </div>
           )}
+
+          {/* RESPONSABILE STORE e RESPONSABILE PRESIDI: Multi Sub Agenzie → Multi Commesse → Multi Servizi */}
+          {(formData.role === "responsabile_store" || formData.role === "responsabile_presidi") && (
+            <>
+              <div className="col-span-2">
+                <Label>Sub Agenzie Autorizzate *</Label>
+                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                  <div className="grid grid-cols-2 gap-2">
+                    {subAgenzie.map((subAgenzia) => (
+                      <div key={subAgenzia.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`edit-subagenzia-store-${subAgenzia.id}`}
+                          checked={formData.sub_agenzie_autorizzate && formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
+                          onCheckedChange={(checked) => handleSubAgenziaAutorizzataChange(subAgenzia.id, checked)}
+                        />
+                        <Label htmlFor={`edit-subagenzia-store-${subAgenzia.id}`} className="text-sm font-normal cursor-pointer">
+                          {subAgenzia.nome}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Selezionate: {formData.sub_agenzie_autorizzate?.length || 0} sub agenzie
+                </p>
+              </div>
+
+              {/* Commesse autorizzate (tutte le commesse disponibili) */}
+              {formData.sub_agenzie_autorizzate && formData.sub_agenzie_autorizzate.length > 0 && (
+                <div className="col-span-2">
+                  <Label>Commesse Autorizzate *</Label>
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                    <div className="grid grid-cols-2 gap-2">
+                      {commesse.map((commessa) => (
+                        <div key={commessa.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-commessa-store-${commessa.id}`}
+                            checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
+                            onCheckedChange={(checked) => handleCommessaAutorizzataChange(commessa.id, checked)}
+                          />
+                          <Label htmlFor={`edit-commessa-store-${commessa.id}`} className="text-sm font-normal cursor-pointer">
+                            {commessa.nome}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Selezionate: {formData.commesse_autorizzate?.length || 0} commesse
+                  </p>
+                </div>
+              )}
+
+              {/* Servizi delle commesse selezionate */}
+              {formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0 && servizi.length > 0 && (
+                <div className="col-span-2">
+                  <Label>Servizi Autorizzati *</Label>
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                    <div className="grid grid-cols-2 gap-2">
+                      {servizi.map((servizio) => (
+                        <div key={servizio.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-servizio-store-${servizio.id}`}
+                            checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
+                            onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
+                          />
+                          <Label htmlFor={`edit-servizio-store-${servizio.id}`} className="text-sm font-normal cursor-pointer">
+                            {servizio.nome}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Selezionati: {formData.servizi_autorizzati?.length || 0} servizi
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* STORE ASSISTANT e PROMOTER PRESIDI: Singola Sub Agenzia → Multi Commesse → Multi Servizi */}
+          {(formData.role === "store_assistant" || formData.role === "promoter_presidi") && (
+            <>
+              <div>
+                <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
+                <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, sub_agenzia_id: value, commesse_autorizzate: [], servizi_autorizzati: [] }));
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona sub agenzia" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subAgenzie.map((subAgenzia) => (
+                      <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
+                        {subAgenzia.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Commesse autorizzate (tutte le commesse disponibili) */}
+              {formData.sub_agenzia_id && (
+                <div className="col-span-2">
+                  <Label>Commesse Autorizzate *</Label>
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                    <div className="grid grid-cols-2 gap-2">
+                      {commesse.map((commessa) => (
+                        <div key={commessa.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-commessa-assistant-${commessa.id}`}
+                            checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
+                            onCheckedChange={(checked) => handleCommessaAutorizzataChange(commessa.id, checked)}
+                          />
+                          <Label htmlFor={`edit-commessa-assistant-${commessa.id}`} className="text-sm font-normal cursor-pointer">
+                            {commessa.nome}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Selezionate: {formData.commesse_autorizzate?.length || 0} commesse
+                  </p>
+                </div>
+              )}
+
+              {/* Servizi delle commesse selezionate */}
+              {formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0 && servizi.length > 0 && (
+                <div className="col-span-2">
+                  <Label>Servizi Autorizzati *</Label>
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                    <div className="grid grid-cols-2 gap-2">
+                      {servizi.map((servizio) => (
+                        <div key={servizio.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-servizio-assistant-${servizio.id}`}
+                            checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
+                            onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
+                          />
+                          <Label htmlFor={`edit-servizio-assistant-${servizio.id}`} className="text-sm font-normal cursor-pointer">
+                            {servizio.nome}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Selezionati: {formData.servizi_autorizzati?.length || 0} servizi
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Annulla
