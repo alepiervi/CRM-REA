@@ -9939,6 +9939,51 @@ async def delete_document_metadata(
         logging.error(f"Error deleting document {document_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nella cancellazione: {str(e)}")
 
+@api_router.get("/documents/download/{document_id}")
+async def download_document_by_id(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Download document by ID from local storage or Aruba Drive."""
+    try:
+        # Get document metadata
+        document = await db.documents.find_one({"id": document_id})
+        
+        if not document:
+            raise HTTPException(status_code=404, detail="Documento non trovato")
+            
+        # TODO: Check user authorization for this document
+        
+        # Try local path first
+        local_path = document.get("local_path")
+        if local_path and Path(local_path).exists():
+            return FileResponse(
+                path=local_path,
+                filename=document.get("original_filename", document.get("filename")),
+                media_type=document.get("file_type", "application/octet-stream")
+            )
+        
+        # If not local, try alternative paths
+        file_path = document.get("file_path")
+        if file_path and Path(file_path).exists():
+            return FileResponse(
+                path=file_path,
+                filename=document.get("original_filename", document.get("filename")),
+                media_type=document.get("file_type", "application/octet-stream")
+            )
+        
+        # If no local file found
+        raise HTTPException(
+            status_code=404, 
+            detail=f"File fisico non trovato per il documento {document.get('filename')}. Potrebbe essere solo su Aruba Drive."
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error downloading document {document_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel download: {str(e)}")
+
 @api_router.get("/documents/{document_id}/download")
 async def download_document(
     document_id: str,
