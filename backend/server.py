@@ -3673,7 +3673,7 @@ async def upload_document(
     
     # Validate document type
     try:
-        doc_type = DocumentType(document_type)
+        doc_type = DocumentType(entity_type)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid document type")
     
