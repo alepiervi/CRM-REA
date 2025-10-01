@@ -12800,6 +12800,20 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           subAgenzie={subAgenzie}
         />
       )}
+
+      {/* Documents Modal */}
+      {showDocumentsModal && (
+        <ClientDocumentsModal
+          isOpen={showDocumentsModal}
+          onClose={() => {
+            setShowDocumentsModal(false);
+            setSelectedClientId(null);
+            setSelectedClientName('');
+          }}
+          clientId={selectedClientId}
+          clientName={selectedClientName}
+        />
+      )}
     </div>
   );
 };
