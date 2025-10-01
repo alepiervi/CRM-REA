@@ -14246,7 +14246,11 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       segmento: mapSegmentoValue(formData.segmento)
     };
     
+    console.log("🎯 ORIGINAL FORM DATA:", formData);
     console.log("🎯 CLEAN FORM DATA FOR SUBMISSION:", cleanFormData);
+    console.log("🎯 ENUM MAPPINGS APPLIED:");
+    console.log("  - tipologia_contratto:", formData.tipologia_contratto, "→", cleanFormData.tipologia_contratto);
+    console.log("  - segmento:", formData.segmento, "→", cleanFormData.segmento);
     console.log("🎯 CALLING onSubmit FUNCTION...");
     
     // Call the onSubmit function passed from parent
