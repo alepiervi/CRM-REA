@@ -9495,24 +9495,39 @@ async def get_client_documents(
 ):
     """Get all documents for a specific client."""
     try:
-        # Check if user can access this client's documents
-        # TODO: Add proper authorization logic
+        # Check if client exists
+        client = await db.clienti.find_one({"id": client_id})
+        if not client:
+            raise HTTPException(status_code=404, detail="Cliente non trovato")
+            
+        # Check user authorization for this client's documents
+        # TODO: Add proper role-based authorization logic here
         
         documents = await db.documents.find({
             "entity_type": "clienti", 
             "entity_id": client_id,
-            "storage_type": {"$ne": "deleted"}
-        }).to_list(length=None)
+            "$or": [
+                {"storage_type": {"$ne": "deleted"}},
+                {"storage_type": {"$exists": False}}  # For backward compatibility
+            ]
+        }).sort("created_at", -1).to_list(length=None)
+        
+        # Add client information to each document for display
+        for doc in documents:
+            doc["client_name"] = f"{client.get('nome', '')} {client.get('cognome', '')}"
         
         return {
             "success": True,
             "documents": documents,
-            "count": len(documents)
+            "count": len(documents),
+            "client_name": f"{client.get('nome', '')} {client.get('cognome', '')}"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error(f"Error fetching client documents: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Error fetching client documents for {client_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero documenti: {str(e)}")
 
 @api_router.get("/documents/{document_id}/download")
 async def download_document(
