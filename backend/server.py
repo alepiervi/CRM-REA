@@ -9823,15 +9823,39 @@ async def upload_to_aruba_drive(
         
         await db.documents.insert_one(document_data)
         
-        logging.info(f"Document processed for {entity_type} {entity_id}: {unique_filename}")
+        # Also save screenshot metadata if generated
+        if screenshot_path:
+            screenshot_data = {
+                "id": str(uuid.uuid4()),
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "filename": f"anagrafica_{client_name}_{client_surname}.png",
+                "original_filename": f"anagrafica_{client_name}_{client_surname}.png",
+                "local_path": screenshot_path,
+                "aruba_drive_path": f"/{commessa_name}/{servizio_name}/{client_name}_{client_surname}/anagrafica_{client_name}_{client_surname}.png",
+                "aruba_config_id": aruba_config["id"],
+                "file_size": Path(screenshot_path).stat().st_size if Path(screenshot_path).exists() else 0,
+                "file_type": "image/png",
+                "created_by": uploaded_by,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "storage_type": "aruba_drive",
+                "upload_status": "screenshot_generated",
+                "document_type": "client_screenshot"
+            }
+            
+            await db.documents.insert_one(screenshot_data)
+        
+        logging.info(f"Document processed for {commessa_name}/{servizio_name}/{client_name}_{client_surname}: {unique_filename}")
         
         return {
             "success": True,
-            "message": f"Documento {'caricato su Aruba Drive' if upload_success else 'salvato localmente'} con successo",
+            "message": f"Documento {'e anagrafica caricati su Aruba Drive' if upload_success else 'salvati localmente'} con successo",
             "document_id": document_data["id"],
             "filename": file.filename,
             "aruba_drive_path": aruba_drive_path,
-            "aruba_uploaded": upload_success
+            "aruba_uploaded": upload_success,
+            "screenshot_generated": screenshot_path is not None,
+            "folder_structure": f"{commessa_name}/{servizio_name}/{client_name}_{client_surname}"
         }
         
     except Exception as e:
