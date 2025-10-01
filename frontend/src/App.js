@@ -3668,7 +3668,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
           </div>
 
           {/* Scelta tipo assegnazione - Non per responsabile/backoffice commessa */}
-          {!(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
+          {formData.role && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
             <div className="col-span-2">
               <Label>Assegnazione *</Label>
               <div className="flex space-x-4 mt-2">
@@ -3676,17 +3676,18 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                   <input
                     type="radio"
                     id="assignment_unit"
+                    name="assignment_type"
                     value="unit"
                     checked={formData.assignment_type === "unit"}
                     onChange={(e) => {
                       console.log('🔄 Changing assignment_type to:', e.target.value);
-                      setFormData({ 
-                        ...formData, 
+                      setFormData(prev => ({ 
+                        ...prev, 
                         assignment_type: e.target.value,
                         unit_id: "",
                         sub_agenzia_id: "",
                         servizi_autorizzati: []
-                      });
+                      }));
                       setServiziDisponibili([]);
                     }}
                   />
@@ -3696,21 +3697,22 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                   <input
                     type="radio"
                     id="assignment_subagenzia"
+                    name="assignment_type"
                     value="sub_agenzia"
                     checked={formData.assignment_type === "sub_agenzia"}
                     onChange={(e) => {
                       console.log('🔄 Changing assignment_type to:', e.target.value);
-                      setFormData({ 
-                        ...formData, 
+                      setFormData(prev => ({ 
+                        ...prev, 
                         assignment_type: e.target.value,
                         unit_id: "",
                         sub_agenzia_id: "",
                         servizi_autorizzati: []
-                      });
+                      }));
                       setServiziDisponibili([]);
                     }}
                   />
-                  <Label htmlFor="assignment_subagenzia">Sub Agenzia</Label>
+                  <Label htmlFor="assignment_subagenzia" className="cursor-pointer">Sub Agenzia</Label>
                 </div>
               </div>
             </div>
