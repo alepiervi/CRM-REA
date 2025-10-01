@@ -14088,7 +14088,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     cap: '',
     codice_fiscale: '',
     partita_iva: '',
-    commessa_id: selectedCommessa || '',
+    commessa_id: (selectedCommessa && selectedCommessa !== 'all') ? selectedCommessa : '',
     sub_agenzia_id: '',
     servizio_id: '',
     tipologia_contratto: '',
