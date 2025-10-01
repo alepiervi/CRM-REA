@@ -9758,17 +9758,44 @@ async def upload_to_aruba_drive(
         with open(local_file_path, "wb") as f:
             f.write(content)
         
-        # Upload to Aruba Drive via web automation
+        # Get client details for folder organization
+        client = await db.clienti.find_one({"id": entity_id})
+        if not client:
+            raise HTTPException(status_code=404, detail="Cliente non trovato")
+        
+        # Get commessa and servizio names
+        commessa = await db.commesse.find_one({"id": client.get("commessa_id")})
+        servizio = await db.servizi.find_one({"id": client.get("servizio_id")})
+        
+        if not commessa or not servizio:
+            raise HTTPException(status_code=400, detail="Commessa o Servizio non trovati per questo cliente")
+        
+        commessa_name = commessa.get("nome", "UNKNOWN")
+        servizio_name = servizio.get("nome", "UNKNOWN")
+        client_name = client.get("nome", "Unknown")
+        client_surname = client.get("cognome", "Unknown")
+        
+        # Generate client screenshot
+        screenshot_path = await generate_client_screenshot(entity_id, client_name, client_surname)
+        
+        # Prepare files list for upload (document + screenshot)
+        files_to_upload = [str(local_file_path)]
+        if screenshot_path:
+            files_to_upload.append(screenshot_path)
+        
+        # Upload to Aruba Drive via web automation with organized structure
         automation = ArubaWebAutomation()
         upload_success = False
         
         try:
             if await automation.initialize():
                 if await automation.login_to_aruba(aruba_config):
-                    remote_folder = f"/{entity_type}/{entity_id}"
-                    upload_success = await automation.upload_file_to_aruba(
-                        str(local_file_path), 
-                        remote_folder
+                    upload_success = await automation.upload_files_to_aruba(
+                        files_to_upload,
+                        commessa_name,
+                        servizio_name, 
+                        client_name,
+                        client_surname
                     )
         finally:
             await automation.cleanup()
