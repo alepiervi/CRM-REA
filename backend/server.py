@@ -9295,7 +9295,224 @@ async def get_documents(
         logger.error(f"Error fetching documents: {e}")
         raise HTTPException(status_code=500, detail=f"Error fetching documents: {str(e)}")
 
-# Endpoint duplicato rimosso - utilizzato quello alla riga 3664
+# ============================================
+# ARUBA DRIVE INTEGRATION ENDPOINTS
+# ============================================
+
+@api_router.post("/aruba-drive/config")
+async def create_aruba_config(
+    name: str = Form(...),
+    url: str = Form(...), 
+    username: str = Form(...),
+    password: str = Form(...),
+    is_active: bool = Form(False),
+    current_user: User = Depends(get_current_user)
+):
+    """Create or update Aruba Drive configuration."""
+    try:
+        # Only admin can configure Aruba Drive
+        if current_user.role != UserRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Solo gli amministratori possono configurare Aruba Drive")
+        
+        # If setting as active, deactivate all others first
+        if is_active:
+            await db.aruba_configs.update_many({}, {"$set": {"is_active": False}})
+        
+        config_data = {
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "url": url,
+            "username": username,
+            "password": password,  # In production, encrypt this
+            "is_active": is_active,
+            "created_at": datetime.now(timezone.utc),
+            "created_by": current_user.id
+        }
+        
+        await db.aruba_configs.insert_one(config_data)
+        
+        return {
+            "success": True,
+            "message": "Configurazione Aruba Drive creata con successo",
+            "config_id": config_data["id"]
+        }
+        
+    except Exception as e:
+        logging.error(f"Error creating Aruba config: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nella configurazione: {str(e)}")
+
+@api_router.get("/aruba-drive/configs")
+async def get_aruba_configs(current_user: User = Depends(get_current_user)):
+    """Get all Aruba Drive configurations."""
+    try:
+        if current_user.role != UserRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Non autorizzato")
+        
+        configs = await db.aruba_configs.find({}).to_list(length=None)
+        
+        # Remove passwords from response
+        for config in configs:
+            config.pop("password", None)
+            
+        return configs
+        
+    except Exception as e:
+        logging.error(f"Error fetching Aruba configs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/aruba-drive/upload")
+async def upload_to_aruba_drive(
+    entity_type: str = Form(...),
+    entity_id: str = Form(...),
+    file: UploadFile = File(...),
+    uploaded_by: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload document to Aruba Drive and save metadata."""
+    try:
+        # Get active Aruba Drive configuration
+        aruba_config = await db.aruba_configs.find_one({"is_active": True})
+        
+        if not aruba_config:
+            raise HTTPException(
+                status_code=400, 
+                detail="Nessuna configurazione Aruba Drive attiva. Configurare Aruba Drive prima di caricare documenti."
+            )
+        
+        # For now, use local storage but prepare for Aruba Drive integration
+        documents_dir = Path("/app/documents")
+        documents_dir.mkdir(exist_ok=True)
+        
+        # Generate unique filename
+        file_extension = Path(file.filename).suffix
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        
+        # Create directory structure that mimics Aruba Drive organization
+        entity_dir = documents_dir / entity_type / entity_id
+        entity_dir.mkdir(parents=True, exist_ok=True)
+        
+        file_path = entity_dir / unique_filename
+        
+        # Save file locally (TODO: Replace with actual Aruba Drive upload)
+        content = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(content)
+        
+        # Prepare Aruba Drive path structure
+        aruba_drive_path = f"/{entity_type}/{entity_id}/{unique_filename}"
+        
+        # TODO: Actual Aruba Drive upload would go here
+        # aruba_upload_result = await upload_to_aruba_drive_api(
+        #     config=aruba_config,
+        #     file_content=content,
+        #     remote_path=aruba_drive_path,
+        #     filename=file.filename
+        # )
+        
+        # Save document metadata with Aruba Drive information
+        document_data = {
+            "id": str(uuid.uuid4()),
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "filename": file.filename,
+            "original_filename": file.filename,
+            "local_path": str(file_path),
+            "aruba_drive_path": aruba_drive_path,
+            "aruba_config_id": aruba_config["id"],
+            "file_size": len(content),
+            "file_type": file.content_type,
+            "created_by": uploaded_by,
+            "created_at": datetime.now(timezone.utc),
+            "storage_type": "aruba_drive_ready",  # Indicates ready for Aruba Drive
+            "upload_status": "local_pending_aruba"  # Status tracking
+        }
+        
+        await db.documents.insert_one(document_data)
+        
+        logging.info(f"Document uploaded for {entity_type} {entity_id}: {unique_filename}")
+        
+        return {
+            "success": True,
+            "message": "Documento caricato con successo",
+            "document_id": document_data["id"],
+            "filename": file.filename,
+            "aruba_drive_path": aruba_drive_path,
+            "status": "Pronto per sincronizzazione Aruba Drive"
+        }
+        
+    except Exception as e:
+        logging.error(f"Error in Aruba Drive upload: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento: {str(e)}")
+
+@api_router.get("/aruba-drive/download/{document_id}")
+async def download_from_aruba_drive(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Download document from Aruba Drive."""
+    try:
+        # Get document metadata
+        document = await db.documents.find_one({"id": document_id})
+        
+        if not document:
+            raise HTTPException(status_code=404, detail="Documento non trovato")
+        
+        # TODO: Check user authorization for this document
+        
+        # For now, serve from local storage
+        # TODO: Replace with actual Aruba Drive download
+        
+        local_path = Path(document["local_path"])
+        
+        if not local_path.exists():
+            # Try to download from Aruba Drive
+            # aruba_config = await db.aruba_configs.find_one({"id": document["aruba_config_id"]})
+            # file_content = await download_from_aruba_drive_api(
+            #     config=aruba_config,
+            #     remote_path=document["aruba_drive_path"]
+            # )
+            
+            raise HTTPException(
+                status_code=404, 
+                detail="File non trovato. Implementare download da Aruba Drive."
+            )
+        
+        # Serve file from local storage (temporary solution)
+        return FileResponse(
+            path=local_path,
+            filename=document["original_filename"],
+            media_type=document["file_type"]
+        )
+        
+    except Exception as e:
+        logging.error(f"Error downloading document {document_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel download: {str(e)}")
+
+@api_router.get("/documents/client/{client_id}")
+async def get_client_documents(
+    client_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all documents for a specific client."""
+    try:
+        # Check if user can access this client's documents
+        # TODO: Add proper authorization logic
+        
+        documents = await db.documents.find({
+            "entity_type": "clienti", 
+            "entity_id": client_id,
+            "storage_type": {"$ne": "deleted"}
+        }).to_list(length=None)
+        
+        return {
+            "success": True,
+            "documents": documents,
+            "count": len(documents)
+        }
+        
+    except Exception as e:
+        logging.error(f"Error fetching client documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/documents/{document_id}/download")
 async def download_document(
