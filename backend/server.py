@@ -10598,11 +10598,10 @@ async def generate_client_screenshot(client_id: str, client_name: str, client_su
             screenshot_filename = f"anagrafica_{client_name}_{client_surname}_{client_id[:8]}.png"
             screenshot_path = screenshots_dir / screenshot_filename
             
-            # Take full page screenshot
+            # Take full page screenshot (PNG format - no quality parameter needed)
             await page.screenshot(
                 path=str(screenshot_path),
-                full_page=True,
-                quality=90
+                full_page=True
             )
             
             logging.info(f"✅ Client screenshot generated: {screenshot_path}")
