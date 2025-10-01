@@ -83,6 +83,26 @@ security = HTTPBearer()
 # Create the main app without a prefix
 app = FastAPI(title="CRM Lead Management System", version="1.0.0")
 
+# FastAPI Validation Exception Handler for debugging client creation errors
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print("=" * 80)
+    print("🚨 FASTAPI VALIDATION ERROR - CLIENT CREATION:")
+    print(f"📋 Request URL: {request.url}")
+    print(f"📋 Request method: {request.method}")
+    print(f"📋 Validation errors: {exc.errors()}")
+    try:
+        body = await request.body()
+        print(f"📋 Request body: {body.decode('utf-8')}")
+    except:
+        print("📋 Request body: [Could not decode]")
+    print("=" * 80)
+    
+    return JSONResponse(
+        status_code=422,
+        content={"detail": f"Validation error: {exc.errors()}"}
+    )
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
