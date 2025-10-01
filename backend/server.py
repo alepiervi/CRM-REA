@@ -871,7 +871,7 @@ class Cliente(BaseModel):
 class ClienteCreate(BaseModel):
     nome: str
     cognome: str
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None  # Cambiato da EmailStr per permettere stringhe vuote
     telefono: str
     indirizzo: Optional[str] = None
     citta: Optional[str] = None
