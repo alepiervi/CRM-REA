@@ -15825,4 +15825,413 @@ const ArubaDriveConfigModal = ({
   );
 };
 
+// Componente ClientiManagement
+const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse, subAgenzie }) => {
+  const [clienti, setClienti] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [selectedClientName, setSelectedClientName] = useState('');
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchClienti();
+  }, [selectedUnit, selectedCommessa]);
+
+  const fetchClienti = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      if (selectedCommessa && selectedCommessa !== "all") {
+        params.append('commessa_id', selectedCommessa);
+      }
+      
+      const response = await axios.get(`${API}/clienti?${params}`);
+      setClienti(response.data || []);
+    } catch (error) {
+      console.error("Error fetching clienti:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei clienti",
+        variant: "destructive",
+      });
+      setClienti([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateClient = async (clientData) => {
+    try {
+      await axios.post(`${API}/clienti`, clientData);
+      toast({
+        title: "Successo",
+        description: "Cliente creato con successo",
+      });
+      fetchClienti();
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error("Error creating client:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nella creazione del cliente",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewDocuments = (clientId, clientName) => {
+    setSelectedClientId(clientId);
+    setSelectedClientName(clientName);
+    setShowDocumentsModal(true);
+  };
+
+  const filteredClienti = clienti.filter(cliente => {
+    if (selectedUnit === "all" && selectedCommessa === "all") return true;
+    if (selectedUnit !== "all" && selectedCommessa === "all") {
+      return cliente.unit_id === selectedUnit;
+    }
+    if (selectedUnit === "all" && selectedCommessa !== "all") {
+      return cliente.commessa_id === selectedCommessa;
+    }
+    return cliente.unit_id === selectedUnit && cliente.commessa_id === selectedCommessa;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Gestione Clienti</h1>
+          <p className="text-slate-600">{filteredClienti.length} clienti trovati</p>
+        </div>
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nuovo Cliente
+        </Button>
+      </div>
+
+      {/* Clienti Table */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Cognome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Telefono</TableHead>
+                  <TableHead>Commessa</TableHead>
+                  <TableHead>Sub Agenzia</TableHead>
+                  <TableHead>Data Creazione</TableHead>
+                  <TableHead>Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredClienti.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8">
+                      <div className="flex flex-col items-center space-y-2">
+                        <Users className="w-8 h-8 text-slate-400" />
+                        <p className="text-slate-500">Nessun cliente trovato</p>
+                        <Button
+                          onClick={() => setShowCreateModal(true)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Crea il primo cliente
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredClienti.map((cliente) => (
+                    <TableRow key={cliente.id}>
+                      <TableCell className="font-medium">{cliente.nome}</TableCell>
+                      <TableCell>{cliente.cognome}</TableCell>
+                      <TableCell>{cliente.email || 'N/A'}</TableCell>
+                      <TableCell>{cliente.telefono}</TableCell>
+                      <TableCell>
+                        {commesse.find(c => c.id === cliente.commessa_id)?.nome || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {subAgenzie.find(s => s.id === cliente.sub_agenzia_id)?.nome || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(cliente.created_at).toLocaleDateString('it-IT')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewDocuments(cliente.id, `${cliente.nome} ${cliente.cognome}`)}
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            Documenti
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Create Client Modal */}
+      {showCreateModal && (
+        <CreateClienteModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={handleCreateClient}
+          commesse={commesse}
+          subAgenzie={subAgenzie}
+          selectedCommessa={selectedCommessa}
+        />
+      )}
+
+      {/* Documents Modal */}
+      {showDocumentsModal && (
+        <ClientDocumentsModal
+          isOpen={showDocumentsModal}
+          onClose={() => setShowDocumentsModal(false)}
+          clientId={selectedClientId}
+          clientName={selectedClientName}
+        />
+      )}
+    </div>
+  );
+};
+
+// Componente per gestire i documenti del cliente
+const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (isOpen && clientId) {
+      fetchClientDocuments();
+    }
+  }, [isOpen, clientId]);
+
+  const fetchClientDocuments = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/documents/client/${clientId}`);
+      setDocuments(response.data.documents || []);
+    } catch (error) {
+      console.error("Error fetching client documents:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei documenti",
+        variant: "destructive",
+      });
+      setDocuments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "Errore",
+        description: "Seleziona un file da caricare",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('entity_type', 'clienti');
+      formData.append('entity_id', clientId);
+      formData.append('uploaded_by', 'current_user'); // TODO: Use actual user ID
+
+      const response = await axios.post(`${API}/aruba-drive/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      toast({
+        title: "Successo",
+        description: "Documento caricato con successo su Aruba Drive",
+      });
+
+      setSelectedFile(null);
+      fetchClientDocuments();
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nel caricamento del documento",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownload = async (documentId, filename) => {
+    try {
+      const response = await axios.get(`${API}/aruba-drive/download/${documentId}`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel download del documento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Documenti - {clientName}</DialogTitle>
+          <DialogDescription>
+            Gestisci i documenti del cliente. I file vengono caricati su Aruba Drive.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Upload Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Carica Nuovo Documento</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <input
+                    type="file"
+                    onChange={(e) => setSelectedFile(e.target.files[0])}
+                    className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {selectedFile && (
+                    <p className="text-sm text-slate-600 mt-2">
+                      File selezionato: {selectedFile.name}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  onClick={handleFileUpload}
+                  disabled={uploading || !selectedFile}
+                >
+                  {uploading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Caricamento...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Carica su Aruba Drive
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Documents List */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Documenti Caricati ({documents.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+                </div>
+              ) : documents.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-500">Nessun documento caricato</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <p className="font-medium">{doc.filename}</p>
+                          <p className="text-sm text-slate-500">
+                            {doc.aruba_drive_path && (
+                              <span className="text-green-600">📁 Aruba Drive: {doc.aruba_drive_path}</span>
+                            )}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            Caricato il {new Date(doc.created_at).toLocaleDateString('it-IT')}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownload(doc.id, doc.filename)}
+                      >
+                        <Download className="w-4 h-4 mr-1" />
+                        Scarica
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default AppWithAuth;
