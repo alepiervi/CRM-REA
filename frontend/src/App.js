@@ -3715,7 +3715,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             <div className="col-span-2">
               <Label>Servizi Autorizzati *</Label>
               {serviziDisponibili.length > 0 ? (
-                <>
+                <div>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
                     <div className="grid grid-cols-2 gap-2">
                       {serviziDisponibili.map((servizio) => (
@@ -3735,7 +3735,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                   <p className="text-xs text-slate-500 mt-1">
                     Selezionati: {formData.servizi_autorizzati?.length || 0} servizi
                   </p>
-                </>
+                </div>
               ) : (
                 <div className="border rounded-lg p-4 bg-amber-50 border-amber-200">
                   <p className="text-sm text-amber-800">
