@@ -8712,9 +8712,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # FastAPI Validation Exception Handler for debugging client creation errors
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from starlette.requests import Request
 
 # ============================================
 # RESPONSABILE COMMESSA ENDPOINTS
