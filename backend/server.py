@@ -9663,7 +9663,7 @@ async def upload_to_aruba_drive(
             "file_size": len(content),
             "file_type": file.content_type,
             "created_by": uploaded_by,
-            "created_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "storage_type": "aruba_drive",
             "upload_status": "uploaded_to_aruba" if upload_success else "local_only"
         }
