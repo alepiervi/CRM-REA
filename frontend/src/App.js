@@ -12056,10 +12056,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
   const fetchSubAgenzie = async () => {
     try {
+      console.log("🔄 ClientiManagement: Caricando sub agenzie...");
       const response = await axios.get(`${API}/sub-agenzie`);
+      console.log("✅ ClientiManagement: Sub agenzie caricate:", response.data.length, "elementi");
       setSubAgenzie(response.data);
     } catch (error) {
-      console.error("Error fetching sub agenzie:", error);
+      console.error("❌ ClientiManagement: Error fetching sub agenzie:", error);
+      setSubAgenzie([]);
     }
   };
 
