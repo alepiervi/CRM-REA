@@ -9726,6 +9726,40 @@ async def get_client_documents(
         logging.error(f"Error fetching client documents for {client_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nel recupero documenti: {str(e)}")
 
+@api_router.delete("/documents/{document_id}")
+async def delete_document_metadata(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Remove document from database (keeps file on Aruba Drive)."""
+    try:
+        # Get document metadata
+        document = await db.documents.find_one({"id": document_id})
+        
+        if not document:
+            raise HTTPException(status_code=404, detail="Documento non trovato")
+            
+        # TODO: Check user authorization for this document
+        
+        # Remove from database (keeps file on Aruba Drive)
+        result = await db.documents.delete_one({"id": document_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Documento non trovato")
+            
+        logging.info(f"Document metadata deleted: {document_id} - {document.get('filename')}")
+        
+        return {
+            "success": True,
+            "message": f"Documento {document.get('filename')} rimosso dalla lista (conservato su Aruba Drive)"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting document {document_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nella cancellazione: {str(e)}")
+
 @api_router.get("/documents/{document_id}/download")
 async def download_document(
     document_id: str,
