@@ -185,6 +185,18 @@ backend:
           agent: "testing"
           comment: "🎉 USER ENTITY MANAGEMENT TESTING COMPLETED - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ POST /api/users (WITH ENTITY_MANAGEMENT): Successfully created user with entity_management field - field correctly saved and returned in response. ✅ ALL ENTITY_MANAGEMENT VALUES: All 3 valid values tested successfully - 'clienti', 'lead', 'both' all accepted and saved correctly. ✅ FIELD VALIDATION: Invalid values properly rejected (would return 422 for invalid enum values). ✅ GET /api/users INCLUDES FIELD: entity_management field present in GET response for all users, backward compatibility maintained. ✅ DATABASE PERSISTENCE: entity_management field correctly persisted in database and retrieved in subsequent requests. ✅ DEFAULT VALUE HANDLING: Field defaults to 'clienti' when not specified (as per model definition). SUCCESS RATE: 100% (12/12 tests passed) - User entity management system fully operational!"
 
+  - task: "Document Management System Complete Testing"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 DOCUMENT MANAGEMENT SYSTEM TESTING COMPLETE - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ CLIENT VERIFICATION: Found test client 'Ale2 pro' (ID: 63a4ba86-8076-4c34-8626-5360ed6c8fbe) for document testing. ✅ LISTA DOCUMENTI: GET /api/documents/client/{client_id} returns 200 OK with proper structure - found 0 initial documents, response includes success, documents array, count, and client_name fields. ✅ UPLOAD DOCUMENTI: POST /api/aruba-drive/upload works perfectly - uploaded test PDF document successfully, fallback system operational (Aruba Drive → Local storage), document metadata saved correctly in database with proper entity_type and entity_id. ✅ UPLOAD VERIFICATION: Document count increased from 0 to 2 (document + screenshot), uploaded document found in client document list with correct metadata, all expected fields present (id, entity_type, entity_id, filename, created_at). ✅ DOWNLOAD DOCUMENTI: GET /api/documents/download/{document_id} returns 200 OK - file downloaded successfully with correct Content-Type (application/pdf), content received (328 bytes), proper FileResponse handling. ✅ DELETE DOCUMENTI: DELETE /api/documents/{document_id} returns 200 OK - document metadata removed from database successfully, proper success message 'Documento rimosso dalla lista (conservato su Aruba Drive)', document no longer appears in client document list, file preservation confirmed. ✅ ARUBA DRIVE CONFIGURATION: Found 1 active Aruba Drive configuration 'PROVA', connection test successful, fallback system verified working when Aruba Drive unavailable. 🎯 FALLBACK SYSTEM VERIFIED: Aruba Drive → Local storage fallback operational - documents saved locally when Aruba Drive unavailable, metadata correctly tracks storage_type and upload_status. SUCCESS RATE: 100% (24/24 tests passed) - Complete document management system fully operational with robust fallback mechanism!"
+
   - task: "Lead Qualification API Datetime Error Fix"
     implemented: true
     working: true
