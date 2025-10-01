@@ -12027,13 +12027,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
   useEffect(() => {
     try {
-      // Use props data when available, don't fetch if already provided
-      if (!commesseFromParent || commesseFromParent.length === 0) {
-        fetchCommesse();
-      }
-      if (!subAgenzieFromParent || subAgenzieFromParent.length === 0) {
-        fetchSubAgenzie();
-      }
+      // Always fetch commesse and sub agenzie to ensure fresh data
+      console.log("📊 ClientiManagement: Inizializzazione - caricando dati...");
+      fetchCommesse();
+      fetchSubAgenzie();
       fetchClienti();
     } catch (error) {
       console.error("ClientiManagement useEffect error:", error);
