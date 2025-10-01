@@ -16109,50 +16109,69 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
           </DialogHeader>
         </div>
         
-        <div className="space-y-6">
-          {/* Multi-File Upload Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>📁 Carica Documenti (Multi-File)</span>
-                <Badge variant="outline">{selectedFiles.length} file selezionati</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+        <div className="p-4 sm:p-6 space-y-6">
+          {/* Multi-File Upload Section - Responsive */}
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
+            <div className="border-b border-slate-200 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Upload className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">Carica Documenti</h3>
+                    <p className="text-sm text-slate-600">Upload multipli supportati</p>
+                  </div>
+                </div>
+                {selectedFiles.length > 0 && (
+                  <Badge variant="secondary" className="self-start sm:self-center">
+                    {selectedFiles.length} file selezionati
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            <div className="p-4 sm:p-6">
               <div className="space-y-4">
-                {/* Drag & Drop Area */}
+                {/* Responsive Drag & Drop Area */}
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                  className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center transition-all duration-200 ${
                     dragActive
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-slate-300 hover:border-slate-400'
+                      ? 'border-blue-500 bg-blue-50 scale-[1.02]'
+                      : 'border-slate-300 hover:border-blue-400 hover:bg-slate-50'
                   }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
                 >
-                  <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                  <p className="text-lg font-medium text-slate-700 mb-2">
-                    Trascina file qui o clicca per selezionare
-                  </p>
-                  <p className="text-sm text-slate-500 mb-4">
-                    Supporta file multipli • PDF, DOC, XLS, IMG, ZIP
-                  </p>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    id="file-input-multi"
-                  />
-                  <label
-                    htmlFor="file-input-multi"
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Seleziona File
-                  </label>
+                  <div className="space-y-4">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
+                      <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-base sm:text-lg font-medium text-slate-700">
+                        Trascina file qui o clicca per selezionare
+                      </p>
+                      <p className="text-xs sm:text-sm text-slate-500">
+                        PDF • DOC • XLS • IMG • ZIP • Massimo 10 MB per file
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="file-input-multi"
+                    />
+                    <label
+                      htmlFor="file-input-multi"
+                      className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-blue-700 cursor-pointer transition-colors"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Seleziona File
+                    </label>
+                  </div>
                 </div>
 
                 {/* Selected Files List */}
