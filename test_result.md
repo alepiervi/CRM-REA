@@ -296,6 +296,13 @@ frontend:
     stuck_count: 1
     priority: "critical"
     needs_retesting: false
+  - task: "CreateClienteModal Dropdown Population Bug Fix"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
     status_history:
         - working: "needs_testing"
           agent: "main"
