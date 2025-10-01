@@ -12606,18 +12606,28 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                       {new Date(cliente.created_at).toLocaleDateString('it-IT')}
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-1">
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={() => handleViewCliente(cliente)}
+                          title="Visualizza cliente"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm"
+                          onClick={() => handleViewDocuments(cliente)}
+                          title="Gestisci documenti"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
                           onClick={() => handleEditCliente(cliente)}
+                          title="Modifica cliente"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -12629,6 +12639,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                               deleteCliente(cliente.id);
                             }
                           }}
+                          title="Elimina cliente"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
