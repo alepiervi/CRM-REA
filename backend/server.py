@@ -3860,43 +3860,7 @@ async def download_document(
             detail=f"Download failed: {str(e)}"
         )
 
-@api_router.delete("/documents/{document_id}")
-async def delete_document(
-    document_id: str,
-    current_user: User = Depends(get_current_user)
-):
-    """Soft delete a document (marks as inactive)"""
-    
-    # Only admin can delete documents
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Only admin can delete documents")
-    
-    document = await db.documents.find_one({
-        "document_id": document_id,
-        "is_active": True
-    })
-    
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-    
-    try:
-        # Soft delete in database
-        await db.documents.update_one(
-            {"document_id": document_id},
-            {"$set": {"is_active": False}}
-        )
-        
-        return {
-            "success": True,
-            "message": "Document deleted successfully",
-            "document_id": document_id
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Deletion failed: {str(e)}"
-        )
+# REMOVED: Duplicate delete endpoint - using newer version at line 9908
 
 # Endpoint duplicato rimosso - ora utilizziamo solo quello alla linea 7871 con DocumentResponse
 
