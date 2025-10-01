@@ -477,45 +477,42 @@ class CRMAPITester:
             self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
             return False
 
-        # 2. **Test Endpoint Configurazioni**
-        print("\n⚙️ 2. TEST ENDPOINT CONFIGURAZIONI...")
+        # 2. **Verifica Clienti Esistenti**
+        print("\n👥 2. VERIFICA CLIENTI ESISTENTI...")
         
-        # GET /api/admin/aruba-drive-configs (lista configurazioni)
-        print("   Testing GET /api/admin/aruba-drive-configs...")
-        success, configs_response, status = self.make_request('GET', 'admin/aruba-drive-configs', expected_status=200)
+        # GET /api/clienti per trovare clienti di test
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
         
-        if success and status == 200:
-            configs_list = configs_response
-            self.log_test("✅ GET /api/admin/aruba-drive-configs", True, f"Status: {status}, Found {len(configs_list)} configurations")
-            
-            # Verify response structure
-            if isinstance(configs_list, list):
-                self.log_test("✅ Response is array", True, f"Configurations array with {len(configs_list)} items")
-                
-                # Check structure if configs exist
-                if len(configs_list) > 0:
-                    config = configs_list[0]
-                    expected_fields = ['id', 'name', 'url', 'username', 'password_masked', 'is_active', 'created_at', 'updated_at']
-                    missing_fields = [field for field in expected_fields if field not in config]
-                    
-                    if not missing_fields:
-                        self.log_test("✅ Configuration structure valid", True, f"All expected fields present")
-                        
-                        # Verify password is masked
-                        password_masked = config.get('password_masked', '')
-                        if password_masked and all(c == '*' for c in password_masked):
-                            self.log_test("✅ Password masking working", True, f"Password properly masked: {password_masked}")
-                        else:
-                            self.log_test("❌ Password masking issue", False, f"Password not properly masked: {password_masked}")
-                    else:
-                        self.log_test("❌ Configuration structure invalid", False, f"Missing fields: {missing_fields}")
-                else:
-                    self.log_test("ℹ️ No configurations found", True, "Empty array returned (valid)")
-            else:
-                self.log_test("❌ Response not array", False, f"Response type: {type(configs_response)}")
-        else:
-            self.log_test("❌ GET /api/admin/aruba-drive-configs", False, f"Status: {status}, Response: {configs_response}")
+        if not success or status != 200:
+            self.log_test("❌ GET /api/clienti", False, f"Status: {status}, Response: {clienti_response}")
             return False
+        
+        clienti = clienti_response.get('clienti', []) if isinstance(clienti_response, dict) else clienti_response
+        self.log_test("✅ GET /api/clienti", True, f"Found {len(clienti)} clienti")
+        
+        # Find test clients (Ale2 pro or ale pro)
+        test_client = None
+        for client in clienti:
+            client_name = f"{client.get('nome', '')} {client.get('cognome', '')}".lower()
+            if 'ale' in client_name and 'pro' in client_name:
+                test_client = client
+                break
+        
+        if not test_client:
+            # Use first available client
+            if len(clienti) > 0:
+                test_client = clienti[0]
+                self.log_test("ℹ️ Using first available client", True, 
+                    f"Client: {test_client.get('nome', '')} {test_client.get('cognome', '')}")
+            else:
+                self.log_test("❌ No clients found", False, "Cannot test document system without clients")
+                return False
+        else:
+            self.log_test("✅ Found test client", True, 
+                f"Client: {test_client.get('nome', '')} {test_client.get('cognome', '')} (ID: {test_client.get('id')})")
+        
+        test_client_id = test_client.get('id')
+        test_client_name = f"{test_client.get('nome', '')} {test_client.get('cognome', '')}"
 
         # POST /api/admin/aruba-drive-configs (crea configurazione test)
         print("   Testing POST /api/admin/aruba-drive-configs...")
