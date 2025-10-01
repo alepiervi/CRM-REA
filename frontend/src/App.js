@@ -3327,7 +3327,74 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
   
   const [isLoading, setIsLoading] = useState(false);
   const [servizi, setServizi] = useState([]);
+  const [serviziDisponibili, setServiziDisponibili] = useState([]); // NEW: Servizi per UNIT/SUB selezionata
   const { toast } = useToast();
+
+  // NEW: Fetch servizi quando si seleziona una UNIT
+  const handleUnitChange = async (unitId) => {
+    if (!unitId) {
+      setServiziDisponibili([]);
+      return;
+    }
+    
+    try {
+      console.log('🔄 Fetching servizi for unit:', unitId);
+      // Find the selected unit
+      const selectedUnitObj = units.find(u => u.id === unitId);
+      if (!selectedUnitObj || !selectedUnitObj.commesse_autorizzate) {
+        setServiziDisponibili([]);
+        return;
+      }
+      
+      // Fetch all servizi for the authorized commesse of this unit
+      const allServizi = [];
+      for (const commessaId of selectedUnitObj.commesse_autorizzate) {
+        try {
+          const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+          allServizi.push(...response.data);
+        } catch (error) {
+          console.error(`Error fetching servizi for commessa ${commessaId}:`, error);
+        }
+      }
+      
+      console.log('✅ Servizi loaded for unit:', allServizi.length);
+      setServiziDisponibili(allServizi);
+    } catch (error) {
+      console.error("Error fetching servizi for unit:", error);
+      setServiziDisponibili([]);
+    }
+  };
+
+  // NEW: Fetch servizi quando si seleziona una SUB AGENZIA
+  const handleSubAgenziaChange = async (subAgenziaId) => {
+    if (!subAgenziaId) {
+      setServiziDisponibili([]);
+      return;
+    }
+    
+    try {
+      console.log('🔄 Fetching servizi for sub agenzia:', subAgenziaId);
+      // Find the selected sub agenzia
+      const selectedSubAgenzia = subAgenzie.find(sa => sa.id === subAgenziaId);
+      if (!selectedSubAgenzia || !selectedSubAgenzia.servizi_autorizzati || selectedSubAgenzia.servizi_autorizzati.length === 0) {
+        setServiziDisponibili([]);
+        return;
+      }
+      
+      // Fetch all servizi
+      const response = await axios.get(`${API}/servizi`);
+      const allServizi = response.data;
+      
+      // Filter only the servizi authorized for this sub agenzia
+      const filteredServizi = allServizi.filter(s => selectedSubAgenzia.servizi_autorizzati.includes(s.id));
+      
+      console.log('✅ Servizi loaded for sub agenzia:', filteredServizi.length);
+      setServiziDisponibili(filteredServizi);
+    } catch (error) {
+      console.error("Error fetching servizi for sub agenzia:", error);
+      setServiziDisponibili([]);
+    }
+  };
 
   // Fetch servizi quando si seleziona una commessa
   const handleCommessaChange = async (commessaId) => {
