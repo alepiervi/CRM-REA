@@ -16291,7 +16291,7 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
           </div>
 
           {/* Documents List - Mobile Optimized */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
+          <Card className="bg-white border border-slate-200 rounded-xl shadow-sm">
             <div className="border-b border-slate-200 p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center space-x-3">
