@@ -9540,7 +9540,7 @@ async def create_aruba_config(
             "username": username,
             "password": password,  # In production, encrypt this
             "is_active": is_active,
-            "created_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "created_by": current_user.id
         }
         
