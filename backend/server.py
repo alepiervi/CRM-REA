@@ -9701,13 +9701,15 @@ async def upload_to_aruba_drive(
         if screenshot_path:
             files_to_upload.append(screenshot_path)
         
-        # Upload to Aruba Drive via web automation with organized structure
+        # Try uploading to Aruba Drive - if fails, use local storage as fallback
         automation = ArubaWebAutomation()
         upload_success = False
+        aruba_upload_attempted = False
         
         try:
             if await automation.initialize():
                 if await automation.login_to_aruba(aruba_config):
+                    aruba_upload_attempted = True
                     upload_success = await automation.upload_files_to_aruba(
                         files_to_upload,
                         commessa_name,
@@ -9715,8 +9717,18 @@ async def upload_to_aruba_drive(
                         client_name,
                         client_surname
                     )
+                else:
+                    logging.warning("❌ Aruba Drive login failed - using local storage fallback")
+            else:
+                logging.warning("❌ Aruba Drive initialization failed - using local storage fallback")
+        except Exception as e:
+            logging.error(f"❌ Aruba Drive upload failed: {e} - using local storage fallback")
         finally:
             await automation.cleanup()
+            
+        # If Aruba upload failed, use local storage as backup
+        storage_type = "aruba_drive" if upload_success else "local"
+        upload_status_msg = "Caricato su Aruba Drive" if upload_success else "Archiviato localmente (Aruba Drive non disponibile)"
         
         # Prepare Aruba Drive path with organized structure
         aruba_drive_path = f"/{commessa_name}/{servizio_name}/{client_name}_{client_surname}/{unique_filename}"
