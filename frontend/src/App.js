@@ -12213,6 +12213,12 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     setShowEditModal(true);
   };
 
+  const handleViewDocuments = (cliente) => {
+    setSelectedClientId(cliente.id);
+    setSelectedClientName(`${cliente.nome} ${cliente.cognome}`);
+    setShowDocumentsModal(true);
+  };
+
   const deleteCliente = async (clienteId) => {
     try {
       await axios.delete(`${API}/clienti/${clienteId}`);
