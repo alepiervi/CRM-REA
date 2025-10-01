@@ -14457,8 +14457,8 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return
         
-        # Run the specific cliente creation payload validation test
-        self.test_cliente_creation_payload_validation()
+        # Run the document management system test (FOCUS OF THIS REVIEW)
+        self.test_document_management_system_complete()
         
         # Clean up test resources
         self.cleanup_test_resources()
