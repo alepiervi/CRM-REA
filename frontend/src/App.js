@@ -3678,14 +3678,19 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                     id="assignment_unit"
                     value="unit"
                     checked={formData.assignment_type === "unit"}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      assignment_type: e.target.value,
-                      unit_id: "",
-                      sub_agenzia_id: ""
-                    })}
+                    onChange={(e) => {
+                      console.log('🔄 Changing assignment_type to:', e.target.value);
+                      setFormData({ 
+                        ...formData, 
+                        assignment_type: e.target.value,
+                        unit_id: "",
+                        sub_agenzia_id: "",
+                        servizi_autorizzati: []
+                      });
+                      setServiziDisponibili([]);
+                    }}
                   />
-                  <Label htmlFor="assignment_unit">Unit</Label>
+                  <Label htmlFor="assignment_unit" className="cursor-pointer">Unit</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <input
@@ -3693,12 +3698,17 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                     id="assignment_subagenzia"
                     value="sub_agenzia"
                     checked={formData.assignment_type === "sub_agenzia"}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      assignment_type: e.target.value,
-                      unit_id: "",
-                      sub_agenzia_id: ""
-                    })}
+                    onChange={(e) => {
+                      console.log('🔄 Changing assignment_type to:', e.target.value);
+                      setFormData({ 
+                        ...formData, 
+                        assignment_type: e.target.value,
+                        unit_id: "",
+                        sub_agenzia_id: "",
+                        servizi_autorizzati: []
+                      });
+                      setServiziDisponibili([]);
+                    }}
                   />
                   <Label htmlFor="assignment_subagenzia">Sub Agenzia</Label>
                 </div>
