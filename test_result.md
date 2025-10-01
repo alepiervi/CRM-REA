@@ -361,6 +361,8 @@ test_plan:
     - "Complete Webhook Removal from Unit & Sub Agenzie Section"
     - "React State Closure Bug Fix - Unit & Sub Agenzie Checkboxes"
     - "Responsabile Field UX Enhancement - Sub Agenzie Modals"
+    - "CreateClienteModal Dropdown Population Bug Fix"
+    - "User Creation Enhancement - UNIT/SUB AGENZIA Assignment with Services"
 
 agent_communication:
     - agent: "main"
