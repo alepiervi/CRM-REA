@@ -4338,15 +4338,19 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                     id="edit_assignment_unit"
                     value="unit"
                     checked={formData.assignment_type === "unit"}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      assignment_type: e.target.value,
-                      unit_id: "",
-                      sub_agenzia_id: "",
-                      servizi_autorizzati: []
-                    })}
+                    onChange={(e) => {
+                      console.log('🔄 EditUser: Changing assignment_type to:', e.target.value);
+                      setFormData({ 
+                        ...formData, 
+                        assignment_type: e.target.value,
+                        unit_id: "",
+                        sub_agenzia_id: "",
+                        servizi_autorizzati: []
+                      });
+                      setServiziDisponibili([]);
+                    }}
                   />
-                  <Label htmlFor="edit_assignment_unit">Unit</Label>
+                  <Label htmlFor="edit_assignment_unit" className="cursor-pointer">Unit</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <input
@@ -4354,15 +4358,19 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                     id="edit_assignment_subagenzia"
                     value="sub_agenzia"
                     checked={formData.assignment_type === "sub_agenzia"}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      assignment_type: e.target.value,
-                      unit_id: "",
-                      sub_agenzia_id: "",
-                      servizi_autorizzati: []
-                    })}
+                    onChange={(e) => {
+                      console.log('🔄 EditUser: Changing assignment_type to:', e.target.value);
+                      setFormData({ 
+                        ...formData, 
+                        assignment_type: e.target.value,
+                        unit_id: "",
+                        sub_agenzia_id: "",
+                        servizi_autorizzati: []
+                      });
+                      setServiziDisponibili([]);
+                    }}
                   />
-                  <Label htmlFor="edit_assignment_subagenzia">Sub Agenzia</Label>
+                  <Label htmlFor="edit_assignment_subagenzia" className="cursor-pointer">Sub Agenzia</Label>
                 </div>
               </div>
             </div>
