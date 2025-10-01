@@ -343,8 +343,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "CreateClienteModal Dropdown Population Bug Fix"
-    - "User Creation Enhancement - UNIT/SUB AGENZIA Assignment with Services"
+    - "Cliente Creation Payload Validation - Enum Format Issue"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
