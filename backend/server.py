@@ -3701,7 +3701,10 @@ async def upload_document(
             raise HTTPException(status_code=403, detail="Access denied to this cliente")
     
     try:
-        # Create documents directory
+        # TODO: Integrate with Aruba Drive - For now use local storage as fallback
+        # In production, this should upload to Aruba Drive and store path reference
+        
+        # Create documents directory (fallback for now)
         documents_dir = Path("/app/documents")
         documents_dir.mkdir(exist_ok=True)
         
@@ -3710,22 +3713,24 @@ async def upload_document(
         unique_filename = f"{uuid.uuid4()}{file_extension}"
         file_path = documents_dir / unique_filename
         
-        # Save file
+        # Save file locally (TODO: Replace with Aruba Drive upload)
         content = await file.read()
         with open(file_path, "wb") as f:
             f.write(content)
         
-        # Save document metadata
+        # Save document metadata with Aruba Drive path placeholder
         document_data = {
             "id": str(uuid.uuid4()),
-            "entity_type": entity_type,  # Usa entity_type invece di document_type
+            "entity_type": entity_type,
             "entity_id": entity_id,
             "filename": file.filename,
-            "file_path": str(file_path),
+            "file_path": str(file_path),  # TODO: This should be Aruba Drive path
+            "aruba_drive_path": f"/documents/{entity_type}/{entity_id}/{unique_filename}",  # Future Aruba path
             "file_size": len(content),
             "file_type": file.content_type,
             "created_by": uploaded_by,
-            "created_at": datetime.now(timezone.utc)
+            "created_at": datetime.now(timezone.utc),
+            "storage_type": "local"  # TODO: Change to "aruba_drive" when implemented
         }
         
         await db.documents.insert_one(document_data)
@@ -3734,7 +3739,8 @@ async def upload_document(
             "success": True,
             "message": "Documento caricato con successo",
             "document_id": document_data["id"],
-            "filename": file.filename
+            "filename": file.filename,
+            "aruba_drive_path": document_data["aruba_drive_path"]
         }
                 
     except HTTPException:
