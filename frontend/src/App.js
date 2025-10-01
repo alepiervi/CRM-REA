@@ -15874,13 +15874,16 @@ const ArubaDriveConfigModal = ({
 
 // Rimuovo il componente ClientiManagement duplicato - esiste già alla riga 11995
 
-// Componente per gestire i documenti del cliente
+// Componente avanzato per gestire documenti multipli del cliente (stesse funzioni della sezione Documenti)
 const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [dragActive, setDragActive] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (isOpen && clientId) {
@@ -15906,47 +15909,130 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
     }
   };
 
-  const handleFileUpload = async () => {
-    if (!selectedFile) {
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      setSelectedFiles(prev => [...prev, ...droppedFiles]);
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setSelectedFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleMultipleUpload = async () => {
+    if (selectedFiles.length === 0) {
       toast({
-        title: "Errore",
-        description: "Seleziona un file da caricare",
+        title: "Errore", 
+        description: "Seleziona almeno un file da caricare",
         variant: "destructive",
       });
       return;
     }
 
-    try {
-      setUploading(true);
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('entity_type', 'clienti');
-      formData.append('entity_id', clientId);
-      formData.append('uploaded_by', 'current_user'); // TODO: Use actual user ID
+    setUploading(true);
+    const uploadResults = [];
+    
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      
+      try {
+        // Update progress
+        setUploadProgress(prev => ({
+          ...prev,
+          [file.name]: { status: 'uploading', progress: 0 }
+        }));
 
-      const response = await axios.post(`${API}/aruba-drive/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('entity_type', 'clienti');
+        formData.append('entity_id', clientId);
+        formData.append('uploaded_by', user?.id || 'current_user');
 
+        const response = await axios.post(`${API}/aruba-drive/upload`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(prev => ({
+              ...prev,
+              [file.name]: { status: 'uploading', progress: percentCompleted }
+            }));
+          }
+        });
+
+        // Mark as completed
+        setUploadProgress(prev => ({
+          ...prev,
+          [file.name]: { status: 'completed', progress: 100 }
+        }));
+
+        uploadResults.push({ success: true, filename: file.name, data: response.data });
+        
+      } catch (error) {
+        console.error(`Error uploading ${file.name}:`, error);
+        
+        setUploadProgress(prev => ({
+          ...prev,
+          [file.name]: { 
+            status: 'error', 
+            progress: 0, 
+            error: error.response?.data?.detail || "Errore nel caricamento"
+          }
+        }));
+
+        uploadResults.push({ success: false, filename: file.name, error: error.message });
+      }
+    }
+
+    // Summary toast
+    const successCount = uploadResults.filter(r => r.success).length;
+    const errorCount = uploadResults.filter(r => !r.success).length;
+    
+    if (successCount > 0) {
       toast({
-        title: "Successo",
-        description: "Documento caricato con successo su Aruba Drive",
+        title: "Upload Completato",
+        description: `${successCount} file caricati su Aruba Drive con successo${errorCount > 0 ? `, ${errorCount} errori` : ''}`,
       });
-
-      setSelectedFile(null);
-      fetchClientDocuments();
-    } catch (error) {
-      console.error("Error uploading document:", error);
+    }
+    
+    if (errorCount > 0 && successCount === 0) {
       toast({
-        title: "Errore",
-        description: error.response?.data?.detail || "Errore nel caricamento del documento",
+        title: "Errore Upload",
+        description: `Tutti i ${errorCount} file hanno fallito il caricamento`,
         variant: "destructive",
       });
-    } finally {
-      setUploading(false);
     }
+
+    // Reset
+    setTimeout(() => {
+      setSelectedFiles([]);
+      setUploadProgress({});
+      setUploading(false);
+      fetchClientDocuments();
+    }, 2000);
   };
 
   const handleDownload = async (documentId, filename) => {
@@ -15963,11 +16049,39 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download Completato",
+        description: `File ${filename} scaricato con successo`,
+      });
+      
     } catch (error) {
       console.error("Error downloading document:", error);
       toast({
+        title: "Errore Download",
+        description: error.response?.data?.detail || "Errore nel download del documento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteDocument = async (documentId, filename) => {
+    if (!confirm(`Rimuovere il documento "${filename}" dalla lista? (Il file rimarrà su Aruba Drive)`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/documents/${documentId}`);
+      toast({
+        title: "Documento Rimosso",
+        description: `${filename} rimosso dalla lista (file conservato su Aruba Drive)`,
+      });
+      fetchClientDocuments();
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      toast({
         title: "Errore",
-        description: "Errore nel download del documento",
+        description: "Errore nella rimozione del documento",
         variant: "destructive",
       });
     }
@@ -15977,50 +16091,142 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Documenti - {clientName}</DialogTitle>
+          <DialogTitle className="flex items-center space-x-2">
+            <FileText className="w-5 h-5" />
+            <span>Gestione Documenti - {clientName}</span>
+          </DialogTitle>
           <DialogDescription>
-            Gestisci i documenti del cliente. I file vengono caricati su Aruba Drive.
+            Carica, gestisci e scarica documenti specifici per questo cliente. I file vengono automaticamente sincronizzati con Aruba Drive.
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* Upload Section */}
+          {/* Multi-File Upload Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Carica Nuovo Documento</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>📁 Carica Documenti (Multi-File)</span>
+                <Badge variant="outline">{selectedFiles.length} file selezionati</Badge>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div>
+                {/* Drag & Drop Area */}
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    dragActive
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-slate-300 hover:border-slate-400'
+                  }`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                  <p className="text-lg font-medium text-slate-700 mb-2">
+                    Trascina file qui o clicca per selezionare
+                  </p>
+                  <p className="text-sm text-slate-500 mb-4">
+                    Supporta file multipli • PDF, DOC, XLS, IMG, ZIP
+                  </p>
                   <input
                     type="file"
-                    onChange={(e) => setSelectedFile(e.target.files[0])}
-                    className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="file-input-multi"
                   />
-                  {selectedFile && (
-                    <p className="text-sm text-slate-600 mt-2">
-                      File selezionato: {selectedFile.name}
-                    </p>
-                  )}
+                  <label
+                    htmlFor="file-input-multi"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Seleziona File
+                  </label>
                 </div>
-                <Button
-                  onClick={handleFileUpload}
-                  disabled={uploading || !selectedFile}
-                >
-                  {uploading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      Caricamento...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Carica su Aruba Drive
-                    </>
-                  )}
-                </Button>
+
+                {/* Selected Files List */}
+                {selectedFiles.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-slate-700">File Selezionati:</h4>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded border">
+                          <div className="flex items-center space-x-2 flex-1">
+                            <FileText className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-medium truncate">{file.name}</span>
+                            <span className="text-xs text-slate-500">
+                              ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                            </span>
+                          </div>
+                          
+                          {/* Progress Bar */}
+                          {uploadProgress[file.name] && (
+                            <div className="flex items-center space-x-2 mr-2">
+                              {uploadProgress[file.name].status === 'uploading' && (
+                                <div className="w-16 bg-slate-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-blue-600 h-2 rounded-full transition-all" 
+                                    style={{ width: `${uploadProgress[file.name].progress}%` }}
+                                  ></div>
+                                </div>
+                              )}
+                              {uploadProgress[file.name].status === 'completed' && (
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              )}
+                              {uploadProgress[file.name].status === 'error' && (
+                                <XCircle className="w-4 h-4 text-red-600" />
+                              )}
+                            </div>
+                          )}
+                          
+                          {!uploading && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => removeFile(index)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload Controls */}
+                {selectedFiles.length > 0 && (
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedFiles([])}
+                      disabled={uploading}
+                    >
+                      Azzera Selezione
+                    </Button>
+                    <Button
+                      onClick={handleMultipleUpload}
+                      disabled={uploading}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {uploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Caricamento su Aruba Drive...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Carica {selectedFiles.length} File su Aruba Drive
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -16028,46 +16234,109 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
           {/* Documents List */}
           <Card>
             <CardHeader>
-              <CardTitle>Documenti Caricati ({documents.length})</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>📋 Documenti Cliente ({documents.length})</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={fetchClientDocuments}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-600" />
+                  ) : (
+                    "🔄 Aggiorna"
+                  )}
+                </Button>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
                 </div>
               ) : documents.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-500">Nessun documento caricato</p>
+                <div className="text-center py-12">
+                  <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-slate-700 mb-2">
+                    Nessun documento caricato
+                  </h3>
+                  <p className="text-slate-500">
+                    Usa la sezione di caricamento sopra per aggiungere documenti per questo cliente
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <FileText className="w-5 h-5 text-blue-600" />
-                        <div>
-                          <p className="font-medium">{doc.filename}</p>
-                          <p className="text-sm text-slate-500">
-                            {doc.aruba_drive_path && (
-                              <span className="text-green-600">📁 Aruba Drive: {doc.aruba_drive_path}</span>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-slate-300">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="border border-slate-300 px-4 py-2 text-left">File</th>
+                        <th className="border border-slate-300 px-4 py-2 text-left">Tipo</th>
+                        <th className="border border-slate-300 px-4 py-2 text-left">Dimensione</th>
+                        <th className="border border-slate-300 px-4 py-2 text-left">Aruba Drive</th>
+                        <th className="border border-slate-300 px-4 py-2 text-left">Data Upload</th>
+                        <th className="border border-slate-300 px-4 py-2 text-center">Azioni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {documents.map((doc) => (
+                        <tr key={doc.id} className="hover:bg-slate-50">
+                          <td className="border border-slate-300 px-4 py-3">
+                            <div className="flex items-center space-x-2">
+                              <FileText className="w-5 h-5 text-blue-600" />
+                              <span className="font-medium">{doc.filename}</span>
+                            </div>
+                          </td>
+                          <td className="border border-slate-300 px-4 py-3">
+                            <Badge variant="secondary">
+                              {doc.file_type || 'application/octet-stream'}
+                            </Badge>
+                          </td>
+                          <td className="border border-slate-300 px-4 py-3">
+                            {doc.file_size ? `${(doc.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}
+                          </td>
+                          <td className="border border-slate-300 px-4 py-3">
+                            {doc.aruba_drive_path ? (
+                              <span className="text-green-600 text-sm">
+                                ✅ {doc.aruba_drive_path}
+                              </span>
+                            ) : (
+                              <span className="text-amber-600 text-sm">⏳ Solo locale</span>
                             )}
-                          </p>
-                          <p className="text-xs text-slate-400">
-                            Caricato il {new Date(doc.created_at).toLocaleDateString('it-IT')}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDownload(doc.id, doc.filename)}
-                      >
-                        <Download className="w-4 h-4 mr-1" />
-                        Scarica
-                      </Button>
-                    </div>
-                  ))}
+                          </td>
+                          <td className="border border-slate-300 px-4 py-3">
+                            {new Date(doc.created_at).toLocaleDateString('it-IT', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="border border-slate-300 px-4 py-3">
+                            <div className="flex items-center justify-center space-x-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDownload(doc.id, doc.filename)}
+                                title="Scarica da Aruba Drive"
+                              >
+                                <Download className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteDocument(doc.id, doc.filename)}
+                                title="Rimuovi dalla lista (mantieni su Aruba Drive)"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>
