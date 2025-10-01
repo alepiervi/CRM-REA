@@ -15699,14 +15699,12 @@ const ArubaDriveConfigModal = ({
             </div>
 
             <div className="flex items-center space-x-2">
-              <input
+              <Checkbox
                 id="is_active"
-                type="checkbox"
                 checked={formData.is_active}
-                onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
-                className="rounded"
+                onCheckedChange={(checked) => setFormData({...formData, is_active: checked})}
               />
-              <Label htmlFor="is_active">Imposta come configurazione attiva</Label>
+              <Label htmlFor="is_active" className="cursor-pointer">Imposta come configurazione attiva</Label>
             </div>
 
             <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
