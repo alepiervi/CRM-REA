@@ -389,6 +389,7 @@ test_plan:
     - "CreateClienteModal Dropdown Population Bug Fix"
     - "User Creation Enhancement - UNIT/SUB AGENZIA Assignment with Services"
     - "Document Management System Complete Testing"
+    - "Frontend Document Management System Testing"
 
 agent_communication:
     - agent: "main"
