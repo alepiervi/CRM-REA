@@ -14171,18 +14171,30 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     console.log("🎯 HANDLE SUBMIT CALLED - DEBUGGING");
     console.log("🎯 Form Data Before Validation:", formData);
     
-    // TEMPORARY: Remove all validation to test if form submission works
-    // Will add back validation once we confirm the submission process works
+    // Validate required fields
+    if (!formData.nome || !formData.cognome || !formData.telefono) {
+      alert("Per favore compila tutti i campi obbligatori: Nome, Cognome e Telefono");
+      return;
+    }
     
-    // Clean data
+    if (!formData.commessa_id || formData.commessa_id === "none") {
+      alert("Per favore seleziona una Commessa");
+      return;
+    }
+    
+    if (!formData.sub_agenzia_id || formData.sub_agenzia_id === "none") {
+      alert("Per favore seleziona una Sub Agenzia");
+      return;
+    }
+    
+    // Clean data - remove "none" values but keep valid IDs
     const cleanFormData = {
       ...formData,
-      // Convert "none" values to empty strings
       commessa_id: formData.commessa_id === "none" ? "" : formData.commessa_id,
       sub_agenzia_id: formData.sub_agenzia_id === "none" ? "" : formData.sub_agenzia_id,
-      servizio_id: formData.servizio_id === "none" ? "" : formData.servizio_id,
-      tipologia_contratto: formData.tipologia_contratto === "none" ? "" : formData.tipologia_contratto,
-      segmento: formData.segmento === "none" ? "" : formData.segmento
+      servizio_id: (!formData.servizio_id || formData.servizio_id === "none") ? null : formData.servizio_id,
+      tipologia_contratto: (!formData.tipologia_contratto || formData.tipologia_contratto === "none") ? null : formData.tipologia_contratto,
+      segmento: (!formData.segmento || formData.segmento === "none") ? null : formData.segmento
     };
     
     console.log("🎯 CLEAN FORM DATA FOR SUBMISSION:", cleanFormData);
