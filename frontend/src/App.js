@@ -14237,9 +14237,9 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     onClose();
   };
 
-  const availableSubAgenzie = formData.commessa_id  
+  const availableSubAgenzie = formData.commessa_id && formData.commessa_id !== ''
     ? subAgenzie.filter(sa => sa.commesse_autorizzate?.includes(formData.commessa_id))
-    : [];  // Se nessuna commessa selezionata, non mostrare sub agenzie
+    : subAgenzie;  // Se nessuna commessa selezionata o commessa vuota, mostra tutte le sub agenzie
   
   // 🔍 DEBUG: Log available sub agenzie after filtering
   useEffect(() => {
