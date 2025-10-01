@@ -3955,6 +3955,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   });
   const [isLoading, setIsLoading] = useState(false);
   const [servizi, setServizi] = useState([]);
+  const [serviziDisponibili, setServiziDisponibili] = useState([]); // NEW: Servizi per UNIT/SUB selezionata
   const { toast } = useToast();
 
   // Load servizi when commesse_autorizzate changes
@@ -3964,6 +3965,75 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
       handleCommessaChange(formData.commesse_autorizzate[0]);
     }
   }, [formData.commesse_autorizzate]);
+
+  // NEW: Load servizi when unit_id or sub_agenzia_id is set on mount
+  useEffect(() => {
+    if (formData.unit_id && formData.assignment_type === "unit") {
+      handleUnitChange(formData.unit_id);
+    } else if (formData.sub_agenzia_id && formData.assignment_type === "sub_agenzia") {
+      handleSubAgenziaChange(formData.sub_agenzia_id);
+    }
+  }, []);
+
+  // NEW: Fetch servizi quando si seleziona una UNIT
+  const handleUnitChange = async (unitId) => {
+    if (!unitId) {
+      setServiziDisponibili([]);
+      return;
+    }
+    
+    try {
+      console.log('🔄 EditUser: Fetching servizi for unit:', unitId);
+      const selectedUnitObj = units.find(u => u.id === unitId);
+      if (!selectedUnitObj || !selectedUnitObj.commesse_autorizzate) {
+        setServiziDisponibili([]);
+        return;
+      }
+      
+      const allServizi = [];
+      for (const commessaId of selectedUnitObj.commesse_autorizzate) {
+        try {
+          const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+          allServizi.push(...response.data);
+        } catch (error) {
+          console.error(`Error fetching servizi for commessa ${commessaId}:`, error);
+        }
+      }
+      
+      console.log('✅ EditUser: Servizi loaded for unit:', allServizi.length);
+      setServiziDisponibili(allServizi);
+    } catch (error) {
+      console.error("EditUser: Error fetching servizi for unit:", error);
+      setServiziDisponibili([]);
+    }
+  };
+
+  // NEW: Fetch servizi quando si seleziona una SUB AGENZIA
+  const handleSubAgenziaChange = async (subAgenziaId) => {
+    if (!subAgenziaId) {
+      setServiziDisponibili([]);
+      return;
+    }
+    
+    try {
+      console.log('🔄 EditUser: Fetching servizi for sub agenzia:', subAgenziaId);
+      const selectedSubAgenzia = subAgenzie.find(sa => sa.id === subAgenziaId);
+      if (!selectedSubAgenzia || !selectedSubAgenzia.servizi_autorizzati || selectedSubAgenzia.servizi_autorizzati.length === 0) {
+        setServiziDisponibili([]);
+        return;
+      }
+      
+      const response = await axios.get(`${API}/servizi`);
+      const allServizi = response.data;
+      const filteredServizi = allServizi.filter(s => selectedSubAgenzia.servizi_autorizzati.includes(s.id));
+      
+      console.log('✅ EditUser: Servizi loaded for sub agenzia:', filteredServizi.length);
+      setServiziDisponibili(filteredServizi);
+    } catch (error) {
+      console.error("EditUser: Error fetching servizi for sub agenzia:", error);
+      setServiziDisponibili([]);
+    }
+  };
 
   const handleCommessaChange = async (commessaId) => {
     if (commessaId) {
