@@ -14237,8 +14237,17 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   };
 
   const availableSubAgenzie = subAgenzie.filter(sa => 
-    sa.commesse_autorizzate.includes(formData.commessa_id)
+    sa.commesse_autorizzate?.includes(formData.commessa_id)
   );
+  
+  // 🔍 DEBUG: Log available sub agenzie after filtering
+  useEffect(() => {
+    console.log("🔍 availableSubAgenzie dopo filtro:", availableSubAgenzie.length, "elementi");
+    console.log("🔍 formData.commessa_id:", formData.commessa_id);
+    if (availableSubAgenzie.length > 0) {
+      console.log("🔍 Primo availableSubAgenzia:", JSON.stringify(availableSubAgenzie[0], null, 2));
+    }
+  }, [formData.commessa_id, subAgenzie]);
 
   if (!isOpen) return null;
 
