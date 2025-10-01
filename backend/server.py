@@ -9800,8 +9800,8 @@ async def upload_to_aruba_drive(
         finally:
             await automation.cleanup()
         
-        # Prepare Aruba Drive path
-        aruba_drive_path = f"/{entity_type}/{entity_id}/{unique_filename}"
+        # Prepare Aruba Drive path with organized structure
+        aruba_drive_path = f"/{commessa_name}/{servizio_name}/{client_name}_{client_surname}/{unique_filename}"
         
         # Save document metadata
         document_data = {
