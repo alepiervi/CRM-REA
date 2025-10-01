@@ -3812,53 +3812,7 @@ async def list_lead_documents(
         }
     }
 
-@api_router.get("/documents/download/{document_id}")
-async def download_document(
-    document_id: str,
-    current_user: User = Depends(get_current_user)
-):
-    """Download a specific document by document ID"""
-    
-    # Find document in database
-    document = await db.documents.find_one({
-        "document_id": document_id,
-        "is_active": True
-    })
-    
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-    
-    # Check access permissions
-    document_obj = Document(**document)
-    if not await can_user_access_document(current_user, document_obj):
-        raise HTTPException(status_code=403, detail="Access denied to this document")
-    
-    try:
-        # Download from Aruba Drive
-        file_content = await aruba_service.download_file(document["aruba_drive_file_id"])
-        
-        # Update download count
-        await db.documents.update_one(
-            {"document_id": document_id},
-            {
-                "$set": {"last_downloaded_at": datetime.now(timezone.utc)},
-                "$inc": {"download_count": 1}
-            }
-        )
-        
-        return StreamingResponse(
-            io.BytesIO(file_content),
-            media_type=document["content_type"],
-            headers={
-                "Content-Disposition": f"attachment; filename={document['original_filename']}"
-            }
-        )
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Download failed: {str(e)}"
-        )
+# REMOVED: Duplicate download endpoint - using newer version at line 9942
 
 # REMOVED: Duplicate delete endpoint - using newer version at line 9908
 
