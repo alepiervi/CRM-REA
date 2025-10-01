@@ -49,6 +49,7 @@ import {
   Database,
   LogOut, 
   Plus,
+  PlusIcon,
   UserPlus,
   Eye,
   EyeOff,
