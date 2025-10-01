@@ -14239,6 +14239,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     // Clean data - remove "none" values but keep valid IDs, and map enum values
     const cleanFormData = {
       ...formData,
+      email: formData.email || null, // Rimuovi email vuota
       commessa_id: formData.commessa_id === "none" ? "" : formData.commessa_id,
       sub_agenzia_id: formData.sub_agenzia_id === "none" ? "" : formData.sub_agenzia_id,
       servizio_id: (!formData.servizio_id || formData.servizio_id === "none") ? null : formData.servizio_id,
