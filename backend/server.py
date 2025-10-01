@@ -3701,44 +3701,41 @@ async def upload_document(
             raise HTTPException(status_code=403, detail="Access denied to this cliente")
     
     try:
-        # Validate file
-        await validate_uploaded_file(file)
+        # Create documents directory
+        documents_dir = Path("/app/documents")
+        documents_dir.mkdir(exist_ok=True)
         
-        # Save to temporary storage
-        temp_path = await save_temporary_file(file)
+        # Generate unique filename
+        file_extension = Path(file.filename).suffix
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = documents_dir / unique_filename
         
-        try:
-            # Upload to Aruba Drive
-            aruba_response = await aruba_service.upload_file(temp_path, file.filename)
-            
-            # Create database record
-            document = await create_document_record(doc_type, entity_id, file, aruba_response, uploaded_by)
-            
-            entity_info = {
-                "id": entity["id"],
-                "nome": entity["nome"],
-                "cognome": entity["cognome"]
-            }
-            
-            return {
-                "success": True,
-                "message": "Document uploaded successfully",
-                "document": {
-                    "id": document.id,
-                    "document_id": document.document_id,
-                    "filename": document.original_filename,
-                    "size": document.file_size,
-                    "upload_status": document.upload_status,
-                    "created_at": document.created_at.isoformat()
-                },
-                "entity": entity_info,
-                "document_type": doc_type
-            }
-            
-        finally:
-            # Clean up temporary file
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
+        # Save file
+        content = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(content)
+        
+        # Save document metadata
+        document_data = {
+            "id": str(uuid.uuid4()),
+            "entity_type": entity_type,  # Usa entity_type invece di document_type
+            "entity_id": entity_id,
+            "filename": file.filename,
+            "file_path": str(file_path),
+            "file_size": len(content),
+            "file_type": file.content_type,
+            "created_by": uploaded_by,
+            "created_at": datetime.now(timezone.utc)
+        }
+        
+        await db.documents.insert_one(document_data)
+        
+        return {
+            "success": True,
+            "message": "Documento caricato con successo",
+            "document_id": document_data["id"],
+            "filename": file.filename
+        }
                 
     except HTTPException:
         raise
