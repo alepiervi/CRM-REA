@@ -14117,7 +14117,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   }, [commesse, subAgenzie, selectedCommessa]);
 
   useEffect(() => {
-    if (selectedCommessa) {
+    if (selectedCommessa && selectedCommessa !== 'all') {
       setFormData(prev => ({ ...prev, commessa_id: selectedCommessa }));
       fetchServizi(selectedCommessa);
     }
