@@ -12904,6 +12904,15 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      <div className="flex items-center space-x-1">
+                        <User className="w-3 h-3 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {/* TODO: Mostrare nome utente creatore */}
+                          {cliente.created_by ? getUserDisplayName(cliente.created_by) : 'N/A'}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       {new Date(cliente.created_at).toLocaleDateString('it-IT')}
                     </TableCell>
                     <TableCell>
