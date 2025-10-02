@@ -14559,9 +14559,29 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     setSelectedData(prev => ({ ...prev, commessa_id: commessaId }));
     
     try {
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("❌ No JWT token found for cascade API call");
+        return;
+      }
+      
       // Load servizi autorizzati for this commessa
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/servizi-by-commessa/${commessaId}`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/servizi-by-commessa/${commessaId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`❌ CASCADE API Error: ${response.status} ${response.statusText}`);
+        return;
+      }
+      
       const servizi = await response.json();
+      console.log("✅ CASCADE: Servizi loaded successfully:", servizi);
       setCascadeServizi(Array.isArray(servizi) ? servizi : []);
       
       // Reset downstream selections
