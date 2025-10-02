@@ -8298,8 +8298,12 @@ async def update_cliente(
         # Prepare update data with special handling for empty fields
         update_dict = cliente_update.dict()
         
-        # Handle empty email field - convert empty string to None
+        # Handle empty email field - convert empty string to None, validate if not empty
         if update_dict.get('email') == "":
+            update_dict['email'] = None
+        elif update_dict.get('email') and '@' not in str(update_dict.get('email')):
+            # If email is provided but not valid, set to None
+            logging.warning(f"Invalid email format provided: {update_dict.get('email')}, setting to None")
             update_dict['email'] = None
         
         # Handle tipologia_contratto - convert UUID to enum string if needed
