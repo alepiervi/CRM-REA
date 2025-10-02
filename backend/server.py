@@ -8275,15 +8275,25 @@ async def update_cliente(
     current_user: User = Depends(get_current_user)
 ):
     """Update cliente"""
-    cliente_doc = await db.clienti.find_one({"id": cliente_id})
-    if not cliente_doc:
-        raise HTTPException(status_code=404, detail="Cliente not found")
+    try:
+        cliente_doc = await db.clienti.find_one({"id": cliente_id})
+        if not cliente_doc:
+            raise HTTPException(status_code=404, detail="Cliente not found")
+        
+        cliente = Cliente(**cliente_doc)
+        
+        # Verifica permessi di modifica
+        if not await can_user_modify_cliente(current_user, cliente):
+            raise HTTPException(status_code=403, detail="No permission to modify this cliente")
     
-    cliente = Cliente(**cliente_doc)
-    
-    # Verifica permessi di modifica
-    if not await can_user_modify_cliente(current_user, cliente):
-        raise HTTPException(status_code=403, detail="No permission to modify this cliente")
+    except HTTPException:
+        raise
+    except ValidationError as e:
+        logging.error(f"❌ CLIENT UPDATE VALIDATION ERROR: {e}")
+        raise HTTPException(status_code=422, detail=f"Errore validazione dati: {str(e)}")
+    except Exception as e:
+        logging.error(f"❌ CLIENT UPDATE ERROR: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
     
     # Prepare update data with special handling for empty fields
     update_dict = cliente_update.dict()
