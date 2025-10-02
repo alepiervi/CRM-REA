@@ -136,9 +136,9 @@ const AuthProvider = ({ children }) => {
   const [countdownTimer, setCountdownTimer] = useState(null);
   const [isCountdownActive, setIsCountdownActive] = useState(false);
 
-  // Activity timeout system - PRODUCTION (15 minutes with 2-minute countdown)
-  const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes = 900 seconds total
-  const WARNING_TIME = 13 * 60 * 1000;    // Show banner at 13 minutes = exactly 2 minutes (120 sec) left
+  // Activity timeout system - BUG-FREE TEST (25 seconds total)
+  const INACTIVITY_TIME = 25 * 1000;  // 25 seconds total for bug testing
+  const WARNING_TIME = 10 * 1000;     // Show banner at 10 seconds = 15 seconds left (simulates 2 min)
 
   const startActivityTimer = () => {
     console.log('🕒 Starting 15 minute inactivity timer');
