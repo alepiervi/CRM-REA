@@ -143,21 +143,14 @@ const AuthProvider = ({ children }) => {
   const startActivityTimer = () => {
     console.log('🕒 Starting 15 minute inactivity timer');
     
-    // Clear existing timers
+    // Clear ALL existing timers completely
     if (activityTimer) {
       clearTimeout(activityTimer);
     }
     warningTimers.forEach(timer => clearTimeout(timer));
     
-    // Clear countdown timer to prevent flickering
-    if (countdownTimer) {
-      clearInterval(countdownTimer);
-      setCountdownTimer(null);
-    }
-    
-    // Reset warning state
-    setShowSessionWarning(false);
-    setTimeLeft(0);
+    // Stop any active countdown
+    stopCountdown();
 
     // SINGLE WARNING TIMER - Shows banner with exactly 2 minutes left and counts down to 0
     const warningTimer = setTimeout(() => {
