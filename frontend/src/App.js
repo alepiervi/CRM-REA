@@ -134,6 +134,7 @@ const AuthProvider = ({ children }) => {
   const [showSessionWarning, setShowSessionWarning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [countdownTimer, setCountdownTimer] = useState(null);
+  const [isCountdownActive, setIsCountdownActive] = useState(false);
 
   // Activity timeout system - PRODUCTION (15 minutes with 2-minute countdown)
   const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes = 900 seconds total
