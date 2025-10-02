@@ -11992,7 +11992,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
 };
 
 // Clienti Management Component
-const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: commesseFromParent, subAgenzie: subAgenzieFromParent }) => {
+const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: commesseFromParent, subAgenzie: subAgenzieFromParent, servizi: serviziFromParent }) => {
   const [clienti, setClienti] = useState([]);
   const [allClienti, setAllClienti] = useState([]); // Store all clients for filtering
   const [commesse, setCommesse] = useState(commesseFromParent || []);
