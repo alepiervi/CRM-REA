@@ -8480,6 +8480,9 @@ async def update_cliente(
         update_data = {k: v for k, v in update_dict.items() if v is not None}
         update_data["updated_at"] = datetime.now(timezone.utc)
         
+        # 📝 LOG: Rileva i cambiamenti prima dell'aggiornamento
+        changes = detect_client_changes(cliente, update_data)
+        
         result = await db.clienti.update_one(
             {"id": cliente_id},
             {"$set": update_data}
@@ -8487,6 +8490,37 @@ async def update_cliente(
         
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Cliente not found")
+        
+        # 📝 LOG: Registra i cambiamenti nel log
+        if changes:
+            # Log generico di aggiornamento
+            change_descriptions = [change["description"] for change in changes]
+            
+            await log_client_action(
+                cliente_id=cliente_id,
+                action=ClienteLogAction.UPDATED,
+                description=f"Anagrafica aggiornata: {'; '.join(change_descriptions)}",
+                user=current_user,
+                old_value=f"{cliente.nome} {cliente.cognome}",
+                new_value=f"Aggiornati {len(changes)} campi",
+                metadata={
+                    "changes_count": len(changes),
+                    "changes": changes,
+                    "updated_fields": [change["field"] for change in changes]
+                }
+            )
+            
+            # Log specifico per cambio status (se presente)
+            status_change = next((change for change in changes if change["field"] == "status"), None)
+            if status_change:
+                await log_client_action(
+                    cliente_id=cliente_id,
+                    action=ClienteLogAction.STATUS_CHANGED,
+                    description=f"Status cambiato da '{status_change['old_value']}' a '{status_change['new_value']}'",
+                    user=current_user,
+                    old_value=status_change["old_value"],
+                    new_value=status_change["new_value"]
+                )
         
         cliente_doc = await db.clienti.find_one({"id": cliente_id})
         return Cliente(**cliente_doc)
