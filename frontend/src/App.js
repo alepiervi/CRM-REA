@@ -14973,7 +14973,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
         {/* CLIENT FORM (shown after offerta selection) */}
         {showClientForm && (
-        <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            
+            {/* SELECTED OFFERTA SUMMARY */}
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-6">
+              <h4 className="font-semibold text-green-800 mb-2">✅ Offerta Selezionata</h4>
+              <div className="text-sm text-green-700">
+                <div><strong>Offerta:</strong> {cascadeOfferte?.find(o => o.id === selectedData.offerta_id)?.nome}</div>
+                <div><strong>Segmento:</strong> {cascadeSegmenti?.find(s => s.id === selectedData.segmento)?.nome}</div>
+              </div>
+            </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="nome">Nome *</Label>
