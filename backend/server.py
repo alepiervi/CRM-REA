@@ -8285,7 +8285,14 @@ async def update_cliente(
     if not await can_user_modify_cliente(current_user, cliente):
         raise HTTPException(status_code=403, detail="No permission to modify this cliente")
     
-    update_data = {k: v for k, v in cliente_update.dict().items() if v is not None}
+    # Prepare update data with special handling for empty fields
+    update_dict = cliente_update.dict()
+    
+    # Handle empty email field - convert empty string to None
+    if update_dict.get('email') == "":
+        update_dict['email'] = None
+    
+    update_data = {k: v for k, v in update_dict.items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc)
     
     result = await db.clienti.update_one(
