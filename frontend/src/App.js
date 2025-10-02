@@ -14403,7 +14403,29 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
   );
 };
 
-const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, selectedCommessa }) => {
+const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, selectedCommessa, user }) => {
+  // STEP MANAGEMENT for cascading flow
+  const [currentStep, setCurrentStep] = useState('initial'); // initial, filiera, cliente
+  const [showClientForm, setShowClientForm] = useState(false);
+  
+  // SELECTION DATA for cascading
+  const [selectedData, setSelectedData] = useState({
+    sub_agenzia_id: '',
+    commessa_id: (selectedCommessa && selectedCommessa !== 'all') ? selectedCommessa : '',
+    servizio_id: '',
+    tipologia_contratto: '',
+    segmento: '',
+    offerta_id: ''
+  });
+
+  // CASCADING DATA ARRAYS
+  const [cascadeCommesse, setCascadeCommesse] = useState([]);
+  const [cascadeServizi, setCascadeServizi] = useState([]);
+  const [cascadeTipologie, setCascadeTipologie] = useState([]);
+  const [cascadeSegmenti, setCascadeSegmenti] = useState([]);
+  const [cascadeOfferte, setCascadeOfferte] = useState([]);
+
+  // CLIENT FORM DATA (shown after offerta selection)
   const [formData, setFormData] = useState({
     nome: '',
     cognome: '',
@@ -14415,14 +14437,10 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     cap: '',
     codice_fiscale: '',
     partita_iva: '',
-    commessa_id: (selectedCommessa && selectedCommessa !== 'all') ? selectedCommessa : '',
-    sub_agenzia_id: '',
-    servizio_id: '',
-    tipologia_contratto: '',
-    segmento: '',
     note: ''
   });
 
+  // LEGACY STATES (keep for compatibility)
   const [servizi, setServizi] = useState([]);
   const [createTipologieContratto, setCreateTipologieContratto] = useState([]);
   const [segmenti, setSegmenti] = useState([]);
