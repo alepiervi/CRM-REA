@@ -202,8 +202,8 @@ const AuthProvider = ({ children }) => {
       setCountdownTimer(null);
     }
     
-    // Start precise countdown from exactly 120 seconds
-    let currentTime = 120;
+    // Start precise countdown from exactly 15 seconds (for testing - will be 120 in production)
+    let currentTime = 15;
     setTimeLeft(currentTime);
     
     const newCountdownInterval = setInterval(() => {
