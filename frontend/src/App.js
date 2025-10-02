@@ -278,8 +278,14 @@ const AuthProvider = ({ children }) => {
 
     const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     
-    // Add event listeners for user activity - FIXED TO WORK!
-    const handleActivity = () => {
+    // Add event listeners for user activity - EXCLUDING BANNER INTERACTIONS!
+    const handleActivity = (event) => {
+      // Don't reset timer if user is interacting with session warning banner
+      if (event.target.closest('[data-session-banner]')) {
+        console.log('🚫 Ignoring activity on session banner');
+        return;
+      }
+      
       console.log('🎯 USER ACTIVITY DETECTED - Resetting 15-minute timer');
       startActivityTimer(); // This restarts the full 15-minute timer
     };
