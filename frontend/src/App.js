@@ -251,13 +251,13 @@ const AuthProvider = ({ children }) => {
           
           // Check if session was extended before logout
           setTimeout(() => {
-            if (!sessionExtended) {
+            if (!sessionExtendedRef.current) {
               console.log('🚪 Session expired - logging out user');
               setShowSessionWarning(false);
               logout();
             } else {
               console.log('✅ Session was extended - logout cancelled');
-              setSessionExtended(false); // Reset flag
+              sessionExtendedRef.current = false; // Reset flag
             }
           }, 100);
           return 0;
