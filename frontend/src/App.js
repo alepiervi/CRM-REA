@@ -130,8 +130,11 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [activityTimer, setActivityTimer] = useState(null);
 
-  // Activity timeout system - 14 minute timer like the other app
-  const INACTIVITY_TIME = 14 * 60 * 1000; // 14 minutes in milliseconds
+  // Activity timeout system - 15 minute timer with warnings
+  const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes in milliseconds
+  const WARNING_2_MIN = 13 * 60 * 1000;   // Show warning at 13 minutes (2 min left)
+  const WARNING_1_MIN = 14 * 60 * 1000;   // Show warning at 14 minutes (1 min left)
+  const WARNING_30_SEC = 14.5 * 60 * 1000; // Show warning at 14.5 minutes (30 sec left)
 
   const startActivityTimer = () => {
     console.log('Starting 14 minute timer');
