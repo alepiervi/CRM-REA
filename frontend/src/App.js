@@ -13053,6 +13053,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         commesse={commesse}
         subAgenzie={subAgenzie}
         selectedCommessa={selectedCommessaLocal}
+        user={user}
       />
 
       {/* Import Clienti Modal */}
