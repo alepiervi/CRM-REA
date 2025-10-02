@@ -1577,7 +1577,7 @@ const Dashboard = () => {
           console.log("Rendering ClientiManagement with props:", { selectedUnit, selectedCommessa, units: units?.length, commesse: commesse?.length, subAgenzie: subAgenzie?.length });
           if (user.role === "admin" || user.role === "responsabile_commessa") {
             try {
-              return <ClientiManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} selectedTipologiaContratto={selectedTipologiaContratto} units={units} commesse={commesse} subAgenzie={subAgenzie} />;
+              return <ClientiManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} selectedTipologiaContratto={selectedTipologiaContratto} units={units} commesse={commesse} subAgenzie={subAgenzie} servizi={servizi} />;
             } catch (error) {
               console.error("Error rendering ClientiManagement:", error);
               return <div className="p-4 text-red-600">Errore nel caricamento della gestione clienti: {error.message}</div>;
