@@ -14514,7 +14514,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       // Load commesse autorizzate for this sub agenzia
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/commesse-by-subagenzia/${subAgenziaId}`);
       const commesse = await response.json();
-      setCascadeCommesse(commesse);
+      setCascadeCommesse(Array.isArray(commesse) ? commesse : []);
       
       // Reset downstream selections
       setCascadeServizi([]);
