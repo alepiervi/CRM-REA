@@ -956,6 +956,7 @@ const Dashboard = () => {
     fetchCommesse();
     fetchSubAgenzie();
     fetchServizi();
+    fetchServizi();
     
     // Fetch assistants solo per admin
     if (user.role === "admin") {
