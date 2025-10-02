@@ -11584,13 +11584,9 @@ async def get_tipologie_autorizzate_by_servizio(
         authorized_tipologie_ids = servizio.get("tipologie_autorizzate", [])
         
         if not authorized_tipologie_ids:
-            # Fallback to hardcoded tipologie if none specified
-            return [
-                {"id": "energia_fastweb", "nome": "Energia Fastweb"},
-                {"id": "telefonia_fastweb", "nome": "Telefonia Fastweb"},
-                {"id": "ho_mobile", "nome": "Ho Mobile"},
-                {"id": "telepass", "nome": "Telepass"}
-            ]
+            # No fallback - return empty array if no tipologie are configured
+            logging.info("📭 CASCADE: No tipologie autorizzate found for servizio, returning empty array")
+            return []
         
         # Fetch authorized tipologie
         tipologie_docs = await db.tipologie_contratto.find({
