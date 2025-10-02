@@ -13182,6 +13182,138 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           clientName={selectedClientName}
         />
       )}
+
+      {/* Cliente History Modal */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <h2 className="text-xl font-semibold flex items-center">
+                  <History className="w-5 h-5 mr-2 text-blue-600" />
+                  Cronologia Cliente
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {selectedClientName} - Tutte le attività e modifiche
+                </p>
+              </div>
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setShowHistoryModal(false);
+                  setSelectedCliente(null);
+                  setClienteHistory([]);
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <Clock className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
+                    <p className="text-gray-600">Caricamento cronologia...</p>
+                  </div>
+                </div>
+              ) : clienteHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <History className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-600 mb-2">
+                    Nessuna attività registrata
+                  </h3>
+                  <p className="text-gray-500">
+                    Non ci sono ancora log di attività per questo cliente
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-medium text-gray-900">
+                      {clienteHistory.length} attività trovate
+                    </h3>
+                    <Badge variant="outline">
+                      Ordinamento: più recenti
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {clienteHistory.map((log, index) => (
+                      <div key={log.id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className={`w-2 h-2 rounded-full ${
+                                log.action === 'created' ? 'bg-green-500' :
+                                log.action === 'updated' ? 'bg-blue-500' :
+                                log.action === 'status_changed' ? 'bg-orange-500' :
+                                log.action === 'document_uploaded' ? 'bg-purple-500' :
+                                log.action === 'document_deleted' ? 'bg-red-500' :
+                                'bg-gray-500'
+                              }`} />
+                              <span className="font-medium text-gray-900">
+                                {log.action === 'created' ? '📋 Creazione' :
+                                 log.action === 'updated' ? '✏️ Modifica' :
+                                 log.action === 'status_changed' ? '🔄 Cambio Status' :
+                                 log.action === 'document_uploaded' ? '📄 Upload Documento' :
+                                 log.action === 'document_deleted' ? '🗑️ Eliminazione Documento' :
+                                 '🔍 Attività'}
+                              </span>
+                              <Badge variant="secondary" className="text-xs">
+                                {log.user_role}
+                              </Badge>
+                            </div>
+                            
+                            <p className="text-gray-700 mb-2">
+                              {log.description}
+                            </p>
+                            
+                            {(log.old_value || log.new_value) && (
+                              <div className="text-sm text-gray-500 bg-gray-100 rounded p-2">
+                                {log.old_value && (
+                                  <div>
+                                    <span className="font-medium">Prima:</span> {log.old_value}
+                                  </div>
+                                )}
+                                {log.new_value && (
+                                  <div>
+                                    <span className="font-medium">Dopo:</span> {log.new_value}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {log.metadata && Object.keys(log.metadata).length > 0 && (
+                              <details className="mt-2 text-xs text-gray-500">
+                                <summary className="cursor-pointer hover:text-gray-700">
+                                  Dettagli tecnici
+                                </summary>
+                                <pre className="mt-1 bg-gray-100 p-2 rounded text-xs overflow-x-auto">
+                                  {JSON.stringify(log.metadata, null, 2)}
+                                </pre>
+                              </details>
+                            )}
+                          </div>
+                          
+                          <div className="text-right text-sm text-gray-500">
+                            <div className="font-medium">
+                              {log.user_name}
+                            </div>
+                            <div>
+                              {log.timestamp_display || new Date(log.timestamp).toLocaleString('it-IT')}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
