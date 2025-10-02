@@ -286,12 +286,7 @@ const AuthProvider = ({ children }) => {
     showSessionWarningToast('✅ Sessione estesa per altri 15 minuti', 'default');
   };
 
-  const resetActivityTimer = () => {
-    console.log('Activity detected - resetting timer');
-    if (token && user) {
-      startActivityTimer();
-    }
-  };
+  // resetActivityTimer removed - using handleActivity directly in useEffect
 
   // Activity listeners
   useEffect(() => {
