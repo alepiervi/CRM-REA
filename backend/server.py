@@ -8202,6 +8202,23 @@ async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depen
     
     await db.clienti.insert_one(cliente.dict())
     
+    # 📝 LOG: Registra la creazione del cliente
+    await log_client_action(
+        cliente_id=cliente.id,
+        action=ClienteLogAction.CREATED,
+        description=f"Cliente creato: {cliente.nome} {cliente.cognome}",
+        user=current_user,
+        new_value=f"{cliente.nome} {cliente.cognome} - Tel: {cliente.telefono}",
+        metadata={
+            "commessa_id": cliente.commessa_id,
+            "sub_agenzia_id": cliente.sub_agenzia_id,
+            "servizio_id": cliente.servizio_id,
+            "tipologia_contratto": cliente.tipologia_contratto.value if cliente.tipologia_contratto else None,
+            "segmento": cliente.segmento.value if cliente.segmento else None,
+            "creation_method": "cascading_flow" if hasattr(cliente_data, 'created_via') else "standard_form"
+        }
+    )
+    
     return cliente
 
 @api_router.get("/clienti", response_model=List[Cliente])
