@@ -160,7 +160,14 @@ const AuthProvider = ({ children }) => {
 
     // SINGLE WARNING TIMER - Shows banner with exactly 2 minutes left and counts down to 0
     const warningTimer = setTimeout(() => {
-      console.log('⚠️ SHOWING BANNER: Exactly 2 minutes (120 seconds) remaining');
+      const timestamp = new Date().toLocaleTimeString();
+      console.log(`⚠️ [${timestamp}] SHOWING BANNER: Exactly 2 minutes (120 seconds) remaining`);
+      console.log('📊 Timer state before showing banner:', {
+        showSessionWarning,
+        timeLeft,
+        isCountdownActive
+      });
+      
       setShowSessionWarning(true);
       setTimeLeft(120); // Exactly 120 seconds = 2 minutes
       showSessionWarningToast('⚠️ La sessione scadrà tra 2 minuti', 'default');
