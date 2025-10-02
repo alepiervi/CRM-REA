@@ -14605,9 +14605,29 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     setSelectedData(prev => ({ ...prev, servizio_id: servizioId }));
     
     try {
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("❌ No JWT token found for cascade API call");
+        return;
+      }
+      
       // Load tipologie autorizzate for this servizio
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/tipologie-by-servizio/${servizioId}`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/tipologie-by-servizio/${servizioId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`❌ CASCADE API Error: ${response.status} ${response.statusText}`);
+        return;
+      }
+      
       const tipologie = await response.json();
+      console.log("✅ CASCADE: Tipologie loaded successfully:", tipologie);
       setCascadeTipologie(tipologie);
       
       // Reset downstream selections
