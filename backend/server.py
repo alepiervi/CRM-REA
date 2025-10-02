@@ -11516,9 +11516,17 @@ async def get_servizi_autorizzati_by_commessa(
             return []
         
         # Fetch authorized servizi
-        servizi = await db.servizi.find({
+        servizi_docs = await db.servizi.find({
             "id": {"$in": authorized_servizi_ids}
         }).to_list(length=None)
+        
+        # Convert to JSON serializable format
+        servizi = []
+        for doc in servizi_docs:
+            # Remove MongoDB ObjectId field
+            if '_id' in doc:
+                del doc['_id']
+            servizi.append(doc)
         
         return servizi
         
