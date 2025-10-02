@@ -11620,14 +11620,14 @@ async def get_offerte_by_filiera(
     """Get offerte based on entire selection chain (commessa, servizio, tipologia, segmento)"""
     try:
         # Query offerte based on the full selection chain
-        offerte = await db.offerte.find({
+        offerte_docs = await db.offerte.find({
             "commessa_id": commessa_id,
             "servizio_id": servizio_id,
             "tipologia_contratto_id": tipologia_id,
             "segmento_id": segmento_id
         }).to_list(length=None)
         
-        if not offerte:
+        if not offerte_docs:
             # Create default offerta based on selections
             return [{
                 "id": f"offerta_{segmento_id}_{tipologia_id}",
@@ -11638,6 +11638,14 @@ async def get_offerte_by_filiera(
                 "segmento_id": segmento_id,
                 "descrizione": "Offerta standard per la combinazione selezionata"
             }]
+        
+        # Convert to JSON serializable format
+        offerte = []
+        for doc in offerte_docs:
+            # Remove MongoDB ObjectId field
+            if '_id' in doc:
+                del doc['_id']
+            offerte.append(doc)
         
         return offerte
         
