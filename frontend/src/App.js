@@ -134,11 +134,11 @@ const AuthProvider = ({ children }) => {
   const [showSessionWarning, setShowSessionWarning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
 
-  // Activity timeout system - 15 minute timer with warnings
-  const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes in milliseconds
-  const WARNING_2_MIN = 13 * 60 * 1000;   // Show warning at 13 minutes (2 min left)
-  const WARNING_1_MIN = 14 * 60 * 1000;   // Show warning at 14 minutes (1 min left)
-  const WARNING_30_SEC = 14.5 * 60 * 1000; // Show warning at 14.5 minutes (30 sec left)
+  // Activity timeout system - FINAL TEST EXTEND BUTTON (20 seconds)
+  const INACTIVITY_TIME = 20 * 1000;  // 20 seconds for final test
+  const WARNING_2_MIN = 5 * 1000;     // Warning at 5 seconds (15 sec left)  
+  const WARNING_1_MIN = 10 * 1000;    // Warning at 10 seconds (10 sec left)
+  const WARNING_30_SEC = 15 * 1000;   // Warning at 15 seconds (5 sec left)
 
   const startActivityTimer = () => {
     console.log('🕒 Starting 15 minute inactivity timer');
