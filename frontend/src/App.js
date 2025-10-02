@@ -12295,6 +12295,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   });
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Get filtered clients (combining search and date filters)
   const getFilteredClients = () => {
