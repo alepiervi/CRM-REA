@@ -14493,12 +14493,130 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     }
   };
 
-  useEffect(() => {
-    if (selectedCommessa && selectedCommessa !== 'all') {
-      setFormData(prev => ({ ...prev, commessa_id: selectedCommessa }));
-      fetchServizi(selectedCommessa);
+  // ===== CASCADE HANDLERS =====
+  
+  const handleSubAgenziaSelect = async (subAgenziaId) => {
+    console.log("🏢 Sub Agenzia selected:", subAgenziaId);
+    setSelectedData(prev => ({ ...prev, sub_agenzia_id: subAgenziaId }));
+    
+    try {
+      // Load commesse autorizzate for this sub agenzia
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/commesse-by-subagenzia/${subAgenziaId}`);
+      const commesse = await response.json();
+      setCascadeCommesse(commesse);
+      
+      // Reset downstream selections
+      setCascadeServizi([]);
+      setCascadeTipologie([]);
+      setCascadeSegmenti([]);
+      setCascadeOfferte([]);
+      setSelectedData(prev => ({ 
+        ...prev, 
+        commessa_id: '', 
+        servizio_id: '', 
+        tipologia_contratto: '', 
+        segmento: '', 
+        offerta_id: '' 
+      }));
+    } catch (error) {
+      console.error("Error loading commesse:", error);
     }
-  }, [selectedCommessa]);
+  };
+
+  const handleCommessaSelect = async (commessaId) => {
+    console.log("📋 Commessa selected:", commessaId);
+    setSelectedData(prev => ({ ...prev, commessa_id: commessaId }));
+    
+    try {
+      // Load servizi autorizzati for this commessa
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/servizi-by-commessa/${commessaId}`);
+      const servizi = await response.json();
+      setCascadeServizi(servizi);
+      
+      // Reset downstream selections
+      setCascadeTipologie([]);
+      setCascadeSegmenti([]);
+      setCascadeOfferte([]);
+      setSelectedData(prev => ({ 
+        ...prev, 
+        servizio_id: '', 
+        tipologia_contratto: '', 
+        segmento: '', 
+        offerta_id: '' 
+      }));
+    } catch (error) {
+      console.error("Error loading servizi:", error);
+    }
+  };
+
+  const handleServizioSelect = async (servizioId) => {
+    console.log("⚙️ Servizio selected:", servizioId);
+    setSelectedData(prev => ({ ...prev, servizio_id: servizioId }));
+    
+    try {
+      // Load tipologie autorizzate for this servizio
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/tipologie-by-servizio/${servizioId}`);
+      const tipologie = await response.json();
+      setCascadeTipologie(tipologie);
+      
+      // Reset downstream selections
+      setCascadeSegmenti([]);
+      setCascadeOfferte([]);
+      setSelectedData(prev => ({ 
+        ...prev, 
+        tipologia_contratto: '', 
+        segmento: '', 
+        offerta_id: '' 
+      }));
+    } catch (error) {
+      console.error("Error loading tipologie:", error);
+    }
+  };
+
+  const handleTipologiaSelect = async (tipologiaId) => {
+    console.log("📝 Tipologia selected:", tipologiaId);
+    setSelectedData(prev => ({ ...prev, tipologia_contratto: tipologiaId }));
+    
+    try {
+      // Load segmenti for this tipologia
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/segmenti-by-tipologia/${tipologiaId}`);
+      const segmenti = await response.json();
+      setCascadeSegmenti(segmenti);
+      
+      // Reset downstream selections
+      setCascadeOfferte([]);
+      setSelectedData(prev => ({ ...prev, segmento: '', offerta_id: '' }));
+    } catch (error) {
+      console.error("Error loading segmenti:", error);
+    }
+  };
+
+  const handleSegmentoSelect = async (segmentoId) => {
+    console.log("🎯 Segmento selected:", segmentoId);
+    setSelectedData(prev => ({ ...prev, segmento: segmentoId }));
+    
+    try {
+      // Load offerte based on entire selection chain
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/cascade/offerte-by-filiera?commessa_id=${selectedData.commessa_id}&servizio_id=${selectedData.servizio_id}&tipologia_id=${selectedData.tipologia_contratto}&segmento_id=${segmentoId}`
+      );
+      const offerte = await response.json();
+      setCascadeOfferte(offerte);
+      
+      setSelectedData(prev => ({ ...prev, offerta_id: '' }));
+    } catch (error) {
+      console.error("Error loading offerte:", error);
+    }
+  };
+
+  const handleOffertaSelect = (offertaId) => {
+    console.log("💡 Offerta selected:", offertaId);
+    setSelectedData(prev => ({ ...prev, offerta_id: offertaId }));
+    
+    // Show client form after offerta selection
+    setShowClientForm(true);
+    setCurrentStep('cliente');
+  };
 
   useEffect(() => {
     fetchSegmenti();
