@@ -11459,6 +11459,160 @@ async def manual_aruba_drive_upload(
         logger.error(f"Manual Aruba Drive upload error: {e}")
         raise HTTPException(status_code=500, detail=f"Errore upload Aruba Drive: {str(e)}")
 
+# ===== ENDPOINTS FOR CASCADING CLIENT CREATION FLOW =====
+
+@api_router.get("/cascade/commesse-by-subagenzia/{sub_agenzia_id}")
+async def get_commesse_by_subagenzia(
+    sub_agenzia_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get commesse autorizzate for a specific sub agenzia"""
+    try:
+        # Find sub agenzia and get authorized commesse
+        sub_agenzia = await db.sub_agenzie.find_one({"id": sub_agenzia_id})
+        if not sub_agenzia:
+            raise HTTPException(status_code=404, detail="Sub Agenzia non trovata")
+        
+        # Get authorized commesse IDs
+        authorized_commesse_ids = sub_agenzia.get("commesse_autorizzate", [])
+        
+        if not authorized_commesse_ids:
+            return []
+        
+        # Fetch authorized commesse
+        commesse = await db.commesse.find({
+            "id": {"$in": authorized_commesse_ids}
+        }).to_list(length=None)
+        
+        return commesse
+        
+    except Exception as e:
+        logging.error(f"Error fetching commesse by sub agenzia: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento commesse: {str(e)}")
+
+@api_router.get("/cascade/servizi-by-commessa/{commessa_id}")
+async def get_servizi_autorizzati_by_commessa(
+    commessa_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get servizi autorizzati for a specific commessa"""
+    try:
+        commessa = await db.commesse.find_one({"id": commessa_id})
+        if not commessa:
+            raise HTTPException(status_code=404, detail="Commessa non trovata")
+        
+        # Get authorized servizi IDs
+        authorized_servizi_ids = commessa.get("servizi_autorizzati", [])
+        
+        if not authorized_servizi_ids:
+            return []
+        
+        # Fetch authorized servizi
+        servizi = await db.servizi.find({
+            "id": {"$in": authorized_servizi_ids}
+        }).to_list(length=None)
+        
+        return servizi
+        
+    except Exception as e:
+        logging.error(f"Error fetching servizi by commessa: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento servizi: {str(e)}")
+
+@api_router.get("/cascade/tipologie-by-servizio/{servizio_id}")
+async def get_tipologie_autorizzate_by_servizio(
+    servizio_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get tipologie contratto autorizzate for a specific servizio"""
+    try:
+        servizio = await db.servizi.find_one({"id": servizio_id})
+        if not servizio:
+            raise HTTPException(status_code=404, detail="Servizio non trovato")
+        
+        # Get authorized tipologie IDs
+        authorized_tipologie_ids = servizio.get("tipologie_autorizzate", [])
+        
+        if not authorized_tipologie_ids:
+            # Fallback to hardcoded tipologie if none specified
+            return [
+                {"id": "energia_fastweb", "nome": "Energia Fastweb"},
+                {"id": "telefonia_fastweb", "nome": "Telefonia Fastweb"},
+                {"id": "ho_mobile", "nome": "Ho Mobile"},
+                {"id": "telepass", "nome": "Telepass"}
+            ]
+        
+        # Fetch authorized tipologie
+        tipologie = await db.tipologie_contratto.find({
+            "id": {"$in": authorized_tipologie_ids}
+        }).to_list(length=None)
+        
+        return tipologie
+        
+    except Exception as e:
+        logging.error(f"Error fetching tipologie by servizio: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento tipologie: {str(e)}")
+
+@api_router.get("/cascade/segmenti-by-tipologia/{tipologia_id}")
+async def get_segmenti_by_tipologia(
+    tipologia_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get segmenti associati for a specific tipologia contratto"""
+    try:
+        # Query segmenti based on tipologia
+        segmenti = await db.segmenti.find({
+            "tipologia_contratto_id": tipologia_id
+        }).to_list(length=None)
+        
+        if not segmenti:
+            # Fallback to standard segmenti
+            return [
+                {"id": "residenziale", "nome": "Residenziale", "tipologia_contratto_id": tipologia_id},
+                {"id": "business", "nome": "Business", "tipologia_contratto_id": tipologia_id}
+            ]
+        
+        return segmenti
+        
+    except Exception as e:
+        logging.error(f"Error fetching segmenti by tipologia: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento segmenti: {str(e)}")
+
+@api_router.get("/cascade/offerte-by-filiera")
+async def get_offerte_by_filiera(
+    commessa_id: str,
+    servizio_id: str, 
+    tipologia_id: str,
+    segmento_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get offerte based on entire selection chain (commessa, servizio, tipologia, segmento)"""
+    try:
+        # Query offerte based on the full selection chain
+        offerte = await db.offerte.find({
+            "commessa_id": commessa_id,
+            "servizio_id": servizio_id,
+            "tipologia_contratto_id": tipologia_id,
+            "segmento_id": segmento_id
+        }).to_list(length=None)
+        
+        if not offerte:
+            # Create default offerta based on selections
+            return [{
+                "id": f"offerta_{segmento_id}_{tipologia_id}",
+                "nome": f"Offerta Standard {segmento_id.title()}",
+                "commessa_id": commessa_id,
+                "servizio_id": servizio_id,
+                "tipologia_contratto_id": tipologia_id,
+                "segmento_id": segmento_id,
+                "descrizione": "Offerta standard per la combinazione selezionata"
+            }]
+        
+        return offerte
+        
+    except Exception as e:
+        logging.error(f"Error fetching offerte by filiera: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento offerte: {str(e)}")
+
 # Include the router in the main app (MUST be after all endpoints are defined)
 app.include_router(api_router)
 
