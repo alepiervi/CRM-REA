@@ -11584,16 +11584,24 @@ async def get_segmenti_by_tipologia(
     """Get segmenti associati for a specific tipologia contratto"""
     try:
         # Query segmenti based on tipologia
-        segmenti = await db.segmenti.find({
+        segmenti_docs = await db.segmenti.find({
             "tipologia_contratto_id": tipologia_id
         }).to_list(length=None)
         
-        if not segmenti:
+        if not segmenti_docs:
             # Fallback to standard segmenti
             return [
                 {"id": "residenziale", "nome": "Residenziale", "tipologia_contratto_id": tipologia_id},
                 {"id": "business", "nome": "Business", "tipologia_contratto_id": tipologia_id}
             ]
+        
+        # Convert to JSON serializable format
+        segmenti = []
+        for doc in segmenti_docs:
+            # Remove MongoDB ObjectId field
+            if '_id' in doc:
+                del doc['_id']
+            segmenti.append(doc)
         
         return segmenti
         
