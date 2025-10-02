@@ -406,7 +406,7 @@ test_plan:
 
   - task: "Cascading Client Creation Flow Testing and Form Customization"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/App.js, /app/backend/server.py"
     stuck_count: 0
     priority: "critical"
