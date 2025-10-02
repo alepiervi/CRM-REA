@@ -13080,7 +13080,16 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     Documenti
                   </Button>
                   
-                  {/* Seconda riga: Modifica e Elimina */}
+                  {/* Seconda riga: Log e Modifica */}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewClienteHistory(cliente)}
+                    className="w-full"
+                  >
+                    <History className="w-4 h-4 mr-1" />
+                    Log
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -13090,6 +13099,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     <Edit className="w-4 h-4 mr-1" />
                     Modifica
                   </Button>
+                  
+                  {/* Terza riga: Elimina (full width) */}
                   <Button 
                     variant="destructive" 
                     size="sm"
@@ -13098,7 +13109,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                         deleteCliente(cliente.id);
                       }
                     }}
-                    className="w-full"
+                    className="w-full col-span-2"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
                     Elimina
