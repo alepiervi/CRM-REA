@@ -11480,9 +11480,17 @@ async def get_commesse_by_subagenzia(
             return []
         
         # Fetch authorized commesse
-        commesse = await db.commesse.find({
+        commesse_docs = await db.commesse.find({
             "id": {"$in": authorized_commesse_ids}
         }).to_list(length=None)
+        
+        # Convert to Pydantic models to ensure JSON serialization
+        commesse = []
+        for doc in commesse_docs:
+            # Remove MongoDB ObjectId field
+            if '_id' in doc:
+                del doc['_id']
+            commesse.append(doc)
         
         return commesse
         
