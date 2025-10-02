@@ -14899,8 +14899,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">Seleziona Tipologia...</option>
-                    {cascadeTipologie?.map(tipologia => (
-                      <option key={tipologia.id} value={tipologia.id}>{tipologia.nome}</option>
+                    {Array.isArray(cascadeTipologie) && cascadeTipologie.map(tipologia => (
+                      <option key={tipologia?.id || Math.random()} value={tipologia?.id}>{tipologia?.nome || 'Nome non disponibile'}</option>
                     ))}
                   </select>
                 </div>
