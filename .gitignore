@@ -400,3 +400,7 @@ frontend/node_modules/.cache/default-development/55.pack
 frontend/node_modules/.cache/default-development/56.pack
 frontend/node_modules/.cache/default-development/58.pack
 frontend/node_modules/.cache/default-development/59.pack
+-e 
+# Environment files
+*.env
+*.env.*
