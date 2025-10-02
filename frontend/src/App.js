@@ -276,7 +276,8 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (!token || !user) return;
 
-    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    // Only significant user activities (removed mousemove to reduce noise)
+    const activityEvents = ['mousedown', 'keydown', 'click', 'touchstart', 'scroll'];
     
     // Add event listeners for user activity - EXCLUDING BANNER INTERACTIONS!
     const handleActivity = (event) => {
