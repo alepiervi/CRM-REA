@@ -136,9 +136,9 @@ const AuthProvider = ({ children }) => {
   const [countdownTimer, setCountdownTimer] = useState(null);
   const [isCountdownActive, setIsCountdownActive] = useState(false);
 
-  // Activity timeout system - PRODUCTION (15 minutes with 2-minute countdown)
-  const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes = 900 seconds total  
-  const WARNING_TIME = 13 * 60 * 1000;    // Show banner at 13 minutes = exactly 2 minutes left
+  // Activity timeout system - DEBUG EXTEND SESSION (30 seconds total)
+  const INACTIVITY_TIME = 30 * 1000;  // 30 seconds total for extend session debugging
+  const WARNING_TIME = 15 * 1000;     // Show banner at 15 seconds = 15 seconds left
 
   const startActivityTimer = () => {
     const timestamp = new Date().toLocaleTimeString();
