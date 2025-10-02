@@ -14542,7 +14542,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       // Load servizi autorizzati for this commessa
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/servizi-by-commessa/${commessaId}`);
       const servizi = await response.json();
-      setCascadeServizi(servizi);
+      setCascadeServizi(Array.isArray(servizi) ? servizi : []);
       
       // Reset downstream selections
       setCascadeTipologie([]);
