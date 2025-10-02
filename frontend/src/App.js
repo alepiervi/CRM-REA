@@ -14687,11 +14687,32 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     setSelectedData(prev => ({ ...prev, segmento: segmentoId }));
     
     try {
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("❌ No JWT token found for cascade API call");
+        return;
+      }
+      
       // Load offerte based on entire selection chain
       const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/cascade/offerte-by-filiera?commessa_id=${selectedData.commessa_id}&servizio_id=${selectedData.servizio_id}&tipologia_id=${selectedData.tipologia_contratto}&segmento_id=${segmentoId}`
+        `${process.env.REACT_APP_BACKEND_URL}/api/cascade/offerte-by-filiera?commessa_id=${selectedData.commessa_id}&servizio_id=${selectedData.servizio_id}&tipologia_id=${selectedData.tipologia_contratto}&segmento_id=${segmentoId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
       );
+      
+      if (!response.ok) {
+        console.error(`❌ CASCADE API Error: ${response.status} ${response.statusText}`);
+        return;
+      }
+      
       const offerte = await response.json();
+      console.log("✅ CASCADE: Offerte loaded successfully:", offerte);
       setCascadeOfferte(offerte);
       
       setSelectedData(prev => ({ ...prev, offerta_id: '' }));
