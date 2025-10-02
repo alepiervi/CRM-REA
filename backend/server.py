@@ -8534,6 +8534,53 @@ async def update_cliente(
         logging.error(f"❌ CLIENT UPDATE ERROR: {e}")
         raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
 
+@api_router.get("/clienti/{cliente_id}/logs")
+async def get_cliente_logs(
+    cliente_id: str,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """Recupera la cronologia completa delle azioni per un cliente"""
+    
+    # Verifica che l'utente possa accedere a questo cliente
+    cliente_doc = await db.clienti.find_one({"id": cliente_id})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente not found")
+    
+    cliente = Cliente(**cliente_doc)
+    
+    # Verifica permessi (stesso controllo degli altri endpoint clienti)
+    if not await can_user_modify_cliente(current_user, cliente):
+        raise HTTPException(status_code=403, detail="No permission to view this cliente's logs")
+    
+    try:
+        # Recupera i log ordinati per timestamp (più recenti prima)
+        logs_cursor = db.clienti_logs.find({"cliente_id": cliente_id}).sort("timestamp", -1).limit(limit)
+        logs = await logs_cursor.to_list(length=None)
+        
+        # Rimuovi _id MongoDB e formatta per il frontend
+        formatted_logs = []
+        for log in logs:
+            if '_id' in log:
+                del log['_id']
+            
+            # Formatta timestamp per display user-friendly
+            if isinstance(log.get('timestamp'), datetime):
+                log['timestamp_display'] = log['timestamp'].strftime('%d/%m/%Y %H:%M:%S')
+            
+            formatted_logs.append(log)
+        
+        return {
+            "cliente_id": cliente_id,
+            "cliente_name": f"{cliente.nome} {cliente.cognome}",
+            "total_logs": len(formatted_logs),
+            "logs": formatted_logs
+        }
+        
+    except Exception as e:
+        logging.error(f"Error fetching cliente logs: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero dei log: {str(e)}")
+
 @api_router.delete("/clienti/{cliente_id}")
 async def delete_cliente(
     cliente_id: str,
