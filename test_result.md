@@ -380,7 +380,8 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus: 
+    - "Cascading Client Creation Flow Testing and Form Customization"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
