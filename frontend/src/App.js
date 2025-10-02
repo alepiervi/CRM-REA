@@ -14882,8 +14882,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">Seleziona Servizio...</option>
-                    {cascadeServizi?.map(servizio => (
-                      <option key={servizio.id} value={servizio.id}>{servizio.nome}</option>
+                    {Array.isArray(cascadeServizi) && cascadeServizi.map(servizio => (
+                      <option key={servizio?.id || Math.random()} value={servizio?.id}>{servizio?.nome || 'Nome non disponibile'}</option>
                     ))}
                   </select>
                 </div>
