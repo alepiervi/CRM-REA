@@ -176,7 +176,7 @@ const AuthProvider = ({ children }) => {
     }, INACTIVITY_TIME);
 
     setActivityTimer(finalTimer);
-    setWarningTimers([warning2MinTimer, warning1MinTimer, warning30SecTimer]);
+    setWarningTimers([warningTimer]);
   };
 
   const showSessionWarningToast = (message, variant = 'default') => {
