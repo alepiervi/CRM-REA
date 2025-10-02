@@ -244,15 +244,15 @@ const AuthProvider = ({ children }) => {
           setCountdownTimer(null);
           setIsCountdownActive(false);
           
-          // Check if session warning is still shown - if not, user extended session
+          // Check if session was extended before logout
           setTimeout(() => {
-            // Double-check if session was extended during the timeout
-            if (showSessionWarning) {
+            if (!sessionExtended) {
               console.log('🚪 Session expired - logging out user');
               setShowSessionWarning(false);
               logout();
             } else {
               console.log('✅ Session was extended - logout cancelled');
+              setSessionExtended(false); // Reset flag
             }
           }, 100);
           return 0;
