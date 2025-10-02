@@ -1687,6 +1687,40 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex overflow-hidden">
+      {/* Session Warning Banner */}
+      {showSessionWarning && timeLeft > 0 && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 border-b-4 border-amber-600 text-white px-4 py-3 shadow-lg">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center animate-pulse">
+                <span className="text-amber-500 text-sm font-bold">!</span>
+              </div>
+              <div>
+                <p className="font-semibold">⚠️ Attenzione: La sessione sta per scadere</p>
+                <p className="text-sm">
+                  Tempo rimanente: <span className="font-mono font-bold text-amber-100">
+                    {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={extendSession}
+                className="bg-white text-amber-600 px-4 py-2 rounded-lg font-medium hover:bg-amber-50 transition-colors"
+              >
+                ⏱️ Estendi Sessione
+              </button>
+              <button
+                onClick={() => setShowSessionWarning(false)}
+                className="text-white hover:text-amber-200 p-1"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* 🎯 MOBILE: Mobile Menu Overlay */}
       {isMobile && (
         <div>
