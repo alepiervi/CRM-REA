@@ -194,50 +194,70 @@ const AuthProvider = ({ children }) => {
   };
 
   const startCountdown = () => {
-    console.log('🕒 STARTING PRECISE 120-SECOND COUNTDOWN');
+    console.log('🕒 STARTING ULTRA-ROBUST 120-SECOND COUNTDOWN');
     
-    // Clear any existing countdown timer
+    // Prevent multiple countdowns
+    if (isCountdownActive) {
+      console.log('⚠️ Countdown already active, skipping');
+      return;
+    }
+    
+    // Clear any existing countdown timer completely
     if (countdownTimer) {
       console.log('🧹 Clearing existing countdown timer');
       clearInterval(countdownTimer);
       setCountdownTimer(null);
     }
     
-    // Start precise countdown from exactly 120 seconds (2 minutes)
-    let currentTime = 120;
-    setTimeLeft(currentTime);
+    setIsCountdownActive(true);
+    
+    // Use React state for precise countdown (no local variables)
+    setTimeLeft(120); // Start with exactly 120 seconds
     
     const newCountdownInterval = setInterval(() => {
-      currentTime = currentTime - 1;
-      
-      console.log(`⏱️ Countdown: ${currentTime} seconds remaining`);
-      
-      // Toast notifications at 1 minute and 30 seconds milestones
-      if (currentTime === 60) {
-        console.log('⏰ 1 minute milestone');
-        showSessionWarningToast('🚨 ATTENZIONE: La sessione scadrà tra 1 minuto!', 'destructive');
-      }
-      if (currentTime === 30) {
-        console.log('🚨 30 seconds milestone');
-        showSessionWarningToast('🚨 ULTIMO AVVISO: Sessione scade tra 30 secondi!', 'destructive');
-      }
-      
-      // Update the display
-      setTimeLeft(currentTime);
-      
-      // End countdown when time reaches 0
-      if (currentTime <= 0) {
-        console.log('⏰ COUNTDOWN FINISHED - LOGGING OUT');
-        clearInterval(newCountdownInterval);
-        setCountdownTimer(null);
-        setShowSessionWarning(false);
-        setTimeout(logout, 1000); // Logout after 1 second delay
-        return;
-      }
+      setTimeLeft(prevTime => {
+        const newTime = prevTime - 1;
+        
+        console.log(`⏱️ Countdown: ${newTime} seconds remaining`);
+        
+        // Toast notifications at milestones (only once)
+        if (newTime === 60) {
+          console.log('⏰ 1 minute milestone');
+          showSessionWarningToast('🚨 ATTENZIONE: La sessione scadrà tra 1 minuto!', 'destructive');
+        }
+        if (newTime === 30) {
+          console.log('🚨 30 seconds milestone');
+          showSessionWarningToast('🚨 ULTIMO AVVISO: Sessione scade tra 30 secondi!', 'destructive');
+        }
+        
+        // End countdown when time reaches 0
+        if (newTime <= 0) {
+          console.log('⏰ COUNTDOWN FINISHED - LOGGING OUT');
+          clearInterval(newCountdownInterval);
+          setCountdownTimer(null);
+          setIsCountdownActive(false);
+          setShowSessionWarning(false);
+          setTimeout(logout, 1000);
+          return 0;
+        }
+        
+        return newTime;
+      });
     }, 1000);
     
     setCountdownTimer(newCountdownInterval);
-    console.log('✅ Countdown timer started successfully');
+    console.log('✅ Ultra-robust countdown timer started successfully');
+  };
+  
+  const stopCountdown = () => {
+    console.log('🛑 STOPPING COUNTDOWN');
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      setCountdownTimer(null);
+    }
+    setIsCountdownActive(false);
+    setShowSessionWarning(false);
+    setTimeLeft(0);
   };
 
   const extendSession = () => {
