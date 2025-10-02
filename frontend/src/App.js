@@ -14933,8 +14933,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">Seleziona Offerta...</option>
-                    {cascadeOfferte?.map(offerta => (
-                      <option key={offerta.id} value={offerta.id}>{offerta.nome}</option>
+                    {Array.isArray(cascadeOfferte) && cascadeOfferte.map(offerta => (
+                      <option key={offerta?.id || Math.random()} value={offerta?.id}>{offerta?.nome || 'Nome non disponibile'}</option>
                     ))}
                   </select>
                 </div>
