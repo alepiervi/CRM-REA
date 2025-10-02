@@ -201,15 +201,23 @@ const AuthProvider = ({ children }) => {
   };
 
   const startCountdown = () => {
-    const countdownInterval = setInterval(() => {
+    // Clear any existing countdown timer to prevent multiple intervals
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+    }
+    
+    const newCountdownInterval = setInterval(() => {
       setTimeLeft(prevTime => {
         if (prevTime <= 1) {
-          clearInterval(countdownInterval);
+          clearInterval(newCountdownInterval);
+          setCountdownTimer(null);
           return 0;
         }
         return prevTime - 1;
       });
     }, 1000);
+    
+    setCountdownTimer(newCountdownInterval);
   };
 
   const extendSession = () => {
