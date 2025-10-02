@@ -150,6 +150,12 @@ const AuthProvider = ({ children }) => {
     }
     warningTimers.forEach(timer => clearTimeout(timer));
     
+    // Clear countdown timer to prevent flickering
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      setCountdownTimer(null);
+    }
+    
     // Reset warning state
     setShowSessionWarning(false);
     setTimeLeft(0);
