@@ -12798,6 +12798,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           }}
           commesse={commesse}
           subAgenzie={subAgenzie}
+          servizi={servizi}
         />
       )}
 
