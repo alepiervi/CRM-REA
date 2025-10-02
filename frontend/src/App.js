@@ -211,14 +211,14 @@ const AuthProvider = ({ children }) => {
       
       console.log(`⏱️ Countdown: ${currentTime} seconds remaining`);
       
-      // Toast notifications at specific times (without disrupting countdown)
-      if (currentTime === 60) {
-        console.log('⏰ 1 minute milestone');
-        showSessionWarningToast('🚨 ATTENZIONE: La sessione scadrà tra 1 minuto!', 'destructive');
+      // Toast notifications at specific times (for testing: 10 sec and 5 sec)
+      if (currentTime === 10) {
+        console.log('⏰ 10 seconds milestone');
+        showSessionWarningToast('🚨 ATTENZIONE: La sessione scadrà tra 10 secondi!', 'destructive');
       }
-      if (currentTime === 30) {
-        console.log('🚨 30 seconds milestone');
-        showSessionWarningToast('🚨 ULTIMO AVVISO: Sessione scade tra 30 secondi!', 'destructive');
+      if (currentTime === 5) {
+        console.log('🚨 5 seconds milestone');
+        showSessionWarningToast('🚨 ULTIMO AVVISO: Sessione scade tra 5 secondi!', 'destructive');
       }
       
       // Update the display
