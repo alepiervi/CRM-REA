@@ -371,12 +371,19 @@ const AuthProvider = ({ children }) => {
 
   // Clear timer on logout
   const logout = () => {
-    console.log('Logging out user');
+    console.log('🚪 Logging out user');
     
+    // Clear all timers
     if (activityTimer) {
       clearTimeout(activityTimer);
       setActivityTimer(null);
     }
+    warningTimers.forEach(timer => clearTimeout(timer));
+    setWarningTimers([]);
+    
+    // Reset warning states
+    setShowSessionWarning(false);
+    setTimeLeft(0);
     
     setUser(null);
     setToken(null);
