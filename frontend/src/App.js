@@ -1727,9 +1727,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex overflow-hidden">
-      {/* Session Warning Banner */}
+      {/* Session Warning Banner - Optimized to prevent flickering */}
       {showSessionWarning && timeLeft > 0 && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 border-b-4 border-amber-600 text-white px-4 py-3 shadow-lg">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 border-b-4 border-amber-600 text-white px-4 py-3 shadow-lg animate-in slide-in-from-top duration-500">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div className="flex items-center space-x-3">
               <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center animate-pulse">
@@ -1738,7 +1738,7 @@ const Dashboard = () => {
               <div>
                 <p className="font-semibold">⚠️ Attenzione: La sessione sta per scadere</p>
                 <p className="text-sm">
-                  Tempo rimanente: <span className="font-mono font-bold text-amber-100">
+                  Tempo rimanente: <span className="font-mono font-bold text-amber-100 transition-all duration-300 ease-in-out">
                     {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                   </span>
                 </p>
@@ -1747,13 +1747,19 @@ const Dashboard = () => {
             <div className="flex space-x-2">
               <button
                 onClick={extendSession}
-                className="bg-white text-amber-600 px-4 py-2 rounded-lg font-medium hover:bg-amber-50 transition-colors"
+                className="bg-white text-amber-600 px-4 py-2 rounded-lg font-medium hover:bg-amber-50 transition-all duration-200 hover:scale-105"
               >
                 ⏱️ Estendi Sessione
               </button>
               <button
-                onClick={() => setShowSessionWarning(false)}
-                className="text-white hover:text-amber-200 p-1"
+                onClick={() => {
+                  if (countdownTimer) {
+                    clearInterval(countdownTimer);
+                    setCountdownTimer(null);
+                  }
+                  setShowSessionWarning(false);
+                }}
+                className="text-white hover:text-amber-200 p-1 transition-colors duration-200"
               >
                 ✕
               </button>
