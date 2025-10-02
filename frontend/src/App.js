@@ -14445,21 +14445,53 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const [createTipologieContratto, setCreateTipologieContratto] = useState([]);
   const [segmenti, setSegmenti] = useState([]);
 
-  // Debug: Log received props
+  // Determine user role and initialize flow
   useEffect(() => {
-    console.log("📋 CreateClienteModal: Props ricevute:");
-    console.log("  - Commesse:", commesse?.length || 0, "elementi");
-    console.log("  - Sub Agenzie:", subAgenzie?.length || 0, "elementi");
-    console.log("  - Selected Commessa:", selectedCommessa);
+    if (!isOpen) return;
     
-    // 🔍 DEBUG: Inspect actual objects
-    if (commesse && commesse.length > 0) {
-      console.log("🔍 Primo oggetto commessa:", JSON.stringify(commesse[0], null, 2));
+    console.log("🚀 CreateClienteModal opened - Initializing cascading flow");
+    console.log("👤 User role:", user?.role);
+    console.log("📋 Available data:", {
+      commesse: commesse?.length || 0,
+      subAgenzie: subAgenzie?.length || 0,
+      selectedCommessa
+    });
+    
+    // Reset states when modal opens
+    setCurrentStep('initial');
+    setShowClientForm(false);
+    setSelectedData({
+      sub_agenzia_id: '',
+      commessa_id: (selectedCommessa && selectedCommessa !== 'all') ? selectedCommessa : '',
+      servizio_id: '',
+      tipologia_contratto: '',
+      segmento: '',
+      offerta_id: ''
+    });
+    
+    // Initialize based on user role
+    initializeFlowByRole();
+    
+  }, [isOpen, user, selectedCommessa]);
+
+  const initializeFlowByRole = () => {
+    if (!user) return;
+    
+    if (user.role === 'sub_agenzia' || user.sub_agenzia_id) {
+      // SUB AGENZIA FLOW: Start with commesse selection
+      console.log("🏢 Sub Agenzia Flow: Starting with commesse selection");
+      setCascadeCommesse(commesse || []);
+      
+      // If commessa is pre-selected, load servizi immediately
+      if (selectedCommessa && selectedCommessa !== 'all') {
+        handleCommessaSelect(selectedCommessa);
+      }
+    } else if (user.role === 'responsabile' || user.role === 'backoffice' || user.role === 'admin') {
+      // RESPONSABILE/BACKOFFICE FLOW: Start with sub agenzia selection  
+      console.log("👔 Responsabile/Backoffice Flow: Starting with sub agenzia selection");
+      setCascadeCommesse([]); // Will be loaded after sub agenzia selection
     }
-    if (subAgenzie && subAgenzie.length > 0) {
-      console.log("🔍 Primo oggetto sub_agenzia:", JSON.stringify(subAgenzie[0], null, 2));
-    }
-  }, [commesse, subAgenzie, selectedCommessa]);
+  };
 
   useEffect(() => {
     if (selectedCommessa && selectedCommessa !== 'all') {
