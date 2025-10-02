@@ -11558,9 +11558,17 @@ async def get_tipologie_autorizzate_by_servizio(
             ]
         
         # Fetch authorized tipologie
-        tipologie = await db.tipologie_contratto.find({
+        tipologie_docs = await db.tipologie_contratto.find({
             "id": {"$in": authorized_tipologie_ids}
         }).to_list(length=None)
+        
+        # Convert to JSON serializable format
+        tipologie = []
+        for doc in tipologie_docs:
+            # Remove MongoDB ObjectId field
+            if '_id' in doc:
+                del doc['_id']
+            tipologie.append(doc)
         
         return tipologie
         
