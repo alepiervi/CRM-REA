@@ -129,6 +129,9 @@ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
   const [activityTimer, setActivityTimer] = useState(null);
+  const [warningTimers, setWarningTimers] = useState([]);
+  const [showSessionWarning, setShowSessionWarning] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
 
   // Activity timeout system - 15 minute timer with warnings
   const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes in milliseconds
