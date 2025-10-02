@@ -447,7 +447,8 @@ const AuthProvider = ({ children }) => {
         checkAuth,
         showSessionWarning: showSessionWarning || false,
         timeLeft: timeLeft || 0,
-        extendSession: extendSession || (() => {})
+        extendSession: extendSession || (() => {}),
+        countdownTimer
       }}
     >
       {children}
