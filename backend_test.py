@@ -14831,8 +14831,8 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return
         
-        # Run the document management system test (FOCUS OF THIS REVIEW)
-        self.test_document_management_system_complete()
+        # Run the cliente update test (FOCUS OF THIS REVIEW)
+        self.test_cliente_update_after_fixes()
         
         # Clean up test resources
         self.cleanup_test_resources()
