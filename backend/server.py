@@ -890,7 +890,7 @@ class ClienteCreate(BaseModel):
 class ClienteUpdate(BaseModel):
     nome: Optional[str] = None
     cognome: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None  # Changed from EmailStr to str to handle empty strings
     telefono: Optional[str] = None
     indirizzo: Optional[str] = None
     citta: Optional[str] = None
@@ -899,7 +899,7 @@ class ClienteUpdate(BaseModel):
     codice_fiscale: Optional[str] = None
     partita_iva: Optional[str] = None
     servizio_id: Optional[str] = None
-    tipologia_contratto: Optional[TipologiaContratto] = None  # Nuovo campo
+    tipologia_contratto: Optional[str] = None  # Changed to str to accept both UUID and enum
     segmento: Optional[Segmento] = None  # Nuovo campo  
     status: Optional[ClienteStatus] = None
     note: Optional[str] = None
