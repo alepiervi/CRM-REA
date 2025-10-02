@@ -279,6 +279,10 @@ const AuthProvider = ({ children }) => {
     // Only significant user activities (removed mousemove to reduce noise)
     const activityEvents = ['mousedown', 'keydown', 'click', 'touchstart', 'scroll'];
     
+    // Throttling to prevent too many timer resets
+    let lastActivity = 0;
+    const THROTTLE_TIME = 5000; // Only reset timer once every 5 seconds max
+    
     // Add event listeners for user activity - EXCLUDING BANNER INTERACTIONS!
     const handleActivity = (event) => {
       // Don't reset timer if user is interacting with session warning banner
@@ -287,6 +291,14 @@ const AuthProvider = ({ children }) => {
         return;
       }
       
+      // Throttle activity detection
+      const now = Date.now();
+      if (now - lastActivity < THROTTLE_TIME) {
+        console.log('⏱️ Activity throttled');
+        return;
+      }
+      
+      lastActivity = now;
       console.log('🎯 USER ACTIVITY DETECTED - Resetting 15-minute timer');
       startActivityTimer(); // This restarts the full 15-minute timer
     };
