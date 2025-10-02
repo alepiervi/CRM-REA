@@ -286,6 +286,7 @@ const AuthProvider = ({ children }) => {
     
     // STEP 0: Set flag to prevent logout
     setSessionExtended(true);
+    sessionExtendedRef.current = true;
     
     // STEP 1: Stop countdown completely
     stopCountdown();
