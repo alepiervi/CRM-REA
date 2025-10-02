@@ -14649,9 +14649,29 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     setSelectedData(prev => ({ ...prev, tipologia_contratto: tipologiaId }));
     
     try {
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("❌ No JWT token found for cascade API call");
+        return;
+      }
+      
       // Load segmenti for this tipologia
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/segmenti-by-tipologia/${tipologiaId}`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/segmenti-by-tipologia/${tipologiaId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error(`❌ CASCADE API Error: ${response.status} ${response.statusText}`);
+        return;
+      }
+      
       const segmenti = await response.json();
+      console.log("✅ CASCADE: Segmenti loaded successfully:", segmenti);
       setCascadeSegmenti(segmenti);
       
       // Reset downstream selections
