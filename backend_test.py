@@ -15093,11 +15093,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return
         
-        # Run the cliente update test (FOCUS OF THIS REVIEW)
-        self.test_cliente_update_after_fixes()
+        # Run specific test based on review request
+        print("\n" + "="*80)
+        print("🎯 FOCUS TEST: CASCADE ENDPOINTS DEBUG - 403 FORBIDDEN ERROR")
+        print("="*80)
         
-        # Clean up test resources
-        self.cleanup_test_resources()
+        self.test_cascade_endpoints_debug_403()
         
         # Print final results
         print(f"\n📊 Test Results Summary:")
