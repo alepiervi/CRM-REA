@@ -133,6 +133,7 @@ const AuthProvider = ({ children }) => {
   const [warningTimers, setWarningTimers] = useState([]);
   const [showSessionWarning, setShowSessionWarning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [countdownTimer, setCountdownTimer] = useState(null);
 
   // Activity timeout system - 15 minute timer with warnings (PRODUCTION)  
   const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes in milliseconds
