@@ -1057,10 +1057,19 @@ const Dashboard = () => {
     try {
       const response = await axios.get(`${API}/sub-agenzie`);
       setSubAgenzie(response.data);
+      console.log("Sub Agenzie caricate:", response.data);
     } catch (error) {
       console.error("Error fetching sub agenzie:", error);
-      // Don't show toast for this as it's handled by the component fallback to props
-      setSubAgenzie([]); // Fallback to empty array
+    }
+  };
+
+  const fetchServizi = async () => {
+    try {
+      const response = await axios.get(`${API}/servizi`);
+      setServizi(response.data);
+      console.log("Servizi caricati:", response.data);
+    } catch (error) {
+      console.error("Error fetching servizi:", error);
     }
   };
 
