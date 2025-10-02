@@ -193,35 +193,50 @@ const AuthProvider = ({ children }) => {
   };
 
   const startCountdown = () => {
-    console.log('🕒 Starting smooth 2-minute countdown from', timeLeft, 'seconds');
+    console.log('🕒 STARTING PRECISE 120-SECOND COUNTDOWN');
     
-    // Clear any existing countdown timer to prevent multiple intervals
+    // Clear any existing countdown timer
     if (countdownTimer) {
+      console.log('🧹 Clearing existing countdown timer');
       clearInterval(countdownTimer);
       setCountdownTimer(null);
     }
     
+    // Start precise countdown from exactly 120 seconds
+    let currentTime = 120;
+    setTimeLeft(currentTime);
+    
     const newCountdownInterval = setInterval(() => {
-      setTimeLeft(prevTime => {
-        const newTime = prevTime - 1;
-        
-        // Log important milestones
-        if (newTime === 60) console.log('⏰ 1 minute remaining');
-        if (newTime === 30) console.log('🚨 30 seconds remaining');
-        if (newTime === 10) console.log('🚨 10 seconds remaining');
-        
-        if (newTime <= 0) {
-          console.log('⏰ Countdown finished - should logout');
-          clearInterval(newCountdownInterval);
-          setCountdownTimer(null);
-          return 0;
-        }
-        
-        return newTime;
-      });
+      currentTime = currentTime - 1;
+      
+      console.log(`⏱️ Countdown: ${currentTime} seconds remaining`);
+      
+      // Toast notifications at specific times (without disrupting countdown)
+      if (currentTime === 60) {
+        console.log('⏰ 1 minute milestone');
+        showSessionWarningToast('🚨 ATTENZIONE: La sessione scadrà tra 1 minuto!', 'destructive');
+      }
+      if (currentTime === 30) {
+        console.log('🚨 30 seconds milestone');
+        showSessionWarningToast('🚨 ULTIMO AVVISO: Sessione scade tra 30 secondi!', 'destructive');
+      }
+      
+      // Update the display
+      setTimeLeft(currentTime);
+      
+      // End countdown when time reaches 0
+      if (currentTime <= 0) {
+        console.log('⏰ COUNTDOWN FINISHED - LOGGING OUT');
+        clearInterval(newCountdownInterval);
+        setCountdownTimer(null);
+        setShowSessionWarning(false);
+        setTimeout(logout, 1000); // Logout after 1 second delay
+        return;
+      }
     }, 1000);
     
     setCountdownTimer(newCountdownInterval);
+    console.log('✅ Countdown timer started successfully');
   };
 
   const extendSession = () => {
