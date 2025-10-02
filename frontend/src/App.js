@@ -12524,6 +12524,28 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     setShowDocumentsModal(true);
   };
 
+  const handleViewClienteHistory = async (cliente) => {
+    setSelectedCliente(cliente);
+    setSelectedClientName(`${cliente.nome} ${cliente.cognome}`);
+    setLoadingHistory(true);
+    setShowHistoryModal(true);
+    
+    try {
+      const response = await axios.get(`${API}/clienti/${cliente.id}/logs`);
+      setClienteHistory(response.data.logs || []);
+    } catch (error) {
+      console.error("Error fetching cliente history:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare la cronologia del cliente",
+        variant: "destructive"
+      });
+      setClienteHistory([]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   const deleteCliente = async (clienteId) => {
     try {
       await axios.delete(`${API}/clienti/${clienteId}`);
