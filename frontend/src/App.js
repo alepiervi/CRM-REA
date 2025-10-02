@@ -251,6 +251,7 @@ const AuthProvider = ({ children }) => {
       if (activityTimer) {
         clearTimeout(activityTimer);
       }
+      warningTimers.forEach(timer => clearTimeout(timer));
     };
   }, [token, user]);
 
