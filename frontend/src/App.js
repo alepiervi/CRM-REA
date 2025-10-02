@@ -160,24 +160,23 @@ const AuthProvider = ({ children }) => {
     setShowSessionWarning(false);
     setTimeLeft(0);
 
-    // Set warning timers
+    // Set warning timer - ONLY ONE banner that starts at 2 minutes and counts down smoothly
     const warning2MinTimer = setTimeout(() => {
-      console.log('⚠️ 2 minutes warning');
+      console.log('⚠️ 2 minutes warning - starting smooth countdown');
       setShowSessionWarning(true);
-      setTimeLeft(120); // 2 minutes in seconds
-      showSessionWarningToast('La sessione scadrà tra 2 minuti');
+      setTimeLeft(120); // Start with exactly 2 minutes = 120 seconds
+      showSessionWarningToast('⚠️ La sessione scadrà tra 2 minuti', 'default');
       startCountdown();
     }, WARNING_2_MIN);
 
+    // Additional toast warnings (without disrupting the countdown)
     const warning1MinTimer = setTimeout(() => {
-      console.log('⚠️ 1 minute warning');
-      setTimeLeft(60); // 1 minute in seconds
-      showSessionWarningToast('⚠️ ATTENZIONE: La sessione scadrà tra 1 minuto!', 'destructive');
+      console.log('⚠️ 1 minute warning toast only');
+      showSessionWarningToast('🚨 ATTENZIONE: La sessione scadrà tra 1 minuto!', 'destructive');
     }, WARNING_1_MIN);
 
     const warning30SecTimer = setTimeout(() => {
-      console.log('🚨 30 seconds warning');
-      setTimeLeft(30); // 30 seconds in seconds
+      console.log('🚨 30 seconds warning toast only');
       showSessionWarningToast('🚨 ULTIMO AVVISO: Sessione scade tra 30 secondi!', 'destructive');
     }, WARNING_30_SEC);
 
