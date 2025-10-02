@@ -8292,6 +8292,31 @@ async def update_cliente(
     if update_dict.get('email') == "":
         update_dict['email'] = None
     
+    # Handle tipologia_contratto - convert UUID to enum string if needed
+    if update_dict.get('tipologia_contratto'):
+        tipologia_value = update_dict['tipologia_contratto']
+        # If it looks like a UUID, try to convert it to enum string
+        if len(str(tipologia_value)) > 20:  # UUID is longer than enum strings
+            # Try to find matching tipologia contratto in database
+            tipologia_doc = await db.tipologie_contratto.find_one({"id": str(tipologia_value)})
+            if tipologia_doc:
+                # Map the tipologia name to enum value
+                tipologia_name = tipologia_doc.get("nome", "").lower().replace(" ", "_")
+                if tipologia_name == "telefonia_fastweb":
+                    update_dict['tipologia_contratto'] = "telefonia_fastweb"
+                elif tipologia_name == "energia_fastweb":
+                    update_dict['tipologia_contratto'] = "energia_fastweb"
+                elif tipologia_name == "ho_mobile":
+                    update_dict['tipologia_contratto'] = "ho_mobile"
+                elif tipologia_name == "telepass":
+                    update_dict['tipologia_contratto'] = "telepass"
+                else:
+                    # Fallback to default if no match
+                    update_dict['tipologia_contratto'] = "telefonia_fastweb"
+            else:
+                # If UUID not found, fallback to default
+                update_dict['tipologia_contratto'] = "telefonia_fastweb"
+    
     update_data = {k: v for k, v in update_dict.items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc)
     
