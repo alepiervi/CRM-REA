@@ -145,6 +145,9 @@ const AuthProvider = ({ children }) => {
     const timestamp = new Date().toLocaleTimeString();
     console.log(`🕒 [${timestamp}] STARTING 15-MINUTE INACTIVITY TIMER`);
     
+    // Reset session extension flag
+    setSessionExtended(false);
+    
     // Clear ALL existing timers completely
     if (activityTimer) {
       console.log('🧹 Clearing existing activity timer');
