@@ -228,7 +228,15 @@ const AuthProvider = ({ children }) => {
 
   const extendSession = () => {
     console.log('🔄 Session extended by user');
+    
+    // Clear countdown timer to stop flickering
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      setCountdownTimer(null);
+    }
+    
     setShowSessionWarning(false);
+    setTimeLeft(0);
     startActivityTimer(); // Restart the full 15-minute timer
     showSessionWarningToast('✅ Sessione estesa per altri 15 minuti', 'default');
   };
