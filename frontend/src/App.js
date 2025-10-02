@@ -206,19 +206,31 @@ const AuthProvider = ({ children }) => {
   };
 
   const startCountdown = () => {
+    console.log('🕒 Starting smooth 2-minute countdown from', timeLeft, 'seconds');
+    
     // Clear any existing countdown timer to prevent multiple intervals
     if (countdownTimer) {
       clearInterval(countdownTimer);
+      setCountdownTimer(null);
     }
     
     const newCountdownInterval = setInterval(() => {
       setTimeLeft(prevTime => {
-        if (prevTime <= 1) {
+        const newTime = prevTime - 1;
+        
+        // Log important milestones
+        if (newTime === 60) console.log('⏰ 1 minute remaining');
+        if (newTime === 30) console.log('🚨 30 seconds remaining');
+        if (newTime === 10) console.log('🚨 10 seconds remaining');
+        
+        if (newTime <= 0) {
+          console.log('⏰ Countdown finished - should logout');
           clearInterval(newCountdownInterval);
           setCountdownTimer(null);
           return 0;
         }
-        return prevTime - 1;
+        
+        return newTime;
       });
     }, 1000);
     
