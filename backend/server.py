@@ -8285,16 +8285,7 @@ async def update_cliente(
         # Verifica permessi di modifica
         if not await can_user_modify_cliente(current_user, cliente):
             raise HTTPException(status_code=403, detail="No permission to modify this cliente")
-    
-    except HTTPException:
-        raise
-    except ValidationError as e:
-        logging.error(f"❌ CLIENT UPDATE VALIDATION ERROR: {e}")
-        raise HTTPException(status_code=422, detail=f"Errore validazione dati: {str(e)}")
-    except Exception as e:
-        logging.error(f"❌ CLIENT UPDATE ERROR: {e}")
-        raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
-    
+        
         # Prepare update data with special handling for empty fields
         update_dict = cliente_update.dict()
         
@@ -8344,6 +8335,15 @@ async def update_cliente(
         
         cliente_doc = await db.clienti.find_one({"id": cliente_id})
         return Cliente(**cliente_doc)
+    
+    except HTTPException:
+        raise
+    except ValidationError as e:
+        logging.error(f"❌ CLIENT UPDATE VALIDATION ERROR: {e}")
+        raise HTTPException(status_code=422, detail=f"Errore validazione dati: {str(e)}")
+    except Exception as e:
+        logging.error(f"❌ CLIENT UPDATE ERROR: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
 
 @api_router.delete("/clienti/{cliente_id}")
 async def delete_cliente(
