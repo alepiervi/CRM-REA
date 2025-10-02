@@ -12938,6 +12938,14 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                         <Button 
                           variant="outline" 
                           size="sm"
+                          onClick={() => handleViewClienteHistory(cliente)}
+                          title="Cronologia e Log cliente"
+                        >
+                          <History className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
                           onClick={() => handleEditCliente(cliente)}
                           title="Modifica cliente"
                         >
