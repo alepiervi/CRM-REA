@@ -11519,33 +11519,54 @@ async def get_servizi_autorizzati_by_commessa(
 ):
     """Get servizi autorizzati for a specific commessa"""
     try:
+        logging.info(f"🔍 CASCADE: Searching servizi for commessa ID: {commessa_id}")
+        
         commessa = await db.commesse.find_one({"id": commessa_id})
         if not commessa:
+            logging.error(f"❌ CASCADE: Commessa not found for ID: {commessa_id}")
             raise HTTPException(status_code=404, detail="Commessa non trovata")
+        
+        logging.info(f"✅ CASCADE: Commessa found: {commessa.get('nome')}")
         
         # Get authorized servizi IDs
         authorized_servizi_ids = commessa.get("servizi_autorizzati", [])
+        logging.info(f"🔗 CASCADE: Authorized servizi IDs: {authorized_servizi_ids}")
         
         if not authorized_servizi_ids:
-            return []
-        
-        # Fetch authorized servizi
-        servizi_docs = await db.servizi.find({
-            "id": {"$in": authorized_servizi_ids}
-        }).to_list(length=None)
+            # FALLBACK: If no specific servizi_autorizzati, find all servizi for this commessa
+            logging.info("📭 CASCADE: No servizi_autorizzati found, using fallback to find all servizi for this commessa")
+            servizi_docs = await db.servizi.find({
+                "commessa_id": commessa_id,
+                "is_active": True
+            }).to_list(length=None)
+            
+            logging.info(f"🔄 CASCADE: Fallback found {len(servizi_docs)} active servizi")
+        else:
+            # Fetch authorized servizi
+            logging.info(f"🔍 CASCADE: Querying servizi with authorized IDs: {authorized_servizi_ids}")
+            servizi_docs = await db.servizi.find({
+                "id": {"$in": authorized_servizi_ids},
+                "is_active": True
+            }).to_list(length=None)
+            
+            logging.info(f"📊 CASCADE: Found {len(servizi_docs)} authorized servizi")
         
         # Convert to JSON serializable format
         servizi = []
         for doc in servizi_docs:
+            logging.info(f"🔧 CASCADE: Processing servizio with keys: {list(doc.keys())}")
             # Remove MongoDB ObjectId field
             if '_id' in doc:
                 del doc['_id']
             servizi.append(doc)
         
+        logging.info(f"✅ CASCADE: Returning {len(servizi)} servizi successfully")
         return servizi
         
     except Exception as e:
-        logging.error(f"Error fetching servizi by commessa: {e}")
+        logging.error(f"❌ CASCADE SERVIZI ERROR: {type(e).__name__}: {str(e)}")
+        import traceback
+        logging.error(f"❌ CASCADE SERVIZI TRACEBACK: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Errore nel caricamento servizi: {str(e)}")
 
 @api_router.get("/cascade/tipologie-by-servizio/{servizio_id}")
