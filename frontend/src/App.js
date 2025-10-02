@@ -310,7 +310,7 @@ const AuthProvider = ({ children }) => {
     
     // Throttling to prevent too many timer resets
     let lastActivity = 0;
-    const THROTTLE_TIME = 5000; // Only reset timer once every 5 seconds max
+    const THROTTLE_TIME = 1000; // Only reset timer once every 1 second max (reduced from 5s)
     
     // Add event listeners for user activity - EXCLUDING BANNER INTERACTIONS!
     const handleActivity = (event) => {
