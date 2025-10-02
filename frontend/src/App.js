@@ -135,11 +135,11 @@ const AuthProvider = ({ children }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [countdownTimer, setCountdownTimer] = useState(null);
 
-  // Activity timeout system - ANTI-FLICKER TEST (30 seconds)
-  const INACTIVITY_TIME = 30 * 1000;  // 30 seconds for anti-flicker test
-  const WARNING_2_MIN = 10 * 1000;    // Warning at 10 seconds (20 sec left)  
-  const WARNING_1_MIN = 20 * 1000;    // Warning at 20 seconds (10 sec left)
-  const WARNING_30_SEC = 25 * 1000;   // Warning at 25 seconds (5 sec left)
+  // Activity timeout system - 15 minute timer with warnings (PRODUCTION)  
+  const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes in milliseconds
+  const WARNING_2_MIN = 13 * 60 * 1000;   // Show warning at 13 minutes (2 min left)
+  const WARNING_1_MIN = 14 * 60 * 1000;   // Show warning at 14 minutes (1 min left)
+  const WARNING_30_SEC = 14.5 * 60 * 1000; // Show warning at 14.5 minutes (30 sec left)
 
   const startActivityTimer = () => {
     console.log('🕒 Starting 15 minute inactivity timer');
