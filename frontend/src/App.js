@@ -15210,15 +15210,42 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             />
           </div>
 
-          <DialogFooter>
+            <DialogFooter className="mt-6">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowClientForm(false)}
+                className="mr-2"
+              >
+                ← Torna alla Selezione
+              </Button>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Annulla
+              </Button>
+              <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                ✅ Crea Cliente
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
+
+        {/* FOOTER BUTTONS for cascading flow */}
+        {!showClientForm && (
+          <DialogFooter className="mt-6">
             <Button type="button" variant="outline" onClick={onClose}>
               Annulla
             </Button>
-            <Button type="submit">
-              Crea Cliente
+            <Button 
+              type="button" 
+              disabled={!selectedData.offerta_id}
+              onClick={() => setShowClientForm(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Continua → Scheda Cliente
             </Button>
           </DialogFooter>
-        </form>
+        )}
+
       </DialogContent>
     </Dialog>
   );
