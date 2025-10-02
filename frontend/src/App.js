@@ -280,6 +280,9 @@ const AuthProvider = ({ children }) => {
   const extendSession = () => {
     console.log('🔄 SESSION EXTENSION - COMPLETE CLEANUP AND RESTART');
     
+    // STEP 0: Set flag to prevent logout
+    setSessionExtended(true);
+    
     // STEP 1: Stop countdown completely
     stopCountdown();
     
