@@ -10157,6 +10157,22 @@ async def delete_document_metadata(
             
         logging.info(f"Document metadata deleted: {document_id} - {document.get('filename')}")
         
+        # 📝 LOG: Registra la cancellazione del documento (solo per clienti)
+        if document.get('cliente_id'):
+            await log_client_action(
+                cliente_id=document['cliente_id'],
+                action=ClienteLogAction.DOCUMENT_DELETED,
+                description=f"Documento eliminato: {document.get('filename')}",
+                user=current_user,
+                old_value=document.get('filename'),
+                metadata={
+                    "document_id": document_id,
+                    "file_size": document.get('file_size'),
+                    "file_type": document.get('file_type'),
+                    "deletion_type": "metadata_only"
+                }
+            )
+        
         return {
             "success": True,
             "message": f"Documento {document.get('filename')} rimosso dalla lista (conservato su Aruba Drive)"
