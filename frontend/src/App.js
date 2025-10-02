@@ -140,20 +140,81 @@ const AuthProvider = ({ children }) => {
   const WARNING_30_SEC = 14.5 * 60 * 1000; // Show warning at 14.5 minutes (30 sec left)
 
   const startActivityTimer = () => {
-    console.log('Starting 14 minute timer');
+    console.log('🕒 Starting 15 minute inactivity timer');
     
-    // Clear existing timer
+    // Clear existing timers
     if (activityTimer) {
       clearTimeout(activityTimer);
     }
+    warningTimers.forEach(timer => clearTimeout(timer));
+    
+    // Reset warning state
+    setShowSessionWarning(false);
+    setTimeLeft(0);
 
-    // Start new timer
-    const timer = setTimeout(() => {
-      console.log('Inactivity timeout - logging out user');
-      logout();
+    // Set warning timers
+    const warning2MinTimer = setTimeout(() => {
+      console.log('⚠️ 2 minutes warning');
+      setShowSessionWarning(true);
+      setTimeLeft(120); // 2 minutes in seconds
+      showSessionWarningToast('La sessione scadrà tra 2 minuti');
+      startCountdown();
+    }, WARNING_2_MIN);
+
+    const warning1MinTimer = setTimeout(() => {
+      console.log('⚠️ 1 minute warning');
+      setTimeLeft(60); // 1 minute in seconds
+      showSessionWarningToast('⚠️ ATTENZIONE: La sessione scadrà tra 1 minuto!', 'destructive');
+    }, WARNING_1_MIN);
+
+    const warning30SecTimer = setTimeout(() => {
+      console.log('🚨 30 seconds warning');
+      setTimeLeft(30); // 30 seconds in seconds
+      showSessionWarningToast('🚨 ULTIMO AVVISO: Sessione scade tra 30 secondi!', 'destructive');
+    }, WARNING_30_SEC);
+
+    // Final logout timer
+    const finalTimer = setTimeout(() => {
+      console.log('🚪 Inactivity timeout - logging out user');
+      setShowSessionWarning(false);
+      showSessionWarningToast('⏰ Sessione scaduta per inattività', 'destructive');
+      setTimeout(logout, 2000); // Small delay to show the message
     }, INACTIVITY_TIME);
 
-    setActivityTimer(timer);
+    setActivityTimer(finalTimer);
+    setWarningTimers([warning2MinTimer, warning1MinTimer, warning30SecTimer]);
+  };
+
+  const showSessionWarningToast = (message, variant = 'default') => {
+    if (typeof toast !== 'undefined') {
+      toast({
+        title: "⏰ Avviso Sessione",
+        description: message,
+        variant: variant,
+        duration: 8000
+      });
+    } else {
+      console.log('Toast not available:', message);
+    }
+  };
+
+  const startCountdown = () => {
+    const countdownInterval = setInterval(() => {
+      setTimeLeft(prevTime => {
+        if (prevTime <= 1) {
+          clearInterval(countdownInterval);
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+  };
+
+  const extendSession = () => {
+    console.log('🔄 Session extended by user');
+    setShowSessionWarning(false);
+    startActivityTimer(); // Restart the full 15-minute timer
+    showSessionWarningToast('✅ Sessione estesa per altri 15 minuti', 'default');
   };
 
   const resetActivityTimer = () => {
