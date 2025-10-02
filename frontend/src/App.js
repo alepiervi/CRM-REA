@@ -204,8 +204,8 @@ const AuthProvider = ({ children }) => {
     
     setIsCountdownActive(true);
     
-    // Use React state for precise countdown (no local variables)
-    setTimeLeft(120); // Start with exactly 120 seconds
+    // Use React state for precise countdown (15 seconds for testing)
+    setTimeLeft(15); // Start with exactly 15 seconds for testing
     
     const newCountdownInterval = setInterval(() => {
       setTimeLeft(prevTime => {
