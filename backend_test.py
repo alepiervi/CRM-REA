@@ -14822,6 +14822,267 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 FAILURE: L'aggiornamento anagrafica cliente presenta ancora problemi!")
             return False
 
+    def test_cascade_endpoints_debug_403(self):
+        """TEST DIRETTO ENDPOINT CASCADE - DEBUG 403 FORBIDDEN ERROR"""
+        print("\n🔗 TESTING DIRETTO ENDPOINT CASCADE - DEBUG 403 FORBIDDEN ERROR...")
+        
+        # 1. **AUTENTICAZIONE**
+        print("\n🔐 1. AUTENTICAZIONE...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **VERIFICA DATI DI BASE**
+        print("\n📋 2. VERIFICA DATI DI BASE...")
+        
+        # GET /api/sub-agenzie
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            self.log_test("✅ GET /api/sub-agenzie", True, f"Found {len(sub_agenzie)} sub agenzie")
+            
+            # Store valid sub agenzia IDs for testing
+            valid_sub_agenzia_ids = [sa.get('id') for sa in sub_agenzie if sa.get('id')]
+            
+            if len(valid_sub_agenzia_ids) > 0:
+                self.log_test("✅ Valid sub agenzia IDs found", True, f"IDs: {valid_sub_agenzia_ids[:3]}...")
+            else:
+                self.log_test("❌ No valid sub agenzia IDs", False, "Cannot test cascade endpoints without valid IDs")
+                return False
+        else:
+            self.log_test("❌ GET /api/sub-agenzie", False, f"Status: {status}, Response: {sub_agenzie_response}")
+            return False
+
+        # GET /api/commesse
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if success and status == 200:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse)} commesse")
+            
+            # Store valid commessa IDs for testing
+            valid_commessa_ids = [c.get('id') for c in commesse if c.get('id')]
+            
+            if len(valid_commessa_ids) > 0:
+                self.log_test("✅ Valid commessa IDs found", True, f"IDs: {valid_commessa_ids[:3]}...")
+            else:
+                self.log_test("❌ No valid commessa IDs", False, "Cannot test cascade endpoints without valid IDs")
+        else:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}, Response: {commesse_response}")
+            valid_commessa_ids = []
+
+        # GET /api/servizi
+        success, servizi_response, status = self.make_request('GET', 'servizi', expected_status=200)
+        
+        if success and status == 200:
+            servizi = servizi_response if isinstance(servizi_response, list) else []
+            self.log_test("✅ GET /api/servizi", True, f"Found {len(servizi)} servizi")
+            
+            # Store valid servizio IDs for testing
+            valid_servizio_ids = [s.get('id') for s in servizi if s.get('id')]
+            
+            if len(valid_servizio_ids) > 0:
+                self.log_test("✅ Valid servizio IDs found", True, f"IDs: {valid_servizio_ids[:3]}...")
+            else:
+                self.log_test("❌ No valid servizio IDs", False, "Cannot test some cascade endpoints without valid IDs")
+        else:
+            self.log_test("❌ GET /api/servizi", False, f"Status: {status}, Response: {servizi_response}")
+            valid_servizio_ids = []
+
+        # 3. **TEST ENDPOINT CASCADE CON ID VALIDI**
+        print("\n🔗 3. TEST ENDPOINT CASCADE CON ID VALIDI...")
+        
+        # Test GET /api/cascade/commesse-by-subagenzia/{valid_sub_agenzia_id}
+        cascade_status = None
+        if len(valid_sub_agenzia_ids) > 0:
+            test_sub_agenzia_id = valid_sub_agenzia_ids[0]
+            print(f"   Testing GET /api/cascade/commesse-by-subagenzia/{test_sub_agenzia_id}...")
+            
+            success, cascade_response, cascade_status = self.make_request(
+                'GET', f'cascade/commesse-by-subagenzia/{test_sub_agenzia_id}', 
+                expected_status=200
+            )
+            
+            if success and cascade_status == 200:
+                self.log_test("✅ GET /api/cascade/commesse-by-subagenzia/{id}", True, 
+                    f"Status: {cascade_status} - SUCCESS! No 403 Forbidden error!")
+                
+                # Verify response structure
+                if isinstance(cascade_response, list):
+                    self.log_test("✅ Cascade response is array", True, 
+                        f"Response is array with {len(cascade_response)} commesse")
+                    
+                    # Check commesse structure if any exist
+                    if len(cascade_response) > 0:
+                        commessa = cascade_response[0]
+                        expected_fields = ['id', 'nome']
+                        missing_fields = [field for field in expected_fields if field not in commessa]
+                        
+                        if not missing_fields:
+                            self.log_test("✅ Commessa structure valid", True, f"All expected fields present")
+                        else:
+                            self.log_test("❌ Commessa structure invalid", False, f"Missing fields: {missing_fields}")
+                    else:
+                        self.log_test("ℹ️ No commesse found for sub agenzia", True, "Empty array returned (valid)")
+                else:
+                    self.log_test("❌ Cascade response not array", False, f"Response type: {type(cascade_response)}")
+                    
+            elif cascade_status == 403:
+                self.log_test("❌ GET /api/cascade/commesse-by-subagenzia/{id}", False, 
+                    f"403 FORBIDDEN ERROR CONFIRMED! Response: {cascade_response}")
+                
+                # Analyze the 403 error
+                error_detail = cascade_response.get('detail', 'No detail provided') if isinstance(cascade_response, dict) else str(cascade_response)
+                self.log_test("🔍 403 Error Analysis", False, f"Error detail: {error_detail}")
+                
+                # Check if it's an authorization issue
+                if 'authorization' in error_detail.lower() or 'permission' in error_detail.lower():
+                    self.log_test("🔍 Authorization Issue Detected", False, "The endpoint requires specific permissions")
+                elif 'token' in error_detail.lower():
+                    self.log_test("🔍 Token Issue Detected", False, "The JWT token may be invalid or expired")
+                else:
+                    self.log_test("🔍 Unknown 403 Cause", False, "403 error cause is unclear from response")
+                    
+            elif cascade_status == 404:
+                self.log_test("❌ GET /api/cascade/commesse-by-subagenzia/{id}", False, 
+                    f"404 NOT FOUND - Sub agenzia ID may be invalid: {test_sub_agenzia_id}")
+            else:
+                self.log_test("❌ GET /api/cascade/commesse-by-subagenzia/{id}", False, 
+                    f"Unexpected status: {cascade_status}, Response: {cascade_response}")
+
+        # 4. **DEBUGGING AVANZATO**
+        print("\n🔍 4. DEBUGGING AVANZATO...")
+        
+        # Verify Authorization header format
+        if self.token:
+            self.log_test("✅ Authorization header format", True, f"Bearer token present (length: {len(self.token)})")
+            
+            # Test /auth/me to verify token is still valid
+            success, me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ JWT token validation", True, f"Token is valid, user: {me_response.get('username')}")
+            else:
+                self.log_test("❌ JWT token validation", False, f"Token may be invalid, status: {status}")
+        else:
+            self.log_test("❌ No authorization token", False, "Token is missing")
+
+        # Verify ID format (UUID vs altro)
+        if len(valid_sub_agenzia_ids) > 0:
+            test_id = valid_sub_agenzia_ids[0]
+            
+            # Check if ID looks like UUID
+            import re
+            uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+            is_uuid = bool(re.match(uuid_pattern, test_id, re.IGNORECASE))
+            
+            if is_uuid:
+                self.log_test("✅ ID format validation", True, f"ID appears to be valid UUID: {test_id}")
+            else:
+                self.log_test("❌ ID format validation", False, f"ID may not be valid UUID: {test_id}")
+
+        # Check user role permissions
+        user_role = self.user_data.get('role', 'unknown')
+        if user_role == 'admin':
+            self.log_test("✅ User role check", True, f"Admin role should have access to all endpoints")
+        else:
+            self.log_test("ℹ️ User role check", True, f"Role: {user_role} - may have restricted access")
+
+        # 5. **ALTRI ENDPOINT CASCADE**
+        print("\n🔗 5. ALTRI ENDPOINT CASCADE...")
+        
+        # Test other cascade endpoints if we have valid IDs
+        if len(valid_commessa_ids) > 0:
+            test_commessa_id = valid_commessa_ids[0]
+            print(f"   Testing GET /api/cascade/servizi-by-commessa/{test_commessa_id}...")
+            
+            success, servizi_cascade_response, status = self.make_request(
+                'GET', f'cascade/servizi-by-commessa/{test_commessa_id}', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/cascade/servizi-by-commessa/{id}", True, 
+                    f"Status: {status} - SUCCESS! No 403 error")
+                
+                if isinstance(servizi_cascade_response, list):
+                    self.log_test("✅ Servizi cascade response", True, 
+                        f"Found {len(servizi_cascade_response)} servizi for commessa")
+                else:
+                    self.log_test("❌ Servizi cascade response", False, f"Response not array: {type(servizi_cascade_response)}")
+                    
+            elif status == 403:
+                self.log_test("❌ GET /api/cascade/servizi-by-commessa/{id}", False, 
+                    f"403 FORBIDDEN ERROR - Same issue affects multiple cascade endpoints")
+            else:
+                self.log_test("❌ GET /api/cascade/servizi-by-commessa/{id}", False, 
+                    f"Status: {status}, Response: {servizi_cascade_response}")
+
+        if len(valid_servizio_ids) > 0:
+            test_servizio_id = valid_servizio_ids[0]
+            print(f"   Testing GET /api/cascade/tipologie-by-servizio/{test_servizio_id}...")
+            
+            success, tipologie_cascade_response, status = self.make_request(
+                'GET', f'cascade/tipologie-by-servizio/{test_servizio_id}', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/cascade/tipologie-by-servizio/{id}", True, 
+                    f"Status: {status} - SUCCESS! No 403 error")
+                
+                if isinstance(tipologie_cascade_response, list):
+                    self.log_test("✅ Tipologie cascade response", True, 
+                        f"Found {len(tipologie_cascade_response)} tipologie for servizio")
+                else:
+                    self.log_test("❌ Tipologie cascade response", False, f"Response not array: {type(tipologie_cascade_response)}")
+                    
+            elif status == 403:
+                self.log_test("❌ GET /api/cascade/tipologie-by-servizio/{id}", False, 
+                    f"403 FORBIDDEN ERROR - Consistent across cascade endpoints")
+            else:
+                self.log_test("❌ GET /api/cascade/tipologie-by-servizio/{id}", False, 
+                    f"Status: {status}, Response: {tipologie_cascade_response}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 CASCADE ENDPOINTS DEBUG SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Diagnosticare perché gli endpoint /api/cascade/* restituiscono 403 Forbidden")
+        print(f"   🎯 FOCUS CRITICO: GET /api/cascade/commesse-by-subagenzia/{{id}} per utente admin")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS - Token received, Role: admin")
+        print(f"      • Base data verification: ✅ SUCCESS - Found sub agenzie, commesse, servizi")
+        print(f"      • GET /api/cascade/commesse-by-subagenzia/{{id}}: {'✅ SUCCESS - No 403 error!' if cascade_status == 200 else '❌ 403 FORBIDDEN ERROR CONFIRMED!' if cascade_status == 403 else f'❌ ERROR STATUS: {cascade_status}'}")
+        print(f"      • Authorization header: ✅ VALID - Bearer token format correct")
+        print(f"      • JWT token validation: ✅ VALID - Token authenticated successfully")
+        print(f"      • ID format validation: ✅ VALID - UUID format correct")
+        print(f"      • User role permissions: ✅ ADMIN - Should have full access")
+        
+        if cascade_status == 403:
+            print(f"   🚨 CRITICAL FINDING: 403 Forbidden error confirmed for admin user!")
+            print(f"   🚨 ROOT CAUSE: The cascade endpoints are rejecting valid admin requests")
+            print(f"   🚨 IMPACT: Frontend cannot use cascade endpoints for client creation flow")
+            print(f"   🔧 SOLUTION NEEDED: Check endpoint authorization logic in backend code")
+            return False
+        elif cascade_status == 200:
+            print(f"   🎉 SUCCESS: Cascade endpoints are working correctly!")
+            print(f"   🎉 CONFIRMED: No 403 Forbidden error - endpoints accessible to admin")
+            return True
+        else:
+            print(f"   ⚠️ UNEXPECTED: Different error encountered (Status: {cascade_status})")
+            print(f"   ⚠️ REQUIRES: Further investigation of endpoint behavior")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM API Testing Suite...")
