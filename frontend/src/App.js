@@ -14916,8 +14916,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">Seleziona Segmento...</option>
-                    {cascadeSegmenti?.map(segmento => (
-                      <option key={segmento.id} value={segmento.id}>{segmento.nome}</option>
+                    {Array.isArray(cascadeSegmenti) && cascadeSegmenti.map(segmento => (
+                      <option key={segmento?.id || Math.random()} value={segmento?.id}>{segmento?.nome || 'Nome non disponibile'}</option>
                     ))}
                   </select>
                 </div>
