@@ -15102,11 +15102,12 @@ const AppWithAuth = () => (
 );
 
 // View Cliente Modal Component
-const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie }) => {
+const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) => {
   if (!cliente) return null;
   
   const getCommessaName = (id) => commesse.find(c => c.id === id)?.nome || id;
   const getSubAgenziaName = (id) => subAgenzie.find(s => s.id === id)?.nome || id;
+  const getServizioName = (id) => servizi.find(s => s.id === id)?.nome || id;
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
