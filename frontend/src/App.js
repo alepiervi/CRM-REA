@@ -15156,7 +15156,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
               {cliente.servizio_id && (
                 <div>
                   <Label className="text-sm font-medium text-slate-600">Servizio</Label>
-                  <p className="text-sm">{cliente.servizio_id}</p>
+                  <p className="text-sm">{getServizioName(cliente.servizio_id)}</p>
                 </div>
               )}
               {cliente.tipologia_contratto && (
