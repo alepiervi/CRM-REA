@@ -11468,34 +11468,48 @@ async def get_commesse_by_subagenzia(
 ):
     """Get commesse autorizzate for a specific sub agenzia"""
     try:
+        logging.info(f"🔍 CASCADE: Searching sub agenzia with ID: {sub_agenzia_id}")
+        
         # Find sub agenzia and get authorized commesse
         sub_agenzia = await db.sub_agenzie.find_one({"id": sub_agenzia_id})
         if not sub_agenzia:
+            logging.error(f"❌ CASCADE: Sub Agenzia not found for ID: {sub_agenzia_id}")
             raise HTTPException(status_code=404, detail="Sub Agenzia non trovata")
+        
+        logging.info(f"✅ CASCADE: Sub Agenzia found: {sub_agenzia.get('nome')}")
         
         # Get authorized commesse IDs
         authorized_commesse_ids = sub_agenzia.get("commesse_autorizzate", [])
+        logging.info(f"🔗 CASCADE: Authorized commesse IDs: {authorized_commesse_ids}")
         
         if not authorized_commesse_ids:
+            logging.info("📭 CASCADE: No authorized commesse, returning empty array")
             return []
         
         # Fetch authorized commesse
+        logging.info(f"🔍 CASCADE: Querying commesse with IDs: {authorized_commesse_ids}")
         commesse_docs = await db.commesse.find({
             "id": {"$in": authorized_commesse_ids}
         }).to_list(length=None)
         
+        logging.info(f"📊 CASCADE: Found {len(commesse_docs)} commesse docs")
+        
         # Convert to Pydantic models to ensure JSON serialization
         commesse = []
         for doc in commesse_docs:
+            logging.info(f"🔧 CASCADE: Processing doc with keys: {list(doc.keys())}")
             # Remove MongoDB ObjectId field
             if '_id' in doc:
                 del doc['_id']
             commesse.append(doc)
         
+        logging.info(f"✅ CASCADE: Returning {len(commesse)} commesse successfully")
         return commesse
         
     except Exception as e:
-        logging.error(f"Error fetching commesse by sub agenzia: {e}")
+        logging.error(f"❌ CASCADE ERROR: {type(e).__name__}: {str(e)}")
+        import traceback
+        logging.error(f"❌ CASCADE TRACEBACK: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Errore nel caricamento commesse: {str(e)}")
 
 @api_router.get("/cascade/servizi-by-commessa/{commessa_id}")
