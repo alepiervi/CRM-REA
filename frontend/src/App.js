@@ -12524,6 +12524,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     setShowDocumentsModal(true);
   };
 
+  // Funzione helper per ottenere il nome dell'utente
+  const getUserDisplayName = (userId) => {
+    // Per ora ritorna solo l'ID, in futuro potremo caricare i nomi utente
+    // TODO: Implementare cache utenti per mostrare nomi reali
+    return userId ? userId.substring(0, 8) + "..." : "N/A";
+  };
+
   const handleViewClienteHistory = async (cliente) => {
     setSelectedCliente(cliente);
     setSelectedClientName(`${cliente.nome} ${cliente.cognome}`);
