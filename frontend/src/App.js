@@ -254,13 +254,34 @@ const AuthProvider = ({ children }) => {
   };
 
   const extendSession = () => {
-    console.log('🔄 Session extended by user - ULTRA-CLEAN RESTART');
+    console.log('🔄 SESSION EXTENSION - COMPLETE CLEANUP AND RESTART');
     
-    // Stop countdown completely
+    // STEP 1: Stop countdown completely
     stopCountdown();
     
-    // Restart the full 15-minute timer clean
-    startActivityTimer();
+    // STEP 2: Clear ALL existing timers (activity + warning)
+    if (activityTimer) {
+      console.log('🧹 Clearing existing activity timer');
+      clearTimeout(activityTimer);
+      setActivityTimer(null);
+    }
+    
+    warningTimers.forEach((timer, index) => {
+      console.log(`🧹 Clearing warning timer ${index}`);
+      clearTimeout(timer);
+    });
+    setWarningTimers([]);
+    
+    // STEP 3: Reset all session states
+    setShowSessionWarning(false);
+    setTimeLeft(0);
+    setIsCountdownActive(false);
+    
+    // STEP 4: Wait a moment then restart clean 15-minute timer
+    setTimeout(() => {
+      console.log('🚀 RESTARTING CLEAN 15-MINUTE TIMER');
+      startActivityTimer();
+    }, 100);
     
     showSessionWarningToast('✅ Sessione estesa per altri 15 minuti', 'default');
   };
