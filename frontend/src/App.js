@@ -187,15 +187,15 @@ const AuthProvider = ({ children }) => {
   };
 
   const showSessionWarningToast = (message, variant = 'default') => {
-    if (typeof toast !== 'undefined') {
+    try {
       toast({
         title: "⏰ Avviso Sessione",
         description: message,
         variant: variant,
         duration: 8000
       });
-    } else {
-      console.log('Toast not available:', message);
+    } catch (error) {
+      console.log('Toast error:', error, 'Message:', message);
     }
   };
 
