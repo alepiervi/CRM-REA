@@ -148,6 +148,7 @@ const AuthProvider = ({ children }) => {
     
     // Reset session extension flag
     setSessionExtended(false);
+    sessionExtendedRef.current = false;
     
     // Clear ALL existing timers completely
     if (activityTimer) {
