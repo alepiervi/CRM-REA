@@ -213,14 +213,10 @@ const AuthProvider = ({ children }) => {
         
         console.log(`⏱️ Countdown: ${newTime} seconds remaining`);
         
-        // Toast notifications at production milestones (60 and 30 seconds)
-        if (newTime === 60) {
-          console.log('⏰ 1 minute milestone');
-          showSessionWarningToast('🚨 ATTENZIONE: La sessione scadrà tra 1 minuto!', 'destructive');
-        }
-        if (newTime === 30) {
-          console.log('🚨 30 seconds milestone');
-          showSessionWarningToast('🚨 ULTIMO AVVISO: Sessione scade tra 30 secondi!', 'destructive');
+        // Toast notifications for urgent testing (at 5 seconds)
+        if (newTime === 5) {
+          console.log('🚨 5 seconds milestone');
+          showSessionWarningToast('🚨 ULTIMO AVVISO: Sessione scade tra 5 secondi!', 'destructive');
         }
         
         // End countdown when time reaches 0
