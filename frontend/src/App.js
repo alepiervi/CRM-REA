@@ -278,9 +278,10 @@ const AuthProvider = ({ children }) => {
 
     const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     
-    // Add event listeners for user activity
+    // Add event listeners for user activity - FIXED TO WORK!
     const handleActivity = () => {
-      resetActivityTimer();
+      console.log('🎯 USER ACTIVITY DETECTED - Resetting 15-minute timer');
+      startActivityTimer(); // This restarts the full 15-minute timer
     };
 
     activityEvents.forEach(event => {
