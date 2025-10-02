@@ -12868,6 +12868,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                   <TableHead>Commessa</TableHead>
                   <TableHead>Sub Agenzia</TableHead>
                   <TableHead>Stato</TableHead>
+                  <TableHead>Creato da</TableHead>
                   <TableHead>Data Creazione</TableHead>
                   <TableHead>Azioni</TableHead>
                 </TableRow>
