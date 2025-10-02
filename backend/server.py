@@ -11616,15 +11616,14 @@ async def get_segmenti_by_tipologia(
     try:
         # Query segmenti based on tipologia
         segmenti_docs = await db.segmenti.find({
-            "tipologia_contratto_id": tipologia_id
+            "tipologia_contratto_id": tipologia_id,
+            "is_active": True
         }).to_list(length=None)
         
         if not segmenti_docs:
-            # Fallback to standard segmenti
-            return [
-                {"id": "residenziale", "nome": "Residenziale", "tipologia_contratto_id": tipologia_id},
-                {"id": "business", "nome": "Business", "tipologia_contratto_id": tipologia_id}
-            ]
+            # No fallback - return empty array if no segmenti are found
+            logging.info(f"📭 CASCADE: No active segmenti found for tipologia {tipologia_id}, returning empty array")
+            return []
         
         # Convert to JSON serializable format
         segmenti = []
