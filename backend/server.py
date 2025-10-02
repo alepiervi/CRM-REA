@@ -8078,6 +8078,61 @@ async def cleanup_orphaned_references(current_user: User = Depends(get_current_u
         logging.error(f"Error during cleanup: {e}")
         raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
 
+# === SISTEMA AUDIT LOG CLIENTI ===
+
+async def log_client_action(
+    cliente_id: str,
+    action: ClienteLogAction,
+    description: str,
+    user: User,
+    old_value: Optional[str] = None,
+    new_value: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    ip_address: Optional[str] = None
+):
+    """Registra un'azione nel log di audit del cliente"""
+    try:
+        log_entry = {
+            "id": str(uuid.uuid4()),
+            "cliente_id": cliente_id,
+            "action": action.value,
+            "description": description,
+            "user_id": user.id,
+            "user_name": f"{user.nome} {user.cognome}",
+            "user_role": user.role.value,
+            "old_value": old_value,
+            "new_value": new_value,
+            "metadata": metadata or {},
+            "timestamp": datetime.now(timezone.utc),
+            "ip_address": ip_address
+        }
+        
+        # Rimuovi _id se presente per evitare conflitti MongoDB
+        if '_id' in log_entry:
+            del log_entry['_id']
+            
+        await db.clienti_logs.insert_one(log_entry)
+        logging.info(f"📝 CLIENT LOG: {action.value} for cliente {cliente_id} by {user.nome} {user.cognome}")
+        
+    except Exception as e:
+        logging.error(f"Error logging client action: {e}")
+        # Non interrompere l'operazione principale se il logging fallisce
+
+def get_user_ip(request) -> Optional[str]:
+    """Estrae l'IP dell'utente dalla richiesta"""
+    # In un ambiente Kubernetes, l'IP potrebbe essere in diversi headers
+    forwarded_for = getattr(request, 'headers', {}).get('X-Forwarded-For')
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    
+    real_ip = getattr(request, 'headers', {}).get('X-Real-IP')
+    if real_ip:
+        return real_ip
+        
+    # Fallback all'IP del client (potrebbe essere il proxy)
+    client_host = getattr(request, 'client', None)
+    return getattr(client_host, 'host', None) if client_host else None
+
 # Gestione Clienti
 @api_router.post("/clienti", response_model=Cliente)
 async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depends(get_current_user)):
