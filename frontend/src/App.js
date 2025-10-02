@@ -397,6 +397,12 @@ const AuthProvider = ({ children }) => {
     warningTimers.forEach(timer => clearTimeout(timer));
     setWarningTimers([]);
     
+    // Clear countdown timer
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      setCountdownTimer(null);
+    }
+    
     // Reset warning states
     setShowSessionWarning(false);
     setTimeLeft(0);
