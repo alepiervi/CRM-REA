@@ -14420,7 +14420,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     offerta_id: ''
   });
 
-  // CASCADING DATA ARRAYS
+  // CASCADING DATA ARRAYS - ALWAYS INITIALIZE AS ARRAYS
   const [cascadeCommesse, setCascadeCommesse] = useState([]);
   const [cascadeServizi, setCascadeServizi] = useState([]);
   const [cascadeTipologie, setCascadeTipologie] = useState([]);
