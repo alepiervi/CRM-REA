@@ -141,15 +141,21 @@ const AuthProvider = ({ children }) => {
   const WARNING_TIME = 13 * 60 * 1000;    // Show banner at 13 minutes = exactly 2 minutes left
 
   const startActivityTimer = () => {
-    console.log('🕒 Starting 15 minute inactivity timer');
+    const timestamp = new Date().toLocaleTimeString();
+    console.log(`🕒 [${timestamp}] STARTING 15-MINUTE INACTIVITY TIMER`);
     
     // Clear ALL existing timers completely
     if (activityTimer) {
+      console.log('🧹 Clearing existing activity timer');
       clearTimeout(activityTimer);
     }
-    warningTimers.forEach(timer => clearTimeout(timer));
+    warningTimers.forEach((timer, index) => {
+      console.log(`🧹 Clearing existing warning timer ${index}`);
+      clearTimeout(timer);
+    });
     
     // Stop any active countdown
+    console.log('🛑 Stopping any active countdown');
     stopCountdown();
 
     // SINGLE WARNING TIMER - Shows banner with exactly 2 minutes left and counts down to 0
