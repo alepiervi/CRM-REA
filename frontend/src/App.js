@@ -191,6 +191,8 @@ const AuthProvider = ({ children }) => {
 
     setActivityTimer(finalTimer);
     setWarningTimers([warning2MinTimer, warning1MinTimer, warning30SecTimer]);
+    
+    return newCountdownInterval;
   };
 
   const showSessionWarningToast = (message, variant = 'default') => {
