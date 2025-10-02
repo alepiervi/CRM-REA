@@ -11997,6 +11997,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [allClienti, setAllClienti] = useState([]); // Store all clients for filtering
   const [commesse, setCommesse] = useState(commesseFromParent || []);
   const [subAgenzie, setSubAgenzie] = useState(subAgenzieFromParent || []);
+  const [servizi, setServizi] = useState(serviziFromParent || []);
   const [selectedCommessaLocal, setSelectedCommessaLocal] = useState(selectedCommessa || null);
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
