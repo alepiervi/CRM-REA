@@ -14863,11 +14863,11 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   value={selectedData.commessa_id} 
                   onChange={(e) => handleCommessaSelect(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                  disabled={!cascadeCommesse.length && (user?.role === 'responsabile' || user?.role === 'backoffice')}
+                  disabled={!Array.isArray(cascadeCommesse) || (!cascadeCommesse.length && (user?.role === 'responsabile' || user?.role === 'backoffice'))}
                 >
                   <option value="">Seleziona Commessa...</option>
-                  {cascadeCommesse?.map(commessa => (
-                    <option key={commessa.id} value={commessa.id}>{commessa.nome}</option>
+                  {Array.isArray(cascadeCommesse) && cascadeCommesse.map(commessa => (
+                    <option key={commessa?.id || Math.random()} value={commessa?.id}>{commessa?.nome || 'Nome non disponibile'}</option>
                   ))}
                 </select>
               </div>
