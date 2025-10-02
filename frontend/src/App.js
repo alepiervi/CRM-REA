@@ -238,12 +238,22 @@ const AuthProvider = ({ children }) => {
         
         // End countdown when time reaches 0
         if (newTime <= 0) {
-          console.log('⏰ COUNTDOWN FINISHED - LOGGING OUT');
+          console.log('⏰ COUNTDOWN FINISHED - CHECKING IF LOGOUT IS NEEDED');
           clearInterval(newCountdownInterval);
           setCountdownTimer(null);
           setIsCountdownActive(false);
-          setShowSessionWarning(false);
-          setTimeout(logout, 1000);
+          
+          // Check if session warning is still shown - if not, user extended session
+          setTimeout(() => {
+            // Double-check if session was extended during the timeout
+            if (showSessionWarning) {
+              console.log('🚪 Session expired - logging out user');
+              setShowSessionWarning(false);
+              logout();
+            } else {
+              console.log('✅ Session was extended - logout cancelled');
+            }
+          }, 100);
           return 0;
         }
         
