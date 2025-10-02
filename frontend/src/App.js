@@ -14479,19 +14479,28 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const initializeFlowByRole = () => {
     if (!user) return;
     
-    if (user.role === 'sub_agenzia' || user.sub_agenzia_id) {
+    if (user?.role === 'sub_agenzia' || user?.sub_agenzia_id) {
       // SUB AGENZIA FLOW: Start with commesse selection
       console.log("🏢 Sub Agenzia Flow: Starting with commesse selection");
-      setCascadeCommesse(commesse || []);
+      const commesseArray = Array.isArray(commesse) ? commesse : [];
+      setCascadeCommesse(commesseArray);
       
       // If commessa is pre-selected, load servizi immediately
       if (selectedCommessa && selectedCommessa !== 'all') {
         handleCommessaSelect(selectedCommessa);
       }
-    } else if (user.role === 'responsabile' || user.role === 'backoffice' || user.role === 'admin') {
+    } else if (user?.role === 'responsabile' || user?.role === 'backoffice' || user?.role === 'admin') {
       // RESPONSABILE/BACKOFFICE FLOW: Start with sub agenzia selection  
       console.log("👔 Responsabile/Backoffice Flow: Starting with sub agenzia selection");
       setCascadeCommesse([]); // Will be loaded after sub agenzia selection
+    } else {
+      // FALLBACK: Default to empty arrays
+      console.log("⚠️ Unknown user role, initializing empty arrays");
+      setCascadeCommesse([]);
+      setCascadeServizi([]);
+      setCascadeTipologie([]);
+      setCascadeSegmenti([]);  
+      setCascadeOfferte([]);
     }
   };
 
