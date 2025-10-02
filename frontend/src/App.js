@@ -14784,13 +14784,195 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nuovo Cliente</DialogTitle>
-          <DialogDescription>
-            Crea un nuovo cliente inserendo i dati richiesti. I campi contrassegnati con * sono obbligatori.
+          <DialogTitle className="text-2xl font-bold text-blue-600">
+            {showClientForm ? "📝 Compila Scheda Cliente" : "🎯 Selezione Prodotto/Offerta"}
+          </DialogTitle>
+          <DialogDescription className="text-lg">
+            {showClientForm 
+              ? "Inserisci i dati del cliente per completare la creazione."
+              : "Segui il percorso guidato per selezionare il prodotto/offerta più adatto."
+            }
           </DialogDescription>
         </DialogHeader>
+
+        {/* CASCADING SELECTION FLOW */}
+        {!showClientForm && (
+          <div className="space-y-6">
+            
+            {/* STEP INDICATOR */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+              <h3 className="font-semibold text-blue-800 mb-2">Percorso Guidato Selezione</h3>
+              <div className="flex flex-wrap gap-2 text-sm">
+                {user?.role === 'sub_agenzia' || user?.sub_agenzia_id ? (
+                  <>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.commessa_id ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      1. Commessa
+                    </span>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.servizio_id ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      2. Servizio
+                    </span>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.tipologia_contratto ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      3. Tipologia
+                    </span>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.segmento ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      4. Segmento
+                    </span>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.offerta_id ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      5. Offerta
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.sub_agenzia_id ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      1. Sub Agenzia
+                    </span>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.commessa_id ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      2. Commessa
+                    </span>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.servizio_id ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      3. Servizio
+                    </span>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.tipologia_contratto ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      4. Tipologia
+                    </span>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.segmento ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      5. Segmento
+                    </span>
+                    <span className={`px-3 py-1 rounded-full ${selectedData.offerta_id ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      6. Offerta
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              
+              {/* SUB AGENZIA SELECTION (for Responsabili/Backoffice only) */}
+              {(user?.role === 'responsabile' || user?.role === 'backoffice' || user?.role === 'admin') && (
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold text-gray-700">🏢 Sub Agenzia</Label>
+                  <select 
+                    value={selectedData.sub_agenzia_id} 
+                    onChange={(e) => handleSubAgenziaSelect(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona Sub Agenzia...</option>
+                    {subAgenzie?.map(sa => (
+                      <option key={sa.id} value={sa.id}>{sa.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* COMMESSA SELECTION */}
+              <div className="space-y-2">
+                <Label className="text-base font-semibold text-gray-700">📋 Commessa</Label>
+                <select 
+                  value={selectedData.commessa_id} 
+                  onChange={(e) => handleCommessaSelect(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  disabled={!cascadeCommesse.length && (user?.role === 'responsabile' || user?.role === 'backoffice')}
+                >
+                  <option value="">Seleziona Commessa...</option>
+                  {cascadeCommesse?.map(commessa => (
+                    <option key={commessa.id} value={commessa.id}>{commessa.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* SERVIZIO SELECTION */}
+              {selectedData.commessa_id && (
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold text-gray-700">⚙️ Servizio</Label>
+                  <select 
+                    value={selectedData.servizio_id} 
+                    onChange={(e) => handleServizioSelect(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona Servizio...</option>
+                    {cascadeServizi?.map(servizio => (
+                      <option key={servizio.id} value={servizio.id}>{servizio.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* TIPOLOGIA CONTRATTO SELECTION */}
+              {selectedData.servizio_id && (
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold text-gray-700">📝 Tipologia Contratto</Label>
+                  <select 
+                    value={selectedData.tipologia_contratto} 
+                    onChange={(e) => handleTipologiaSelect(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona Tipologia...</option>
+                    {cascadeTipologie?.map(tipologia => (
+                      <option key={tipologia.id} value={tipologia.id}>{tipologia.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* SEGMENTO SELECTION */}
+              {selectedData.tipologia_contratto && (
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold text-gray-700">🎯 Segmento</Label>
+                  <select 
+                    value={selectedData.segmento} 
+                    onChange={(e) => handleSegmentoSelect(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona Segmento...</option>
+                    {cascadeSegmenti?.map(segmento => (
+                      <option key={segmento.id} value={segmento.id}>{segmento.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* OFFERTA SELECTION */}
+              {selectedData.segmento && (
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold text-gray-700">💡 Offerta</Label>
+                  <select 
+                    value={selectedData.offerta_id} 
+                    onChange={(e) => handleOffertaSelect(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona Offerta...</option>
+                    {cascadeOfferte?.map(offerta => (
+                      <option key={offerta.id} value={offerta.id}>{offerta.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+            </div>
+
+            {/* SELECTION SUMMARY */}
+            {Object.values(selectedData).some(val => val) && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-2">Riepilogo Selezione</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm text-blue-700">
+                  {selectedData.sub_agenzia_id && <div><strong>Sub Agenzia:</strong> {subAgenzie?.find(sa => sa.id === selectedData.sub_agenzia_id)?.nome}</div>}
+                  {selectedData.commessa_id && <div><strong>Commessa:</strong> {cascadeCommesse?.find(c => c.id === selectedData.commessa_id)?.nome}</div>}
+                  {selectedData.servizio_id && <div><strong>Servizio:</strong> {cascadeServizi?.find(s => s.id === selectedData.servizio_id)?.nome}</div>}
+                  {selectedData.tipologia_contratto && <div><strong>Tipologia:</strong> {cascadeTipologie?.find(t => t.id === selectedData.tipologia_contratto)?.nome}</div>}
+                  {selectedData.segmento && <div><strong>Segmento:</strong> {cascadeSegmenti?.find(s => s.id === selectedData.segmento)?.nome}</div>}
+                  {selectedData.offerta_id && <div><strong>Offerta:</strong> {cascadeOfferte?.find(o => o.id === selectedData.offerta_id)?.nome}</div>}
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {/* CLIENT FORM (shown after offerta selection) */}
+        {showClientForm && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
