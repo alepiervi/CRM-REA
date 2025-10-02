@@ -3770,6 +3770,22 @@ async def upload_document(
         
         await db.documents.insert_one(document_data)
         
+        # 📝 LOG: Registra l'upload del documento (solo per clienti)
+        if doc_type == DocumentType.CLIENTE:
+            await log_client_action(
+                cliente_id=entity_id,
+                action=ClienteLogAction.DOCUMENT_UPLOADED,
+                description=f"Documento caricato: {file.filename}",
+                user=current_user,
+                new_value=file.filename,
+                metadata={
+                    "document_id": document_data["id"],
+                    "file_size": file.size,
+                    "file_type": file.content_type,
+                    "aruba_drive_path": document_data["aruba_drive_path"]
+                }
+            )
+        
         return {
             "success": True,
             "message": "Documento caricato con successo",
