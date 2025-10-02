@@ -380,8 +380,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: 
-    - "Cascading Client Creation Flow Testing and Form Customization"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
@@ -403,6 +402,7 @@ test_plan:
     - "User Creation Enhancement - UNIT/SUB AGENZIA Assignment with Services"
     - "Document Management System Complete Testing"
     - "Frontend Document Management System Testing"
+    - "Cascading Client Creation Flow Testing and Form Customization"
 
   - task: "Cascading Client Creation Flow Testing and Form Customization"
     implemented: true
