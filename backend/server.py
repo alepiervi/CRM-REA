@@ -8133,6 +8133,54 @@ def get_user_ip(request) -> Optional[str]:
     client_host = getattr(request, 'client', None)
     return getattr(client_host, 'host', None) if client_host else None
 
+def detect_client_changes(old_client: Cliente, update_data: dict) -> List[Dict[str, str]]:
+    """Rileva i cambiamenti nei dati del cliente e genera descrizioni leggibili"""
+    changes = []
+    
+    # Mappa dei campi con nomi user-friendly
+    field_names = {
+        "nome": "Nome",
+        "cognome": "Cognome", 
+        "email": "Email",
+        "telefono": "Telefono",
+        "indirizzo": "Indirizzo",
+        "citta": "Città",
+        "provincia": "Provincia",
+        "cap": "CAP",
+        "codice_fiscale": "Codice Fiscale",
+        "partita_iva": "Partita IVA",
+        "commessa_id": "Commessa",
+        "sub_agenzia_id": "Sub Agenzia",
+        "servizio_id": "Servizio",
+        "tipologia_contratto": "Tipologia Contratto",
+        "segmento": "Segmento",
+        "status": "Status",
+        "note": "Note",
+        "assigned_to": "Assegnato a"
+    }
+    
+    for field, new_value in update_data.items():
+        if field in ["updated_at", "dati_aggiuntivi"]:  # Skip meta fields
+            continue
+            
+        old_value = getattr(old_client, field, None)
+        
+        # Convert values to string for comparison
+        old_str = str(old_value) if old_value is not None else ""
+        new_str = str(new_value) if new_value is not None else ""
+        
+        if old_str != new_str:
+            field_display = field_names.get(field, field.title())
+            changes.append({
+                "field": field,
+                "field_display": field_display,
+                "old_value": old_str,
+                "new_value": new_str,
+                "description": f"{field_display} modificato da '{old_str}' a '{new_str}'"
+            })
+    
+    return changes
+
 # Gestione Clienti
 @api_router.post("/clienti", response_model=Cliente)
 async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depends(get_current_user)):
