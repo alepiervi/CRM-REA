@@ -1727,42 +1727,91 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex overflow-hidden">
-      {/* Session Warning Banner - Optimized to prevent flickering */}
+      {/* Professional Session Warning Banner */}
       {showSessionWarning && timeLeft > 0 && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 border-b-4 border-amber-600 text-white px-4 py-3 shadow-lg animate-in slide-in-from-top duration-500">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <div className="flex items-center space-x-3">
-              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center animate-pulse">
-                <span className="text-amber-500 text-sm font-bold">!</span>
+        <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 border-b-4 border-orange-600 text-white shadow-2xl animate-in slide-in-from-top duration-700 ease-out">
+          <div className="bg-black bg-opacity-10 backdrop-blur-sm">
+            <div className="max-w-7xl mx-auto px-6 py-4">
+              <div className="flex items-center justify-between">
+                {/* Left side - Warning content */}
+                <div className="flex items-center space-x-4">
+                  {/* Animated warning icon */}
+                  <div className="relative">
+                    <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm border-2 border-white border-opacity-30">
+                      <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center animate-pulse shadow-lg">
+                        <svg className="w-5 h-5 text-orange-500 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    {/* Pulsating ring effect */}
+                    <div className="absolute inset-0 w-12 h-12 bg-white bg-opacity-20 rounded-full animate-ping"></div>
+                  </div>
+                  
+                  {/* Warning text and countdown */}
+                  <div className="flex flex-col">
+                    <div className="flex items-center space-x-3 mb-1">
+                      <h3 className="text-lg font-bold text-white drop-shadow-sm">
+                        🔒 Sessione in Scadenza
+                      </h3>
+                      <div className="bg-red-500 bg-opacity-80 px-2 py-1 rounded-full animate-pulse">
+                        <span className="text-xs font-bold text-white">URGENTE</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <p className="text-sm text-white text-opacity-95 font-medium">
+                        La tua sessione terminerà automaticamente tra:
+                      </p>
+                      <div className="bg-black bg-opacity-30 px-4 py-2 rounded-lg border border-white border-opacity-30 backdrop-blur-sm">
+                        <span className="text-2xl font-mono font-bold text-white drop-shadow-lg transition-all duration-500 ease-in-out">
+                          {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Right side - Action buttons */}
+                <div className="flex items-center space-x-3">
+                  {/* Progress bar */}
+                  <div className="hidden md:flex flex-col items-center space-y-1">
+                    <span className="text-xs text-white text-opacity-80 font-medium">Progresso</span>
+                    <div className="w-32 h-2 bg-black bg-opacity-30 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-white to-yellow-200 transition-all duration-1000 ease-linear"
+                        style={{ width: `${Math.max(0, Math.min(100, ((120 - timeLeft) / 120) * 100))}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  {/* Extend session button */}
+                  <button
+                    onClick={extendSession}
+                    className="group bg-white text-orange-600 px-6 py-3 rounded-xl font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-orange-50 border-2 border-transparent hover:border-white flex items-center space-x-2"
+                  >
+                    <svg className="w-5 h-5 group-hover:animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Estendi Sessione</span>
+                  </button>
+                  
+                  {/* Close button */}
+                  <button
+                    onClick={() => {
+                      if (countdownTimer) {
+                        clearInterval(countdownTimer);
+                        setCountdownTimer(null);
+                      }
+                      setShowSessionWarning(false);
+                    }}
+                    className="w-10 h-10 bg-black bg-opacity-20 hover:bg-opacity-40 rounded-full flex items-center justify-center text-white hover:text-red-200 transition-all duration-200 backdrop-blur-sm border border-white border-opacity-20 hover:border-opacity-40"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold">⚠️ Attenzione: La sessione sta per scadere</p>
-                <p className="text-sm">
-                  Tempo rimanente: <span className="font-mono font-bold text-amber-100 transition-all duration-300 ease-in-out">
-                    {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-                  </span>
-                </p>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={extendSession}
-                className="bg-white text-amber-600 px-4 py-2 rounded-lg font-medium hover:bg-amber-50 transition-all duration-200 hover:scale-105"
-              >
-                ⏱️ Estendi Sessione
-              </button>
-              <button
-                onClick={() => {
-                  if (countdownTimer) {
-                    clearInterval(countdownTimer);
-                    setCountdownTimer(null);
-                  }
-                  setShowSessionWarning(false);
-                }}
-                className="text-white hover:text-amber-200 p-1 transition-colors duration-200"
-              >
-                ✕
-              </button>
             </div>
           </div>
         </div>
