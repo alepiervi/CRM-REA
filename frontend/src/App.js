@@ -14682,86 +14682,64 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    console.log("🎯 HANDLE SUBMIT CALLED - DEBUGGING");
-    console.log("🎯 Form Data Before Validation:", formData);
+    console.log("🎯 CASCADING SUBMIT TRIGGERED");
+    console.log("Selected data:", selectedData);
+    console.log("Form data:", formData);
     
-    // Validate required fields
-    if (!formData.nome || !formData.cognome || !formData.telefono) {
-      alert("Per favore compila tutti i campi obbligatori: Nome, Cognome e Telefono");
-      return;
-    }
-    
-    if (!formData.commessa_id || formData.commessa_id === "none") {
-      alert("Per favore seleziona una Commessa");
-      return;
-    }
-    
-    if (!formData.sub_agenzia_id || formData.sub_agenzia_id === "none") {
-      alert("Per favore seleziona una Sub Agenzia");
-      return;
-    }
-    
-    // Mappatura display values → backend enum values
-    const tipologiaMapping = {
-      'Telefonia Fastweb': 'telefonia_fastweb',
-      'Energia Fastweb': 'energia_fastweb',
-      'HO Mobile': 'ho_mobile',
-      'Telepass': 'telepass'
-    };
-    
-    const segmentoMapping = {
-      'Residenziale': 'residenziale',
-      'Business': 'business'
-    };
-    
-    // Converti i valori display agli enum backend
-    const mapTipologiaValue = (value) => {
-      if (!value || value === "none") return null;
-      // Se è già un valore enum, mantienilo
-      if (Object.values(tipologiaMapping).includes(value)) return value;
-      // Altrimenti cerca nella mappatura
-      return tipologiaMapping[value] || value;
-    };
-    
-    const mapSegmentoValue = (value) => {
-      if (!value || value === "none") return null;
-      // Se è già un valore enum, mantienilo  
-      if (Object.values(segmentoMapping).includes(value)) return value;
-      // Altrimenti cerca nella mappatura
-      return segmentoMapping[value] || value;
-    };
-    
-    // Clean data - remove "none" values but keep valid IDs, and map enum values
+    // Create clean form data with cascading selections + client data
     const cleanFormData = {
-      ...formData,
-      email: formData.email || null, // Rimuovi email vuota
-      commessa_id: formData.commessa_id === "none" ? "" : formData.commessa_id,
-      sub_agenzia_id: formData.sub_agenzia_id === "none" ? "" : formData.sub_agenzia_id,
-      servizio_id: (!formData.servizio_id || formData.servizio_id === "none") ? null : formData.servizio_id,
-      tipologia_contratto: mapTipologiaValue(formData.tipologia_contratto),
-      segmento: mapSegmentoValue(formData.segmento)
+      // Client personal data
+      nome: formData.nome,
+      cognome: formData.cognome,
+      email: formData.email || null,
+      telefono: formData.telefono,
+      indirizzo: formData.indirizzo,
+      citta: formData.citta,
+      provincia: formData.provincia,
+      cap: formData.cap,
+      codice_fiscale: formData.codice_fiscale,
+      partita_iva: formData.partita_iva,
+      note: formData.note,
+      
+      // Cascading selection data
+      sub_agenzia_id: selectedData.sub_agenzia_id,
+      commessa_id: selectedData.commessa_id,
+      servizio_id: selectedData.servizio_id,
+      tipologia_contratto: mapTipologiaContratto(selectedData.tipologia_contratto),
+      segmento: mapSegmento(selectedData.segmento),
+      offerta_id: selectedData.offerta_id,
+      
+      // Additional metadata for tracking
+      selection_flow: user?.role === 'sub_agenzia' ? 'sub_agenzia_flow' : 'responsabile_flow',
+      created_via: 'cascading_modal'
     };
     
-    console.log("🎯 ORIGINAL FORM DATA:", formData);
-    console.log("🎯 CLEAN FORM DATA FOR SUBMISSION:", cleanFormData);
-    console.log("🎯 ENUM MAPPINGS APPLIED:");
-    console.log("  - tipologia_contratto:", formData.tipologia_contratto, "→", cleanFormData.tipologia_contratto);
-    console.log("  - segmento:", formData.segmento, "→", cleanFormData.segmento);
+    console.log("🎯 CLEAN CASCADING FORM DATA:", cleanFormData);
     console.log("🎯 CALLING onSubmit FUNCTION...");
     
     // Call the onSubmit function passed from parent
     onSubmit(cleanFormData);
     
-    console.log("🎯 ONSUBMIT CALLED - RESETTING FORM");
+    console.log("🎯 ONSUBMIT CALLED - RESETTING ALL FORMS");
     
-    // Reset form after submit
+    // Reset all form data after submit
     setFormData({
       nome: '', cognome: '', email: '', telefono: '', indirizzo: '', 
       citta: '', provincia: '', cap: '', codice_fiscale: '', partita_iva: '',
-      commessa_id: (selectedCommessa && selectedCommessa !== 'all') ? selectedCommessa : '',
-      sub_agenzia_id: '', servizio_id: '',
-      tipologia_contratto: '', segmento: '', note: ''
+      note: ''
     });
+    
+    setSelectedData({
+      sub_agenzia_id: '',
+      commessa_id: '',
+      servizio_id: '',
+      tipologia_contratto: '',
+      segmento: '',
+      offerta_id: ''
+    });
+    
+    setShowClientForm(false);
+    setCurrentStep('initial');
     
     console.log("🎯 CLOSING MODAL");
     onClose();
