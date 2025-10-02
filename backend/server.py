@@ -11651,23 +11651,14 @@ async def get_offerte_by_filiera(
     try:
         # Query offerte based on the full selection chain
         offerte_docs = await db.offerte.find({
-            "commessa_id": commessa_id,
-            "servizio_id": servizio_id,
-            "tipologia_contratto_id": tipologia_id,
-            "segmento_id": segmento_id
+            "segmento_id": segmento_id,
+            "is_active": True
         }).to_list(length=None)
         
         if not offerte_docs:
-            # Create default offerta based on selections
-            return [{
-                "id": f"offerta_{segmento_id}_{tipologia_id}",
-                "nome": f"Offerta Standard {segmento_id.title()}",
-                "commessa_id": commessa_id,
-                "servizio_id": servizio_id,
-                "tipologia_contratto_id": tipologia_id,
-                "segmento_id": segmento_id,
-                "descrizione": "Offerta standard per la combinazione selezionata"
-            }]
+            # No fallback - return empty array if no offerte are found
+            logging.info(f"📭 CASCADE: No active offerte found for segmento {segmento_id}, returning empty array")
+            return []
         
         # Convert to JSON serializable format
         offerte = []
