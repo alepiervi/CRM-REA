@@ -905,6 +905,41 @@ class ClienteUpdate(BaseModel):
     note: Optional[str] = None
     dati_aggiuntivi: Optional[Dict[str, Any]] = None
     assigned_to: Optional[str] = None
+    last_contact: Optional[datetime] = None
+    updated_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Sistema di Audit Log per clienti
+class ClienteLogAction(str, Enum):
+    CREATED = "created"
+    UPDATED = "updated" 
+    STATUS_CHANGED = "status_changed"
+    DOCUMENT_UPLOADED = "document_uploaded"
+    DOCUMENT_DELETED = "document_deleted"
+    ASSIGNED = "assigned"
+    CONTACTED = "contacted"
+    NOTE_ADDED = "note_added"
+
+class ClienteLog(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    cliente_id: str  # ID del cliente
+    action: ClienteLogAction  # Tipo di azione
+    description: str  # Descrizione dell'azione
+    user_id: str  # ID dell'utente che ha eseguito l'azione
+    user_name: str  # Nome dell'utente (per facilità di visualizzazione)
+    user_role: str  # Ruolo dell'utente
+    old_value: Optional[str] = None  # Valore precedente (per modifiche)
+    new_value: Optional[str] = None  # Nuovo valore (per modifiche)
+    metadata: Optional[Dict[str, Any]] = {}  # Metadati aggiuntivi
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    ip_address: Optional[str] = None  # IP dell'utente (se disponibile)
+
+class ClienteLogCreate(BaseModel):
+    cliente_id: str
+    action: ClienteLogAction
+    description: str
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = {}
 
 class UserCommessaAuthorization(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
