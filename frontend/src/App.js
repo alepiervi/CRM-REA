@@ -17279,7 +17279,7 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
         formData.append('entity_id', clientId);
         formData.append('uploaded_by', user?.id || 'current_user');
 
-        const response = await axios.post(`${API}/aruba-drive/upload`, formData, {
+        const response = await axios.post(`${API}/documents/upload`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
