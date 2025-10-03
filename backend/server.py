@@ -8550,6 +8550,45 @@ async def update_cliente(
         logging.error(f"❌ CLIENT UPDATE ERROR: {e}")
         raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
 
+@api_router.get("/users/display-name/{user_id}")
+async def get_user_display_name(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Ottieni il nome visualizzabile di un utente per l'UI"""
+    try:
+        user = await db.users.find_one({"id": user_id})
+        if user:
+            # Rimuovi _id per evitare problemi di serializzazione
+            if '_id' in user:
+                del user['_id']
+            
+            display_name = f"{user.get('nome', '')} {user.get('cognome', '')}".strip()
+            if not display_name:
+                display_name = user.get('username', user_id)
+            
+            return {
+                "user_id": user_id,
+                "display_name": display_name,
+                "username": user.get('username'),
+                "role": user.get('role')
+            }
+        else:
+            return {
+                "user_id": user_id,
+                "display_name": user_id[:8] + "...",
+                "username": "Unknown",
+                "role": "Unknown"
+            }
+    except Exception as e:
+        logging.error(f"Error fetching user display name: {e}")
+        return {
+            "user_id": user_id,
+            "display_name": "Error",
+            "username": "Error",
+            "role": "Error"
+        }
+
 @api_router.get("/clienti/{cliente_id}/logs")
 async def get_cliente_logs(
     cliente_id: str,
