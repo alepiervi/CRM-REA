@@ -2114,7 +2114,6 @@ const Dashboard = () => {
           {/* Desktop Hierarchical Selectors */}
           {/* NOTE: Moved to footer to prevent interference with navigation click events */}
         </div>
-        </div>
 
         {/* Desktop Navigation */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
