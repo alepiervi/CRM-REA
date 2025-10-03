@@ -16873,7 +16873,7 @@ Duplicate,Test,+393471234567"""
         
         success, put_config_response, status = self.make_request(
             'PUT', f'commesse/{fastweb_commessa_id}/aruba-config', 
-            {"aruba_drive_config": test_aruba_config}, 
+            test_aruba_config, 
             expected_status=200
         )
         
@@ -17513,7 +17513,7 @@ def main():
         
         success, put_config_response, status = self.make_request(
             'PUT', f'commesse/{fastweb_commessa_id}/aruba-config', 
-            {"aruba_drive_config": test_aruba_config}, 
+            test_aruba_config, 
             expected_status=200
         )
         
