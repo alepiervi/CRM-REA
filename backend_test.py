@@ -18068,10 +18068,10 @@ Duplicate,Test,+393471234567"""
             if success and status == 200:
                 stored_segmento = client_details.get('segmento')
                 if stored_segmento == 'privato':
-                    self.log_test("✅ Enum mapping 'Privato' → 'privato' working", True, 
+                    self.log_test("✅ Enum fix 'privato' working", True, 
                         f"Stored segmento: {stored_segmento}")
                 else:
-                    self.log_test("❌ Enum mapping 'Privato' → 'privato' failed", False, 
+                    self.log_test("❌ Enum fix 'privato' failed", False, 
                         f"Expected: 'privato', Got: {stored_segmento}")
             else:
                 self.log_test("❌ Could not verify client details", False, f"Status: {status}")
