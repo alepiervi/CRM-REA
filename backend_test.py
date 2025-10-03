@@ -15371,12 +15371,27 @@ Duplicate,Test,+393471234567"""
         
         # Verifica Sub Agenzia F2F (ID: 7c70d4b5-4be0-4707-8bca-dfe84a0b9dee)
         f2f_sub_agenzia_id = "7c70d4b5-4be0-4707-8bca-dfe84a0b9dee"
-        success, f2f_response, status = self.make_request('GET', f'sub-agenzie/{f2f_sub_agenzia_id}', expected_status=200)
+        
+        # Get all sub agenzie and find F2F
+        success, all_sub_agenzie, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
         
         if success and status == 200:
-            self.log_test("✅ Sub Agenzia F2F trovata", True, f"ID: {f2f_sub_agenzia_id}, Nome: {f2f_response.get('nome', 'Unknown')}")
+            f2f_found = False
+            f2f_response = None
+            
+            for sub_agenzia in all_sub_agenzie:
+                if sub_agenzia.get('id') == f2f_sub_agenzia_id:
+                    f2f_found = True
+                    f2f_response = sub_agenzia
+                    break
+            
+            if f2f_found:
+                self.log_test("✅ Sub Agenzia F2F trovata", True, f"ID: {f2f_sub_agenzia_id}, Nome: {f2f_response.get('nome', 'Unknown')}")
+            else:
+                self.log_test("❌ Sub Agenzia F2F non trovata", False, f"ID: {f2f_sub_agenzia_id} not found in sub agenzie list")
+                return False
         else:
-            self.log_test("❌ Sub Agenzia F2F non trovata", False, f"Status: {status}, ID: {f2f_sub_agenzia_id}")
+            self.log_test("❌ Errore nel recupero sub agenzie", False, f"Status: {status}")
             return False
         
         # Verifica Commessa Fastweb (ID: 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1)
