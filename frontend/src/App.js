@@ -11803,8 +11803,8 @@ const CommesseManagement = ({
   );
 };
 
-// Segmento Aruba Drive Configuration Modal
-const SegmentoArubaConfigModal = ({ isOpen, onClose, onSave, segmento }) => {
+// Aruba Drive Configuration Modal per Commesse (Filiera)
+const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
   const [config, setConfig] = useState({
     enabled: false,
     url: '',
