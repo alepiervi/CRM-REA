@@ -9792,28 +9792,55 @@ class ArubaWebAutomation:
             return False
 
     async def upload_single_file(self, local_file_path):
-        """Upload single file to current Aruba Drive location"""
-        try:
-            # Look for file input or upload area
-            upload_selectors = [
-                'input[type="file"]',
-                'input[multiple]',
-                '.file-input',
-                '[data-upload="files"]'
-            ]
-            
-            # Try direct file input upload
-            for selector in upload_selectors:
-                try:
-                    file_input = await self.page.wait_for_selector(selector, timeout=3000)
-                    await file_input.set_input_files(local_file_path)
-                    
-                    # Wait for upload to complete
-                    await self.page.wait_for_timeout(3000)
-                    
-                    return True
-                except:
-                    continue
+        """Upload single file to current Aruba Drive location with enhanced reliability"""
+        file_name = Path(local_file_path).name
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                logging.info(f"📤 Attempting upload of {file_name} (attempt {attempt + 1}/{max_retries})")
+                
+                # Step 1: Look for file input or upload area (multiple strategies)
+                upload_selectors = [
+                    'input[type="file"]',
+                    'input[multiple]',
+                    'input[accept*="*"]',
+                    '.file-input',
+                    '[data-upload="files"]',
+                    '[data-testid="file-input"]'
+                ]
+                
+                # Strategy 1: Direct file input upload
+                for selector in upload_selectors:
+                    try:
+                        # Wait with human-like delay
+                        await self.page.wait_for_timeout(500)
+                        file_input = await self.page.wait_for_selector(selector, timeout=5000)
+                        
+                        if file_input:
+                            logging.info(f"🎯 Found file input with selector: {selector}")
+                            
+                            # Simulate human-like interaction
+                            await self.page.evaluate("() => window.scrollTo(0, 0)")
+                            await self.page.wait_for_timeout(300)
+                            
+                            # Upload file
+                            await file_input.set_input_files(local_file_path)
+                            logging.info(f"📁 File {file_name} attached to input")
+                            
+                            # Wait for upload progress with verification
+                            upload_success = await self._verify_upload_completion(file_name)
+                            
+                            if upload_success:
+                                logging.info(f"✅ Successfully uploaded {file_name}")
+                                return True
+                            else:
+                                logging.warning(f"⚠️ Upload of {file_name} may have failed, retrying...")
+                                break  # Try next attempt
+                                
+                    except Exception as selector_error:
+                        logging.debug(f"Selector {selector} failed: {selector_error}")
+                        continue
             
             # If direct input failed, try upload button approach
             upload_button_selectors = [
