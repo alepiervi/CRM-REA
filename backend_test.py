@@ -18053,7 +18053,7 @@ Duplicate,Test,+393471234567"""
             "sub_agenzia_id": fastweb_sub_agenzia.get('id'),
             "servizio_id": servizio_id,
             "tipologia_contratto": "energia_fastweb",
-            "segmento": "Privato"  # This should be mapped to "privato"
+            "segmento": "privato"  # Fixed enum value
         }
         
         success, create_response, status = self.make_request('POST', 'clienti', client_data, expected_status=200)
