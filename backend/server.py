@@ -10351,7 +10351,9 @@ class ArubaWebAutomation:
         """
         try:
             # Initialize Playwright browser, context, and page
-            await self.initialize()
+            init_success = await self.initialize()
+            if not init_success:
+                return {"success": False, "error": "Failed to initialize browser"}
             
             # Initialize connection with commessa-specific config
             login_success = await self.login_with_config(aruba_config)
