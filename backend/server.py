@@ -1046,6 +1046,7 @@ class SegmentoCreate(BaseModel):
     is_active: bool = True
 
 class SegmentoUpdate(BaseModel):
+    aruba_config: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
 
 # Offerta Models
