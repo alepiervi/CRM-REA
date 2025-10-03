@@ -335,10 +335,16 @@ const AuthProvider = ({ children }) => {
     
     // Add event listeners for user activity - EXCLUDING BANNER INTERACTIONS!
     const handleActivity = (event) => {
-      // Don't reset timer if user is interacting with session warning banner
-      if (event.target.closest('[data-session-banner]')) {
-        console.log('🚫 Ignoring activity on session banner');
-        return;
+      // Safety check: ensure event.target exists and has closest method
+      if (!event.target || typeof event.target.closest !== 'function') {
+        console.log('⚠️ Event target invalid, proceeding with activity detection');
+        // Proceed with activity detection since we can't check banner interaction
+      } else {
+        // Don't reset timer if user is interacting with session warning banner
+        if (event.target.closest('[data-session-banner]')) {
+          console.log('🚫 Ignoring activity on session banner');
+          return;
+        }
       }
       
       // Throttle activity detection
