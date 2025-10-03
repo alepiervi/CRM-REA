@@ -17092,7 +17092,7 @@ Duplicate,Test,+393471234567"""
             # Restore original configuration
             success, restore_response, status = self.make_request(
                 'PUT', f'commesse/{fastweb_commessa_id}/aruba-config', 
-                {"aruba_drive_config": existing_config}, 
+                existing_config, 
                 expected_status=200
             )
             
@@ -17732,7 +17732,7 @@ def main():
             # Restore original configuration
             success, restore_response, status = self.make_request(
                 'PUT', f'commesse/{fastweb_commessa_id}/aruba-config', 
-                {"aruba_drive_config": existing_config}, 
+                existing_config, 
                 expected_status=200
             )
             
