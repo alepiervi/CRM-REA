@@ -15022,6 +15022,26 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
 };
 
 const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, selectedCommessa, user }) => {
+  
+  // ENUM MAPPING FUNCTIONS - Convert display values to backend enum format
+  const mapTipologiaContratto = (displayValue) => {
+    const mappings = {
+      'Telefonia Fastweb': 'telefonia_fastweb',
+      'Energia Fastweb': 'energia_fastweb',
+      'Ho Mobile': 'ho_mobile',
+      'Telepass': 'telepass'
+    };
+    return mappings[displayValue] || displayValue;
+  };
+
+  const mapSegmento = (displayValue) => {
+    const mappings = {
+      'Residenziale': 'residenziale',
+      'Business': 'business'
+    };
+    return mappings[displayValue] || displayValue;
+  };
+
   // STEP MANAGEMENT for cascading flow
   const [currentStep, setCurrentStep] = useState('initial'); // initial, filiera, cliente
   const [showClientForm, setShowClientForm] = useState(false);
