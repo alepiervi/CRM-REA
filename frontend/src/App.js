@@ -2111,31 +2111,8 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Desktop Hierarchical Selectors - TEMPORARILY DISABLED FOR DEBUGGING */}
-          <div style={{ display: 'none' }}>
-            {/* 1. SELETTORE COMMESSA - DISABLED TO FIX NAVIGATION */}
-            <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-              1. Seleziona Commessa
-              {getAvailableCommesse().length > 0 && (
-                <span className="ml-1 text-xs text-green-600">({getAvailableCommesse().length} disponibili)</span>
-              )}
-            </Label>
-            <Select value={selectedCommessa} onValueChange={handleCommessaChange}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Seleziona commessa" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutte le Commesse</SelectItem>
-                {getAvailableCommesse().map((commessa) => (
-                  <SelectItem key={commessa.id} value={commessa.id}>
-                    <div className="flex items-center space-x-2">
-                      <Building className="w-3 h-3" />
-                      <span>{commessa.nome}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Desktop Hierarchical Selectors */}
+          {/* NOTE: Moved after navigation to prevent interference with click events */}
 
             {/* 2. SELETTORE SERVIZIO */}
             {selectedCommessa && selectedCommessa !== "all" && (
