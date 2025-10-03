@@ -310,15 +310,18 @@ frontend:
     needs_retesting: false
   - task: "Sistema Configurazione Aruba Drive per Commessa - Implementazione Completa"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/backend/server.py, /app/frontend/src/App.js"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "✅ SISTEMA CONFIGURAZIONE ARUBA DRIVE PER COMMESSA IMPLEMENTATO COMPLETAMENTE: 1) BACKEND: Nuovo modello CommessaArubaDriveConfig con campi enabled, url, username, password, root_folder_path, auto_create_structure, folder_structure, connection_timeout, upload_timeout, retry_attempts. Endpoint PUT /api/commesse/{id}/aruba-config per salvare configurazione e GET /api/commesse/{id}/aruba-config per recuperare configurazione. 2) FRONTEND: Nuovo pulsante configurazione Aruba Drive (icona FileText) nella gestione commesse, ArubaConfigModal completo con form per credenziali e impostazioni, toggle per abilitare/disabilitare, campi per URL, username, password, cartella root, checkbox per creazione automatica struttura, impostazioni avanzate (timeout, retry). 3) INTEGRAZIONE: Sistema upload documenti aggiornato per usare configurazione specifica per commessa, struttura gerarchica automatica Commessa/Servizio/Tipologia/Segmento/ClientName, enhanced audit log con metadata commessa_config_used. 4) SIDEBAR CLEANUP: Rimossa voce 'Documenti' dalla sidebar - ora gestita tramite pulsanti specifici per cliente. TESTING RICHIESTO: Verificare sidebar pulita, accesso configurazione Aruba Drive, modal funzionante, salvataggio configurazione, upload documenti con struttura gerarchica, audit log enhanced."
+        - working: false
+          agent: "testing"
+          comment: "🎯 SISTEMA ARUBA DRIVE TESTING COMPLETATO - IMPLEMENTAZIONE PARZIALMENTE FUNZIONANTE! ✅ SUCCESSI VERIFICATI: 1) ADMIN LOGIN: admin/admin123 funziona perfettamente - Token ricevuto, Ruolo: admin. 2) SIDEBAR CLEANUP CONFERMATO: Sezione 'Documenti' completamente rimossa dalla sidebar per ruolo admin - menu mostra solo: Dashboard, Lead, Utenti, Workflow Builder, Configurazione AI, Configurazioni, WhatsApp, Qualificazione Lead, Call Center, Commesse, Unit & Sub Agenzie, Clienti, Analytics. 3) NAVIGAZIONE COMMESSE: Clic su 'Commesse' funziona correttamente, sezione accessibile. 4) BACKEND DATA LOADING: 3 commesse caricate con successo (IDs: 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1, 5ef3ae82-645a-43d4-82e0-a3b27da77a7c, 72d1a8da-10cb-4fa7-85fe-1f26ac9a9690), Sub Agenzie (1), Servizi (3), Tipologie contratto (26) tutti caricati correttamente. ❌ PROBLEMI IDENTIFICATI: 1) PULSANTI ARUBA CONFIG NON TROVATI: Non sono riuscito a localizzare i pulsanti di configurazione Aruba Drive con icona FileText nella sezione Commesse - potrebbero non essere visibili o non essere stati renderizzati correttamente. 2) MODAL ARUBA CONFIG NON ACCESSIBILE: Non è stato possibile testare l'ArubaConfigModal perché i pulsanti di configurazione non sono stati trovati. 3) TIMEOUT NAVIGAZIONE CLIENTI: Problemi di timeout nel clic su 'Clienti' - potrebbero esserci problemi di overlay o interferenze UI. 🔍 ANALISI TECNICA: Il backend sembra funzionare correttamente (dati caricati), ma l'interfaccia frontend per la configurazione Aruba Drive potrebbe non essere completamente integrata o visibile. I pulsanti di configurazione potrebbero essere nascosti, non renderizzati, o posizionati diversamente da quanto previsto. RACCOMANDAZIONE: Verificare l'implementazione frontend dei pulsanti Aruba Drive nella sezione Commesse e assicurarsi che siano visibili e cliccabili."
   - task: "Cliente Status Modification Fix - Frontend-Backend Enum Synchronization"
     implemented: true
     working: true
