@@ -11035,13 +11035,13 @@ class ArubaDriveConfigResponse(BaseModel):
     updated_at: datetime
     last_test_result: Optional[dict] = None
 
-# Configurazione Aruba Drive specifica per commessa
-class CommessaArubaDriveConfig(BaseModel):
+# Configurazione Aruba Drive specifica per segmento (moved from commessa level)
+class SegmentoArubaDriveConfig(BaseModel):
     enabled: bool = False
     url: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None
-    root_folder_path: Optional[str] = None  # Cartella root per questa commessa
+    root_folder_path: Optional[str] = None  # Cartella root per questo segmento
     auto_create_structure: bool = True  # Crea automaticamente la struttura cartelle
     folder_structure: Dict[str, Any] = {}  # Struttura cartelle personalizzata
     connection_timeout: int = 30
