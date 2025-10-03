@@ -18172,7 +18172,7 @@ Duplicate,Test,+393471234567"""
             "sub_agenzia_id": fastweb_sub_agenzia.get('id'),
             "servizio_id": servizio_id,
             "tipologia_contratto": "energia_fastweb",
-            "segmento": "Privato"
+            "segmento": "privato"
         }
         
         success, create_response_2, status = self.make_request('POST', 'clienti', client_data_2, expected_status=200)
