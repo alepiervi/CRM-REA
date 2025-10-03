@@ -17965,12 +17965,18 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return
 
-        # Run the specific urgent test based on review request
-        print("\n" + "🚨" * 40)
-        print("FINAL TEST: ARUBA DRIVE HIERARCHICAL FOLDER CREATION AFTER PATH NAVIGATION FIX")
-        print("🚨" * 40)
+        # Run the specific test for new Aruba Drive strategy
+        print("\n" + "🎯" * 40)
+        print("FOCUS TEST: NUOVA STRATEGIA ARUBA DRIVE - NAVIGAZIONE CARTELLE ESISTENTI")
+        print("🎯" * 40)
         
-        self.test_aruba_drive_hierarchical_folder_creation_final()
+        self.test_aruba_drive_new_strategy_navigate_existing_folders()
+
+        # Run additional relevant tests
+        print("\n📋 ADDITIONAL TESTS...")
+        self.test_provinces_endpoint()
+        self.test_dashboard_stats()
+        self.test_documents_endpoint_urgent()
 
         # Print final summary
         print("\n" + "=" * 80)
