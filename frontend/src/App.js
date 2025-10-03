@@ -11951,7 +11951,7 @@ const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
                 />
                 <div>
                   <Label htmlFor="aruba-enabled" className="font-medium">
-                    Abilita Aruba Drive per questo segmento
+                    Abilita Aruba Drive per questa filiera/commessa
                   </Label>
                   <p className="text-sm text-gray-600">
                     Attiva il caricamento automatico dei documenti su Aruba Drive
