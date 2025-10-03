@@ -17304,12 +17304,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return
 
-        # Run the specific Aruba Drive upload test with original filename and hierarchy as requested
-        print("\n" + "📁" * 40)
-        print("ARUBA DRIVE UPLOAD CON NOME FILE ORIGINALE E STRUTTURA GERARCHICA TESTING")
-        print("📁" * 40)
+        # Run the specific urgent test based on review request
+        print("\n" + "🚨" * 40)
+        print("URGENT: ARUBA DRIVE HIERARCHICAL FOLDER CREATION WITH SIMULATION MODE")
+        print("🚨" * 40)
         
-        self.test_aruba_drive_upload_with_original_filename_and_hierarchy()
+        self.test_aruba_drive_hierarchical_folder_creation_urgent()
 
         # Print final summary
         print("\n" + "=" * 80)
