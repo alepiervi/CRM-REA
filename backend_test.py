@@ -15358,10 +15358,10 @@ Duplicate,Test,+393471234567"""
         
         # Run specific test based on review request
         print("\n" + "="*80)
-        print("🎯 FOCUS TEST: CASCADE ENDPOINTS DEBUG - 403 FORBIDDEN ERROR")
+        print("🎯 FOCUS TEST: HIERARCHICAL MANAGEMENT SYSTEM - COMMESSE-SERVIZI-TIPOLOGIE-SEGMENTI")
         print("="*80)
         
-        self.test_cascade_endpoints_debug_403()
+        self.test_hierarchical_management_system_complete()
         
         # Print final results
         print(f"\n📊 Test Results Summary:")
