@@ -11924,7 +11924,7 @@ const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
               Configurazione Aruba Drive
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              {segmento?.nome} - Configurazione accesso documenti
+              {commessa?.nome} - Configurazione accesso documenti (Filiera)
             </p>
           </div>
           <Button variant="ghost" onClick={onClose}>
