@@ -785,6 +785,9 @@ class CommessaUpdate(BaseModel):
     has_call_center: Optional[bool] = None
     document_management: Optional[DocumentManagement] = None
     
+    # NEW: Aruba Drive configuration updates
+    aruba_drive_config: Optional[Dict[str, Any]] = None
+    
     responsabile_id: Optional[str] = None
     is_active: Optional[bool] = None
 
