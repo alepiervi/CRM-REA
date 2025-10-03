@@ -1760,22 +1760,26 @@ const Dashboard = () => {
           return user.role === "admin" ? <CallCenterManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "commesse":
           return user.role === "admin" ? (
-            <CommesseManagement 
-              selectedUnit={selectedUnit} 
-              units={units}
-              selectedTipologia={selectedTipologia}
-              setSelectedTipologia={setSelectedTipologia}
-              selectedSegmento={selectedSegmento}
-              setSelectedSegmento={setSelectedSegmento}
-              segmenti={segmenti}
-              offerte={offerte}
-              fetchSegmenti={fetchSegmenti}
-              fetchOfferte={fetchOfferte}
-              updateSegmento={updateSegmento}
-              createOfferta={createOfferta}
-              updateOfferta={updateOfferta}
-              deleteOfferta={deleteOfferta}
-            />
+            <div className="p-6">
+              <h1 className="text-2xl font-bold mb-4">🔧 Test Commesse Section</h1>
+              <p>Se vedi questo messaggio, il routing funziona!</p>
+              <CommesseManagement 
+                selectedUnit={selectedUnit} 
+                units={units}
+                selectedTipologia={selectedTipologia}
+                setSelectedTipologia={setSelectedTipologia}
+                selectedSegmento={selectedSegmento}
+                setSelectedSegmento={setSelectedSegmento}
+                segmenti={segmenti}
+                offerte={offerte}
+                fetchSegmenti={fetchSegmenti}
+                fetchOfferte={fetchOfferte}
+                updateSegmento={updateSegmento}
+                createOfferta={createOfferta}
+                updateOfferta={updateOfferta}
+                deleteOfferta={deleteOfferta}
+              />
+            </div>
           ) : <div>Non autorizzato</div>;
         case "sub-agenzie":
           return user.role === "admin" ? <SubAgenzieManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} units={units} commesse={commesse} subAgenzie={subAgenzie} /> : <div>Non autorizzato</div>;
