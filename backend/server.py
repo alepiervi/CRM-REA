@@ -1033,6 +1033,8 @@ class SegmentoModel(BaseModel):
     tipo: SegmentoType
     nome: str  # "Privato" or "Business"
     tipologia_contratto_id: str
+    # NEW: Aruba Drive configuration per segmento (moved from Commessa level)
+    aruba_config: Optional[Dict[str, Any]] = None
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
