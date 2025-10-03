@@ -9842,12 +9842,65 @@ class ArubaWebAutomation:
                         logging.debug(f"Selector {selector} failed: {selector_error}")
                         continue
             
-            # If direct input failed, try upload button approach
-            upload_button_selectors = [
-                'button:has-text("Upload")', 'button:has-text("Carica")',
-                '.upload-btn', '[data-action="upload"]',
-                'button[title*="upload"]'
-            ]
+                # If all direct inputs failed for this attempt, try button approach
+                logging.info(f"⚠️ Direct input upload failed for {file_name} on attempt {attempt + 1}, trying button approach...")
+                
+                # Strategy 2: Upload button + file dialog approach
+                upload_button_selectors = [
+                    'button:has-text("Upload")', 'button:has-text("Carica")',
+                    'button:has-text("Add Files")', 'button:has-text("Aggiungi File")', 
+                    '.upload-btn', '[data-action="upload"]',
+                    'button[title*="upload"]', 'button[title*="carica"]',
+                    '.btn-upload', '.file-upload-btn'
+                ]
+                
+                for selector in upload_button_selectors:
+                    try:
+                        # Human-like interaction: scroll to button, wait, click
+                        button = await self.page.wait_for_selector(selector, timeout=3000)
+                        if button:
+                            # Scroll button into view
+                            await button.scroll_into_view_if_needed()
+                            await self.page.wait_for_timeout(300)
+                            
+                            # Click upload button
+                            await button.click()
+                            await self.page.wait_for_timeout(500)
+                            
+                            # Look for file input that appears after clicking
+                            file_input = await self.page.wait_for_selector('input[type="file"]', timeout=3000)
+                            if file_input:
+                                await file_input.set_input_files(local_file_path)
+                                logging.info(f"📁 File {file_name} uploaded via button approach")
+                                
+                                # Verify upload
+                                upload_success = await self._verify_upload_completion(file_name)
+                                if upload_success:
+                                    return True
+                                else:
+                                    break  # Try next attempt
+                    except Exception as e:
+                        logging.debug(f"Button selector {selector} failed: {e}")
+                        continue
+                
+                # If we get here, this attempt failed
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 2  # Progressive backoff
+                    logging.info(f"⏳ Upload attempt {attempt + 1} failed, waiting {wait_time}s before retry...")
+                    await self.page.wait_for_timeout(wait_time * 1000)
+                    
+                    # Refresh page state
+                    await self.page.reload()
+                    await self.page.wait_for_load_state('networkidle')
+                    
+            except Exception as attempt_error:
+                logging.error(f"❌ Upload attempt {attempt + 1} failed with error: {attempt_error}")
+                if attempt < max_retries - 1:
+                    await self.page.wait_for_timeout(2000)
+                    continue
+        
+        logging.error(f"❌ All {max_retries} upload attempts failed for {file_name}")
+        return False
             
             for selector in upload_button_selectors:
                 try:
