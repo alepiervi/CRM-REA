@@ -15023,23 +15023,56 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
 
 const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, selectedCommessa, user }) => {
   
-  // ENUM MAPPING FUNCTIONS - Convert display values to backend enum format
-  const mapTipologiaContratto = (displayValue) => {
+  // ENUM MAPPING FUNCTIONS - Convert UUID or display values to backend enum format
+  const mapTipologiaContratto = (uuidOrDisplayValue) => {
+    // First, check if it's a UUID - if so, convert to display name using cascadeTipologie
+    let displayValue = uuidOrDisplayValue;
+    
+    // If it looks like a UUID (contains hyphens), find the display name
+    if (typeof uuidOrDisplayValue === 'string' && uuidOrDisplayValue.includes('-')) {
+      const tipologia = cascadeTipologie?.find(t => t.id === uuidOrDisplayValue);
+      if (tipologia) {
+        displayValue = tipologia.nome;
+        console.log(`🎯 ENUM MAPPING: UUID ${uuidOrDisplayValue} → Display: "${displayValue}"`);
+      }
+    }
+    
+    // Now convert display name to backend enum
     const mappings = {
       'Telefonia Fastweb': 'telefonia_fastweb',
       'Energia Fastweb': 'energia_fastweb',
       'Ho Mobile': 'ho_mobile',
       'Telepass': 'telepass'
     };
-    return mappings[displayValue] || displayValue;
+    
+    const enumValue = mappings[displayValue] || displayValue;
+    console.log(`🎯 ENUM MAPPING: Display "${displayValue}" → Enum: "${enumValue}"`);
+    return enumValue;
   };
 
-  const mapSegmento = (displayValue) => {
+  const mapSegmento = (uuidOrDisplayValue) => {
+    // First, check if it's a UUID - if so, convert to display name using cascadeSegmenti
+    let displayValue = uuidOrDisplayValue;
+    
+    // If it looks like a UUID (contains hyphens), find the display name
+    if (typeof uuidOrDisplayValue === 'string' && uuidOrDisplayValue.includes('-')) {
+      const segmento = cascadeSegmenti?.find(s => s.id === uuidOrDisplayValue);
+      if (segmento) {
+        displayValue = segmento.nome;
+        console.log(`🎯 ENUM MAPPING: UUID ${uuidOrDisplayValue} → Display: "${displayValue}"`);
+      }
+    }
+    
+    // Now convert display name to backend enum
     const mappings = {
+      'Privato': 'residenziale',
       'Residenziale': 'residenziale',
       'Business': 'business'
     };
-    return mappings[displayValue] || displayValue;
+    
+    const enumValue = mappings[displayValue] || displayValue;
+    console.log(`🎯 ENUM MAPPING: Display "${displayValue}" → Enum: "${enumValue}"`);
+    return enumValue;
   };
 
   // STEP MANAGEMENT for cascading flow
