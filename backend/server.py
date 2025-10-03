@@ -7962,6 +7962,74 @@ async def update_segmento(
         logger.error(f"Error updating segmento: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nell'aggiornamento: {str(e)}")
 
+@api_router.put("/segmenti/{segmento_id}/aruba-config")
+async def update_segmento_aruba_config(
+    segmento_id: str,
+    aruba_config: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Update Aruba Drive configuration for a specific segmento"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono modificare la configurazione Aruba Drive")
+    
+    try:
+        # Check if segmento exists
+        segmento = await db.segmenti.find_one({"id": segmento_id})
+        if not segmento:
+            raise HTTPException(status_code=404, detail="Segmento non trovato")
+        
+        # Update aruba_config
+        result = await db.segmenti.update_one(
+            {"id": segmento_id},
+            {"$set": {
+                "aruba_config": aruba_config,
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Segmento non trovato")
+        
+        return {
+            "success": True, 
+            "message": "Configurazione Aruba Drive aggiornata con successo",
+            "segmento_id": segmento_id,
+            "aruba_config": aruba_config
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating segmento aruba config: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'aggiornamento configurazione: {str(e)}")
+
+@api_router.get("/segmenti/{segmento_id}/aruba-config")
+async def get_segmento_aruba_config(
+    segmento_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get Aruba Drive configuration for a specific segmento"""
+    
+    try:
+        segmento = await db.segmenti.find_one({"id": segmento_id})
+        if not segmento:
+            raise HTTPException(status_code=404, detail="Segmento non trovato")
+        
+        aruba_config = segmento.get("aruba_config", {})
+        
+        return {
+            "success": True,
+            "segmento_id": segmento_id,
+            "aruba_config": aruba_config
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting segmento aruba config: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento configurazione: {str(e)}")
+
 # ================================
 # OFFERTE ENDPOINTS
 # ================================
