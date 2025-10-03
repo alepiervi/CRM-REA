@@ -16903,7 +16903,7 @@ Duplicate,Test,+393471234567"""
         )
         
         if success and status == 200:
-            saved_config = verify_config_response.get('aruba_drive_config', {})
+            saved_config = verify_config_response.get('config', {})
             
             if saved_config:
                 self.log_test("✅ Configuration persistence verified", True, 
@@ -17543,7 +17543,7 @@ def main():
         )
         
         if success and status == 200:
-            saved_config = verify_config_response.get('aruba_drive_config', {})
+            saved_config = verify_config_response.get('config', {})
             
             if saved_config:
                 self.log_test("✅ Configuration persistence verified", True, 
