@@ -16174,31 +16174,46 @@ Duplicate,Test,+393471234567"""
 
     def run_all_tests(self):
         """Run all test suites"""
-        print("🚀 Starting CRM API Testing Suite...")
+        print("🚀 Starting CRM Backend API Testing...")
         print(f"🌐 Base URL: {self.base_url}")
-        
-        # Run authentication first
+        print("=" * 80)
+
+        # Run authentication tests first
         if not self.test_authentication():
             print("❌ Authentication failed - stopping tests")
             return
+
+        # Run other tests
+        self.test_provinces_endpoint()
+        self.test_dashboard_stats()
         
-        # Run specific test based on review request
-        print("\n" + "="*80)
-        print("🎯 FOCUS TEST: CLIENT CREATION WITH ENUM MAPPING FIX - F2F FLOW")
-        print("="*80)
+        # Run specific tests based on requirements
+        self.test_password_fix_multiple_users_login()
+        self.test_documents_endpoint_urgent()
+        self.test_document_management_system_complete()
+        self.test_aruba_drive_configuration_complete()
         
-        self.test_client_creation_enum_mapping_fix()
+        # NEW: Run Playwright and Aruba Drive specific tests
+        print("\n" + "🎭" * 40)
+        print("PLAYWRIGHT AND ARUBA DRIVE SPECIFIC TESTING")
+        print("🎭" * 40)
         
-        # Print final results
-        print(f"\n📊 Test Results Summary:")
-        print(f"   Tests Run: {self.tests_run}")
-        print(f"   Tests Passed: {self.tests_passed}")
-        print(f"   Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        self.test_playwright_functionality()
+        self.test_aruba_drive_upload_complete_flow()
+
+        # Print final summary
+        print("\n" + "=" * 80)
+        print("🎯 FINAL TEST SUMMARY")
+        print("=" * 80)
+        print(f"📊 Tests run: {self.tests_run}")
+        print(f"✅ Tests passed: {self.tests_passed}")
+        print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
+        print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
         if self.tests_passed == self.tests_run:
-            print("🎉 All tests passed!")
+            print("🎉 ALL TESTS PASSED!")
         else:
-            print(f"⚠️  {self.tests_run - self.tests_passed} tests failed")
+            print("🚨 SOME TESTS FAILED - CHECK LOGS ABOVE")
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
