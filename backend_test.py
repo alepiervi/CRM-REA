@@ -15421,12 +15421,27 @@ Duplicate,Test,+393471234567"""
         
         # Verifica Servizio TLS (ID: e000d779-2d13-4cde-afae-e498776a5493)
         tls_servizio_id = "e000d779-2d13-4cde-afae-e498776a5493"
-        success, tls_response, status = self.make_request('GET', f'servizi/{tls_servizio_id}', expected_status=200)
+        
+        # Get all servizi and find TLS
+        success, all_servizi, status = self.make_request('GET', 'servizi', expected_status=200)
         
         if success and status == 200:
-            self.log_test("✅ Servizio TLS trovato", True, f"ID: {tls_servizio_id}, Nome: {tls_response.get('nome', 'Unknown')}")
+            tls_found = False
+            tls_response = None
+            
+            for servizio in all_servizi:
+                if servizio.get('id') == tls_servizio_id:
+                    tls_found = True
+                    tls_response = servizio
+                    break
+            
+            if tls_found:
+                self.log_test("✅ Servizio TLS trovato", True, f"ID: {tls_servizio_id}, Nome: {tls_response.get('nome', 'Unknown')}")
+            else:
+                self.log_test("❌ Servizio TLS non trovato", False, f"ID: {tls_servizio_id} not found in servizi list")
+                return False
         else:
-            self.log_test("❌ Servizio TLS non trovato", False, f"Status: {status}, ID: {tls_servizio_id}")
+            self.log_test("❌ Errore nel recupero servizi", False, f"Status: {status}")
             return False
 
         # 3. **Test Cascade Endpoints Completo F2F**
