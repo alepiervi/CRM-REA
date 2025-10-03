@@ -308,6 +308,17 @@ frontend:
     stuck_count: 1
     priority: "critical"
     needs_retesting: false
+  - task: "Sistema Configurazione Aruba Drive per Commessa - Implementazione Completa"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "✅ SISTEMA CONFIGURAZIONE ARUBA DRIVE PER COMMESSA IMPLEMENTATO COMPLETAMENTE: 1) BACKEND: Nuovo modello CommessaArubaDriveConfig con campi enabled, url, username, password, root_folder_path, auto_create_structure, folder_structure, connection_timeout, upload_timeout, retry_attempts. Endpoint PUT /api/commesse/{id}/aruba-config per salvare configurazione e GET /api/commesse/{id}/aruba-config per recuperare configurazione. 2) FRONTEND: Nuovo pulsante configurazione Aruba Drive (icona FileText) nella gestione commesse, ArubaConfigModal completo con form per credenziali e impostazioni, toggle per abilitare/disabilitare, campi per URL, username, password, cartella root, checkbox per creazione automatica struttura, impostazioni avanzate (timeout, retry). 3) INTEGRAZIONE: Sistema upload documenti aggiornato per usare configurazione specifica per commessa, struttura gerarchica automatica Commessa/Servizio/Tipologia/Segmento/ClientName, enhanced audit log con metadata commessa_config_used. 4) SIDEBAR CLEANUP: Rimossa voce 'Documenti' dalla sidebar - ora gestita tramite pulsanti specifici per cliente. TESTING RICHIESTO: Verificare sidebar pulita, accesso configurazione Aruba Drive, modal funzionante, salvataggio configurazione, upload documenti con struttura gerarchica, audit log enhanced."
   - task: "Cliente Status Modification Fix - Frontend-Backend Enum Synchronization"
     implemented: true
     working: true
