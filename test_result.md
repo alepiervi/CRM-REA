@@ -435,7 +435,10 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Aruba Drive Configuration for Commesse - PUT/GET Endpoints"
+    - "Document Upload Endpoint - POST /api/documents/upload"
+    - "Aruba Drive Filiera-Specific Configuration System"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
