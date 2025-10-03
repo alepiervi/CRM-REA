@@ -11785,7 +11785,9 @@ const CommesseManagement = ({
         }}
         commessa={editingCommessaForAruba}
         onSave={(config) => {
-          saveArubaConfig(editingCommessaForAruba.id, config);
+          if (editingCommessaForAruba) {
+            saveArubaConfig(editingCommessaForAruba.id, config);
+          }
           setShowArubaConfigModal(false);
           setEditingCommessaForAruba(null);
         }}
