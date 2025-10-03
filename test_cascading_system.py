@@ -257,10 +257,10 @@ class CascadingSystemTester:
             return False
 
         # 7. **Test Cascade Endpoint 5: Offerte by Segmento**
-        print("\n🔗 7. TEST CASCADE ENDPOINT 5: GET /api/cascade/offerte-by-segmento/{segmento_id}...")
+        print("\n🔗 7. TEST CASCADE ENDPOINT 5: GET /api/segmenti/{segmento_id}/offerte...")
         
         success, offerte_cascade_response, status = self.make_request(
-            'GET', f'cascade/offerte-by-segmento/{test_segmento_id}', expected_status=200)
+            'GET', f'segmenti/{test_segmento_id}/offerte', expected_status=200)
         
         if success and status == 200:
             offerte_cascade = offerte_cascade_response if isinstance(offerte_cascade_response, list) else []
