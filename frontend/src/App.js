@@ -2228,6 +2228,127 @@ const Dashboard = () => {
           ))}
         </nav>
 
+        {/* Desktop Hierarchical Selectors - Moved here to prevent navigation interference */}
+        <div className="p-4 border-t border-slate-200 bg-slate-50">
+          {/* 1. SELETTORE COMMESSA */}
+          <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+            1. Seleziona Commessa
+            {getAvailableCommesse().length > 0 && (
+              <span className="ml-1 text-xs text-green-600">({getAvailableCommesse().length} disponibili)</span>
+            )}
+          </Label>
+          <Select value={selectedCommessa} onValueChange={handleCommessaChange}>
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Seleziona commessa" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutte le Commesse</SelectItem>
+              {getAvailableCommesse().map((commessa) => (
+                <SelectItem key={commessa.id} value={commessa.id}>
+                  <div className="flex items-center space-x-2">
+                    <Building className="w-3 h-3" />
+                    <span>{commessa.nome}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* 2. SELETTORE SERVIZIO */}
+          {selectedCommessa && selectedCommessa !== "all" && (
+            <div className="mt-4">
+              <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                2. Seleziona Servizio
+                {servizi.length > 0 && (
+                  <span className="ml-1 text-xs text-green-600">({servizi.length} disponibili)</span>
+                )}
+              </Label>
+              <Select value={selectedServizio || "all"} onValueChange={handleServizioChange}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona servizio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutti i Servizi</SelectItem>
+                  {servizi.map((servizio) => (
+                    <SelectItem key={servizio.id} value={servizio.id}>
+                      <div className="flex items-center space-x-2">
+                        <Cog className="w-3 h-3" />
+                        <span>{servizio.nome}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* 3. SELETTORE TIPOLOGIA CONTRATTO */}
+          {selectedCommessa && selectedCommessa !== "all" && 
+           selectedServizio && selectedServizio !== "all" && (
+            <div className="mt-4">
+              <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                3. Seleziona Tipologia
+                {formTipologieContratto.length > 0 && (
+                  <span className="ml-1 text-xs text-green-600">({formTipologieContratto.length})</span>
+                )}
+              </Label>
+              <Select value={selectedTipologiaContratto} onValueChange={handleTipologiaContrattoChange}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona tipologia" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le Tipologie</SelectItem>
+                  {formTipologieContratto.map((tipologia) => (
+                    <SelectItem key={tipologia.value} value={tipologia.value}>
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-3 h-3" />
+                        <span className="text-sm">{tipologia.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* 4. SELETTORE UNIT/SUB AGENZIA */}
+          {selectedCommessa && selectedCommessa !== "all" && 
+           selectedServizio && selectedServizio !== "all" && 
+           selectedTipologiaContratto && selectedTipologiaContratto !== "all" && (
+            <div className="mt-4">
+              <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                4. Unit/Sub Agenzia
+                {getAvailableUnitsSubAgenzie().length > 0 && (
+                  <span className="ml-1 text-xs text-green-600">({getAvailableUnitsSubAgenzie().length})</span>
+                )}
+              </Label>
+              <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le Unit/Sub Agenzie</SelectItem>
+                  {getAvailableUnitsSubAgenzie().map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      <div className="flex items-center space-x-2">
+                        {item.type === 'unit' ? (
+                          <Building2 className="w-3 h-3" />
+                        ) : (
+                          <MapPin className="w-3 h-3" />
+                        )}
+                        <span className="text-sm">{item.nome}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {item.type === 'unit' ? 'Unit' : 'Sub Agenzia'}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
         {/* Desktop Footer */}
         <div className="p-4 border-t border-slate-200">
           <div className="flex items-center space-x-3">
