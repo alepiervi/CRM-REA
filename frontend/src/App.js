@@ -10931,6 +10931,27 @@ const CommesseManagement = ({
     }
   };
 
+  const saveArubaConfig = async (commessaId, config) => {
+    try {
+      await axios.put(`${API}/commesse/${commessaId}/aruba-config`, config);
+      
+      toast({
+        title: "Successo",
+        description: "Configurazione Aruba Drive salvata con successo",
+      });
+      
+      // Refresh the list to show any changes
+      fetchCommesse();
+    } catch (error) {
+      console.error("Error saving Aruba config:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nel salvataggio della configurazione Aruba Drive",
+        variant: "destructive"
+      });
+    }
+  };
+
   const createServizio = async (servizioData) => {
     try {
       const response = await axios.post(`${API}/servizi`, servizioData);
