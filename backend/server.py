@@ -7977,10 +7977,12 @@ async def update_segmento_aruba_config(
             raise HTTPException(status_code=404, detail="Segmento non trovato")
         
         # Update aruba_config
+        config_dict = config.dict()
+        
         result = await db.segmenti.update_one(
             {"id": segmento_id},
             {"$set": {
-                "aruba_config": aruba_config,
+                "aruba_config": config_dict,
                 "updated_at": datetime.now(timezone.utc)
             }}
         )
@@ -7992,7 +7994,7 @@ async def update_segmento_aruba_config(
             "success": True, 
             "message": "Configurazione Aruba Drive aggiornata con successo",
             "segmento_id": segmento_id,
-            "aruba_config": aruba_config
+            "config_enabled": config.enabled
         }
         
     except HTTPException:
