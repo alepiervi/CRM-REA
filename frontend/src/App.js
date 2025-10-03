@@ -15170,6 +15170,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       
       const commesse = await response.json();
       console.log("✅ CASCADE: Commesse loaded successfully:", commesse);
+      console.log("✅ CASCADE DEBUG: Commesse array:", Array.isArray(commesse));
+      console.log("✅ CASCADE DEBUG: First commessa object:", commesse[0]);
       setCascadeCommesse(Array.isArray(commesse) ? commesse : []);
       
       // Reset downstream selections
