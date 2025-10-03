@@ -1617,6 +1617,76 @@ class ArubadriveService:
             logging.error(f"Aruba Drive download failed: {e}")
             # Per sviluppo, ritorna contenuto mock PDF
             return b'%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000074 00000 n \n0000000120 00000 n \ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n197\n%%EOF'
+    
+    async def navigate_to_folder(self, folder_path):
+        """Navigate to specific folder in Aruba Drive with enhanced reliability"""
+        try:
+            folders = folder_path.split('/')
+            current_path = []
+            
+            for i, folder in enumerate(folders):
+                if not folder:  # Skip empty strings
+                    continue
+                    
+                current_path.append(folder)
+                logging.info(f"🗂️ Navigating to folder: {folder} (step {i+1}/{len([f for f in folders if f])})")
+                
+                # Human-like interaction: wait and scroll to top
+                await self.page.wait_for_timeout(500)
+                await self.page.evaluate("() => window.scrollTo(0, 0)")
+                
+                # Look for folder link with multiple strategies
+                folder_selectors = [
+                    f'a:has-text("{folder}")', f'[title="{folder}"]',
+                    f'.folder:has-text("{folder}")', f'.directory:has-text("{folder}")',
+                    f'[data-name="{folder}"]', f'.file-item:has-text("{folder}")',
+                    f'.folder-icon + *:has-text("{folder}")'
+                ]
+                
+                folder_found = False
+                for selector in folder_selectors:
+                    try:
+                        element = await self.page.wait_for_selector(selector, timeout=5000)
+                        if element:
+                            # Ensure element is visible
+                            await element.scroll_into_view_if_needed()
+                            await self.page.wait_for_timeout(300)
+                            
+                            # Double-click for folder navigation (more reliable)
+                            await element.dblclick()
+                            
+                            # Wait for navigation to complete
+                            await self.page.wait_for_timeout(2000)
+                            await self.page.wait_for_load_state('networkidle', timeout=10000)
+                            
+                            logging.info(f"✅ Successfully navigated to: {'/'.join(current_path)}")
+                            folder_found = True
+                            break
+                    except Exception as e:
+                        logging.debug(f"Folder selector {selector} failed: {e}")
+                        continue
+                
+                if not folder_found:
+                    logging.error(f"❌ Could not find folder: {folder} in path {'/'.join(current_path[:-1])}")
+                    
+                    # Try to create the folder if it doesn't exist
+                    logging.info(f"🛠️ Attempting to create missing folder: {folder}")
+                    created = await self.create_folder(folder)
+                    if created:
+                        logging.info(f"✅ Created and navigated to new folder: {folder}")
+                        folder_found = True
+                    else:
+                        return False
+                
+                if not folder_found:
+                    return False
+            
+            logging.info(f"🎯 Successfully navigated to complete path: {folder_path}")
+            return True
+            
+        except Exception as e:
+            logging.error(f"❌ Navigation failed for path {folder_path}: {e}")
+            return False
 
 # Document Service Functions
 async def validate_uploaded_file(file) -> bool:
