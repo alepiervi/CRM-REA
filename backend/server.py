@@ -7962,7 +7962,7 @@ async def update_segmento(
 @api_router.put("/segmenti/{segmento_id}/aruba-config")
 async def update_segmento_aruba_config(
     segmento_id: str,
-    aruba_config: dict,
+    config: SegmentoArubaDriveConfig,
     current_user: User = Depends(get_current_user)
 ):
     """Update Aruba Drive configuration for a specific segmento"""
