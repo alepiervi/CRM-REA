@@ -12523,11 +12523,40 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     setShowDocumentsModal(true);
   };
 
+  // Cache per i nomi utenti per evitare chiamate ripetute
+  const [userDisplayCache, setUserDisplayCache] = useState({});
+
   // Funzione helper per ottenere il nome dell'utente
   const getUserDisplayName = (userId) => {
-    // Per ora ritorna solo l'ID, in futuro potremo caricare i nomi utente
-    // TODO: Implementare cache utenti per mostrare nomi reali
-    return userId ? userId.substring(0, 8) + "..." : "N/A";
+    if (!userId) return "N/A";
+    
+    // Controlla cache prima
+    if (userDisplayCache[userId]) {
+      return userDisplayCache[userId];
+    }
+    
+    // Se non in cache, carica async e ritorna placeholder nel frattempo
+    loadUserDisplayName(userId);
+    return userId.substring(0, 8) + "...";
+  };
+
+  // Funzione per caricare nome utente e aggiornare cache
+  const loadUserDisplayName = async (userId) => {
+    if (userDisplayCache[userId]) return; // Già caricato o in caricamento
+    
+    try {
+      const response = await axios.get(`${API}/users/display-name/${userId}`);
+      setUserDisplayCache(prev => ({
+        ...prev,
+        [userId]: response.data.display_name
+      }));
+    } catch (error) {
+      console.error(`Error loading user display name for ${userId}:`, error);
+      setUserDisplayCache(prev => ({
+        ...prev,
+        [userId]: userId.substring(0, 8) + "..."
+      }));
+    }
   };
 
   const handleViewClienteHistory = async (cliente) => {
