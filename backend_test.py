@@ -16835,7 +16835,7 @@ Duplicate,Test,+393471234567"""
             
             # Verify response structure
             if isinstance(get_config_response, dict):
-                config = get_config_response.get('aruba_drive_config', {})
+                config = get_config_response.get('config', {})
                 self.log_test("✅ Aruba config response structure", True, 
                     f"Config present: {config is not None}, Keys: {list(config.keys()) if config else 'None'}")
                 
@@ -17475,7 +17475,7 @@ def main():
             
             # Verify response structure
             if isinstance(get_config_response, dict):
-                config = get_config_response.get('aruba_drive_config', {})
+                config = get_config_response.get('config', {})
                 self.log_test("✅ Aruba config response structure", True, 
                     f"Config present: {config is not None}, Keys: {list(config.keys()) if config else 'None'}")
                 
