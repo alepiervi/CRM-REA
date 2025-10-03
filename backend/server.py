@@ -1042,6 +1042,7 @@ class SegmentoModel(BaseModel):
 class SegmentoCreate(BaseModel):
     tipo: SegmentoType
     tipologia_contratto_id: str
+    aruba_config: Optional[Dict[str, Any]] = None
     is_active: bool = True
 
 class SegmentoUpdate(BaseModel):
