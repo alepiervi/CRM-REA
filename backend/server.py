@@ -771,7 +771,8 @@ class CommessaCreate(BaseModel):
     has_call_center: bool = False
     document_management: DocumentManagement = DocumentManagement.DISABLED
     
-    # NOTE: Aruba Drive configuration moved to Segmento level
+    # RESTORED: Aruba Drive configuration per commessa
+    aruba_drive_config: Optional[Dict[str, Any]] = None
     
     responsabile_id: Optional[str] = None
 
@@ -787,7 +788,8 @@ class CommessaUpdate(BaseModel):
     has_call_center: Optional[bool] = None
     document_management: Optional[DocumentManagement] = None
     
-    # NOTE: Aruba Drive configuration moved to Segmento level
+    # RESTORED: Aruba Drive configuration per commessa
+    aruba_drive_config: Optional[Dict[str, Any]] = None
     
     responsabile_id: Optional[str] = None
     is_active: Optional[bool] = None
