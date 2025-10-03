@@ -10938,24 +10938,22 @@ const CommesseManagement = ({
     }
   };
 
-  const saveSegmentoArubaConfig = async (segmentoId, config) => {
+  const saveArubaConfig = async (commessaId, config) => {
     try {
-      await axios.put(`${API}/segmenti/${segmentoId}/aruba-config`, config);
+      await axios.put(`${API}/commesse/${commessaId}/aruba-config`, config);
       
       toast({
         title: "Successo",
-        description: "Configurazione Aruba Drive del segmento salvata con successo",
+        description: "Configurazione Aruba Drive per filiera salvata con successo",
       });
       
-      // Refresh the segmenti list to show any changes
-      if (selectedTipologia) {
-        fetchSegmenti(selectedTipologia);
-      }
+      // Refresh the commesse list to show any changes
+      fetchCommesse();
     } catch (error) {
-      console.error("Error saving Segmento Aruba config:", error);
+      console.error("Error saving Commessa Aruba config:", error);
       toast({
         title: "Errore",
-        description: error.response?.data?.detail || "Errore nel salvataggio della configurazione Aruba Drive del segmento",
+        description: error.response?.data?.detail || "Errore nel salvataggio della configurazione Aruba Drive per filiera",
         variant: "destructive"
       });
     }
