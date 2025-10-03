@@ -18060,7 +18060,7 @@ Duplicate,Test,+393471234567"""
         
         if success and status == 200:
             client_id = create_response.get('id') or create_response.get('cliente_id')
-            self.log_test("✅ Client created with segment 'Privato'", True, f"Client ID: {client_id}")
+            self.log_test("✅ Client created with segment 'privato'", True, f"Client ID: {client_id}")
             
             # Verify the client was created with correct segment mapping
             success, client_details, status = self.make_request('GET', f'clienti/{client_id}', expected_status=200)
