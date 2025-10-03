@@ -15396,12 +15396,27 @@ Duplicate,Test,+393471234567"""
         
         # Verifica Commessa Fastweb (ID: 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1)
         fastweb_commessa_id = "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1"
-        success, fastweb_response, status = self.make_request('GET', f'commesse/{fastweb_commessa_id}', expected_status=200)
+        
+        # Get all commesse and find Fastweb
+        success, all_commesse, status = self.make_request('GET', 'commesse', expected_status=200)
         
         if success and status == 200:
-            self.log_test("✅ Commessa Fastweb trovata", True, f"ID: {fastweb_commessa_id}, Nome: {fastweb_response.get('nome', 'Unknown')}")
+            fastweb_found = False
+            fastweb_response = None
+            
+            for commessa in all_commesse:
+                if commessa.get('id') == fastweb_commessa_id:
+                    fastweb_found = True
+                    fastweb_response = commessa
+                    break
+            
+            if fastweb_found:
+                self.log_test("✅ Commessa Fastweb trovata", True, f"ID: {fastweb_commessa_id}, Nome: {fastweb_response.get('nome', 'Unknown')}")
+            else:
+                self.log_test("❌ Commessa Fastweb non trovata", False, f"ID: {fastweb_commessa_id} not found in commesse list")
+                return False
         else:
-            self.log_test("❌ Commessa Fastweb non trovata", False, f"Status: {status}, ID: {fastweb_commessa_id}")
+            self.log_test("❌ Errore nel recupero commesse", False, f"Status: {status}")
             return False
         
         # Verifica Servizio TLS (ID: e000d779-2d13-4cde-afae-e498776a5493)
