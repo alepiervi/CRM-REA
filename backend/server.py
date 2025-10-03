@@ -10462,8 +10462,13 @@ class ArubaWebAutomation:
                 # Check if folder exists
                 exists = await self.folder_exists(folder)
                 if not exists:
-                    logging.warning(f"⚠️ Expected folder not found: {folder} - Please create manually: {'/'.join(folders[:i+1])}")
-                    return False
+                    logging.warning(f"⚠️ Expected folder not found: {folder} - Creating automatically as fallback")
+                    # Fallback: create the missing folder instead of failing
+                    created = await self.create_folder(folder)
+                    if not created:
+                        logging.error(f"❌ Failed to create missing folder: {folder}")
+                        return False
+                    logging.info(f"✅ Successfully created missing folder: {folder}")
                 
                 # Navigate to existing folder
                 nav_success = await self.navigate_to_folder(folder)
