@@ -1684,7 +1684,6 @@ const Dashboard = () => {
     if (user.role === "admin") {
       items.push(
         { id: "leads", label: "Lead", icon: Phone },
-        { id: "documents", label: "Documenti", icon: FileText },
         { id: "users", label: "Utenti", icon: Users },
         { id: "workflow-builder", label: "Workflow Builder", icon: Workflow },
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
