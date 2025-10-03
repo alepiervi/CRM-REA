@@ -264,7 +264,7 @@ class CascadingSystemTester:
         
         if success and status == 200:
             offerte_cascade = offerte_cascade_response if isinstance(offerte_cascade_response, list) else []
-            self.log_test("✅ GET /api/cascade/offerte-by-segmento/{segmento_id}", True, 
+            self.log_test("✅ GET /api/segmenti/{segmento_id}/offerte", True, 
                 f"Status: {status}, Found {len(offerte_cascade)} offerte for segmento {test_segmento_nome}")
             
             if len(offerte_cascade) > 0:
