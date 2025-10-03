@@ -9987,26 +9987,7 @@ class ArubaWebAutomation:
         
         logging.error(f"❌ All {max_retries} upload attempts failed for {file_name}")
         return False
-            
-            for selector in upload_button_selectors:
-                try:
-                    await self.page.click(selector)
-                    await self.page.wait_for_timeout(1000)
-                    
-                    # Look for file input that appears
-                    file_input = await self.page.wait_for_selector('input[type="file"]', timeout=3000)
-                    await file_input.set_input_files(local_file_path)
-                    
-                    await self.page.wait_for_timeout(3000)
-                    return True
-                except:
-                    continue
-            
-            raise Exception("No upload method worked")
-            
-        except Exception as e:
-            logging.error(f"Single file upload failed: {e}")
-            return False
+
     async def _verify_upload_completion(self, file_name, timeout=30):
         """Verify that file upload completed successfully"""
         try:
