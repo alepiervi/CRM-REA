@@ -18041,8 +18041,8 @@ Duplicate,Test,+393471234567"""
         else:
             servizio_id = None
 
-        # Create client with segment "Privato" (should map to "privato")
-        print("   Creating client with segment 'Privato'...")
+        # Create client with segment "privato" (enum fix applied)
+        print("   Creating client with segment 'privato'...")
         
         client_data = {
             "nome": "Mario",
