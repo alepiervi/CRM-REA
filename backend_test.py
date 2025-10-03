@@ -17654,10 +17654,10 @@ Duplicate,Test,+393471234567"""
 
         # Run the specific urgent test based on review request
         print("\n" + "🚨" * 40)
-        print("URGENT: ARUBA DRIVE HIERARCHICAL FOLDER CREATION WITH SIMULATION MODE")
+        print("FINAL TEST: ARUBA DRIVE HIERARCHICAL FOLDER CREATION AFTER PATH NAVIGATION FIX")
         print("🚨" * 40)
         
-        self.test_aruba_drive_hierarchical_folder_creation_urgent()
+        self.test_aruba_drive_hierarchical_folder_creation_final()
 
         # Print final summary
         print("\n" + "=" * 80)
