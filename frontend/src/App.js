@@ -11822,25 +11822,25 @@ const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
 
   // Carica configurazione esistente quando si apre il modal
   useEffect(() => {
-    if (isOpen && segmento) {
-      loadSegmentoArubaConfig();
+    if (isOpen && commessa) {
+      loadCommessaArubaConfig();
     }
-  }, [isOpen, segmento]);
+  }, [isOpen, commessa]);
 
-  const loadSegmentoArubaConfig = async () => {
-    if (!segmento) return;
+  const loadCommessaArubaConfig = async () => {
+    if (!commessa) return;
     
     setLoading(true);
     try {
-      const response = await axios.get(`${API}/segmenti/${segmento.id}/aruba-config`);
-      const loadedConfig = response.data.aruba_config || {};
+      const response = await axios.get(`${API}/commesse/${commessa.id}/aruba-config`);
+      const loadedConfig = response.data.config || {};
       
       setConfig({
         enabled: loadedConfig.enabled || false,
         url: loadedConfig.url || '',
         username: loadedConfig.username || '',
         password: loadedConfig.password === '***MASKED***' ? '' : (loadedConfig.password || ''),
-        root_folder_path: loadedConfig.root_folder_path || segmento.nome,
+        root_folder_path: loadedConfig.root_folder_path || commessa.nome,
         auto_create_structure: loadedConfig.auto_create_structure !== false,
         connection_timeout: loadedConfig.connection_timeout || 30,
         upload_timeout: loadedConfig.upload_timeout || 60,
