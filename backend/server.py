@@ -8114,7 +8114,7 @@ async def log_client_action(
             "action": action.value,
             "description": description,
             "user_id": user.id,
-            "user_name": f"{user.nome} {user.cognome}",
+            "user_name": user.username,  # Usa username invece di nome/cognome
             "user_role": user.role.value,
             "old_value": old_value,
             "new_value": new_value,
