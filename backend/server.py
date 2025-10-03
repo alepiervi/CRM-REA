@@ -1046,6 +1046,19 @@ class SegmentoUpdate(BaseModel):
     aruba_config: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
 
+# Configurazione Aruba Drive specifica per segmento (moved from commessa level)
+class SegmentoArubaDriveConfig(BaseModel):
+    enabled: bool = False
+    url: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    root_folder_path: Optional[str] = None  # Cartella root per questo segmento
+    auto_create_structure: bool = True  # Crea automaticamente la struttura cartelle
+    folder_structure: Dict[str, Any] = {}  # Struttura cartelle personalizzata
+    connection_timeout: int = 30
+    upload_timeout: int = 60
+    retry_attempts: int = 3
+
 # Offerta Models
 class OffertaModel(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
