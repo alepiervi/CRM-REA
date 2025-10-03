@@ -16908,12 +16908,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return
 
-        # Run the specific Aruba Drive browser initialization test as requested
-        print("\n" + "🌐" * 40)
-        print("ARUBA DRIVE BROWSER INITIALIZATION FIX TESTING")
-        print("🌐" * 40)
+        # Run the specific Aruba Drive upload test with original filename and hierarchy as requested
+        print("\n" + "📁" * 40)
+        print("ARUBA DRIVE UPLOAD CON NOME FILE ORIGINALE E STRUTTURA GERARCHICA TESTING")
+        print("📁" * 40)
         
-        self.test_aruba_drive_browser_initialization_fix()
+        self.test_aruba_drive_upload_with_original_filename_and_hierarchy()
 
         # Print final summary
         print("\n" + "=" * 80)
