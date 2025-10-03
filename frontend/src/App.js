@@ -1159,9 +1159,10 @@ const Dashboard = () => {
   // 🎯 MOBILE-FRIENDLY: Close mobile menu when tab changes
   const handleTabChange = (tabId) => {
     console.log(`🔄 NAVIGATION DEBUG: Changing from ${activeTab} to ${tabId}`);
+    console.log(`🔄 NAVIGATION DEBUG: handleTabChange called with tabId:`, tabId);
     setActiveTab(tabId);
     setIsMobileMenuOpen(false);
-    console.log(`✅ NAVIGATION DEBUG: setActiveTab(${tabId}) called`);
+    console.log(`✅ NAVIGATION DEBUG: setActiveTab(${tabId}) called, new activeTab should be:`, tabId);
   };
 
   useEffect(() => {
