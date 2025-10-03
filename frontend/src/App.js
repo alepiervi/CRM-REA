@@ -11590,8 +11590,8 @@ const CommesseManagement = ({
                         </Badge>
                       </div>
 
-                      {/* Pulsanti - Layout a griglia */}
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                      {/* Pulsanti - Layout a griglia (updated to 3 columns for Aruba Drive config) */}
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100">
                         <Button
                           size="sm"
                           variant="ghost"
@@ -11605,6 +11605,19 @@ const CommesseManagement = ({
                           title="Gestisci offerte"
                         >
                           <Settings className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingSegmentoForAruba(segmento);
+                            setShowSegmentoArubaConfigModal(true);
+                          }}
+                          className="p-2 h-8 w-full"
+                          title="Configura Aruba Drive"
+                        >
+                          <FileText className="w-3 h-3" />
                         </Button>
                         <Button
                           size="sm"
