@@ -2111,9 +2111,9 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {/* Desktop Hierarchical Selectors */}
-          <div>
-            {/* 1. SELETTORE COMMESSA */}
+          {/* Desktop Hierarchical Selectors - TEMPORARILY DISABLED FOR DEBUGGING */}
+          <div style={{ display: 'none' }}>
+            {/* 1. SELETTORE COMMESSA - DISABLED TO FIX NAVIGATION */}
             <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
               1. Seleziona Commessa
               {getAvailableCommesse().length > 0 && (
