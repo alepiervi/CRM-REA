@@ -771,6 +771,9 @@ class CommessaCreate(BaseModel):
     has_call_center: bool = False
     document_management: DocumentManagement = DocumentManagement.DISABLED
     
+    # NEW: Aruba Drive configuration
+    aruba_drive_config: Optional[Dict[str, Any]] = None
+    
     responsabile_id: Optional[str] = None
 
 class CommessaUpdate(BaseModel):
