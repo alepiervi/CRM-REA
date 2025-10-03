@@ -11785,21 +11785,21 @@ const CommesseManagement = ({
         commessa={editingCommessa}
       />
 
-      {/* Aruba Drive Configuration Modal */}
-      <ArubaConfigModal 
-        isOpen={showArubaConfigModal}
+      {/* Segmento Aruba Drive Configuration Modal */}
+      <SegmentoArubaConfigModal 
+        isOpen={showSegmentoArubaConfigModal}
         onClose={() => {
-          setShowArubaConfigModal(false);
-          setEditingCommessaForAruba(null);
-          setArubaConfig({});
+          setShowSegmentoArubaConfigModal(false);
+          setEditingSegmentoForAruba(null);
+          setSegmentoArubaConfig({});
         }}
-        commessa={editingCommessaForAruba}
+        segmento={editingSegmentoForAruba}
         onSave={(config) => {
-          if (editingCommessaForAruba) {
-            saveArubaConfig(editingCommessaForAruba.id, config);
+          if (editingSegmentoForAruba) {
+            saveSegmentoArubaConfig(editingSegmentoForAruba.id, config);
           }
-          setShowArubaConfigModal(false);
-          setEditingCommessaForAruba(null);
+          setShowSegmentoArubaConfigModal(false);
+          setEditingSegmentoForAruba(null);
         }}
       />
     </div>
