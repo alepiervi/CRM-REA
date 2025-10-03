@@ -770,8 +770,7 @@ class CommessaCreate(BaseModel):
     has_call_center: bool = False
     document_management: DocumentManagement = DocumentManagement.DISABLED
     
-    # NEW: Aruba Drive configuration
-    aruba_drive_config: Optional[Dict[str, Any]] = None
+    # NOTE: Aruba Drive configuration moved to Segmento level
     
     responsabile_id: Optional[str] = None
 
