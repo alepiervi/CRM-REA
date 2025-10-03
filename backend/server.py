@@ -3831,36 +3831,122 @@ async def upload_document(
             raise HTTPException(status_code=403, detail="Access denied to this cliente")
     
     try:
-        # TODO: Integrate with Aruba Drive - For now use local storage as fallback
-        # In production, this should upload to Aruba Drive and store path reference
+        # NEW: Smart Aruba Drive Integration with per-commessa configuration
+        aruba_drive_path = None
+        storage_type = "local"  # Default fallback
         
-        # Create documents directory (fallback for now)
-        documents_dir = Path("/app/documents")
-        documents_dir.mkdir(exist_ok=True)
+        # Get commessa-specific Aruba Drive config for clients
+        aruba_config = None
+        if doc_type == DocumentType.CLIENTE:
+            commessa_id = entity.get("commessa_id")
+            if commessa_id:
+                commessa = await db.commesse.find_one({"id": commessa_id})
+                if commessa and commessa.get("aruba_drive_config", {}).get("enabled"):
+                    aruba_config = commessa["aruba_drive_config"]
+                    logging.info(f"📋 Using Aruba Drive config for commessa: {commessa.get('nome')}")
         
         # Generate unique filename
         file_extension = Path(file.filename).suffix
         unique_filename = f"{uuid.uuid4()}{file_extension}"
+        
+        # Read file content
+        content = await file.read()
+        
+        # Try Aruba Drive upload if configured
+        if aruba_config:
+            try:
+                # Build hierarchical folder path: Commessa/Servizio/TipologiaContratto/Segmento/ClientName
+                folder_path_parts = []
+                
+                # Add root folder
+                if aruba_config.get("root_folder_path"):
+                    folder_path_parts.append(aruba_config["root_folder_path"])
+                else:
+                    folder_path_parts.append(commessa.get("nome", "Documenti"))
+                
+                # Add hierarchical structure if auto_create_structure is enabled
+                if aruba_config.get("auto_create_structure", True):
+                    # Get service name
+                    servizio_id = entity.get("servizio_id")
+                    if servizio_id:
+                        servizio = await db.servizi.find_one({"id": servizio_id})
+                        if servizio:
+                            folder_path_parts.append(servizio.get("nome", servizio_id))
+                    
+                    # Add tipologia contratto
+                    tipologia = entity.get("tipologia_contratto")
+                    if tipologia:
+                        folder_path_parts.append(str(tipologia))
+                    
+                    # Add segmento
+                    segmento = entity.get("segmento")
+                    if segmento:
+                        folder_path_parts.append(str(segmento))
+                    
+                    # Add client name folder
+                    client_name = f"{entity.get('nome', '')} {entity.get('cognome', '')}".strip()
+                    if client_name:
+                        folder_path_parts.append(client_name)
+                
+                # Create folder path
+                folder_path = "/".join(folder_path_parts)
+                logging.info(f"📁 Target Aruba Drive folder: {folder_path}")
+                
+                # Initialize Aruba automation with commessa-specific config
+                aruba = ArubaWebAutomation()
+                
+                # Save file temporarily for upload
+                temp_dir = Path("/tmp/aruba_uploads")
+                temp_dir.mkdir(exist_ok=True)
+                temp_file_path = temp_dir / unique_filename
+                
+                with open(temp_file_path, "wb") as f:
+                    f.write(content)
+                
+                # Upload to Aruba Drive with hierarchical structure
+                upload_result = await aruba.upload_documents_with_config(
+                    [str(temp_file_path)],
+                    folder_path,
+                    aruba_config
+                )
+                
+                # Cleanup temp file
+                if temp_file_path.exists():
+                    temp_file_path.unlink()
+                
+                if upload_result and upload_result.get("successful_uploads", 0) > 0:
+                    aruba_drive_path = f"{folder_path}/{file.filename}"
+                    storage_type = "aruba_drive"
+                    logging.info(f"✅ Successfully uploaded to Aruba Drive: {aruba_drive_path}")
+                else:
+                    logging.warning("⚠️ Aruba Drive upload failed, using local storage fallback")
+                    
+            except Exception as aruba_error:
+                logging.error(f"❌ Aruba Drive upload error: {aruba_error}")
+                # Continue with local storage fallback
+        
+        # Local storage fallback (always create local copy)
+        documents_dir = Path("/app/documents")
+        documents_dir.mkdir(exist_ok=True)
         file_path = documents_dir / unique_filename
         
-        # Save file locally (TODO: Replace with Aruba Drive upload)
-        content = await file.read()
         with open(file_path, "wb") as f:
             f.write(content)
         
-        # Save document metadata with Aruba Drive path placeholder
+        # Save document metadata
         document_data = {
             "id": str(uuid.uuid4()),
             "entity_type": entity_type,
             "entity_id": entity_id,
             "filename": file.filename,
-            "file_path": str(file_path),  # TODO: This should be Aruba Drive path
-            "aruba_drive_path": f"/documents/{entity_type}/{entity_id}/{unique_filename}",  # Future Aruba path
+            "file_path": str(file_path),
+            "aruba_drive_path": aruba_drive_path or f"/local/{entity_type}/{entity_id}/{unique_filename}",
             "file_size": len(content),
             "file_type": file.content_type,
             "created_by": uploaded_by,
             "created_at": datetime.now(timezone.utc),
-            "storage_type": "local"  # TODO: Change to "aruba_drive" when implemented
+            "storage_type": storage_type,
+            "commessa_config_used": bool(aruba_config)  # Track if commessa config was used
         }
         
         await db.documents.insert_one(document_data)
