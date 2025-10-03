@@ -420,8 +420,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: 
-    - "Sistema Configurazione Aruba Drive per Commessa - Implementazione Completa"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
@@ -444,6 +443,7 @@ test_plan:
     - "Document Management System Complete Testing"
     - "Frontend Document Management System Testing"
     - "Cascading Client Creation Flow Testing and Form Customization"
+    - "Hierarchical Management System Testing - Commesse-Servizi-Tipologie-Segmenti with Aruba Drive Migration"
 
   - task: "Sistema Audit Log Clienti Completo - Nuova Funzionalità"
     implemented: true
