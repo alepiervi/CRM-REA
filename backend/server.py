@@ -3903,10 +3903,18 @@ async def upload_document(
                     if segmento:
                         folder_path_parts.append(str(segmento))
                     
-                    # Add client name folder
-                    client_name = f"{entity.get('nome', '')} {entity.get('cognome', '')}".strip()
-                    if client_name:
-                        folder_path_parts.append(client_name)
+                    # Add client name folder with ID in brackets
+                    nome = entity.get('nome', '').strip()
+                    cognome = entity.get('cognome', '').strip()
+                    client_id = entity.get('id', '').strip()
+                    
+                    if nome or cognome:
+                        client_name = f"{nome} {cognome}".strip()
+                        if client_id:
+                            client_folder = f"{client_name} [{client_id}]"
+                        else:
+                            client_folder = client_name
+                        folder_path_parts.append(client_folder)
                 
                 # Create folder path
                 folder_path = "/".join(folder_path_parts)
