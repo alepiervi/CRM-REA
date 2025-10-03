@@ -1725,6 +1725,7 @@ const Dashboard = () => {
 
   const renderTabContent = () => {
     console.log(`📺 RENDER DEBUG: Rendering tab content for activeTab: ${activeTab}`);
+    console.log(`📺 RENDER DEBUG: About to render content for:`, activeTab);
     try {
       switch (activeTab) {
         case "dashboard":
