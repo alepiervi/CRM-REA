@@ -10043,6 +10043,12 @@ class ArubaWebAutomation:
     async def create_folder(self, folder_name):
         """Create a new folder in current Aruba Drive location"""
         try:
+            # If in simulation mode (test environment), simulate folder creation
+            if self.simulation_mode:
+                logging.info(f"🔄 SIMULATION: Creating folder '{folder_name}' (Aruba Drive simulation mode)")
+                await asyncio.sleep(0.5)  # Simulate delay
+                return True
+            
             # Look for "New Folder" or "+" button
             new_folder_selectors = [
                 'button:has-text("New Folder")', 'button:has-text("Nuova Cartella")',
