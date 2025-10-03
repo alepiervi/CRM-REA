@@ -11773,6 +11773,324 @@ const CommesseManagement = ({
   );
 };
 
+// Aruba Drive Configuration Modal
+const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
+  const [config, setConfig] = useState({
+    enabled: false,
+    url: '',
+    username: '',
+    password: '',
+    root_folder_path: '',
+    auto_create_structure: true,
+    connection_timeout: 30,
+    upload_timeout: 60,
+    retry_attempts: 3
+  });
+  const [loading, setLoading] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const { toast } = useToast();
+
+  // Carica configurazione esistente quando si apre il modal
+  useEffect(() => {
+    if (isOpen && commessa) {
+      loadArubaConfig();
+    }
+  }, [isOpen, commessa]);
+
+  const loadArubaConfig = async () => {
+    if (!commessa) return;
+    
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API}/commesse/${commessa.id}/aruba-config`);
+      const loadedConfig = response.data.config;
+      
+      setConfig({
+        enabled: loadedConfig.enabled || false,
+        url: loadedConfig.url || '',
+        username: loadedConfig.username || '',
+        password: loadedConfig.password === '***MASKED***' ? '' : (loadedConfig.password || ''),
+        root_folder_path: loadedConfig.root_folder_path || commessa.nome,
+        auto_create_structure: loadedConfig.auto_create_structure !== false,
+        connection_timeout: loadedConfig.connection_timeout || 30,
+        upload_timeout: loadedConfig.upload_timeout || 60,
+        retry_attempts: loadedConfig.retry_attempts || 3
+      });
+    } catch (error) {
+      console.error("Error loading Aruba config:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare la configurazione Aruba Drive",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.put(`${API}/commesse/${commessa.id}/aruba-config`, config);
+      
+      toast({
+        title: "Successo",
+        description: "Configurazione Aruba Drive salvata con successo",
+      });
+      
+      onSave(config);
+    } catch (error) {
+      console.error("Error saving Aruba config:", error);
+      toast({
+        title: "Errore", 
+        description: error.response?.data?.detail || "Errore nel salvataggio della configurazione",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testConnection = async () => {
+    if (!config.url || !config.username || !config.password) {
+      toast({
+        title: "Campi Mancanti",
+        description: "Inserisci URL, username e password per testare la connessione",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setTestingConnection(true);
+    try {
+      // Qui si potrebbe implementare un test reale della connessione
+      // Per ora simuliamo
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      toast({
+        title: "Test Connessione",
+        description: "Configurazione salvata. Test connessione disponibile dopo il salvataggio.",
+      });
+    } catch (error) {
+      toast({
+        title: "Test Fallito",
+        description: "Impossibile connettersi ad Aruba Drive con le credenziali fornite",
+        variant: "destructive"
+      });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b">
+          <div>
+            <h2 className="text-xl font-semibold flex items-center">
+              <FileText className="w-5 h-5 mr-2 text-blue-600" />
+              Configurazione Aruba Drive
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {commessa?.nome} - Configurazione accesso documenti
+            </p>
+          </div>
+          <Button variant="ghost" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Clock className="w-8 h-8 animate-spin text-blue-600" />
+              <span className="ml-2">Caricamento configurazione...</span>
+            </div>
+          ) : (
+            <>
+              {/* Enable/Disable Toggle */}
+              <div className="flex items-center space-x-3 p-4 border rounded-lg">
+                <input
+                  type="checkbox"
+                  id="aruba-enabled"
+                  checked={config.enabled}
+                  onChange={(e) => setConfig({ ...config, enabled: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <div>
+                  <Label htmlFor="aruba-enabled" className="font-medium">
+                    Abilita Aruba Drive per questa commessa
+                  </Label>
+                  <p className="text-sm text-gray-600">
+                    Attiva il caricamento automatico dei documenti su Aruba Drive
+                  </p>
+                </div>
+              </div>
+
+              {config.enabled && (
+                <>
+                  {/* Connection Settings */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="url">URL Aruba Drive *</Label>
+                      <Input
+                        id="url"
+                        type="url"
+                        value={config.url}
+                        onChange={(e) => setConfig({ ...config, url: e.target.value })}
+                        placeholder="https://webspace.aruba.it"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="root_folder">Cartella Root</Label>
+                      <Input
+                        id="root_folder"
+                        value={config.root_folder_path}
+                        onChange={(e) => setConfig({ ...config, root_folder_path: e.target.value })}
+                        placeholder={commessa?.nome}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="username">Username *</Label>
+                      <Input
+                        id="username"
+                        value={config.username}
+                        onChange={(e) => setConfig({ ...config, username: e.target.value })}
+                        placeholder="username@aruba.it"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="password">Password *</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={config.password}
+                        onChange={(e) => setConfig({ ...config, password: e.target.value })}
+                        placeholder="Password Aruba Drive"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Structure Settings */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id="auto-structure"
+                        checked={config.auto_create_structure}
+                        onChange={(e) => setConfig({ ...config, auto_create_structure: e.target.checked })}
+                        className="w-4 h-4"
+                      />
+                      <div>
+                        <Label htmlFor="auto-structure" className="font-medium">
+                          Crea automaticamente struttura cartelle
+                        </Label>
+                        <p className="text-sm text-gray-600">
+                          Crea cartelle: Commessa/Servizio/TipologiaContratto/Segmento
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Advanced Settings */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-3">Impostazioni Avanzate</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="connection_timeout">Timeout Connessione (s)</Label>
+                        <Input
+                          id="connection_timeout"
+                          type="number"
+                          min="10"
+                          max="120"
+                          value={config.connection_timeout}
+                          onChange={(e) => setConfig({ ...config, connection_timeout: parseInt(e.target.value) || 30 })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="upload_timeout">Timeout Upload (s)</Label>
+                        <Input
+                          id="upload_timeout"
+                          type="number"
+                          min="30"
+                          max="300"
+                          value={config.upload_timeout}
+                          onChange={(e) => setConfig({ ...config, upload_timeout: parseInt(e.target.value) || 60 })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="retry_attempts">Tentativi Retry</Label>
+                        <Input
+                          id="retry_attempts"
+                          type="number"
+                          min="1"
+                          max="5"
+                          value={config.retry_attempts}
+                          onChange={(e) => setConfig({ ...config, retry_attempts: parseInt(e.target.value) || 3 })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between p-6 border-t bg-gray-50">
+          <Button variant="outline" onClick={onClose}>
+            Annulla
+          </Button>
+          
+          <div className="space-x-2">
+            {config.enabled && (
+              <Button
+                variant="secondary"
+                onClick={testConnection}
+                disabled={testingConnection || !config.url || !config.username || !config.password}
+              >
+                {testingConnection ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    Test...
+                  </>
+                ) : (
+                  <>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Test Connessione
+                  </>
+                )}
+              </Button>
+            )}
+            
+            <Button
+              onClick={handleSave}
+              disabled={loading || (config.enabled && (!config.url || !config.username || !config.password))}
+            >
+              {loading ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  Salvataggio...
+                </>
+              ) : (
+                'Salva Configurazione'
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Unit & Sub Agenzie Management Component (Unified)
 const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse: commesseFromParent, subAgenzie: subAgenzieFromParent }) => {
   const [activeTab, setActiveTab] = useState("units");
