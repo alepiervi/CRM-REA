@@ -10321,6 +10321,33 @@ class ArubaWebAutomation:
         except Exception as e:
             logging.debug(f"Error checking folder existence: {e}")
             return False
+
+    async def navigate_to_folder(self, folder_name):
+        """Navigate to a specific folder by name"""
+        try:
+            folder_selectors = [
+                f'a:has-text("{folder_name}")',
+                f'[title="{folder_name}"]',
+                f'.folder:has-text("{folder_name}")',
+                f'.directory:has-text("{folder_name}")',
+                f'[data-name="{folder_name}"]'
+            ]
+            
+            for selector in folder_selectors:
+                try:
+                    await self.page.click(selector, timeout=5000)
+                    await self.page.wait_for_timeout(2000)
+                    logging.info(f"✅ Navigated to folder: {folder_name}")
+                    return True
+                except:
+                    continue
+            
+            logging.error(f"❌ Could not find folder: {folder_name}")
+            return False
+            
+        except Exception as e:
+            logging.error(f"❌ Navigation failed for folder {folder_name}: {e}")
+            return False
     
     async def cleanup(self):
         """Cleanup browser resources"""
