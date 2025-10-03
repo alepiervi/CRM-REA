@@ -13053,7 +13053,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                   </div>
                   <Badge 
                     variant={
-                      cliente.status === "completato" ? "default" :
+                      cliente.status === "convertito" ? "default" :
                       cliente.status === "in_lavorazione" ? "secondary" : "outline"
                     }
                     className="text-xs"
