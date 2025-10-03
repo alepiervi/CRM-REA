@@ -16534,9 +16534,8 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     <SelectContent>
                       <SelectItem value="nuovo">Nuovo</SelectItem>
                       <SelectItem value="contattato">Contattato</SelectItem>
-                      <SelectItem value="in_corso">In Corso</SelectItem>
-                      <SelectItem value="completato">Completato</SelectItem>
-                      <SelectItem value="sospeso">Sospeso</SelectItem>
+                      <SelectItem value="in_lavorazione">In Lavorazione</SelectItem>
+                      <SelectItem value="convertito">Convertito</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
