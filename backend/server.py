@@ -847,7 +847,7 @@ class TipologiaContratto(str, Enum):
     TELEPASS = "telepass"
 
 class Segmento(str, Enum):
-    RESIDENZIALE = "residenziale"
+    PRIVATO = "privato"
     BUSINESS = "business"
 
 class Cliente(BaseModel):
