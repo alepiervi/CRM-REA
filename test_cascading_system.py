@@ -289,7 +289,7 @@ class CascadingSystemTester:
                     f"No offerte available for segmento {test_segmento_nome} (this is optional)")
                 test_offerta_id = None
         else:
-            self.log_test("❌ GET /api/cascade/offerte-by-segmento/{segmento_id}", False, 
+            self.log_test("❌ GET /api/segmenti/{segmento_id}/offerte", False, 
                 f"Status: {status}, Response: {offerte_cascade_response}")
             test_offerta_id = None
 
