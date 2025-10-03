@@ -751,8 +751,7 @@ class Commessa(BaseModel):
     # NEW: Document management configuration
     document_management: DocumentManagement = DocumentManagement.DISABLED  # NEW: Document access control
     
-    # NEW: Aruba Drive configuration per commessa
-    aruba_drive_config: Optional[Dict[str, Any]] = None  # Configurazione Aruba Drive specifica per commessa
+    # NOTE: Aruba Drive configuration moved to Segmento level
     
     is_active: bool = True
     responsabile_id: Optional[str] = None  # User ID del Responsabile Commessa
