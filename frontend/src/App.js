@@ -11288,6 +11288,19 @@ const CommesseManagement = ({
                       </Button>
                       <Button
                         size="sm"
+                        variant="secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingCommessaForAruba(commessa);
+                          setShowArubaConfigModal(true);
+                        }}
+                        className="p-2 h-8 w-full"
+                        title="Configura Aruba Drive"
+                      >
+                        <FileText className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="destructive"
                         onClick={(e) => {
                           e.stopPropagation();
