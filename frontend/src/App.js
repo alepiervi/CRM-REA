@@ -1713,8 +1713,7 @@ const Dashboard = () => {
       );
     } else if (user.role === "agente_specializzato" || user.role === "operatore" || user.role === "agente") {
       items.push(
-        { id: "clienti", label: "Clienti", icon: UserCheck },
-        { id: "documents", label: "Documenti", icon: FileText }
+        { id: "clienti", label: "Clienti", icon: UserCheck }
       );
     }
 
