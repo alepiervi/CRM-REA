@@ -1927,7 +1927,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Mobile Selectors - TEMPORARILY DISABLED FOR DEBUGGING */}
+            {/* Mobile Selectors - Moved to avoid navigation interference */}
             <div className="p-2 bg-slate-50 border-b border-slate-200 max-h-32 overflow-y-auto flex-shrink-0" style={{ display: 'none' }}>
               {/* 1. Commessa Selector - DISABLED TO FIX NAVIGATION */}
               <div>
