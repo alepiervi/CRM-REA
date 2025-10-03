@@ -11753,6 +11753,22 @@ const CommesseManagement = ({
         }}
         commessa={editingCommessa}
       />
+
+      {/* Aruba Drive Configuration Modal */}
+      <ArubaConfigModal 
+        isOpen={showArubaConfigModal}
+        onClose={() => {
+          setShowArubaConfigModal(false);
+          setEditingCommessaForAruba(null);
+          setArubaConfig({});
+        }}
+        commessa={editingCommessaForAruba}
+        onSave={(config) => {
+          saveArubaConfig(editingCommessaForAruba.id, config);
+          setShowArubaConfigModal(false);
+          setEditingCommessaForAruba(null);
+        }}
+      />
     </div>
   );
 };
