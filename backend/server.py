@@ -10350,6 +10350,9 @@ class ArubaWebAutomation:
             Dict with upload results
         """
         try:
+            # Initialize Playwright browser, context, and page
+            await self.initialize()
+            
             # Initialize connection with commessa-specific config
             login_success = await self.login_with_config(aruba_config)
             if not login_success:
