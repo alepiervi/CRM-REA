@@ -1745,18 +1745,7 @@ const Dashboard = () => {
             setShowConfigModal={setShowConfigModal}
           />;
 
-        case "documents":
-          // Tutti i ruoli hanno accesso alla sezione documenti con autorizzazioni specifiche
-          return <DocumentsManagement 
-            selectedUnit={selectedUnit} 
-            selectedCommessa={selectedCommessa}
-            selectedTipologiaContratto={selectedTipologiaContratto}
-            units={units} 
-            commesse={commesse}
-            subAgenzie={subAgenzie}
-            userRole={user.role}
-            userId={user.id}
-          />;
+        // Sezione "Documenti" rimossa dalla sidebar - ora gestita all'interno della sezione Clienti
         case "users":
           return user.role === "admin" ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "workflow-builder":
