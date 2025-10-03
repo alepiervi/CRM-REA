@@ -9897,6 +9897,7 @@ class ArubaWebAutomation:
         self.browser = None
         self.context = None
         self.page = None
+        self.simulation_mode = False  # Enable simulation for non-reachable Aruba Drive URLs
         
     async def initialize(self):
         """Initialize playwright browser"""
