@@ -571,7 +571,7 @@ test_plan:
     - "Document Upload Endpoint - POST /api/documents/upload"
     - "Aruba Drive Filiera-Specific Configuration System"
     - "Aruba Drive Upload with Original Filename and Hierarchical Folder Structure"
-  completed_tasks:
+    - "Aruba Drive Critical Fixes - Enum Mapping 'Privato' → 'privato' and Folder Creation Fallback"
     - "GET /api/servizi Endpoint Fix - 405 Method Not Allowed Resolution"
     - "Sub Agenzie Problems Diagnosis - Deletion, Commesse Visibility, and Flagging"
     - "AI-Based Lead Routing System Implementation"
