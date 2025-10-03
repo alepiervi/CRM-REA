@@ -10504,6 +10504,11 @@ class ArubaWebAutomation:
     async def navigate_to_folder(self, folder_name):
         """Navigate to a specific folder by name"""
         try:
+            # If in simulation mode, simulate folder navigation
+            if self.simulation_mode:
+                logging.info(f"🔄 SIMULATION: Navigated to folder '{folder_name}' (simulation mode)")
+                await asyncio.sleep(0.3)  # Simulate navigation delay
+                return True
             folder_selectors = [
                 f'a:has-text("{folder_name}")',
                 f'[title="{folder_name}"]',
