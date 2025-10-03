@@ -6727,6 +6727,75 @@ async def update_commessa(commessa_id: str, commessa_update: CommessaUpdate, cur
     commessa_doc = await db.commesse.find_one({"id": commessa_id})
     return Commessa(**commessa_doc)
 
+@api_router.put("/commesse/{commessa_id}/aruba-config")
+async def update_commessa_aruba_config(
+    commessa_id: str,
+    config: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Update Aruba Drive configuration for a specific commessa (filiera-specific)"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono modificare la configurazione Aruba Drive")
+    
+    try:
+        # Check if commessa exists
+        commessa = await db.commesse.find_one({"id": commessa_id})
+        if not commessa:
+            raise HTTPException(status_code=404, detail="Commessa non trovata")
+        
+        # Update aruba_drive_config
+        result = await db.commesse.update_one(
+            {"id": commessa_id},
+            {"$set": {
+                "aruba_drive_config": config,
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Commessa non trovata")
+        
+        return {
+            "success": True, 
+            "message": "Configurazione Aruba Drive per filiera aggiornata con successo",
+            "commessa_id": commessa_id,
+            "config": config
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating commessa aruba config: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'aggiornamento configurazione: {str(e)}")
+
+@api_router.get("/commesse/{commessa_id}/aruba-config")
+async def get_commessa_aruba_config(
+    commessa_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get Aruba Drive configuration for a specific commessa (filiera-specific)"""
+    
+    try:
+        commessa = await db.commesse.find_one({"id": commessa_id})
+        if not commessa:
+            raise HTTPException(status_code=404, detail="Commessa non trovata")
+        
+        aruba_config = commessa.get("aruba_drive_config", {})
+        
+        return {
+            "success": True,
+            "commessa_id": commessa_id,
+            "commessa_name": commessa.get("nome"),
+            "config": aruba_config
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting commessa aruba config: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento configurazione: {str(e)}")
+
 @api_router.delete("/commesse/{commessa_id}")
 async def delete_commessa(commessa_id: str, current_user: User = Depends(get_current_user)):
     """Delete commessa completely"""
