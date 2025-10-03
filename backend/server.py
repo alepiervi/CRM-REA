@@ -10180,6 +10180,147 @@ class ArubaWebAutomation:
                         
         except Exception as e:
             logging.info(f"Folder creation info: {e}")  # Not critical if folders exist
+
+    async def upload_documents_with_config(self, file_paths, folder_path, aruba_config):
+        """
+        Upload documents using commessa-specific Aruba Drive configuration
+        
+        Args:
+            file_paths: List of local file paths to upload
+            folder_path: Target folder path on Aruba Drive
+            aruba_config: Dict with Aruba Drive configuration for this commessa
+        
+        Returns:
+            Dict with upload results
+        """
+        try:
+            # Initialize connection with commessa-specific config
+            login_success = await self.login_with_config(aruba_config)
+            if not login_success:
+                return {"success": False, "error": "Login failed with provided configuration"}
+            
+            # Navigate to root folder
+            root_folder = aruba_config.get("root_folder_path", "")
+            if root_folder:
+                await self.navigate_to_folder(root_folder)
+            
+            # Navigate or create the hierarchical folder structure
+            if aruba_config.get("auto_create_structure", True):
+                await self.ensure_folder_structure(folder_path)
+            else:
+                # Just navigate to folder_path
+                await self.navigate_to_folder(folder_path)
+            
+            # Upload all files
+            successful_uploads = 0
+            failed_uploads = []
+            
+            for file_path in file_paths:
+                try:
+                    upload_success = await self.upload_single_file(file_path)
+                    if upload_success:
+                        successful_uploads += 1
+                        logging.info(f"✅ Uploaded: {Path(file_path).name}")
+                    else:
+                        failed_uploads.append(Path(file_path).name)
+                        logging.error(f"❌ Failed to upload: {Path(file_path).name}")
+                except Exception as e:
+                    failed_uploads.append(Path(file_path).name)
+                    logging.error(f"❌ Exception uploading {Path(file_path).name}: {e}")
+            
+            return {
+                "success": successful_uploads > 0,
+                "successful_uploads": successful_uploads,
+                "failed_uploads": failed_uploads,
+                "total_files": len(file_paths),
+                "target_folder": folder_path
+            }
+            
+        except Exception as e:
+            logging.error(f"❌ Upload with config failed: {e}")
+            return {"success": False, "error": str(e)}
+        finally:
+            await self.cleanup()
+
+    async def login_with_config(self, aruba_config):
+        """Login to Aruba Drive using commessa-specific configuration"""
+        try:
+            # Use configuration from aruba_config
+            url = aruba_config.get("url", "")
+            username = aruba_config.get("username", "")
+            password = aruba_config.get("password", "")
+            connection_timeout = aruba_config.get("connection_timeout", 30) * 1000  # Convert to ms
+            
+            if not all([url, username, password]):
+                logging.error("❌ Missing Aruba Drive configuration (url, username, or password)")
+                return False
+            
+            # Navigate to login URL
+            await self.page.goto(url, timeout=connection_timeout, wait_until='networkidle')
+            logging.info(f"🌐 Navigated to Aruba Drive: {url}")
+            
+            # Perform login (reuse existing login logic)
+            return await self.login(username, password)
+            
+        except Exception as e:
+            logging.error(f"❌ Login with config failed: {e}")
+            return False
+
+    async def ensure_folder_structure(self, folder_path):
+        """Ensure the complete folder structure exists, creating folders as needed"""
+        try:
+            folders = [f for f in folder_path.split('/') if f.strip()]
+            current_path = []
+            
+            for folder in folders:
+                current_path.append(folder)
+                folder_exists = await self.folder_exists(folder)
+                
+                if not folder_exists:
+                    logging.info(f"📁 Creating folder: {folder}")
+                    created = await self.create_folder(folder)
+                    if not created:
+                        logging.error(f"❌ Failed to create folder: {folder}")
+                        return False
+                
+                # Navigate into the folder
+                success = await self.navigate_to_folder(folder)
+                if not success:
+                    logging.error(f"❌ Failed to navigate to folder: {folder}")
+                    return False
+                
+                logging.info(f"✅ Ensured folder exists: {'/'.join(current_path)}")
+            
+            return True
+            
+        except Exception as e:
+            logging.error(f"❌ Failed to ensure folder structure: {e}")
+            return False
+
+    async def folder_exists(self, folder_name):
+        """Check if a folder exists in the current directory"""
+        try:
+            folder_selectors = [
+                f'a:has-text("{folder_name}")',
+                f'[title="{folder_name}"]',
+                f'.folder:has-text("{folder_name}")',
+                f'.directory:has-text("{folder_name}")',
+                f'[data-name="{folder_name}"]'
+            ]
+            
+            for selector in folder_selectors:
+                try:
+                    element = await self.page.wait_for_selector(selector, timeout=2000)
+                    if element:
+                        return True
+                except:
+                    continue
+            
+            return False
+            
+        except Exception as e:
+            logging.debug(f"Error checking folder existence: {e}")
+            return False
     
     async def cleanup(self):
         """Cleanup browser resources"""
