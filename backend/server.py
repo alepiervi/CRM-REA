@@ -3862,9 +3862,12 @@ async def upload_document(
                     aruba_config = commessa["aruba_drive_config"]
                     logging.info(f"📋 Using Aruba Drive config for commessa: {commessa.get('nome')}")
         
-        # Generate unique filename
-        file_extension = Path(file.filename).suffix
-        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        # Preserve original filename with safety checks
+        original_filename = file.filename
+        file_extension = Path(original_filename).suffix
+        # Use original filename but ensure it's safe for file system
+        safe_filename = "".join(c for c in original_filename if c.isalnum() or c in (' ', '-', '_', '.')).rstrip()
+        unique_filename = safe_filename if safe_filename else f"documento{file_extension}"
         
         # Read file content
         content = await file.read()
