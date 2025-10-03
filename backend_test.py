@@ -18076,7 +18076,7 @@ Duplicate,Test,+393471234567"""
             else:
                 self.log_test("❌ Could not verify client details", False, f"Status: {status}")
         else:
-            self.log_test("❌ Client creation with 'Privato' segment failed", False, f"Status: {status}")
+            self.log_test("❌ Client creation with 'privato' segment failed", False, f"Status: {status}")
             return False
 
         # 3. **Test Folder Path Construction**
