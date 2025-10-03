@@ -1927,9 +1927,9 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Mobile Selectors - Complete Hierarchy */}
-            <div className="p-2 bg-slate-50 border-b border-slate-200 max-h-32 overflow-y-auto flex-shrink-0">
-              {/* 1. Commessa Selector */}
+            {/* Mobile Selectors - TEMPORARILY DISABLED FOR DEBUGGING */}
+            <div className="p-2 bg-slate-50 border-b border-slate-200 max-h-32 overflow-y-auto flex-shrink-0" style={{ display: 'none' }}>
+              {/* 1. Commessa Selector - DISABLED TO FIX NAVIGATION */}
               <div>
                 <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
                   Commessa
