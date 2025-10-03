@@ -251,6 +251,40 @@ backend:
           agent: "testing"
           comment: "🎉 CASCADING SYSTEM TESTING COMPLETE - 96.6% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ SUB AGENZIA F2F FOUND: Successfully located F2F sub agenzia (ID: 7c70d4b5-4be0-4707-8bca-dfe84a0b9dee) with 1 authorized commesse - this resolves the frontend dropdown issue. ✅ CASCADE ENDPOINT 1: GET /api/cascade/commesse-by-subagenzia/{sub_agenzia_id} returns 200 OK - Found 1 commesse (Fastweb) for F2F sub agenzia, proper structure with id/nome/descrizione fields. ✅ CASCADE ENDPOINT 2: GET /api/cascade/servizi-by-commessa/{commessa_id} returns 200 OK - Found 1 servizio (TLS) for Fastweb commessa, proper structure with commessa_id reference. ✅ CASCADE ENDPOINT 3: GET /api/cascade/tipologie-by-servizio/{servizio_id} returns 200 OK - Found 2 tipologie (including Energia Fastweb) for TLS servizio, proper structure with servizio_id reference. ✅ CASCADE ENDPOINT 4: GET /api/cascade/segmenti-by-tipologia/{tipologia_id} returns 200 OK - Found 2 segmenti (Privato/Business) for Energia Fastweb tipologia, proper structure with tipologia_contratto_id reference. ✅ CASCADE ENDPOINT 5: GET /api/segmenti/{segmento_id}/offerte returns 200 OK - Found 1 offerta (energia 1) for Privato segmento, complete cascade chain verified. ✅ COMPLETE CASCADE CHAIN: F2F → Fastweb → TLS → Energia Fastweb → Privato → energia 1 - Full 6-level cascade working correctly. ✅ CLIENT CREATION: POST /api/clienti with cascade data returns 200 OK - Client created successfully using complete cascade chain data (Mario Rossi, ID: dfab55e7). ✅ ENUM VALIDATION: All 4 valid enum combinations (telefonia_fastweb/residenziale, energia_fastweb/business, ho_mobile/residenziale, telepass/business) accepted correctly, all 3 invalid combinations properly rejected with 422. 🎯 ROOT CAUSE IDENTIFIED: Frontend dropdown issue is NOT backend-related - all cascade endpoints work perfectly and F2F has associated commesse. Issue is likely in frontend JavaScript/React state management or API call handling. SUCCESS RATE: 96.6% (28/29 tests passed) - Cascading system fully operational for client creation!"
 
+  - task: "Aruba Drive Configuration for Commesse - PUT/GET Endpoints"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "🎯 NUOVO TESTING RICHIESTO: Test configurazione Aruba Drive per Commesse. Endpoint da testare: PUT /api/commesse/{id}/aruba-config per salvare configurazione, GET /api/commesse/{id}/aruba-config per recuperare configurazione. Verificare che la configurazione venga salvata nel campo aruba_drive_config della commessa. Focus su commessa Fastweb (ID: 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1). TESTING IN CORSO."
+  - task: "Document Upload Endpoint - POST /api/documents/upload"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "🎯 NUOVO TESTING RICHIESTO: Test endpoint upload documenti corretto POST /api/documents/upload (NON /api/aruba-drive/upload). Verificare che l'endpoint recuperi la configurazione da commessa.aruba_drive_config e utilizzi la configurazione specifica per filiera/commessa. TESTING IN CORSO."
+  - task: "Aruba Drive Filiera-Specific Configuration System"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "🎯 NUOVO TESTING RICHIESTO: Simulazione completa upload con configurazione Aruba Drive specifica per filiera. Configurare Aruba Drive per commessa Fastweb, creare cliente test con commessa_id = Fastweb, testare upload documento, verificare utilizzo configurazione filiera-specifica. Eliminare configurazioni globali conflittuali. TESTING IN CORSO."
+
 frontend:
   - task: "Calendar Filter and Client Export Functionality"
     implemented: true
