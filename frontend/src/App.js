@@ -11861,7 +11861,7 @@ const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const response = await axios.put(`${API}/segmenti/${segmento.id}/aruba-config`, config);
+      const response = await axios.put(`${API}/commesse/${commessa.id}/aruba-config`, config);
       
       toast({
         title: "Successo",
