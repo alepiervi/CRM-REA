@@ -308,6 +308,17 @@ frontend:
     stuck_count: 1
     priority: "critical"
     needs_retesting: false
+  - task: "Cliente Status Modification Fix - Frontend-Backend Enum Synchronization"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "✅ FRONTEND-BACKEND STATUS ENUM SYNCHRONIZATION IMPLEMENTED: Fixed the critical issue where frontend was sending invalid status values ('in_corso', 'completato', 'sospeso') while backend expected different enum values ('nuovo', 'contattato', 'in_lavorazione', 'convertito'). SOLUTION: Synchronized frontend dropdown options and form submission to use correct backend enum values. Frontend now sends: 'nuovo', 'contattato', 'in_lavorazione', 'convertito' which match exactly with backend enum expectations. TESTING REQUIRED: Verify client status modification works without 422 errors, test dropdown shows correct options, verify visual updates in client table, test audit log generation for status changes."
   - task: "Cliente Creation Payload Validation - Enum Format Issue"
     implemented: true
     working: true
