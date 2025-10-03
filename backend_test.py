@@ -17104,7 +17104,7 @@ Duplicate,Test,+393471234567"""
             # Clear test configuration
             success, clear_response, status = self.make_request(
                 'PUT', f'commesse/{fastweb_commessa_id}/aruba-config', 
-                {"aruba_drive_config": None}, 
+                None, 
                 expected_status=200
             )
             
@@ -17744,7 +17744,7 @@ def main():
             # Clear test configuration
             success, clear_response, status = self.make_request(
                 'PUT', f'commesse/{fastweb_commessa_id}/aruba-config', 
-                {"aruba_drive_config": None}, 
+                None, 
                 expected_status=200
             )
             
