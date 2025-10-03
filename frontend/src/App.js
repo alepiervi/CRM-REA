@@ -11983,7 +11983,7 @@ const SegmentoArubaConfigModal = ({ isOpen, onClose, onSave, segmento }) => {
                         id="root_folder"
                         value={config.root_folder_path}
                         onChange={(e) => setConfig({ ...config, root_folder_path: e.target.value })}
-                        placeholder={commessa?.nome}
+                        placeholder={segmento?.nome}
                       />
                     </div>
                   </div>
