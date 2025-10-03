@@ -10441,36 +10441,71 @@ class ArubaWebAutomation:
             logging.error(f"❌ Login with config failed: {e}")
             return False
 
-    async def ensure_folder_structure(self, folder_path):
-        """Ensure the complete folder structure exists, creating folders as needed"""
+    async def navigate_to_existing_folders_and_create_client_folder(self, folder_path):
+        """Navigate to existing manual folders and create only the client folder at the end"""
         try:
+            if self.simulation_mode:
+                logging.info(f"🔄 SIMULATION: Navigate to existing folders and create client folder: {folder_path}")
+                return True
+                
             folders = [f for f in folder_path.split('/') if f.strip()]
-            current_path = []
+            if not folders:
+                return True
             
-            for folder in folders:
-                current_path.append(folder)
-                folder_exists = await self.folder_exists(folder)
+            logging.info(f"📁 Navigating to existing folders and creating client folder: {' → '.join(folders)}")
+            
+            # Navigate through all folders except the last one (client folder)
+            # These should exist already (created manually)
+            for i, folder in enumerate(folders[:-1]):  # All except last
+                logging.info(f"🚶‍♂️ Navigating to existing folder: {folder} (level {i+1})")
                 
-                if not folder_exists:
-                    logging.info(f"📁 Creating folder: {folder}")
-                    created = await self.create_folder(folder)
-                    if not created:
-                        logging.error(f"❌ Failed to create folder: {folder}")
-                        return False
-                
-                # Navigate into the folder
-                success = await self.navigate_to_folder(folder)
-                if not success:
-                    logging.error(f"❌ Failed to navigate to folder: {folder}")
+                # Check if folder exists
+                exists = await self.folder_exists(folder)
+                if not exists:
+                    logging.warning(f"⚠️ Expected folder not found: {folder} - Please create manually: {'/'.join(folders[:i+1])}")
                     return False
                 
-                logging.info(f"✅ Ensured folder exists: {'/'.join(current_path)}")
+                # Navigate to existing folder
+                nav_success = await self.navigate_to_folder(folder)
+                if not nav_success:
+                    logging.error(f"❌ Failed to navigate to existing folder: {folder}")
+                    return False
+                    
+                logging.info(f"✅ Successfully navigated to: {folder}")
             
+            # Now create ONLY the final client folder
+            if len(folders) > 0:
+                client_folder = folders[-1]  # Last folder is the client folder
+                logging.info(f"👤 Creating CLIENT FOLDER: {client_folder}")
+                
+                # Check if client folder already exists
+                exists = await self.folder_exists(client_folder)
+                if not exists:
+                    created = await self.create_folder(client_folder)
+                    if not created:
+                        logging.error(f"❌ Failed to create client folder: {client_folder}")
+                        return False
+                    else:
+                        logging.info(f"✅ Successfully created client folder: {client_folder}")
+                else:
+                    logging.info(f"✅ Client folder already exists: {client_folder}")
+                
+                # Navigate into the client folder
+                nav_success = await self.navigate_to_folder(client_folder)
+                if not nav_success:
+                    logging.error(f"❌ Failed to navigate to client folder: {client_folder}")
+                    return False
+            
+            logging.info(f"✅ Ready to upload documents in client folder: {folders[-1] if folders else 'root'}")
             return True
             
         except Exception as e:
-            logging.error(f"❌ Failed to ensure folder structure: {e}")
+            logging.error(f"❌ Error in navigate and create client folder: {e}")
             return False
+
+    async def ensure_folder_structure(self, folder_path):
+        """Legacy method - redirect to new approach"""
+        return await self.navigate_to_existing_folders_and_create_client_folder(folder_path)
 
     async def folder_exists(self, folder_name):
         """Check if a folder exists in the current directory"""
