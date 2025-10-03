@@ -12964,7 +12964,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     <TableCell>
                       <Badge 
                         variant={
-                          cliente.status === "completato" ? "default" :
+                          cliente.status === "convertito" ? "default" :
                           cliente.status === "in_lavorazione" ? "secondary" : "outline"
                         }
                       >
