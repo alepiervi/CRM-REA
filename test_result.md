@@ -394,7 +394,8 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus: 
+    - "Sistema Configurazione Aruba Drive per Commessa - Implementazione Completa"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
