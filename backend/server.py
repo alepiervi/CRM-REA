@@ -10475,6 +10475,10 @@ class ArubaWebAutomation:
     async def folder_exists(self, folder_name):
         """Check if a folder exists in the current directory"""
         try:
+            # If in simulation mode, simulate folder existence
+            if self.simulation_mode:
+                logging.info(f"🔄 SIMULATION: Folder '{folder_name}' exists (simulation mode)")
+                return True
             folder_selectors = [
                 f'a:has-text("{folder_name}")',
                 f'[title="{folder_name}"]',
