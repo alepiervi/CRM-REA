@@ -478,13 +478,14 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "Aruba Drive Configuration for Commesse - PUT/GET Endpoints"
-    - "Document Upload Endpoint - POST /api/documents/upload"
-    - "Aruba Drive Filiera-Specific Configuration System"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
+  completed_tasks:
+    - "Aruba Drive Configuration for Commesse - PUT/GET Endpoints"
+    - "Document Upload Endpoint - POST /api/documents/upload"
+    - "Aruba Drive Filiera-Specific Configuration System"
   completed_tasks:
     - "GET /api/servizi Endpoint Fix - 405 Method Not Allowed Resolution"
     - "Sub Agenzie Problems Diagnosis - Deletion, Commesse Visibility, and Flagging"
