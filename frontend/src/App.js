@@ -1698,7 +1698,6 @@ const Dashboard = () => {
       );
     } else if (user.role === "referente") {
       items.push(
-        { id: "documents", label: "Documenti", icon: FileText },
         { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
