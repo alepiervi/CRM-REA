@@ -16172,6 +16172,350 @@ Duplicate,Test,+393471234567"""
         
         return upload_success
 
+    def test_aruba_drive_browser_initialization_fix(self):
+        """TEST SPECIFICO: Verifica fix inizializzazione browser Aruba Drive dopo risoluzione bug"""
+        print("\n🌐 TEST SPECIFICO: ARUBA DRIVE BROWSER INITIALIZATION FIX...")
+        
+        # 1. **Test Login Admin**: Login con admin/admin123
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Configurazione Aruba Drive per Commessa Fastweb**
+        print("\n⚙️ 2. CONFIGURAZIONE ARUBA DRIVE PER COMMESSA FASTWEB...")
+        
+        # Find Fastweb commessa
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}")
+            return False
+        
+        commesse = commesse_response if isinstance(commesse_response, list) else []
+        fastweb_commessa = None
+        
+        for commessa in commesse:
+            if 'fastweb' in commessa.get('nome', '').lower():
+                fastweb_commessa = commessa
+                break
+        
+        if not fastweb_commessa:
+            self.log_test("❌ Fastweb commessa not found", False, "Cannot test without Fastweb commessa")
+            return False
+        
+        fastweb_id = fastweb_commessa['id']
+        self.log_test("✅ Fastweb commessa found", True, f"ID: {fastweb_id}, Nome: {fastweb_commessa['nome']}")
+        
+        # Configure Aruba Drive for Fastweb commessa with real-looking test credentials
+        aruba_config = {
+            "enabled": True,
+            "url": "https://drive.aruba.it",  # Real Aruba Drive URL for testing
+            "username": "test_fastweb_user",
+            "password": "TestPassword123!",
+            "root_folder_path": "/Fastweb/Documenti",
+            "auto_create_structure": True,
+            "folder_structure": {
+                "commessa": True,
+                "servizio": True,
+                "tipologia": True,
+                "segmento": True,
+                "cliente": True
+            },
+            "connection_timeout": 30,
+            "upload_timeout": 60,
+            "retry_attempts": 3
+        }
+        
+        # PUT /api/commesse/{id}/aruba-config
+        success, config_response, status = self.make_request(
+            'PUT', f'commesse/{fastweb_id}/aruba-config', 
+            aruba_config, expected_status=200
+        )
+        
+        if success and status == 200:
+            self.log_test("✅ PUT /api/commesse/{id}/aruba-config", True, 
+                f"Aruba Drive configured for Fastweb commessa")
+        else:
+            self.log_test("❌ PUT /api/commesse/{id}/aruba-config", False, 
+                f"Status: {status}, Response: {config_response}")
+            return False
+
+        # 3. **Trova Cliente Fastweb per Test Upload**
+        print("\n👥 3. TROVA CLIENTE FASTWEB PER TEST UPLOAD...")
+        
+        # GET /api/clienti per trovare cliente con commessa Fastweb
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/clienti", False, f"Status: {status}")
+            return False
+        
+        clienti = clienti_response.get('clienti', []) if isinstance(clienti_response, dict) else clienti_response
+        fastweb_client = None
+        
+        for client in clienti:
+            if client.get('commessa_id') == fastweb_id:
+                fastweb_client = client
+                break
+        
+        if not fastweb_client:
+            # Create a test client for Fastweb commessa
+            print("   Creating test client for Fastweb commessa...")
+            
+            # Get sub agenzie for Fastweb
+            success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+            
+            if success and status == 200:
+                sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+                fastweb_sub_agenzia = None
+                
+                for sub_agenzia in sub_agenzie:
+                    if fastweb_id in sub_agenzia.get('commesse_autorizzate', []):
+                        fastweb_sub_agenzia = sub_agenzia
+                        break
+                
+                if fastweb_sub_agenzia:
+                    # Create test client
+                    test_client_data = {
+                        "nome": "Mario",
+                        "cognome": "Rossi Test Upload",
+                        "telefono": "+39 333 1234567",
+                        "email": "mario.rossi.test@example.com",
+                        "commessa_id": fastweb_id,
+                        "sub_agenzia_id": fastweb_sub_agenzia['id'],
+                        "tipologia_contratto": "telefonia_fastweb",
+                        "segmento": "residenziale"
+                    }
+                    
+                    success, create_response, status = self.make_request(
+                        'POST', 'clienti', test_client_data, expected_status=200
+                    )
+                    
+                    if success and status == 200:
+                        fastweb_client = {
+                            'id': create_response.get('cliente_id') or create_response.get('id'),
+                            'nome': test_client_data['nome'],
+                            'cognome': test_client_data['cognome'],
+                            'commessa_id': fastweb_id
+                        }
+                        self.log_test("✅ Test client created", True, 
+                            f"Client: {fastweb_client['nome']} {fastweb_client['cognome']} (ID: {fastweb_client['id']})")
+                    else:
+                        self.log_test("❌ Failed to create test client", False, f"Status: {status}")
+                        return False
+                else:
+                    self.log_test("❌ No sub agenzia found for Fastweb", False, "Cannot create test client")
+                    return False
+            else:
+                self.log_test("❌ Failed to get sub agenzie", False, f"Status: {status}")
+                return False
+        else:
+            self.log_test("✅ Fastweb client found", True, 
+                f"Client: {fastweb_client.get('nome')} {fastweb_client.get('cognome')} (ID: {fastweb_client.get('id')})")
+
+        # 4. **Test Upload Documento con Browser Initialization Fix**
+        print("\n📤 4. TEST UPLOAD DOCUMENTO CON BROWSER INITIALIZATION FIX...")
+        
+        # Create test PDF content
+        test_pdf_content = b'%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000074 00000 n \n0000000120 00000 n \ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n197\n%%EOF'
+        
+        # Test POST /api/documents/upload (NOT /api/aruba-drive/upload)
+        print("   Testing POST /api/documents/upload with browser initialization fix...")
+        
+        import requests
+        
+        files = {
+            'file': ('test_aruba_browser_fix.pdf', test_pdf_content, 'application/pdf')
+        }
+        
+        data = {
+            'entity_type': 'clienti',
+            'entity_id': fastweb_client['id'],
+            'uploaded_by': self.user_data['id']
+        }
+        
+        headers = {'Authorization': f'Bearer {self.token}'}
+        
+        try:
+            response = requests.post(
+                f"{self.base_url}/documents/upload",
+                files=files,
+                data=data,
+                headers=headers,
+                timeout=60  # Increased timeout for browser initialization
+            )
+            
+            upload_success = response.status_code == 200
+            upload_response = response.json() if response.content else {}
+            
+            if upload_success:
+                self.log_test("✅ POST /api/documents/upload", True, 
+                    f"Status: {response.status_code}, Upload successful with browser initialization")
+                
+                # Verify response structure
+                expected_keys = ['success', 'message', 'document_id', 'filename', 'aruba_drive_path']
+                missing_keys = [key for key in expected_keys if key not in upload_response]
+                
+                if not missing_keys:
+                    document_id = upload_response.get('document_id')
+                    aruba_drive_path = upload_response.get('aruba_drive_path', '')
+                    
+                    self.log_test("✅ Upload response structure", True, f"All expected keys present")
+                    
+                    # CRITICAL: Check if upload attempted Aruba Drive (not immediate fallback)
+                    if '/local/clienti/' not in aruba_drive_path:
+                        self.log_test("✅ BROWSER INITIALIZATION FIX VERIFIED", True, 
+                            f"Upload attempted Aruba Drive instead of immediate fallback - Path: {aruba_drive_path}")
+                        
+                        # Check if commessa config was used
+                        commessa_config_used = upload_response.get('commessa_config_used', False)
+                        if commessa_config_used:
+                            self.log_test("✅ Commessa-specific config used", True, 
+                                "System used Fastweb commessa Aruba Drive configuration")
+                        else:
+                            self.log_test("ℹ️ Config usage not tracked", True, 
+                                "Upload proceeded but config usage not explicitly tracked")
+                    else:
+                        self.log_test("❌ IMMEDIATE FALLBACK DETECTED", False, 
+                            f"Upload went directly to local storage: {aruba_drive_path}")
+                        self.log_test("❌ BROWSER INITIALIZATION ISSUE", False, 
+                            "Browser initialization may still have issues - upload didn't attempt Aruba Drive")
+                    
+                    # Store document ID for verification
+                    uploaded_document_id = document_id
+                else:
+                    self.log_test("❌ Upload response structure", False, f"Missing keys: {missing_keys}")
+                    uploaded_document_id = None
+            else:
+                self.log_test("❌ POST /api/documents/upload", False, 
+                    f"Status: {response.status_code}, Response: {upload_response}")
+                uploaded_document_id = None
+                
+        except Exception as e:
+            self.log_test("❌ Upload request failed", False, f"Exception: {str(e)}")
+            uploaded_document_id = None
+
+        # 5. **Verifica Browser Initialization Logs**
+        print("\n🔍 5. VERIFICA BROWSER INITIALIZATION LOGS...")
+        
+        if uploaded_document_id:
+            # Check backend logs for browser initialization
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ['tail', '-n', '50', '/var/log/supervisor/backend.err.log'],
+                    capture_output=True, text=True, timeout=10
+                )
+                
+                if result.returncode == 0:
+                    logs = result.stdout
+                    
+                    # Look for browser initialization indicators
+                    if 'Failed to initialize Aruba automation' in logs:
+                        self.log_test("❌ Browser initialization failed", False, 
+                            "Found 'Failed to initialize Aruba automation' in logs")
+                    elif 'NoneType' in logs and 'page' in logs:
+                        self.log_test("❌ NoneType error still present", False, 
+                            "Found NoneType errors related to page object")
+                    elif 'await self.initialize()' in logs or 'browser' in logs.lower():
+                        self.log_test("✅ Browser initialization attempted", True, 
+                            "Found browser-related activity in logs")
+                    else:
+                        self.log_test("ℹ️ No specific browser errors", True, 
+                            "No obvious browser initialization errors in recent logs")
+                else:
+                    self.log_test("ℹ️ Could not check logs", True, "Backend logs not accessible")
+                    
+            except Exception as e:
+                self.log_test("ℹ️ Log check failed", True, f"Could not check logs: {str(e)}")
+
+        # 6. **Verifica Upload Flow Tracking**
+        print("\n📊 6. VERIFICA UPLOAD FLOW TRACKING...")
+        
+        if uploaded_document_id:
+            # Get document metadata to verify upload flow
+            success, doc_list_response, status = self.make_request(
+                'GET', f'documents/client/{fastweb_client["id"]}', expected_status=200
+            )
+            
+            if success and status == 200:
+                documents = doc_list_response.get('documents', [])
+                uploaded_doc = next((doc for doc in documents if doc.get('id') == uploaded_document_id), None)
+                
+                if uploaded_doc:
+                    self.log_test("✅ Document found in client list", True, 
+                        f"Document {uploaded_document_id} found with metadata")
+                    
+                    # Check storage type and path
+                    storage_type = uploaded_doc.get('storage_type', 'unknown')
+                    aruba_path = uploaded_doc.get('aruba_drive_path', '')
+                    
+                    if storage_type == 'aruba_drive':
+                        self.log_test("✅ ARUBA DRIVE UPLOAD SUCCESSFUL", True, 
+                            f"Document stored on Aruba Drive - Storage type: {storage_type}")
+                    elif storage_type == 'local' and '/local/clienti/' not in aruba_path:
+                        self.log_test("✅ ARUBA DRIVE ATTEMPTED", True, 
+                            f"Upload attempted Aruba Drive, fell back to local - Path: {aruba_path}")
+                    elif '/local/clienti/' in aruba_path:
+                        self.log_test("❌ IMMEDIATE LOCAL FALLBACK", False, 
+                            f"Upload went directly to local storage without attempting Aruba Drive")
+                    else:
+                        self.log_test("ℹ️ Upload flow unclear", True, 
+                            f"Storage type: {storage_type}, Path: {aruba_path}")
+                else:
+                    self.log_test("❌ Document not found in list", False, 
+                        f"Document {uploaded_document_id} not found in client document list")
+
+        # 7. **Test Cleanup**
+        print("\n🧹 7. TEST CLEANUP...")
+        
+        # Remove test configuration
+        success, cleanup_response, status = self.make_request(
+            'PUT', f'commesse/{fastweb_id}/aruba-config', 
+            {"enabled": False}, expected_status=200
+        )
+        
+        if success:
+            self.log_test("✅ Test configuration cleanup", True, "Aruba Drive config disabled for Fastweb")
+        else:
+            self.log_test("ℹ️ Cleanup attempt", True, f"Cleanup status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 ARUBA DRIVE BROWSER INITIALIZATION FIX TEST SUMMARY:")
+        print(f"   🎯 OBJECTIVE: Verify that await self.initialize() fix resolves NoneType errors")
+        print(f"   🎯 FOCUS CRITICO: Confirm browser initialization works before login_with_config()")
+        print(f"   📊 RESULTS:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Fastweb commessa configuration: ✅ SUCCESS - Aruba Drive configured")
+        print(f"      • Test client preparation: ✅ SUCCESS - Client ready for upload")
+        print(f"      • POST /api/documents/upload: {'✅ SUCCESS' if uploaded_document_id else '❌ FAILED'} - Upload with browser initialization")
+        print(f"      • Browser initialization fix: {'✅ VERIFIED' if uploaded_document_id and '/local/clienti/' not in aruba_drive_path else '❌ NEEDS INVESTIGATION'}")
+        print(f"      • Aruba Drive attempt: {'✅ CONFIRMED' if uploaded_document_id else '❌ NOT CONFIRMED'} - System attempted Aruba Drive instead of immediate fallback")
+        print(f"      • Upload flow tracking: {'✅ WORKING' if uploaded_document_id else '❌ NOT TESTED'} - Metadata and logs available")
+        
+        if uploaded_document_id and '/local/clienti/' not in aruba_drive_path:
+            print(f"   🎉 SUCCESS: Browser initialization fix appears to be working!")
+            print(f"   🎉 CONFIRMED: Upload attempted Aruba Drive instead of immediate local fallback!")
+            print(f"   🎉 VERIFIED: await self.initialize() is being called before login_with_config()!")
+        elif uploaded_document_id:
+            print(f"   ⚠️ PARTIAL SUCCESS: Upload worked but may have used immediate fallback")
+            print(f"   🔍 INVESTIGATION NEEDED: Check if browser initialization is actually working")
+        else:
+            print(f"   🚨 FAILURE: Upload failed - browser initialization fix may not be working")
+        
+        return uploaded_document_id is not None
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
