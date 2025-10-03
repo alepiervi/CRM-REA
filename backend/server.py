@@ -11037,18 +11037,7 @@ class ArubaDriveConfigResponse(BaseModel):
     updated_at: datetime
     last_test_result: Optional[dict] = None
 
-# Configurazione Aruba Drive specifica per segmento (moved from commessa level)
-class SegmentoArubaDriveConfig(BaseModel):
-    enabled: bool = False
-    url: Optional[str] = None
-    username: Optional[str] = None
-    password: Optional[str] = None
-    root_folder_path: Optional[str] = None  # Cartella root per questo segmento
-    auto_create_structure: bool = True  # Crea automaticamente la struttura cartelle
-    folder_structure: Dict[str, Any] = {}  # Struttura cartelle personalizzata
-    connection_timeout: int = 30
-    upload_timeout: int = 60
-    retry_attempts: int = 3
+# NOTE: SegmentoArubaDriveConfig moved near other Segmento models
 
 async def create_aruba_drive_folder_and_upload(entity_type: str, entity_id: str, uploaded_files: List[dict]):
     """
