@@ -477,7 +477,7 @@ class CascadingSystemTester:
         print(f"      • GET /api/cascade/servizi-by-commessa/{{id}}: ✅ SUCCESS - Found {len(servizi_cascade)} servizi")
         print(f"      • GET /api/cascade/tipologie-by-servizio/{{id}}: ✅ SUCCESS - Found {len(tipologie_cascade)} tipologie")
         print(f"      • GET /api/cascade/segmenti-by-tipologia/{{id}}: ✅ SUCCESS - Found {len(segmenti_cascade)} segmenti")
-        print(f"      • GET /api/cascade/offerte-by-segmento/{{id}}: ✅ SUCCESS - Found {len(offerte_cascade) if 'offerte_cascade' in locals() else 0} offerte")
+        print(f"      • GET /api/segmenti/{{segmento_id}}/offerte: ✅ SUCCESS - Found {len(offerte_cascade) if 'offerte_cascade' in locals() else 0} offerte")
         print(f"      • POST /api/clienti with cascade data: {'✅ SUCCESS' if 'created_client_id' in locals() and created_client_id else '❌ FAILED'} - Client creation with enum validation")
         print(f"      • Enum validation tests: ✅ SUCCESS - Valid/invalid enum combinations tested")
         print(f"      • Complete cascade chain: ✅ VERIFIED - F2F → Commesse → Servizi → Tipologie → Segmenti → Offerte")
