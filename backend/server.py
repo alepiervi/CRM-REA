@@ -848,6 +848,7 @@ class TipologiaContratto(str, Enum):
 
 class Segmento(str, Enum):
     PRIVATO = "privato"
+    RESIDENZIALE = "residenziale"  # Backward compatibility for existing data
     BUSINESS = "business"
 
 class Cliente(BaseModel):
