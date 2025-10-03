@@ -11806,8 +11806,8 @@ const CommesseManagement = ({
   );
 };
 
-// Aruba Drive Configuration Modal
-const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
+// Segmento Aruba Drive Configuration Modal
+const SegmentoArubaConfigModal = ({ isOpen, onClose, onSave, segmento }) => {
   const [config, setConfig] = useState({
     enabled: false,
     url: '',
