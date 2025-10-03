@@ -456,6 +456,7 @@ test_plan:
     - "Frontend Document Management System Testing"
     - "Cascading Client Creation Flow Testing and Form Customization"
     - "Hierarchical Management System Testing - Commesse-Servizi-Tipologie-Segmenti with Aruba Drive Migration"
+    - "Cascading System for Client Creation - F2F Sub Agenzia Testing"
 
   - task: "Sistema Audit Log Clienti Completo - Nuova Funzionalità"
     implemented: true
