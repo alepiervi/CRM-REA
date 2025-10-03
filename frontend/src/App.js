@@ -10822,10 +10822,10 @@ const CommesseManagement = ({
   const [showCreateOffertaModal, setShowCreateOffertaModal] = useState(false);
   const [showViewCommessaModal, setShowViewCommessaModal] = useState(false);
   const [showEditCommessaModal, setShowEditCommessaModal] = useState(false);
-  const [showSegmentoArubaConfigModal, setShowSegmentoArubaConfigModal] = useState(false);
+  const [showArubaConfigModal, setShowArubaConfigModal] = useState(false);
   const [editingCommessa, setEditingCommessa] = useState(null);
-  const [editingSegmentoForAruba, setEditingSegmentoForAruba] = useState(null);
-  const [segmentoArubaConfig, setSegmentoArubaConfig] = useState({});
+  const [editingCommessaForAruba, setEditingCommessaForAruba] = useState(null);
+  const [arubaConfig, setArubaConfig] = useState({});
   const [modalType, setModalType] = useState(''); // 'commessa', 'servizio', 'tipologia', 'offerta'
   const { toast } = useToast();
 
