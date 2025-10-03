@@ -16527,23 +16527,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return
 
-        # Run other tests
-        self.test_provinces_endpoint()
-        self.test_dashboard_stats()
+        # Run the specific Aruba Drive browser initialization test as requested
+        print("\n" + "🌐" * 40)
+        print("ARUBA DRIVE BROWSER INITIALIZATION FIX TESTING")
+        print("🌐" * 40)
         
-        # Run specific tests based on requirements
-        self.test_password_fix_multiple_users_login()
-        self.test_documents_endpoint_urgent()
-        self.test_document_management_system_complete()
-        self.test_aruba_drive_configuration_complete()
-        
-        # NEW: Run Playwright and Aruba Drive specific tests
-        print("\n" + "🎭" * 40)
-        print("PLAYWRIGHT AND ARUBA DRIVE SPECIFIC TESTING")
-        print("🎭" * 40)
-        
-        self.test_playwright_functionality()
-        self.test_aruba_drive_upload_complete_flow()
+        self.test_aruba_drive_browser_initialization_fix()
 
         # Print final summary
         print("\n" + "=" * 80)
