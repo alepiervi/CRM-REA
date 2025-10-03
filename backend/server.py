@@ -10260,7 +10260,7 @@ class ArubaWebAutomation:
             logging.info(f"🌐 Navigated to Aruba Drive: {url}")
             
             # Perform login (reuse existing login logic)
-            return await self.login(username, password)
+            return await self.login_to_aruba(aruba_config)
             
         except Exception as e:
             logging.error(f"❌ Login with config failed: {e}")
