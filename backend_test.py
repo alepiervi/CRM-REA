@@ -21210,6 +21210,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
 
+        # Run the decisive final test for Aruba Drive timeout optimization
+        print("\n" + "🚀" * 40)
+        print("🚀 RUNNING TEST FINALE DECISIVO - ARUBA DRIVE TIMEOUT OPTIMIZATION")
+        print("🚀" * 40)
+        
+        optimization_success = self.test_aruba_drive_timeout_optimization_final()
+
         # Run the final comprehensive test
         final_success = self.test_final_comprehensive_backend_verification()
 
@@ -21222,12 +21229,21 @@ Duplicate,Test,+393471234567"""
         print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
         print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
-        if final_success:
-            print("🎉 OBIETTIVO RAGGIUNTO: BACKEND AL 100% FUNZIONALE!")
+        # Highlight the critical optimization test result
+        print("\n🚀 CRITICAL TEST RESULT:")
+        if optimization_success:
+            print("🎉 ARUBA DRIVE TIMEOUT OPTIMIZATION: ✅ SUCCESS - 100% TARGET ACHIEVED!")
+        else:
+            print("🚨 ARUBA DRIVE TIMEOUT OPTIMIZATION: ❌ NEEDS IMPROVEMENT")
+        
+        if final_success and optimization_success:
+            print("🎉 OBIETTIVO RAGGIUNTO: BACKEND AL 100% FUNZIONALE CON TIMEOUT OTTIMIZZATO!")
+        elif final_success:
+            print("✅ BACKEND FUNZIONALE - TIMEOUT OPTIMIZATION NEEDS WORK")
         else:
             print("🚨 OBIETTIVO NON RAGGIUNTO - VERIFICARE ERRORI SOPRA")
         
-        return final_success
+        return final_success and optimization_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
