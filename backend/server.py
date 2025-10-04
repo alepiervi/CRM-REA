@@ -3920,10 +3920,13 @@ async def upload_document(
                     if nome or cognome:
                         client_name = f"{nome} {cognome}".strip()
                         if client_id:
-                            client_folder = f"{client_name} [{client_id}]"
+                            client_folder = f"{client_name} ({client_id})"  # FIXED: Use () instead of []
                         else:
                             client_folder = client_name
                         folder_path_parts.append(client_folder)
+                        
+                    # Add final Documents folder
+                    folder_path_parts.append("Documenti")
                 
                 # Create folder path
                 folder_path = "/".join(folder_path_parts)
