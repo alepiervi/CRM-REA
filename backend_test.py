@@ -21498,6 +21498,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
 
+        # Run URGENT test first - Aruba Drive Real Upload
+        print("\n" + "🚨" * 40)
+        print("🚨 RUNNING TEST URGENTE - ARUBA DRIVE REAL UPLOAD")
+        print("🚨" * 40)
+        
+        urgent_success = self.test_aruba_drive_real_upload_urgent()
+
         # Run the decisive final test for Aruba Drive timeout optimization
         print("\n" + "🚀" * 40)
         print("🚀 RUNNING TEST FINALE DECISIVO - ARUBA DRIVE TIMEOUT OPTIMIZATION")
