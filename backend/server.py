@@ -3873,6 +3873,26 @@ async def upload_document(
                 
                 # Add hierarchical structure if auto_create_structure is enabled
                 if aruba_config.get("auto_create_structure", True):
+                    # Helper function to convert enum values to display names
+                    def enum_to_display_name(enum_value, enum_type):
+                        """Convert backend enum values to proper display names for Aruba Drive folders"""
+                        if enum_type == "tipologia":
+                            mappings = {
+                                'energia_fastweb': 'Energia Fastweb',
+                                'telefonia_fastweb': 'Telefonia Fastweb', 
+                                'ho_mobile': 'Ho Mobile',
+                                'telepass': 'Telepass'
+                            }
+                        elif enum_type == "segmento":
+                            mappings = {
+                                'privato': 'Privato',
+                                'residenziale': 'Residenziale',
+                                'business': 'Business'
+                            }
+                        else:
+                            return enum_value
+                        return mappings.get(enum_value, enum_value)
+                    
                     # Get service name
                     servizio_id = entity.get("servizio_id")
                     if servizio_id:
