@@ -7490,7 +7490,7 @@ const DocumentsManagement = ({
         const formData = new FormData();
         formData.append('file', file);
         formData.append('entity_type', activeTab);
-        formData.append('entity_id', entityId);
+        formData.append('entity_id', actualEntityId);
         formData.append('uploaded_by', userId);
 
         try {
