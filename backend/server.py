@@ -5537,17 +5537,15 @@ async def get_qualification_analytics(
         
         return {
             "success": True,
-            "analytics": {
-                "total_qualifications": total_qualifications,
-                "active_qualifications": active_qualifications,
-                "completed_qualifications": completed_qualifications,
-                "results_breakdown": results_breakdown,
-                "conversion_rate": round(conversion_rate, 2),
-                "average_score": round(avg_score, 1),
-                "average_responses_per_lead": round(avg_responses, 1),
-                "average_bot_messages": round(avg_bot_messages, 1),
-                "qualified_leads": qualified_count
-            },
+            "total": total_qualifications,
+            "active": active_qualifications,
+            "completed": completed_qualifications,
+            "results_breakdown": results_breakdown,
+            "conversion_rate": round(conversion_rate, 2),
+            "average_score": round(avg_score, 1),
+            "average_responses_per_lead": round(avg_responses, 1),
+            "average_bot_messages": round(avg_bot_messages, 1),
+            "qualified_leads": qualified_count,
             "date_range": {
                 "from": date_from,
                 "to": date_to
