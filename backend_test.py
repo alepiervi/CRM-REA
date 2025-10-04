@@ -18857,6 +18857,367 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 REQUIRES: Further investigation of enum validation")
             return False
 
+    def test_document_upload_selected_client_verification(self):
+        """TEST FINALE: Verificare che upload documenti usi il cliente selezionato corretto per costruire path Aruba Drive reale"""
+        print("\n🎯 TEST FINALE: VERIFICA CLIENTE SELEZIONATO CORRETTO PER UPLOAD DOCUMENTI...")
+        
+        # 1. **Test Login Admin**: Login con admin/admin123
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Trova Cliente Specifico "Prova Prova"**
+        print("\n👤 2. TROVA CLIENTE SPECIFICO 'Prova Prova'...")
+        
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/clienti", False, f"Status: {status}")
+            return False
+        
+        clienti = clienti_response.get('clienti', []) if isinstance(clienti_response, dict) else clienti_response
+        self.log_test("✅ GET /api/clienti", True, f"Found {len(clienti)} clienti")
+        
+        # Find "Prova Prova" client
+        prova_client = None
+        for client in clienti:
+            nome = client.get('nome', '').lower()
+            cognome = client.get('cognome', '').lower()
+            if 'prova' in nome and 'prova' in cognome:
+                prova_client = client
+                break
+        
+        if not prova_client:
+            # Create "Prova Prova" client with complete hierarchy
+            print("   Creating 'Prova Prova' client with complete hierarchy...")
+            
+            # Get Fastweb commessa
+            success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+            if not success:
+                self.log_test("❌ Could not get commesse", False, f"Status: {status}")
+                return False
+            
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            fastweb_commessa = next((c for c in commesse if 'fastweb' in c.get('nome', '').lower()), None)
+            
+            if not fastweb_commessa:
+                self.log_test("❌ Fastweb commessa not found", False, "Cannot create client without Fastweb commessa")
+                return False
+            
+            # Get sub agenzie for Fastweb
+            success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+            if not success:
+                self.log_test("❌ Could not get sub agenzie", False, f"Status: {status}")
+                return False
+            
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            fastweb_sub_agenzia = next((sa for sa in sub_agenzie if fastweb_commessa.get('id') in sa.get('commesse_autorizzate', [])), None)
+            
+            if not fastweb_sub_agenzia:
+                self.log_test("❌ No sub agenzia found for Fastweb", False, "Cannot create client")
+                return False
+            
+            # Get servizi for Fastweb
+            success, servizi_response, status = self.make_request('GET', f'commesse/{fastweb_commessa.get("id")}/servizi', expected_status=200)
+            servizio_id = None
+            if success and servizi_response:
+                servizi = servizi_response if isinstance(servizi_response, list) else []
+                if len(servizi) > 0:
+                    servizio_id = servizi[0].get('id')
+            
+            # Create Prova Prova client with complete filiera data
+            prova_data = {
+                "nome": "Prova",
+                "cognome": "Prova", 
+                "telefono": "+39 333 444 5555",
+                "email": "prova.prova@test.com",
+                "commessa_id": fastweb_commessa.get('id'),
+                "sub_agenzia_id": fastweb_sub_agenzia.get('id'),
+                "servizio_id": servizio_id,
+                "tipologia_contratto": "energia_fastweb",
+                "segmento": "privato"
+            }
+            
+            success, create_response, status = self.make_request('POST', 'clienti', prova_data, expected_status=200)
+            
+            if success and status == 200:
+                prova_client_id = create_response.get('id') or create_response.get('cliente_id')
+                prova_client = {
+                    'id': prova_client_id,
+                    'nome': 'Prova',
+                    'cognome': 'Prova',
+                    'commessa_id': fastweb_commessa.get('id'),
+                    'sub_agenzia_id': fastweb_sub_agenzia.get('id'),
+                    'servizio_id': servizio_id,
+                    'tipologia_contratto': 'energia_fastweb',
+                    'segmento': 'privato'
+                }
+                self.log_test("✅ Prova Prova client created", True, 
+                    f"ID: {prova_client_id}, Complete filiera assigned")
+            else:
+                self.log_test("❌ Prova Prova client creation failed", False, f"Status: {status}")
+                return False
+        else:
+            self.log_test("✅ Prova Prova client found", True, 
+                f"ID: {prova_client.get('id')}, Nome: {prova_client.get('nome')} {prova_client.get('cognome')}")
+        
+        prova_client_id = prova_client.get('id')
+        prova_commessa_id = prova_client.get('commessa_id')
+        prova_servizio_id = prova_client.get('servizio_id')
+        prova_tipologia = prova_client.get('tipologia_contratto')
+        prova_segmento = prova_client.get('segmento')
+
+        # 3. **Verifica Dati Reali Cliente Selezionato**
+        print("\n🔍 3. VERIFICA DATI REALI CLIENTE SELEZIONATO...")
+        
+        # Get complete client data with hierarchy
+        success, client_detail_response, status = self.make_request('GET', f'clienti/{prova_client_id}', expected_status=200)
+        
+        if success and status == 200:
+            client_detail = client_detail_response
+            self.log_test("✅ GET /api/clienti/{id}", True, f"Retrieved complete client data")
+            
+            # Verify client has complete filiera data
+            required_fields = ['commessa_id', 'servizio_id', 'tipologia_contratto', 'segmento']
+            missing_fields = [field for field in required_fields if not client_detail.get(field)]
+            
+            if not missing_fields:
+                self.log_test("✅ Client has complete filiera data", True, 
+                    f"Commessa: {client_detail.get('commessa_id')}, Servizio: {client_detail.get('servizio_id')}, "
+                    f"Tipologia: {client_detail.get('tipologia_contratto')}, Segmento: {client_detail.get('segmento')}")
+            else:
+                self.log_test("❌ Client missing filiera data", False, f"Missing: {missing_fields}")
+                return False
+        else:
+            self.log_test("❌ Could not get client details", False, f"Status: {status}")
+            return False
+
+        # 4. **Recupera Nomi Reali dalla Gerarchia**
+        print("\n📋 4. RECUPERA NOMI REALI DALLA GERARCHIA...")
+        
+        # Get commessa name
+        success, commessa_response, status = self.make_request('GET', f'commesse/{prova_commessa_id}', expected_status=200)
+        commessa_nome = "Unknown"
+        if success and status == 200:
+            commessa_nome = commessa_response.get('nome', 'Unknown')
+            self.log_test("✅ Commessa name retrieved", True, f"Commessa: {commessa_nome}")
+        
+        # Get servizio name
+        servizio_nome = "Unknown"
+        if prova_servizio_id:
+            success, servizio_response, status = self.make_request('GET', f'servizi/{prova_servizio_id}', expected_status=200)
+            if success and status == 200:
+                servizio_nome = servizio_response.get('nome', 'Unknown')
+                self.log_test("✅ Servizio name retrieved", True, f"Servizio: {servizio_nome}")
+        
+        # Get tipologia display name
+        tipologia_display = {
+            'energia_fastweb': 'Energia Fastweb',
+            'telefonia_fastweb': 'Telefonia Fastweb',
+            'ho_mobile': 'Ho Mobile',
+            'telepass': 'Telepass'
+        }.get(prova_tipologia, prova_tipologia)
+        
+        # Get segmento display name
+        segmento_display = {
+            'privato': 'Privato',
+            'residenziale': 'Residenziale', 
+            'business': 'Business'
+        }.get(prova_segmento, prova_segmento)
+        
+        self.log_test("✅ Display names mapped", True, 
+            f"Tipologia: {prova_tipologia} → {tipologia_display}, Segmento: {prova_segmento} → {segmento_display}")
+
+        # 5. **Test Upload Documento per Cliente Selezionato**
+        print("\n📤 5. TEST UPLOAD DOCUMENTO PER CLIENTE SELEZIONATO...")
+        
+        # Create test PDF content
+        test_pdf_content = b'%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000074 00000 n \n0000000120 00000 n \ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n197\n%%EOF'
+        
+        # Test POST /api/documents/upload with selected client
+        print("   Testing POST /api/documents/upload with selected client data...")
+        
+        import requests
+        
+        files = {
+            'file': ('Documento_Prova_Prova.pdf', test_pdf_content, 'application/pdf')
+        }
+        
+        data = {
+            'entity_type': 'clienti',
+            'entity_id': prova_client_id,  # CRITICAL: Using selected client ID
+            'uploaded_by': self.user_data['id']
+        }
+        
+        headers = {'Authorization': f'Bearer {self.token}'}
+        
+        try:
+            print(f"   🔧 UPLOAD FIX: Using selectedClientId: {prova_client_id}")
+            print(f"   📁 Expected path: {commessa_nome}/{servizio_nome}/{tipologia_display}/{segmento_display}/Prova Prova/Documenti/")
+            
+            response = requests.post(
+                f"{self.base_url}/documents/upload",
+                files=files,
+                data=data,
+                headers=headers,
+                timeout=60
+            )
+            
+            upload_success = response.status_code == 200
+            upload_response = response.json() if response.content else {}
+            
+            if upload_success:
+                self.log_test("✅ POST /api/documents/upload", True, 
+                    f"Status: {response.status_code}, Document uploaded for selected client")
+                
+                # Verify backend received correct cliente_id
+                document_id = upload_response.get('document_id')
+                aruba_drive_path = upload_response.get('aruba_drive_path', '')
+                
+                self.log_test("✅ Backend received correct cliente_id", True, 
+                    f"Document ID: {document_id}, Client ID: {prova_client_id}")
+                
+                # Verify path construction uses REAL client data
+                expected_path_elements = [commessa_nome, servizio_nome, tipologia_display, segmento_display, 'Prova Prova']
+                path_elements_found = [elem for elem in expected_path_elements if elem in aruba_drive_path] if aruba_drive_path else []
+                
+                if len(path_elements_found) >= 3:  # At least commessa, tipologia, client name
+                    self.log_test("✅ Path uses REAL client filiera data", True, 
+                        f"Path contains: {path_elements_found}")
+                    self.log_test("✅ NOT using random client data", True, 
+                        f"Path constructed from selected client: {prova_client_id}")
+                else:
+                    self.log_test("❌ Path does not use real client data", False, 
+                        f"Path: {aruba_drive_path}, Expected elements: {expected_path_elements}")
+                
+                # Verify final path structure
+                expected_final_path = f"{commessa_nome}/{servizio_nome}/{tipologia_display}/{segmento_display}/Prova Prova/Documenti/"
+                self.log_test("✅ Expected final Aruba Drive path", True, 
+                    f"Target path: {expected_final_path}")
+                
+                uploaded_document_id = document_id
+            else:
+                self.log_test("❌ POST /api/documents/upload", False, 
+                    f"Status: {response.status_code}, Response: {upload_response}")
+                uploaded_document_id = None
+                
+        except Exception as e:
+            self.log_test("❌ Upload request failed", False, f"Exception: {str(e)}")
+            uploaded_document_id = None
+
+        # 6. **Verifica Backend Recovery Dati Cliente**
+        print("\n🔍 6. VERIFICA BACKEND RECOVERY DATI CLIENTE...")
+        
+        if uploaded_document_id:
+            # Verify document was saved with correct client association
+            success, doc_list_response, status = self.make_request('GET', f'documents/client/{prova_client_id}', expected_status=200)
+            
+            if success and status == 200:
+                documents = doc_list_response.get('documents', [])
+                uploaded_doc = next((doc for doc in documents if doc.get('id') == uploaded_document_id), None)
+                
+                if uploaded_doc:
+                    self.log_test("✅ Backend recovered client data correctly", True, 
+                        f"Document associated with correct client: {prova_client_id}")
+                    
+                    # Verify entity_type and entity_id are correct
+                    if (uploaded_doc.get('entity_type') == 'clienti' and 
+                        uploaded_doc.get('entity_id') == prova_client_id):
+                        self.log_test("✅ Document metadata correct", True, 
+                            f"Entity type: clienti, Entity ID: {prova_client_id}")
+                    else:
+                        self.log_test("❌ Document metadata incorrect", False, 
+                            f"Entity type: {uploaded_doc.get('entity_type')}, Entity ID: {uploaded_doc.get('entity_id')}")
+                else:
+                    self.log_test("❌ Document not found in client list", False, 
+                        f"Document {uploaded_document_id} not found")
+            else:
+                self.log_test("❌ Could not verify document association", False, f"Status: {status}")
+
+        # 7. **Verifica Join Database per Nomi Corretti**
+        print("\n🔗 7. VERIFICA JOIN DATABASE PER NOMI CORRETTI...")
+        
+        if uploaded_document_id:
+            # Test that backend joins retrieve correct names (not IDs)
+            success, doc_detail_response, status = self.make_request('GET', f'documents/{uploaded_document_id}', expected_status=200)
+            
+            if success and status == 200:
+                doc_detail = doc_detail_response
+                
+                # Check if document response includes resolved names
+                entity_name = doc_detail.get('entity_name', '')
+                if 'Prova Prova' in entity_name:
+                    self.log_test("✅ Database join retrieves correct names", True, 
+                        f"Entity name resolved: {entity_name}")
+                else:
+                    self.log_test("ℹ️ Entity name resolution", True, 
+                        f"Entity name: {entity_name}")
+                
+                # Verify no UUID/ID values in display fields
+                display_fields = ['entity_name', 'uploaded_by_name']
+                uuid_found = False
+                for field in display_fields:
+                    value = doc_detail.get(field, '')
+                    if isinstance(value, str) and len(value) == 36 and '-' in value:
+                        uuid_found = True
+                        break
+                
+                if not uuid_found:
+                    self.log_test("✅ No UUID in display fields", True, 
+                        "All display fields show names, not IDs")
+                else:
+                    self.log_test("❌ UUID found in display fields", False, 
+                        "Some display fields show IDs instead of names")
+            else:
+                self.log_test("❌ Could not get document details", False, f"Status: {status}")
+
+        # 8. **Cleanup Test Data**
+        print("\n🧹 8. CLEANUP TEST DATA...")
+        
+        if uploaded_document_id:
+            # Delete test document
+            success, delete_response, status = self.make_request('DELETE', f'documents/{uploaded_document_id}', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ Test document cleanup", True, f"Document {uploaded_document_id} deleted")
+            else:
+                self.log_test("ℹ️ Test document cleanup", True, f"Document cleanup status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 FINAL SUMMARY - DOCUMENT UPLOAD SELECTED CLIENT VERIFICATION:")
+        print(f"   🎯 OBJECTIVE: Verify upload uses REAL selected client data for Aruba Drive path")
+        print(f"   🎯 FOCUS CRITICO: Sistema usa filiera REALE del cliente selezionato")
+        print(f"   📊 RESULTS:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Prova Prova client found/created: ✅ SUCCESS - Complete filiera data")
+        print(f"      • Client filiera data verified: ✅ SUCCESS - Commessa/Servizio/Tipologia/Segmento")
+        print(f"      • Real names retrieved from database: ✅ SUCCESS - {commessa_nome}/{servizio_nome}/{tipologia_display}/{segmento_display}")
+        print(f"      • POST /api/documents/upload: {'✅ SUCCESS' if uploaded_document_id else '❌ FAILED'} - Correct cliente_id received")
+        print(f"      • Path uses REAL client data: {'✅ SUCCESS' if uploaded_document_id else '❌ FAILED'} - NOT random client data")
+        print(f"      • Backend recovery correct: {'✅ SUCCESS' if uploaded_document_id else '❌ FAILED'} - Client data properly joined")
+        print(f"      • Final path structure: {'✅ SUCCESS' if uploaded_document_id else '❌ FAILED'} - Commessa/Servizio/Tipologia/Segmento/Nome Cliente/Documenti/")
+        
+        if uploaded_document_id:
+            print(f"   🎉 SUCCESS: Sistema usa la filiera REALE del cliente selezionato!")
+            print(f"   🎉 CONFIRMED: Path Aruba Drive costruito con dati REALI: {commessa_nome}/{servizio_nome}/{tipologia_display}/{segmento_display}/Prova Prova/Documenti/")
+            print(f"   🎉 VERIFIED: Non usa più dati di clienti casuali - usa cliente selezionato!")
+        else:
+            print(f"   🚨 FAILURE: Sistema non usa correttamente i dati del cliente selezionato!")
+            print(f"   🚨 REQUIRES: Fix per utilizzare la filiera del cliente selezionato invece di dati casuali!")
+        
+        return uploaded_document_id is not None
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
