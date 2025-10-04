@@ -19409,10 +19409,14 @@ Duplicate,Test,+393471234567"""
             else:
                 commessa_name = 'Missing'
             
-            # Get servizio name
+            # Get servizio name (GET /api/servizi/{id} returns 405, so get from list)
             if servizio_id:
-                success, servizio_response, status = self.make_request('GET', f'servizi/{servizio_id}', expected_status=200)
-                servizio_name = servizio_response.get('nome', 'Unknown') if success else 'Unknown'
+                success, all_servizi, status = self.make_request('GET', 'servizi', expected_status=200)
+                if success and isinstance(all_servizi, list):
+                    servizio_obj = next((s for s in all_servizi if s.get('id') == servizio_id), None)
+                    servizio_name = servizio_obj.get('nome', 'Unknown') if servizio_obj else 'Unknown'
+                else:
+                    servizio_name = 'Unknown'
             else:
                 servizio_name = 'Missing'
             
