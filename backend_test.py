@@ -22552,12 +22552,30 @@ def main():
 if __name__ == "__main__":
     tester = CRMAPITester()
     
-    # Run the specific Aruba Drive test as requested
-    success = tester.test_aruba_drive_commesse_configuration_system()
+    print("🚀 Starting CRM API Testing - FOCUS: VERIFICA CORREZIONI IMPLEMENTATE...")
+    print(f"🌐 Base URL: {tester.base_url}")
+    print(f"🎯 OBIETTIVO: Raggiungere 100% success rate (25/25 test)")
+    print(f"🔍 FOCUS SPECIFICO: Verificare le correzioni implementate")
     
-    if success:
-        print("\n🎉 All Aruba Drive tests completed successfully!")
+    # Run comprehensive fix verification
+    success = tester.run_comprehensive_fix_verification()
+    
+    # Final summary
+    print(f"\n{'='*80}")
+    print(f"📊 FINAL TEST SUMMARY")
+    print(f"{'='*80}")
+    print(f"Tests run: {tester.tests_run}")
+    print(f"Tests passed: {tester.tests_passed}")
+    print(f"Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+    print(f"Fix verification: {'✅ SUCCESS' if success else '❌ FAILED'}")
+    
+    if success and tester.tests_passed == tester.tests_run:
+        print("\n🎉 OBIETTIVO RAGGIUNTO: 100% SUCCESS RATE!")
+        print("🎉 TUTTE LE CORREZIONI VERIFICATE E FUNZIONANTI!")
+        print("🎉 SISTEMA COMPLETAMENTE OPERATIVO!")
+        sys.exit(0)
     else:
-        print("\n❌ Some Aruba Drive tests failed!")
-    
-    sys.exit(0 if success else 1)
+        failed_count = tester.tests_run - tester.tests_passed
+        print(f"\n🚨 OBIETTIVO NON RAGGIUNTO: {failed_count} test ancora falliti")
+        print("🚨 ALCUNE CORREZIONI RICHIEDONO ULTERIORE ATTENZIONE")
+        sys.exit(1)
