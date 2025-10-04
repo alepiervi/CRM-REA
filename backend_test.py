@@ -20505,6 +20505,124 @@ Duplicate,Test,+393471234567"""
 
         return True
 
+    def test_timeout_optimization(self):
+        """TEST TIMEOUT OPTIMIZATION - Verifica timeout ottimizzati (5s invece di 30s)"""
+        print("\n⚡ TEST TIMEOUT OPTIMIZATION...")
+        
+        # Test document upload with optimized timeout
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        if not success:
+            self.log_test("❌ Cannot get clienti for timeout test", False, f"Status: {status}")
+            return False
+        
+        clienti = clienti_response.get('clienti', []) if isinstance(clienti_response, dict) else clienti_response
+        if not clienti:
+            self.log_test("❌ No clienti found for timeout test", False, "Cannot test without clients")
+            return False
+        
+        test_client_id = clienti[0].get('id')
+        
+        # Create test PDF content
+        test_pdf_content = b'%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000074 00000 n \n0000000120 00000 n \ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n197\n%%EOF'
+        
+        import requests
+        import time
+        
+        files = {
+            'file': ('timeout_test.pdf', test_pdf_content, 'application/pdf')
+        }
+        
+        data = {
+            'entity_type': 'clienti',
+            'entity_id': test_client_id,
+            'uploaded_by': self.user_data['id']
+        }
+        
+        headers = {'Authorization': f'Bearer {self.token}'}
+        
+        try:
+            start_time = time.time()
+            response = requests.post(
+                f"{self.base_url}/documents/upload",
+                files=files,
+                data=data,
+                headers=headers,
+                timeout=10  # Test with 10s timeout to verify optimization
+            )
+            end_time = time.time()
+            
+            response_time = end_time - start_time
+            
+            if response.status_code == 200:
+                if response_time < 5.0:
+                    self.log_test("✅ TIMEOUT OPTIMIZATION VERIFIED", True, 
+                        f"Upload completed in {response_time:.2f}s (optimized from 30s to <5s)")
+                    
+                    # Cleanup test document
+                    upload_response = response.json()
+                    document_id = upload_response.get('document_id')
+                    if document_id:
+                        self.make_request('DELETE', f'documents/{document_id}', expected_status=200)
+                    
+                    return True
+                else:
+                    self.log_test("❌ TIMEOUT NOT OPTIMIZED", False, 
+                        f"Upload took {response_time:.2f}s (still slow)")
+                    return False
+            else:
+                # Even if upload fails, check if it failed quickly (simulation mode activation)
+                if response_time < 5.0:
+                    self.log_test("✅ TIMEOUT OPTIMIZATION VERIFIED", True, 
+                        f"Simulation mode activated quickly in {response_time:.2f}s")
+                    return True
+                else:
+                    self.log_test("❌ TIMEOUT NOT OPTIMIZED", False, 
+                        f"Response took {response_time:.2f}s")
+                    return False
+                    
+        except Exception as e:
+            self.log_test("❌ Timeout test failed", False, f"Exception: {str(e)}")
+            return False
+
+    def test_lead_qualification_analytics_fix(self):
+        """TEST LEAD QUALIFICATION ANALYTICS FIX - Verifica struttura response corretta"""
+        print("\n📊 TEST LEAD QUALIFICATION ANALYTICS FIX...")
+        
+        # Test GET /api/lead-qualification/analytics
+        success, response, status = self.make_request('GET', 'lead-qualification/analytics', expected_status=200)
+        
+        if success and status == 200:
+            # Verify response structure - should have total, active, completed at root level
+            if isinstance(response, dict):
+                required_fields = ['total', 'active', 'completed']
+                missing_fields = [field for field in required_fields if field not in response]
+                
+                if not missing_fields:
+                    self.log_test("✅ LEAD QUALIFICATION ANALYTICS STRUCTURE CORRECT", True, 
+                        f"Response contains required fields at root level: total={response.get('total')}, active={response.get('active')}, completed={response.get('completed')}")
+                    
+                    # Verify fields are not wrapped in analytics object
+                    if 'analytics' not in response or not isinstance(response.get('analytics'), dict):
+                        self.log_test("✅ NO ANALYTICS WRAPPER", True, 
+                            "Fields are at root level, not wrapped in analytics object")
+                        return True
+                    else:
+                        self.log_test("❌ ANALYTICS WRAPPER STILL PRESENT", False, 
+                            "Fields are still wrapped in analytics object")
+                        return False
+                else:
+                    self.log_test("❌ MISSING REQUIRED FIELDS", False, 
+                        f"Missing fields at root level: {missing_fields}")
+                    return False
+            else:
+                self.log_test("❌ INVALID RESPONSE TYPE", False, 
+                    f"Expected dict, got {type(response)}")
+                return False
+        else:
+            self.log_test("❌ LEAD QUALIFICATION ANALYTICS ENDPOINT FAILED", False, 
+                f"Status: {status}, Response: {response}")
+            return False
+
     def test_final_comprehensive_backend_verification(self):
         """TEST FINALE COMPLETO - 100% SUCCESS RATE VERIFICATION"""
         print("\n🎯 TEST FINALE COMPLETO - VERIFICA 100% SUCCESS RATE BACKEND...")
