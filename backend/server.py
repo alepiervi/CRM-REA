@@ -10436,7 +10436,7 @@ class ArubaWebAutomation:
             url = aruba_config.get("url", "")
             username = aruba_config.get("username", "")
             password = aruba_config.get("password", "")
-            connection_timeout = aruba_config.get("connection_timeout", 30) * 1000  # Convert to ms
+            connection_timeout = aruba_config.get("connection_timeout", 10) * 1000  # Convert to ms - reduced for faster testing
             
             if not all([url, username, password]):
                 logging.error("❌ Missing Aruba Drive configuration (url, username, or password)")
