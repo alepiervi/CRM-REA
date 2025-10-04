@@ -608,6 +608,7 @@ test_plan:
     - "Aruba Drive Filiera-Specific Configuration System"
     - "Aruba Drive Upload with Original Filename and Hierarchical Folder Structure"
     - "Aruba Drive Critical Fixes - Enum Mapping 'Privato' → 'privato' and Folder Creation Fallback"
+    - "Document Upload Selected Client Verification - Final Test"
     - "GET /api/servizi Endpoint Fix - 405 Method Not Allowed Resolution"
     - "Sub Agenzie Problems Diagnosis - Deletion, Commesse Visibility, and Flagging"
     - "AI-Based Lead Routing System Implementation"
