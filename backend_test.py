@@ -18567,6 +18567,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return
 
+        # Run the URGENT Aruba Drive path construction test
+        print("\n" + "🚨" * 40)
+        print("URGENT TEST: ARUBA DRIVE PATH CONSTRUCTION FIXES")
+        print("🚨" * 40)
+        
+        self.test_aruba_drive_path_construction_fixes_urgent()
+        
         # Run the URGENT enum backward compatibility test
         print("\n" + "🎯" * 40)
         print("FOCUS TEST: CLIENT ENUM BACKWARD COMPATIBILITY - PRIVATO/RESIDENZIALE")
