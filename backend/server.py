@@ -8485,7 +8485,7 @@ async def log_client_action(
             del log_entry['_id']
             
         await db.clienti_logs.insert_one(log_entry)
-        logging.info(f"📝 CLIENT LOG: {action.value} for cliente {cliente_id} by {user.nome} {user.cognome}")
+        logging.info(f"📝 CLIENT LOG: {action.value} for cliente {cliente_id} by {user.username} ({user.email})")
         
     except Exception as e:
         logging.error(f"Error logging client action: {e}")
