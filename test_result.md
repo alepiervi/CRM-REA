@@ -621,6 +621,7 @@ test_plan:
     - "Aruba Drive Upload with Original Filename and Hierarchical Folder Structure"
     - "Aruba Drive Critical Fixes - Enum Mapping 'Privato' → 'privato' and Folder Creation Fallback"
     - "Document Upload Selected Client Verification - Final Test"
+    - "Prova Prova Client Data Verification and Fix"
     - "GET /api/servizi Endpoint Fix - 405 Method Not Allowed Resolution"
     - "Sub Agenzie Problems Diagnosis - Deletion, Commesse Visibility, and Flagging"
     - "AI-Based Lead Routing System Implementation"
