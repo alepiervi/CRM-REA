@@ -7461,6 +7461,13 @@ const DocumentsManagement = ({
       return;
     }
 
+    // CRITICAL FIX: If in clienti section, use selectedClientId instead of generic entityId
+    let actualEntityId = entityId;
+    if (activeTab === 'clienti' && selectedClientId) {
+      actualEntityId = selectedClientId;
+      console.log(`🔧 UPLOAD FIX: Using selectedClientId (${selectedClientId}) instead of generic entityId (${entityId})`);
+    }
+
     if (!files || files.length === 0) {
       toast({
         title: "Errore",
