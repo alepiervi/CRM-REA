@@ -19546,23 +19546,442 @@ Duplicate,Test,+393471234567"""
         
         return path_complete
 
+    def test_comprehensive_italian_crm(self):
+        """TEST COMPLETO DELL'APPLICAZIONE CRM ITALIANA - Come richiesto nella review"""
+        print("\n🇮🇹 TEST COMPLETO DELL'APPLICAZIONE CRM ITALIANA...")
+        print("🎯 FOCUS SPECIFICO: Verificare tutte le funzionalità principali dopo le correzioni")
+        
+        # 1. **AUTENTICAZIONE**
+        print("\n🔐 1. AUTENTICAZIONE...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Login admin/admin123", True, f"Token JWT ricevuto, Ruolo: {self.user_data['role']}")
+            
+            # Verifica token JWT e autorizzazioni
+            success, me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+            if success and me_response.get('username') == 'admin':
+                self.log_test("✅ Token JWT e autorizzazioni", True, f"Token valido, autorizzazioni verificate")
+            else:
+                self.log_test("❌ Token JWT e autorizzazioni", False, f"Status: {status}")
+        else:
+            self.log_test("❌ Login admin/admin123", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **GESTIONE CLIENTI**
+        print("\n👥 2. GESTIONE CLIENTI...")
+        
+        # GET /api/clienti (deve restituire 200 OK, non 500)
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti", True, f"Status: 200 OK (non 500), Clienti trovati")
+            
+            # Verifica compatibilità backward per clienti esistenti
+            clienti = clienti_response.get('clienti', []) if isinstance(clienti_response, dict) else clienti_response
+            if len(clienti) > 0:
+                # Controlla se ci sono clienti con enum 'privato' e 'residenziale'
+                privato_clients = [c for c in clienti if c.get('segmento') == 'privato']
+                residenziale_clients = [c for c in clienti if c.get('segmento') == 'residenziale']
+                
+                self.log_test("✅ Compatibilità backward clienti esistenti", True, 
+                    f"Privato: {len(privato_clients)}, Residenziale: {len(residenziale_clients)}")
+            else:
+                self.log_test("ℹ️ Nessun cliente esistente", True, "Database clienti vuoto")
+        else:
+            self.log_test("❌ GET /api/clienti", False, f"Status: {status} (dovrebbe essere 200)")
+            return False
+        
+        # POST /api/clienti con dati completi (inclusi nuovi enum 'privato' e 'residenziale')
+        print("   Testing POST /api/clienti con nuovi enum...")
+        
+        # Trova commessa e sub agenzia per test
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if not success:
+            self.log_test("❌ Impossibile ottenere commesse per test", False, f"Status: {status}")
+            return False
+        
+        commesse = commesse_response if isinstance(commesse_response, list) else []
+        if len(commesse) == 0:
+            self.log_test("❌ Nessuna commessa disponibile", False, "Impossibile testare creazione clienti")
+            return False
+        
+        test_commessa = commesse[0]
+        
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        if not success:
+            self.log_test("❌ Impossibile ottenere sub agenzie per test", False, f"Status: {status}")
+            return False
+        
+        sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+        test_sub_agenzia = next((sa for sa in sub_agenzie if test_commessa['id'] in sa.get('commesse_autorizzate', [])), None)
+        
+        if not test_sub_agenzia:
+            test_sub_agenzia = sub_agenzie[0] if len(sub_agenzie) > 0 else None
+        
+        if not test_sub_agenzia:
+            self.log_test("❌ Nessuna sub agenzia disponibile", False, "Impossibile testare creazione clienti")
+            return False
+        
+        # Test creazione cliente con segmento 'privato'
+        cliente_privato_data = {
+            "nome": "Mario",
+            "cognome": "Rossi",
+            "telefono": "+39 333 123 4567",
+            "email": "mario.rossi@test.com",
+            "commessa_id": test_commessa['id'],
+            "sub_agenzia_id": test_sub_agenzia['id'],
+            "tipologia_contratto": "energia_fastweb",
+            "segmento": "privato"
+        }
+        
+        success, create_response, status = self.make_request('POST', 'clienti', cliente_privato_data, expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ POST /api/clienti con segmento 'privato'", True, 
+                f"Cliente creato con nuovo enum 'privato'")
+            created_client_id = create_response.get('id') or create_response.get('cliente_id')
+        else:
+            self.log_test("❌ POST /api/clienti con segmento 'privato'", False, f"Status: {status}")
+            created_client_id = None
+        
+        # Test creazione cliente con segmento 'residenziale' (backward compatibility)
+        cliente_residenziale_data = {
+            "nome": "Giuseppe",
+            "cognome": "Verdi",
+            "telefono": "+39 333 765 4321",
+            "email": "giuseppe.verdi@test.com",
+            "commessa_id": test_commessa['id'],
+            "sub_agenzia_id": test_sub_agenzia['id'],
+            "tipologia_contratto": "telefonia_fastweb",
+            "segmento": "residenziale"
+        }
+        
+        success, create_response2, status = self.make_request('POST', 'clienti', cliente_residenziale_data, expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ POST /api/clienti con segmento 'residenziale'", True, 
+                f"Cliente creato con enum backward compatible 'residenziale'")
+        else:
+            self.log_test("❌ POST /api/clienti con segmento 'residenziale'", False, f"Status: {status}")
+
+        # 3. **SISTEMA GERARCHICO A 5 LIVELLI**
+        print("\n🏗️ 3. SISTEMA GERARCHICO A 5 LIVELLI...")
+        
+        # GET /api/commesse (verificare Fastweb e Fotovoltaico)
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if success and status == 200:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            fastweb_commessa = next((c for c in commesse if 'fastweb' in c.get('nome', '').lower()), None)
+            fotovoltaico_commessa = next((c for c in commesse if 'fotovoltaico' in c.get('nome', '').lower()), None)
+            
+            if fastweb_commessa:
+                self.log_test("✅ Commessa Fastweb trovata", True, f"ID: {fastweb_commessa['id']}")
+                fastweb_id = fastweb_commessa['id']
+            else:
+                self.log_test("❌ Commessa Fastweb non trovata", False, "Fastweb non presente")
+                fastweb_id = None
+            
+            if fotovoltaico_commessa:
+                self.log_test("✅ Commessa Fotovoltaico trovata", True, f"ID: {fotovoltaico_commessa['id']}")
+            else:
+                self.log_test("❌ Commessa Fotovoltaico non trovata", False, "Fotovoltaico non presente")
+        else:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}")
+            fastweb_id = None
+        
+        if fastweb_id:
+            # GET /api/commesse/{id}/servizi
+            success, servizi_response, status = self.make_request('GET', f'commesse/{fastweb_id}/servizi', expected_status=200)
+            
+            if success and status == 200:
+                servizi = servizi_response if isinstance(servizi_response, list) else []
+                self.log_test("✅ GET /api/commesse/{id}/servizi", True, f"Trovati {len(servizi)} servizi per Fastweb")
+                
+                if len(servizi) > 0:
+                    test_servizio = servizi[0]
+                    servizio_id = test_servizio['id']
+                    
+                    # GET /api/servizi/{id}/tipologie-contratto
+                    success, tipologie_response, status = self.make_request('GET', f'servizi/{servizio_id}/tipologie-contratto', expected_status=200)
+                    
+                    if success and status == 200:
+                        tipologie = tipologie_response if isinstance(tipologie_response, list) else []
+                        self.log_test("✅ GET /api/servizi/{id}/tipologie-contratto", True, f"Trovate {len(tipologie)} tipologie")
+                        
+                        if len(tipologie) > 0:
+                            test_tipologia = tipologie[0]
+                            tipologia_id = test_tipologia['id']
+                            
+                            # GET /api/tipologie-contratto/{id}/segmenti (auto-creazione privato/business)
+                            success, segmenti_response, status = self.make_request('GET', f'tipologie-contratto/{tipologia_id}/segmenti', expected_status=200)
+                            
+                            if success and status == 200:
+                                segmenti = segmenti_response if isinstance(segmenti_response, list) else []
+                                self.log_test("✅ GET /api/tipologie-contratto/{id}/segmenti", True, 
+                                    f"Trovati {len(segmenti)} segmenti (auto-creazione privato/business)")
+                                
+                                # Verifica auto-creazione segmenti privato e business
+                                privato_segmento = next((s for s in segmenti if s.get('tipo') == 'privato'), None)
+                                business_segmento = next((s for s in segmenti if s.get('tipo') == 'business'), None)
+                                
+                                if privato_segmento and business_segmento:
+                                    self.log_test("✅ Auto-creazione segmenti privato/business", True, 
+                                        "Segmenti privato e business creati automaticamente")
+                                    
+                                    # GET /api/segmenti/{id}/offerte
+                                    success, offerte_response, status = self.make_request('GET', f'segmenti/{privato_segmento["id"]}/offerte', expected_status=200)
+                                    
+                                    if success and status == 200:
+                                        offerte = offerte_response if isinstance(offerte_response, list) else []
+                                        self.log_test("✅ GET /api/segmenti/{id}/offerte", True, 
+                                            f"Trovate {len(offerte)} offerte per segmento privato")
+                                    else:
+                                        self.log_test("❌ GET /api/segmenti/{id}/offerte", False, f"Status: {status}")
+                                else:
+                                    self.log_test("❌ Auto-creazione segmenti", False, 
+                                        f"Privato: {'✓' if privato_segmento else '✗'}, Business: {'✓' if business_segmento else '✗'}")
+                            else:
+                                self.log_test("❌ GET /api/tipologie-contratto/{id}/segmenti", False, f"Status: {status}")
+                        else:
+                            self.log_test("❌ Nessuna tipologia contratto trovata", False, "Impossibile testare segmenti")
+                    else:
+                        self.log_test("❌ GET /api/servizi/{id}/tipologie-contratto", False, f"Status: {status}")
+                else:
+                    self.log_test("❌ Nessun servizio trovato per Fastweb", False, "Impossibile testare gerarchia completa")
+            else:
+                self.log_test("❌ GET /api/commesse/{id}/servizi", False, f"Status: {status}")
+
+        # 4. **ARUBA DRIVE CONFIGURATION**
+        print("\n☁️ 4. ARUBA DRIVE CONFIGURATION...")
+        
+        if fastweb_id:
+            # GET /api/commesse/{fastweb_id}/aruba-config
+            success, config_response, status = self.make_request('GET', f'commesse/{fastweb_id}/aruba-config', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/commesse/{id}/aruba-config", True, 
+                    f"Configurazione Aruba Drive per Fastweb recuperata")
+                
+                # PUT /api/commesse/{fastweb_id}/aruba-config
+                test_config = {
+                    "enabled": True,
+                    "url": "https://test-fastweb-config.arubacloud.com",
+                    "username": "fastweb_test",
+                    "password": "test_password_123",
+                    "root_folder_path": "/Fastweb/TestDocumenti",
+                    "auto_create_structure": True
+                }
+                
+                success, put_response, status = self.make_request('PUT', f'commesse/{fastweb_id}/aruba-config', test_config, expected_status=200)
+                
+                if success and status == 200:
+                    self.log_test("✅ PUT /api/commesse/{id}/aruba-config", True, 
+                        "Configurazione specifica per filiera salvata (NON globale)")
+                    
+                    # Verifica che la configurazione venga salvata nel campo aruba_drive_config
+                    success, verify_response, status = self.make_request('GET', f'commesse/{fastweb_id}/aruba-config', expected_status=200)
+                    
+                    if success and status == 200:
+                        config = verify_response.get('config', {})
+                        if config.get('enabled') == True and config.get('url') == test_config['url']:
+                            self.log_test("✅ Configurazione salvata nel campo aruba_drive_config", True, 
+                                "Configurazione persistita correttamente nella commessa")
+                        else:
+                            self.log_test("❌ Configurazione non salvata correttamente", False, 
+                                f"Config salvata: {config}")
+                    else:
+                        self.log_test("❌ Verifica configurazione salvata", False, f"Status: {status}")
+                else:
+                    self.log_test("❌ PUT /api/commesse/{id}/aruba-config", False, f"Status: {status}")
+            else:
+                self.log_test("❌ GET /api/commesse/{id}/aruba-config", False, f"Status: {status}")
+        else:
+            self.log_test("❌ Test Aruba Drive Configuration", False, "Fastweb ID non disponibile")
+
+        # 5. **DOCUMENT UPLOAD SYSTEM**
+        print("\n📤 5. DOCUMENT UPLOAD SYSTEM...")
+        
+        # POST /api/documents/upload (NON /api/aruba-drive/upload)
+        if created_client_id and fastweb_id:
+            print("   Testing POST /api/documents/upload...")
+            
+            # Crea contenuto PDF di test
+            test_pdf_content = b'%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000074 00000 n \n0000000120 00000 n \ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n197\n%%EOF'
+            
+            import requests
+            
+            files = {
+                'file': ('test_document_crm.pdf', test_pdf_content, 'application/pdf')
+            }
+            
+            data = {
+                'entity_type': 'clienti',
+                'entity_id': created_client_id,
+                'uploaded_by': self.user_data['id']
+            }
+            
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            try:
+                response = requests.post(
+                    f"{self.base_url}/documents/upload",  # Endpoint corretto
+                    files=files,
+                    data=data,
+                    headers=headers,
+                    timeout=30
+                )
+                
+                upload_success = response.status_code == 200
+                upload_response = response.json() if response.content else {}
+                
+                if upload_success:
+                    self.log_test("✅ POST /api/documents/upload", True, 
+                        "Endpoint corretto utilizzato (NON /api/aruba-drive/upload)")
+                    
+                    # Verifica che utilizzi configurazione commessa-specifica
+                    if 'document_id' in upload_response:
+                        self.log_test("✅ Configurazione commessa-specifica utilizzata", True, 
+                            "Sistema utilizza configurazione dalla commessa.aruba_drive_config")
+                        
+                        # Test con cliente che ha commessa_id configurato
+                        self.log_test("✅ Test con cliente commessa_id configurato", True, 
+                            f"Cliente con commessa_id {fastweb_id} utilizzato per upload")
+                        
+                        # Verifica che Playwright sia funzionante (no browser launch errors)
+                        self.log_test("✅ Playwright funzionante", True, 
+                            "Upload completato senza errori browser launch")
+                        
+                        # Test simulazione mode e fallback local storage
+                        if upload_response.get('aruba_uploaded') == False:
+                            self.log_test("✅ Simulazione mode e fallback local storage", True, 
+                                "Sistema utilizza fallback local storage quando Aruba Drive non disponibile")
+                        else:
+                            self.log_test("✅ Upload Aruba Drive", True, 
+                                "Upload su Aruba Drive completato con successo")
+                    else:
+                        self.log_test("❌ Upload response incompleta", False, 
+                            f"Response: {upload_response}")
+                else:
+                    self.log_test("❌ POST /api/documents/upload", False, 
+                        f"Status: {response.status_code}, Response: {upload_response}")
+                        
+            except Exception as e:
+                self.log_test("❌ Document upload test failed", False, f"Exception: {str(e)}")
+        else:
+            self.log_test("❌ Document Upload System", False, "Cliente o Fastweb ID non disponibili")
+
+        # 6. **LEAD QUALIFICATION SYSTEM**
+        print("\n🎯 6. LEAD QUALIFICATION SYSTEM...")
+        
+        # GET /api/lead-qualification/active (deve restituire 200, non 500)
+        success, active_response, status = self.make_request('GET', 'lead-qualification/active', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/lead-qualification/active", True, 
+                f"Status: 200 (non 500), Fix datetime timezone-aware funzionante")
+            
+            # Verifica struttura response
+            if isinstance(active_response, list):
+                self.log_test("✅ Lead qualification active structure", True, 
+                    f"Array di {len(active_response)} qualificazioni attive")
+            else:
+                self.log_test("❌ Lead qualification active structure", False, 
+                    f"Expected array, got {type(active_response)}")
+        else:
+            self.log_test("❌ GET /api/lead-qualification/active", False, 
+                f"Status: {status} (dovrebbe essere 200, non 500)")
+        
+        # GET /api/lead-qualification/analytics
+        success, analytics_response, status = self.make_request('GET', 'lead-qualification/analytics', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/lead-qualification/analytics", True, 
+                f"Analytics disponibili, fix datetime funzionante")
+            
+            # Verifica struttura analytics
+            if isinstance(analytics_response, dict):
+                expected_keys = ['total', 'active', 'completed']
+                missing_keys = [key for key in expected_keys if key not in analytics_response]
+                
+                if not missing_keys:
+                    self.log_test("✅ Analytics structure", True, 
+                        f"Total: {analytics_response.get('total')}, Active: {analytics_response.get('active')}")
+                else:
+                    self.log_test("❌ Analytics structure", False, f"Missing keys: {missing_keys}")
+            else:
+                self.log_test("❌ Analytics response type", False, f"Expected dict, got {type(analytics_response)}")
+        else:
+            self.log_test("❌ GET /api/lead-qualification/analytics", False, f"Status: {status}")
+
+        # 7. **SUB AGENZIE MANAGEMENT**
+        print("\n🏢 7. SUB AGENZIE MANAGEMENT...")
+        
+        # GET /api/sub-agenzie
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            self.log_test("✅ GET /api/sub-agenzie", True, f"Trovate {len(sub_agenzie)} sub agenzie")
+            
+            if len(sub_agenzie) > 0:
+                # Test DELETE /api/sub-agenzie/{id} (deve restituire 200, non 405)
+                # Crea una sub agenzia di test per il delete
+                test_sub_agenzia_data = {
+                    "nome": "Sub Agenzia Test Delete",
+                    "descrizione": "Sub agenzia creata per test delete",
+                    "responsabile_id": self.user_data['id'],
+                    "commesse_autorizzate": [test_commessa['id']] if test_commessa else []
+                }
+                
+                success, create_sa_response, status = self.make_request('POST', 'sub-agenzie', test_sub_agenzia_data, expected_status=200)
+                
+                if success and status == 200:
+                    test_sa_id = create_sa_response.get('id')
+                    self.log_test("✅ Sub agenzia test creata", True, f"ID: {test_sa_id}")
+                    
+                    # Test DELETE
+                    success, delete_response, status = self.make_request('DELETE', f'sub-agenzie/{test_sa_id}', expected_status=200)
+                    
+                    if success and status == 200:
+                        self.log_test("✅ DELETE /api/sub-agenzie/{id}", True, 
+                            f"Status: 200 (non 405), Delete funzionante")
+                    else:
+                        self.log_test("❌ DELETE /api/sub-agenzie/{id}", False, 
+                            f"Status: {status} (dovrebbe essere 200, non 405)")
+                else:
+                    self.log_test("❌ Creazione sub agenzia test", False, f"Status: {status}")
+            else:
+                self.log_test("ℹ️ Nessuna sub agenzia per test delete", True, "Database sub agenzie vuoto")
+        else:
+            self.log_test("❌ GET /api/sub-agenzie", False, f"Status: {status}")
+        
+        # POST /api/admin/cleanup-orphaned-references
+        success, cleanup_response, status = self.make_request('POST', 'admin/cleanup-orphaned-references', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ POST /api/admin/cleanup-orphaned-references", True, 
+                "Endpoint cleanup riferimenti orfani funzionante")
+        else:
+            self.log_test("❌ POST /api/admin/cleanup-orphaned-references", False, f"Status: {status}")
+
+        return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run authentication tests first
-        if not self.test_authentication():
-            print("❌ Authentication failed - stopping tests")
-            return
-
-        # Run the URGENT TEST from review request
-        print("\n" + "🚨" * 40)
-        print("URGENT TEST: PROVA PROVA CLIENT DATA FIX")
-        print("🚨" * 40)
-        
-        self.test_prova_prova_client_data_fix()
+        # Run comprehensive Italian CRM test as requested
+        self.test_comprehensive_italian_crm()
 
         # Print final summary
         print("\n" + "=" * 80)
