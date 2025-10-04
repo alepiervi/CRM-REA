@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://crm-evolution-5.preview.emergentagent.com"
+    base_url = "https://italcrm-fix.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:
