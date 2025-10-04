@@ -3900,15 +3900,17 @@ async def upload_document(
                         if servizio:
                             folder_path_parts.append(servizio.get("nome", servizio_id))
                     
-                    # Add tipologia contratto
+                    # Add tipologia contratto (convert enum to display name)
                     tipologia = entity.get("tipologia_contratto")
                     if tipologia:
-                        folder_path_parts.append(str(tipologia))
+                        tipologia_display = enum_to_display_name(str(tipologia), "tipologia")
+                        folder_path_parts.append(tipologia_display)
                     
-                    # Add segmento
+                    # Add segmento (convert enum to display name)
                     segmento = entity.get("segmento")
                     if segmento:
-                        folder_path_parts.append(str(segmento))
+                        segmento_display = enum_to_display_name(str(segmento), "segmento")
+                        folder_path_parts.append(segmento_display)
                     
                     # Add client name folder with ID in brackets
                     nome = entity.get('nome', '').strip()
