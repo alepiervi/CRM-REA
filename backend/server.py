@@ -10390,13 +10390,9 @@ class ArubaWebAutomation:
             if not login_success:
                 return {"success": False, "error": "Login failed with provided configuration"}
             
-            # Ensure root folder structure exists if specified
-            root_folder = aruba_config.get("root_folder_path", "")
-            if root_folder:
-                await self.ensure_folder_structure(root_folder)
-            
             # Navigate or create the hierarchical folder structure
             if aruba_config.get("auto_create_structure", True):
+                # Use folder_path directly (it already includes root path if needed)
                 await self.ensure_folder_structure(folder_path)
             else:
                 # Just navigate to folder_path
