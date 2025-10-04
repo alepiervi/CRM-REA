@@ -1738,10 +1738,6 @@ class CRMAPITester:
             print(f"🚨 FAILED AREAS: {[r[0] for r in failed_fixes]}")
         
         return len(failed_fixes) == 0
-                self.log_test("❌ Response not array", False, f"Response type: {type(configs_response)}")
-        else:
-            self.log_test("❌ GET /api/admin/aruba-drive-configs", False, f"Status: {status}, Response: {configs_response}")
-            return False
 
         # POST /api/admin/aruba-drive-configs (crea configurazione test)
         print("   Testing POST /api/admin/aruba-drive-configs...")
