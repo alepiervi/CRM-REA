@@ -7652,14 +7652,30 @@ const DocumentsManagement = ({
     }
 
     try {
-      // Open document in new tab/window for viewing
-      const viewUrl = `${API}/documents/${documentId}/view`;
-      window.open(viewUrl, '_blank');
+      // Use authenticated request (same as download but for viewing)
+      const response = await axios.get(`${API}/documents/${documentId}/view`, {
+        responseType: 'blob', // Get file as blob
+      });
+
+      // Create blob URL and open in new tab for viewing
+      const blob = new Blob([response.data], { 
+        type: response.headers['content-type'] || 'application/pdf' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      
+      // Open in new tab for viewing
+      const newWindow = window.open(url, '_blank');
+      
+      // Clean up blob URL after a delay to ensure it loads
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 5000);
+      
     } catch (error) {
       console.error("Error viewing document:", error);
       toast({
         title: "Errore",
-        description: "Errore nella visualizzazione del documento",
+        description: error.response?.data?.detail || "Errore nella visualizzazione del documento",
         variant: "destructive",
       });
     }
