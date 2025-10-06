@@ -483,14 +483,22 @@ const AuthProvider = ({ children }) => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
+        // CRITICAL FIX: Don't auto-logout during session extension process
+        if (sessionExtendedRef.current) {
+          console.log('🔄 Session extension in progress - skipping automatic logout, letting extendSession handle errors');
+          return Promise.reject(error);
+        }
+        
         // Solo fai logout su errori di autenticazione critici, non su tutti i 403
         if (error.response?.status === 401) {
+          console.log('🚪 Axios interceptor: 401 unauthorized - triggering logout');
           // Token scaduto o non valido, forza logout
           logout();
         } else if (error.response?.status === 403) {
           // Per 403, fai logout solo se è un errore di auth endpoints
           const url = error.config?.url || '';
           if (url.includes('/auth/') || url.includes('/auth/me')) {
+            console.log('🚪 Axios interceptor: 403 forbidden on auth endpoint - triggering logout');
             logout();
           }
           // Altri 403 (es. autorizzazioni specifiche risorse) non causano logout
