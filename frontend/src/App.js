@@ -289,8 +289,8 @@ const AuthProvider = ({ children }) => {
     setTimeLeft(0);
   };
 
-  const extendSession = () => {
-    console.log('🔄 SESSION EXTENSION - COMPLETE CLEANUP AND RESTART');
+  const extendSession = async () => {
+    console.log('🔄 SESSION EXTENSION - JWT TOKEN REFRESH + TIMER RESET');
     
     // STEP 0: Set extension flag to prevent any logout attempts
     setSessionExtended(true);
@@ -299,44 +299,74 @@ const AuthProvider = ({ children }) => {
     // STEP 1: Stop countdown completely with full reset
     stopCountdown();
     
-    // STEP 2: AGGRESSIVE TIMER CLEANUP - Clear ALL existing timers
-    console.log('🧹 AGGRESSIVE TIMER CLEANUP FOR SESSION EXTENSION');
-    
-    if (activityTimer) {
-      console.log('🧹 Clearing existing activity timer:', activityTimer);
-      clearTimeout(activityTimer);
+    try {
+      // STEP 2: CRITICAL JWT TOKEN VALIDATION AND REFRESH
+      console.log('🔑 Validating JWT token with backend...');
+      
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL || ''}/api/auth/me`);
+      
+      if (response.data && response.data.user) {
+        console.log('✅ JWT Token validated successfully - session can be extended');
+        
+        // Update user data if needed (in case of any changes)
+        setUser(response.data.user);
+        
+        // STEP 3: AGGRESSIVE TIMER CLEANUP - Clear ALL existing timers
+        console.log('🧹 AGGRESSIVE TIMER CLEANUP FOR SESSION EXTENSION');
+        
+        if (activityTimer) {
+          console.log('🧹 Clearing existing activity timer:', activityTimer);
+          clearTimeout(activityTimer);
+        }
+        
+        // Clear all warning timers with explicit logging
+        warningTimers.forEach((timer, index) => {
+          console.log(`🧹 Clearing warning timer ${index}:`, timer);
+          clearTimeout(timer);
+        });
+        
+        // STEP 4: COMPLETE STATE RESET
+        setActivityTimer(null);
+        setWarningTimers([]);
+        setShowSessionWarning(false);
+        setTimeLeft(0);
+        setIsCountdownActive(false);
+        
+        console.log('✅ Session extension: JWT validated, timers cleared, state reset');
+        
+        // STEP 5: Show success message
+        showSessionWarningToast('✅ Sessione estesa per altri 15 minuti', 'default');
+        
+        // STEP 6: Start fresh 15-minute timer after brief delay
+        setTimeout(() => {
+          console.log('🚀 STARTING FRESH 15-MINUTE TIMER AFTER JWT VALIDATION');
+          
+          // Reset extension flag before starting new timer
+          setSessionExtended(false);
+          sessionExtendedRef.current = false;
+          
+          startActivityTimer();
+          
+          console.log('✅ Session successfully extended with JWT validation - new 15-minute timer active');
+        }, 200);
+        
+      } else {
+        throw new Error('Invalid response from auth/me endpoint');
+      }
+      
+    } catch (error) {
+      console.error('❌ JWT Token validation failed during session extension:', error);
+      
+      // CRITICAL: JWT token is invalid/expired - force logout
+      console.log('🚪 JWT Token expired - redirecting to login');
+      
+      showSessionWarningToast('⏰ Sessione scaduta - richiesto nuovo login', 'destructive');
+      
+      // Clear session state and redirect to login
+      setTimeout(() => {
+        logout();
+      }, 1000);
     }
-    
-    // Clear all warning timers with explicit logging
-    warningTimers.forEach((timer, index) => {
-      console.log(`🧹 Clearing warning timer ${index}:`, timer);
-      clearTimeout(timer);
-    });
-    
-    // STEP 3: COMPLETE STATE RESET
-    setActivityTimer(null);
-    setWarningTimers([]);
-    setShowSessionWarning(false);
-    setTimeLeft(0);
-    setIsCountdownActive(false);
-    
-    console.log('✅ Session extension: All timers cleared, state reset');
-    
-    // STEP 4: Show success message immediately
-    showSessionWarningToast('✅ Sessione estesa per altri 15 minuti', 'default');
-    
-    // STEP 5: Start fresh 15-minute timer after brief delay
-    setTimeout(() => {
-      console.log('🚀 STARTING FRESH 15-MINUTE TIMER AFTER EXTENSION');
-      
-      // Reset extension flag before starting new timer
-      setSessionExtended(false);
-      sessionExtendedRef.current = false;
-      
-      startActivityTimer();
-      
-      console.log('✅ Session successfully extended - new 15-minute timer active');
-    }, 200); // Slightly longer delay for complete state reset
   };
 
   // resetActivityTimer removed - using handleActivity directly in useEffect
