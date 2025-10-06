@@ -130,14 +130,12 @@ const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
   const { toast } = useToast(); // Add toast hook
-  const [activityTimer, setActivityTimer] = useState(null);
-  const [warningTimers, setWarningTimers] = useState([]);
+  // REDESIGNED: Single-timer session management state
   const [showSessionWarning, setShowSessionWarning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [countdownTimer, setCountdownTimer] = useState(null);
-  const [isCountdownActive, setIsCountdownActive] = useState(false);
-  const [sessionExtended, setSessionExtended] = useState(false);
-  const sessionExtendedRef = useRef(false);
+  const sessionTimerRef = useRef(null);
+  const countdownIntervalRef = useRef(null);
+  const lastActivityRef = useRef(Date.now());
 
   // Activity timeout system - PRODUCTION (15 minutes with 2-minute countdown)
   const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes = 900 seconds total
