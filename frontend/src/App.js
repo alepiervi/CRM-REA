@@ -348,9 +348,9 @@ const AuthProvider = ({ children }) => {
     // Only significant user activities (removed mousemove to reduce noise)
     const activityEvents = ['mousedown', 'keydown', 'click', 'touchstart', 'scroll'];
     
-    // Throttling to prevent too many timer resets
+    // Throttling to prevent too many timer resets (made less aggressive)
     let lastActivity = 0;
-    const THROTTLE_TIME = 1000; // Only reset timer once every 1 second max (reduced from 5s)
+    const THROTTLE_TIME = 500; // Only reset timer once every 500ms max (further reduced for better responsiveness)
     
     // Add event listeners for user activity - EXCLUDING BANNER INTERACTIONS!
     const handleActivity = (event) => {
