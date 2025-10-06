@@ -384,25 +384,37 @@ const AuthProvider = ({ children }) => {
     
     // Add event listeners for user activity - EXCLUDING BANNER INTERACTIONS!
     const handleActivity = (event) => {
-      // Smart banner detection - handle different element types gracefully
+      // IMPROVED: Allow banner button clicks but ignore general banner interactions
       try {
         // Check if we can safely use closest method (most elements support this)
         if (event.target && typeof event.target.closest === 'function') {
-          // Don't reset timer if user is interacting with session warning banner
-          if (event.target.closest('[data-session-banner]')) {
-            console.log('🚫 Ignoring activity on session banner');
-            return;
+          const bannerElement = event.target.closest('[data-session-banner]');
+          if (bannerElement) {
+            // Allow clicks on buttons within the banner (extend session, close)
+            const isButton = event.target.tagName === 'BUTTON' || 
+                            event.target.closest('button') ||
+                            event.target.tagName === 'SVG' && event.target.closest('button');
+            
+            if (!isButton) {
+              console.log('🚫 Ignoring non-button activity on session banner');
+              return;
+            }
+            // Button clicks on banner are allowed to proceed (will trigger activity detection)
           }
         } else if (event.target) {
-          // For elements without closest (SVG, text nodes, etc.), check parent elements
+          // For elements without closest (SVG, text nodes, etc.), check parent elements  
           let element = event.target;
           while (element && element.parentElement) {
             if (element.parentElement.matches && element.parentElement.matches('[data-session-banner]')) {
-              console.log('🚫 Ignoring activity on session banner (via parent check)');
-              return;
+              // Allow interaction if it's part of a button
+              const isButton = element.tagName === 'BUTTON' || element.closest('button');
+              if (!isButton) {
+                console.log('🚫 Ignoring non-button activity on session banner (via parent check)');
+                return;
+              }
+              break;
             }
             element = element.parentElement;
-            // Only check up to 3 levels to avoid performance issues
             if (!element.parentElement || element === document.body) break;
           }
         }
