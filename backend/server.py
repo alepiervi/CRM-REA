@@ -11136,6 +11136,21 @@ async def view_document(
                     entity.get("commessa_id") in current_user.commesse_autorizzate and
                     entity.get("unit_id") == current_user.unit_id):
                     can_view = True
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.AGENTE]:
+            # Check if they created the document or have access to the entity
+            if document.get("created_by") == current_user.id:
+                can_view = True
+            # Also allow if they have access to the entity (for agents working on clients/leads)
+            elif document["entity_type"] == "clienti":
+                entity = await db.clienti.find_one({"id": document["entity_id"]})
+                if (entity and 
+                    entity.get("sub_agenzia_id") == current_user.sub_agenzia_id):
+                    can_view = True
+            else:
+                entity = await db.leads.find_one({"id": document["entity_id"]})
+                if (entity and 
+                    entity.get("unit_id") == current_user.unit_id):
+                    can_view = True
         
         if not can_view:
             raise HTTPException(status_code=403, detail="Non autorizzato a visualizzare questo documento")
