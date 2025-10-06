@@ -11067,7 +11067,7 @@ async def download_document(
                 entity = await db.leads.find_one({"id": document["entity_id"]})
                 if (entity and 
                     entity.get("commessa_id") in current_user.commesse_autorizzate and
-                    entity.get("sub_agenzia_id") == current_user.sub_agenzia_id):
+                    entity.get("unit_id") == current_user.unit_id):
                     can_download = True
         elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.AGENTE]:
             # Check if they created the document
