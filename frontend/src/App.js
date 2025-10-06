@@ -375,8 +375,8 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (!token || !user) return;
 
-    // Only significant user activities (removed mousemove to reduce noise)
-    const activityEvents = ['mousedown', 'keydown', 'click', 'touchstart', 'scroll'];
+    // Comprehensive user activity detection for reliable session management
+    const activityEvents = ['mousedown', 'keydown', 'click', 'touchstart', 'scroll', 'mousemove', 'wheel', 'input', 'focus', 'blur'];
     
     // Throttling to prevent too many timer resets (made less aggressive)
     let lastActivity = 0;
