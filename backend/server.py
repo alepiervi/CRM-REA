@@ -3849,12 +3849,51 @@ async def upload_document(
                     aruba_config = commessa["aruba_drive_config"]
                     logging.info(f"📋 Using Aruba Drive config for commessa: {commessa.get('nome')}")
         
-        # Preserve original filename with safety checks
+        # Generate filename with client information
         original_filename = file.filename
         file_extension = Path(original_filename).suffix
-        # Use original filename but ensure it's safe for file system
-        safe_filename = "".join(c for c in original_filename if c.isalnum() or c in (' ', '-', '_', '.')).rstrip()
-        unique_filename = safe_filename if safe_filename else f"documento{file_extension}"
+        
+        # Create enhanced filename with client data for better organization
+        if doc_type == DocumentType.CLIENTE:
+            nome = entity.get("nome", "").strip()
+            cognome = entity.get("cognome", "").strip()
+            telefono = entity.get("telefono", "").strip()
+            
+            # Clean phone number (remove spaces, +, parentheses)
+            clean_telefono = "".join(c for c in telefono if c.isdigit())
+            
+            # Create client prefix
+            client_prefix = ""
+            if nome and cognome:
+                client_prefix = f"{nome}_{cognome}"
+                if clean_telefono:
+                    client_prefix += f"_{clean_telefono}"
+            elif nome or cognome:
+                client_prefix = nome or cognome
+                if clean_telefono:
+                    client_prefix += f"_{clean_telefono}"
+            elif clean_telefono:
+                client_prefix = clean_telefono
+            
+            # Clean original filename
+            clean_original = "".join(c for c in Path(original_filename).stem if c.isalnum() or c in (' ', '-', '_')).rstrip()
+            
+            # Combine client info with original filename
+            if client_prefix and clean_original:
+                unique_filename = f"{client_prefix}_{clean_original}{file_extension}"
+            elif client_prefix:
+                unique_filename = f"{client_prefix}_documento{file_extension}"
+            else:
+                unique_filename = f"{clean_original}{file_extension}" if clean_original else f"documento{file_extension}"
+        else:
+            # For leads, use original filename logic
+            safe_filename = "".join(c for c in original_filename if c.isalnum() or c in (' ', '-', '_', '.')).rstrip()
+            unique_filename = safe_filename if safe_filename else f"documento{file_extension}"
+        
+        # Ensure filename is not too long (max 200 characters)
+        if len(unique_filename) > 200:
+            stem = Path(unique_filename).stem[:190]
+            unique_filename = f"{stem}{file_extension}"
         
         # Read file content
         content = await file.read()
