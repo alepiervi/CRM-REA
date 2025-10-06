@@ -21800,6 +21800,13 @@ Duplicate,Test,+393471234567"""
         # Run the final comprehensive test
         final_success = self.test_final_comprehensive_backend_verification()
 
+        # NEW: Test new document features as requested
+        print("\n" + "📄" * 40)
+        print("📄 RUNNING TEST NUOVE FUNZIONALITÀ DOCUMENTI")
+        print("📄" * 40)
+        
+        new_features_success = self.test_new_document_features()
+
         # Print final summary
         print("\n" + "=" * 80)
         print("🎯 FINAL TEST SUMMARY")
