@@ -17424,6 +17424,20 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
       });
     }
   };
+  const handleView = async (documentId, filename) => {
+    try {
+      // Open document in new tab/window for viewing
+      const viewUrl = `${API}/documents/${documentId}/view`;
+      window.open(viewUrl, '_blank');
+    } catch (error) {
+      console.error("Error viewing document:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella visualizzazione del documento",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleDeleteDocument = async (documentId, filename) => {
     if (!confirm(`Rimuovere il documento "${filename}" dalla lista? (Il file rimarrà su Aruba Drive)`)) {
