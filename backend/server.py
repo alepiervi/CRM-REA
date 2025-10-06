@@ -11094,6 +11094,83 @@ async def download_document(
         logger.error(f"Error downloading document: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nel download: {str(e)}")
 
+@api_router.get("/documents/{document_id}/view")
+async def view_document(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """View document inline in browser with role-based authorization"""
+    
+    try:
+        # Get document
+        document = await db.documents.find_one({"id": document_id})
+        if not document:
+            raise HTTPException(status_code=404, detail="Documento non trovato")
+        
+        # Check authorization (reuse same logic as download)
+        can_view = False
+        
+        if current_user.role == UserRole.ADMIN:
+            can_view = True
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            # Check if entity belongs to authorized commesse
+            if document["entity_type"] == "clienti":
+                entity = await db.clienti.find_one({"id": document["entity_id"]})
+                if entity and entity.get("commessa_id") in current_user.commesse_autorizzate:
+                    can_view = True
+            else:
+                entity = await db.leads.find_one({"id": document["entity_id"]})
+                if entity and entity.get("commessa_id") in current_user.commesse_autorizzate:
+                    can_view = True
+        elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+            # Check if entity belongs to authorized commesse and their sub agenzia
+            if document["entity_type"] == "clienti":
+                entity = await db.clienti.find_one({"id": document["entity_id"]})
+                if (entity and 
+                    entity.get("commessa_id") in current_user.commesse_autorizzate and
+                    entity.get("sub_agenzia_id") == current_user.sub_agenzia_id):
+                    can_view = True
+            else:
+                entity = await db.leads.find_one({"id": document["entity_id"]})
+                if (entity and 
+                    entity.get("commessa_id") in current_user.commesse_autorizzate and
+                    entity.get("unit_id") == current_user.unit_id):
+                    can_view = True
+        
+        if not can_view:
+            raise HTTPException(status_code=403, detail="Non autorizzato a visualizzare questo documento")
+        
+        # Try local path first
+        local_path = document.get("local_path")
+        if local_path and Path(local_path).exists():
+            # Return file for inline viewing (browser will decide based on content-type)
+            return FileResponse(
+                path=local_path,
+                media_type=document.get("file_type", "application/pdf"),
+                headers={"Content-Disposition": "inline; filename=" + document.get("filename", "documento.pdf")}
+            )
+        
+        # If not local, try alternative paths
+        file_path = document.get("file_path")
+        if file_path and Path(file_path).exists():
+            return FileResponse(
+                path=file_path,
+                media_type=document.get("file_type", "application/pdf"),
+                headers={"Content-Disposition": "inline; filename=" + document.get("filename", "documento.pdf")}
+            )
+        
+        # If no local file found
+        raise HTTPException(
+            status_code=404, 
+            detail=f"File fisico non trovato per il documento {document.get('filename')}. Potrebbe essere solo su Aruba Drive."
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error viewing document {document_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nella visualizzazione: {str(e)}")
+
 @api_router.post("/documents/upload/multiple")
 async def upload_multiple_documents(
     entity_type: str = Form(...),
