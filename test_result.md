@@ -732,6 +732,7 @@ test_plan:
     - "Cascading Client Creation Flow Testing and Form Customization"
     - "Hierarchical Management System Testing - Commesse-Servizi-Tipologie-Segmenti with Aruba Drive Migration"
     - "Cascading System for Client Creation - F2F Sub Agenzia Testing"
+    - "Redesigned Session Management System Verification"
 
   - task: "Document View 403 Error Fix - Urgent Verification"
     implemented: true
