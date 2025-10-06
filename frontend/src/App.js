@@ -17840,8 +17840,18 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                onClick={() => handleView(doc.id, doc.filename)}
+                                className="h-8 w-8 p-0"
+                                title="Visualizza"
+                              >
+                                <Eye className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => handleDownload(doc.id, doc.filename)}
                                 className="h-8 w-8 p-0"
+                                title="Scarica"
                               >
                                 <Download className="w-3 h-3" />
                               </Button>
@@ -17850,6 +17860,7 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
                                 variant="outline"
                                 onClick={() => handleDeleteDocument(doc.id, doc.filename)}
                                 className="h-8 w-8 p-0 hover:bg-red-50"
+                                title="Elimina"
                               >
                                 <Trash2 className="w-3 h-3" />
                               </Button>
