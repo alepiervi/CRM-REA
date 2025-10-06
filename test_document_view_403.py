@@ -86,8 +86,11 @@ class DocumentViewTester:
                 self.log_test("Test document found", True, 
                     f"Document ID: {document_id}, Filename: {test_document.get('filename')}")
             else:
-                self.log_test("No documents found", True, "Will test with mock document ID")
-                document_id = "test-document-id"
+                # Create a test document if none exist
+                print("   No documents found, creating test document...")
+                document_id = self.create_test_document()
+                if not document_id:
+                    return False
         else:
             self.log_test("GET /api/documents", False, f"Status: {status}")
             return False
