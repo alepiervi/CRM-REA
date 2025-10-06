@@ -7908,15 +7908,24 @@ const DocumentsManagement = ({
                 </div>
                 
                 {permissions.canDownload && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(doc.id, doc.filename)}
-                    className="w-full"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Scarica Documento
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleView(doc.id, doc.filename)}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Visualizza
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(doc.id, doc.filename)}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Scarica
+                    </Button>
+                  </div>
                 )}
               </Card>
             ))
