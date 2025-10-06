@@ -7786,16 +7786,30 @@ const DocumentsManagement = ({
                           {doc.created_at ? new Date(doc.created_at).toLocaleDateString('it-IT') : 'N/A'}
                         </TableCell>
                         <TableCell>
-                          {permissions.canDownload && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownload(doc.id, doc.filename)}
-                            >
-                              <Download className="w-4 h-4 mr-1" />
-                              Scarica
-                            </Button>
-                          )}
+                          <div className="flex space-x-2">
+                            {permissions.canDownload && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleView(doc.id, doc.filename)}
+                                title="Visualizza documento"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Visualizza
+                              </Button>
+                            )}
+                            {permissions.canDownload && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(doc.id, doc.filename)}
+                                title="Scarica documento"
+                              >
+                                <Download className="w-4 h-4 mr-1" />
+                                Scarica
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
