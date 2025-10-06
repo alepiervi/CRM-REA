@@ -17778,6 +17778,15 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
                                   <Button
                                     size="sm"
                                     variant="outline"
+                                    onClick={() => handleView(doc.id, doc.filename)}
+                                    className="h-8 w-8 p-0"
+                                    title="Visualizza documento"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => handleDownload(doc.id, doc.filename)}
                                     className="h-8 w-8 p-0"
                                     title="Scarica documento"
