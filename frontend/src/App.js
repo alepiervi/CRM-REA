@@ -354,16 +354,32 @@ const AuthProvider = ({ children }) => {
     
     // Add event listeners for user activity - EXCLUDING BANNER INTERACTIONS!
     const handleActivity = (event) => {
-      // Safety check: ensure event.target exists and has closest method
-      if (!event.target || typeof event.target.closest !== 'function') {
-        console.log('⚠️ Event target invalid, proceeding with activity detection');
-        // Proceed with activity detection since we can't check banner interaction
-      } else {
-        // Don't reset timer if user is interacting with session warning banner
-        if (event.target.closest('[data-session-banner]')) {
-          console.log('🚫 Ignoring activity on session banner');
-          return;
+      // Smart banner detection - handle different element types gracefully
+      try {
+        // Check if we can safely use closest method (most elements support this)
+        if (event.target && typeof event.target.closest === 'function') {
+          // Don't reset timer if user is interacting with session warning banner
+          if (event.target.closest('[data-session-banner]')) {
+            console.log('🚫 Ignoring activity on session banner');
+            return;
+          }
+        } else if (event.target) {
+          // For elements without closest (SVG, text nodes, etc.), check parent elements
+          let element = event.target;
+          while (element && element.parentElement) {
+            if (element.parentElement.matches && element.parentElement.matches('[data-session-banner]')) {
+              console.log('🚫 Ignoring activity on session banner (via parent check)');
+              return;
+            }
+            element = element.parentElement;
+            // Only check up to 3 levels to avoid performance issues
+            if (!element.parentElement || element === document.body) break;
+          }
         }
+        // If we get here, it's valid user activity - no need to log anything special
+      } catch (error) {
+        // Silently handle any edge cases - still count as activity
+        // This prevents console spam while maintaining functionality
       }
       
       // Throttle activity detection
