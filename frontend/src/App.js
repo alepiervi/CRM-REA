@@ -7641,6 +7641,30 @@ const DocumentsManagement = ({
     }
   };
 
+  const handleView = async (documentId, filename) => {
+    if (!permissions.canDownload) { // Use same permission as download
+      toast({
+        title: "Non autorizzato",
+        description: "Non hai i permessi per visualizzare documenti",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Open document in new tab/window for viewing
+      const viewUrl = `${API}/documents/${documentId}/view`;
+      window.open(viewUrl, '_blank');
+    } catch (error) {
+      console.error("Error viewing document:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nella visualizzazione del documento",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getRoleDisplayText = () => {
     switch (userRole) {
       case "admin":
