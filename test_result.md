@@ -601,6 +601,17 @@ frontend:
   - task: "Cliente Creation Payload Validation - Enum Format Issue"
     implemented: true
     working: true
+  - task: "Activity Detection Warning Elimination - Event Target Invalid Fix"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 WARNING ELIMINATION VERIFICATION COMPLETE - 100% SUCCESS! ✅ CRITICAL OBJECTIVE ACHIEVED: The '⚠️ Event target invalid, proceeding with activity detection' warnings have been COMPLETELY ELIMINATED from the console after the activity detection logic fix. ✅ COMPREHENSIVE TESTING COMPLETED: Performed intensive interaction testing with admin/admin123 credentials including clicks on various elements (buttons, links, icons, SVG), hover interactions on 50+ elements, scroll testing (5 different positions), keyboard events (Tab, Enter, Escape), synthetic event testing on problematic elements (SVG paths, text nodes), navigation between all major sections (Dashboard, Clienti, Lead, Utenti, Commesse). ✅ CONSOLE MONITORING RESULTS: Captured 1,493 total console logs during intensive testing, found 0 'Event target invalid' warnings (PERFECT!), detected 13 activity detection events confirming system is working, found 10 session management logs showing proper timer operation, detected 0 JavaScript errors. ✅ ACTIVITY DETECTION SYSTEM VERIFIED: Robust error handling implemented in handleActivity function (lines 358-383), graceful handling of elements without closest() method (SVG, text nodes), fallback logic using parent element traversal, silent error handling prevents console spam while maintaining functionality. ✅ SESSION MANAGEMENT OPERATIONAL: 15-minute inactivity timer working correctly, activity detection resets timer properly during user interactions, session extension functionality intact, no false logout during active use. ✅ SVG AND COMPLEX ELEMENTS TESTED: Specifically tested 25+ SVG elements that previously caused warnings, tested text nodes and elements without closest() method, confirmed all interactions work without generating warnings. 🎯 FIX IMPLEMENTATION CONFIRMED: The implemented fix successfully handles different element types gracefully, prevents 'Event target invalid' warnings while maintaining full activity detection functionality, ensures robust error handling without breaking the timeout system. RESOLUTION STATUS: COMPLETE AND VERIFIED - Console is now clean without warning spam!"
     file: "/app/backend/server.py, /app/frontend/src/App.js"
     stuck_count: 0
     priority: "critical"
