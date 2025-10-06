@@ -272,101 +272,49 @@ const AuthProvider = ({ children }) => {
 
   // resetActivityTimer removed - using handleActivity directly in useEffect
 
-  // Activity listeners
+  // REDESIGNED: Activity detection system
   useEffect(() => {
     if (!token || !user) return;
 
-    // Comprehensive user activity detection for reliable session management
-    const activityEvents = ['mousedown', 'keydown', 'click', 'touchstart', 'scroll', 'mousemove', 'wheel', 'input', 'focus', 'blur'];
+    const activityEvents = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
     
-    // More aggressive activity detection to ensure user activity is captured
-    let lastActivity = 0;
-    const THROTTLE_TIME = 200; // Only reset timer once every 200ms max (very responsive for real user activity)
+    let throttleTimeout = null;
     
-    // Add event listeners for user activity - EXCLUDING BANNER INTERACTIONS!
-    const handleActivity = (event) => {
-      // IMPROVED: Allow banner button clicks but ignore general banner interactions
-      try {
-        // Check if we can safely use closest method (most elements support this)
-        if (event.target && typeof event.target.closest === 'function') {
-          const bannerElement = event.target.closest('[data-session-banner]');
-          if (bannerElement) {
-            // Allow clicks on buttons within the banner (extend session, close)
-            const isButton = event.target.tagName === 'BUTTON' || 
-                            event.target.closest('button') ||
-                            event.target.tagName === 'SVG' && event.target.closest('button');
-            
-            if (!isButton) {
-              console.log('🚫 Ignoring non-button activity on session banner');
-              return;
-            }
-            // Button clicks on banner are allowed to proceed (will trigger activity detection)
-          }
-        } else if (event.target) {
-          // For elements without closest (SVG, text nodes, etc.), check parent elements  
-          let element = event.target;
-          while (element && element.parentElement) {
-            if (element.parentElement.matches && element.parentElement.matches('[data-session-banner]')) {
-              // Allow interaction if it's part of a button
-              const isButton = element.tagName === 'BUTTON' || element.closest('button');
-              if (!isButton) {
-                console.log('🚫 Ignoring non-button activity on session banner (via parent check)');
-                return;
-              }
-              break;
-            }
-            element = element.parentElement;
-            if (!element.parentElement || element === document.body) break;
-          }
-        }
-        // If we get here, it's valid user activity - no need to log anything special
-      } catch (error) {
-        // Silently handle any edge cases - still count as activity
-        // This prevents console spam while maintaining functionality
-      }
+    const handleActivity = () => {
+      // Throttle activity detection to prevent excessive calls
+      if (throttleTimeout) return;
       
-      // Throttle activity detection
-      const now = Date.now();
-      if (now - lastActivity < THROTTLE_TIME) {
-        // Activity throttled - no need to log this frequently
-        return;
-      }
+      throttleTimeout = setTimeout(() => {
+        throttleTimeout = null;
+      }, 1000);
       
-      lastActivity = now;
+      console.log('🎯 Activity detected');
       
-      // CRITICAL FIX: If banner is showing, stop countdown timer to prevent race condition logout
+      // Update last activity time
+      lastActivityRef.current = Date.now();
+      
+      // If warning is showing, hide it (user is active)
       if (showSessionWarning) {
-        console.log('🛑 CRITICAL: Stopping countdown timer due to activity during banner phase');
-        stopCountdown();
+        console.log('✅ Hiding session warning due to activity');
         setShowSessionWarning(false);
-        setTimeLeft(0);
+        stopCountdown();
       }
-      
-      // Only log activity detection in development/debug mode to reduce console noise
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🎯 USER ACTIVITY DETECTED - Resetting 15-minute timer');
-      }
-      
-      startActivityTimer(); // This restarts the full 15-minute timer
     };
 
+    // Add event listeners
     activityEvents.forEach(event => {
       document.addEventListener(event, handleActivity, true);
     });
 
-    // Start initial timer
-    startActivityTimer();
+    // Start session timer
+    startSessionTimer();
 
-    // Cleanup function
+    // Cleanup
     return () => {
       activityEvents.forEach(event => {
         document.removeEventListener(event, handleActivity, true);
       });
-      
-      if (activityTimer) {
-        clearTimeout(activityTimer);
-      }
-      warningTimers.forEach(timer => clearTimeout(timer));
+      clearSessionTimers();
     };
   }, [token, user]);
 
