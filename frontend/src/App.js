@@ -137,64 +137,62 @@ const AuthProvider = ({ children }) => {
   const countdownIntervalRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
 
-  // Activity timeout system - PRODUCTION (15 minutes with 2-minute countdown)
-  const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutes = 900 seconds total
-  const WARNING_TIME = 13 * 60 * 1000;    // Show banner at 13 minutes = exactly 2 minutes left
+  // REDESIGNED: Single-timer session management system
+  const SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutes total
+  const WARNING_TIME = 2 * 60 * 1000;     // Show warning 2 minutes before timeout
 
-  const startActivityTimer = () => {
-    console.log('🕐 Starting fresh activity timer');
-    
-    // CRITICAL FIX: Clear ALL existing timers completely before creating new ones
-    console.log('🧹 CLEARING ALL EXISTING TIMERS COMPLETELY');
-    
-    // Clear activity timer with proper state reset
-    if (activityTimer) {
-      console.log('🧹 Clearing existing activity timer:', activityTimer);
-      clearTimeout(activityTimer);
-    }
-    
-    // Clear ALL warning timers with proper cleanup
-    warningTimers.forEach((timer, index) => {
-      console.log(`🧹 Clearing existing warning timer ${index}:`, timer);
-      clearTimeout(timer);
-    });
-    
-    // Stop any active countdown completely
-    console.log('🛑 Stopping any active countdown');
-    stopCountdown();
-    
-    // Reset session warning state
-    setShowSessionWarning(false);
+  const checkSessionTimeout = () => {
+    const now = Date.now();
+    const timeSinceActivity = now - lastActivityRef.current;
+    const timeRemaining = SESSION_TIMEOUT - timeSinceActivity;
 
-    // SINGLE WARNING TIMER - Shows banner with exactly 2 minutes left and counts down to 0
-    const warningTimer = setTimeout(() => {
-      const timestamp = new Date().toLocaleTimeString();
-      console.log(`⚠️ [${timestamp}] SHOWING BANNER: Exactly 2 minutes (120 seconds) remaining`);
-      console.log('📊 Timer state before showing banner:', {
-        showSessionWarning,
-        timeLeft,
-        isCountdownActive
-      });
-      
-      setShowSessionWarning(true);
-      setTimeLeft(120); // Exactly 120 seconds = 2 minutes
-      showSessionWarningToast('⚠️ La sessione scadrà tra 2 minuti', 'default');
-      startCountdown();
-    }, WARNING_TIME);
+    console.log(`🕐 Session check: ${Math.floor(timeRemaining / 1000)}s remaining`);
 
-    // Final logout timer - THIS IS THE MAIN TIMER
-    const finalTimer = setTimeout(() => {
-      console.log('🚪 Inactivity timeout - logging out user');
+    if (timeRemaining <= 0) {
+      // Session expired - logout
+      console.log('🚪 Session expired - logging out');
+      clearSessionTimers();
       setShowSessionWarning(false);
       showSessionWarningToast('⏰ Sessione scaduta per inattività', 'destructive');
-      setTimeout(logout, 2000); // Small delay to show the message
-    }, INACTIVITY_TIME);
+      setTimeout(logout, 1000);
+      return;
+    }
 
-    // CRITICAL FIX: Store BOTH timers properly
-    setActivityTimer(finalTimer);  // Main logout timer
-    setWarningTimers([warningTimer]); // Warning timer array
+    if (timeRemaining <= WARNING_TIME && !showSessionWarning) {
+      // Show warning banner and start countdown
+      console.log(`⚠️ Showing session warning: ${Math.floor(timeRemaining / 1000)}s left`);
+      setShowSessionWarning(true);
+      setTimeLeft(Math.ceil(timeRemaining / 1000));
+      showSessionWarningToast('⚠️ La sessione scadrà tra 2 minuti', 'default');
+      startCountdown();
+    } else if (timeRemaining > WARNING_TIME && showSessionWarning) {
+      // Hide warning if activity detected
+      console.log('✅ Activity detected - hiding session warning');
+      setShowSessionWarning(false);
+      stopCountdown();
+    }
+  };
+
+  const clearSessionTimers = () => {
+    if (sessionTimerRef.current) {
+      clearInterval(sessionTimerRef.current);
+      sessionTimerRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+  };
+
+  const startSessionTimer = () => {
+    console.log('🚀 Starting session timer');
+    clearSessionTimers();
     
-    console.log('✅ New timers created:', { finalTimer, warningTimer });
+    // Update last activity
+    lastActivityRef.current = Date.now();
+    
+    // Check session every 5 seconds
+    sessionTimerRef.current = setInterval(checkSessionTimeout, 5000);
   };
 
   const showSessionWarningToast = (message, variant = 'default') => {
