@@ -209,80 +209,30 @@ const AuthProvider = ({ children }) => {
   };
 
   const startCountdown = () => {
-    console.log('🕒 STARTING ULTRA-ROBUST 120-SECOND COUNTDOWN');
+    console.log('▶️ Starting countdown');
+    stopCountdown();
     
-    // Prevent multiple countdowns
-    if (isCountdownActive) {
-      console.log('⚠️ Countdown already active, skipping');
-      return;
-    }
-    
-    // Clear any existing countdown timer completely
-    if (countdownTimer) {
-      console.log('🧹 Clearing existing countdown timer');
-      clearInterval(countdownTimer);
-      setCountdownTimer(null);
-    }
-    
-    setIsCountdownActive(true);
-    
-    // Use React state for precise countdown (120 seconds = 2 minutes)
-    setTimeLeft(120); // Start with exactly 120 seconds = 2 minutes
-    
-    const newCountdownInterval = setInterval(() => {
-      setTimeLeft(prevTime => {
+    countdownIntervalRef.current = setInterval(() => {
+      setTimeLeft((prevTime) => {
         const newTime = prevTime - 1;
         
-        console.log(`⏱️ Countdown: ${newTime} seconds remaining`);
-        
-        // Toast notifications at production milestones (60 and 30 seconds)
-        if (newTime === 60) {
-          console.log('⏰ 1 minute milestone');
-          showSessionWarningToast('🚨 ATTENZIONE: La sessione scadrà tra 1 minuto!', 'destructive');
-        }
-        if (newTime === 30) {
-          console.log('🚨 30 seconds milestone');
-          showSessionWarningToast('🚨 ULTIMO AVVISO: Sessione scade tra 30 secondi!', 'destructive');
-        }
-        
-        // End countdown when time reaches 0
         if (newTime <= 0) {
-          console.log('⏰ COUNTDOWN FINISHED - CHECKING IF LOGOUT IS NEEDED');
-          clearInterval(newCountdownInterval);
-          setCountdownTimer(null);
-          setIsCountdownActive(false);
-          
-          // Check if session was extended before logout
-          setTimeout(() => {
-            if (!sessionExtendedRef.current) {
-              console.log('🚪 Session expired - logging out user');
-              setShowSessionWarning(false);
-              logout();
-            } else {
-              console.log('✅ Session was extended - logout cancelled');
-              sessionExtendedRef.current = false; // Reset flag
-            }
-          }, 100);
+          console.log('⏰ Countdown reached 0 - checking session');
+          stopCountdown();
+          checkSessionTimeout(); // This will handle logout if needed
           return 0;
         }
         
         return newTime;
       });
     }, 1000);
-    
-    setCountdownTimer(newCountdownInterval);
-    console.log('✅ Ultra-robust countdown timer started successfully');
   };
-  
+
   const stopCountdown = () => {
-    console.log('🛑 STOPPING COUNTDOWN');
-    if (countdownTimer) {
-      clearInterval(countdownTimer);
-      setCountdownTimer(null);
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
     }
-    setIsCountdownActive(false);
-    setShowSessionWarning(false);
-    setTimeLeft(0);
   };
 
   const extendSession = async () => {
