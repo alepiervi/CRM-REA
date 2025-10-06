@@ -421,6 +421,14 @@ const AuthProvider = ({ children }) => {
       
       lastActivity = now;
       
+      // CRITICAL FIX: If banner is showing, stop countdown timer to prevent race condition logout
+      if (showSessionWarning) {
+        console.log('🛑 CRITICAL: Stopping countdown timer due to activity during banner phase');
+        stopCountdown();
+        setShowSessionWarning(false);
+        setTimeLeft(0);
+      }
+      
       // Only log activity detection in development/debug mode to reduce console noise
       if (process.env.NODE_ENV === 'development') {
         console.log('🎯 USER ACTIVITY DETECTED - Resetting 15-minute timer');
