@@ -49,6 +49,62 @@ class DocumentViewTester:
         except json.JSONDecodeError:
             return False, {"error": "Invalid JSON response"}, response.status_code
 
+    def create_test_document(self):
+        """Create a test document for testing view endpoint"""
+        try:
+            # Find a client to associate the document with
+            success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+            
+            if not success or status != 200:
+                self.log_test("Could not get clients", False, f"Status: {status}")
+                return None
+            
+            clienti = clienti_response.get('clienti', []) if isinstance(clienti_response, dict) else clienti_response
+            
+            if len(clienti) == 0:
+                self.log_test("No clients found", False, "Cannot create test document without clients")
+                return None
+            
+            test_client = clienti[0]
+            test_client_id = test_client.get('id')
+            
+            # Create test PDF content
+            test_pdf_content = b'%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000074 00000 n \n0000000120 00000 n \ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n197\n%%EOF'
+            
+            # Upload test document
+            files = {
+                'file': ('test_view_document.pdf', test_pdf_content, 'application/pdf')
+            }
+            
+            data = {
+                'entity_type': 'clienti',
+                'entity_id': test_client_id,
+                'uploaded_by': self.user_data['id']
+            }
+            
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            response = requests.post(
+                f"{self.base_url}/documents/upload",
+                files=files,
+                data=data,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                upload_response = response.json()
+                document_id = upload_response.get('document_id')
+                self.log_test("Test document created", True, f"Document ID: {document_id}")
+                return document_id
+            else:
+                self.log_test("Could not create test document", False, f"Status: {response.status_code}")
+                return None
+                
+        except Exception as e:
+            self.log_test("Document upload failed", False, f"Exception: {str(e)}")
+            return None
+
     def test_document_view_endpoint_403_fix(self):
         """TEST URGENTE: Verificare che l'errore 403 nell'endpoint view documenti sia risolto"""
         print("\n🚨 TEST URGENTE CORREZIONE ERRORE 403 - ENDPOINT VIEW DOCUMENTI...")
