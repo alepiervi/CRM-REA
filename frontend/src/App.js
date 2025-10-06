@@ -425,20 +425,15 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  // Clear timer on logout
+  // REDESIGNED: Clear timers on logout
   const logout = () => {
     console.log('🚪 Logging out user');
     
-    // Clear all timers
-    if (activityTimer) {
-      clearTimeout(activityTimer);
-      setActivityTimer(null);
-    }
-    warningTimers.forEach(timer => clearTimeout(timer));
-    setWarningTimers([]);
+    // Clear redesigned session timers
+    clearSessionTimers();
     
-    // Stop countdown completely
-    stopCountdown();
+    // Hide any session warnings
+    setShowSessionWarning(false);
     
     setUser(null);
     setToken(null);
