@@ -292,38 +292,51 @@ const AuthProvider = ({ children }) => {
   const extendSession = () => {
     console.log('🔄 SESSION EXTENSION - COMPLETE CLEANUP AND RESTART');
     
-    // STEP 0: Set flag to prevent logout
+    // STEP 0: Set extension flag to prevent any logout attempts
     setSessionExtended(true);
     sessionExtendedRef.current = true;
     
-    // STEP 1: Stop countdown completely
+    // STEP 1: Stop countdown completely with full reset
     stopCountdown();
     
-    // STEP 2: Clear ALL existing timers (activity + warning)
+    // STEP 2: AGGRESSIVE TIMER CLEANUP - Clear ALL existing timers
+    console.log('🧹 AGGRESSIVE TIMER CLEANUP FOR SESSION EXTENSION');
+    
     if (activityTimer) {
-      console.log('🧹 Clearing existing activity timer');
+      console.log('🧹 Clearing existing activity timer:', activityTimer);
       clearTimeout(activityTimer);
-      setActivityTimer(null);
     }
     
+    // Clear all warning timers with explicit logging
     warningTimers.forEach((timer, index) => {
-      console.log(`🧹 Clearing warning timer ${index}`);
+      console.log(`🧹 Clearing warning timer ${index}:`, timer);
       clearTimeout(timer);
     });
-    setWarningTimers([]);
     
-    // STEP 3: Reset all session states
+    // STEP 3: COMPLETE STATE RESET
+    setActivityTimer(null);
+    setWarningTimers([]);
     setShowSessionWarning(false);
     setTimeLeft(0);
     setIsCountdownActive(false);
     
-    // STEP 4: Wait a moment then restart clean 15-minute timer
-    setTimeout(() => {
-      console.log('🚀 RESTARTING CLEAN 15-MINUTE TIMER');
-      startActivityTimer();
-    }, 100);
+    console.log('✅ Session extension: All timers cleared, state reset');
     
+    // STEP 4: Show success message immediately
     showSessionWarningToast('✅ Sessione estesa per altri 15 minuti', 'default');
+    
+    // STEP 5: Start fresh 15-minute timer after brief delay
+    setTimeout(() => {
+      console.log('🚀 STARTING FRESH 15-MINUTE TIMER AFTER EXTENSION');
+      
+      // Reset extension flag before starting new timer
+      setSessionExtended(false);
+      sessionExtendedRef.current = false;
+      
+      startActivityTimer();
+      
+      console.log('✅ Session successfully extended - new 15-minute timer active');
+    }, 200); // Slightly longer delay for complete state reset
   };
 
   // resetActivityTimer removed - using handleActivity directly in useEffect
