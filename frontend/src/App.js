@@ -473,9 +473,7 @@ const AuthProvider = ({ children }) => {
         showSessionWarning: showSessionWarning || false,
         timeLeft: timeLeft || 0,
         extendSession: extendSession || (() => {}),
-        countdownTimer,
-        stopCountdown: stopCountdown || (() => {}),
-        isCountdownActive: isCountdownActive || false
+        stopCountdown: stopCountdown || (() => {})
       }}
     >
       {children}
