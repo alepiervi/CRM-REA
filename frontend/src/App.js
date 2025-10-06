@@ -378,9 +378,9 @@ const AuthProvider = ({ children }) => {
     // Comprehensive user activity detection for reliable session management
     const activityEvents = ['mousedown', 'keydown', 'click', 'touchstart', 'scroll', 'mousemove', 'wheel', 'input', 'focus', 'blur'];
     
-    // Throttling to prevent too many timer resets (made less aggressive)
+    // More aggressive activity detection to ensure user activity is captured
     let lastActivity = 0;
-    const THROTTLE_TIME = 500; // Only reset timer once every 500ms max (further reduced for better responsiveness)
+    const THROTTLE_TIME = 200; // Only reset timer once every 200ms max (very responsive for real user activity)
     
     // Add event listeners for user activity - EXCLUDING BANNER INTERACTIONS!
     const handleActivity = (event) => {
