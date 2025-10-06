@@ -144,26 +144,29 @@ const AuthProvider = ({ children }) => {
   const WARNING_TIME = 13 * 60 * 1000;    // Show banner at 13 minutes = exactly 2 minutes left
 
   const startActivityTimer = () => {
-    const timestamp = new Date().toLocaleTimeString();
-    console.log(`🕒 [${timestamp}] STARTING 15-MINUTE INACTIVITY TIMER`);
+    console.log('🕐 Starting fresh activity timer');
     
-    // Reset session extension flag
-    setSessionExtended(false);
-    sessionExtendedRef.current = false;
+    // CRITICAL FIX: Clear ALL existing timers completely before creating new ones
+    console.log('🧹 CLEARING ALL EXISTING TIMERS COMPLETELY');
     
-    // Clear ALL existing timers completely
+    // Clear activity timer with proper state reset
     if (activityTimer) {
-      console.log('🧹 Clearing existing activity timer');
+      console.log('🧹 Clearing existing activity timer:', activityTimer);
       clearTimeout(activityTimer);
     }
+    
+    // Clear ALL warning timers with proper cleanup
     warningTimers.forEach((timer, index) => {
-      console.log(`🧹 Clearing existing warning timer ${index}`);
+      console.log(`🧹 Clearing existing warning timer ${index}:`, timer);
       clearTimeout(timer);
     });
     
-    // Stop any active countdown
+    // Stop any active countdown completely
     console.log('🛑 Stopping any active countdown');
     stopCountdown();
+    
+    // Reset session warning state
+    setShowSessionWarning(false);
 
     // SINGLE WARNING TIMER - Shows banner with exactly 2 minutes left and counts down to 0
     const warningTimer = setTimeout(() => {
@@ -181,7 +184,7 @@ const AuthProvider = ({ children }) => {
       startCountdown();
     }, WARNING_TIME);
 
-    // Final logout timer
+    // Final logout timer - THIS IS THE MAIN TIMER
     const finalTimer = setTimeout(() => {
       console.log('🚪 Inactivity timeout - logging out user');
       setShowSessionWarning(false);
@@ -189,8 +192,11 @@ const AuthProvider = ({ children }) => {
       setTimeout(logout, 2000); // Small delay to show the message
     }, INACTIVITY_TIME);
 
-    setActivityTimer(finalTimer);
-    setWarningTimers([warningTimer]);
+    // CRITICAL FIX: Store BOTH timers properly
+    setActivityTimer(finalTimer);  // Main logout timer
+    setWarningTimers([warningTimer]); // Warning timer array
+    
+    console.log('✅ New timers created:', { finalTimer, warningTimer });
   };
 
   const showSessionWarningToast = (message, variant = 'default') => {
