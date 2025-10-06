@@ -385,12 +385,17 @@ const AuthProvider = ({ children }) => {
       // Throttle activity detection
       const now = Date.now();
       if (now - lastActivity < THROTTLE_TIME) {
-        console.log('⏱️ Activity throttled');
+        // Activity throttled - no need to log this frequently
         return;
       }
       
       lastActivity = now;
-      console.log('🎯 USER ACTIVITY DETECTED - Resetting 15-minute timer');
+      
+      // Only log activity detection in development/debug mode to reduce console noise
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎯 USER ACTIVITY DETECTED - Resetting 15-minute timer');
+      }
+      
       startActivityTimer(); // This restarts the full 15-minute timer
     };
 
