@@ -13067,18 +13067,14 @@ async def get_tipologie_autorizzate_by_servizio(
         if not servizio:
             raise HTTPException(status_code=404, detail="Servizio non trovato")
         
-        # Get authorized tipologie IDs
-        authorized_tipologie_ids = servizio.get("tipologie_autorizzate", [])
-        
-        if not authorized_tipologie_ids:
-            # No fallback - return empty array if no tipologie are configured
-            logging.info("📭 CASCADE: No tipologie autorizzate found for servizio, returning empty array")
-            return []
-        
-        # Fetch authorized tipologie
+        # AUTO-DISCOVERY: Always find all tipologie for this servizio (no manual configuration needed)
+        logging.info("🔄 CASCADE: Using auto-discovery to find all active tipologie for this servizio")
         tipologie_docs = await db.tipologie_contratto.find({
-            "id": {"$in": authorized_tipologie_ids}
+            "servizio_id": servizio_id,
+            "is_active": True
         }).to_list(length=None)
+        
+        logging.info(f"🔄 CASCADE: Auto-discovery found {len(tipologie_docs)} active tipologie")
         
         # Convert to JSON serializable format
         tipologie = []
