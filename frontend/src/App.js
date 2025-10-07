@@ -13381,10 +13381,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             variant="outline"
             size="sm"
             onClick={() => {
-              setClientiFilterSubAgenzia('');
-              setClientiFilterTipologia('');
-              setClientiFilterStatus('');
-              setClientiFilterCreatedBy('');
+              setClientiFilterSubAgenzia('all');
+              setClientiFilterTipologia('all');
+              setClientiFilterStatus('all');
+              setClientiFilterCreatedBy('all');
             }}
           >
             <X className="w-4 h-4 mr-2" />
