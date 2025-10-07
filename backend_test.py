@@ -24518,12 +24518,12 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # URGENT TEST: Cascading System Diagnosis
+        # URGENT TEST: Cascading Hierarchy Configuration
         print("\n" + "🚨" * 40)
-        print("🚨 URGENT TEST: CASCADING SYSTEM DIAGNOSIS")
+        print("🚨 URGENT TEST: CASCADING HIERARCHY CONFIGURATION")
         print("🚨" * 40)
         
-        cascade_success = self.test_cascading_system_urgent_diagnosis()
+        cascade_success = self.test_cascading_hierarchy_urgent()
 
         # Print final summary
         print("\n" + "=" * 80)
