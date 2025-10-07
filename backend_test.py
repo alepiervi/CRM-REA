@@ -25705,15 +25705,15 @@ Duplicate,Test,+393471234567"""
         print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
         print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
-        # Highlight the critical roles test result
+        # Highlight the critical client visibility test result
         print("\n🎯 CRITICAL TEST RESULT:")
-        if roles_success:
-            print("🎉 USER ROLES SYSTEM: ✅ SUCCESS - ALL ROLES CAN BE CREATED AND HAVE CORRECT AUTHORIZATIONS!")
+        if client_visibility_success:
+            print("🎉 CLIENT VISIBILITY SYSTEM: ✅ SUCCESS - ALL USERS CAN ACCESS CLIENTS APPROPRIATELY!")
         else:
-            print("🚨 USER ROLES SYSTEM: ❌ NEEDS INVESTIGATION")
+            print("🚨 CLIENT VISIBILITY SYSTEM: ❌ NEEDS INVESTIGATION")
         
-        if roles_success:
-            print("🎉 OBIETTIVO RAGGIUNTO: SISTEMA UTILIZZABILE PER TUTTI I RUOLI!")
+        if client_visibility_success:
+            print("🎉 OBIETTIVO RAGGIUNTO: TUTTI GLI UTENTI NON-ADMIN POSSONO VEDERE I CLIENTI!")
         else:
             print("🚨 OBIETTIVO NON RAGGIUNTO - VERIFICARE ERRORI SOPRA")
         
