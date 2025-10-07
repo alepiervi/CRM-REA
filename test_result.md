@@ -877,9 +877,10 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Client Filters Diagnosis - PROBLEMA 1 & 2 Investigation"
-    - "Critical Filter-Options Endpoint Fix - Wrong Tipologie Contratto Data"
-  stuck_tasks: []
+    - "CreateClientModal Cascading Selection System - Frontend Testing"
+    - "Hierarchical Management System Testing - Commesse-Servizi-Tipologie-Segmenti with Aruba Drive Migration"
+  stuck_tasks: 
+    - "CreateClientModal Cascading Selection System - Frontend Testing"
   test_all: false
   test_priority: "critical_first"
   completed_tasks:
