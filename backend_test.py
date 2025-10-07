@@ -25052,12 +25052,12 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # URGENT TEST: Cascading Hierarchy Configuration
+        # URGENT TEST: Auto-Discovery Cascade Fix
         print("\n" + "🚨" * 40)
-        print("🚨 URGENT TEST: CASCADING HIERARCHY CONFIGURATION")
+        print("🚨 URGENT TEST: AUTO-DISCOVERY CASCADE FIX")
         print("🚨" * 40)
         
-        cascade_success = self.test_cascading_functionality_all_commesse()
+        cascade_success = self.test_cascade_auto_discovery_fix_urgent()
 
         # Print final summary
         print("\n" + "=" * 80)
