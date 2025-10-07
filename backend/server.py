@@ -8779,6 +8779,13 @@ async def get_clienti(
     if status:
         query["status"] = status
     
+    # Additional filter parameters
+    if tipologia_contratto:
+        query["tipologia_contratto"] = tipologia_contratto
+    
+    if created_by:
+        query["created_by"] = created_by
+    
     print(f"🔍 FINAL QUERY for {current_user.role}: {query}")
     
     clienti = await db.clienti.find(query).sort("created_at", -1).limit(limit).to_list(length=None)
