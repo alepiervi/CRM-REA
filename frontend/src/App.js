@@ -12710,6 +12710,14 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [clientiFilterSubAgenzia, setClientiFilterSubAgenzia] = useState('all');
   const [clientiFilterCreatedBy, setClientiFilterCreatedBy] = useState('all');
   const [users, setUsers] = useState([]);
+  // Dynamic filter options
+  const [filterOptions, setFilterOptions] = useState({
+    tipologie_contratto: [],
+    status_values: [],
+    segmenti: [],
+    sub_agenzie: [],
+    users: []
+  });
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
