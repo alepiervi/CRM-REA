@@ -23399,12 +23399,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
 
-        # IMMEDIATE TEST: Complete Filter Options System
-        print("\n" + "🎯" * 40)
-        print("🎯 IMMEDIATE TEST: COMPLETE FILTER OPTIONS SYSTEM")
-        print("🎯" * 40)
+        # IMMEDIATE TEST: Filter Options Real Data Only
+        print("\n" + "🚨" * 40)
+        print("🚨 IMMEDIATE TEST: FILTER OPTIONS REAL DATA ONLY")
+        print("🚨" * 40)
         
-        filter_success = self.test_complete_filter_options_system()
+        filter_success = self.test_filter_options_real_data_only()
 
         # Print final summary
         print("\n" + "=" * 80)
