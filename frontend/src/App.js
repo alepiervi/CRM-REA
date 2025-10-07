@@ -13364,7 +13364,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                 <SelectValue placeholder="Tutti gli Utenti" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tutti gli Utenti</SelectItem>
+                <SelectItem value="all">Tutti gli Utenti</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.username} ({user.email})
