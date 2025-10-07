@@ -24251,7 +24251,7 @@ Duplicate,Test,+393471234567"""
         else:
             print("🚨 OBIETTIVO NON RAGGIUNTO - VERIFICARE ERRORI SOPRA")
         
-        return client_creation_success
+        return cascade_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
