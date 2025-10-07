@@ -25918,7 +25918,7 @@ Duplicate,Test,+393471234567"""
             return True
         else:
             print(f"   🚨 FAILURE: IL PROBLEMA NON È STATO COMPLETAMENTE RISOLTO!")
-            print(f"   🚨 ISSUE: POST /api/clienti ancora ritorna {status} invece di 201 Created")
+            print(f"   🚨 ISSUE: POST /api/clienti ancora ritorna {status} invece di 200/201 Success")
             print(f"   🚨 ACTION REQUIRED: Verificare configurazione user_commessa_authorizations per utente 'ale'")
             return False
 
