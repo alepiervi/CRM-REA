@@ -901,11 +901,8 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: 
-    - "CreateClientModal Cascading Selection System - Frontend Testing"
-    - "Hierarchical Management System Testing - Commesse-Servizi-Tipologie-Segmenti with Aruba Drive Migration"
-  stuck_tasks: 
-    - "CreateClientModal Cascading Selection System - Frontend Testing"
+  current_focus: []
+  stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
   completed_tasks:
