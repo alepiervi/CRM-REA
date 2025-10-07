@@ -8976,14 +8976,15 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             return mapping.get(segmento, segmento.replace("_", " ").title())
         
         def map_status_display(status):
+            # Map to uppercase to match client card display format
             mapping = {
-                "attivo": "Attivo",
-                "inattivo": "Inattivo",
-                "sospeso": "Sospeso",
-                "nuovo": "Nuovo",
-                "completato": "Completato"
+                "attivo": "ATTIVO",
+                "inattivo": "INATTIVO", 
+                "sospeso": "SOSPESO",
+                "nuovo": "NUOVO",
+                "completato": "COMPLETATO"
             }
-            return mapping.get(status, status.replace("_", " ").title())
+            return mapping.get(status, status.replace("_", " ").upper())
         
         # Format response with display names
         return {
