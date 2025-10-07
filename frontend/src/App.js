@@ -17198,6 +17198,30 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   );
 };
 
+// Import Clienti Modal Component
+const ImportClientiModal = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <Upload className="w-5 h-5 text-blue-600" />
+            <span>Importa Clienti</span>
+          </DialogTitle>
+          <DialogDescription>
+            Funzionalità di importazione clienti in fase di sviluppo.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button onClick={onClose}>Chiudi</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Edit Cliente Modal Component  
 const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
   const [formData, setFormData] = useState({
