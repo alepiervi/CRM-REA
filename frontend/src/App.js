@@ -12732,6 +12732,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       console.log("📊 ClientiManagement: Inizializzazione - caricando dati...");
       fetchCommesse();
       fetchSubAgenzie();
+      fetchUsers();
       fetchClienti();
     } catch (error) {
       console.error("ClientiManagement useEffect error:", error);
