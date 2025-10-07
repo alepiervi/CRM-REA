@@ -12705,10 +12705,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     enabled: false
   });
   // New filter states
-  const [clientiFilterStatus, setClientiFilterStatus] = useState('');
-  const [clientiFilterTipologia, setClientiFilterTipologia] = useState('');
-  const [clientiFilterSubAgenzia, setClientiFilterSubAgenzia] = useState('');
-  const [clientiFilterCreatedBy, setClientiFilterCreatedBy] = useState('');
+  const [clientiFilterStatus, setClientiFilterStatus] = useState('all');
+  const [clientiFilterTipologia, setClientiFilterTipologia] = useState('all');
+  const [clientiFilterSubAgenzia, setClientiFilterSubAgenzia] = useState('all');
+  const [clientiFilterCreatedBy, setClientiFilterCreatedBy] = useState('all');
   const [users, setUsers] = useState([]);
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
