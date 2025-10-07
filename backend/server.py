@@ -8900,31 +8900,42 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         else:
             base_query["_id"] = {"$exists": False}
         
-        # Get ALL available data from system collections (not just from existing clients)
+        # Get available data from system collections AND actual client usage
         
-        # Get ALL tipologie contratto from enum or system data
-        tipologie_contratto = [
-            "energia_fastweb", 
-            "fotovoltaico", 
-            "efficientamento_energetico",
-            "telefonia_fastweb",
-            "ho_mobile",
-            "gas_fastweb",
-            "fibra_fastweb"
+        # Get tipologie contratto from actual tipologie_contratto collection + actual client data
+        tipologie_pipeline = [{"$match": base_query}] if base_query else []
+        tipologie_pipeline += [
+            {"$group": {"_id": "$tipologia_contratto"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$sort": {"_id": 1}}
         ]
+        tipologie_result = await db.clienti.aggregate(tipologie_pipeline).to_list(length=None)
+        tipologie_from_clients = [item["_id"] for item in tipologie_result]
         
-        # Get ALL possible status values 
-        status_values = [
-            "nuovo", 
-            "attivo", 
-            "inattivo", 
-            "sospeso", 
-            "completato", 
-            "in_lavorazione",
-            "da_richiamare",
-            "non_interessato",
-            "chiuso"
+        # Also get tipologie from tipologie_contratto collection if it exists
+        try:
+            tipologie_cursor = db.tipologie_contratto.find({})
+            tipologie_docs = await tipologie_cursor.to_list(length=None)
+            tipologie_from_collection = [doc.get("id") or doc.get("nome", "").lower().replace(" ", "_") for doc in tipologie_docs]
+        except:
+            tipologie_from_collection = []
+        
+        # Combine both sources and remove duplicates
+        tipologie_contratto = list(set(tipologie_from_clients + tipologie_from_collection))
+        
+        # Get status values from actual client data + possible values
+        status_pipeline = [{"$match": base_query}] if base_query else []
+        status_pipeline += [
+            {"$group": {"_id": "$status"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$sort": {"_id": 1}}
         ]
+        status_result = await db.clienti.aggregate(status_pipeline).to_list(length=None)
+        status_from_clients = [item["_id"] for item in status_result]
+        
+        # Add common status values that might be used
+        common_status = ["nuovo", "attivo", "inattivo", "sospeso", "completato"]
+        status_values = list(set(status_from_clients + common_status))
         
         # Get ALL segmenti available
         segmenti_values = ["privato", "business", "residenziale"]
