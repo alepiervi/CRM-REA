@@ -23388,6 +23388,234 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 FAILURE: L'endpoint presenta ancora problemi!")
             return False
 
+    def test_contract_type_filters_fix_verification(self):
+        """🎯 VERIFICA COMPLETA DEL FIX PER I FILTRI TIPOLOGIE CONTRATTO NELLA SEZIONE CLIENTI"""
+        print("\n🎯 VERIFICA COMPLETA DEL FIX PER I FILTRI TIPOLOGIE CONTRATTO NELLA SEZIONE CLIENTI...")
+        print("🎯 OBIETTIVO: Verificare che GET /api/clienti/filter-options mostri SOLO le tipologie di contratto utilizzate nei clienti esistenti")
+        print("🎯 FOCUS: NON devono comparire tipologie create dall'utente nella collezione tipologie_contratto")
+        
+        # 1. **Test Login Admin**: Login con admin/admin123
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Verifica Clienti Esistenti e Loro Tipologie**
+        print("\n👥 2. VERIFICA CLIENTI ESISTENTI E LORO TIPOLOGIE...")
+        
+        # GET /api/clienti per ottenere tutti i clienti esistenti
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            clienti = clienti_response.get('clienti', []) if isinstance(clienti_response, dict) else clienti_response
+            self.log_test("✅ GET /api/clienti", True, f"Found {len(clienti)} existing clients")
+            
+            # Estrai le tipologie di contratto effettivamente utilizzate dai clienti
+            tipologie_reali_clienti = set()
+            for client in clienti:
+                tipologia = client.get('tipologia_contratto')
+                if tipologia:
+                    tipologie_reali_clienti.add(tipologia)
+            
+            self.log_test("✅ Tipologie contratto dai clienti reali", True, 
+                f"Found {len(tipologie_reali_clienti)} unique contract types: {sorted(tipologie_reali_clienti)}")
+            
+            # Verifica che ci siano le tipologie attese (energia_fastweb, telefonia_fastweb, ho_mobile)
+            expected_real_types = {'energia_fastweb', 'telefonia_fastweb', 'ho_mobile'}
+            found_expected = expected_real_types.intersection(tipologie_reali_clienti)
+            
+            if found_expected:
+                self.log_test("✅ Expected real types found in clients", True, 
+                    f"Found expected types: {sorted(found_expected)}")
+            else:
+                self.log_test("ℹ️ Expected types not found", True, 
+                    f"Expected {expected_real_types}, found {tipologie_reali_clienti}")
+                
+        else:
+            self.log_test("❌ GET /api/clienti", False, f"Status: {status}, Response: {clienti_response}")
+            return False
+
+        # 3. **Test GET /api/clienti/filter-options**
+        print("\n🔍 3. TEST GET /api/clienti/filter-options...")
+        
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/filter-options", True, f"Status: {status} - Endpoint working correctly!")
+            
+            # Verifica struttura risposta
+            if isinstance(filter_response, dict):
+                tipologie_contratto_filter = filter_response.get('tipologie_contratto', [])
+                status_values_filter = filter_response.get('status_values', [])
+                segmenti_filter = filter_response.get('segmenti', [])
+                sub_agenzie_filter = filter_response.get('sub_agenzie', [])
+                users_filter = filter_response.get('users', [])
+                
+                self.log_test("✅ Response structure correct", True, 
+                    f"tipologie_contratto: {len(tipologie_contratto_filter)}, status: {len(status_values_filter)}, "
+                    f"segmenti: {len(segmenti_filter)}, sub_agenzie: {len(sub_agenzie_filter)}, users: {len(users_filter)}")
+                
+                # 4. **VERIFICA CRITICA: Tipologie Contratto SOLO dai Clienti Reali**
+                print("\n🎯 4. VERIFICA CRITICA: TIPOLOGIE CONTRATTO SOLO DAI CLIENTI REALI...")
+                
+                # Estrai i valori delle tipologie dal filtro
+                tipologie_filter_values = set(item['value'] for item in tipologie_contratto_filter if isinstance(item, dict) and 'value' in item)
+                
+                self.log_test("✅ Tipologie contratto from filter", True, 
+                    f"Filter contains {len(tipologie_filter_values)} types: {sorted(tipologie_filter_values)}")
+                
+                # VERIFICA PRINCIPALE: Le tipologie nel filtro devono essere SOLO quelle dei clienti reali
+                if tipologie_filter_values.issubset(tipologie_reali_clienti):
+                    self.log_test("🎉 CRITICAL SUCCESS: Filter shows ONLY real client types", True, 
+                        f"All filter types ({tipologie_filter_values}) are from real clients")
+                    
+                    # Verifica che non ci siano tipologie "fake" o create dall'utente
+                    fake_types = {'efficientamento_energetico', 'fibra_fastweb', 'gas_fastweb', 'telepass_premium'}
+                    found_fake = tipologie_filter_values.intersection(fake_types)
+                    
+                    if not found_fake:
+                        self.log_test("🎉 CRITICAL SUCCESS: No fake/user-created types", True, 
+                            "Filter does NOT contain user-created types from tipologie_contratto collection")
+                    else:
+                        self.log_test("❌ CRITICAL FAILURE: Found fake types", False, 
+                            f"Filter contains user-created types: {found_fake}")
+                        
+                    # Verifica che le tipologie attese siano presenti
+                    expected_in_filter = expected_real_types.intersection(tipologie_filter_values)
+                    if expected_in_filter:
+                        self.log_test("✅ Expected real types in filter", True, 
+                            f"Filter contains expected types: {sorted(expected_in_filter)}")
+                    else:
+                        self.log_test("⚠️ Expected types not in filter", False, 
+                            f"Expected {expected_real_types}, filter has {tipologie_filter_values}")
+                        
+                else:
+                    # Ci sono tipologie nel filtro che non sono nei clienti reali
+                    extra_types = tipologie_filter_values - tipologie_reali_clienti
+                    self.log_test("❌ CRITICAL FAILURE: Filter contains non-client types", False, 
+                        f"Filter has extra types not from real clients: {extra_types}")
+                    
+                    # Verifica se sono tipologie create dall'utente
+                    user_created_types = {'efficientamento_energetico', 'fibra_fastweb', 'gas_fastweb', 'telepass_premium'}
+                    found_user_created = extra_types.intersection(user_created_types)
+                    
+                    if found_user_created:
+                        self.log_test("🚨 ROOT CAUSE: User-created types in filter", False, 
+                            f"Filter contains user-created types from tipologie_contratto collection: {found_user_created}")
+                    else:
+                        self.log_test("ℹ️ Extra types analysis", True, 
+                            f"Extra types are not known user-created types: {extra_types}")
+
+                # 5. **Verifica Altri Filtri Continuano a Funzionare**
+                print("\n✅ 5. VERIFICA ALTRI FILTRI CONTINUANO A FUNZIONARE...")
+                
+                # Verifica status_values
+                if len(status_values_filter) > 0:
+                    sample_status = status_values_filter[0]
+                    if isinstance(sample_status, dict) and 'value' in sample_status and 'label' in sample_status:
+                        self.log_test("✅ Status values filter working", True, 
+                            f"Found {len(status_values_filter)} status options, sample: {sample_status}")
+                    else:
+                        self.log_test("❌ Status values filter format", False, f"Invalid format: {sample_status}")
+                else:
+                    self.log_test("ℹ️ Status values filter empty", True, "No status values available")
+                
+                # Verifica segmenti
+                if len(segmenti_filter) > 0:
+                    sample_segmento = segmenti_filter[0]
+                    if isinstance(sample_segmento, dict) and 'value' in sample_segmento and 'label' in sample_segmento:
+                        self.log_test("✅ Segmenti filter working", True, 
+                            f"Found {len(segmenti_filter)} segmenti options, sample: {sample_segmento}")
+                    else:
+                        self.log_test("❌ Segmenti filter format", False, f"Invalid format: {sample_segmento}")
+                else:
+                    self.log_test("ℹ️ Segmenti filter empty", True, "No segmenti available")
+                
+                # Verifica sub_agenzie
+                if len(sub_agenzie_filter) > 0:
+                    sample_sub_agenzia = sub_agenzie_filter[0]
+                    if isinstance(sample_sub_agenzia, dict) and 'value' in sample_sub_agenzia and 'label' in sample_sub_agenzia:
+                        self.log_test("✅ Sub agenzie filter working", True, 
+                            f"Found {len(sub_agenzie_filter)} sub agenzie options, sample: {sample_sub_agenzia}")
+                    else:
+                        self.log_test("❌ Sub agenzie filter format", False, f"Invalid format: {sample_sub_agenzia}")
+                else:
+                    self.log_test("ℹ️ Sub agenzie filter empty", True, "No sub agenzie available")
+                
+                # Verifica users
+                if len(users_filter) > 0:
+                    sample_user = users_filter[0]
+                    if isinstance(sample_user, dict) and 'value' in sample_user and 'label' in sample_user:
+                        self.log_test("✅ Users filter working", True, 
+                            f"Found {len(users_filter)} users options, sample: {sample_user}")
+                    else:
+                        self.log_test("❌ Users filter format", False, f"Invalid format: {sample_user}")
+                else:
+                    self.log_test("ℹ️ Users filter empty", True, "No users available")
+
+                # 6. **Confronto con Clienti Esistenti per Coerenza**
+                print("\n🔍 6. CONFRONTO CON CLIENTI ESISTENTI PER COERENZA...")
+                
+                # Verifica che ogni tipologia nel filtro sia effettivamente utilizzata da almeno un cliente
+                for tipologia_item in tipologie_contratto_filter:
+                    if isinstance(tipologia_item, dict) and 'value' in tipologia_item:
+                        tipologia_value = tipologia_item['value']
+                        tipologia_label = tipologia_item.get('label', tipologia_value)
+                        
+                        # Conta quanti clienti usano questa tipologia
+                        client_count = sum(1 for client in clienti if client.get('tipologia_contratto') == tipologia_value)
+                        
+                        if client_count > 0:
+                            self.log_test(f"✅ {tipologia_value} has clients", True, 
+                                f"'{tipologia_label}' used by {client_count} clients")
+                        else:
+                            self.log_test(f"❌ {tipologia_value} no clients", False, 
+                                f"'{tipologia_label}' in filter but no clients use it")
+
+            else:
+                self.log_test("❌ Response not dict", False, f"Expected dict, got: {type(filter_response)}")
+                return False
+        else:
+            self.log_test("❌ GET /api/clienti/filter-options", False, f"Status: {status}, Response: {filter_response}")
+            return False
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 VERIFICA COMPLETA DEL FIX FILTRI TIPOLOGIE CONTRATTO - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che l'endpoint mostri SOLO tipologie dai clienti reali")
+        print(f"   🎯 FOCUS CRITICO: NON devono comparire tipologie create dall'utente")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Clienti esistenti trovati: ✅ SUCCESS - {len(clienti)} clients")
+        print(f"      • Tipologie reali dai clienti: ✅ SUCCESS - {sorted(tipologie_reali_clienti)}")
+        print(f"      • GET /api/clienti/filter-options: ✅ SUCCESS - Endpoint working")
+        print(f"      • Tipologie nel filtro: ✅ SUCCESS - {sorted(tipologie_filter_values)}")
+        
+        # Verifica finale del fix
+        fix_successful = tipologie_filter_values.issubset(tipologie_reali_clienti)
+        no_fake_types = not bool(tipologie_filter_values.intersection({'efficientamento_energetico', 'fibra_fastweb', 'gas_fastweb', 'telepass_premium'}))
+        
+        if fix_successful and no_fake_types:
+            print(f"   🎉 FIX VERIFICATION SUCCESS: Filter shows ONLY real client contract types!")
+            print(f"   🎉 CONFIRMED: No user-created types from tipologie_contratto collection!")
+            print(f"   🎉 EXPECTED RESULT ACHIEVED: energia_fastweb, telefonia_fastweb, ho_mobile (or similar) only!")
+            self.log_test("🎉 CONTRACT TYPE FILTERS FIX VERIFIED", True, "Filter shows only real client types")
+            return True
+        else:
+            print(f"   🚨 FIX VERIFICATION FAILED: Filter still shows non-client types!")
+            print(f"   🚨 ISSUE: User-created types still appearing in filter!")
+            self.log_test("🚨 CONTRACT TYPE FILTERS FIX FAILED", False, "Filter shows non-client types")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
