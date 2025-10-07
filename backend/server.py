@@ -8912,16 +8912,8 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         tipologie_result = await db.clienti.aggregate(tipologie_pipeline).to_list(length=None)
         tipologie_from_clients = [item["_id"] for item in tipologie_result]
         
-        # Also get tipologie from tipologie_contratto collection if it exists
-        try:
-            tipologie_cursor = db.tipologie_contratto.find({})
-            tipologie_docs = await tipologie_cursor.to_list(length=None)
-            tipologie_from_collection = [doc.get("id") or doc.get("nome", "").lower().replace(" ", "_") for doc in tipologie_docs]
-        except:
-            tipologie_from_collection = []
-        
-        # Combine both sources and remove duplicates
-        tipologie_contratto = list(set(tipologie_from_clients + tipologie_from_collection))
+        # Use only tipologie from actual client data (no user-created types from collection)
+        tipologie_contratto = tipologie_from_clients
         
         # Get status values from actual client data + possible values
         status_pipeline = [{"$match": base_query}] if base_query else []
