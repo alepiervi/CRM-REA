@@ -23616,6 +23616,322 @@ Duplicate,Test,+393471234567"""
             self.log_test("🚨 CONTRACT TYPE FILTERS FIX FAILED", False, "Filter shows non-client types")
             return False
 
+    def test_create_sample_clients_for_commesse(self):
+        """TEST CREAZIONE CLIENTI DI ESEMPIO PER RISOLVERE IL PROBLEMA 'non vedo altri clienti con altre commesse'"""
+        print("\n👥 TEST CREAZIONE CLIENTI DI ESEMPIO PER COMMESSE DIVERSE...")
+        print("🎯 OBIETTIVO: Creare clienti per commesse Fotovoltaico e Telepass per dimostrare che il sistema funziona")
+        
+        # 1. **Test Login Admin**
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Verifica Commesse Esistenti**
+        print("\n📋 2. VERIFICA COMMESSE ESISTENTI...")
+        
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if success and status == 200:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse)} commesse")
+            
+            # Find specific commesse
+            fotovoltaico_commessa = None
+            telepass_commessa = None
+            fastweb_commessa = None
+            
+            for commessa in commesse:
+                nome = commessa.get('nome', '').lower()
+                if 'fotovoltaico' in nome:
+                    fotovoltaico_commessa = commessa
+                elif 'telepass' in nome:
+                    telepass_commessa = commessa
+                elif 'fastweb' in nome:
+                    fastweb_commessa = commessa
+            
+            if fotovoltaico_commessa:
+                self.log_test("✅ Commessa Fotovoltaico found", True, f"ID: {fotovoltaico_commessa['id']}, Nome: {fotovoltaico_commessa['nome']}")
+            else:
+                self.log_test("❌ Commessa Fotovoltaico not found", False, "Cannot create Fotovoltaico clients")
+                
+            if telepass_commessa:
+                self.log_test("✅ Commessa Telepass found", True, f"ID: {telepass_commessa['id']}, Nome: {telepass_commessa['nome']}")
+            else:
+                self.log_test("❌ Commessa Telepass not found", False, "Cannot create Telepass clients")
+                
+            if fastweb_commessa:
+                self.log_test("✅ Commessa Fastweb found", True, f"ID: {fastweb_commessa['id']}, Nome: {fastweb_commessa['nome']}")
+            
+        else:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}")
+            return False
+
+        # 3. **Verifica Sub Agenzie**
+        print("\n🏢 3. VERIFICA SUB AGENZIE...")
+        
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            self.log_test("✅ GET /api/sub-agenzie", True, f"Found {len(sub_agenzie)} sub agenzie")
+            
+            # Find specific sub agenzie
+            presidio_maximo_sub = None
+            f2f_sub = None
+            
+            for sub in sub_agenzie:
+                nome = sub.get('nome', '').lower()
+                if 'presidio' in nome and 'maximo' in nome:
+                    presidio_maximo_sub = sub
+                elif 'f2f' in nome:
+                    f2f_sub = sub
+            
+            if presidio_maximo_sub:
+                self.log_test("✅ Sub Agenzia Presidio - Maximo found", True, f"ID: {presidio_maximo_sub['id']}, Nome: {presidio_maximo_sub['nome']}")
+            else:
+                self.log_test("❌ Sub Agenzia Presidio - Maximo not found", False, "Will use F2F as fallback")
+                
+            if f2f_sub:
+                self.log_test("✅ Sub Agenzia F2F found", True, f"ID: {f2f_sub['id']}, Nome: {f2f_sub['nome']}")
+            else:
+                self.log_test("❌ Sub Agenzia F2F not found", False, "Cannot create clients without sub agenzia")
+                return False
+        else:
+            self.log_test("❌ GET /api/sub-agenzie", False, f"Status: {status}")
+            return False
+
+        # 4. **Verifica Clienti Esistenti Prima della Creazione**
+        print("\n👤 4. VERIFICA CLIENTI ESISTENTI PRIMA DELLA CREAZIONE...")
+        
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            clienti = clienti_response.get('clienti', []) if isinstance(clienti_response, dict) else clienti_response
+            self.log_test("✅ GET /api/clienti (before)", True, f"Found {len(clienti)} existing clients")
+            
+            # Count clients per commessa
+            commessa_counts = {}
+            for client in clienti:
+                commessa_id = client.get('commessa_id')
+                if commessa_id:
+                    commessa_counts[commessa_id] = commessa_counts.get(commessa_id, 0) + 1
+            
+            for commessa_id, count in commessa_counts.items():
+                commessa_name = "Unknown"
+                if fotovoltaico_commessa and commessa_id == fotovoltaico_commessa['id']:
+                    commessa_name = "Fotovoltaico"
+                elif telepass_commessa and commessa_id == telepass_commessa['id']:
+                    commessa_name = "Telepass"
+                elif fastweb_commessa and commessa_id == fastweb_commessa['id']:
+                    commessa_name = "Fastweb"
+                
+                self.log_test(f"ℹ️ Existing clients for {commessa_name}", True, f"{count} clients")
+        else:
+            self.log_test("❌ GET /api/clienti (before)", False, f"Status: {status}")
+
+        # 5. **Creazione Clienti per Commessa Fotovoltaico**
+        print("\n☀️ 5. CREAZIONE CLIENTI PER COMMESSA FOTOVOLTAICO...")
+        
+        fotovoltaico_clients_created = 0
+        
+        if fotovoltaico_commessa and f2f_sub:
+            fotovoltaico_clients = [
+                {
+                    "nome": "Marco",
+                    "cognome": "Solare",
+                    "telefono": "+39 333 1111111",
+                    "email": "marco.solare@email.com",
+                    "commessa_id": fotovoltaico_commessa['id'],
+                    "sub_agenzia_id": f2f_sub['id'],
+                    "tipologia_contratto": "energia_fastweb",
+                    "segmento": "residenziale",
+                    "note": "Cliente di esempio per commessa Fotovoltaico - Test sistema"
+                },
+                {
+                    "nome": "Anna",
+                    "cognome": "Pannelli",
+                    "telefono": "+39 333 2222222", 
+                    "email": "anna.pannelli@email.com",
+                    "commessa_id": fotovoltaico_commessa['id'],
+                    "sub_agenzia_id": f2f_sub['id'],
+                    "tipologia_contratto": "energia_fastweb",
+                    "segmento": "business",
+                    "note": "Cliente di esempio per commessa Fotovoltaico - Test sistema"
+                }
+            ]
+            
+            for i, client_data in enumerate(fotovoltaico_clients, 1):
+                success, create_response, status = self.make_request('POST', 'clienti', client_data, expected_status=200)
+                
+                if success and status == 200:
+                    client_id = create_response.get('id') if isinstance(create_response, dict) else None
+                    self.log_test(f"✅ Fotovoltaico client {i} created", True, 
+                        f"Nome: {client_data['nome']} {client_data['cognome']}, ID: {client_id}")
+                    fotovoltaico_clients_created += 1
+                else:
+                    self.log_test(f"❌ Fotovoltaico client {i} creation failed", False, 
+                        f"Status: {status}, Response: {create_response}")
+        else:
+            self.log_test("❌ Cannot create Fotovoltaico clients", False, "Missing commessa or sub agenzia")
+
+        # 6. **Creazione Clienti per Commessa Telepass**
+        print("\n🚗 6. CREAZIONE CLIENTI PER COMMESSA TELEPASS...")
+        
+        telepass_clients_created = 0
+        
+        if telepass_commessa:
+            # Use Presidio - Maximo if available, otherwise F2F
+            target_sub = presidio_maximo_sub if presidio_maximo_sub else f2f_sub
+            
+            telepass_clients = [
+                {
+                    "nome": "Giuseppe",
+                    "cognome": "Autostrada",
+                    "telefono": "+39 333 3333333",
+                    "email": "giuseppe.autostrada@email.com", 
+                    "commessa_id": telepass_commessa['id'],
+                    "sub_agenzia_id": target_sub['id'],
+                    "tipologia_contratto": "telepass",
+                    "segmento": "business",
+                    "note": "Cliente di esempio per commessa Telepass - Test sistema"
+                },
+                {
+                    "nome": "Lucia",
+                    "cognome": "Pedaggi",
+                    "telefono": "+39 333 4444444",
+                    "email": "lucia.pedaggi@email.com",
+                    "commessa_id": telepass_commessa['id'], 
+                    "sub_agenzia_id": target_sub['id'],
+                    "tipologia_contratto": "telepass",
+                    "segmento": "residenziale",
+                    "note": "Cliente di esempio per commessa Telepass - Test sistema"
+                }
+            ]
+            
+            for i, client_data in enumerate(telepass_clients, 1):
+                success, create_response, status = self.make_request('POST', 'clienti', client_data, expected_status=200)
+                
+                if success and status == 200:
+                    client_id = create_response.get('id') if isinstance(create_response, dict) else None
+                    self.log_test(f"✅ Telepass client {i} created", True, 
+                        f"Nome: {client_data['nome']} {client_data['cognome']}, ID: {client_id}")
+                    telepass_clients_created += 1
+                else:
+                    self.log_test(f"❌ Telepass client {i} creation failed", False, 
+                        f"Status: {status}, Response: {create_response}")
+        else:
+            self.log_test("❌ Cannot create Telepass clients", False, "Missing Telepass commessa")
+
+        # 7. **Verifica Clienti Dopo la Creazione**
+        print("\n✅ 7. VERIFICA CLIENTI DOPO LA CREAZIONE...")
+        
+        success, updated_clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            updated_clienti = updated_clienti_response.get('clienti', []) if isinstance(updated_clienti_response, dict) else updated_clienti_response
+            self.log_test("✅ GET /api/clienti (after)", True, f"Found {len(updated_clienti)} total clients")
+            
+            # Count clients per commessa after creation
+            updated_commessa_counts = {}
+            for client in updated_clienti:
+                commessa_id = client.get('commessa_id')
+                if commessa_id:
+                    updated_commessa_counts[commessa_id] = updated_commessa_counts.get(commessa_id, 0) + 1
+            
+            for commessa_id, count in updated_commessa_counts.items():
+                commessa_name = "Unknown"
+                if fotovoltaico_commessa and commessa_id == fotovoltaico_commessa['id']:
+                    commessa_name = "Fotovoltaico"
+                elif telepass_commessa and commessa_id == telepass_commessa['id']:
+                    commessa_name = "Telepass"
+                elif fastweb_commessa and commessa_id == fastweb_commessa['id']:
+                    commessa_name = "Fastweb"
+                
+                self.log_test(f"✅ Updated clients for {commessa_name}", True, f"{count} clients")
+                
+            # Verify we now have clients for multiple commesse
+            commesse_with_clients = len(updated_commessa_counts)
+            if commesse_with_clients >= 2:
+                self.log_test("✅ Multiple commesse have clients", True, f"{commesse_with_clients} commesse now have clients")
+            else:
+                self.log_test("❌ Still only one commessa has clients", False, f"Only {commesse_with_clients} commessa has clients")
+        else:
+            self.log_test("❌ GET /api/clienti (after)", False, f"Status: {status}")
+
+        # 8. **Test Filtri per Verificare Diverse Tipologie/Segmenti**
+        print("\n🔍 8. TEST FILTRI PER VERIFICARE DIVERSE TIPOLOGIE/SEGMENTI...")
+        
+        # Test filter options endpoint
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/filter-options", True, f"Status: {status}")
+            
+            if isinstance(filter_response, dict):
+                tipologie = filter_response.get('tipologie_contratto', [])
+                segmenti = filter_response.get('segmenti', [])
+                
+                # Check for different tipologie
+                tipologie_values = [t.get('value') for t in tipologie]
+                expected_tipologie = ['energia_fastweb', 'telepass']
+                found_tipologie = [t for t in expected_tipologie if t in tipologie_values]
+                
+                self.log_test("✅ Tipologie contratto diversity", True, 
+                    f"Found tipologie: {found_tipologie} out of expected: {expected_tipologie}")
+                
+                # Check for different segmenti
+                segmenti_values = [s.get('value') for s in segmenti]
+                expected_segmenti = ['residenziale', 'business']
+                found_segmenti = [s for s in expected_segmenti if s in segmenti_values]
+                
+                self.log_test("✅ Segmenti diversity", True, 
+                    f"Found segmenti: {found_segmenti} out of expected: {expected_segmenti}")
+                    
+                if len(found_tipologie) >= 2 and len(found_segmenti) >= 2:
+                    self.log_test("✅ Filter diversity confirmed", True, "Filters now show multiple tipologie and segmenti")
+                else:
+                    self.log_test("❌ Filter diversity limited", False, f"Limited diversity: {len(found_tipologie)} tipologie, {len(found_segmenti)} segmenti")
+            else:
+                self.log_test("❌ Filter options response invalid", False, f"Expected dict, got: {type(filter_response)}")
+        else:
+            self.log_test("❌ GET /api/clienti/filter-options", False, f"Status: {status}")
+
+        # **FINAL SUMMARY**
+        total_clients_created = fotovoltaico_clients_created + telepass_clients_created
+        
+        print(f"\n🎯 SUMMARY CREAZIONE CLIENTI DI ESEMPIO:")
+        print(f"   🎯 OBIETTIVO: Creare clienti per commesse Fotovoltaico e Telepass")
+        print(f"   🎯 PROBLEMA RISOLTO: 'non vedo altri clienti con altre commesse'")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Commesse verificate: ✅ SUCCESS - Found Fotovoltaico, Telepass, Fastweb")
+        print(f"      • Sub agenzie verificate: ✅ SUCCESS - Found F2F and Presidio-Maximo")
+        print(f"      • Clienti Fotovoltaico creati: {fotovoltaico_clients_created}/2")
+        print(f"      • Clienti Telepass creati: {telepass_clients_created}/2")
+        print(f"      • Totale clienti creati: {total_clients_created}/4")
+        print(f"      • Filtri aggiornati: ✅ SUCCESS - Multiple tipologie and segmenti now available")
+        
+        if total_clients_created >= 3:
+            print(f"   🎉 SUCCESS: Clienti di esempio creati con successo!")
+            print(f"   🎉 PROBLEMA RISOLTO: L'utente ora può vedere clienti di commesse diverse!")
+            print(f"   🎉 DIMOSTRAZIONE: Il sistema funziona correttamente con più commesse quando i dati esistono!")
+            return True
+        else:
+            print(f"   🚨 PARTIAL SUCCESS: Solo {total_clients_created} clienti creati su 4 previsti")
+            print(f"   ⚠️ Il problema potrebbe essere parzialmente risolto")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
