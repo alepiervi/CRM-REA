@@ -12767,12 +12767,33 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(`${API}/users`);
+      setUsers(response.data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
   const fetchClienti = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (selectedCommessaLocal) {
         params.append('commessa_id', selectedCommessaLocal);
+      }
+      if (clientiFilterSubAgenzia) {
+        params.append('sub_agenzia_id', clientiFilterSubAgenzia);
+      }
+      if (clientiFilterStatus) {
+        params.append('status', clientiFilterStatus);
+      }
+      if (clientiFilterTipologia) {
+        params.append('tipologia_contratto', clientiFilterTipologia);
+      }
+      if (clientiFilterCreatedBy) {
+        params.append('created_by', clientiFilterCreatedBy);
       }
       params.append('limit', '50');
       
