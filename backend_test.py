@@ -25928,12 +25928,12 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # URGENT TEST: Client Visibility for All Users
-        print("\n" + "🚨" * 40)
-        print("🚨 URGENT TEST: CLIENT VISIBILITY FOR ALL USERS")
-        print("🚨" * 40)
+        # URGENT TEST: Responsabile Commessa Client Creation Fix
+        print("\n" + "🚨" * 50)
+        print("🚨 URGENT TEST: RESPONSABILE COMMESSA CLIENT CREATION FIX")
+        print("🚨" * 50)
         
-        client_visibility_success = self.test_all_users_client_visibility_urgent()
+        creation_fix_success = self.test_responsabile_commessa_client_creation_fix()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -25944,19 +25944,19 @@ Duplicate,Test,+393471234567"""
         print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
         print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
-        # Highlight the critical client visibility test result
+        # Highlight the critical client creation fix test result
         print("\n🎯 CRITICAL TEST RESULT:")
-        if client_visibility_success:
-            print("🎉 CLIENT VISIBILITY SYSTEM: ✅ SUCCESS - ALL USERS CAN ACCESS CLIENTS APPROPRIATELY!")
+        if creation_fix_success:
+            print("🎉 RESPONSABILE COMMESSA CLIENT CREATION: ✅ SUCCESS - FIX WORKING CORRECTLY!")
         else:
-            print("🚨 CLIENT VISIBILITY SYSTEM: ❌ NEEDS INVESTIGATION")
+            print("🚨 RESPONSABILE COMMESSA CLIENT CREATION: ❌ FIX NOT WORKING")
         
-        if client_visibility_success:
-            print("🎉 OBIETTIVO RAGGIUNTO: TUTTI GLI UTENTI NON-ADMIN POSSONO VEDERE I CLIENTI!")
+        if creation_fix_success:
+            print("🎉 OBIETTIVO RAGGIUNTO: RESPONSABILE COMMESSA PUÒ CREARE CLIENTI!")
         else:
-            print("🚨 OBIETTIVO NON RAGGIUNTO - VERIFICARE ERRORI SOPRA")
+            print("🚨 OBIETTIVO NON RAGGIUNTO - VERIFICARE AUTORIZZAZIONI")
         
-        return client_visibility_success
+        return creation_fix_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
