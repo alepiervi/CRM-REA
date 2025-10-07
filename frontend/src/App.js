@@ -13339,9 +13339,9 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le Sub Agenzie</SelectItem>
-                {subAgenzie.map((sub) => (
-                  <SelectItem key={sub.id} value={sub.id}>
-                    {sub.nome}
+                {filterOptions.sub_agenzie.map((sub) => (
+                  <SelectItem key={sub.value} value={sub.value}>
+                    {sub.label}
                   </SelectItem>
                 ))}
               </SelectContent>
