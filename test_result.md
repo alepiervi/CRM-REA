@@ -849,6 +849,7 @@ test_plan:
     - "Cascading System for Client Creation - F2F Sub Agenzia Testing"
     - "Redesigned Session Management System Verification"
     - "Dynamic Client Filters Endpoint - GET /api/clienti/filter-options"
+    - "Dynamic Client Filters Frontend UI Testing"
 
   - task: "Document View 403 Error Fix - Urgent Verification"
     implemented: true
