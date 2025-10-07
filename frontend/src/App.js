@@ -16773,29 +16773,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
   );
 };
 
-// Import Clienti Modal Component
-const ImportClientiModal = ({ isOpen, onClose }) => {
-  if (!isOpen) return null;
-  
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Upload className="w-5 h-5 text-blue-600" />
-            <span>Importa Clienti</span>
-          </DialogTitle>
-          <DialogDescription>
-            Funzionalità di importazione clienti in fase di sviluppo.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button onClick={onClose}>Chiudi</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
+// Duplicate ImportClientiModal removed - using the full version above
 
 // Edit Cliente Modal Component  
 const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
