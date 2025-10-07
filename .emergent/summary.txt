@@ -1,38 +1,22 @@
 <analysis>
-The trajectory documents an extensive series of debugging and refactoring cycles on a full-stack Italian CRM application. The initial task was to fix a critical sidebar navigation bug where clicks on Commesse were intercepted by filter dropdowns. This was resolved by relocating the dropdowns within the UI.
-
-A significant portion of the work involved the Aruba Drive integration for document management. The engineer first migrated the configuration from the Commesse level to the Segmenti level, which involved substantial backend and frontend refactoring. However, this was later reverted based on user feedback, requiring a full rollback of the changes to restore the configuration at the Commesse level.
-
-The core of the trajectory details the deep debugging of the Aruba Drive upload functionality. Multiple root causes were identified and fixed in succession:
-1.  Playwright browsers were not installed in the container environment.
-2.  The  class failed to initialize the browser before use.
-3.  Uploaded files were named with UUIDs instead of their original names.
-4.  The hierarchical folder structure logic was flawed, with issues in path construction, enum-to-display-name mapping, and path duplication.
-5.  The frontend was using the wrong client ID for uploads.
-6.  A backend enum change broke backward compatibility for existing client data.
-
-Each issue was systematically diagnosed, often with the help of a , and resolved through targeted code changes in both  and , ultimately leading to a fully functional and correct implementation as per the user's precise specifications.
+The trajectory documents extensive full-stack development on an Italian CRM. Initially, the AI engineer fixed a sidebar navigation bug and evolved the Aruba Drive integration, addressing Playwright setup, file naming, and hierarchical folder structure issues. User feedback prompted fixes for backend enum compatibility, document view 403 errors (authentication headers, permissions), and critical session management bugs involving timer leaks, race conditions, JWT token refresh, and an interfering Axios interceptor, which ultimately led to a complete architectural redesign of the session logic. Finally, the focus shifted to client management: implementing Excel export, dynamic search filters, and resolving data consistency issues where filters incorrectly showed only data associated with existing clients rather than all available system data, culminating in a fix for hardcoded fictitious data in dynamic filter options. Multiple  calls were instrumental in diagnosing complex, persistent issues.
 </analysis>
 
 <product_requirements>
-The application is an internal CRM for managing clients and projects (Commesse). Key requirements implemented and refined during the trajectory include:
-
-1.  **Client Management**: Users must be able to create, view, and manage clients. A critical bug affecting client creation due to incorrect data mapping was resolved. Another bug preventing the client list from loading due to a backend enum validation error was also fixed.
-
-2.  **Document Management with Aruba Drive**: The system must upload client documents to Aruba Drive. This feature underwent significant debugging. The final, correct implementation requires:
-    *   Configuration of Aruba Drive credentials (URL, username, password) at the Commessa (project/chain) level.
-    *   Automatic creation of a specific hierarchical folder structure on Aruba Drive upon document upload, based on the client's associated entities: .
-    *   Preservation of the original filename for all uploaded documents.
-
-3.  **UI/UX**: The application's navigation must be reliable. A critical bug preventing access to the Commesse management page via the sidebar was fixed by restructuring UI components to prevent event interception.
+The application is an internal CRM for managing clients and projects (Commesse). Key implemented and refined requirements include:
+1.  **Client Management**: Users can create, view, and manage clients. Critical fixes encompassed correct data mapping, backend enum validation, Excel download of client lists, and dynamic, data-driven custom search filters (Sub Agenzia, Tipologia Contratto, Status, Utente creatore) displaying all available system data.
+2.  **Document Management with Aruba Drive**: The system uploads client documents to Aruba Drive. This involves configuring credentials at the Commessa level, automatic creation of a specific hierarchical folder structure (), and intelligent filenames (). A View button in the document list allows inline browser viewing without download, requiring robust authentication.
+3.  **UI/UX & Session Stability**: Ensures reliable navigation and stable user sessions. The sidebar navigation bug was resolved. Critical session management issues (logout after inactivity, extend session not working) were identified as multi-faceted bugs leading to a complete architectural redesign and stabilization.
 </product_requirements>
 
 <key_technical_concepts>
-- **Full Stack**: React.js for the frontend, FastAPI (Python) for the backend.
-- **Database**: MongoDB, accessed asynchronously via the Motor library.
-- **Web Automation**: Playwright is used for browser automation to interact with the Aruba Drive web interface for document uploads.
-- **Architecture**: A monolithic structure with the entire frontend logic in  and the backend in .
-- **Data Modeling**: Pydantic models are used for API data validation and serialization, including handling Enum types for fields like .
+-   **Full Stack**: React.js (frontend), FastAPI (Python, backend).
+-   **Database**: MongoDB (accessed asynchronously via Motor).
+-   **Web Automation**: Playwright (for Aruba Drive web interface).
+-   **Architecture**: Monolithic, with core logic in  and .
+-   **Data Modeling**: Pydantic models (for API validation and Enums).
+-   **Authentication**: JWT-based session management.
+-   **UI Components**: React Select for dynamic dropdowns.
 </key_technical_concepts>
 
 <code_architecture>
@@ -40,66 +24,42 @@ The application is a monolith composed of a React frontend and a FastAPI backend
 
 
 -   ****
-    -   **Importance**: This single file contains the entire React application, managing all UI components, state, and API interactions.
+    -   **Importance**: This single file manages the entire React application's UI, state, and API interactions.
     -   **Summary of Changes**:
-        1.  **Sidebar Navigation**: Fixed a critical bug where filter dropdowns were intercepting clicks meant for navigation links. The dropdowns were moved from the header to the footer of the sidebar to resolve the conflict.
-        2.  **Aruba Drive Configuration**: The UI for managing Aruba Drive credentials was first moved from the Commesse section to the Segmenti section, and then moved back to the Commesse section per user request. This involved adding, removing, and restoring buttons, state management hooks, and modals.
-        3.  **Client Creation**: Fixed a runtime error () by re-implementing missing enum-mapping helper functions required during client creation.
-        4.  **Enum Mapping**: Corrected a critical bug in the  function where the display value Privato was incorrectly mapped to the backend enum residenziale. The fix changed the mapping to privato, ensuring correct folder path generation for Aruba Drive.
-        5.  **Document Upload**: Corrected the logic in the upload handler () to ensure it always uses the ID of the currently selected client (), fixing a bug where it could use the ID of a different client.
+        1.  **UI Navigation/Aruba Drive**: Fixed sidebar navigation bugs, refined Aruba Drive credential management UI. Corrected  to use the selected client's ID.
+        2.  **Client Creation/Enum Mapping**: Resolved  and  issues for correct data handling.
+        3.  **Document View**: Implemented  function using  and  to view documents inline, incorporating authentication and adding View buttons across desktop/mobile document lists.
+        4.  **Session Management Redesign**: Replaced a complex multi-timer system with a simpler, robust single-timer architecture (, ). Updated , activity detection, and  to function with the new design, including JWT token refresh via . A problematic Axios interceptor was simplified to avoid premature logouts.
+        5.  **Client Filters/Export UI**: Added new state variables and UI elements for dynamic custom filters (Sub Agenzia, Tipologia Contratto, Status, Utente Creatore). Updated the client export button to Esporta Excel and linked it to the new backend endpoint.
+        6.  **Error Handling**: Fixed React Select  errors,  in , and  in  by correctly accessing the token from .
 
 -   ****
-    -   **Importance**: This file contains the entire FastAPI backend, including all API endpoints, database models, business logic, and the  class.
+    -   **Importance**: This file contains the complete FastAPI backend, including API endpoints, database models, business logic, and the  class.
     -   **Summary of Changes**:
-        1.  **Aruba Drive Configuration**: The  field was moved from the  Pydantic model to the  and then reverted. This included adding and removing API endpoints ( was removed and then restored).
-        2.  **Playwright Integration**: Resolved a fundamental issue where Playwright's browser binaries were not installed in the environment by running Downloading Firefox 141.0 (playwright build v1490) from https://cdn.playwright.dev/dbazure/download/playwright/builds/firefox/1490/firefox-debian-12-arm64.zip
-|                                                                                |   0% of 87.3 MiB
-|■■■■■■■■                                                                        |  10% of 87.3 MiB
-|■■■■■■■■■■■■■■■■                                                                |  20% of 87.3 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 87.3 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 87.3 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 87.3 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 87.3 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 87.3 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 87.3 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 87.3 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 87.3 MiB
-Firefox 141.0 (playwright build v1490) downloaded to /pw-browsers/firefox-1490
-Downloading Webkit 26.0 (playwright build v2203) from https://cdn.playwright.dev/dbazure/download/playwright/builds/webkit/2203/webkit-debian-12-arm64.zip
-|                                                                                |   0% of 87.6 MiB
-|■■■■■■■■                                                                        |  10% of 87.6 MiB
-|■■■■■■■■■■■■■■■■                                                                |  20% of 87.6 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 87.6 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 87.6 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 87.6 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 87.6 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 87.6 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 87.6 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 87.6 MiB
-|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 87.6 MiB
-Webkit 26.0 (playwright build v2203) downloaded to /pw-browsers/webkit-2203.
-        3.  ** Class**: This class was heavily refactored to fix numerous bugs. Key fixes include: adding the missing  call to start the browser before use, replacing a placeholder  method with a functional one, and modifying navigation logic () to correctly handle path creation and prevent duplication.
-        4.  **Folder Path Logic**: The document upload endpoint () logic was significantly improved to construct the precise hierarchical path required by the user (), including mapping backend enum values to user-friendly display names for folder creation.
-        5.  **Enum Backward Compatibility**: The  enum was updated to include a legacy value () alongside the new one () to prevent validation errors when loading existing clients from the database.
+        1.  **Aruba Drive Logic**: Refactored  for robust folder creation/navigation,  browser initialization, and corrected the Aruba Drive URL to .
+        2.  **Document Upload**: Enhanced  to generate precise hierarchical paths and include client name, surname, and phone in filenames.
+        3.  **Document View**: Added  endpoint to serve files inline, with comprehensive role-based authorization matching the download endpoint.
+        4.  **API Fixes**: Resolved  error, optimized Playwright timeouts, and corrected response structures for  endpoints.
+        5.  **Client Excel Export**: Implemented  to generate and serve client data in  format.
+        6.  **Client Filters**: Updated  to support new filter parameters and apply them in MongoDB queries. Created  to dynamically fetch *all* unique filter options (Sub Agenzie, Tipologie Contratto, Status, Users) directly from primary database collections, ensuring consistency with client card displays (e.g., uppercase status values), and removing hardcoded fictitious data.
+        7.  **Enum Backward Compatibility**: Added  to the  enum to handle existing database entries.
+        8.  **Authentication**: Confirmed  endpoint functionality for JWT token validation.
 </code_architecture>
 
 <pending_tasks>
-- There are no outstanding tasks. The previous engineer successfully resolved all user-reported issues, culminating in a fully functional Aruba Drive upload system that meets all specified requirements for folder structure and file naming.
+- There are no explicitly outstanding tasks. All user-reported issues and requested features from the trajectory have been addressed and verified as resolved.
 </pending_tasks>
 
 <current_work>
-The most recent work was a comprehensive and multi-faceted fix for the Aruba Drive document upload functionality. The user reported that documents were being saved outside the correct folder structure and that the generated path was incorrect (e.g., wrong segment name, duplicated path components).
+The most recent work addressed a critical user complaint regarding client search filters and new client creation. The user reported that filter dropdowns (Sub Agenzia, Tipologia Contratto, Status, Utente Creatore) were not displaying *all* available system-wide options, but only those already linked to existing clients. This also impacted the creation of new clients, which couldn't find available commesse (chains). A related issue was the presence of hardcoded, non-existent typology data in the filter options.
 
-The AI engineer, with the aid of a , identified and resolved five distinct bugs in :
-1.  **Enum-to-Display-Name Mapping**: Implemented a mapping function to convert backend enum values (e.g., , ) into user-friendly display names (Energia Fastweb, Privato) for use in folder names.
-2.  **Client Folder Name Format**: Corrected the client folder name format to  as requested.
-3.  **Missing Documenti Subfolder**: Added the final  subfolder to the path.
-4.  **Path Duplication**: Fixed a logical error where the folder creation logic was called twice, causing parts of the path to be duplicated.
-5.  **Incorrect Client Data**: The final root cause was traced to the frontend sending the wrong client's ID during upload. A fix was implemented in  to enforce the use of the currently selected client's ID.
+The AI engineer successfully diagnosed and resolved these issues by:
+1.  **Refactoring the  endpoint in **: The logic was changed from aggregating options based solely on existing client data to dynamically querying all unique values directly from their respective primary database collections (e.g., , ). This ensures that all available system-wide options are presented in the filters.
+2.  **Removing fictitious data**: The  generation in the  endpoint was corrected to exclusively fetch real data from the database, eliminating previously hardcoded and non-existent entries.
 
-After these fixes, backend testing confirmed that the system correctly generates the precise folder path () and that the correct client data is used. The entire Aruba Drive feature is now considered fully operational and bug-free.
+Backend tests after these changes confirmed 100% success, verifying that filter options now accurately reflect all available data within the system and that no incorrect, hardcoded data is returned.
 </current_work>
 
 <optional_next_step>
-Ask the user to perform a final end-to-end test of the document upload feature using their real, valid Aruba Drive credentials to confirm that files are correctly uploaded to the live environment.
+Ask the user for confirmation that all issues are definitively resolved and if any new features or improvements are desired.
 </optional_next_step>

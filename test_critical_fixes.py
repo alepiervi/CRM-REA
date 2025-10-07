@@ -7,7 +7,7 @@ import requests
 import json
 import sys
 
-BASE_URL = "https://italcrm-fix.preview.emergentagent.com/api"
+BASE_URL = "https://client-mgmt-portal-1.preview.emergentagent.com/api"
 
 def test_critical_fixes():
     print("🚨 TESTING CRITICAL ARUBA DRIVE FIXES...")

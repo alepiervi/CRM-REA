@@ -11,7 +11,7 @@ import uuid
 import io
 
 class UploadTester:
-    def __init__(self, base_url="https://italcrm-fix.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://client-mgmt-portal-1.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
