@@ -13302,6 +13302,97 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         </div>
       </div>
 
+      {/* Advanced Filters Section */}
+      <div className="bg-blue-50 p-4 rounded-lg border">
+        <h3 className="text-lg font-semibold mb-4 text-gray-800">Filtri Avanzati</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Sub Agenzia Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sub Agenzia</label>
+            <Select value={clientiFilterSubAgenzia} onValueChange={setClientiFilterSubAgenzia}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Tutte le Sub Agenzie" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tutte le Sub Agenzie</SelectItem>
+                {subAgenzie.map((sub) => (
+                  <SelectItem key={sub.id} value={sub.id}>
+                    {sub.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Tipologia Contratto Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipologia Contratto</label>
+            <Select value={clientiFilterTipologia} onValueChange={setClientiFilterTipologia}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Tutte le Tipologie" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tutte le Tipologie</SelectItem>
+                <SelectItem value="energia_fastweb">Energia Fastweb</SelectItem>
+                <SelectItem value="fotovoltaico">Fotovoltaico</SelectItem>
+                <SelectItem value="efficientamento_energetico">Efficientamento Energetico</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <Select value={clientiFilterStatus} onValueChange={setClientiFilterStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Tutti gli Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tutti gli Status</SelectItem>
+                <SelectItem value="attivo">Attivo</SelectItem>
+                <SelectItem value="inattivo">Inattivo</SelectItem>
+                <SelectItem value="sospeso">Sospeso</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Created By Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Utente Creatore</label>
+            <Select value={clientiFilterCreatedBy} onValueChange={setClientiFilterCreatedBy}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Tutti gli Utenti" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tutti gli Utenti</SelectItem>
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.username} ({user.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Clear All Filters Button */}
+        <div className="mt-4 flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setClientiFilterSubAgenzia('');
+              setClientiFilterTipologia('');
+              setClientiFilterStatus('');
+              setClientiFilterCreatedBy('');
+            }}
+          >
+            <X className="w-4 h-4 mr-2" />
+            Azzera Filtri
+          </Button>
+        </div>
+      </div>
+
       {/* Search Field */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
