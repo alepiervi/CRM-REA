@@ -137,6 +137,11 @@ class UserRole(str, Enum):
     BACKOFFICE_SUB_AGENZIA = "backoffice_sub_agenzia"
     AGENTE_SPECIALIZZATO = "agente_specializzato"  # agente che carica clienti legati a lui
     OPERATORE = "operatore"
+    # Ruoli Store e Presidi  
+    RESPONSABILE_STORE = "responsabile_store"
+    STORE_ASSIST = "store_assist"
+    RESPONSABILE_PRESIDI = "responsabile_presidi"
+    PROMOTER_PRESIDI = "promoter_presidi"
 
 class LeadStatus(str, Enum):
     NUOVO = "nuovo"
