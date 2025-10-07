@@ -236,7 +236,12 @@ const AuthProvider = ({ children }) => {
   };
 
   const extendSession = async () => {
-    console.log('🔄 Extending session');
+    console.log('🔄 Extending session - STOPPING COUNTDOWN IMMEDIATELY');
+    
+    // CRITICAL FIX: Stop countdown and update activity BEFORE API call to prevent race condition
+    stopCountdown();
+    setShowSessionWarning(false);
+    lastActivityRef.current = Date.now();
     
     try {
       // Validate JWT token
@@ -246,19 +251,12 @@ const AuthProvider = ({ children }) => {
       if (response.data && response.data.user) {
         console.log('✅ Session extended successfully');
         
-        // Update last activity to current time (extends session)
-        lastActivityRef.current = Date.now();
-        
-        // Hide warning banner
-        setShowSessionWarning(false);
-        stopCountdown();
-        
         // Update user data if needed
         setUser(response.data.user);
         
         showSessionWarningToast('✅ Sessione estesa per altri 15 minuti', 'default');
         
-        console.log('✅ Session successfully extended');
+        console.log('✅ Session successfully extended with race condition fix');
       } else {
         throw new Error('Invalid response from auth/me endpoint');
       }
