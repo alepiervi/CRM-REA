@@ -13314,7 +13314,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                 <SelectValue placeholder="Tutte le Sub Agenzie" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tutte le Sub Agenzie</SelectItem>
+                <SelectItem value="all">Tutte le Sub Agenzie</SelectItem>
                 {subAgenzie.map((sub) => (
                   <SelectItem key={sub.id} value={sub.id}>
                     {sub.nome}
