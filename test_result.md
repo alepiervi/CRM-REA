@@ -966,6 +966,7 @@ test_plan:
     - "Dynamic Client Filters Endpoint - GET /api/clienti/filter-options"
     - "Dynamic Client Filters Frontend UI Testing"
     - "Cascade Auto-Discovery Fix - Critical Bug Resolution for Client Creation"
+    - "All Users Client Visibility Testing - Complete Authorization Verification"
 
   - task: "Document View 403 Error Fix - Urgent Verification"
     implemented: true
