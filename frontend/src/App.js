@@ -12704,6 +12704,12 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     endDate: '',
     enabled: false
   });
+  // New filter states
+  const [clientiFilterStatus, setClientiFilterStatus] = useState('');
+  const [clientiFilterTipologia, setClientiFilterTipologia] = useState('');
+  const [clientiFilterSubAgenzia, setClientiFilterSubAgenzia] = useState('');
+  const [clientiFilterCreatedBy, setClientiFilterCreatedBy] = useState('');
+  const [users, setUsers] = useState([]);
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
