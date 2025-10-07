@@ -24097,13 +24097,13 @@ def main():
 if __name__ == "__main__":
     tester = CRMAPITester()
     
-    print("🚀 Starting CRM API Testing - FOCUS: VERIFICA CORREZIONI IMPLEMENTATE...")
+    print("🚨 URGENT AUTH/ME ENDPOINT VERIFICATION")
+    print("🎯 FOCUS: Test immediato dell'endpoint /api/auth/me per identificare logout issue")
     print(f"🌐 Base URL: {tester.base_url}")
-    print(f"🎯 OBIETTIVO: Raggiungere 100% success rate (25/25 test)")
-    print(f"🔍 FOCUS SPECIFICO: Verificare le correzioni implementate")
+    print("🔍 OBIETTIVO: Identificare perché /api/auth/me causa logout durante session extension")
     
-    # Run comprehensive fix verification
-    success = tester.run_comprehensive_fix_verification()
+    # Run urgent auth/me test
+    success = tester.run_urgent_auth_me_test()
     
     # Final summary
     print(f"\n{'='*80}")
