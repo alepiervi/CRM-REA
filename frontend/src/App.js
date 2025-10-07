@@ -12784,16 +12784,16 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       if (selectedCommessaLocal) {
         params.append('commessa_id', selectedCommessaLocal);
       }
-      if (clientiFilterSubAgenzia) {
+      if (clientiFilterSubAgenzia && clientiFilterSubAgenzia !== 'all') {
         params.append('sub_agenzia_id', clientiFilterSubAgenzia);
       }
-      if (clientiFilterStatus) {
+      if (clientiFilterStatus && clientiFilterStatus !== 'all') {
         params.append('status', clientiFilterStatus);
       }
-      if (clientiFilterTipologia) {
+      if (clientiFilterTipologia && clientiFilterTipologia !== 'all') {
         params.append('tipologia_contratto', clientiFilterTipologia);
       }
-      if (clientiFilterCreatedBy) {
+      if (clientiFilterCreatedBy && clientiFilterCreatedBy !== 'all') {
         params.append('created_by', clientiFilterCreatedBy);
       }
       params.append('limit', '50');
