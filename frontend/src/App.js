@@ -15328,9 +15328,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       if (selectedCommessa && selectedCommessa !== 'all') {
         handleCommessaSelect(selectedCommessa);
       }
-    } else if (user?.role === 'responsabile_commessa' || user?.role === 'backoffice_commessa' || user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'admin') {
-      // RESPONSABILE/BACKOFFICE FLOW: Start with commesse selection for commessa roles
-      console.log("👔 Responsabile/Backoffice Flow: Starting with commesse selection");
+    } else if (user?.role === 'responsabile_commessa' || user?.role === 'backoffice_commessa') {
+      // RESPONSABILE/BACKOFFICE COMMESSA: Show authorized commesse directly
+      console.log("👔 Responsabile/Backoffice Commessa Flow: Showing authorized commesse");
+      const authorizedCommesse = commesse.filter(commessa => 
+        user.commesse_autorizzate && user.commesse_autorizzate.includes(commessa.id)
+      );
+      setCascadeCommesse(authorizedCommesse);
+    } else if (user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'admin') {
+      // SUB AGENZIA ROLES: Start with sub agenzia selection
+      console.log("👔 Sub Agenzia Flow: Starting with sub agenzia selection");
       setCascadeCommesse([]); // Will be loaded after sub agenzia selection
     } else {
       // FALLBACK: Default to empty arrays
