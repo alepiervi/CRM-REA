@@ -12742,7 +12742,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         variant: "destructive",
       });
     }
-  }, [selectedUnit, selectedCommessaLocal]);
+  }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy]);
 
   const fetchCommesse = async () => {
     try {
