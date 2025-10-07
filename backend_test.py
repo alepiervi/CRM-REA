@@ -22358,6 +22358,13 @@ Duplicate,Test,+393471234567"""
         # Run the final comprehensive test
         final_success = self.test_final_comprehensive_backend_verification()
 
+        # NEW: Test new client Excel export and filters as requested
+        print("\n" + "📊" * 40)
+        print("📊 RUNNING TEST NUOVE FUNZIONALITÀ CLIENTI - EXCEL EXPORT E FILTRI")
+        print("📊" * 40)
+        
+        excel_export_success = self.test_new_client_excel_export_and_filters()
+
         # NEW: Test new document features as requested
         print("\n" + "📄" * 40)
         print("📄 RUNNING TEST NUOVE FUNZIONALITÀ DOCUMENTI")
