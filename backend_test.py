@@ -23959,19 +23959,19 @@ Duplicate,Test,+393471234567"""
         print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
         print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
-        # Highlight the critical filter test result
+        # Highlight the critical client creation test result
         print("\n🎯 CRITICAL TEST RESULT:")
-        if filter_success:
-            print("🎉 FILTER OPTIONS SYSTEM: ✅ SUCCESS - ALL DATA AVAILABLE!")
+        if client_creation_success:
+            print("🎉 CLIENT CREATION SYSTEM: ✅ SUCCESS - SAMPLE CLIENTS CREATED!")
         else:
-            print("🚨 FILTER OPTIONS SYSTEM: ❌ NEEDS IMPROVEMENT")
+            print("🚨 CLIENT CREATION SYSTEM: ❌ NEEDS IMPROVEMENT")
         
-        if filter_success:
-            print("🎉 OBIETTIVO RAGGIUNTO: FILTRI MOSTRANO TUTTI I DATI DISPONIBILI NEL SISTEMA!")
+        if client_creation_success:
+            print("🎉 OBIETTIVO RAGGIUNTO: CLIENTI DI ESEMPIO CREATI PER COMMESSE DIVERSE!")
         else:
             print("🚨 OBIETTIVO NON RAGGIUNTO - VERIFICARE ERRORI SOPRA")
         
-        return filter_success
+        return client_creation_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
