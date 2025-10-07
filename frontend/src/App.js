@@ -11078,7 +11078,7 @@ const CommesseManagement = ({
       
       // Refresh servizi list
       if (selectedCommessa) {
-        fetchServiziPerCommessa(selectedCommessa);
+        fetchServizi(selectedCommessa.id);
       }
       
       toast({
