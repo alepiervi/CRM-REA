@@ -259,11 +259,11 @@ const AuthProvider = ({ children }) => {
       console.log('🔑 Validating JWT token...');
       const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL || ''}/api/auth/me`);
       
-      if (response.data && response.data.user) {
+      if (response.data && response.data.username && response.data.id) {
         console.log('✅ Session extended successfully');
         
         // Update user data if needed
-        setUser(response.data.user);
+        setUser(response.data);
         
         showSessionWarningToast('✅ Sessione estesa per altri 15 minuti', 'default');
         
