@@ -802,8 +802,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "React Select Error Fix Verification - Clienti Section Access"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
@@ -837,6 +836,7 @@ test_plan:
     - "Hierarchical Management System Testing - Commesse-Servizi-Tipologie-Segmenti with Aruba Drive Migration"
     - "Cascading System for Client Creation - F2F Sub Agenzia Testing"
     - "Redesigned Session Management System Verification"
+    - "Dynamic Client Filters Endpoint - GET /api/clienti/filter-options"
 
   - task: "Document View 403 Error Fix - Urgent Verification"
     implemented: true
