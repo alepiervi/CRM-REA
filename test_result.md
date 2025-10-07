@@ -746,8 +746,10 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Session Extension Frontend Bug - Response Handling Fix"
+  stuck_tasks:
+    - "Session Extension Frontend Bug - Response Handling Fix"
   test_all: false
   test_priority: "critical_first"
   completed_tasks:
