@@ -13357,9 +13357,11 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le Tipologie</SelectItem>
-                <SelectItem value="energia_fastweb">Energia Fastweb</SelectItem>
-                <SelectItem value="fotovoltaico">Fotovoltaico</SelectItem>
-                <SelectItem value="efficientamento_energetico">Efficientamento Energetico</SelectItem>
+                {filterOptions.tipologie_contratto.map((tip) => (
+                  <SelectItem key={tip.value} value={tip.value}>
+                    {tip.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
