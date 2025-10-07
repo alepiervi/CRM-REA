@@ -13375,9 +13375,11 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti gli Status</SelectItem>
-                <SelectItem value="attivo">Attivo</SelectItem>
-                <SelectItem value="inattivo">Inattivo</SelectItem>
-                <SelectItem value="sospeso">Sospeso</SelectItem>
+                {filterOptions.status_values.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
