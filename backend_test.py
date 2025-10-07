@@ -25395,6 +25395,294 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 LOGGED IN USERS: {len(logged_in_users)}/{len(created_users)}")
             return False
 
+    def test_all_users_client_visibility_urgent(self):
+        """🚨 TEST URGENTE - Verifica che TUTTI gli utenti non-admin vedano i clienti nella sezione Clienti"""
+        print("\n🚨 TEST URGENTE - VERIFICA VISIBILITÀ CLIENTI PER TUTTI GLI UTENTI NON-ADMIN...")
+        print("🎯 OBIETTIVO: Confermare che 'Non funziona la parte clienti di tutti gli utenti' sia stato RISOLTO")
+        
+        # Test users as specified in the review request
+        test_users = [
+            {
+                'username': 'ale', 
+                'password': 'admin123', 
+                'expected_role': 'responsabile_commessa',
+                'description': 'RESPONSABILE_COMMESSA - deve vedere 2 clienti Fastweb',
+                'expected_clients': 2,
+                'client_type': 'Fastweb clients'
+            },
+            {
+                'username': 'ale2', 
+                'password': 'admin123', 
+                'expected_role': 'backoffice_commessa',
+                'description': 'BACKOFFICE_COMMESSA - deve vedere clienti per Fastweb E Telepass',
+                'expected_clients': 'multiple',
+                'client_type': 'Fastweb and Telepass clients'
+            },
+            {
+                'username': 'ale3', 
+                'password': 'admin123', 
+                'expected_role': 'responsabile_sub_agenzia',
+                'description': 'RESPONSABILE_SUB_AGENZIA - deve vedere clienti della sub agenzia F2F',
+                'expected_clients': 'sub_agenzia',
+                'client_type': 'F2F sub agenzia clients'
+            },
+            {
+                'username': 'ale4', 
+                'password': 'admin123', 
+                'expected_role': 'backoffice_sub_agenzia',
+                'description': 'BACKOFFICE_SUB_AGENZIA - deve vedere clienti della sub agenzia F2F',
+                'expected_clients': 'sub_agenzia',
+                'client_type': 'F2F sub agenzia clients'
+            },
+            {
+                'username': 'ale5', 
+                'password': 'admin123', 
+                'expected_role': 'agente_specializzato',
+                'description': 'AGENTE_SPECIALIZZATO - deve vedere 0 clienti (deve creare i suoi)',
+                'expected_clients': 0,
+                'client_type': 'own created clients only'
+            },
+            {
+                'username': 'ale6', 
+                'password': 'admin123', 
+                'expected_role': 'operatore',
+                'description': 'OPERATORE - deve vedere 0 clienti (deve creare i suoi)',
+                'expected_clients': 0,
+                'client_type': 'own created clients only'
+            },
+            {
+                'username': 'ale7', 
+                'password': 'admin123', 
+                'expected_role': 'responsabile_store',
+                'description': 'RESPONSABILE_STORE - deve vedere clienti creati da lui',
+                'expected_clients': 'own',
+                'client_type': 'own created clients'
+            },
+            {
+                'username': 'ale8', 
+                'password': 'admin123', 
+                'expected_role': 'store_assist',
+                'description': 'STORE_ASSIST - deve vedere clienti creati da lui',
+                'expected_clients': 'own',
+                'client_type': 'own created clients'
+            },
+            {
+                'username': 'ale9', 
+                'password': 'admin123', 
+                'expected_role': 'responsabile_presidi',
+                'description': 'RESPONSABILE_PRESIDI - deve vedere clienti creati da lui',
+                'expected_clients': 'own',
+                'client_type': 'own created clients'
+            }
+        ]
+        
+        successful_tests = 0
+        failed_tests = 0
+        total_tests = len(test_users)
+        
+        print(f"\n🔑 TESTING {total_tests} USER TYPES WITH CLIENT VISIBILITY...")
+        
+        for user_info in test_users:
+            username = user_info['username']
+            password = user_info['password']
+            expected_role = user_info['expected_role']
+            description = user_info['description']
+            expected_clients = user_info['expected_clients']
+            client_type = user_info['client_type']
+            
+            print(f"\n{'='*60}")
+            print(f"🧪 TESTING USER: {username} ({expected_role.upper()})")
+            print(f"📋 DESCRIPTION: {description}")
+            print(f"🎯 EXPECTED: {client_type}")
+            print(f"{'='*60}")
+            
+            # 1. Test Login
+            success, response, status = self.make_request(
+                'POST', 'auth/login', 
+                {'username': username, 'password': password}, 
+                expected_status=200, auth_required=False
+            )
+            
+            if not success or status != 200 or 'access_token' not in response:
+                self.log_test(f"❌ {username} LOGIN FAILED", False, 
+                    f"Status: {status}, Cannot test client visibility without login")
+                failed_tests += 1
+                continue
+            
+            # Login successful - store token and user data
+            user_token = response['access_token']
+            user_data = response['user']
+            actual_role = user_data.get('role', 'MISSING')
+            
+            self.log_test(f"✅ {username} LOGIN SUCCESS", True, 
+                f"Role: {actual_role}, Token received")
+            
+            # Verify role is correct
+            if actual_role == expected_role:
+                self.log_test(f"✅ {username} ROLE CORRECT", True, f"Expected: {expected_role}, Got: {actual_role}")
+            else:
+                self.log_test(f"❌ {username} ROLE INCORRECT", False, f"Expected: {expected_role}, Got: {actual_role}")
+            
+            # 2. Test GET /api/clienti with user token
+            print(f"   🔍 Testing GET /api/clienti with {username} credentials...")
+            
+            # Save current token and use user token
+            admin_token = self.token
+            self.token = user_token
+            
+            success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+            
+            # Restore admin token
+            self.token = admin_token
+            
+            if success and status == 200:
+                self.log_test(f"✅ {username} GET /api/clienti SUCCESS", True, f"Status: {status} - API accessible")
+                
+                # Parse response to get clients
+                if isinstance(clienti_response, dict):
+                    clienti = clienti_response.get('clienti', [])
+                    total_count = clienti_response.get('total', len(clienti))
+                elif isinstance(clienti_response, list):
+                    clienti = clienti_response
+                    total_count = len(clienti)
+                else:
+                    self.log_test(f"❌ {username} RESPONSE FORMAT ERROR", False, f"Unexpected response format: {type(clienti_response)}")
+                    failed_tests += 1
+                    continue
+                
+                client_count = len(clienti)
+                
+                # 3. Verify client visibility based on role
+                print(f"   📊 Found {client_count} clients for {username}")
+                
+                if client_count == 0:
+                    if expected_clients == 0 or expected_clients == 'own':
+                        self.log_test(f"✅ {username} CLIENT COUNT CORRECT", True, 
+                            f"Found {client_count} clients (expected for {expected_role})")
+                        
+                        # For roles that should see 0 initially, this is correct
+                        if expected_clients == 0:
+                            self.log_test(f"✅ {username} AUTHORIZATION WORKING", True, 
+                                f"User sees 0 clients initially - must create their own")
+                        else:
+                            self.log_test(f"ℹ️ {username} NO CLIENTS YET", True, 
+                                f"User has not created any clients yet (normal)")
+                        
+                        successful_tests += 1
+                    else:
+                        self.log_test(f"❌ {username} NO CLIENTS VISIBLE", False, 
+                            f"Expected to see {expected_clients} clients but got empty array []")
+                        self.log_test(f"🚨 {username} AUTHORIZATION ISSUE", False, 
+                            f"User cannot access clients - this confirms the reported problem!")
+                        failed_tests += 1
+                        
+                else:
+                    # User can see clients - verify they are the correct ones
+                    self.log_test(f"✅ {username} CAN SEE CLIENTS", True, 
+                        f"Found {client_count} clients - NOT empty array []")
+                    
+                    # Analyze client details
+                    client_details = []
+                    fastweb_clients = 0
+                    telepass_clients = 0
+                    f2f_clients = 0
+                    own_clients = 0
+                    
+                    for client in clienti:
+                        client_name = f"{client.get('nome', '')} {client.get('cognome', '')}"
+                        commessa_id = client.get('commessa_id', '')
+                        sub_agenzia_id = client.get('sub_agenzia_id', '')
+                        created_by = client.get('created_by', '')
+                        tipologia = client.get('tipologia_contratto', '')
+                        
+                        client_details.append({
+                            'name': client_name,
+                            'commessa_id': commessa_id,
+                            'sub_agenzia_id': sub_agenzia_id,
+                            'created_by': created_by,
+                            'tipologia': tipologia
+                        })
+                        
+                        # Count by type
+                        if 'fastweb' in tipologia.lower():
+                            fastweb_clients += 1
+                        if 'telepass' in tipologia.lower():
+                            telepass_clients += 1
+                        if created_by == user_data.get('id'):
+                            own_clients += 1
+                    
+                    # Verify client types based on role
+                    if expected_role in ['responsabile_commessa', 'backoffice_commessa']:
+                        if fastweb_clients >= 2:
+                            self.log_test(f"✅ {username} FASTWEB CLIENTS VISIBLE", True, 
+                                f"Found {fastweb_clients} Fastweb clients (Mario Fastweb, Luigi Telefonia expected)")
+                        else:
+                            self.log_test(f"❌ {username} MISSING FASTWEB CLIENTS", False, 
+                                f"Expected 2+ Fastweb clients, found {fastweb_clients}")
+                        
+                        if expected_role == 'backoffice_commessa' and telepass_clients > 0:
+                            self.log_test(f"✅ {username} TELEPASS CLIENTS VISIBLE", True, 
+                                f"Found {telepass_clients} Telepass clients (has both commesse)")
+                    
+                    elif expected_role in ['responsabile_sub_agenzia', 'backoffice_sub_agenzia']:
+                        self.log_test(f"✅ {username} SUB AGENZIA CLIENTS VISIBLE", True, 
+                            f"Found {client_count} clients from sub agenzia")
+                    
+                    elif expected_role in ['agente_specializzato', 'operatore', 'responsabile_store', 'store_assist', 'responsabile_presidi']:
+                        if own_clients == client_count:
+                            self.log_test(f"✅ {username} OWN CLIENTS ONLY", True, 
+                                f"All {client_count} clients created by user (correct authorization)")
+                        else:
+                            self.log_test(f"ℹ️ {username} CLIENT OWNERSHIP", True, 
+                                f"{own_clients}/{client_count} clients created by user")
+                    
+                    # Log sample client details
+                    if len(client_details) > 0:
+                        sample_client = client_details[0]
+                        self.log_test(f"ℹ️ {username} SAMPLE CLIENT", True, 
+                            f"Name: {sample_client['name']}, Tipologia: {sample_client['tipologia']}")
+                    
+                    successful_tests += 1
+                    
+            else:
+                # API call failed
+                self.log_test(f"❌ {username} GET /api/clienti FAILED", False, 
+                    f"Status: {status}, Response: {clienti_response}")
+                self.log_test(f"🚨 {username} API ACCESS DENIED", False, 
+                    f"User cannot access /api/clienti endpoint - authorization issue!")
+                failed_tests += 1
+        
+        # Final Summary
+        print(f"\n{'='*80}")
+        print(f"🎯 FINAL SUMMARY - CLIENT VISIBILITY TEST FOR ALL USER TYPES")
+        print(f"{'='*80}")
+        print(f"📊 RESULTS:")
+        print(f"   • Total users tested: {total_tests}")
+        print(f"   • Successful tests: {successful_tests}")
+        print(f"   • Failed tests: {failed_tests}")
+        print(f"   • Success rate: {(successful_tests/total_tests)*100:.1f}%")
+        
+        if successful_tests == total_tests:
+            print(f"   🎉 ALL USERS CAN ACCESS CLIENTS SECTION!")
+            print(f"   🎉 PROBLEM RESOLVED: 'Non funziona la parte clienti di tutti gli utenti' is FIXED!")
+            print(f"   ✅ VERIFICATION COMPLETE: All non-admin users can see appropriate clients")
+            self.log_test("🎉 CLIENT VISIBILITY FIX VERIFICATION", True, 
+                f"All {total_tests} users can access clients appropriately")
+        else:
+            print(f"   🚨 CLIENT VISIBILITY ISSUES PERSIST!")
+            print(f"   🚨 PROBLEM NOT FULLY RESOLVED: {failed_tests} users still cannot access clients")
+            print(f"   ❌ URGENT ACTION REQUIRED: Fix authorization for failing users")
+            self.log_test("🚨 CLIENT VISIBILITY FIX VERIFICATION", False, 
+                f"{failed_tests} out of {total_tests} users still failing")
+        
+        print(f"\n🎯 KEY FINDINGS:")
+        print(f"   • Responsabile/BackOffice Commessa: Should see Fastweb clients (Mario Fastweb, Luigi Telefonia)")
+        print(f"   • Responsabile/BackOffice Sub Agenzia: Should see F2F sub agenzia clients")
+        print(f"   • Agente/Operatore: Should see 0 initially (create their own)")
+        print(f"   • Store/Presidi roles: Should see only clients they created")
+        
+        return successful_tests == total_tests
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
