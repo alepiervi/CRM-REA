@@ -8784,6 +8784,189 @@ async def get_clienti(
     
     return [Cliente(**c) for c in clienti]
 
+async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
+    """Create Excel file with clienti data"""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Clienti Report"
+    
+    # Headers
+    headers = [
+        "ID Cliente", "Nome", "Cognome", "Telefono", "Email", "Codice Fiscale",
+        "Data Nascita", "Provincia", "Comune", "Indirizzo", "Cap", 
+        "Sub Agenzia", "Commessa", "Servizio", "Tipologia Contratto", "Segmento",
+        "Status", "Utente Creatore", "Data Creazione", "Note"
+    ]
+    
+    # Header styling
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+    
+    # Data rows
+    for row, cliente in enumerate(clienti_data, 2):
+        ws.cell(row=row, column=1, value=cliente.get("id", "")[:8])  # Short ID
+        ws.cell(row=row, column=2, value=cliente.get("nome", ""))
+        ws.cell(row=row, column=3, value=cliente.get("cognome", ""))
+        ws.cell(row=row, column=4, value=cliente.get("telefono", ""))
+        ws.cell(row=row, column=5, value=cliente.get("email", ""))
+        ws.cell(row=row, column=6, value=cliente.get("codice_fiscale", ""))
+        
+        # Format date
+        data_nascita = cliente.get("data_nascita")
+        if data_nascita:
+            if isinstance(data_nascita, str):
+                ws.cell(row=row, column=7, value=data_nascita)
+            else:
+                ws.cell(row=row, column=7, value=data_nascita.strftime("%d/%m/%Y") if data_nascita else "")
+        
+        ws.cell(row=row, column=8, value=cliente.get("provincia", ""))
+        ws.cell(row=row, column=9, value=cliente.get("comune", ""))
+        ws.cell(row=row, column=10, value=cliente.get("indirizzo", ""))
+        ws.cell(row=row, column=11, value=cliente.get("cap", ""))
+        ws.cell(row=row, column=12, value=cliente.get("sub_agenzia_name", ""))
+        ws.cell(row=row, column=13, value=cliente.get("commessa_name", ""))
+        ws.cell(row=row, column=14, value=cliente.get("servizio_name", ""))
+        ws.cell(row=row, column=15, value=cliente.get("tipologia_contratto_display", ""))
+        ws.cell(row=row, column=16, value=cliente.get("segmento_display", ""))
+        ws.cell(row=row, column=17, value=cliente.get("status", "attivo"))
+        ws.cell(row=row, column=18, value=cliente.get("created_by_name", ""))
+        
+        # Format creation date
+        created_at = cliente.get("created_at")
+        if created_at:
+            if isinstance(created_at, str):
+                ws.cell(row=row, column=19, value=created_at)
+            else:
+                ws.cell(row=row, column=19, value=created_at.strftime("%d/%m/%Y %H:%M") if created_at else "")
+        
+        ws.cell(row=row, column=20, value=cliente.get("note", ""))
+    
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)  # Max width 50
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Save to temporary file
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
+    wb.save(temp_file.name)
+    return temp_file.name
+
+@api_router.get("/clienti/export/excel")
+async def export_clienti_excel(
+    sub_agenzia_id: Optional[str] = Query(None),
+    tipologia_contratto: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    created_by: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Export clienti to Excel with enhanced filters"""
+    try:
+        # Build query based on user role and filters (reuse logic from main endpoint)
+        query = {}
+        
+        # Role-based access control
+        if current_user.role == UserRole.ADMIN:
+            pass  # Admin can see all
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            if current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            else:
+                query["_id"] = {"$exists": False}  # No results if no authorized commesse
+        elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+            if current_user.commesse_autorizzate and current_user.sub_agenzia_id:
+                query["$and"] = [
+                    {"commessa_id": {"$in": current_user.commesse_autorizzate}},
+                    {"sub_agenzia_id": current_user.sub_agenzia_id}
+                ]
+            else:
+                query["_id"] = {"$exists": False}
+        else:
+            query["_id"] = {"$exists": False}
+        
+        # Apply additional filters
+        if sub_agenzia_id:
+            query["sub_agenzia_id"] = sub_agenzia_id
+        if tipologia_contratto:
+            query["tipologia_contratto"] = tipologia_contratto
+        if status:
+            query["status"] = status
+        if created_by:
+            query["created_by"] = created_by
+        
+        # Get clienti with enriched data
+        clienti = await db.clienti.find(query).sort("created_at", -1).to_list(length=None)
+        
+        # Enrich data with related info for Excel export
+        enriched_clienti = []
+        for cliente in clienti:
+            enriched_cliente = dict(cliente)
+            
+            # Get sub agenzia name
+            if cliente.get("sub_agenzia_id"):
+                sub_agenzia = await db.sub_agenzie.find_one({"id": cliente["sub_agenzia_id"]})
+                enriched_cliente["sub_agenzia_name"] = sub_agenzia.get("nome") if sub_agenzia else ""
+            
+            # Get commessa name
+            if cliente.get("commessa_id"):
+                commessa = await db.commesse.find_one({"id": cliente["commessa_id"]})
+                enriched_cliente["commessa_name"] = commessa.get("nome") if commessa else ""
+            
+            # Get servizio name
+            if cliente.get("servizio_id"):
+                servizio = await db.servizi.find_one({"id": cliente["servizio_id"]})
+                enriched_cliente["servizio_name"] = servizio.get("nome") if servizio else ""
+            
+            # Map tipologia contratto and segmento to display names
+            tipologia = cliente.get("tipologia_contratto", "")
+            enriched_cliente["tipologia_contratto_display"] = {
+                "energia_fastweb": "Energia Fastweb",
+                "fotovoltaico": "Fotovoltaico", 
+                "efficientamento_energetico": "Efficientamento Energetico"
+            }.get(tipologia, tipologia)
+            
+            segmento = cliente.get("segmento", "")
+            enriched_cliente["segmento_display"] = {
+                "privato": "Privato",
+                "business": "Business",
+                "residenziale": "Residenziale"
+            }.get(segmento, segmento)
+            
+            # Get creator name
+            if cliente.get("created_by"):
+                creator = await db.users.find_one({"id": cliente["created_by"]})
+                enriched_cliente["created_by_name"] = creator.get("username") if creator else ""
+            
+            enriched_clienti.append(enriched_cliente)
+        
+        # Create Excel file
+        excel_file_path = await create_clienti_excel_report(enriched_clienti, f"clienti_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+        
+        # Return Excel file
+        return FileResponse(
+            path=excel_file_path,
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            filename=f"clienti_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        )
+        
+    except Exception as e:
+        logging.error(f"Error in clienti Excel export: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'export Excel: {str(e)}")
+
 @api_router.get("/clienti/{cliente_id}", response_model=Cliente)
 async def get_cliente(cliente_id: str, current_user: User = Depends(get_current_user)):
     """Get specific cliente with role-based access control"""
