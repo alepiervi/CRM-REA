@@ -8684,6 +8684,8 @@ async def get_clienti(
     commessa_id: Optional[str] = None,
     sub_agenzia_id: Optional[str] = None,
     status: Optional[str] = None,
+    tipologia_contratto: Optional[str] = None,
+    created_by: Optional[str] = None,
     limit: int = 100,
     current_user: User = Depends(get_current_user)
 ):
