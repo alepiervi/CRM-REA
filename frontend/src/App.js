@@ -16773,6 +16773,431 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
   );
 };
 
+// Create Cliente Modal Component  
+const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, selectedCommessa, user }) => {
+  const [formData, setFormData] = useState({
+    nome: '',
+    cognome: '',
+    email: '',
+    telefono: '',
+    data_nascita: '',
+    luogo_nascita: '',
+    codice_fiscale: '',
+    partita_iva: '',
+    indirizzo: '',
+    citta: '',
+    provincia: '',
+    cap: '',
+    commessa_id: selectedCommessa || '',
+    sub_agenzia_id: '',
+    servizio_id: '',
+    tipologia_contratto: '',
+    segmento: '',
+    status: 'nuovo',
+    note: ''
+  });
+
+  const [servizi, setServizi] = useState([]);
+  const [tipologieContratto, setTipologieContratto] = useState([]);
+  const [segmenti, setSegmenti] = useState([]);
+
+  useEffect(() => {
+    if (formData.commessa_id) {
+      fetchServizi(formData.commessa_id);
+    }
+  }, [formData.commessa_id]);
+
+  useEffect(() => {
+    if (formData.servizio_id) {
+      fetchTipologieContratto(formData.servizio_id);
+    }
+  }, [formData.servizio_id]);
+
+  useEffect(() => {
+    if (formData.tipologia_contratto) {
+      fetchSegmenti(formData.tipologia_contratto);
+    }
+  }, [formData.tipologia_contratto]);
+
+  const fetchServizi = async (commessaId) => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/servizi-by-commessa/${commessaId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setServizi(response.data);
+    } catch (error) {
+      console.error("Error fetching servizi:", error);
+      setServizi([]);
+    }
+  };
+
+  const fetchTipologieContratto = async (servizioId) => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/tipologie-by-servizio/${servizioId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setTipologieContratto(response.data);
+    } catch (error) {
+      console.error("Error fetching tipologie:", error);
+      setTipologieContratto([]);
+    }
+  };
+
+  const fetchSegmenti = async (tipologiaContratto) => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/segmenti-by-tipologia/${tipologiaContratto}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setSegmenti(response.data);
+    } catch (error) {
+      console.error("Error fetching segmenti:", error);
+      setSegmenti([]);
+    }
+  };
+
+  const handleCommessaChange = (commessaId) => {
+    setFormData(prev => ({
+      ...prev, 
+      commessa_id: commessaId,
+      servizio_id: '',
+      tipologia_contratto: '',
+      segmento: ''
+    }));
+    setServizi([]);
+    setTipologieContratto([]);
+    setSegmenti([]);
+  };
+
+  const handleServizioChange = (servizioId) => {
+    setFormData(prev => ({
+      ...prev,
+      servizio_id: servizioId,
+      tipologia_contratto: '',
+      segmento: ''
+    }));
+    setTipologieContratto([]);
+    setSegmenti([]);
+  };
+
+  const handleTipologiaChange = (tipologia) => {
+    setFormData(prev => ({
+      ...prev,
+      tipologia_contratto: tipologia,
+      segmento: ''
+    }));
+    setSegmenti([]);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <UserPlus className="w-5 h-5 text-green-600" />
+            <span>Nuovo Cliente</span>
+          </DialogTitle>
+          <DialogDescription>
+            Compila i dati anagrafici del nuovo cliente. I campi contrassegnati con * sono obbligatori.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          {/* Dati Personali */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Dati Personali</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nome">Nome *</Label>
+                  <Input
+                    id="nome"
+                    value={formData.nome}
+                    onChange={(e) => handleChange('nome', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cognome">Cognome *</Label>
+                  <Input
+                    id="cognome"
+                    value={formData.cognome}
+                    onChange={(e) => handleChange('cognome', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="telefono">Telefono</Label>
+                  <Input
+                    id="telefono"
+                    value={formData.telefono}
+                    onChange={(e) => handleChange('telefono', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="data_nascita">Data di Nascita</Label>
+                  <Input
+                    id="data_nascita"
+                    type="date"
+                    value={formData.data_nascita}
+                    onChange={(e) => handleChange('data_nascita', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="luogo_nascita">Luogo di Nascita</Label>
+                  <Input
+                    id="luogo_nascita"
+                    value={formData.luogo_nascita}
+                    onChange={(e) => handleChange('luogo_nascita', e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dati Fiscali */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Dati Fiscali</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="codice_fiscale">Codice Fiscale</Label>
+                  <Input
+                    id="codice_fiscale"
+                    value={formData.codice_fiscale}
+                    onChange={(e) => handleChange('codice_fiscale', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="partita_iva">Partita IVA</Label>
+                  <Input
+                    id="partita_iva"
+                    value={formData.partita_iva}
+                    onChange={(e) => handleChange('partita_iva', e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Indirizzo */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Indirizzo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="indirizzo">Via/Piazza</Label>
+                  <Input
+                    id="indirizzo"
+                    value={formData.indirizzo}
+                    onChange={(e) => handleChange('indirizzo', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="citta">Città</Label>
+                  <Input
+                    id="citta"
+                    value={formData.citta}
+                    onChange={(e) => handleChange('citta', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="provincia">Provincia</Label>
+                  <Input
+                    id="provincia"
+                    value={formData.provincia}
+                    onChange={(e) => handleChange('provincia', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cap">CAP</Label>
+                  <Input
+                    id="cap"
+                    value={formData.cap}
+                    onChange={(e) => handleChange('cap', e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dati Organizzativi - CASCADING SELECTORS */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Dati Organizzativi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Sub Agenzia */}
+                <div>
+                  <Label>Sub Agenzia *</Label>
+                  <Select value={formData.sub_agenzia_id} onValueChange={(value) => handleChange('sub_agenzia_id', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona sub agenzia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subAgenzie.map((subAgenzia) => (
+                        <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
+                          {subAgenzia.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Commessa */}
+                <div>
+                  <Label>Commessa *</Label>
+                  <Select value={formData.commessa_id} onValueChange={handleCommessaChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona commessa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {commesse.map((commessa) => (
+                        <SelectItem key={commessa.id} value={commessa.id}>
+                          {commessa.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Servizio */}
+                <div>
+                  <Label>Servizio *</Label>
+                  <Select 
+                    value={formData.servizio_id} 
+                    onValueChange={handleServizioChange}
+                    disabled={!formData.commessa_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona servizio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {servizi.map((servizio) => (
+                        <SelectItem key={servizio.id} value={servizio.id}>
+                          {servizio.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Tipologia Contratto */}
+                <div>
+                  <Label>Tipologia Contratto *</Label>
+                  <Select 
+                    value={formData.tipologia_contratto} 
+                    onValueChange={handleTipologiaChange}
+                    disabled={!formData.servizio_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona tipologia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tipologieContratto.map((tipologia) => (
+                        <SelectItem key={tipologia.value} value={tipologia.value}>
+                          {tipologia.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Segmento */}
+                <div>
+                  <Label>Segmento *</Label>
+                  <Select 
+                    value={formData.segmento} 
+                    onValueChange={(value) => handleChange('segmento', value)}
+                    disabled={!formData.tipologia_contratto}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona segmento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {segmenti.map((segmento) => (
+                        <SelectItem key={segmento.value} value={segmento.value}>
+                          {segmento.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <Label>Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nuovo">Nuovo</SelectItem>
+                      <SelectItem value="contattato">Contattato</SelectItem>
+                      <SelectItem value="in_lavorazione">In Lavorazione</SelectItem>
+                      <SelectItem value="convertito">Convertito</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Note */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Note</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={formData.note}
+                onChange={(e) => handleChange('note', e.target.value)}
+                placeholder="Note aggiuntive..."
+                rows={4}
+              />
+            </CardContent>
+          </Card>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">
+              Crea Cliente
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Edit Cliente Modal Component  
 const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
   const [formData, setFormData] = useState({
