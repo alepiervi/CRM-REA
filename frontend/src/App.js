@@ -13393,9 +13393,9 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti gli Utenti</SelectItem>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.username} ({user.email})
+                {filterOptions.users.map((user) => (
+                  <SelectItem key={user.value} value={user.value}>
+                    {user.label}
                   </SelectItem>
                 ))}
               </SelectContent>
