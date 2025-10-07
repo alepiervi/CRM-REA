@@ -13348,7 +13348,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                 <SelectValue placeholder="Tutti gli Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tutti gli Status</SelectItem>
+                <SelectItem value="all">Tutti gli Status</SelectItem>
                 <SelectItem value="attivo">Attivo</SelectItem>
                 <SelectItem value="inattivo">Inattivo</SelectItem>
                 <SelectItem value="sospeso">Sospeso</SelectItem>
