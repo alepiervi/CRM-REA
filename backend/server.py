@@ -13035,8 +13035,8 @@ async def get_servizi_autorizzati_by_commessa(
         }).to_list(length=None)
         
         logging.info(f"🔄 CASCADE: Auto-discovery found {len(servizi_docs)} active servizi")
-            
-            logging.info(f"📊 CASCADE: Found {len(servizi_docs)} authorized servizi")
+        
+        logging.info(f"📊 CASCADE: Found {len(servizi_docs)} authorized servizi")
         
         # Convert to JSON serializable format
         servizi = []
