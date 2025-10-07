@@ -25804,7 +25804,7 @@ Duplicate,Test,+393471234567"""
         # Attempt POST /api/clienti (expecting 200 or 201)
         success, create_response, status = self.make_request('POST', 'clienti', test_client_data, expected_status=200)
         
-        if success and status == 201:
+        if success and (status == 200 or status == 201):
             self.log_test("🎉 POST /api/clienti SUCCESS", True, f"Status: {status} - CLIENT CREATION SUCCESSFUL!")
             
             # Verify response contains client data
