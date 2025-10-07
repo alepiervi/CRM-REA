@@ -24223,17 +24223,12 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Core authentication test
-        if not self.test_authentication():
-            print("❌ Authentication failed - stopping tests")
-            return False
-
-        # IMMEDIATE TEST: Create Sample Clients for Commesse
+        # URGENT TEST: Cascading System Diagnosis
         print("\n" + "🚨" * 40)
-        print("🚨 IMMEDIATE TEST: CREATE SAMPLE CLIENTS FOR COMMESSE")
+        print("🚨 URGENT TEST: CASCADING SYSTEM DIAGNOSIS")
         print("🚨" * 40)
         
-        client_creation_success = self.test_create_sample_clients_for_commesse()
+        cascade_success = self.test_cascading_system_urgent_diagnosis()
 
         # Print final summary
         print("\n" + "=" * 80)
