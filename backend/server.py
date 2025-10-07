@@ -8900,63 +8900,65 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         else:
             base_query["_id"] = {"$exists": False}
         
-        # Get distinct values for each filterable field
-        pipeline_base = [{"$match": base_query}] if base_query else []
+        # Get ALL available data from system collections (not just from existing clients)
         
-        # Get unique tipologie_contratto
-        tipologie_pipeline = pipeline_base + [
-            {"$group": {"_id": "$tipologia_contratto"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
-            {"$sort": {"_id": 1}}
+        # Get ALL tipologie contratto from enum or system data
+        tipologie_contratto = [
+            "energia_fastweb", 
+            "fotovoltaico", 
+            "efficientamento_energetico",
+            "telefonia_fastweb",
+            "ho_mobile",
+            "gas_fastweb",
+            "fibra_fastweb"
         ]
-        tipologie_result = await db.clienti.aggregate(tipologie_pipeline).to_list(length=None)
-        tipologie_contratto = [item["_id"] for item in tipologie_result]
         
-        # Get unique status values
-        status_pipeline = pipeline_base + [
-            {"$group": {"_id": "$status"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
-            {"$sort": {"_id": 1}}
+        # Get ALL possible status values 
+        status_values = [
+            "nuovo", 
+            "attivo", 
+            "inattivo", 
+            "sospeso", 
+            "completato", 
+            "in_lavorazione",
+            "da_richiamare",
+            "non_interessato",
+            "chiuso"
         ]
-        status_result = await db.clienti.aggregate(status_pipeline).to_list(length=None)
-        status_values = [item["_id"] for item in status_result]
         
-        # Get unique segmenti
-        segmenti_pipeline = pipeline_base + [
-            {"$group": {"_id": "$segmento"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
-            {"$sort": {"_id": 1}}
-        ]
-        segmenti_result = await db.clienti.aggregate(segmenti_pipeline).to_list(length=None)
-        segmenti_values = [item["_id"] for item in segmenti_result]
+        # Get ALL segmenti available
+        segmenti_values = ["privato", "business", "residenziale"]
         
-        # Get unique sub_agenzia_id values with names
-        sub_agenzie_pipeline = pipeline_base + [
-            {"$group": {"_id": "$sub_agenzia_id"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
-        ]
-        sub_agenzie_ids_result = await db.clienti.aggregate(sub_agenzie_pipeline).to_list(length=None)
-        sub_agenzie_ids = [item["_id"] for item in sub_agenzie_ids_result]
+        # Get ALL sub agenzie from sub_agenzie collection (filtered by user permissions)
+        sub_agenzie_query = {}
+        if current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+            if current_user.sub_agenzia_id:
+                sub_agenzie_query["id"] = current_user.sub_agenzia_id
+            else:
+                sub_agenzie_query = {"_id": {"$exists": False}}  # No results
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            if current_user.commesse_autorizzate:
+                # Get sub agenzie for authorized commesse
+                sub_agenzie_query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            else:
+                sub_agenzie_query = {"_id": {"$exists": False}}
+        # Admin sees all sub agenzie
         
-        # Get sub agenzia details
-        sub_agenzie = []
-        if sub_agenzie_ids:
-            sub_agenzie_cursor = db.sub_agenzie.find({"id": {"$in": sub_agenzie_ids}})
-            sub_agenzie = await sub_agenzie_cursor.to_list(length=None)
+        sub_agenzie_cursor = db.sub_agenzie.find(sub_agenzie_query)
+        sub_agenzie = await sub_agenzie_cursor.to_list(length=None)
         
-        # Get unique created_by values with user details
-        created_by_pipeline = pipeline_base + [
-            {"$group": {"_id": "$created_by"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
-        ]
-        created_by_result = await db.clienti.aggregate(created_by_pipeline).to_list(length=None)
-        created_by_ids = [item["_id"] for item in created_by_result]
+        # Get ALL users who can create clients (filtered by permissions)  
+        users_query = {}
+        if current_user.role != UserRole.ADMIN:
+            # Non-admin users see limited set based on their organization
+            if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
+                users_query["sub_agenzia_id"] = current_user.sub_agenzia_id
+            elif hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                users_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
+        # Admin sees all users
         
-        # Get user details
-        users = []
-        if created_by_ids:
-            users_cursor = db.users.find({"id": {"$in": created_by_ids}})
-            users = await users_cursor.to_list(length=None)
+        users_cursor = db.users.find(users_query)
+        users = await users_cursor.to_list(length=None)
         
         # Map enum values to display names
         def map_tipologia_display(tipologia):
