@@ -8875,6 +8875,144 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
     wb.save(temp_file.name)
     return temp_file.name
 
+@api_router.get("/clienti/filter-options")
+async def get_clienti_filter_options(current_user: User = Depends(get_current_user)):
+    """Get dynamic filter options based on existing data in the system"""
+    try:
+        # Build base query based on user role (same logic as main clienti endpoint)
+        base_query = {}
+        
+        if current_user.role == UserRole.ADMIN:
+            pass  # Admin can see all
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            if current_user.commesse_autorizzate:
+                base_query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            else:
+                base_query["_id"] = {"$exists": False}  # No results if no authorized commesse
+        elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+            if current_user.commesse_autorizzate and current_user.sub_agenzia_id:
+                base_query["$and"] = [
+                    {"commessa_id": {"$in": current_user.commesse_autorizzate}},
+                    {"sub_agenzia_id": current_user.sub_agenzia_id}
+                ]
+            else:
+                base_query["_id"] = {"$exists": False}
+        else:
+            base_query["_id"] = {"$exists": False}
+        
+        # Get distinct values for each filterable field
+        pipeline_base = [{"$match": base_query}] if base_query else []
+        
+        # Get unique tipologie_contratto
+        tipologie_pipeline = pipeline_base + [
+            {"$group": {"_id": "$tipologia_contratto"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$sort": {"_id": 1}}
+        ]
+        tipologie_result = await db.clienti.aggregate(tipologie_pipeline).to_list(length=None)
+        tipologie_contratto = [item["_id"] for item in tipologie_result]
+        
+        # Get unique status values
+        status_pipeline = pipeline_base + [
+            {"$group": {"_id": "$status"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$sort": {"_id": 1}}
+        ]
+        status_result = await db.clienti.aggregate(status_pipeline).to_list(length=None)
+        status_values = [item["_id"] for item in status_result]
+        
+        # Get unique segmenti
+        segmenti_pipeline = pipeline_base + [
+            {"$group": {"_id": "$segmento"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$sort": {"_id": 1}}
+        ]
+        segmenti_result = await db.clienti.aggregate(segmenti_pipeline).to_list(length=None)
+        segmenti_values = [item["_id"] for item in segmenti_result]
+        
+        # Get unique sub_agenzia_id values with names
+        sub_agenzie_pipeline = pipeline_base + [
+            {"$group": {"_id": "$sub_agenzia_id"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+        ]
+        sub_agenzie_ids_result = await db.clienti.aggregate(sub_agenzie_pipeline).to_list(length=None)
+        sub_agenzie_ids = [item["_id"] for item in sub_agenzie_ids_result]
+        
+        # Get sub agenzia details
+        sub_agenzie = []
+        if sub_agenzie_ids:
+            sub_agenzie_cursor = db.sub_agenzie.find({"id": {"$in": sub_agenzie_ids}})
+            sub_agenzie = await sub_agenzie_cursor.to_list(length=None)
+        
+        # Get unique created_by values with user details
+        created_by_pipeline = pipeline_base + [
+            {"$group": {"_id": "$created_by"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+        ]
+        created_by_result = await db.clienti.aggregate(created_by_pipeline).to_list(length=None)
+        created_by_ids = [item["_id"] for item in created_by_result]
+        
+        # Get user details
+        users = []
+        if created_by_ids:
+            users_cursor = db.users.find({"id": {"$in": created_by_ids}})
+            users = await users_cursor.to_list(length=None)
+        
+        # Map enum values to display names
+        def map_tipologia_display(tipologia):
+            mapping = {
+                "energia_fastweb": "Energia Fastweb",
+                "fotovoltaico": "Fotovoltaico",
+                "efficientamento_energetico": "Efficientamento Energetico"
+            }
+            return mapping.get(tipologia, tipologia.replace("_", " ").title())
+        
+        def map_segmento_display(segmento):
+            mapping = {
+                "privato": "Privato",
+                "business": "Business", 
+                "residenziale": "Residenziale"
+            }
+            return mapping.get(segmento, segmento.replace("_", " ").title())
+        
+        def map_status_display(status):
+            mapping = {
+                "attivo": "Attivo",
+                "inattivo": "Inattivo",
+                "sospeso": "Sospeso",
+                "nuovo": "Nuovo",
+                "completato": "Completato"
+            }
+            return mapping.get(status, status.replace("_", " ").title())
+        
+        # Format response with display names
+        return {
+            "tipologie_contratto": [
+                {"value": tip, "label": map_tipologia_display(tip)} 
+                for tip in sorted(tipologie_contratto)
+            ],
+            "status_values": [
+                {"value": status, "label": map_status_display(status)} 
+                for status in sorted(status_values)
+            ],
+            "segmenti": [
+                {"value": seg, "label": map_segmento_display(seg)} 
+                for seg in sorted(segmenti_values)
+            ],
+            "sub_agenzie": [
+                {"value": sub["id"], "label": sub["nome"]} 
+                for sub in sorted(sub_agenzie, key=lambda x: x.get("nome", ""))
+            ],
+            "users": [
+                {"value": user["id"], "label": f"{user.get('username', 'Unknown')} ({user.get('email', '')})"}
+                for user in sorted(users, key=lambda x: x.get("username", ""))
+            ]
+        }
+        
+    except Exception as e:
+        logging.error(f"Error getting clienti filter options: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento opzioni filtri: {str(e)}")
+
 @api_router.get("/clienti/export/excel")
 async def export_clienti_excel(
     sub_agenzia_id: Optional[str] = Query(None),
