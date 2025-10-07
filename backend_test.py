@@ -24217,6 +24217,301 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_cascading_hierarchy_urgent(self):
+        """🚨 URGENT TEST: Cascading Selection Hierarchy Configuration for All Commesse"""
+        print("\n🚨 URGENT TEST: CASCADING SELECTION HIERARCHY CONFIGURATION FOR ALL COMMESSE...")
+        print("🎯 OBIETTIVO: Verificare configurazione gerarchia completa per tutte le commesse")
+        print("🎯 PROBLEMA: Solo Fastweb ha gerarchia completa. Telepass e Fotovoltaico incomplete")
+        print("🎯 RICHIESTA: CreateClientModal deve funzionare per TUTTE le commesse")
+        
+        # 1. **Test Login Admin**: Login con admin/admin123
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Verifica Commesse Esistenti**
+        print("\n📋 2. VERIFICA COMMESSE ESISTENTI...")
+        
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}")
+            return False
+        
+        commesse = commesse_response if isinstance(commesse_response, list) else []
+        self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse)} commesse")
+        
+        # Find specific commesse
+        fastweb_commessa = None
+        telepass_commessa = None
+        fotovoltaico_commessa = None
+        
+        for commessa in commesse:
+            nome = commessa.get('nome', '').lower()
+            if 'fastweb' in nome:
+                fastweb_commessa = commessa
+            elif 'telepass' in nome:
+                telepass_commessa = commessa
+            elif 'fotovoltaico' in nome:
+                fotovoltaico_commessa = commessa
+        
+        # Log found commesse
+        if fastweb_commessa:
+            self.log_test("✅ Fastweb commessa found", True, f"ID: {fastweb_commessa['id']}, Nome: {fastweb_commessa['nome']}")
+        else:
+            self.log_test("❌ Fastweb commessa not found", False, "Cannot test Fastweb hierarchy")
+            
+        if telepass_commessa:
+            self.log_test("✅ Telepass commessa found", True, f"ID: {telepass_commessa['id']}, Nome: {telepass_commessa['nome']}")
+        else:
+            self.log_test("❌ Telepass commessa not found", False, "Cannot test Telepass hierarchy")
+            
+        if fotovoltaico_commessa:
+            self.log_test("✅ Fotovoltaico commessa found", True, f"ID: {fotovoltaico_commessa['id']}, Nome: {fotovoltaico_commessa['nome']}")
+        else:
+            self.log_test("❌ Fotovoltaico commessa not found", False, "Cannot test Fotovoltaico hierarchy")
+
+        # 3. **TEST FASTWEB HIERARCHY (Expected to work)**
+        print("\n✅ 3. TEST FASTWEB HIERARCHY (EXPECTED TO WORK)...")
+        
+        fastweb_working = False
+        if fastweb_commessa:
+            fastweb_id = fastweb_commessa['id']
+            
+            # Test servizi for Fastweb
+            success, servizi_response, status = self.make_request('GET', f'commesse/{fastweb_id}/servizi', expected_status=200)
+            
+            if success and status == 200:
+                servizi = servizi_response if isinstance(servizi_response, list) else []
+                self.log_test("✅ Fastweb servizi", True, f"Found {len(servizi)} servizi")
+                
+                if len(servizi) > 0:
+                    # Test tipologie for first servizio
+                    servizio = servizi[0]
+                    servizio_id = servizio['id']
+                    
+                    success, tipologie_response, status = self.make_request('GET', f'cascade/tipologie-by-servizio/{servizio_id}', expected_status=200)
+                    
+                    if success and status == 200:
+                        tipologie = tipologie_response if isinstance(tipologie_response, list) else []
+                        self.log_test("✅ Fastweb tipologie", True, f"Found {len(tipologie)} tipologie for servizio {servizio['nome']}")
+                        
+                        if len(tipologie) > 0:
+                            # Test segmenti for first tipologia
+                            tipologia = tipologie[0]
+                            tipologia_id = tipologia['id']
+                            
+                            success, segmenti_response, status = self.make_request('GET', f'tipologie-contratto/{tipologia_id}/segmenti', expected_status=200)
+                            
+                            if success and status == 200:
+                                segmenti = segmenti_response if isinstance(segmenti_response, list) else []
+                                self.log_test("✅ Fastweb segmenti", True, f"Found {len(segmenti)} segmenti for tipologia {tipologia['nome']}")
+                                
+                                if len(segmenti) > 0:
+                                    # Test offerte for first segmento
+                                    segmento = segmenti[0]
+                                    segmento_id = segmento['id']
+                                    
+                                    success, offerte_response, status = self.make_request('GET', f'segmenti/{segmento_id}/offerte', expected_status=200)
+                                    
+                                    if success and status == 200:
+                                        offerte = offerte_response if isinstance(offerte_response, list) else []
+                                        self.log_test("✅ Fastweb offerte", True, f"Found {len(offerte)} offerte for segmento {segmento['nome']}")
+                                        
+                                        if len(offerte) > 0:
+                                            fastweb_working = True
+                                            self.log_test("🎉 Fastweb complete hierarchy", True, "Full cascade working: Commessa → Servizi → Tipologie → Segmenti → Offerte")
+                                        else:
+                                            self.log_test("❌ Fastweb offerte missing", False, "No offerte found for segmento")
+                                    else:
+                                        self.log_test("❌ Fastweb offerte endpoint", False, f"Status: {status}")
+                                else:
+                                    self.log_test("❌ Fastweb segmenti missing", False, "No segmenti found for tipologia")
+                            else:
+                                self.log_test("❌ Fastweb segmenti endpoint", False, f"Status: {status}")
+                        else:
+                            self.log_test("❌ Fastweb tipologie missing", False, "No tipologie found for servizio")
+                    else:
+                        self.log_test("❌ Fastweb tipologie endpoint", False, f"Status: {status}")
+                else:
+                    self.log_test("❌ Fastweb servizi missing", False, "No servizi found for Fastweb")
+            else:
+                self.log_test("❌ Fastweb servizi endpoint", False, f"Status: {status}")
+
+        # 4. **TEST FOTOVOLTAICO HIERARCHY (Expected to fail - ZERO servizi)**
+        print("\n❌ 4. TEST FOTOVOLTAICO HIERARCHY (EXPECTED TO FAIL - ZERO SERVIZI)...")
+        
+        fotovoltaico_working = False
+        if fotovoltaico_commessa:
+            fotovoltaico_id = fotovoltaico_commessa['id']
+            
+            # Test servizi for Fotovoltaico
+            success, servizi_response, status = self.make_request('GET', f'commesse/{fotovoltaico_id}/servizi', expected_status=200)
+            
+            if success and status == 200:
+                servizi = servizi_response if isinstance(servizi_response, list) else []
+                
+                if len(servizi) == 0:
+                    self.log_test("🚨 PROBLEMA CONFERMATO: Fotovoltaico ZERO servizi", False, f"GET /api/commesse/{fotovoltaico_id}/servizi returns empty array []")
+                    self.log_test("🔧 SOLUZIONE RICHIESTA: Creare servizi per Fotovoltaico", False, "Es: 'Installazione Pannelli', 'Manutenzione Impianti'")
+                else:
+                    self.log_test("✅ Fotovoltaico servizi found", True, f"Found {len(servizi)} servizi")
+                    
+                    # Test complete hierarchy if servizi exist
+                    servizio = servizi[0]
+                    servizio_id = servizio['id']
+                    
+                    success, tipologie_response, status = self.make_request('GET', f'cascade/tipologie-by-servizio/{servizio_id}', expected_status=200)
+                    
+                    if success and status == 200:
+                        tipologie = tipologie_response if isinstance(tipologie_response, list) else []
+                        
+                        if len(tipologie) > 0:
+                            fotovoltaico_working = True
+                            self.log_test("✅ Fotovoltaico hierarchy working", True, f"Found {len(tipologie)} tipologie")
+                        else:
+                            self.log_test("❌ Fotovoltaico tipologie missing", False, "Servizi exist but no tipologie")
+                    else:
+                        self.log_test("❌ Fotovoltaico tipologie endpoint", False, f"Status: {status}")
+            else:
+                self.log_test("❌ Fotovoltaico servizi endpoint", False, f"Status: {status}")
+
+        # 5. **TEST TELEPASS HIERARCHY (Expected to fail - servizi exist but ZERO tipologie)**
+        print("\n❌ 5. TEST TELEPASS HIERARCHY (EXPECTED TO FAIL - SERVIZI EXIST BUT ZERO TIPOLOGIE)...")
+        
+        telepass_working = False
+        negozi_servizio = None
+        presidi_servizio = None
+        
+        if telepass_commessa:
+            telepass_id = telepass_commessa['id']
+            
+            # Test servizi for Telepass
+            success, servizi_response, status = self.make_request('GET', f'commesse/{telepass_id}/servizi', expected_status=200)
+            
+            if success and status == 200:
+                servizi = servizi_response if isinstance(servizi_response, list) else []
+                self.log_test("✅ Telepass servizi found", True, f"Found {len(servizi)} servizi")
+                
+                # Find NEGOZI and PRESIDI servizi
+                for servizio in servizi:
+                    nome = servizio.get('nome', '').upper()
+                    if 'NEGOZI' in nome:
+                        negozi_servizio = servizio
+                    elif 'PRESIDI' in nome:
+                        presidi_servizio = servizio
+                
+                if negozi_servizio:
+                    self.log_test("✅ NEGOZI servizio found", True, f"ID: {negozi_servizio['id']}, Nome: {negozi_servizio['nome']}")
+                    
+                    # Test tipologie for NEGOZI
+                    success, tipologie_response, status = self.make_request('GET', f'cascade/tipologie-by-servizio/{negozi_servizio["id"]}', expected_status=200)
+                    
+                    if success and status == 200:
+                        tipologie = tipologie_response if isinstance(tipologie_response, list) else []
+                        
+                        if len(tipologie) == 0:
+                            self.log_test("🚨 PROBLEMA CONFERMATO: NEGOZI ZERO tipologie", False, f"GET /api/cascade/tipologie-by-servizio/{negozi_servizio['id']} returns empty array []")
+                            self.log_test("🔧 SOLUZIONE RICHIESTA: Aggiungere tipologie a NEGOZI", False, "Es: 'telepass_premium', 'telepass_basic'")
+                        else:
+                            self.log_test("✅ NEGOZI tipologie found", True, f"Found {len(tipologie)} tipologie")
+                            telepass_working = True
+                    else:
+                        self.log_test("❌ NEGOZI tipologie endpoint", False, f"Status: {status}")
+                else:
+                    self.log_test("❌ NEGOZI servizio not found", False, "Cannot test NEGOZI tipologie")
+                
+                if presidi_servizio:
+                    self.log_test("✅ PRESIDI servizio found", True, f"ID: {presidi_servizio['id']}, Nome: {presidi_servizio['nome']}")
+                    
+                    # Test tipologie for PRESIDI
+                    success, tipologie_response, status = self.make_request('GET', f'cascade/tipologie-by-servizio/{presidi_servizio["id"]}', expected_status=200)
+                    
+                    if success and status == 200:
+                        tipologie = tipologie_response if isinstance(tipologie_response, list) else []
+                        
+                        if len(tipologie) == 0:
+                            self.log_test("🚨 PROBLEMA CONFERMATO: PRESIDI ZERO tipologie", False, f"GET /api/cascade/tipologie-by-servizio/{presidi_servizio['id']} returns empty array []")
+                            self.log_test("🔧 SOLUZIONE RICHIESTA: Aggiungere tipologie a PRESIDI", False, "Es: 'telepass_premium', 'telepass_basic'")
+                        else:
+                            self.log_test("✅ PRESIDI tipologie found", True, f"Found {len(tipologie)} tipologie")
+                            if not telepass_working:
+                                telepass_working = True
+                    else:
+                        self.log_test("❌ PRESIDI tipologie endpoint", False, f"Status: {status}")
+                else:
+                    self.log_test("❌ PRESIDI servizio not found", False, "Cannot test PRESIDI tipologie")
+            else:
+                self.log_test("❌ Telepass servizi endpoint", False, f"Status: {status}")
+
+        # 6. **SUMMARY AND RECOMMENDATIONS**
+        print("\n📊 6. SUMMARY AND RECOMMENDATIONS...")
+        
+        working_commesse = 0
+        total_commesse = 0
+        
+        if fastweb_commessa:
+            total_commesse += 1
+            if fastweb_working:
+                working_commesse += 1
+                
+        if fotovoltaico_commessa:
+            total_commesse += 1
+            if fotovoltaico_working:
+                working_commesse += 1
+                
+        if telepass_commessa:
+            total_commesse += 1
+            if telepass_working:
+                working_commesse += 1
+        
+        success_rate = (working_commesse / total_commesse * 100) if total_commesse > 0 else 0
+        
+        print(f"\n🎯 CASCADING HIERARCHY TEST RESULTS:")
+        print(f"   📊 Working commesse: {working_commesse}/{total_commesse} ({success_rate:.1f}%)")
+        print(f"   ✅ Fastweb: {'WORKING' if fastweb_working else 'BROKEN'} - {'Complete hierarchy' if fastweb_working else 'Incomplete hierarchy'}")
+        print(f"   ❌ Fotovoltaico: {'WORKING' if fotovoltaico_working else 'BROKEN'} - {'Complete hierarchy' if fotovoltaico_working else 'ZERO servizi configured'}")
+        print(f"   ❌ Telepass: {'WORKING' if telepass_working else 'BROKEN'} - {'Complete hierarchy' if telepass_working else 'Servizi exist but ZERO tipologie'}")
+        
+        print(f"\n🚨 CRITICAL ISSUES IDENTIFIED:")
+        if not fotovoltaico_working and fotovoltaico_commessa:
+            print(f"   1. FOTOVOLTAICO: GET /api/commesse/{fotovoltaico_commessa['id']}/servizi returns empty array []")
+            print(f"      🔧 FIX: Create servizi for Fotovoltaico (es: 'Installazione Pannelli', 'Manutenzione Impianti')")
+            
+        if not telepass_working and telepass_commessa:
+            if negozi_servizio:
+                print(f"   2. TELEPASS NEGOZI: GET /api/cascade/tipologie-by-servizio/{negozi_servizio['id']} returns empty array []")
+                print(f"      🔧 FIX: Add tipologie to NEGOZI servizio (es: 'telepass_premium', 'telepass_basic')")
+            if presidi_servizio:
+                print(f"   3. TELEPASS PRESIDI: GET /api/cascade/tipologie-by-servizio/{presidi_servizio['id']} returns empty array []")
+                print(f"      🔧 FIX: Add tipologie to PRESIDI servizio (es: 'telepass_premium', 'telepass_basic')")
+        
+        print(f"\n🎯 REQUIRED ACTIONS:")
+        print(f"   1. Configure complete hierarchy for ALL commesse")
+        print(f"   2. Ensure every tipologia has segmenti (auto-created)")
+        print(f"   3. Add offerte to complete the cascade")
+        print(f"   4. Verify CreateClientModal works for ALL commesse")
+        
+        if success_rate == 100:
+            print(f"   🎉 SUCCESS: All commesse have complete hierarchy!")
+            self.log_test("🎉 Cascading hierarchy complete", True, f"All {total_commesse} commesse working")
+        else:
+            print(f"   🚨 URGENT: {total_commesse - working_commesse} commesse have incomplete hierarchy!")
+            self.log_test("🚨 Cascading hierarchy incomplete", False, f"Only {working_commesse}/{total_commesse} commesse working")
+        
+        return success_rate == 100
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
