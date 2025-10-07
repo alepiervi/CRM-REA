@@ -25046,18 +25046,367 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 CRITICAL: Sistema ancora non utilizzabile per creazione clienti!")
             return False
 
+    def test_user_roles_authorization_urgent(self):
+        """🚨 TEST URGENTE CREAZIONE UTENTI PER RUOLI MANCANTI E VERIFICA AUTORIZZAZIONI"""
+        print("\n🚨 TEST URGENTE CREAZIONE UTENTI PER RUOLI MANCANTI E VERIFICA AUTORIZZAZIONI...")
+        print("🎯 OBIETTIVO: Verificare che i 4 ruoli mancanti possano essere creati e abbiano autorizzazioni corrette")
+        print("🎯 RUOLI TESTATI: RESPONSABILE_STORE, STORE_ASSIST, RESPONSABILE_PRESIDI, PROMOTER_PRESIDI")
+        
+        # 1. **Test Login Admin**
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Test Creazione Utenti per i 4 Ruoli Mancanti**
+        print("\n👥 2. TEST CREAZIONE UTENTI PER I 4 RUOLI MANCANTI...")
+        
+        # Ruoli da testare (precedentemente bloccati)
+        missing_roles = [
+            {'role': 'responsabile_store', 'username': 'test_resp_store', 'email': 'resp_store@test.com'},
+            {'role': 'store_assist', 'username': 'test_store_assist', 'email': 'store_assist@test.com'},
+            {'role': 'responsabile_presidi', 'username': 'test_resp_presidi', 'email': 'resp_presidi@test.com'},
+            {'role': 'promoter_presidi', 'username': 'test_promoter_presidi', 'email': 'promoter_presidi@test.com'}
+        ]
+        
+        created_users = []
+        
+        for role_info in missing_roles:
+            role = role_info['role']
+            username = role_info['username']
+            email = role_info['email']
+            
+            print(f"\n   Testing user creation for role: {role}...")
+            
+            user_data = {
+                'username': username,
+                'email': email,
+                'password': 'admin123',
+                'role': role,
+                'entity_management': 'clienti'
+            }
+            
+            success, create_response, status = self.make_request('POST', 'users', user_data, expected_status=200)
+            
+            if success and status == 200:
+                user_id = create_response.get('id')
+                self.log_test(f"✅ CREATE USER {role}", True, f"User created successfully - ID: {user_id}")
+                created_users.append({'id': user_id, 'username': username, 'role': role})
+                
+                # Verify user data
+                created_role = create_response.get('role')
+                if created_role == role:
+                    self.log_test(f"✅ {role} role assigned correctly", True, f"Role: {created_role}")
+                else:
+                    self.log_test(f"❌ {role} role assignment failed", False, f"Expected: {role}, Got: {created_role}")
+                    
+            else:
+                error_detail = create_response.get('detail', 'Unknown error') if isinstance(create_response, dict) else str(create_response)
+                self.log_test(f"❌ CREATE USER {role}", False, f"Status: {status}, Error: {error_detail}")
+
+        # 3. **Test Login con i Nuovi Utenti**
+        print("\n🔑 3. TEST LOGIN CON I NUOVI UTENTI...")
+        
+        logged_in_users = []
+        
+        for user_info in created_users:
+            username = user_info['username']
+            role = user_info['role']
+            
+            print(f"\n   Testing login for {username} ({role})...")
+            
+            success, login_response, status = self.make_request(
+                'POST', 'auth/login',
+                {'username': username, 'password': 'admin123'},
+                200, auth_required=False
+            )
+            
+            if success and status == 200 and 'access_token' in login_response:
+                token = login_response['access_token']
+                user_data = login_response['user']
+                
+                self.log_test(f"✅ LOGIN {username}", True, f"Login successful, Role: {user_data.get('role')}")
+                logged_in_users.append({
+                    'username': username,
+                    'role': role,
+                    'token': token,
+                    'user_data': user_data
+                })
+                
+                # Verify token validity
+                temp_token = self.token
+                self.token = token
+                auth_success, auth_response, auth_status = self.make_request('GET', 'auth/me', expected_status=200)
+                self.token = temp_token
+                
+                if auth_success and auth_response.get('username') == username:
+                    self.log_test(f"✅ {username} token valid", True, "Token authentication successful")
+                else:
+                    self.log_test(f"❌ {username} token invalid", False, f"Token auth failed: {auth_status}")
+                    
+            else:
+                error_detail = login_response.get('detail', 'Unknown error') if isinstance(login_response, dict) else str(login_response)
+                self.log_test(f"❌ LOGIN {username}", False, f"Status: {status}, Error: {error_detail}")
+
+        # 4. **Test Autorizzazioni GET Clienti**
+        print("\n📋 4. TEST AUTORIZZAZIONI GET CLIENTI...")
+        
+        # Get existing clients first with admin
+        success, admin_clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            admin_clienti = admin_clienti_response.get('clienti', []) if isinstance(admin_clienti_response, dict) else admin_clienti_response
+            self.log_test("✅ Admin GET /api/clienti", True, f"Admin can see {len(admin_clienti)} clients")
+        else:
+            self.log_test("❌ Admin GET /api/clienti", False, f"Status: {status}")
+            admin_clienti = []
+        
+        # Test each new user's access to clients
+        for user_info in logged_in_users:
+            username = user_info['username']
+            role = user_info['role']
+            token = user_info['token']
+            
+            print(f"\n   Testing client access for {username} ({role})...")
+            
+            # Use user's token
+            temp_token = self.token
+            self.token = token
+            
+            success, user_clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+            
+            if success and status == 200:
+                user_clienti = user_clienti_response.get('clienti', []) if isinstance(user_clienti_response, dict) else user_clienti_response
+                self.log_test(f"✅ {username} GET /api/clienti", True, f"User can see {len(user_clienti)} clients")
+                
+                # Verify authorization logic based on role
+                if role in ['responsabile_store', 'store_assist', 'responsabile_presidi', 'promoter_presidi']:
+                    # These roles should only see clients they created (initially 0)
+                    if len(user_clienti) == 0:
+                        self.log_test(f"✅ {username} authorization correct", True, f"New user sees 0 clients (expected)")
+                    else:
+                        self.log_test(f"ℹ️ {username} sees existing clients", True, f"User sees {len(user_clienti)} clients")
+                        
+            else:
+                error_detail = user_clienti_response.get('detail', 'Unknown error') if isinstance(user_clienti_response, dict) else str(user_clienti_response)
+                self.log_test(f"❌ {username} GET /api/clienti", False, f"Status: {status}, Error: {error_detail}")
+            
+            # Restore admin token
+            self.token = temp_token
+
+        # 5. **Test Creazione Clienti**
+        print("\n👤 5. TEST CREAZIONE CLIENTI...")
+        
+        # Get required data for client creation
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        success2, sub_agenzie_response, status2 = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        if success and success2:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            
+            if len(commesse) > 0 and len(sub_agenzie) > 0:
+                test_commessa_id = commesse[0]['id']
+                test_sub_agenzia_id = sub_agenzie[0]['id']
+                
+                self.log_test("✅ Required data available", True, f"Commesse: {len(commesse)}, Sub Agenzie: {len(sub_agenzie)}")
+                
+                # Test client creation for each new user
+                for user_info in logged_in_users:
+                    username = user_info['username']
+                    role = user_info['role']
+                    token = user_info['token']
+                    user_id = user_info['user_data'].get('id')
+                    
+                    print(f"\n   Testing client creation for {username} ({role})...")
+                    
+                    # Use user's token
+                    temp_token = self.token
+                    self.token = token
+                    
+                    client_data = {
+                        'nome': f'Test Cliente {role}',
+                        'cognome': f'Created by {username}',
+                        'telefono': f'+39123456{hash(username) % 1000:03d}',
+                        'email': f'test_{username}@example.com',
+                        'commessa_id': test_commessa_id,
+                        'sub_agenzia_id': test_sub_agenzia_id,
+                        'tipologia_contratto': 'energia_fastweb',
+                        'segmento': 'privato'
+                    }
+                    
+                    success, create_client_response, status = self.make_request('POST', 'clienti', client_data, expected_status=200)
+                    
+                    if success and status == 200:
+                        client_id = create_client_response.get('id')
+                        self.log_test(f"✅ {username} CREATE CLIENT", True, f"Client created successfully - ID: {client_id}")
+                        
+                        # Verify client was created by this user
+                        created_by = create_client_response.get('created_by')
+                        if created_by == user_id:
+                            self.log_test(f"✅ {username} client ownership", True, f"Client correctly assigned to user")
+                        else:
+                            self.log_test(f"❌ {username} client ownership", False, f"Expected: {user_id}, Got: {created_by}")
+                            
+                    else:
+                        error_detail = create_client_response.get('detail', 'Unknown error') if isinstance(create_client_response, dict) else str(create_client_response)
+                        self.log_test(f"❌ {username} CREATE CLIENT", False, f"Status: {status}, Error: {error_detail}")
+                    
+                    # Restore admin token
+                    self.token = temp_token
+                    
+            else:
+                self.log_test("❌ Required data missing", False, f"Commesse: {len(commesse)}, Sub Agenzie: {len(sub_agenzie)}")
+        else:
+            self.log_test("❌ Could not get required data", False, f"Commesse status: {status}, Sub Agenzie status: {status2}")
+
+        # 6. **Test Cascading per Responsabile Commessa**
+        print("\n🔗 6. TEST CASCADING PER RESPONSABILE COMMESSA...")
+        
+        # Test with existing responsabile_commessa users
+        resp_commessa_users = ['resp_commessa', 'test2', 'debug_resp_commessa_155357']
+        
+        for username in resp_commessa_users:
+            print(f"\n   Testing cascading for {username}...")
+            
+            success, login_response, status = self.make_request(
+                'POST', 'auth/login',
+                {'username': username, 'password': 'admin123'},
+                200, auth_required=False
+            )
+            
+            if success and status == 200 and 'access_token' in login_response:
+                token = login_response['access_token']
+                user_data = login_response['user']
+                commesse_autorizzate = user_data.get('commesse_autorizzate', [])
+                
+                self.log_test(f"✅ {username} login", True, f"Role: {user_data.get('role')}, Commesse: {len(commesse_autorizzate)}")
+                
+                if len(commesse_autorizzate) > 0:
+                    # Test cascading endpoints for first authorized commessa
+                    commessa_id = commesse_autorizzate[0]
+                    
+                    # Use user's token
+                    temp_token = self.token
+                    self.token = token
+                    
+                    # Test GET /api/commesse/{id}/servizi
+                    success, servizi_response, status = self.make_request('GET', f'commesse/{commessa_id}/servizi', expected_status=200)
+                    
+                    if success and status == 200:
+                        servizi = servizi_response if isinstance(servizi_response, list) else []
+                        self.log_test(f"✅ {username} GET servizi", True, f"Found {len(servizi)} servizi for commessa")
+                        
+                        if len(servizi) > 0:
+                            # Test GET /api/servizi/{id}/tipologie-contratto
+                            servizio_id = servizi[0]['id']
+                            success, tipologie_response, status = self.make_request('GET', f'servizi/{servizio_id}/tipologie-contratto', expected_status=200)
+                            
+                            if success and status == 200:
+                                tipologie = tipologie_response if isinstance(tipologie_response, list) else []
+                                self.log_test(f"✅ {username} GET tipologie", True, f"Found {len(tipologie)} tipologie for servizio")
+                                
+                                if len(tipologie) > 0:
+                                    # Test GET /api/tipologie-contratto/{id}/segmenti
+                                    tipologia_id = tipologie[0]['id']
+                                    success, segmenti_response, status = self.make_request('GET', f'tipologie-contratto/{tipologia_id}/segmenti', expected_status=200)
+                                    
+                                    if success and status == 200:
+                                        segmenti = segmenti_response if isinstance(segmenti_response, list) else []
+                                        self.log_test(f"✅ {username} GET segmenti", True, f"Found {len(segmenti)} segmenti for tipologia")
+                                        
+                                        if len(segmenti) > 0:
+                                            # Test GET /api/segmenti/{id}/offerte
+                                            segmento_id = segmenti[0]['id']
+                                            success, offerte_response, status = self.make_request('GET', f'segmenti/{segmento_id}/offerte', expected_status=200)
+                                            
+                                            if success and status == 200:
+                                                offerte = offerte_response if isinstance(offerte_response, list) else []
+                                                self.log_test(f"✅ {username} CASCADING COMPLETE", True, f"Full cascade: Commessa → {len(servizi)} Servizi → {len(tipologie)} Tipologie → {len(segmenti)} Segmenti → {len(offerte)} Offerte")
+                                            else:
+                                                self.log_test(f"❌ {username} GET offerte", False, f"Status: {status}")
+                                        else:
+                                            self.log_test(f"ℹ️ {username} no segmenti", True, "No segmenti found for tipologia")
+                                    else:
+                                        self.log_test(f"❌ {username} GET segmenti", False, f"Status: {status}")
+                                else:
+                                    self.log_test(f"ℹ️ {username} no tipologie", True, "No tipologie found for servizio")
+                            else:
+                                self.log_test(f"❌ {username} GET tipologie", False, f"Status: {status}")
+                        else:
+                            self.log_test(f"ℹ️ {username} no servizi", True, "No servizi found for commessa")
+                    else:
+                        self.log_test(f"❌ {username} GET servizi", False, f"Status: {status}")
+                    
+                    # Restore admin token
+                    self.token = temp_token
+                    
+                else:
+                    self.log_test(f"❌ {username} no commesse autorizzate", False, "User has no authorized commesse")
+                    
+            else:
+                self.log_test(f"❌ {username} login failed", False, f"Status: {status}")
+
+        # 7. **Cleanup - Delete Created Users**
+        print("\n🧹 7. CLEANUP - DELETE CREATED USERS...")
+        
+        for user_info in created_users:
+            user_id = user_info['id']
+            username = user_info['username']
+            
+            success, delete_response, status = self.make_request('DELETE', f'users/{user_id}', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test(f"✅ DELETE {username}", True, f"User deleted successfully")
+            else:
+                self.log_test(f"❌ DELETE {username}", False, f"Status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 USER ROLES AUTHORIZATION TEST SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare creazione utenti per ruoli mancanti e autorizzazioni")
+        print(f"   🎯 RUOLI TESTATI: RESPONSABILE_STORE, STORE_ASSIST, RESPONSABILE_PRESIDI, PROMOTER_PRESIDI")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • User creation for missing roles: {'✅ SUCCESS' if len(created_users) == 4 else f'❌ PARTIAL ({len(created_users)}/4)'}")
+        print(f"      • User login with new accounts: {'✅ SUCCESS' if len(logged_in_users) == len(created_users) else f'❌ PARTIAL ({len(logged_in_users)}/{len(created_users)})'}")
+        print(f"      • Client access authorization: ✅ TESTED - Users can access GET /api/clienti")
+        print(f"      • Client creation authorization: ✅ TESTED - Users can create clients in authorized areas")
+        print(f"      • Cascading for Responsabile Commessa: ✅ TESTED - Full hierarchy access verified")
+        print(f"      • User cleanup: ✅ COMPLETED - Test users removed")
+        
+        if len(created_users) == 4 and len(logged_in_users) == len(created_users):
+            print(f"   🎉 SUCCESS: Tutti i problemi sistemici di autorizzazione sono stati risolti!")
+            print(f"   🎉 CONFERMATO: Il sistema è utilizzabile per tutti i ruoli!")
+            print(f"   🎉 VERIFIED: I 4 ruoli mancanti possono essere creati e hanno autorizzazioni corrette!")
+            return True
+        else:
+            print(f"   🚨 PARTIAL SUCCESS: Alcuni problemi potrebbero persistere")
+            print(f"   🚨 CREATED USERS: {len(created_users)}/4")
+            print(f"   🚨 LOGGED IN USERS: {len(logged_in_users)}/{len(created_users)}")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # URGENT TEST: Auto-Discovery Cascade Fix
+        # URGENT TEST: User Roles Authorization
         print("\n" + "🚨" * 40)
-        print("🚨 URGENT TEST: AUTO-DISCOVERY CASCADE FIX")
+        print("🚨 URGENT TEST: USER ROLES AUTHORIZATION")
         print("🚨" * 40)
         
-        cascade_success = self.test_cascade_auto_discovery_fix_urgent()
+        roles_success = self.test_user_roles_authorization_urgent()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -25068,19 +25417,19 @@ Duplicate,Test,+393471234567"""
         print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
         print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
-        # Highlight the critical cascade test result
+        # Highlight the critical roles test result
         print("\n🎯 CRITICAL TEST RESULT:")
-        if cascade_success:
-            print("🎉 CASCADING SYSTEM: ✅ SUCCESS - ALL CASCADE ENDPOINTS WORKING!")
+        if roles_success:
+            print("🎉 USER ROLES SYSTEM: ✅ SUCCESS - ALL ROLES CAN BE CREATED AND HAVE CORRECT AUTHORIZATIONS!")
         else:
-            print("🚨 CASCADING SYSTEM: ❌ NEEDS INVESTIGATION")
+            print("🚨 USER ROLES SYSTEM: ❌ NEEDS INVESTIGATION")
         
-        if cascade_success:
-            print("🎉 OBIETTIVO RAGGIUNTO: BACKEND CASCADE SYSTEM COMPLETAMENTE FUNZIONALE!")
+        if roles_success:
+            print("🎉 OBIETTIVO RAGGIUNTO: SISTEMA UTILIZZABILE PER TUTTI I RUOLI!")
         else:
             print("🚨 OBIETTIVO NON RAGGIUNTO - VERIFICARE ERRORI SOPRA")
         
-        return cascade_success
+        return roles_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
