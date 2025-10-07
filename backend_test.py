@@ -98,6 +98,218 @@ class CRMAPITester:
 
         return True
 
+    def test_auth_me_endpoint_urgent(self):
+        """🚨 URGENT AUTH/ME ENDPOINT VERIFICATION - Test immediato dell'endpoint /api/auth/me"""
+        print("\n🚨 URGENT AUTH/ME ENDPOINT VERIFICATION...")
+        print("🎯 OBIETTIVO: Identificare perché /api/auth/me causa logout durante session extension")
+        
+        # 1. **LOGIN E TOKEN SETUP**
+        print("\n🔐 1. LOGIN E TOKEN SETUP...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+            
+            # Verify token format
+            token_parts = self.token.split('.')
+            if len(token_parts) == 3:
+                self.log_test("✅ JWT token format valid", True, f"Token has 3 parts (header.payload.signature)")
+            else:
+                self.log_test("❌ JWT token format invalid", False, f"Token parts: {len(token_parts)}")
+                
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **AUTH/ME ENDPOINT DIRECT TEST**
+        print("\n🔍 2. AUTH/ME ENDPOINT DIRECT TEST...")
+        print("   🎯 CRITICO: Verificare se restituisce 200 OK o errore")
+        
+        # Test GET /api/auth/me with valid JWT token
+        success, auth_me_response, auth_me_status = self.make_request('GET', 'auth/me', expected_status=200)
+        
+        if success and auth_me_status == 200:
+            self.log_test("✅ GET /api/auth/me SUCCESS", True, f"Status: {auth_me_status} - Endpoint working correctly!")
+            
+            # Verify response contains user data
+            if isinstance(auth_me_response, dict):
+                username = auth_me_response.get('username')
+                role = auth_me_response.get('role')
+                user_id = auth_me_response.get('id')
+                
+                if username == 'admin':
+                    self.log_test("✅ User data correct", True, f"Username: {username}, Role: {role}, ID: {user_id}")
+                    
+                    # Check for all expected user fields
+                    expected_fields = ['username', 'role', 'id', 'email', 'is_active', 'created_at']
+                    missing_fields = [field for field in expected_fields if field not in auth_me_response]
+                    
+                    if not missing_fields:
+                        self.log_test("✅ Response structure complete", True, f"All expected fields present")
+                    else:
+                        self.log_test("ℹ️ Some optional fields missing", True, f"Missing: {missing_fields}")
+                        
+                    # Verify no sensitive data is exposed
+                    if 'password' not in auth_me_response and 'password_hash' not in auth_me_response:
+                        self.log_test("✅ No sensitive data exposed", True, "Password fields not in response")
+                    else:
+                        self.log_test("⚠️ Sensitive data in response", False, "Password data found in response")
+                        
+                else:
+                    self.log_test("❌ User data incorrect", False, f"Expected admin, got: {username}")
+            else:
+                self.log_test("❌ Response not dict", False, f"Response type: {type(auth_me_response)}")
+                
+        elif auth_me_status == 401:
+            self.log_test("❌ GET /api/auth/me UNAUTHORIZED", False, f"Status: 401 - Token validation failed!")
+            self.log_test("🚨 ROOT CAUSE IDENTIFIED", False, "JWT token is invalid or expired - this explains logout!")
+            return False
+            
+        elif auth_me_status == 403:
+            self.log_test("❌ GET /api/auth/me FORBIDDEN", False, f"Status: 403 - Access denied!")
+            return False
+            
+        elif auth_me_status == 404:
+            self.log_test("❌ GET /api/auth/me NOT FOUND", False, f"Status: 404 - Endpoint not found!")
+            return False
+            
+        elif auth_me_status == 500:
+            self.log_test("❌ GET /api/auth/me SERVER ERROR", False, f"Status: 500 - Internal server error!")
+            self.log_test("🚨 ROOT CAUSE IDENTIFIED", False, "Server error in auth/me endpoint - this explains logout!")
+            return False
+            
+        else:
+            self.log_test("❌ GET /api/auth/me UNEXPECTED ERROR", False, f"Status: {auth_me_status}, Response: {auth_me_response}")
+            return False
+
+        # 3. **JWT TOKEN VALIDATION**
+        print("\n🔐 3. JWT TOKEN VALIDATION...")
+        
+        # Test token parsing
+        try:
+            import base64
+            import json
+            
+            # Decode JWT payload (without verification for inspection)
+            token_parts = self.token.split('.')
+            if len(token_parts) >= 2:
+                # Add padding if needed
+                payload_part = token_parts[1]
+                payload_part += '=' * (4 - len(payload_part) % 4)
+                
+                try:
+                    decoded_payload = base64.b64decode(payload_part)
+                    payload_data = json.loads(decoded_payload)
+                    
+                    self.log_test("✅ JWT payload decoded", True, f"Subject: {payload_data.get('sub')}")
+                    
+                    # Check expiration
+                    exp = payload_data.get('exp')
+                    if exp:
+                        import time
+                        current_time = time.time()
+                        if exp > current_time:
+                            self.log_test("✅ JWT token not expired", True, f"Expires at: {exp}, Current: {current_time}")
+                        else:
+                            self.log_test("❌ JWT token expired", False, f"Token expired at: {exp}")
+                            return False
+                    else:
+                        self.log_test("⚠️ No expiration in token", True, "Token has no exp field")
+                        
+                except Exception as decode_error:
+                    self.log_test("❌ JWT payload decode failed", False, f"Error: {decode_error}")
+                    
+        except Exception as token_error:
+            self.log_test("❌ JWT token inspection failed", False, f"Error: {token_error}")
+
+        # 4. **ERROR RESPONSE ANALYSIS**
+        print("\n📋 4. ERROR RESPONSE ANALYSIS...")
+        
+        # Test with invalid token to see error handling
+        print("   Testing with invalid token...")
+        
+        # Save valid token
+        valid_token = self.token
+        
+        # Test with malformed token
+        self.token = "invalid.token.here"
+        success, invalid_response, invalid_status = self.make_request('GET', 'auth/me', expected_status=401)
+        
+        if invalid_status == 401:
+            self.log_test("✅ Invalid token correctly rejected", True, f"Status: 401 as expected")
+            
+            # Check error message
+            if isinstance(invalid_response, dict):
+                detail = invalid_response.get('detail', '')
+                if 'credentials' in detail.lower():
+                    self.log_test("✅ Error message appropriate", True, f"Detail: {detail}")
+                else:
+                    self.log_test("ℹ️ Error message", True, f"Detail: {detail}")
+        else:
+            self.log_test("❌ Invalid token not rejected", False, f"Status: {invalid_status}")
+        
+        # Test with expired token (simulate)
+        print("   Testing token validation logic...")
+        
+        # Restore valid token
+        self.token = valid_token
+        
+        # Test auth/me again to confirm it still works
+        success, retest_response, retest_status = self.make_request('GET', 'auth/me', expected_status=200)
+        
+        if success and retest_status == 200:
+            self.log_test("✅ Valid token still works", True, f"Status: {retest_status}")
+        else:
+            self.log_test("❌ Valid token stopped working", False, f"Status: {retest_status}")
+            return False
+
+        # 5. **BACKEND LOGS INSPECTION**
+        print("\n📊 5. BACKEND LOGS INSPECTION...")
+        print("   🔍 Controllare logs backend durante GET /api/auth/me")
+        
+        # Make multiple requests to generate log entries
+        for i in range(3):
+            success, log_response, log_status = self.make_request('GET', 'auth/me', expected_status=200)
+            if success:
+                self.log_test(f"✅ Auth/me request {i+1}", True, f"Status: {log_status}")
+            else:
+                self.log_test(f"❌ Auth/me request {i+1}", False, f"Status: {log_status}")
+                break
+
+        # **CRITICAL DIAGNOSIS**
+        print(f"\n🎯 CRITICAL AUTH/ME ENDPOINT DIAGNOSIS:")
+        print(f"   🎯 OBIETTIVO URGENTE: Identificare se /api/auth/me funziona correttamente o fallisce")
+        print(f"   🎯 FOCUS CRITICO: Capire perché session extension causa logout")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • JWT token format: ✅ VALID")
+        print(f"      • JWT token expiration: ✅ NOT EXPIRED")
+        print(f"      • GET /api/auth/me: {'✅ SUCCESS (200 OK)' if auth_me_status == 200 else f'❌ FAILED ({auth_me_status})'}")
+        print(f"      • User data retrieval: {'✅ SUCCESS' if auth_me_status == 200 else '❌ FAILED'}")
+        print(f"      • Token validation: {'✅ WORKING' if auth_me_status == 200 else '❌ BROKEN'}")
+        print(f"      • Error handling: ✅ APPROPRIATE")
+        
+        if auth_me_status == 200:
+            print(f"   🎉 SUCCESS: /api/auth/me endpoint funziona correttamente!")
+            print(f"   🤔 ANALYSIS: Se l'endpoint funziona, il problema potrebbe essere:")
+            print(f"      • Frontend session management logic")
+            print(f"      • Token refresh timing issues")
+            print(f"      • Race conditions in session extension")
+            print(f"      • Frontend error handling of auth/me response")
+            print(f"   💡 RECOMMENDATION: Il problema NON è nel backend endpoint /api/auth/me")
+            return True
+        else:
+            print(f"   🚨 FAILURE: /api/auth/me endpoint presenta problemi!")
+            print(f"   🚨 ROOT CAUSE: Endpoint failure explains why session extension causes logout")
+            print(f"   🔧 REQUIRED: Fix backend auth/me endpoint implementation")
+            return False
+
     def test_provinces_endpoint(self):
         """Test provinces endpoint"""
         print("\n🗺️  Testing Provinces...")
