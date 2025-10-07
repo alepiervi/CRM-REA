@@ -25226,31 +25226,4 @@ def main():
 
 if __name__ == "__main__":
     tester = CRMAPITester()
-    
-    print("🚨 URGENT AUTH/ME ENDPOINT VERIFICATION")
-    print("🎯 FOCUS: Test immediato dell'endpoint /api/auth/me per identificare logout issue")
-    print(f"🌐 Base URL: {tester.base_url}")
-    print("🔍 OBIETTIVO: Identificare perché /api/auth/me causa logout durante session extension")
-    
-    # Run urgent auth/me test
-    success = tester.run_urgent_auth_me_test()
-    
-    # Final summary
-    print(f"\n{'='*80}")
-    print(f"📊 FINAL TEST SUMMARY")
-    print(f"{'='*80}")
-    print(f"Tests run: {tester.tests_run}")
-    print(f"Tests passed: {tester.tests_passed}")
-    print(f"Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
-    print(f"Fix verification: {'✅ SUCCESS' if success else '❌ FAILED'}")
-    
-    if success and tester.tests_passed == tester.tests_run:
-        print("\n🎉 OBIETTIVO RAGGIUNTO: 100% SUCCESS RATE!")
-        print("🎉 TUTTE LE CORREZIONI VERIFICATE E FUNZIONANTI!")
-        print("🎉 SISTEMA COMPLETAMENTE OPERATIVO!")
-        sys.exit(0)
-    else:
-        failed_count = tester.tests_run - tester.tests_passed
-        print(f"\n🚨 OBIETTIVO NON RAGGIUNTO: {failed_count} test ancora falliti")
-        print("🚨 ALCUNE CORREZIONI RICHIEDONO ULTERIORE ATTENZIONE")
-        sys.exit(1)
+    tester.run_all_tests()
