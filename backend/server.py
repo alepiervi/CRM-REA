@@ -13027,26 +13027,14 @@ async def get_servizi_autorizzati_by_commessa(
         
         logging.info(f"✅ CASCADE: Commessa found: {commessa.get('nome')}")
         
-        # Get authorized servizi IDs
-        authorized_servizi_ids = commessa.get("servizi_autorizzati", [])
-        logging.info(f"🔗 CASCADE: Authorized servizi IDs: {authorized_servizi_ids}")
+        # AUTO-DISCOVERY: Always find all servizi for this commessa (no manual configuration needed)
+        logging.info("🔄 CASCADE: Using auto-discovery to find all active servizi for this commessa")
+        servizi_docs = await db.servizi.find({
+            "commessa_id": commessa_id,
+            "is_active": True
+        }).to_list(length=None)
         
-        if not authorized_servizi_ids:
-            # FALLBACK: If no specific servizi_autorizzati, find all servizi for this commessa
-            logging.info("📭 CASCADE: No servizi_autorizzati found, using fallback to find all servizi for this commessa")
-            servizi_docs = await db.servizi.find({
-                "commessa_id": commessa_id,
-                "is_active": True
-            }).to_list(length=None)
-            
-            logging.info(f"🔄 CASCADE: Fallback found {len(servizi_docs)} active servizi")
-        else:
-            # Fetch authorized servizi
-            logging.info(f"🔍 CASCADE: Querying servizi with authorized IDs: {authorized_servizi_ids}")
-            servizi_docs = await db.servizi.find({
-                "id": {"$in": authorized_servizi_ids},
-                "is_active": True
-            }).to_list(length=None)
+        logging.info(f"🔄 CASCADE: Auto-discovery found {len(servizi_docs)} active servizi")
             
             logging.info(f"📊 CASCADE: Found {len(servizi_docs)} authorized servizi")
         
