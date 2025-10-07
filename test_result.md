@@ -791,9 +791,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Session Extension Frontend Bug - Response Handling Fix"
+    - "Frontend Clienti Excel Export and Advanced Filters UI Testing"
+    - "New Client Excel Export and Advanced Filters Testing"
   stuck_tasks:
-    - "Session Extension Frontend Bug - Response Handling Fix"
+    - "Frontend Clienti Excel Export and Advanced Filters UI Testing"
   test_all: false
   test_priority: "critical_first"
   completed_tasks:
