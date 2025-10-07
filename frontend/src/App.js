@@ -12317,7 +12317,13 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
 
   const createSubAgenzia = async (subAgenziaData) => {
     try {
-      const response = await axios.post(`${API}/sub-agenzie`, subAgenziaData);
+      // Ensure JWT token is included in headers
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      };
+      
+      const response = await axios.post(`${API}/sub-agenzie`, subAgenziaData, { headers });
       setSubAgenzie([response.data, ...subAgenzie]);
       toast({
         title: "Successo",
