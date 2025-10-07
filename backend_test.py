@@ -24239,15 +24239,15 @@ Duplicate,Test,+393471234567"""
         print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
         print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
-        # Highlight the critical client creation test result
+        # Highlight the critical cascade test result
         print("\n🎯 CRITICAL TEST RESULT:")
-        if client_creation_success:
-            print("🎉 CLIENT CREATION SYSTEM: ✅ SUCCESS - SAMPLE CLIENTS CREATED!")
+        if cascade_success:
+            print("🎉 CASCADING SYSTEM: ✅ SUCCESS - ALL CASCADE ENDPOINTS WORKING!")
         else:
-            print("🚨 CLIENT CREATION SYSTEM: ❌ NEEDS IMPROVEMENT")
+            print("🚨 CASCADING SYSTEM: ❌ NEEDS INVESTIGATION")
         
-        if client_creation_success:
-            print("🎉 OBIETTIVO RAGGIUNTO: CLIENTI DI ESEMPIO CREATI PER COMMESSE DIVERSE!")
+        if cascade_success:
+            print("🎉 OBIETTIVO RAGGIUNTO: BACKEND CASCADE SYSTEM COMPLETAMENTE FUNZIONALE!")
         else:
             print("🚨 OBIETTIVO NON RAGGIUNTO - VERIFICARE ERRORI SOPRA")
         
