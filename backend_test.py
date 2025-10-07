@@ -21984,6 +21984,39 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def run_urgent_auth_me_test(self):
+        """🚨 URGENT: Run only the critical auth/me endpoint test"""
+        print("🚨 URGENT AUTH/ME ENDPOINT VERIFICATION")
+        print("🎯 FOCUS: Test immediato dell'endpoint /api/auth/me per identificare logout issue")
+        print(f"📡 Base URL: {self.base_url}")
+        
+        try:
+            print(f"\n{'='*80}")
+            print(f"🚨 URGENT AUTH/ME ENDPOINT TEST")
+            print(f"{'='*80}")
+            result = self.test_auth_me_endpoint_urgent()
+            
+            # Print final summary
+            print(f"\n{'='*80}")
+            print(f"🏁 URGENT TEST SUMMARY")
+            print(f"{'='*80}")
+            print(f"Total tests run: {self.tests_run}")
+            print(f"Tests passed: {self.tests_passed}")
+            print(f"Tests failed: {self.tests_run - self.tests_passed}")
+            print(f"Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+            
+            if result:
+                print("✅ AUTH/ME ENDPOINT WORKING - Problem likely in frontend session management")
+            else:
+                print("❌ AUTH/ME ENDPOINT FAILING - Root cause of logout issue identified")
+            
+            return result
+            
+        except Exception as e:
+            self.log_test("Auth/Me Test Suite", False, f"Exception: {str(e)}")
+            print(f"🚨 CRITICAL ERROR: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
