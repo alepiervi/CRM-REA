@@ -25913,7 +25913,7 @@ Duplicate,Test,+393471234567"""
         if status == 200 or status == 201:
             print(f"   🎉 SUCCESS: PROBLEMA COMPLETAMENTE RISOLTO!")
             print(f"   🎉 CONFERMATO: Il Responsabile Commessa ora può creare clienti oltre che vederli!")
-            print(f"   🎉 VERIFICA SUCCESS: POST /api/clienti ritorna 201 Created (non 403 Forbidden)")
+            print(f"   🎉 VERIFICA SUCCESS: POST /api/clienti ritorna {status} Success (non 403 Forbidden)")
             print(f"   🎉 OBIETTIVO RAGGIUNTO: 'Responsabile commessa vede i clienti ma non li può creare' è stato RISOLTO!")
             return True
         else:
