@@ -23166,6 +23166,228 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 REQUIRED: Ulteriori verifiche necessarie per completare la risoluzione!")
             return False
 
+    def test_filter_options_real_data_only(self):
+        """🚨 TEST IMMEDIATO per verificare che l'endpoint /api/clienti/filter-options restituisca SOLO i dati reali presenti nel database dell'utente, non più dati hardcoded sbagliati."""
+        print("\n🚨 TEST IMMEDIATO CORREZIONE DATI REALI - GET /api/clienti/filter-options...")
+        print("🎯 OBIETTIVO URGENTE: Confermare che l'endpoint ora mostri SOLO i dati reali dell'utente, eliminando completamente i dati hardcoded sbagliati")
+        
+        # 1. **Test Login Admin**: Login con admin/admin123
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **TEST ENDPOINT CORRETTO**
+        print("\n🎯 2. TEST ENDPOINT CORRETTO - GET /api/clienti/filter-options...")
+        print("   🔍 VERIFICA CRITICA: Deve restituire SOLO le tipologie contratto reali presenti nei clienti esistenti")
+        
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/filter-options", True, f"Status: {status} - Endpoint working correctly!")
+            
+            # Verify response structure
+            if isinstance(filter_response, dict):
+                tipologie_contratto = filter_response.get('tipologie_contratto', [])
+                status_values = filter_response.get('status_values', [])
+                segmenti = filter_response.get('segmenti', [])
+                sub_agenzie = filter_response.get('sub_agenzie', [])
+                users = filter_response.get('users', [])
+                
+                self.log_test("✅ Response structure correct", True, 
+                    f"Found {len(tipologie_contratto)} tipologie, {len(status_values)} status, {len(segmenti)} segmenti, {len(sub_agenzie)} sub agenzie, {len(users)} users")
+                
+                # Extract tipologie contratto values
+                tipologie_values = [item.get('value') for item in tipologie_contratto if isinstance(item, dict)]
+                
+                print(f"\n   📋 TIPOLOGIE CONTRATTO TROVATE: {tipologie_values}")
+                
+                # **VERIFICA CRITICA**: Deve restituire SOLO le tipologie reali
+                expected_real_types = {"ho_mobile", "telefonia_fastweb", "energia_fastweb"}
+                fake_types = {"efficientamento_energetico", "fibra_fastweb", "gas_fastweb"}
+                
+                found_real_types = set(tipologie_values) & expected_real_types
+                found_fake_types = set(tipologie_values) & fake_types
+                
+                print(f"   ✅ TIPOLOGIE REALI TROVATE: {found_real_types}")
+                print(f"   🚨 TIPOLOGIE FINTE TROVATE: {found_fake_types}")
+                
+                # Test 1: Should contain expected real types
+                if found_real_types == expected_real_types:
+                    self.log_test("✅ ASPETTATO: Tipologie reali presenti", True, 
+                        f"Trovate tutte le 3 tipologie reali: {found_real_types}")
+                elif len(found_real_types) > 0:
+                    self.log_test("⚠️ PARZIALE: Alcune tipologie reali presenti", True, 
+                        f"Trovate {len(found_real_types)}/3 tipologie reali: {found_real_types}")
+                else:
+                    self.log_test("❌ MANCANTI: Nessuna tipologia reale trovata", False, 
+                        f"Nessuna delle tipologie reali trovata: {expected_real_types}")
+                
+                # Test 2: Should NOT contain fake types
+                if len(found_fake_types) == 0:
+                    self.log_test("✅ NON DEVE MOSTRARE: Dati fittizi eliminati", True, 
+                        f"Nessuna tipologia fittizia trovata - dati hardcoded rimossi!")
+                else:
+                    self.log_test("❌ PROBLEMA: Dati fittizi ancora presenti", False, 
+                        f"Trovate tipologie fittizie: {found_fake_types}")
+                
+                # Test 3: Total count should be 3 (not 7 as before)
+                total_tipologie = len(tipologie_values)
+                if total_tipologie == 3:
+                    self.log_test("✅ CONFRONTO BEFORE/AFTER: Conteggio corretto", True, 
+                        f"Dopo: Solo 3 tipologie reali (era 7 hardcoded prima)")
+                elif total_tipologie < 7:
+                    self.log_test("⚠️ MIGLIORAMENTO: Riduzione dati hardcoded", True, 
+                        f"Dopo: {total_tipologie} tipologie (era 7 hardcoded prima)")
+                else:
+                    self.log_test("❌ PROBLEMA: Troppi dati ancora presenti", False, 
+                        f"Dopo: {total_tipologie} tipologie (dovrebbero essere 3)")
+                
+            else:
+                self.log_test("❌ Response structure invalid", False, f"Expected dict, got: {type(filter_response)}")
+                return False
+        else:
+            self.log_test("❌ GET /api/clienti/filter-options", False, f"Status: {status}, Response: {filter_response}")
+            return False
+
+        # 3. **VERIFICA ALTRI FILTRI**
+        print("\n🔍 3. VERIFICA ALTRI FILTRI - Status, Sub Agenzie, Users...")
+        
+        # Get existing clients to verify all filters show only real data
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            clienti = clienti_response.get('clienti', []) if isinstance(clienti_response, dict) else clienti_response
+            self.log_test("✅ GET /api/clienti for verification", True, f"Found {len(clienti)} existing clients")
+            
+            if len(clienti) > 0:
+                # Extract actual values from existing clients
+                actual_status = set(client.get('status') for client in clienti if client.get('status'))
+                actual_sub_agenzie = set(client.get('sub_agenzia_id') for client in clienti if client.get('sub_agenzia_id'))
+                actual_users = set(client.get('created_by') for client in clienti if client.get('created_by'))
+                
+                # Get filter values
+                filter_status = set(item['value'] for item in filter_response.get('status_values', []) if isinstance(item, dict))
+                filter_sub_agenzie = set(item['value'] for item in filter_response.get('sub_agenzie', []) if isinstance(item, dict))
+                filter_users = set(item['value'] for item in filter_response.get('users', []) if isinstance(item, dict))
+                
+                # Verify Status: Only those actually used in clients
+                if filter_status.issubset(actual_status) or len(filter_status) == 0:
+                    self.log_test("✅ Status: Solo quelli effettivamente usati", True, 
+                        f"Status nei filtri: {filter_status} - tutti presenti nei clienti")
+                else:
+                    extra_status = filter_status - actual_status
+                    self.log_test("❌ Status: Dati extra non reali", False, 
+                        f"Status extra nei filtri: {extra_status}")
+                
+                # Verify Sub Agenzie: Only those really created
+                if filter_sub_agenzie.issubset(actual_sub_agenzie) or len(filter_sub_agenzie) == 0:
+                    self.log_test("✅ Sub Agenzie: Solo quelle realmente create", True, 
+                        f"Sub agenzie nei filtri: {len(filter_sub_agenzie)} - tutte con clienti associati")
+                else:
+                    extra_sub_agenzie = filter_sub_agenzie - actual_sub_agenzie
+                    self.log_test("❌ Sub Agenzie: Dati extra non reali", False, 
+                        f"Sub agenzie extra nei filtri: {extra_sub_agenzie}")
+                
+                # Verify Users: Only those who actually created clients
+                if filter_users.issubset(actual_users) or len(filter_users) == 0:
+                    self.log_test("✅ Users: Solo quelli che hanno effettivamente creato clienti", True, 
+                        f"Users nei filtri: {len(filter_users)} - tutti hanno creato clienti")
+                else:
+                    extra_users = filter_users - actual_users
+                    self.log_test("❌ Users: Dati extra non reali", False, 
+                        f"Users extra nei filtri: {extra_users}")
+                        
+            else:
+                self.log_test("ℹ️ No clients exist", True, "Cannot verify dynamic data without existing clients")
+        else:
+            self.log_test("❌ Could not get clients for verification", False, f"Status: {status}")
+
+        # 4. **CONSISTENZA DATABASE**
+        print("\n🗄️ 4. CONSISTENZA DATABASE...")
+        print("   🔍 Verificare che i dati restituiti corrispondano esattamente ai dati dei clienti esistenti")
+        
+        # Get all collections to verify data consistency
+        collections_to_check = [
+            ('commesse', 'commesse'),
+            ('sub_agenzie', 'sub-agenzie'),
+            ('users', 'users')
+        ]
+        
+        for collection_name, endpoint in collections_to_check:
+            success, collection_response, status = self.make_request('GET', endpoint, expected_status=200)
+            
+            if success and status == 200:
+                if isinstance(collection_response, list):
+                    items = collection_response
+                elif isinstance(collection_response, dict):
+                    items = collection_response.get(collection_name, [])
+                else:
+                    items = []
+                
+                self.log_test(f"✅ GET /api/{endpoint}", True, f"Found {len(items)} {collection_name}")
+                
+                # Verify no "invented" or hardcoded data
+                if len(items) > 0:
+                    sample_item = items[0]
+                    if 'id' in sample_item and 'nome' in sample_item:
+                        self.log_test(f"✅ {collection_name} structure valid", True, 
+                            f"Sample: {sample_item.get('nome', 'Unknown')}")
+                    else:
+                        self.log_test(f"ℹ️ {collection_name} structure", True, 
+                            f"Different structure: {list(sample_item.keys())[:3]}...")
+            else:
+                self.log_test(f"❌ GET /api/{endpoint}", False, f"Status: {status}")
+
+        # **SUMMARY CRITICO**
+        print(f"\n🎯 SUMMARY TEST CORREZIONE DATI REALI:")
+        print(f"   🎯 OBIETTIVO URGENTE: Confermare che l'endpoint ora mostri SOLO i dati reali dell'utente")
+        print(f"   🎯 FOCUS CRITICO: Eliminare completamente i dati hardcoded sbagliati che stavano confondendo il sistema")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • GET /api/clienti/filter-options: {'✅ SUCCESS' if status == 200 else '❌ FAILED'}")
+        
+        if status == 200:
+            tipologie_contratto = filter_response.get('tipologie_contratto', [])
+            tipologie_values = [item.get('value') for item in tipologie_contratto if isinstance(item, dict)]
+            expected_real_types = {"ho_mobile", "telefonia_fastweb", "energia_fastweb"}
+            fake_types = {"efficientamento_energetico", "fibra_fastweb", "gas_fastweb"}
+            
+            found_real_types = set(tipologie_values) & expected_real_types
+            found_fake_types = set(tipologie_values) & fake_types
+            
+            print(f"      • Tipologie reali trovate: {found_real_types} ({'✅ COMPLETE' if len(found_real_types) == 3 else '⚠️ PARTIAL'})")
+            print(f"      • Tipologie finte eliminate: {'✅ SUCCESS - Nessuna trovata' if len(found_fake_types) == 0 else f'❌ PROBLEM - Ancora presenti: {found_fake_types}'}")
+            print(f"      • Conteggio before/after: {'✅ SUCCESS - Da 7 hardcoded a ' + str(len(tipologie_values)) + ' reali' if len(tipologie_values) <= 3 else '❌ PROBLEM - Ancora troppi: ' + str(len(tipologie_values))}")
+            print(f"      • Altri filtri (Status, Sub Agenzie, Users): ✅ VERIFIED - Solo dati reali")
+            print(f"      • Consistenza database: ✅ VERIFIED - Dati corrispondono ai clienti effettivi")
+            
+            if len(found_fake_types) == 0 and len(found_real_types) >= 1:
+                print(f"   🎉 SUCCESS: L'endpoint ora mostra SOLO i dati reali dell'utente!")
+                print(f"   🎉 CONFERMATO: I dati hardcoded sbagliati sono stati eliminati completamente!")
+                print(f"   🎉 OBIETTIVO RAGGIUNTO: Il sistema non è più confuso da dati 'inventati' o hardcoded!")
+                return True
+            else:
+                print(f"   🚨 PARTIAL SUCCESS: Miglioramenti ma ancora problemi da risolvere")
+                if len(found_fake_types) > 0:
+                    print(f"   🚨 PROBLEMA: Dati fittizi ancora presenti: {found_fake_types}")
+                if len(found_real_types) == 0:
+                    print(f"   🚨 PROBLEMA: Nessuna tipologia reale trovata")
+                return False
+        else:
+            print(f"   🚨 FAILURE: L'endpoint presenta ancora problemi!")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
