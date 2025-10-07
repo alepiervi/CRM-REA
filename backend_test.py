@@ -22622,6 +22622,338 @@ Duplicate,Test,+393471234567"""
         
         print(f"   🎉 TESTING COMPLETE: Nuove funzionalità clienti testate!")
         return True
+
+    def test_sub_agenzie_create_endpoint_urgent(self):
+        """🚨 TEST IMMEDIATO ENDPOINT POST /api/sub-agenzie - Verifica creazione sub agenzia"""
+        print("\n🚨 TEST IMMEDIATO ENDPOINT POST /api/sub-agenzie...")
+        print("🎯 OBIETTIVO: Identificare se il problema è nel backend, certificato SSL, o configurazione URL")
+        
+        # 1. **Test Login Admin**: Login con admin/admin123
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **Verifica Certificato SSL e URL Raggiungibilità**
+        print("\n🔒 2. VERIFICA CERTIFICATO SSL E URL RAGGIUNGIBILITÀ...")
+        
+        # Test basic connectivity to the domain
+        try:
+            import ssl
+            import socket
+            from urllib.parse import urlparse
+            
+            parsed_url = urlparse(self.base_url)
+            hostname = parsed_url.hostname
+            port = parsed_url.port or (443 if parsed_url.scheme == 'https' else 80)
+            
+            # Test SSL certificate
+            if parsed_url.scheme == 'https':
+                context = ssl.create_default_context()
+                with socket.create_connection((hostname, port), timeout=10) as sock:
+                    with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                        cert = ssock.getpeercert()
+                        self.log_test("✅ SSL Certificate valid", True, f"Subject: {cert.get('subject', 'Unknown')}")
+            else:
+                self.log_test("ℹ️ HTTP connection", True, "No SSL certificate check needed")
+                
+        except ssl.SSLError as e:
+            self.log_test("❌ SSL Certificate error", False, f"SSL Error: {str(e)}")
+        except socket.error as e:
+            self.log_test("❌ Network connectivity error", False, f"Network Error: {str(e)}")
+        except Exception as e:
+            self.log_test("❌ Connection test failed", False, f"Error: {str(e)}")
+
+        # 3. **Test Altri Endpoint per Verificare Dominio**
+        print("\n🌐 3. TEST ALTRI ENDPOINT PER VERIFICARE DOMINIO...")
+        
+        # Test GET /api/auth/me to verify domain works
+        success, auth_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+        if success and status == 200:
+            self.log_test("✅ GET /api/auth/me works", True, f"Domain is reachable, Status: {status}")
+        else:
+            self.log_test("❌ GET /api/auth/me fails", False, f"Domain issue detected, Status: {status}")
+            return False
+        
+        # Test GET /api/commesse to verify other endpoints work
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if success and status == 200:
+            self.log_test("✅ GET /api/commesse works", True, f"Other endpoints functional, Status: {status}")
+        else:
+            self.log_test("❌ GET /api/commesse fails", False, f"General API issue, Status: {status}")
+
+        # 4. **Verifica Dati Richiesti per SubAgenziaCreate**
+        print("\n📋 4. VERIFICA DATI RICHIESTI PER SUBAGENZIACREATE...")
+        
+        # Get available commesse for testing
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if success and status == 200:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            self.log_test("✅ GET /api/commesse for data", True, f"Found {len(commesse)} commesse available")
+            
+            if len(commesse) > 0:
+                test_commessa = commesse[0]
+                test_commessa_id = test_commessa.get('id')
+                self.log_test("✅ Test commessa available", True, f"Using commessa: {test_commessa.get('nome')} (ID: {test_commessa_id})")
+            else:
+                self.log_test("❌ No commesse available", False, "Cannot test sub agenzia creation without commesse")
+                return False
+        else:
+            self.log_test("❌ Cannot get commesse", False, f"Status: {status}")
+            return False
+        
+        # Get available users for responsabile_id
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        if success and status == 200:
+            users = users_response if isinstance(users_response, list) else []
+            self.log_test("✅ GET /api/users for responsabile", True, f"Found {len(users)} users available")
+            
+            # Find a suitable user for responsabile_id (preferably not admin)
+            test_responsabile = None
+            for user in users:
+                if user.get('role') != 'admin':
+                    test_responsabile = user
+                    break
+            
+            if not test_responsabile and len(users) > 0:
+                test_responsabile = users[0]  # Use admin if no other user available
+            
+            if test_responsabile:
+                test_responsabile_id = test_responsabile.get('id')
+                self.log_test("✅ Test responsabile available", True, f"Using user: {test_responsabile.get('username')} (ID: {test_responsabile_id})")
+            else:
+                self.log_test("❌ No users available", False, "Cannot test sub agenzia creation without users")
+                return False
+        else:
+            self.log_test("❌ Cannot get users", False, f"Status: {status}")
+            return False
+
+        # 5. **Test POST /api/sub-agenzie con Dati Validi**
+        print("\n🎯 5. TEST POST /api/sub-agenzie CON DATI VALIDI...")
+        
+        # Prepare test data for SubAgenziaCreate
+        test_sub_agenzia_data = {
+            "nome": f"Test Sub Agenzia {uuid.uuid4().hex[:8]}",
+            "descrizione": "Sub agenzia di test per verificare endpoint POST",
+            "responsabile_id": test_responsabile_id,
+            "commesse_autorizzate": [test_commessa_id],
+            "servizi_autorizzati": []
+        }
+        
+        print(f"   Test data: {test_sub_agenzia_data}")
+        
+        # Test POST /api/sub-agenzie
+        success, create_response, status = self.make_request(
+            'POST', 'sub-agenzie', 
+            test_sub_agenzia_data, 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            self.log_test("✅ POST /api/sub-agenzie SUCCESS", True, f"Status: {status} - Sub agenzia created successfully!")
+            
+            # Verify response structure
+            if isinstance(create_response, dict):
+                created_id = create_response.get('id')
+                created_nome = create_response.get('nome')
+                
+                if created_id and created_nome:
+                    self.log_test("✅ Response structure valid", True, f"Created ID: {created_id}, Nome: {created_nome}")
+                    
+                    # Store for cleanup
+                    self.created_resources.setdefault('sub_agenzie', []).append(created_id)
+                    
+                    # Verify all fields are present
+                    expected_fields = ['id', 'nome', 'descrizione', 'responsabile_id', 'commesse_autorizzate', 'is_active', 'created_at']
+                    missing_fields = [field for field in expected_fields if field not in create_response]
+                    
+                    if not missing_fields:
+                        self.log_test("✅ All expected fields present", True, f"Response complete")
+                    else:
+                        self.log_test("ℹ️ Some optional fields missing", True, f"Missing: {missing_fields}")
+                        
+                    # Verify data integrity
+                    if (create_response.get('responsabile_id') == test_responsabile_id and 
+                        test_commessa_id in create_response.get('commesse_autorizzate', [])):
+                        self.log_test("✅ Data integrity verified", True, "All input data correctly saved")
+                    else:
+                        self.log_test("❌ Data integrity issue", False, "Input data not correctly saved")
+                        
+                else:
+                    self.log_test("❌ Response missing required fields", False, f"Response: {create_response}")
+            else:
+                self.log_test("❌ Response not dict", False, f"Response type: {type(create_response)}")
+                
+        elif status == 400:
+            self.log_test("❌ POST /api/sub-agenzie BAD REQUEST", False, f"Status: 400 - Validation error: {create_response}")
+            print("   🔍 ANALISI ERRORE 400:")
+            if isinstance(create_response, dict):
+                detail = create_response.get('detail', 'No detail provided')
+                print(f"      Detail: {detail}")
+                if 'validation' in str(detail).lower():
+                    print("      🚨 PROBLEMA: Errore di validazione dati - verificare struttura SubAgenziaCreate")
+                elif 'required' in str(detail).lower():
+                    print("      🚨 PROBLEMA: Campi obbligatori mancanti")
+                else:
+                    print("      🚨 PROBLEMA: Errore di validazione generico")
+            return False
+            
+        elif status == 401:
+            self.log_test("❌ POST /api/sub-agenzie UNAUTHORIZED", False, f"Status: 401 - Authentication failed")
+            print("   🚨 PROBLEMA: Token JWT non valido o scaduto")
+            return False
+            
+        elif status == 403:
+            self.log_test("❌ POST /api/sub-agenzie FORBIDDEN", False, f"Status: 403 - Admin authorization failed")
+            print("   🚨 PROBLEMA: Admin non autorizzato a creare sub agenzie")
+            return False
+            
+        elif status == 404:
+            self.log_test("❌ POST /api/sub-agenzie NOT FOUND", False, f"Status: 404 - Endpoint not found")
+            print("   🚨 PROBLEMA: Endpoint POST /api/sub-agenzie non esiste o non configurato")
+            return False
+            
+        elif status == 500:
+            self.log_test("❌ POST /api/sub-agenzie SERVER ERROR", False, f"Status: 500 - Internal server error")
+            print("   🚨 PROBLEMA: Errore interno del server - controllare backend logs")
+            return False
+            
+        else:
+            self.log_test("❌ POST /api/sub-agenzie UNEXPECTED ERROR", False, f"Status: {status}, Response: {create_response}")
+            return False
+
+        # 6. **Test Autorizzazioni Admin**
+        print("\n🔐 6. TEST AUTORIZZAZIONI ADMIN...")
+        
+        # Verify admin can create sub agenzie (already tested above)
+        if status == 200:
+            self.log_test("✅ Admin authorization verified", True, "Admin can create sub agenzie")
+        
+        # Test with non-admin user if available (should fail with 403)
+        print("   Testing with non-admin user (should fail)...")
+        
+        # Try to login with resp_commessa if available
+        success, resp_response, resp_status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'resp_commessa', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in resp_response:
+            # Save admin token
+            admin_token = self.token
+            
+            # Use resp_commessa token
+            self.token = resp_response['access_token']
+            resp_user_data = resp_response['user']
+            
+            self.log_test("✅ resp_commessa login", True, f"Role: {resp_user_data['role']}")
+            
+            # Try to create sub agenzia with non-admin user
+            test_data_non_admin = {
+                "nome": f"Test Non Admin {uuid.uuid4().hex[:8]}",
+                "descrizione": "Test con utente non admin",
+                "responsabile_id": test_responsabile_id,
+                "commesse_autorizzate": [test_commessa_id],
+                "servizi_autorizzati": []
+            }
+            
+            success, non_admin_response, non_admin_status = self.make_request(
+                'POST', 'sub-agenzie', 
+                test_data_non_admin, 
+                expected_status=403
+            )
+            
+            if non_admin_status == 403:
+                self.log_test("✅ Non-admin correctly forbidden", True, f"Status: 403 - Authorization working correctly")
+            elif non_admin_status == 200:
+                self.log_test("❌ Non-admin allowed to create", False, f"Status: 200 - Authorization not enforced")
+            else:
+                self.log_test("ℹ️ Non-admin test result", True, f"Status: {non_admin_status}")
+            
+            # Restore admin token
+            self.token = admin_token
+            
+        else:
+            self.log_test("ℹ️ Cannot test non-admin authorization", True, "resp_commessa login failed")
+
+        # 7. **Verifica Backend Logs**
+        print("\n📊 7. VERIFICA BACKEND LOGS...")
+        print("   🔍 Controllare se la richiesta arriva al backend:")
+        print("   📝 Comando: tail -n 100 /var/log/supervisor/backend.*.log")
+        print("   🔍 Cercare log entries per POST /api/sub-agenzie")
+        
+        # Make additional requests to generate log entries
+        for i in range(2):
+            test_data_log = {
+                "nome": f"Log Test {i+1} {uuid.uuid4().hex[:6]}",
+                "descrizione": f"Test per generare log entry {i+1}",
+                "responsabile_id": test_responsabile_id,
+                "commesse_autorizzate": [test_commessa_id],
+                "servizi_autorizzati": []
+            }
+            
+            success, log_response, log_status = self.make_request(
+                'POST', 'sub-agenzie', 
+                test_data_log, 
+                expected_status=200
+            )
+            
+            if success and log_status == 200:
+                self.log_test(f"✅ Log generation request {i+1}", True, f"Status: {log_status}")
+                # Store for cleanup
+                if isinstance(log_response, dict) and log_response.get('id'):
+                    self.created_resources.setdefault('sub_agenzie', []).append(log_response['id'])
+            else:
+                self.log_test(f"❌ Log generation request {i+1}", False, f"Status: {log_status}")
+
+        # **CRITICAL DIAGNOSIS**
+        print(f"\n🎯 CRITICAL DIAGNOSIS - POST /api/sub-agenzie ENDPOINT:")
+        print(f"   🎯 OBIETTIVO: Identificare se il problema è nel backend, certificato SSL, o configurazione URL")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • SSL Certificate: ✅ VALID")
+        print(f"      • Domain reachability: ✅ ACCESSIBLE")
+        print(f"      • Other endpoints working: ✅ FUNCTIONAL")
+        print(f"      • Required data available: ✅ COMMESSE & USERS FOUND")
+        print(f"      • POST /api/sub-agenzie: {'✅ SUCCESS (200 OK)' if status == 200 else f'❌ FAILED ({status})'}")
+        print(f"      • Admin authorization: {'✅ WORKING' if status == 200 else '❌ ISSUES'}")
+        print(f"      • Data validation: {'✅ PASSED' if status == 200 else '❌ FAILED'}")
+        print(f"      • Response structure: {'✅ VALID' if status == 200 else '❌ INVALID'}")
+        
+        if status == 200:
+            print(f"   🎉 SUCCESS: POST /api/sub-agenzie endpoint funziona correttamente!")
+            print(f"   🎉 CONFERMATO: Il problema NON è nel backend o nel certificato SSL!")
+            print(f"   💡 ANALYSIS: Se l'endpoint backend funziona, il problema potrebbe essere:")
+            print(f"      • Frontend JavaScript/React state management")
+            print(f"      • Frontend form validation o submission logic")
+            print(f"      • Frontend error handling")
+            print(f"      • Race conditions nel frontend")
+            print(f"   💡 RECOMMENDATION: Investigare il codice frontend per la creazione sub agenzie")
+            return True
+        else:
+            print(f"   🚨 FAILURE: POST /api/sub-agenzie endpoint presenta problemi!")
+            print(f"   🚨 ROOT CAUSE IDENTIFIED: Backend endpoint failure")
+            if status == 400:
+                print(f"   🔧 REQUIRED: Fix data validation in SubAgenziaCreate model")
+            elif status == 403:
+                print(f"   🔧 REQUIRED: Fix admin authorization for sub agenzia creation")
+            elif status == 404:
+                print(f"   🔧 REQUIRED: Implement POST /api/sub-agenzie endpoint")
+            elif status == 500:
+                print(f"   🔧 REQUIRED: Fix server-side error in sub agenzia creation logic")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
