@@ -937,6 +937,7 @@ test_plan:
     - "Redesigned Session Management System Verification"
     - "Dynamic Client Filters Endpoint - GET /api/clienti/filter-options"
     - "Dynamic Client Filters Frontend UI Testing"
+    - "Cascade Auto-Discovery Fix - Critical Bug Resolution for Client Creation"
 
   - task: "Document View 403 Error Fix - Urgent Verification"
     implemented: true
