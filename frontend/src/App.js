@@ -148,6 +148,17 @@ const AuthProvider = ({ children }) => {
 
     console.log(`🕐 Session check: ${Math.floor(timeRemaining / 1000)}s remaining`);
 
+    // DEFENSIVE CHECK: Don't logout if session extension just happened (within last 5 seconds)
+    if (timeSinceActivity < 5000) {
+      console.log('✅ Recent activity detected - session is active');
+      if (showSessionWarning) {
+        console.log('✅ Hiding session warning due to recent activity');
+        setShowSessionWarning(false);
+        stopCountdown();
+      }
+      return;
+    }
+
     if (timeRemaining <= 0) {
       // Session expired - logout
       console.log('🚪 Session expired - logging out');
