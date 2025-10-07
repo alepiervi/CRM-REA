@@ -865,6 +865,7 @@ metadata:
 test_plan:
   current_focus: 
     - "Client Filters Diagnosis - PROBLEMA 1 & 2 Investigation"
+    - "Critical Filter-Options Endpoint Fix - Wrong Tipologie Contratto Data"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
