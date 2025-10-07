@@ -24819,6 +24819,233 @@ Duplicate,Test,+393471234567"""
             self.log_test("🚨 CASCADING PARTIALLY BROKEN", False, f"{len(failed_commesse)} out of {total_commesse} commesse broken")
             return False
 
+    def test_cascade_auto_discovery_fix_urgent(self):
+        """🚨 TEST IMMEDIATO del fix auto-discovery per risoluzione bug cascading critico"""
+        print("\n🚨 TEST IMMEDIATO del fix auto-discovery per risoluzione bug cascading critico...")
+        print("🎯 OBIETTIVO: Verificare che il sistema sia nuovamente UTILIZZABILE per creazione clienti")
+        
+        # 1. **Test Login Admin**: Login con admin/admin123
+        print("\n🔐 1. TEST LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login (admin/admin123)", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **FASTWEB CASCADE IMMEDIATO** - Critical test from review request
+        print("\n🎯 2. FASTWEB CASCADE IMMEDIATO - CRITICAL TEST...")
+        fastweb_commessa_id = "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1"
+        
+        print(f"   Testing GET /api/cascade/servizi-by-commessa/{fastweb_commessa_id}")
+        success, servizi_response, status = self.make_request('GET', f'cascade/servizi-by-commessa/{fastweb_commessa_id}', expected_status=200)
+        
+        has_tls = False
+        has_negozi = False
+        negozi_servizio_id = None
+        
+        if success and status == 200:
+            self.log_test("✅ FASTWEB servizi-by-commessa endpoint", True, f"Status: {status}")
+            
+            if isinstance(servizi_response, list):
+                servizi_count = len(servizi_response)
+                self.log_test("✅ FASTWEB servizi response format", True, f"Array with {servizi_count} servizi")
+                
+                # Check for TLS and NEGOZI services
+                servizi_names = [servizio.get('nome', '') for servizio in servizi_response]
+                has_tls = any('TLS' in nome.upper() for nome in servizi_names)
+                has_negozi = any('NEGOZI' in nome.upper() for nome in servizi_names)
+                
+                if has_tls and has_negozi:
+                    self.log_test("🎉 FASTWEB CASCADE FIX VERIFIED", True, f"Found BOTH TLS + NEGOZI services: {servizi_names}")
+                elif has_tls:
+                    self.log_test("⚠️ FASTWEB CASCADE PARTIAL", False, f"Found TLS but missing NEGOZI. Services: {servizi_names}")
+                elif has_negozi:
+                    self.log_test("⚠️ FASTWEB CASCADE PARTIAL", False, f"Found NEGOZI but missing TLS. Services: {servizi_names}")
+                else:
+                    self.log_test("❌ FASTWEB CASCADE FAILED", False, f"Neither TLS nor NEGOZI found. Services: {servizi_names}")
+                
+                # Store NEGOZI service ID for next test
+                for servizio in servizi_response:
+                    if 'NEGOZI' in servizio.get('nome', '').upper():
+                        negozi_servizio_id = servizio.get('id')
+                        break
+                
+                if not negozi_servizio_id:
+                    # Try to find any service for testing
+                    if len(servizi_response) > 0:
+                        negozi_servizio_id = servizi_response[0].get('id')
+                        self.log_test("ℹ️ Using first available service for tipologie test", True, f"Service: {servizi_response[0].get('nome')}")
+                
+            else:
+                self.log_test("❌ FASTWEB servizi response format", False, f"Expected array, got: {type(servizi_response)}")
+        else:
+            self.log_test("❌ FASTWEB servizi-by-commessa endpoint", False, f"Status: {status}, Response: {servizi_response}")
+
+        # 3. **NEGOZI TIPOLOGIE IMMEDIATO** - Critical test from review request
+        print("\n🎯 3. NEGOZI TIPOLOGIE IMMEDIATO - CRITICAL TEST...")
+        
+        # Use the specific service ID from review request or found NEGOZI service
+        test_servizio_id = "9c1ece3f-8f6f-46c0-90a1-0440d94710d2"  # From review request
+        if negozi_servizio_id:
+            test_servizio_id = negozi_servizio_id
+            
+        print(f"   Testing GET /api/cascade/tipologie-by-servizio/{test_servizio_id}")
+        success, tipologie_response, status = self.make_request('GET', f'cascade/tipologie-by-servizio/{test_servizio_id}', expected_status=200)
+        
+        tipologie_count = 0
+        if success and status == 200:
+            self.log_test("✅ NEGOZI tipologie-by-servizio endpoint", True, f"Status: {status}")
+            
+            if isinstance(tipologie_response, list):
+                tipologie_count = len(tipologie_response)
+                
+                if tipologie_count > 0:
+                    self.log_test("🎉 NEGOZI TIPOLOGIE FIX VERIFIED", True, f"Found {tipologie_count} tipologie (was empty array before)")
+                    
+                    # Show tipologie details
+                    tipologie_names = [tip.get('nome', 'Unknown') for tip in tipologie_response]
+                    self.log_test("✅ NEGOZI tipologie details", True, f"Tipologie: {tipologie_names}")
+                else:
+                    self.log_test("❌ NEGOZI TIPOLOGIE STILL EMPTY", False, f"Still returning empty array [] - fix not working")
+            else:
+                self.log_test("❌ NEGOZI tipologie response format", False, f"Expected array, got: {type(tipologie_response)}")
+        else:
+            self.log_test("❌ NEGOZI tipologie-by-servizio endpoint", False, f"Status: {status}, Response: {tipologie_response}")
+
+        # 4. **VERIFICARE TUTTE LE COMMESSE** - Test all commesse as requested
+        print("\n🎯 4. VERIFICARE TUTTE LE COMMESSE - Auto-discovery for all commesse...")
+        
+        # Get all commesse first
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        commesse_results = {}
+        if success and status == 200:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse)} commesse")
+            
+            # Test each commessa
+            for commessa in commesse:
+                commessa_id = commessa.get('id')
+                commessa_nome = commessa.get('nome', 'Unknown')
+                
+                print(f"\n   Testing commessa: {commessa_nome} ({commessa_id})")
+                
+                # Test servizi for this commessa
+                success, servizi_resp, status = self.make_request('GET', f'cascade/servizi-by-commessa/{commessa_id}', expected_status=200)
+                
+                if success and status == 200 and isinstance(servizi_resp, list):
+                    servizi_count = len(servizi_resp)
+                    commesse_results[commessa_nome] = {
+                        'servizi_count': servizi_count,
+                        'servizi_working': True,
+                        'tipologie_results': []
+                    }
+                    
+                    self.log_test(f"✅ {commessa_nome} servizi", True, f"Found {servizi_count} servizi")
+                    
+                    # Test tipologie for each servizio
+                    for servizio in servizi_resp:
+                        servizio_id = servizio.get('id')
+                        servizio_nome = servizio.get('nome', 'Unknown')
+                        
+                        success, tip_resp, status = self.make_request('GET', f'cascade/tipologie-by-servizio/{servizio_id}', expected_status=200)
+                        
+                        if success and status == 200 and isinstance(tip_resp, list):
+                            tip_count = len(tip_resp)
+                            commesse_results[commessa_nome]['tipologie_results'].append({
+                                'servizio': servizio_nome,
+                                'tipologie_count': tip_count,
+                                'working': True
+                            })
+                            
+                            if tip_count > 0:
+                                self.log_test(f"✅ {commessa_nome}/{servizio_nome} tipologie", True, f"Found {tip_count} tipologie")
+                            else:
+                                self.log_test(f"⚠️ {commessa_nome}/{servizio_nome} tipologie", True, f"Empty array (may need configuration)")
+                        else:
+                            commesse_results[commessa_nome]['tipologie_results'].append({
+                                'servizio': servizio_nome,
+                                'tipologie_count': 0,
+                                'working': False
+                            })
+                            self.log_test(f"❌ {commessa_nome}/{servizio_nome} tipologie", False, f"Status: {status}")
+                else:
+                    commesse_results[commessa_nome] = {
+                        'servizi_count': 0,
+                        'servizi_working': False,
+                        'tipologie_results': []
+                    }
+                    self.log_test(f"❌ {commessa_nome} servizi", False, f"Status: {status}")
+        else:
+            self.log_test("❌ GET /api/commesse", False, f"Status: {status}")
+
+        # 5. **FINAL VERIFICATION AND SUMMARY**
+        print("\n🎯 5. FINAL VERIFICATION AND SUMMARY...")
+        
+        # Count working vs broken commesse
+        total_commesse = len(commesse_results)
+        working_commesse = 0
+        broken_commesse = 0
+        
+        for nome, result in commesse_results.items():
+            if result['servizi_working'] and result['servizi_count'] > 0:
+                # Check if at least one servizio has tipologie
+                has_tipologie = any(tip['tipologie_count'] > 0 for tip in result['tipologie_results'])
+                if has_tipologie:
+                    working_commesse += 1
+                else:
+                    broken_commesse += 1
+            else:
+                broken_commesse += 1
+        
+        success_rate = (working_commesse / total_commesse * 100) if total_commesse > 0 else 0
+        
+        print(f"\n📊 AUTO-DISCOVERY CASCADE TEST RESULTS:")
+        print(f"   🎯 OBIETTIVO: Confermare che il sistema sia nuovamente UTILIZZABILE per creazione clienti")
+        print(f"   🎯 SUCCESS CRITERIA: Fastweb deve mostrare TUTTI i servizi esistenti nel database")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • FASTWEB CASCADE: {'✅ SUCCESS - TLS + NEGOZI found' if has_tls and has_negozi else '❌ FAILED - Missing services'}")
+        print(f"      • NEGOZI TIPOLOGIE: {'✅ SUCCESS - Tipologie found' if tipologie_count > 0 else '❌ FAILED - Still empty array'}")
+        print(f"      • Total commesse tested: {total_commesse}")
+        print(f"      • Working commesse: {working_commesse}")
+        print(f"      • Broken commesse: {broken_commesse}")
+        print(f"      • Success rate: {success_rate:.1f}%")
+        
+        # Detailed breakdown
+        print(f"\n📋 DETAILED COMMESSE BREAKDOWN:")
+        for nome, result in commesse_results.items():
+            servizi_status = f"{result['servizi_count']} servizi" if result['servizi_working'] else "FAILED"
+            tipologie_summary = []
+            for tip in result['tipologie_results']:
+                tip_status = f"{tip['tipologie_count']} tip" if tip['working'] else "FAILED"
+                tipologie_summary.append(f"{tip['servizio']}({tip_status})")
+            
+            print(f"      • {nome}: {servizi_status} → {', '.join(tipologie_summary) if tipologie_summary else 'No tipologie tested'}")
+        
+        # Final assessment
+        if working_commesse == total_commesse and working_commesse > 0:
+            print(f"   🎉 SUCCESS: Auto-discovery fix completamente risolto!")
+            print(f"   🎉 CONFIRMED: Il sistema è nuovamente UTILIZZABILE per creazione clienti!")
+            print(f"   🎉 VERIFIED: CreateClientModal funzionerà per tutte le commesse!")
+            return True
+        elif working_commesse > 0:
+            print(f"   ⚠️ PARTIAL SUCCESS: {working_commesse}/{total_commesse} commesse working")
+            print(f"   ⚠️ ISSUE: Alcune commesse necessitano ancora configurazione dati")
+            return False
+        else:
+            print(f"   🚨 FAILURE: Auto-discovery fix non ha risolto il problema!")
+            print(f"   🚨 CRITICAL: Sistema ancora non utilizzabile per creazione clienti!")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
