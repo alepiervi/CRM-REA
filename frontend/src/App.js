@@ -12785,6 +12785,21 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     }
   };
 
+  const fetchFilterOptions = async () => {
+    try {
+      const response = await axios.get(`${API}/clienti/filter-options`);
+      setFilterOptions(response.data);
+      console.log("📊 Filter options loaded:", response.data);
+    } catch (error) {
+      console.error("Error fetching filter options:", error);
+      toast({
+        title: "Attenzione", 
+        description: "Errore nel caricamento opzioni filtri", 
+        variant: "destructive"
+      });
+    }
+  };
+
   const fetchClienti = async () => {
     try {
       setLoading(true);
