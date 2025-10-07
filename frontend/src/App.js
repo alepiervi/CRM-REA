@@ -12741,6 +12741,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       fetchCommesse();
       fetchSubAgenzie();
       fetchUsers();
+      fetchFilterOptions();
       fetchClienti();
     } catch (error) {
       console.error("ClientiManagement useEffect error:", error);
