@@ -6412,22 +6412,35 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
 
   const exportClienti = async () => {
     try {
-      const params = new URLSearchParams();
-      params.append('date_from', dateRange.startDate);
-      params.append('date_to', dateRange.endDate);
+      // Build query parameters based on current filters
+      const params = {};
+      if (selectedUnit && selectedUnit !== "all") params.unit_id = selectedUnit;
+      params.date_from = dateRange.startDate;
+      params.date_to = dateRange.endDate;
       
-      // Create a temporary export endpoint for clients
-      const response = await axios.get(`${API}/clienti`, { params });
-      const clientiData = response.data;
+      // Call new Excel export endpoint
+      const response = await axios.get(`${API}/clienti/export/excel`, {
+        params,
+        responseType: 'blob'  // Important for file download
+      });
       
-      // For now, download as JSON (future: implement Excel export for clients)
-      const blob = new Blob([JSON.stringify(clientiData, null, 2)], { type: 'application/json' });
-      downloadFile(blob, `clienti_export_${format(new Date(), 'yyyyMMdd')}.json`);
+      // Create download link for Excel file
+      const blob = new Blob([response.data], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `clienti_export_${format(new Date(), 'yyyyMMdd')}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
-      toast({ title: "Successo", description: "Export Clienti completato" });
+      toast({ title: "Successo", description: "Export Clienti Excel completato" });
     } catch (error) {
       console.error("Error exporting clienti:", error);
-      toast({ title: "Errore", description: "Errore nell'export dei clienti", variant: "destructive" });
+      toast({ title: "Errore", description: "Errore nell'export Excel dei clienti", variant: "destructive" });
     }
   };
 
