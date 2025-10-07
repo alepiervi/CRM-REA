@@ -848,7 +848,8 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus: 
+    - "Client Filters Diagnosis - PROBLEMA 1 & 2 Investigation"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
