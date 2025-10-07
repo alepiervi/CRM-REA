@@ -23943,12 +23943,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
 
-        # IMMEDIATE TEST: Filter Options Real Data Only
+        # IMMEDIATE TEST: Create Sample Clients for Commesse
         print("\n" + "🚨" * 40)
-        print("🚨 IMMEDIATE TEST: FILTER OPTIONS REAL DATA ONLY")
+        print("🚨 IMMEDIATE TEST: CREATE SAMPLE CLIENTS FOR COMMESSE")
         print("🚨" * 40)
         
-        filter_success = self.test_filter_options_real_data_only()
+        client_creation_success = self.test_create_sample_clients_for_commesse()
 
         # Print final summary
         print("\n" + "=" * 80)
