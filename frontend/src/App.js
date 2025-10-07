@@ -13332,7 +13332,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                 <SelectValue placeholder="Tutte le Tipologie" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tutte le Tipologie</SelectItem>
+                <SelectItem value="all">Tutte le Tipologie</SelectItem>
                 <SelectItem value="energia_fastweb">Energia Fastweb</SelectItem>
                 <SelectItem value="fotovoltaico">Fotovoltaico</SelectItem>
                 <SelectItem value="efficientamento_energetico">Efficientamento Energetico</SelectItem>
