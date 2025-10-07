@@ -12317,6 +12317,9 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
 
   const createSubAgenzia = async (subAgenziaData) => {
     try {
+      // Get token from localStorage to ensure availability
+      const token = localStorage.getItem('token');
+      
       // Ensure JWT token is included in headers
       const headers = {
         'Content-Type': 'application/json',
