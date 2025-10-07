@@ -24523,7 +24523,7 @@ Duplicate,Test,+393471234567"""
         print("🚨 URGENT TEST: CASCADING HIERARCHY CONFIGURATION")
         print("🚨" * 40)
         
-        cascade_success = self.test_cascading_hierarchy_urgent()
+        cascade_success = self.test_cascading_functionality_all_commesse()
 
         # Print final summary
         print("\n" + "=" * 80)
