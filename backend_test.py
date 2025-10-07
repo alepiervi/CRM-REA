@@ -25689,12 +25689,12 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # URGENT TEST: User Roles Authorization
+        # URGENT TEST: Client Visibility for All Users
         print("\n" + "🚨" * 40)
-        print("🚨 URGENT TEST: USER ROLES AUTHORIZATION")
+        print("🚨 URGENT TEST: CLIENT VISIBILITY FOR ALL USERS")
         print("🚨" * 40)
         
-        roles_success = self.test_user_roles_authorization_urgent()
+        client_visibility_success = self.test_all_users_client_visibility_urgent()
 
         # Print final summary
         print("\n" + "=" * 80)
