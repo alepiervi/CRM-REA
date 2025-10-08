@@ -26980,17 +26980,17 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # Run the critical Responsabile Commessa test
+        # Run the URGENT Sub Agenzia Filter Fix test
         print("\n" + "="*80)
-        print("🚨 RUNNING CRITICAL RESPONSABILE COMMESSA RESOLUTION TEST")
+        print("🚨 RUNNING URGENT SUB AGENZIA FILTER FIX TEST")
         print("="*80)
         
-        success = self.test_responsabile_commessa_complete_resolution()
+        success = self.test_sub_agenzia_filter_fix_urgent()
         
         if success:
-            print("\n🎉 CRITICAL TEST PASSED - All 3 problems resolved!")
+            print("\n🎉 SUB AGENZIA FILTER FIX TEST PASSED!")
         else:
-            print("\n🚨 CRITICAL TEST FAILED - Problems still exist!")
+            print("\n🚨 SUB AGENZIA FILTER FIX TEST FAILED!")
         
         # Run other tests
         self.test_provinces_endpoint()
