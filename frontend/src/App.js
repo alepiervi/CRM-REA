@@ -13077,7 +13077,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   };
 
   // Export clients to CSV
-  const exportClients = () => {
+  const exportClients = async () => {
     if (clienti.length === 0) {
       toast({
         title: "Attenzione",
@@ -13090,73 +13090,44 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     setIsExporting(true);
     
     try {
-      // Get filtered clients using the unified function
-      const clientsToExport = getFilteredClients();
+      // Build query parameters for backend filtering
+      const params = new URLSearchParams();
       
-      if (clientsToExport.length === 0) {
-        toast({
-          title: "Attenzione", 
-          description: "Nessun cliente trovato con i filtri applicati",
-          variant: "destructive",
-        });
-        setIsExporting(false);
-        return;
+      // Apply current filters to backend request
+      if (filters.subAgenzia) {
+        params.append('sub_agenzia_id', filters.subAgenzia);
+      }
+      if (filters.tipologia) {
+        params.append('tipologia_contratto', filters.tipologia);
+      }
+      if (filters.status) {
+        params.append('status', filters.status);
+      }
+      if (filters.utente) {
+        params.append('created_by', filters.utente);
       }
 
-      // Prepare CSV headers
-      const headers = [
-        'ID Cliente',
-        'Nome',
-        'Cognome', 
-        'Email',
-        'Telefono',
-        'Cellulare',
-        'Codice Fiscale',
-        'P. IVA',
-        'Indirizzo',
-        'Città',
-        'Provincia',
-        'CAP',
-        'Data Creazione',
-        'Commessa',
-        'Sub Agenzia'
-      ];
+      // Call backend Excel export endpoint
+      const response = await axios.get(
+        `${process.env.REACT_APP_BACKEND_URL}/api/clienti/export/excel?${params.toString()}`,
+        {
+          headers: { 
+            Authorization: `Bearer ${localStorage.getItem('token')}` 
+          },
+          responseType: 'blob'
+        }
+      );
 
-      // Convert clients to CSV format
-      const csvContent = [
-        headers.join(','),
-        ...clientsToExport.map(cliente => [
-          cliente.cliente_id || '',
-          cliente.nome || '',
-          cliente.cognome || '',
-          cliente.email || '',
-          cliente.telefono || '',
-          cliente.cellulare || '',
-          cliente.codice_fiscale || '',
-          cliente.partita_iva || '',
-          cliente.indirizzo || '',
-          cliente.citta || '',
-          cliente.provincia || '',
-          cliente.cap || '',
-          cliente.created_at ? new Date(cliente.created_at).toLocaleDateString('it-IT') : '',
-          cliente.commessa_nome || '',
-          cliente.sub_agenzia_nome || ''
-        ].map(field => `"${field}"`).join(','))
-      ].join('\n');
-
-      // Create and download file
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      // Create download link for Excel file
+      const blob = new Blob([response.data], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
       
-      // Generate filename with current date and filters
-      let filename = 'clienti_export_' + new Date().toISOString().split('T')[0];
-      if (dateFilter.enabled && dateFilter.startDate && dateFilter.endDate) {
-        filename += `_${dateFilter.startDate}_${dateFilter.endDate}`;
-      }
-      filename += '.csv';
-      
+      // Generate filename with current date
+      const filename = `clienti_export_${new Date().toISOString().split('T')[0]}.xlsx`;
       link.setAttribute('download', filename);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
@@ -13166,14 +13137,14 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
       toast({
         title: "Successo",
-        description: `Esportati ${clientsToExport.length} clienti in ${filename}`,
+        description: `File Excel esportato con successo: ${filename}`,
       });
 
     } catch (error) {
-      console.error('Error exporting clients:', error);
+      console.error('Error exporting clients to Excel:', error);
       toast({
         title: "Errore",
-        description: "Errore durante l'esportazione dei clienti",
+        description: "Errore durante l'esportazione Excel dei clienti",
         variant: "destructive",
       });
     } finally {
