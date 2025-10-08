@@ -15806,7 +15806,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               
               {/* SUB AGENZIA SELECTION (for Responsabili/Backoffice only) */}
-              {(user?.role === 'responsabile' || user?.role === 'backoffice' || user?.role === 'admin') && (
+              {(user?.role === 'responsabile_commessa' || user?.role === 'backoffice_commessa' || user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'admin') && (
                 <div className="space-y-2">
                   <Label className="text-base font-semibold text-gray-700">🏢 Sub Agenzia</Label>
                   <select 
