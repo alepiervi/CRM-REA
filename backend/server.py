@@ -9110,6 +9110,13 @@ async def export_clienti_excel(
                 "residenziale": "Residenziale"
             }.get(segmento, segmento)
             
+            # Get offerta name
+            if cliente.get("offerta_id"):
+                offerta = await db.offerte.find_one({"id": cliente["offerta_id"]})
+                enriched_cliente["offerta_name"] = offerta.get("nome") if offerta else ""
+            else:
+                enriched_cliente["offerta_name"] = ""
+            
             # Get creator name
             if cliente.get("created_by"):
                 creator = await db.users.find_one({"id": cliente["created_by"]})
