@@ -26980,6 +26980,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # Run the URGENT BackOffice Commessa Client Visibility test
+        print("\n" + "="*80)
+        print("🚨 RUNNING URGENT BACKOFFICE COMMESSA CLIENT VISIBILITY TEST")
+        print("="*80)
+        
+        backoffice_success = self.test_backoffice_commessa_client_visibility_urgent()
+        
         # Run the URGENT Sub Agenzia Filter Fix test
         print("\n" + "="*80)
         print("🚨 RUNNING URGENT SUB AGENZIA FILTER FIX TEST")
