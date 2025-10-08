@@ -27757,6 +27757,11 @@ Duplicate,Test,+393471234567"""
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
+        if client_creation_success:
+            print("🎉 CLIENT CREATION AUTHORIZATION TEST: ✅ SUCCESS - ALL 5 ROLES CAN CREATE CLIENTS!")
+        else:
+            print("🚨 CLIENT CREATION AUTHORIZATION TEST: ❌ FAILED - SOME ROLES CANNOT CREATE CLIENTS!")
+            
         if backoffice_success:
             print("🎉 BACKOFFICE COMMESSA CLIENT VISIBILITY TEST: ✅ SUCCESS - ale2 CAN SEE ALL 11 CLIENTS!")
         else:
@@ -27767,7 +27772,7 @@ Duplicate,Test,+393471234567"""
         else:
             print("🚨 RESPONSABILE COMMESSA RESOLUTION TEST: ❌ FAILED - PROBLEMS STILL EXIST!")
         
-        overall_success = backoffice_success and success
+        overall_success = client_creation_success and backoffice_success and success
         if overall_success:
             print("\n🎉 OVERALL RESULT: ✅ SISTEMA UTILIZZABILE PER TUTTI I RUOLI COMMESSA!")
         else:
