@@ -15351,9 +15351,11 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       // Fetch authorized sub agenzie for this user
       fetchCascadeSubAgenzie();
     } else if (user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'admin') {
-      // SUB AGENZIA ROLES: Start with sub agenzia selection
-      console.log("👔 Sub Agenzia Flow: Starting with sub agenzia selection");
+      // SUB AGENZIA ROLES + ADMIN: Start with sub agenzia selection
+      console.log("👔 Sub Agenzia Flow + Admin: Starting with sub agenzia selection");
       setCascadeCommesse([]); // Will be loaded after sub agenzia selection
+      // Fetch sub agenzie for this user (Admin sees ALL, others see authorized)
+      fetchCascadeSubAgenzie();
     } else {
       // FALLBACK: Default to empty arrays
       console.log("⚠️ Unknown user role, initializing empty arrays");
