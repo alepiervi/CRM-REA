@@ -977,7 +977,7 @@ class CRMAPITester:
         success, create_response, status = self.make_request(
             'POST', 'users', 
             test_user_data, 
-            expected_status=None  # Accept any success status
+            expected_status=200  # Backend returns 200 for user creation
         )
         
         if success and (status == 200 or status == 201):
