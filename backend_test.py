@@ -980,7 +980,7 @@ class CRMAPITester:
         
         if success and (status == 200 or status == 201):
             self.log_test("✅ POST /api/users (store_assist role)", True, 
-                f"Status: {status} Created - NO 422 Validation Error!")
+                f"Status: {status} Success - NO 422 Validation Error!")
             
             # Verify response contains user data
             if isinstance(create_response, dict) and 'id' in create_response:
