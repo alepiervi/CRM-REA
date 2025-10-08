@@ -26046,7 +26046,7 @@ Duplicate,Test,+393471234567"""
         
         # Make the request and capture detailed error information
         success, create_response, status = self.make_request(
-            'POST', 'clienti', client_data, expected_status=201)
+            'POST', 'clienti', client_data, expected_status=200)
         
         if success and status in [200, 201]:
             # SUCCESS CASE
