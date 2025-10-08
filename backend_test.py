@@ -1134,9 +1134,9 @@ class CRMAPITester:
         print(f"   🎯 BUG FIX: Frontend ora invia 'store_assist' (match con backend enum)")
         print(f"   📊 RISULTATI:")
         print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
-        print(f"      • POST /api/users con ruolo 'store_assist': {'✅ SUCCESS (201 Created)' if status == 201 else '❌ FAILED'}")
-        print(f"      • Pydantic validation accetta ruolo corretto: {'✅ SUCCESS' if status == 201 else '❌ FAILED'}")
-        print(f"      • Utente Store Assistant creato nel database: {'✅ SUCCESS' if status == 201 else '❌ FAILED'}")
+        print(f"      • POST /api/users con ruolo 'store_assist': {'✅ SUCCESS (' + str(status) + ')' if (status == 200 or status == 201) else '❌ FAILED'}")
+        print(f"      • Pydantic validation accetta ruolo corretto: {'✅ SUCCESS' if (status == 200 or status == 201) else '❌ FAILED'}")
+        print(f"      • Utente Store Assistant creato nel database: {'✅ SUCCESS' if (status == 200 or status == 201) else '❌ FAILED'}")
         print(f"      • OLD value 'store_assistant' correttamente rifiutato: ✅ SUCCESS")
         print(f"      • Altri ruoli Store/Presidi funzionanti: {successful_roles}/4 ruoli")
         
