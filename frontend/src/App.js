@@ -1719,7 +1719,7 @@ const Dashboard = () => {
           return user.role === "admin" ? <SubAgenzieManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} units={units} commesse={commesse} subAgenzie={subAgenzie} /> : <div>Non autorizzato</div>;
         case "clienti":
           console.log("Rendering ClientiManagement with props:", { selectedUnit, selectedCommessa, units: units?.length, commesse: commesse?.length, subAgenzie: subAgenzie?.length });
-          if (user.role === "admin" || user.role === "responsabile_commessa") {
+          if (user.role === "admin" || user.role === "responsabile_commessa" || user.role === "backoffice_commessa" || user.role === "responsabile_sub_agenzia" || user.role === "backoffice_sub_agenzia" || user.role === "agente_specializzato" || user.role === "operatore") {
             try {
               return <ClientiManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} selectedTipologiaContratto={selectedTipologiaContratto} units={units} commesse={commesse} subAgenzie={subAgenzie} servizi={servizi} />;
             } catch (error) {
