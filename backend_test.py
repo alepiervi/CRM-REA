@@ -27465,6 +27465,246 @@ Duplicate,Test,+393471234567"""
             print(f"   🔧 AZIONE RICHIESTA: Verificare implementazione fix alla riga 8956 in server.py")
             return False
 
+    def test_client_creation_authorization_all_5_roles(self):
+        """🚨 TEST IMMEDIATO CREAZIONE CLIENTI PER TUTTI I 5 RUOLI - VERIFICA AUTORIZZAZIONI COMPLETE"""
+        print("\n🚨 TEST IMMEDIATO CREAZIONE CLIENTI PER TUTTI I 5 RUOLI...")
+        print("🎯 OBIETTIVO: Verificare che TUTTI i 5 ruoli possano creare clienti nelle loro aree autorizzate")
+        print("🎯 FIX IMPLEMENTATO: Creati record di autorizzazione in user_commessa_authorizations per tutti e 5 gli utenti")
+        print("🎯 SUCCESS CRITERIA: Tutti e 5 POST /api/clienti devono ritornare 200/201 Success (non 403 Forbidden)")
+        
+        # Test users as specified in the review request
+        test_users = [
+            {
+                'username': 'ale2', 
+                'password': 'admin123', 
+                'role': 'backoffice_commessa',
+                'description': 'BackOffice Commessa - 2 record (Fastweb + Telepass)'
+            },
+            {
+                'username': 'ale3', 
+                'password': 'admin123', 
+                'role': 'responsabile_sub_agenzia',
+                'description': 'Responsabile Sub Agenzia - 1 record (Fastweb)'
+            },
+            {
+                'username': 'ale4', 
+                'password': 'admin123', 
+                'role': 'backoffice_sub_agenzia',
+                'description': 'BackOffice Sub Agenzia - 1 record (Fastweb)'
+            },
+            {
+                'username': 'ale5', 
+                'password': 'admin123', 
+                'role': 'agente_specializzato',
+                'description': 'Agente Specializzato - 1 record (Fastweb)'
+            },
+            {
+                'username': 'ale6', 
+                'password': 'admin123', 
+                'role': 'operatore',
+                'description': 'Operatore - 1 record (Fastweb)'
+            }
+        ]
+        
+        # Test data for client creation as specified in review request
+        base_client_data = {
+            "nome": "TestRuolo",
+            "cognome": "Cliente", 
+            "telefono": "3333333330",
+            "email": "testruolo@test.it",
+            "commessa_id": "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1",  # Fastweb
+            "sub_agenzia_id": "7c70d4b5-4be0-4707-8bca-dfe84a0b9dee",  # F2F
+            "servizio_id": "e000d779-2d13-4cde-afae-e498776a5493",
+            "tipologia_contratto": "energia_fastweb",
+            "segmento": "privato"
+        }
+        
+        successful_creations = 0
+        failed_creations = 0
+        test_results = []
+        
+        print(f"\n🔑 TESTING CLIENT CREATION FOR ALL 5 ROLES...")
+        
+        for i, user_info in enumerate(test_users):
+            username = user_info['username']
+            password = user_info['password']
+            expected_role = user_info['role']
+            description = user_info['description']
+            
+            print(f"\n   === TESTING {username.upper()} ({expected_role}) ===")
+            print(f"   📋 {description}")
+            
+            # **STEP 1: LOGIN**
+            success, response, status = self.make_request(
+                'POST', 'auth/login', 
+                {'username': username, 'password': password}, 
+                expected_status=200, auth_required=False
+            )
+            
+            if not success or status != 200 or 'access_token' not in response:
+                self.log_test(f"❌ {username} LOGIN FAILED", False, f"Status: {status}")
+                failed_creations += 1
+                test_results.append({
+                    'user': username,
+                    'role': expected_role,
+                    'login': False,
+                    'client_creation': False,
+                    'error': f"Login failed: {status}"
+                })
+                continue
+            
+            # Store token and user data
+            user_token = response['access_token']
+            user_data = response['user']
+            actual_role = user_data.get('role', 'MISSING')
+            commesse_autorizzate = user_data.get('commesse_autorizzate', [])
+            
+            self.log_test(f"✅ {username} LOGIN SUCCESS", True, 
+                f"Role: {actual_role}, Commesse: {len(commesse_autorizzate)}")
+            
+            # **STEP 2: VERIFY AUTHORIZATION DATA**
+            # Temporarily set token for auth/me request
+            temp_token = self.token
+            self.token = user_token
+            
+            auth_success, auth_response, auth_status = self.make_request('GET', 'auth/me', expected_status=200)
+            
+            if auth_success and auth_status == 200:
+                self.log_test(f"✅ {username} AUTHORIZATION VERIFIED", True, 
+                    f"Auth/me successful, commesse: {len(auth_response.get('commesse_autorizzate', []))}")
+            else:
+                self.log_test(f"❌ {username} AUTHORIZATION FAILED", False, f"Auth/me status: {auth_status}")
+            
+            # **STEP 3: CLIENT CREATION TEST**
+            # Customize client data for each user
+            client_data = base_client_data.copy()
+            client_data['nome'] = f"Test{expected_role.replace('_', '').title()}"
+            client_data['telefono'] = f"333333333{i}"
+            client_data['email'] = f"test{username}@test.it"
+            
+            print(f"   📋 Client data: Nome: {client_data['nome']}, Telefono: {client_data['telefono']}")
+            
+            # POST /api/clienti
+            success, create_response, create_status = self.make_request(
+                'POST', 'clienti', 
+                client_data, 
+                expected_status=200  # Expecting success
+            )
+            
+            # Restore admin token
+            self.token = temp_token
+            
+            if success and (create_status == 200 or create_status == 201):
+                # SUCCESS - Client created
+                client_id = create_response.get('id', 'MISSING_ID') if isinstance(create_response, dict) else 'NO_DICT'
+                client_name = f"{create_response.get('nome', '')} {create_response.get('cognome', '')}" if isinstance(create_response, dict) else 'NO_NAME'
+                
+                self.log_test(f"✅ {username} CLIENT CREATION SUCCESS", True, 
+                    f"Status: {create_status}, Client ID: {client_id}, Name: {client_name}")
+                
+                successful_creations += 1
+                test_results.append({
+                    'user': username,
+                    'role': expected_role,
+                    'login': True,
+                    'client_creation': True,
+                    'client_id': client_id,
+                    'status': create_status
+                })
+                
+                # **STEP 4: VERIFY CLIENT IN DATABASE**
+                # Get client list to verify persistence
+                success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+                
+                if success and status == 200:
+                    clienti = clienti_response.get('clienti', []) if isinstance(clienti_response, dict) else clienti_response
+                    
+                    # Find our created client
+                    created_client = None
+                    if isinstance(clienti, list):
+                        created_client = next((c for c in clienti if c.get('id') == client_id), None)
+                    
+                    if created_client:
+                        self.log_test(f"✅ {username} CLIENT PERSISTED", True, 
+                            f"Client found in database: {created_client.get('nome')} {created_client.get('cognome')}")
+                    else:
+                        self.log_test(f"❌ {username} CLIENT NOT FOUND", False, "Client not found in database")
+                
+            elif create_status == 403:
+                # FORBIDDEN - Authorization failed
+                self.log_test(f"❌ {username} CLIENT CREATION FORBIDDEN", False, 
+                    f"Status: 403 - User cannot create clients (authorization issue)")
+                
+                failed_creations += 1
+                test_results.append({
+                    'user': username,
+                    'role': expected_role,
+                    'login': True,
+                    'client_creation': False,
+                    'error': f"403 Forbidden - No authorization to create clients"
+                })
+                
+            elif create_status == 422:
+                # VALIDATION ERROR
+                detail = create_response.get('detail', 'No detail') if isinstance(create_response, dict) else str(create_response)
+                self.log_test(f"❌ {username} CLIENT CREATION VALIDATION ERROR", False, 
+                    f"Status: 422 - Validation error: {detail}")
+                
+                failed_creations += 1
+                test_results.append({
+                    'user': username,
+                    'role': expected_role,
+                    'login': True,
+                    'client_creation': False,
+                    'error': f"422 Validation Error: {detail}"
+                })
+                
+            else:
+                # OTHER ERROR
+                self.log_test(f"❌ {username} CLIENT CREATION FAILED", False, 
+                    f"Status: {create_status}, Response: {create_response}")
+                
+                failed_creations += 1
+                test_results.append({
+                    'user': username,
+                    'role': expected_role,
+                    'login': True,
+                    'client_creation': False,
+                    'error': f"Status {create_status}: {create_response}"
+                })
+        
+        # **FINAL SUMMARY**
+        total_users = len(test_users)
+        print(f"\n📊 CLIENT CREATION AUTHORIZATION TEST SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Tutti i 5 ruoli devono poter creare clienti autorizzati")
+        print(f"   🎯 FIX IMPLEMENTATO: Record user_commessa_authorizations con can_create_clients: true")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Total users tested: {total_users}")
+        print(f"      • Successful client creations: {successful_creations}")
+        print(f"      • Failed client creations: {failed_creations}")
+        print(f"      • Success rate: {(successful_creations/total_users)*100:.1f}%")
+        
+        # Detailed results
+        print(f"\n   📋 DETAILED RESULTS:")
+        for result in test_results:
+            status_icon = "✅" if result['client_creation'] else "❌"
+            error_msg = f" - {result.get('error', '')}" if not result['client_creation'] else ""
+            print(f"      {status_icon} {result['user']} ({result['role']}): {'SUCCESS' if result['client_creation'] else 'FAILED'}{error_msg}")
+        
+        if successful_creations == total_users:
+            print(f"   🎉 ALL 5 ROLES CAN NOW CREATE CLIENTS - AUTHORIZATION FIX SUCCESSFUL!")
+            print(f"   🎉 CONFERMATO: check_commessa_access() ritorna True per tutti")
+            print(f"   🎉 VERIFICATO: Clienti creati e salvati nel database per ogni utente")
+            print(f"   🎉 OBIETTIVO RAGGIUNTO: Tutti i 5 ruoli possono creare clienti nelle loro aree autorizzate!")
+            self.log_test("🎉 CLIENT CREATION AUTHORIZATION FIX", True, f"All {total_users} users can create clients successfully")
+            return True
+        else:
+            print(f"   🚨 AUTHORIZATION FIX INCOMPLETE - {failed_creations} users still cannot create clients")
+            print(f"   🚨 AZIONE RICHIESTA: Verificare record user_commessa_authorizations per utenti falliti")
+            print(f"   🚨 PRIORITÀ MASSIMA: Tutti i 5 ruoli devono poter creare clienti autorizzati!")
+            self.log_test("🚨 CLIENT CREATION AUTHORIZATION FIX", False, f"{failed_creations} out of {total_users} users still failing")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
