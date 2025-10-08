@@ -15330,12 +15330,11 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
         handleCommessaSelect(selectedCommessa);
       }
     } else if (user?.role === 'responsabile_commessa' || user?.role === 'backoffice_commessa') {
-      // RESPONSABILE/BACKOFFICE COMMESSA: Show authorized commesse directly
-      console.log("👔 Responsabile/Backoffice Commessa Flow: Showing authorized commesse");
-      const authorizedCommesse = commesse.filter(commessa => 
-        user.commesse_autorizzate && user.commesse_autorizzate.includes(commessa.id)
-      );
-      setCascadeCommesse(authorizedCommesse);
+      // RESPONSABILE/BACKOFFICE COMMESSA: Start with sub agenzia selection first
+      console.log("👔 Responsabile/Backoffice Commessa Flow: Starting with sub agenzia selection");
+      setCascadeCommesse([]); // Will be loaded after sub agenzia selection
+      // Fetch authorized sub agenzie for this user
+      fetchCascadeSubAgenzie();
     } else if (user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'admin') {
       // SUB AGENZIA ROLES: Start with sub agenzia selection
       console.log("👔 Sub Agenzia Flow: Starting with sub agenzia selection");
