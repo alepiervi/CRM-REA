@@ -15815,7 +15815,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">Seleziona Sub Agenzia...</option>
-                    {subAgenzie?.map(sa => (
+                    {Array.isArray(cascadeSubAgenzie) && cascadeSubAgenzie.map(sa => (
                       <option key={sa.id} value={sa.id}>{sa.nome}</option>
                     ))}
                   </select>
