@@ -13239,7 +13239,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             </Button>
             <Button
               variant="outline"
-              onClick={exportClienti}
+              onClick={exportClients}
               disabled={clienti.length === 0 || isExporting}
             >
               {isExporting ? (
