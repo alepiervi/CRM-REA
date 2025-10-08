@@ -8953,7 +8953,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
             if current_user.commesse_autorizzate:
                 # Get sub agenzie for authorized commesse
-                sub_agenzie_query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+                sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}
         # Admin sees all sub agenzie
