@@ -8854,18 +8854,19 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
         ws.cell(row=row, column=14, value=cliente.get("servizio_name", ""))
         ws.cell(row=row, column=15, value=cliente.get("tipologia_contratto_display", ""))
         ws.cell(row=row, column=16, value=cliente.get("segmento_display", ""))
-        ws.cell(row=row, column=17, value=cliente.get("status", "attivo"))
-        ws.cell(row=row, column=18, value=cliente.get("created_by_name", ""))
+        ws.cell(row=row, column=17, value=cliente.get("offerta_name", ""))
+        ws.cell(row=row, column=18, value=cliente.get("status", "attivo"))
+        ws.cell(row=row, column=19, value=cliente.get("created_by_name", ""))
         
         # Format creation date
         created_at = cliente.get("created_at")
         if created_at:
             if isinstance(created_at, str):
-                ws.cell(row=row, column=19, value=created_at)
+                ws.cell(row=row, column=20, value=created_at)
             else:
-                ws.cell(row=row, column=19, value=created_at.strftime("%d/%m/%Y %H:%M") if created_at else "")
+                ws.cell(row=row, column=20, value=created_at.strftime("%d/%m/%Y %H:%M") if created_at else "")
         
-        ws.cell(row=row, column=20, value=cliente.get("note", ""))
+        ws.cell(row=row, column=21, value=cliente.get("note", ""))
     
     # Auto-adjust column widths
     for column in ws.columns:
