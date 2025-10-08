@@ -27289,17 +27289,23 @@ Duplicate,Test,+393471234567"""
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
+        if backoffice_success:
+            print("🎉 BACKOFFICE COMMESSA CLIENT VISIBILITY TEST: ✅ SUCCESS - ale2 CAN SEE ALL 11 CLIENTS!")
+        else:
+            print("🚨 BACKOFFICE COMMESSA CLIENT VISIBILITY TEST: ❌ FAILED - ale2 CANNOT SEE CLIENTS!")
+            
         if success:
             print("🎉 RESPONSABILE COMMESSA RESOLUTION TEST: ✅ SUCCESS - ALL 3 PROBLEMS RESOLVED!")
         else:
             print("🚨 RESPONSABILE COMMESSA RESOLUTION TEST: ❌ FAILED - PROBLEMS STILL EXIST!")
         
-        if success:
-            print("\n🎉 OVERALL RESULT: ✅ SISTEMA UTILIZZABILE PER RESPONSABILE COMMESSA!")
+        overall_success = backoffice_success and success
+        if overall_success:
+            print("\n🎉 OVERALL RESULT: ✅ SISTEMA UTILIZZABILE PER TUTTI I RUOLI COMMESSA!")
         else:
             print("\n🚨 OVERALL RESULT: ❌ SISTEMA NON UTILIZZABILE - PROBLEMI PERSISTENTI!")
         
-        return success
+        return overall_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
