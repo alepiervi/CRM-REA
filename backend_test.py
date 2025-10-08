@@ -25922,6 +25922,266 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 ACTION REQUIRED: Verificare configurazione user_commessa_authorizations per utente 'ale'")
             return False
 
+    def test_responsabile_commessa_client_creation_422_debug(self):
+        """🚨 URGENT TEST: Debug 422 error for Responsabile Commessa client creation"""
+        print("\n🚨 URGENT TEST: DEBUG 422 ERROR FOR RESPONSABILE COMMESSA CLIENT CREATION...")
+        print("🎯 OBIETTIVO: Identificare e risolvere errore 422 specifico per utente 'ale'")
+        print("🎯 FOCUS: Analizzare campo role_in_commessa nel controllo autorizzazioni")
+        
+        # 1. **LOGIN RESPONSABILE COMMESSA**
+        print("\n🔐 1. LOGIN RESPONSABILE COMMESSA (ale/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'ale', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ ale LOGIN SUCCESS", True, 
+                f"Token received, Role: {self.user_data['role']}, Commesse: {len(self.user_data.get('commesse_autorizzate', []))}")
+            
+            # Verify user has access to Fastweb commessa
+            commesse_autorizzate = self.user_data.get('commesse_autorizzate', [])
+            fastweb_commessa_id = "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1"
+            
+            if fastweb_commessa_id in commesse_autorizzate:
+                self.log_test("✅ Fastweb commessa access confirmed", True, 
+                    f"User has access to Fastweb commessa: {fastweb_commessa_id}")
+            else:
+                self.log_test("❌ Fastweb commessa access missing", False, 
+                    f"User commesse: {commesse_autorizzate}, Expected: {fastweb_commessa_id}")
+                return False
+        else:
+            self.log_test("❌ ale LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. **VERIFY AUTHORIZATION RECORD**
+        print("\n🔍 2. VERIFY AUTHORIZATION RECORD...")
+        
+        # Test GET /api/auth/me to see full user data
+        success, auth_me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/auth/me SUCCESS", True, f"Status: {status}")
+            
+            # Check if user has proper authorization data
+            user_id = auth_me_response.get('id')
+            role = auth_me_response.get('role')
+            commesse_autorizzate = auth_me_response.get('commesse_autorizzate', [])
+            
+            self.log_test("✅ User authorization data", True, 
+                f"ID: {user_id}, Role: {role}, Commesse: {len(commesse_autorizzate)}")
+        else:
+            self.log_test("❌ GET /api/auth/me FAILED", False, f"Status: {status}")
+            return False
+
+        # 3. **TEST CASCADE ENDPOINTS ACCESS**
+        print("\n🔗 3. TEST CASCADE ENDPOINTS ACCESS...")
+        
+        fastweb_commessa_id = "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1"
+        
+        # Test GET /api/cascade/servizi-by-commessa
+        success, servizi_response, status = self.make_request(
+            'GET', f'cascade/servizi-by-commessa/{fastweb_commessa_id}', expected_status=200)
+        
+        if success and status == 200:
+            servizi = servizi_response if isinstance(servizi_response, list) else []
+            self.log_test("✅ GET servizi-by-commessa", True, f"Found {len(servizi)} servizi")
+            
+            if len(servizi) > 0:
+                # Use first servizio for further testing
+                test_servizio = servizi[0]
+                servizio_id = test_servizio.get('id')
+                
+                # Test GET /api/cascade/tipologie-by-servizio
+                success, tipologie_response, status = self.make_request(
+                    'GET', f'cascade/tipologie-by-servizio/{servizio_id}', expected_status=200)
+                
+                if success and status == 200:
+                    tipologie = tipologie_response if isinstance(tipologie_response, list) else []
+                    self.log_test("✅ GET tipologie-by-servizio", True, f"Found {len(tipologie)} tipologie")
+                    
+                    if len(tipologie) > 0:
+                        # Use first tipologia for segmenti test
+                        test_tipologia = tipologie[0]
+                        tipologia_id = test_tipologia.get('id')
+                        
+                        # Test GET /api/cascade/segmenti-by-tipologia
+                        success, segmenti_response, status = self.make_request(
+                            'GET', f'cascade/segmenti-by-tipologia/{tipologia_id}', expected_status=200)
+                        
+                        if success and status == 200:
+                            segmenti = segmenti_response if isinstance(segmenti_response, list) else []
+                            self.log_test("✅ GET segmenti-by-tipologia", True, f"Found {len(segmenti)} segmenti")
+                        else:
+                            self.log_test("❌ GET segmenti-by-tipologia", False, f"Status: {status}")
+                    else:
+                        self.log_test("❌ No tipologie found", False, "Cannot test segmenti without tipologie")
+                else:
+                    self.log_test("❌ GET tipologie-by-servizio", False, f"Status: {status}")
+            else:
+                self.log_test("❌ No servizi found", False, "Cannot test cascade without servizi")
+        else:
+            self.log_test("❌ GET servizi-by-commessa", False, f"Status: {status}")
+
+        # 4. **ATTEMPT CLIENT CREATION WITH DETAILED ERROR ANALYSIS**
+        print("\n🚨 4. ATTEMPT CLIENT CREATION WITH DETAILED ERROR ANALYSIS...")
+        
+        # Use the exact data from the review request
+        client_data = {
+            "nome": "Test",
+            "cognome": "Cliente422", 
+            "telefono": "3333333333",
+            "email": "test422@test.it",
+            "commessa_id": "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1",
+            "sub_agenzia_id": "7c70d4b5-4be0-4707-8bca-dfe84a0b9dee",
+            "servizio_id": "e000d779-2d13-4cde-afae-e498776a5493",
+            "tipologia_contratto": "energia_fastweb",
+            "segmento": "privato"
+        }
+        
+        print(f"   Attempting POST /api/clienti with data: {client_data}")
+        
+        # Make the request and capture detailed error information
+        success, create_response, status = self.make_request(
+            'POST', 'clienti', client_data, expected_status=201)
+        
+        if success and status in [200, 201]:
+            # SUCCESS CASE
+            client_id = create_response.get('id') if isinstance(create_response, dict) else None
+            client_name = f"{client_data['nome']} {client_data['cognome']}"
+            
+            self.log_test("🎉 POST /api/clienti SUCCESS", True, 
+                f"Status: {status}, Client created: {client_name} (ID: {client_id})")
+            
+            # Verify client was actually created
+            if client_id:
+                success, verify_response, verify_status = self.make_request('GET', 'clienti', expected_status=200)
+                
+                if success and verify_status == 200:
+                    clienti = verify_response.get('clienti', []) if isinstance(verify_response, dict) else verify_response
+                    created_client = next((c for c in clienti if c.get('id') == client_id), None)
+                    
+                    if created_client:
+                        self.log_test("✅ Client creation verified", True, 
+                            f"Client found in database: {created_client.get('nome')} {created_client.get('cognome')}")
+                        
+                        # Check all fields were saved correctly
+                        field_checks = []
+                        for field, expected_value in client_data.items():
+                            actual_value = created_client.get(field)
+                            if actual_value == expected_value:
+                                field_checks.append(f"✅ {field}: {actual_value}")
+                            else:
+                                field_checks.append(f"❌ {field}: expected {expected_value}, got {actual_value}")
+                        
+                        self.log_test("✅ Client data integrity", True, f"Field checks: {len([c for c in field_checks if c.startswith('✅')])}/{len(field_checks)} correct")
+                        
+                        for check in field_checks[:5]:  # Show first 5 checks
+                            print(f"      {check}")
+                    else:
+                        self.log_test("❌ Client not found in database", False, f"Client ID {client_id} not found")
+                else:
+                    self.log_test("❌ Could not verify client creation", False, f"GET /api/clienti failed: {verify_status}")
+            
+            return True
+            
+        elif status == 422:
+            # 422 VALIDATION ERROR - DETAILED ANALYSIS
+            self.log_test("🚨 POST /api/clienti 422 VALIDATION ERROR", False, f"Status: {status}")
+            
+            print(f"\n🔍 DETAILED 422 ERROR ANALYSIS:")
+            print(f"   📋 Response: {create_response}")
+            
+            # Extract validation error details
+            if isinstance(create_response, dict):
+                detail = create_response.get('detail', 'No detail provided')
+                
+                if isinstance(detail, list):
+                    # Pydantic validation errors
+                    print(f"   📋 Pydantic validation errors found:")
+                    for i, error in enumerate(detail):
+                        error_type = error.get('type', 'unknown')
+                        error_msg = error.get('msg', 'No message')
+                        error_loc = error.get('loc', [])
+                        
+                        print(f"      {i+1}. Type: {error_type}")
+                        print(f"         Message: {error_msg}")
+                        print(f"         Location: {error_loc}")
+                        
+                        # Check for role_in_commessa related errors
+                        if 'role_in_commessa' in str(error_loc) or 'role_in_commessa' in error_msg:
+                            self.log_test("🎯 ROLE_IN_COMMESSA ERROR IDENTIFIED", False, 
+                                f"Error in role_in_commessa field: {error_msg}")
+                        
+                        # Check for enum validation errors
+                        if error_type == 'value_error.enum' or 'enum' in error_type:
+                            self.log_test("🎯 ENUM VALIDATION ERROR", False, 
+                                f"Enum validation failed for field {error_loc}: {error_msg}")
+                        
+                        # Check for missing field errors
+                        if error_type == 'value_error.missing':
+                            self.log_test("🎯 MISSING FIELD ERROR", False, 
+                                f"Required field missing {error_loc}: {error_msg}")
+                
+                elif isinstance(detail, str):
+                    # String error message
+                    print(f"   📋 Error message: {detail}")
+                    
+                    if 'role_in_commessa' in detail:
+                        self.log_test("🎯 ROLE_IN_COMMESSA ERROR IDENTIFIED", False, 
+                            f"Error message contains role_in_commessa: {detail}")
+                    
+                    if 'authorization' in detail.lower() or 'permission' in detail.lower():
+                        self.log_test("🎯 AUTHORIZATION ERROR IDENTIFIED", False, 
+                            f"Authorization error: {detail}")
+            
+            # 5. **CHECK AUTHORIZATION RECORD IN DATABASE**
+            print(f"\n🔍 5. AUTHORIZATION RECORD ANALYSIS:")
+            print(f"   🎯 CRITICAL: Check if user has proper authorization record with correct role_in_commessa")
+            
+            # The issue is likely in the user_commessa_authorizations table
+            # We can't directly query the database, but we can infer from the error
+            
+            self.log_test("🚨 PROBABLE ROOT CAUSE", False, 
+                "User 'ale' likely missing user_commessa_authorizations record with role_in_commessa='responsabile_commessa'")
+            
+            return False
+            
+        elif status == 403:
+            # 403 FORBIDDEN - AUTHORIZATION ERROR
+            self.log_test("🚨 POST /api/clienti 403 FORBIDDEN", False, f"Status: {status}")
+            
+            print(f"\n🔍 403 AUTHORIZATION ERROR ANALYSIS:")
+            print(f"   📋 Response: {create_response}")
+            
+            detail = create_response.get('detail', 'No detail provided') if isinstance(create_response, dict) else str(create_response)
+            
+            if 'commessa' in detail.lower():
+                self.log_test("🎯 COMMESSA ACCESS ERROR", False, f"User cannot access commessa: {detail}")
+            elif 'create' in detail.lower():
+                self.log_test("🎯 CREATE PERMISSION ERROR", False, f"User cannot create clients: {detail}")
+            else:
+                self.log_test("🎯 GENERAL AUTHORIZATION ERROR", False, f"Authorization failed: {detail}")
+            
+            return False
+            
+        else:
+            # OTHER ERROR
+            self.log_test("❌ POST /api/clienti UNEXPECTED ERROR", False, 
+                f"Status: {status}, Response: {create_response}")
+            return False
+
+        # 6. **RECOMMENDATIONS**
+        print(f"\n💡 6. RECOMMENDATIONS FOR FIXING 422 ERROR:")
+        print(f"   🔧 1. Verify user_commessa_authorizations table has record for user 'ale'")
+        print(f"   🔧 2. Ensure role_in_commessa field is set to 'responsabile_commessa'")
+        print(f"   🔧 3. Verify can_create_clients is set to true")
+        print(f"   🔧 4. Check Pydantic model validation for role_in_commessa enum")
+        print(f"   🔧 5. Ensure check_commessa_access() function handles responsabile_commessa role correctly")
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
