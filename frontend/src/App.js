@@ -15203,20 +15203,35 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       const tipologia = cascadeTipologie?.find(t => t.id === uuidOrDisplayValue);
       if (tipologia) {
         displayValue = tipologia.nome;
-        console.log(`🎯 ENUM MAPPING: UUID ${uuidOrDisplayValue} → Display: "${displayValue}"`);
+        console.log(`🔄 UUID → Display: ${uuidOrDisplayValue} → ${displayValue}`);
       }
     }
     
-    // Now convert display name to backend enum
+    // Clean the display value and convert to backend enum
+    const cleanDisplayValue = (displayValue || '').toString().trim();
+    
     const mappings = {
       'Telefonia Fastweb': 'telefonia_fastweb',
-      'Energia Fastweb': 'energia_fastweb',
+      'Energia Fastweb': 'energia_fastweb', 
       'Ho Mobile': 'ho_mobile',
-      'Telepass': 'telepass'
+      'Telepass': 'telepass',
+      'telepass_premium': 'telepass_premium',
+      'telepass_basic': 'telepass_basic',
+      'fotovoltaico_residenziale': 'fotovoltaico_residenziale',
+      'fotovoltaico_aziendale': 'fotovoltaico_aziendale',
+      'manutenzione_premium': 'manutenzione_premium',
+      'manutenzione_standard': 'manutenzione_standard'
     };
     
-    const enumValue = mappings[displayValue] || displayValue;
-    console.log(`🎯 ENUM MAPPING: Display "${displayValue}" → Enum: "${enumValue}"`);
+    // Try exact match first, then case insensitive
+    let enumValue = mappings[cleanDisplayValue];
+    if (!enumValue) {
+      // Case insensitive fallback
+      const key = Object.keys(mappings).find(k => k.toLowerCase() === cleanDisplayValue.toLowerCase());
+      enumValue = key ? mappings[key] : cleanDisplayValue.toLowerCase().replace(/\s+/g, '_');
+    }
+    
+    console.log(`🎯 ENUM MAPPING: Display "${cleanDisplayValue}" → Enum: "${enumValue}"`);
     return enumValue;
   };
 
