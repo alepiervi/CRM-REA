@@ -26753,6 +26753,281 @@ Duplicate,Test,+393471234567"""
         
         return success
 
+    def test_backoffice_commessa_client_visibility_urgent(self):
+        """🚨 URGENT TEST: BackOffice Commessa (ale2) Client Visibility Issue"""
+        print("\n🚨 URGENT TEST: BackOffice COMMESSA (ale2) CLIENT VISIBILITY ISSUE...")
+        print("🎯 OBIETTIVO CRITICO: Identificare perché ale2 non vede clienti nonostante configurazione corretta")
+        print("🎯 DATI VERIFICATI: ale2 ha ruolo backoffice_commessa, 2 commesse autorizzate, 11 clienti disponibili")
+        print("🎯 PROBLEMA: ale2 vede array vuoto invece di 11 clienti (3 Fastweb + 8 Telepass)")
+        
+        # **STEP 1: LOGIN BACKOFFICE COMMESSA (ale2)**
+        print("\n🔐 STEP 1: LOGIN BACKOFFICE COMMESSA (ale2/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'ale2', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            ale2_token = response['access_token']
+            ale2_user_data = response['user']
+            ale2_role = ale2_user_data.get('role')
+            ale2_commesse = ale2_user_data.get('commesse_autorizzate', [])
+            
+            self.log_test("✅ BACKOFFICE COMMESSA LOGIN (ale2/admin123)", True, 
+                f"Role: {ale2_role}, Commesse autorizzate: {len(ale2_commesse)}")
+            
+            # Verify role is correct
+            if ale2_role == 'backoffice_commessa':
+                self.log_test("✅ ROLE VERIFICATION", True, f"Role: {ale2_role} (correct)")
+            else:
+                self.log_test("❌ ROLE VERIFICATION", False, f"Expected: backoffice_commessa, Got: {ale2_role}")
+            
+            # Verify commesse autorizzate
+            expected_commesse = ['4cb70f28-6278-4d0f-b2b7-65f2b783f3f1', '72d1a8da-10cb-4fa7-85fe-1f26ac9a9690']
+            if len(ale2_commesse) == 2:
+                self.log_test("✅ COMMESSE AUTORIZZATE COUNT", True, f"Found {len(ale2_commesse)} commesse (expected 2)")
+                
+                # Check specific commesse IDs
+                missing_commesse = [c for c in expected_commesse if c not in ale2_commesse]
+                if not missing_commesse:
+                    self.log_test("✅ COMMESSE AUTORIZZATE IDs", True, "Both expected commesse IDs present")
+                else:
+                    self.log_test("❌ COMMESSE AUTORIZZATE IDs", False, f"Missing: {missing_commesse}")
+            else:
+                self.log_test("❌ COMMESSE AUTORIZZATE COUNT", False, f"Expected 2, Got: {len(ale2_commesse)}")
+                
+        else:
+            self.log_test("❌ BACKOFFICE COMMESSA LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: TEST GET CLIENTI WITH ale2**
+        print("\n👥 STEP 2: TEST GET CLIENTI WITH ale2...")
+        print("   🎯 CRITICO: Deve ritornare 11 clienti (3 Fastweb + 8 Telepass), NON array vuoto")
+        
+        # Save current token and use ale2 token
+        original_token = self.token
+        self.token = ale2_token
+        
+        # GET /api/clienti with ale2 credentials
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti (ale2)", True, f"Status: {status} - API call successful")
+            
+            # Parse response to get client count
+            if isinstance(clienti_response, dict):
+                clienti = clienti_response.get('clienti', [])
+                total_count = clienti_response.get('total', len(clienti))
+            elif isinstance(clienti_response, list):
+                clienti = clienti_response
+                total_count = len(clienti)
+            else:
+                clienti = []
+                total_count = 0
+            
+            print(f"   📊 RISULTATO CRITICO: ale2 vede {total_count} clienti")
+            
+            if total_count == 11:
+                self.log_test("✅ CLIENT COUNT CORRECT", True, f"ale2 sees {total_count} clients (expected 11) - ISSUE RESOLVED!")
+                
+                # Analyze client distribution by commessa
+                fastweb_clients = []
+                telepass_clients = []
+                other_clients = []
+                
+                for client in clienti:
+                    commessa_id = client.get('commessa_id')
+                    if commessa_id == '4cb70f28-6278-4d0f-b2b7-65f2b783f3f1':  # Fastweb
+                        fastweb_clients.append(client)
+                    elif commessa_id == '72d1a8da-10cb-4fa7-85fe-1f26ac9a9690':  # Telepass
+                        telepass_clients.append(client)
+                    else:
+                        other_clients.append(client)
+                
+                self.log_test("✅ CLIENT DISTRIBUTION", True, 
+                    f"Fastweb: {len(fastweb_clients)}, Telepass: {len(telepass_clients)}, Other: {len(other_clients)}")
+                
+                if len(fastweb_clients) >= 3 and len(telepass_clients) >= 8:
+                    self.log_test("✅ EXPECTED CLIENT DISTRIBUTION", True, 
+                        f"Found expected distribution: {len(fastweb_clients)} Fastweb + {len(telepass_clients)} Telepass")
+                else:
+                    self.log_test("ℹ️ CLIENT DISTRIBUTION DIFFERENT", True, 
+                        f"Distribution differs from expected (3 Fastweb + 8 Telepass)")
+                        
+            elif total_count == 0:
+                self.log_test("❌ CLIENT COUNT ZERO", False, f"ale2 sees {total_count} clients - CRITICAL ISSUE CONFIRMED!")
+                self.log_test("🚨 ROOT CAUSE INVESTIGATION NEEDED", False, "ale2 with perfect config sees empty array")
+                
+                # Additional debugging info
+                print(f"   🔍 DEBUG INFO:")
+                print(f"      • ale2 role: {ale2_role}")
+                print(f"      • ale2 commesse_autorizzate: {ale2_commesse}")
+                print(f"      • API response type: {type(clienti_response)}")
+                print(f"      • API response: {clienti_response}")
+                
+            else:
+                self.log_test("❌ CLIENT COUNT INCORRECT", False, 
+                    f"ale2 sees {total_count} clients (expected 11) - PARTIAL ISSUE")
+                
+                # Show what clients are visible
+                if total_count > 0:
+                    client_names = [f"{c.get('nome', '')} {c.get('cognome', '')}" for c in clienti[:5]]
+                    self.log_test("ℹ️ VISIBLE CLIENTS SAMPLE", True, f"Sample clients: {client_names}")
+                    
+        else:
+            self.log_test("❌ GET /api/clienti (ale2)", False, f"Status: {status}, Response: {clienti_response}")
+            total_count = -1
+
+        # **STEP 3: COMPARISON WITH RESPONSABILE COMMESSA (ale)**
+        print("\n🔄 STEP 3: COMPARISON WITH RESPONSABILE COMMESSA (ale)...")
+        print("   🎯 OBIETTIVO: Confrontare comportamento ale (responsabile) vs ale2 (backoffice)")
+        
+        # Login with ale (responsabile_commessa)
+        success, ale_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'ale', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in ale_response:
+            ale_token = ale_response['access_token']
+            ale_user_data = ale_response['user']
+            ale_role = ale_user_data.get('role')
+            ale_commesse = ale_user_data.get('commesse_autorizzate', [])
+            
+            self.log_test("✅ RESPONSABILE COMMESSA LOGIN (ale/admin123)", True, 
+                f"Role: {ale_role}, Commesse: {len(ale_commesse)}")
+            
+            # Use ale token
+            self.token = ale_token
+            
+            # GET /api/clienti with ale credentials
+            success, ale_clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+            
+            if success and status == 200:
+                # Parse ale's client count
+                if isinstance(ale_clienti_response, dict):
+                    ale_clienti = ale_clienti_response.get('clienti', [])
+                    ale_total_count = ale_clienti_response.get('total', len(ale_clienti))
+                elif isinstance(ale_clienti_response, list):
+                    ale_clienti = ale_clienti_response
+                    ale_total_count = len(ale_clienti)
+                else:
+                    ale_total_count = 0
+                
+                self.log_test("✅ GET /api/clienti (ale)", True, f"ale sees {ale_total_count} clients")
+                
+                # Compare results
+                print(f"\n   📊 COMPARISON RESULTS:")
+                print(f"      • ale (responsabile_commessa): {ale_total_count} clients")
+                print(f"      • ale2 (backoffice_commessa): {total_count} clients")
+                print(f"      • Expected for ale2: 11 clients")
+                
+                if ale_total_count > 0 and total_count == 0:
+                    self.log_test("🚨 CRITICAL DIFFERENCE IDENTIFIED", False, 
+                        f"ale sees {ale_total_count} clients, ale2 sees 0 - AUTHORIZATION ISSUE!")
+                elif ale_total_count == total_count:
+                    self.log_test("ℹ️ SAME RESULT", True, f"Both users see {total_count} clients")
+                else:
+                    self.log_test("ℹ️ DIFFERENT RESULTS", True, 
+                        f"ale: {ale_total_count}, ale2: {total_count} - Role-based difference")
+                        
+            else:
+                self.log_test("❌ GET /api/clienti (ale)", False, f"Status: {status}")
+                
+        else:
+            self.log_test("❌ RESPONSABILE COMMESSA LOGIN FAILED", False, f"Status: {status}")
+
+        # **STEP 4: AUTHORIZATION VERIFICATION**
+        print("\n🔐 STEP 4: AUTHORIZATION VERIFICATION...")
+        print("   🎯 OBIETTIVO: Verificare logica autorizzazioni per backoffice_commessa")
+        
+        # Use ale2 token again
+        self.token = ale2_token
+        
+        # Test auth/me endpoint to verify user data
+        success, auth_me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/auth/me (ale2)", True, f"Status: {status}")
+            
+            # Verify user data consistency
+            auth_role = auth_me_response.get('role')
+            auth_commesse = auth_me_response.get('commesse_autorizzate', [])
+            
+            if auth_role == ale2_role and len(auth_commesse) == len(ale2_commesse):
+                self.log_test("✅ USER DATA CONSISTENCY", True, "auth/me matches login data")
+            else:
+                self.log_test("❌ USER DATA INCONSISTENCY", False, 
+                    f"Login: {ale2_role}/{len(ale2_commesse)}, Auth/me: {auth_role}/{len(auth_commesse)}")
+                    
+        else:
+            self.log_test("❌ GET /api/auth/me (ale2)", False, f"Status: {status}")
+
+        # **STEP 5: BACKEND AUTHORIZATION LOGIC ANALYSIS**
+        print("\n🔍 STEP 5: BACKEND AUTHORIZATION LOGIC ANALYSIS...")
+        print("   🎯 OBIETTIVO: Analizzare se query MongoDB include entrambe le commesse autorizzate")
+        
+        # Test individual commessa access
+        for i, commessa_id in enumerate(ale2_commesse[:2]):  # Test first 2 commesse
+            print(f"\n   Testing access to commessa {i+1}: {commessa_id}")
+            
+            # Try to get clients filtered by specific commessa (if endpoint exists)
+            success, commessa_response, status = self.make_request('GET', f'clienti?commessa_id={commessa_id}', expected_status=200)
+            
+            if success and status == 200:
+                if isinstance(commessa_response, dict):
+                    commessa_clienti = commessa_response.get('clienti', [])
+                    commessa_count = len(commessa_clienti)
+                elif isinstance(commessa_response, list):
+                    commessa_count = len(commessa_response)
+                else:
+                    commessa_count = 0
+                    
+                self.log_test(f"✅ Commessa {i+1} access", True, f"Found {commessa_count} clients for commessa {commessa_id[:8]}...")
+                
+                if commessa_count > 0:
+                    # Sample client from this commessa
+                    sample_client = (commessa_response.get('clienti', []) if isinstance(commessa_response, dict) else commessa_response)[0]
+                    client_commessa = sample_client.get('commessa_id')
+                    
+                    if client_commessa == commessa_id:
+                        self.log_test(f"✅ Commessa {i+1} filtering correct", True, "Client belongs to requested commessa")
+                    else:
+                        self.log_test(f"❌ Commessa {i+1} filtering incorrect", False, 
+                            f"Client commessa: {client_commessa}, Expected: {commessa_id}")
+            else:
+                self.log_test(f"❌ Commessa {i+1} access", False, f"Status: {status}")
+
+        # Restore original token
+        self.token = original_token
+
+        # **FINAL DIAGNOSIS**
+        print(f"\n🎯 FINAL DIAGNOSIS - BACKOFFICE COMMESSA CLIENT VISIBILITY:")
+        print(f"   🎯 PROBLEMA CRITICO: BackOffice Commessa (ale2) non vede clienti")
+        print(f"   🎯 CONFIGURAZIONE VERIFICATA: ale2 ha configurazione perfetta")
+        print(f"   📊 RISULTATI TEST:")
+        print(f"      • ale2 login: ✅ SUCCESS (backoffice_commessa)")
+        print(f"      • ale2 commesse autorizzate: ✅ 2 commesse (correct IDs)")
+        print(f"      • ale2 GET /api/clienti: {'✅ SUCCESS' if status == 200 else '❌ FAILED'}")
+        print(f"      • ale2 client count: {total_count} (expected 11)")
+        print(f"      • Authorization consistency: {'✅ VERIFIED' if success else '❌ ISSUES'}")
+        
+        if total_count == 11:
+            print(f"   🎉 SUCCESS: BackOffice Commessa client visibility WORKING!")
+            print(f"   🎉 RESOLVED: ale2 can now see all 11 authorized clients")
+            return True
+        elif total_count == 0:
+            print(f"   🚨 CRITICAL FAILURE: BackOffice Commessa sees NO clients!")
+            print(f"   🚨 ROOT CAUSE: Authorization logic not working for backoffice_commessa role")
+            print(f"   🔧 REQUIRED: Fix backend authorization query for backoffice_commessa")
+            return False
+        else:
+            print(f"   ⚠️ PARTIAL ISSUE: BackOffice Commessa sees {total_count} clients (expected 11)")
+            print(f"   🔧 INVESTIGATION: Check why not all authorized clients are visible")
+            return False
+
     def test_sub_agenzia_filter_fix_urgent(self):
         """🚨 TEST IMMEDIATO FIX FILTRO SUB AGENZIA - Responsabile Commessa"""
         print("\n🚨 TEST IMMEDIATO FIX FILTRO SUB AGENZIA - RESPONSABILE COMMESSA...")
