@@ -134,7 +134,30 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "TASK: Test immediato Responsabile Sub Agenzia creazione cliente frontend - cattura errore validazione. PROBLEMA CRITICO: ale3 (responsabile_sub_agenzia) non può salvare anagrafiche clienti via frontend, ma backend autorizzazioni funzionano. Problema è nel form frontend. INVESTIGAZIONE FRONTEND SPECIFICA: 1. LOGIN RESPONSABILE SUB AGENZIA: Login ale3/admin123 → navigare Clienti, 2. APERTURA CREATECLIENTEMODAL: Cliccare 'Nuovo Cliente' → verificare modal si apre, 3. COMPILAZIONE FORM COMPLETA: Compilare TUTTI i campi richiesti: Nome, Cognome, Email, Telefono + Selezionare filiera cascading: Sub Agenzia → Commessa → Servizio → Tipologia → Segmento, verificare che tutti i dropdown si popolino correttamente, 4. TENTATIVO SALVATAGGIO: Cliccare 'Crea Cliente' → CATTURARE errore specifico, 5. DEBUG CONSOLE: Controllare errori JavaScript in console browser, Network tab per vedere dati POST /api/clienti inviati, Response error da backend (400, 422, 500?), Enum mapping errors nelle funzioni frontend. FOCUS INVESTIGAZIONE: mapTipologiaContratto() function: Verifica mapping corretto, mapSegmento() function: Verifica enum values, Required fields validation: Nome, Cognome, Telefono, Email, Cascading data: sub_agenzia_id, commessa_id, servizio_id corretti. OBIETTIVO: Identificare l'errore ESATTO che ale3 vede quando tenta di salvare cliente vs perché test automatici hanno successo. CREDENZIALI: ale3/admin123, URL: https://client-mgmt-portal-1.preview.emergentagent.com, PRIORITÀ MASSIMA: Trovare l'errore frontend specifico che impedisce salvataggio anagrafiche!"
+user_problem_statement: "TASK: Test immediato fix Responsabile Sub Agenzia - verifica dropdown popolato e creazione cliente funzionante
+
+BUG FIX IMPLEMENTATO: Corretto bug logica ruolo alla riga 15308 da `if (user?.role === 'sub_agenzia' || user?.sub_agenzia_id)` a `if (user?.role === 'sub_agenzia')` per evitare che ale3 prenda il flusso sbagliato.
+
+PROBLEMA RISOLTO: 'Utente Responsabile Sub Agenzia non permette di salvare le anagrafiche dei clienti si provano a creare'
+
+TESTING IMMEDIATO:
+1. **LOGIN RESPONSABILE SUB AGENZIA**: Login ale3/admin123 → navigare Clienti
+2. **APERTURA CREATECLIENTEMODAL**: Cliccare 'Nuovo Cliente' → verificare modal si apre
+3. **VERIFICA FLUSSO CORRETTO**: Controllare console log per '👔 Responsabile Sub Agenzia Flow' (NON '🏢 Sub Agenzia Flow')
+4. **DROPDOWN SUB AGENZIA POPOLATO**: Verificare che dropdown Sub Agenzia ora mostri 'F2F' (non più solo placeholder)
+5. **CASCADING COMPLETO**: Testare filiera: Sub Agenzia (F2F) → Commessa (Fastweb) → Servizio → Tipologia → Segmento
+6. **CREAZIONE CLIENTE**: Compilare form completo e tentare salvataggio → verificare SUCCESS
+
+VERIFICA SUCCESS CRITERIA:
+- Console log mostra flusso corretto per responsabile_sub_agenzia ✅
+- Dropdown Sub Agenzia popolato con F2F ✅  
+- Cascading completo funzionante ✅
+- Cliente salvato con successo (no errori) ✅
+
+CREDENZIALI: ale3/admin123
+URL: https://client-mgmt-portal-1.preview.emergentagent.com
+
+PRIORITÀ MASSIMA: ale3 deve poter salvare anagrafiche clienti senza errori!"
 
 backend:
   - task: "Client Creation Authorization for All 5 Roles - Complete Authorization Fix"
