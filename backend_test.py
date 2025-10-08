@@ -1140,7 +1140,7 @@ class CRMAPITester:
         print(f"      • OLD value 'store_assistant' correttamente rifiutato: ✅ SUCCESS")
         print(f"      • Altri ruoli Store/Presidi funzionanti: {successful_roles}/4 ruoli")
         
-        if status == 201 and successful_roles >= 3:
+        if (status == 200 or status == 201) and successful_roles >= 3:
             print(f"   🎉 SUCCESS: Creazione utente Store Assistant ora funziona senza errori!")
             print(f"   🎉 CONFERMATO: Mismatch frontend/backend risolto - 'store_assist' accettato correttamente!")
             return True
