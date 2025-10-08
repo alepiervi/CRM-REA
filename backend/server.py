@@ -8908,8 +8908,8 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 ]
             else:
                 base_query["_id"] = {"$exists": False}
-        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
-            # Agente Specializzato & Operatore: only see clients created by them
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
+            # Agente Specializzato, Operatore, Store e Presidi: only see clients created by them
             base_query["created_by"] = current_user.id
         else:
             base_query["_id"] = {"$exists": False}
