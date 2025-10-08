@@ -318,6 +318,18 @@ backend:
           agent: "testing"
           comment: "🎉 SECURITY VULNERABILITY FIX VERIFICATION COMPLETE - 100% SUCCESS! ✅ URGENT TESTING COMPLETED: Tested the immediate security fix for AGENTE_SPECIALIZZATO and OPERATORE filter authorization as requested in review. ✅ AGENTE SPECIALIZZATO LOGIN (ale5/admin123): Successfully authenticated with token, Role: agente_specializzato, Sub Agenzia: F2F. ✅ OPERATORE LOGIN (ale6/admin123): Successfully authenticated with token, Role: operatore, Sub Agenzia: F2F. ✅ CRITICAL SECURITY FIX VERIFIED - ale5 filters: GET /api/clienti/filter-options returns Users field with ONLY ale5 (1 user, not 5 users), Sub Agenzie field with ONLY F2F (1 sub agenzia, not 2 sub agenzie). ✅ CRITICAL SECURITY FIX VERIFIED - ale6 filters: GET /api/clienti/filter-options returns Users field with ONLY ale6 (1 user, not all users), Sub Agenzie field with ONLY F2F (1 sub agenzia, not all sub agenzie). ✅ VULNERABILITY COMPLETELY RESOLVED: PRIMA - ale5 vedeva 5 users + 2 sub agenzie (VULNERABILITÀ), DOPO - ale5 vede 1 user + 1 sub agenzia (SICURO). PRIMA - ale6 vedeva tutti gli utenti + tutte le sub agenzie (VULNERABILITÀ), DOPO - ale6 vede 1 user + 1 sub agenzia (SICURO). ✅ AUTHORIZATION LOGIC WORKING: Added logic for AGENTE_SPECIALIZZATO and OPERATORE in base_query (line 8911), modified filtering users to show only themselves (line 8969-8981), modified filtering sub_agenzie to show only their own sub agenzia (line 8962-8967). ✅ TIPOLOGIE CONTRATTO FILTERED: Both users see tipologie_contratto filtered for their authorized clients only. 🎯 CRITICAL OBJECTIVES ACHIEVED: 1) ale5 sees only own data in filters ✅, 2) ale6 sees only own data in filters ✅, 3) No unauthorized access to other users' data ✅, 4) Security vulnerability completely resolved ✅. 🎉 OBIETTIVO RAGGIUNTO: 'Nei filtri Avanzati gli utenti Agenti specializzati e Operatore devono vedere solamente i loro account e non quello di altri' problema COMPLETAMENTE RISOLTO! Agenti vedono solo i loro dati autorizzati. SUCCESS RATE: 100% (12/12 tests passed) - Security vulnerability fix completely operational!"
 
+  - task: "Complete Responsabile Store and Responsabile Presidi Backend Authorization"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ AUTORIZZAZIONI BACKEND RESPONSABILE STORE/PRESIDI VERIFICATE IMPLEMENTATE: Ho confermato che la logica di autorizzazione per questi ruoli è già completamente implementata nel backend. DETTAGLI IMPLEMENTAZIONE: 1) UserRole enum include RESPONSABILE_STORE e RESPONSABILE_PRESIDI (righe 141-144) ✅ 2) GET /api/clienti endpoint: ruoli inclusi con logica 'only own clients' (righe 8753-8756) ✅ 3) GET /api/clienti/filter-options endpoint: ruoli inclusi in base_query (8911-8912), sub_agenzie filter (8962), users filter (8978) ✅ LOGICA AUTORIZZAZIONI: Store e Presidi vedono solo clienti creati da loro, nei filtri vedono solo se stessi e la propria sub agenzia (stesso pattern di Agenti/Operatori). PRONTO PER TESTING per confermare funzionamento completo."
+
 frontend:
   - task: "Responsabile Sub Agenzia Role Flow Logic Fix - Line 15308 Bug Resolution"
     implemented: true
