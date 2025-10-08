@@ -1107,8 +1107,8 @@ class CRMAPITester:
             print(f"   Testing role: {role}...")
             
             role_user_data = {
-                "username": f"test_{role}",
-                "email": f"test_{role}@test.it", 
+                "username": f"test_{role}_{timestamp}",
+                "email": f"test_{role}_{timestamp}@test.it", 
                 "password": "testpass123",
                 "role": role,
                 "is_active": True
