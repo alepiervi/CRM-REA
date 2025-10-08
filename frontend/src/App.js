@@ -15350,6 +15350,23 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     }
   };
 
+  // ===== FETCH FUNCTIONS =====
+  
+  const fetchCascadeSubAgenzie = async () => {
+    try {
+      console.log("🔄 FETCHING: Sub Agenzie cascade");
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/sub-agenzie`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      console.log("✅ FETCHED Sub Agenzie:", response.data);
+      setCascadeSubAgenzie(response.data || []);
+    } catch (error) {
+      console.error("❌ ERROR fetching sub agenzie:", error);
+      setCascadeSubAgenzie([]);
+    }
+  };
+
   // ===== CASCADE HANDLERS =====
   
   const handleSubAgenziaSelect = async (subAgenziaId) => {
