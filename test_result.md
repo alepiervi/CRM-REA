@@ -123,7 +123,7 @@ VERIFICA SUCCESS CRITERIA:
 - Cliente salvato con successo (no errori) ✅
 
 CREDENZIALI: ale3/admin123
-URL: https://client-mgmt-portal-1.preview.emergentagent.com
+URL: https://client-tracker-99.preview.emergentagent.com
 
 PRIORITÀ MASSIMA: ale3 deve poter salvare anagrafiche clienti senza errori!"
 

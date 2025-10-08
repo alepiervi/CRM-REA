@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_ui_user_passwords():
-    base_url = "https://client-mgmt-portal-1.preview.emergentagent.com/api"
+    base_url = "https://client-tracker-99.preview.emergentagent.com/api"
     
     print("🔐 PASSWORD VERIFICATION TEST FOR UI-CREATED USERS")
     print("=" * 60)
