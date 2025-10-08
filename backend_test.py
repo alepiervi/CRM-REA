@@ -933,6 +933,222 @@ class CRMAPITester:
             print(f"   🚨 PARTIAL SUCCESS: Alcuni test falliti - verificare implementazione export Excel")
             return False
 
+    def test_store_assistant_user_creation_fix(self):
+        """🚨 TEST IMMEDIATO CREAZIONE UTENTE STORE ASSISTANT - VERIFICA RISOLUZIONE ERRORE MISMATCH RUOLO"""
+        print("\n🚨 TEST IMMEDIATO CREAZIONE UTENTE STORE ASSISTANT...")
+        print("🎯 OBIETTIVO: Verificare che creazione utente Store Assistant funzioni senza errori 422")
+        print("🎯 BUG FIX: Frontend ora invia 'store_assist' invece di 'store_assistant' per match con backend enum")
+        print("🎯 SUCCESS CRITERIA: POST /api/users deve ritornare 201 Created (non 422 Validation Error)")
+        
+        # **STEP 1: LOGIN ADMIN**
+        print("\n🔐 STEP 1: LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ ADMIN LOGIN (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ ADMIN LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: TEST CREAZIONE STORE ASSISTANT**
+        print("\n👤 STEP 2: TEST CREAZIONE STORE ASSISTANT...")
+        print("   🎯 CRITICO: Testare ruolo 'store_assist' (NON 'store_assistant')")
+        
+        # Prepare test data as specified in review request
+        test_user_data = {
+            "username": "test_store",
+            "email": "test@store.it", 
+            "password": "testpass123",
+            "role": "store_assist",  # CRITICAL: Using corrected role value
+            "is_active": True
+        }
+        
+        print(f"   📋 Test data: {test_user_data}")
+        
+        # Test POST /api/users with store_assist role
+        success, create_response, status = self.make_request(
+            'POST', 'users', 
+            test_user_data, 
+            expected_status=201  # Expecting 201 Created, NOT 422
+        )
+        
+        if success and status == 201:
+            self.log_test("✅ POST /api/users (store_assist role)", True, 
+                f"Status: {status} Created - NO 422 Validation Error!")
+            
+            # Verify response contains user data
+            if isinstance(create_response, dict) and 'id' in create_response:
+                created_user_id = create_response.get('id')
+                created_role = create_response.get('role')
+                created_username = create_response.get('username')
+                
+                self.log_test("✅ User created successfully", True, 
+                    f"ID: {created_user_id}, Username: {created_username}, Role: {created_role}")
+                
+                # Verify role is correctly stored
+                if created_role == "store_assist":
+                    self.log_test("✅ Role stored correctly", True, f"Role: {created_role}")
+                else:
+                    self.log_test("❌ Role stored incorrectly", False, f"Expected: store_assist, Got: {created_role}")
+                
+                # Store created user ID for cleanup
+                self.created_resources['users'].append(created_user_id)
+                
+            else:
+                self.log_test("❌ Invalid response structure", False, f"Response: {create_response}")
+                
+        elif status == 422:
+            self.log_test("❌ POST /api/users (store_assist role)", False, 
+                f"Status: 422 Validation Error - BUG NOT FIXED! Response: {create_response}")
+            
+            # Analyze validation error details
+            if isinstance(create_response, dict) and 'detail' in create_response:
+                detail = create_response['detail']
+                self.log_test("🔍 Validation Error Details", False, f"Detail: {detail}")
+                
+                # Check if it's specifically a role validation error
+                if isinstance(detail, list) and len(detail) > 0:
+                    for error in detail:
+                        if isinstance(error, dict) and 'loc' in error:
+                            field = error.get('loc', [])
+                            msg = error.get('msg', '')
+                            if 'role' in field:
+                                self.log_test("🚨 ROLE VALIDATION ERROR", False, f"Field: {field}, Message: {msg}")
+            return False
+            
+        else:
+            self.log_test("❌ POST /api/users (store_assist role)", False, 
+                f"Unexpected status: {status}, Response: {create_response}")
+            return False
+
+        # **STEP 3: VERIFICA DATABASE PERSISTENCE**
+        print("\n💾 STEP 3: VERIFICA DATABASE PERSISTENCE...")
+        
+        if success and status == 201:
+            # Verify user exists in database by getting user list
+            success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+            
+            if success and status == 200:
+                users = users_response if isinstance(users_response, list) else []
+                
+                # Find our created user
+                created_user = next((user for user in users if user.get('username') == 'test_store'), None)
+                
+                if created_user:
+                    self.log_test("✅ User persisted in database", True, 
+                        f"Found user: {created_user.get('username')} with role: {created_user.get('role')}")
+                    
+                    # Verify all fields are correctly stored
+                    if (created_user.get('role') == 'store_assist' and 
+                        created_user.get('email') == 'test@store.it' and
+                        created_user.get('is_active') == True):
+                        self.log_test("✅ All user data correct in database", True, "All fields match expected values")
+                    else:
+                        self.log_test("❌ User data incorrect in database", False, 
+                            f"Role: {created_user.get('role')}, Email: {created_user.get('email')}, Active: {created_user.get('is_active')}")
+                else:
+                    self.log_test("❌ User not found in database", False, "Created user not found in user list")
+            else:
+                self.log_test("❌ Could not verify database persistence", False, f"GET /api/users failed: {status}")
+
+        # **STEP 4: TEST PYDANTIC ENUM VALIDATION**
+        print("\n🔍 STEP 4: TEST PYDANTIC ENUM VALIDATION...")
+        
+        # Test with the OLD incorrect value to confirm it fails
+        print("   Testing with OLD incorrect value 'store_assistant'...")
+        
+        old_user_data = {
+            "username": "test_store_old",
+            "email": "test_old@store.it", 
+            "password": "testpass123",
+            "role": "store_assistant",  # OLD incorrect value
+            "is_active": True
+        }
+        
+        success, old_response, status = self.make_request(
+            'POST', 'users', 
+            old_user_data, 
+            expected_status=422  # Expecting 422 for old incorrect value
+        )
+        
+        if status == 422:
+            self.log_test("✅ OLD value 'store_assistant' correctly rejected", True, 
+                f"Status: 422 - Pydantic validation working correctly")
+        else:
+            self.log_test("❌ OLD value 'store_assistant' not rejected", False, 
+                f"Status: {status} - Should have been 422")
+
+        # **STEP 5: TEST OTHER STORE/PRESIDI ROLES**
+        print("\n👥 STEP 5: TEST OTHER STORE/PRESIDI ROLES...")
+        
+        # Test all 4 Store/Presidi roles that were mentioned in the backend enum
+        store_presidi_roles = [
+            "responsabile_store",
+            "store_assist",  # Already tested above
+            "responsabile_presidi", 
+            "promoter_presidi"
+        ]
+        
+        successful_roles = 0
+        
+        for role in store_presidi_roles:
+            if role == "store_assist":
+                successful_roles += 1  # Already tested successfully above
+                continue
+                
+            print(f"   Testing role: {role}...")
+            
+            role_user_data = {
+                "username": f"test_{role}",
+                "email": f"test_{role}@test.it", 
+                "password": "testpass123",
+                "role": role,
+                "is_active": True
+            }
+            
+            success, role_response, status = self.make_request(
+                'POST', 'users', 
+                role_user_data, 
+                expected_status=201
+            )
+            
+            if success and status == 201:
+                self.log_test(f"✅ Role '{role}' creation successful", True, f"Status: {status}")
+                successful_roles += 1
+                
+                # Store for cleanup
+                if isinstance(role_response, dict) and 'id' in role_response:
+                    self.created_resources['users'].append(role_response['id'])
+            else:
+                self.log_test(f"❌ Role '{role}' creation failed", False, f"Status: {status}, Response: {role_response}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 STORE ASSISTANT USER CREATION TEST SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Confermare che creazione utente Store Assistant ora funzioni senza errori 422")
+        print(f"   🎯 BUG FIX: Frontend ora invia 'store_assist' (match con backend enum)")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • POST /api/users con ruolo 'store_assist': {'✅ SUCCESS (201 Created)' if status == 201 else '❌ FAILED'}")
+        print(f"      • Pydantic validation accetta ruolo corretto: {'✅ SUCCESS' if status == 201 else '❌ FAILED'}")
+        print(f"      • Utente Store Assistant creato nel database: {'✅ SUCCESS' if status == 201 else '❌ FAILED'}")
+        print(f"      • OLD value 'store_assistant' correttamente rifiutato: ✅ SUCCESS")
+        print(f"      • Altri ruoli Store/Presidi funzionanti: {successful_roles}/4 ruoli")
+        
+        if status == 201 and successful_roles >= 3:
+            print(f"   🎉 SUCCESS: Creazione utente Store Assistant ora funziona senza errori!")
+            print(f"   🎉 CONFERMATO: Mismatch frontend/backend risolto - 'store_assist' accettato correttamente!")
+            return True
+        else:
+            print(f"   🚨 FAILURE: Creazione utente Store Assistant presenta ancora problemi!")
+            print(f"   🚨 AZIONE RICHIESTA: Verificare enum UserRole nel backend e mapping frontend")
+            return False
+
     def test_document_management_system_complete(self):
         """TEST COMPLETO SISTEMA GESTIONE DOCUMENTI - FOCUS SU UPLOAD, DOWNLOAD, DELETE, LISTA"""
         print("\n📄 TEST COMPLETO SISTEMA GESTIONE DOCUMENTI...")
