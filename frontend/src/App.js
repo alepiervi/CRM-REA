@@ -3861,7 +3861,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                   <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
                   <SelectItem value="operatore">Operatore</SelectItem>
                   <SelectItem value="responsabile_store">Responsabile Store</SelectItem>
-                  <SelectItem value="store_assistant">Store Assistant</SelectItem>
+                  <SelectItem value="store_assist">Store Assistant</SelectItem>
                   <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
                   <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
                 </SelectContent>
@@ -4279,7 +4279,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
           )}
 
           {/* STORE ASSISTANT e PROMOTER PRESIDI: Singola Sub Agenzia → Multi Commesse → Multi Servizi */}
-          {(formData.role === "store_assistant" || formData.role === "promoter_presidi") && (
+          {(formData.role === "store_assist" || formData.role === "promoter_presidi") && (
             <>
               <div>
                 <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
@@ -4702,7 +4702,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                   <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
                   <SelectItem value="operatore">Operatore</SelectItem>
                   <SelectItem value="responsabile_store">Responsabile Store</SelectItem>
-                  <SelectItem value="store_assistant">Store Assistant</SelectItem>
+                  <SelectItem value="store_assist">Store Assistant</SelectItem>
                   <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
                   <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
                 </SelectContent>
@@ -5032,7 +5032,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
           )}
 
           {/* STORE ASSISTANT e PROMOTER PRESIDI: Singola Sub Agenzia → Multi Commesse → Multi Servizi */}
-          {(formData.role === "store_assistant" || formData.role === "promoter_presidi") && (
+          {(formData.role === "store_assist" || formData.role === "promoter_presidi") && (
             <>
               <div>
                 <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
