@@ -27990,6 +27990,18 @@ Duplicate,Test,+393471234567"""
         else:
             print("\n🚨 SUB AGENZIA FILTER FIX TEST FAILED!")
         
+        # Run the URGENT Security Vulnerability Fix test
+        print("\n" + "="*80)
+        print("🚨 RUNNING URGENT SECURITY VULNERABILITY FIX TEST")
+        print("="*80)
+        
+        security_success = self.test_security_vulnerability_fix_agent_filters()
+        
+        if security_success:
+            print("\n🎉 SECURITY VULNERABILITY FIX TEST PASSED!")
+        else:
+            print("\n🚨 SECURITY VULNERABILITY FIX TEST FAILED!")
+        
         # Run other tests
         self.test_provinces_endpoint()
         self.test_dashboard_stats()
