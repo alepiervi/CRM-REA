@@ -8959,9 +8959,9 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}
-        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
             if current_user.sub_agenzia_id:
-                # Agenti and Operatori see only their own sub agenzia
+                # Agenti, Operatori, Store e Presidi see only their own sub agenzia
                 sub_agenzie_query["id"] = current_user.sub_agenzia_id
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}
