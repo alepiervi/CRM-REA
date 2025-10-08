@@ -28822,4 +28822,5 @@ def main():
 
 if __name__ == "__main__":
     tester = CRMAPITester()
-    tester.run_all_tests()
+    # Run the specific Excel export test as requested in the review
+    tester.run_excel_export_filiera_test()
