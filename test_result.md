@@ -1065,6 +1065,7 @@ test_plan:
     - "Dynamic Client Filters Frontend UI Testing"
     - "Cascade Auto-Discovery Fix - Critical Bug Resolution for Client Creation"
     - "All Users Client Visibility Testing - Complete Authorization Verification"
+    - "BackOffice Commessa Client Visibility Issue - ale2 Cannot See Authorized Clients"
 
   - task: "Document View 403 Error Fix - Urgent Verification"
     implemented: true
