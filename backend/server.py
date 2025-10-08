@@ -13097,14 +13097,31 @@ async def get_servizi_autorizzati_by_commessa(
         
         logging.info(f"✅ CASCADE: Commessa found: {commessa.get('nome')}")
         
-        # AUTO-DISCOVERY: Always find all servizi for this commessa (no manual configuration needed)
-        logging.info("🔄 CASCADE: Using auto-discovery to find all active servizi for this commessa")
-        servizi_docs = await db.servizi.find({
-            "commessa_id": commessa_id,
-            "is_active": True
-        }).to_list(length=None)
+        # AUTHORIZATION-FILTERED: Find servizi based on user authorization
+        if current_user.role == "admin":
+            # Admin sees all servizi for this commessa
+            logging.info("👑 CASCADE: Admin user - showing all servizi")
+            servizi_docs = await db.servizi.find({
+                "commessa_id": commessa_id,
+                "is_active": True
+            }).to_list(length=None)
+        else:
+            # Non-admin users: filter by servizi_autorizzati
+            user_servizi_autorizzati = current_user.servizi_autorizzati or []
+            logging.info(f"🔒 CASCADE: User servizi_autorizzati: {user_servizi_autorizzati}")
+            
+            if not user_servizi_autorizzati:
+                logging.info("📭 CASCADE: No servizi autorizzati for user, returning empty")
+                servizi_docs = []
+            else:
+                # Find servizi that are both for this commessa AND in user's authorized list
+                servizi_docs = await db.servizi.find({
+                    "commessa_id": commessa_id,
+                    "id": {"$in": user_servizi_autorizzati},
+                    "is_active": True
+                }).to_list(length=None)
         
-        logging.info(f"🔄 CASCADE: Auto-discovery found {len(servizi_docs)} active servizi")
+        logging.info(f"🔄 CASCADE: Authorization-filtered found {len(servizi_docs)} servizi")
         
         logging.info(f"📊 CASCADE: Found {len(servizi_docs)} authorized servizi")
         
