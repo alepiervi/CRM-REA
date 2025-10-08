@@ -350,7 +350,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Security Vulnerability Fix - Agent Filter Authorization"
+    - "Complete Responsabile Store and Responsabile Presidi Backend Authorization"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
