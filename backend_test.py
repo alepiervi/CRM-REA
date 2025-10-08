@@ -27705,6 +27705,254 @@ Duplicate,Test,+393471234567"""
             self.log_test("🚨 CLIENT CREATION AUTHORIZATION FIX", False, f"{failed_creations} out of {total_users} users still failing")
             return False
 
+    def test_security_vulnerability_fix_agent_filters(self):
+        """🚨 TEST IMMEDIATO RISOLUZIONE VULNERABILITÀ SICUREZZA FILTRI - VERIFICA AUTORIZZAZIONI CORRETTE PER AGENTI"""
+        print("\n🚨 TEST IMMEDIATO RISOLUZIONE VULNERABILITÀ SICUREZZA FILTRI...")
+        print("🎯 OBIETTIVO: Verificare che AGENTE_SPECIALIZZATO e OPERATORE vedano solo i loro dati autorizzati")
+        print("🎯 PROBLEMA RISOLTO: 'Nei filtri Avanzati gli utenti Agenti specializzati e Operatore devono vedere solamente i loro account e non quello di altri'")
+        print("🎯 FIX IMPLEMENTATO: Logica autorizzazioni per AGENTE_SPECIALIZZATO e OPERATORE in base_query + filtering users/sub_agenzie")
+        
+        # **STEP 1: TEST AGENTE SPECIALIZZATO (ale5)**
+        print("\n👤 STEP 1: TEST AGENTE SPECIALIZZATO (ale5/admin123)...")
+        
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'ale5', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            ale5_user_data = response['user']
+            ale5_role = ale5_user_data.get('role')
+            ale5_sub_agenzia = ale5_user_data.get('sub_agenzia_id')
+            
+            self.log_test("✅ AGENTE SPECIALIZZATO LOGIN (ale5/admin123)", True, 
+                f"Role: {ale5_role}, Sub Agenzia: {ale5_sub_agenzia}")
+            
+            # Verify role is correct
+            if ale5_role == "agente_specializzato":
+                self.log_test("✅ ale5 role verification", True, f"Role: {ale5_role}")
+            else:
+                self.log_test("❌ ale5 role incorrect", False, f"Expected: agente_specializzato, Got: {ale5_role}")
+                
+        else:
+            self.log_test("❌ AGENTE SPECIALIZZATO LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # Test GET /api/clienti/filter-options for ale5
+        print("\n   Testing GET /api/clienti/filter-options for ale5...")
+        
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/filter-options (ale5)", True, f"Status: {status}")
+            
+            # Check users field - should contain ONLY ale5
+            users = filter_response.get('users', [])
+            sub_agenzie = filter_response.get('sub_agenzie', [])
+            tipologie_contratto = filter_response.get('tipologie_contratto', [])
+            
+            print(f"   📊 ale5 Filter Options:")
+            print(f"      • Users: {len(users)} items - {[u.get('label', u.get('nome', str(u))) for u in users]}")
+            print(f"      • Sub Agenzie: {len(sub_agenzie)} items - {[sa.get('label', sa.get('nome', str(sa))) for sa in sub_agenzie]}")
+            print(f"      • Tipologie Contratto: {len(tipologie_contratto)} items")
+            
+            # CRITICAL TEST: Users field should contain ONLY ale5
+            ale5_found_in_users = False
+            other_users_found = []
+            
+            for user in users:
+                user_name = user.get('label', user.get('nome', user.get('username', str(user))))
+                if 'ale5' in str(user_name).lower():
+                    ale5_found_in_users = True
+                else:
+                    other_users_found.append(user_name)
+            
+            if len(users) == 1 and ale5_found_in_users:
+                self.log_test("✅ SECURITY FIX VERIFIED - ale5 users filter", True, 
+                    f"Users field contains ONLY ale5 (1 user, not {len(users)} users)")
+            elif ale5_found_in_users and len(other_users_found) > 0:
+                self.log_test("❌ SECURITY VULNERABILITY - ale5 users filter", False, 
+                    f"Users field contains ale5 + {len(other_users_found)} other users: {other_users_found}")
+            else:
+                self.log_test("❌ SECURITY ISSUE - ale5 users filter", False, 
+                    f"Users field: {len(users)} users, ale5 found: {ale5_found_in_users}")
+            
+            # CRITICAL TEST: Sub Agenzie field should contain ONLY F2F (ale5's sub agenzia)
+            f2f_found_in_sub_agenzie = False
+            other_sub_agenzie_found = []
+            
+            for sa in sub_agenzie:
+                sa_name = sa.get('label', sa.get('nome', str(sa)))
+                if 'f2f' in str(sa_name).lower():
+                    f2f_found_in_sub_agenzie = True
+                else:
+                    other_sub_agenzie_found.append(sa_name)
+            
+            if len(sub_agenzie) == 1 and f2f_found_in_sub_agenzie:
+                self.log_test("✅ SECURITY FIX VERIFIED - ale5 sub_agenzie filter", True, 
+                    f"Sub Agenzie field contains ONLY F2F (1 sub agenzia, not {len(sub_agenzie)} sub agenzie)")
+            elif f2f_found_in_sub_agenzie and len(other_sub_agenzie_found) > 0:
+                self.log_test("❌ SECURITY VULNERABILITY - ale5 sub_agenzie filter", False, 
+                    f"Sub Agenzie field contains F2F + {len(other_sub_agenzie_found)} others: {other_sub_agenzie_found}")
+            else:
+                self.log_test("❌ SECURITY ISSUE - ale5 sub_agenzie filter", False, 
+                    f"Sub Agenzie field: {len(sub_agenzie)} items, F2F found: {f2f_found_in_sub_agenzie}")
+            
+            # Check tipologie_contratto is filtered for ale5's clients
+            if len(tipologie_contratto) > 0:
+                self.log_test("✅ ale5 tipologie_contratto populated", True, 
+                    f"Tipologie Contratto: {len(tipologie_contratto)} items (filtered for ale5's clients)")
+            else:
+                self.log_test("ℹ️ ale5 tipologie_contratto empty", True, 
+                    "Tipologie Contratto empty (may be normal if ale5 has no clients)")
+            
+            ale5_security_passed = (len(users) == 1 and ale5_found_in_users and 
+                                  len(sub_agenzie) == 1 and f2f_found_in_sub_agenzie)
+            
+        else:
+            self.log_test("❌ GET /api/clienti/filter-options (ale5)", False, f"Status: {status}, Response: {filter_response}")
+            ale5_security_passed = False
+
+        # **STEP 2: TEST OPERATORE (ale6)**
+        print("\n👤 STEP 2: TEST OPERATORE (ale6/admin123)...")
+        
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'ale6', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            ale6_user_data = response['user']
+            ale6_role = ale6_user_data.get('role')
+            ale6_sub_agenzia = ale6_user_data.get('sub_agenzia_id')
+            
+            self.log_test("✅ OPERATORE LOGIN (ale6/admin123)", True, 
+                f"Role: {ale6_role}, Sub Agenzia: {ale6_sub_agenzia}")
+            
+            # Verify role is correct
+            if ale6_role == "operatore":
+                self.log_test("✅ ale6 role verification", True, f"Role: {ale6_role}")
+            else:
+                self.log_test("❌ ale6 role incorrect", False, f"Expected: operatore, Got: {ale6_role}")
+                
+        else:
+            self.log_test("❌ OPERATORE LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # Test GET /api/clienti/filter-options for ale6
+        print("\n   Testing GET /api/clienti/filter-options for ale6...")
+        
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/filter-options (ale6)", True, f"Status: {status}")
+            
+            # Check users field - should contain ONLY ale6
+            users = filter_response.get('users', [])
+            sub_agenzie = filter_response.get('sub_agenzie', [])
+            tipologie_contratto = filter_response.get('tipologie_contratto', [])
+            
+            print(f"   📊 ale6 Filter Options:")
+            print(f"      • Users: {len(users)} items - {[u.get('label', u.get('nome', str(u))) for u in users]}")
+            print(f"      • Sub Agenzie: {len(sub_agenzie)} items - {[sa.get('label', sa.get('nome', str(sa))) for sa in sub_agenzie]}")
+            print(f"      • Tipologie Contratto: {len(tipologie_contratto)} items")
+            
+            # CRITICAL TEST: Users field should contain ONLY ale6
+            ale6_found_in_users = False
+            other_users_found = []
+            
+            for user in users:
+                user_name = user.get('label', user.get('nome', user.get('username', str(user))))
+                if 'ale6' in str(user_name).lower():
+                    ale6_found_in_users = True
+                else:
+                    other_users_found.append(user_name)
+            
+            if len(users) == 1 and ale6_found_in_users:
+                self.log_test("✅ SECURITY FIX VERIFIED - ale6 users filter", True, 
+                    f"Users field contains ONLY ale6 (1 user, not {len(users)} users)")
+            elif ale6_found_in_users and len(other_users_found) > 0:
+                self.log_test("❌ SECURITY VULNERABILITY - ale6 users filter", False, 
+                    f"Users field contains ale6 + {len(other_users_found)} other users: {other_users_found}")
+            else:
+                self.log_test("❌ SECURITY ISSUE - ale6 users filter", False, 
+                    f"Users field: {len(users)} users, ale6 found: {ale6_found_in_users}")
+            
+            # CRITICAL TEST: Sub Agenzie field should contain ONLY F2F (ale6's sub agenzia)
+            f2f_found_in_sub_agenzie = False
+            other_sub_agenzie_found = []
+            
+            for sa in sub_agenzie:
+                sa_name = sa.get('label', sa.get('nome', str(sa)))
+                if 'f2f' in str(sa_name).lower():
+                    f2f_found_in_sub_agenzie = True
+                else:
+                    other_sub_agenzie_found.append(sa_name)
+            
+            if len(sub_agenzie) == 1 and f2f_found_in_sub_agenzie:
+                self.log_test("✅ SECURITY FIX VERIFIED - ale6 sub_agenzie filter", True, 
+                    f"Sub Agenzie field contains ONLY F2F (1 sub agenzia, not {len(sub_agenzie)} sub agenzie)")
+            elif f2f_found_in_sub_agenzie and len(other_sub_agenzie_found) > 0:
+                self.log_test("❌ SECURITY VULNERABILITY - ale6 sub_agenzie filter", False, 
+                    f"Sub Agenzie field contains F2F + {len(other_sub_agenzie_found)} others: {other_sub_agenzie_found}")
+            else:
+                self.log_test("❌ SECURITY ISSUE - ale6 sub_agenzie filter", False, 
+                    f"Sub Agenzie field: {len(sub_agenzie)} items, F2F found: {f2f_found_in_sub_agenzie}")
+            
+            # Check tipologie_contratto is filtered for ale6's clients
+            if len(tipologie_contratto) > 0:
+                self.log_test("✅ ale6 tipologie_contratto populated", True, 
+                    f"Tipologie Contratto: {len(tipologie_contratto)} items (filtered for ale6's clients)")
+            else:
+                self.log_test("ℹ️ ale6 tipologie_contratto empty", True, 
+                    "Tipologie Contratto empty (may be normal if ale6 has no clients)")
+            
+            ale6_security_passed = (len(users) == 1 and ale6_found_in_users and 
+                                  len(sub_agenzie) == 1 and f2f_found_in_sub_agenzie)
+            
+        else:
+            self.log_test("❌ GET /api/clienti/filter-options (ale6)", False, f"Status: {status}, Response: {filter_response}")
+            ale6_security_passed = False
+
+        # **STEP 3: COMPARISON TEST - VERIFY BEFORE vs AFTER**
+        print("\n🔍 STEP 3: VERIFICA SICUREZZA - CONFRONTO PRIMA vs DOPO FIX...")
+        
+        print("   📊 SECURITY VERIFICATION RESULTS:")
+        print(f"      • ale5 (AGENTE_SPECIALIZZATO):")
+        print(f"        - PRIMA: vedeva 5 users + 2 sub agenzie (VULNERABILITÀ)")
+        print(f"        - DOPO: {'vede 1 user + 1 sub agenzia (SICURO)' if ale5_security_passed else 'ANCORA VULNERABILE'}")
+        print(f"      • ale6 (OPERATORE):")
+        print(f"        - PRIMA: vedeva tutti gli utenti + tutte le sub agenzie (VULNERABILITÀ)")
+        print(f"        - DOPO: {'vede 1 user + 1 sub agenzia (SICURO)' if ale6_security_passed else 'ANCORA VULNERABILE'}")
+
+        # **FINAL SUMMARY**
+        overall_security_passed = ale5_security_passed and ale6_security_passed
+        
+        print(f"\n🎯 SECURITY VULNERABILITY FIX TEST SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Confermare che vulnerabilità sicurezza sia stata risolta")
+        print(f"   🎯 FOCUS CRITICO: Agenti devono vedere solo propri dati autorizzati")
+        print(f"   📊 RISULTATI:")
+        print(f"      • ale5 (AGENTE_SPECIALIZZATO) login: ✅ SUCCESS")
+        print(f"      • ale5 filter security: {'✅ SECURE' if ale5_security_passed else '❌ VULNERABLE'}")
+        print(f"      • ale6 (OPERATORE) login: ✅ SUCCESS")
+        print(f"      • ale6 filter security: {'✅ SECURE' if ale6_security_passed else '❌ VULNERABLE'}")
+        print(f"      • Overall security fix: {'✅ SUCCESSFUL' if overall_security_passed else '❌ INCOMPLETE'}")
+        
+        if overall_security_passed:
+            print(f"   🎉 SUCCESS: Vulnerabilità sicurezza completamente risolta!")
+            print(f"   🎉 CONFERMATO: AGENTE_SPECIALIZZATO e OPERATORE vedono solo i loro dati autorizzati!")
+            print(f"   🎉 VERIFICATO: Filtri avanzati ora sicuri - nessun accesso non autorizzato!")
+            return True
+        else:
+            print(f"   🚨 SECURITY FAILURE: Vulnerabilità sicurezza NON completamente risolta!")
+            print(f"   🚨 AZIONE RICHIESTA: Verificare implementazione logica autorizzazioni in base_query")
+            print(f"   🚨 PRIORITÀ MASSIMA: Sicurezza dati compromessa - agenti vedono dati non autorizzati!")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
