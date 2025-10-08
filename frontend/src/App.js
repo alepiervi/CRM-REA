@@ -13094,17 +13094,17 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       const params = new URLSearchParams();
       
       // Apply current filters to backend request
-      if (filters.subAgenzia) {
-        params.append('sub_agenzia_id', filters.subAgenzia);
+      if (clientiFilterSubAgenzia && clientiFilterSubAgenzia !== 'all') {
+        params.append('sub_agenzia_id', clientiFilterSubAgenzia);
       }
-      if (filters.tipologia) {
-        params.append('tipologia_contratto', filters.tipologia);
+      if (clientiFilterTipologia && clientiFilterTipologia !== 'all') {
+        params.append('tipologia_contratto', clientiFilterTipologia);
       }
-      if (filters.status) {
-        params.append('status', filters.status);
+      if (clientiFilterStatus && clientiFilterStatus !== 'all') {
+        params.append('status', clientiFilterStatus);
       }
-      if (filters.utente) {
-        params.append('created_by', filters.utente);
+      if (clientiFilterCreatedBy && clientiFilterCreatedBy !== 'all') {
+        params.append('created_by', clientiFilterCreatedBy);
       }
 
       // Call backend Excel export endpoint
