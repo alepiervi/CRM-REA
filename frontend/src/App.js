@@ -1648,7 +1648,7 @@ const Dashboard = () => {
         { id: "clienti", label: "Clienti", icon: UserCheck },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
-    } else if (user.role === "agente_specializzato" || user.role === "operatore" || user.role === "agente") {
+    } else if (user.role === "agente_specializzato" || user.role === "operatore" || user.role === "agente" || user.role === "responsabile_store" || user.role === "responsabile_presidi") {
       items.push(
         { id: "clienti", label: "Clienti", icon: UserCheck }
       );
