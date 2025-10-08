@@ -8966,8 +8966,14 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         
         # Get ALL users who can create clients (filtered by permissions)  
         users_query = {}
-        if current_user.role != UserRole.ADMIN:
-            # Non-admin users see limited set based on their organization
+        if current_user.role == UserRole.ADMIN:
+            # Admin sees all users
+            pass
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
+            # Agenti and Operatori see only themselves
+            users_query["id"] = current_user.id
+        else:
+            # Other non-admin users see limited set based on their organization
             if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
                 users_query["sub_agenzia_id"] = current_user.sub_agenzia_id
             elif hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
