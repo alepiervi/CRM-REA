@@ -1030,7 +1030,7 @@ class CRMAPITester:
         # **STEP 3: VERIFICA DATABASE PERSISTENCE**
         print("\n💾 STEP 3: VERIFICA DATABASE PERSISTENCE...")
         
-        if success and status == 201:
+        if success and (status == 200 or status == 201):
             # Verify user exists in database by getting user list
             success, users_response, status = self.make_request('GET', 'users', expected_status=200)
             
