@@ -1044,6 +1044,7 @@ test_plan:
   test_all: false
   test_priority: "critical_first"
   completed_tasks:
+    - "Store Assistant User Creation Fix - Role Enum Mismatch Resolution"
     - "JWT Token Refresh Fix for Session Extension"
     - "Export Clienti Error Fix - exportClienti is not defined Resolution"
     - "Aruba Drive Configuration for Commesse - PUT/GET Endpoints"
