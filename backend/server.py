@@ -8975,8 +8975,8 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         if current_user.role == UserRole.ADMIN:
             # Admin sees all users
             pass
-        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
-            # Agenti and Operatori see only themselves
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
+            # Agenti, Operatori, Store e Presidi see only themselves
             users_query["id"] = current_user.id
         else:
             # Other non-admin users see limited set based on their organization
