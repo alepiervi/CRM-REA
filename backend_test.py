@@ -26457,19 +26457,26 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # URGENT TEST: Debug 422 Error for Responsabile Commessa Client Creation
-        print("\n" + "🚨" * 50)
-        print("🚨 URGENT TEST: DEBUG 422 ERROR FOR RESPONSABILE COMMESSA CLIENT CREATION")
-        print("🚨" * 50)
+        # Core authentication tests
+        if not self.test_authentication():
+            print("❌ Authentication failed - stopping tests")
+            return False
         
-        debug_422_success = self.test_responsabile_commessa_client_creation_422_debug()
+        # Run the critical Responsabile Commessa test
+        print("\n" + "="*80)
+        print("🚨 RUNNING CRITICAL RESPONSABILE COMMESSA RESOLUTION TEST")
+        print("="*80)
         
-        # Also run the existing fix test for comparison
-        print("\n" + "🔍" * 50)
-        print("🔍 COMPARISON TEST: EXISTING CLIENT CREATION FIX")
-        print("🔍" * 50)
+        success = self.test_responsabile_commessa_complete_resolution()
         
-        creation_fix_success = self.test_responsabile_commessa_client_creation_fix()
+        if success:
+            print("\n🎉 CRITICAL TEST PASSED - All 3 problems resolved!")
+        else:
+            print("\n🚨 CRITICAL TEST FAILED - Problems still exist!")
+        
+        # Run other tests
+        self.test_provinces_endpoint()
+        self.test_dashboard_stats()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -26480,27 +26487,19 @@ Duplicate,Test,+393471234567"""
         print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
         print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
-        # Highlight the critical client creation test results
+        # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if debug_422_success:
-            print("🎉 422 ERROR DEBUG TEST: ✅ SUCCESS - CLIENT CREATION WORKING!")
+        if success:
+            print("🎉 RESPONSABILE COMMESSA RESOLUTION TEST: ✅ SUCCESS - ALL 3 PROBLEMS RESOLVED!")
         else:
-            print("🚨 422 ERROR DEBUG TEST: ❌ FAILED - 422 ERROR IDENTIFIED!")
-            
-        if creation_fix_success:
-            print("🎉 EXISTING FIX TEST: ✅ SUCCESS - FIX WORKING CORRECTLY!")
+            print("🚨 RESPONSABILE COMMESSA RESOLUTION TEST: ❌ FAILED - PROBLEMS STILL EXIST!")
+        
+        if success:
+            print("\n🎉 OVERALL RESULT: ✅ SISTEMA UTILIZZABILE PER RESPONSABILE COMMESSA!")
         else:
-            print("🚨 EXISTING FIX TEST: ❌ FAILED - FIX NOT WORKING!")
+            print("\n🚨 OVERALL RESULT: ❌ SISTEMA NON UTILIZZABILE - PROBLEMI PERSISTENTI!")
         
-        # Overall success if either test passes
-        overall_success = debug_422_success or creation_fix_success
-        
-        if overall_success:
-            print("\n🎉 OVERALL RESULT: ✅ RESPONSABILE COMMESSA CAN CREATE CLIENTS!")
-        else:
-            print("\n🚨 OVERALL RESULT: ❌ RESPONSABILE COMMESSA CANNOT CREATE CLIENTS - 422 ERROR PERSISTS!")
-        
-        return overall_success
+        return success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
