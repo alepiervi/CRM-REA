@@ -338,7 +338,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Responsabile Sub Agenzia Role Flow Logic Fix - Line 15308 Bug Resolution"
+    - "Security Vulnerability Fix - Agent Filter Authorization"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
