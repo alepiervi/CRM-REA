@@ -960,10 +960,12 @@ class CRMAPITester:
         print("\n👤 STEP 2: TEST CREAZIONE STORE ASSISTANT...")
         print("   🎯 CRITICO: Testare ruolo 'store_assist' (NON 'store_assistant')")
         
-        # Prepare test data as specified in review request
+        # Prepare test data as specified in review request (with unique username)
+        import time
+        timestamp = str(int(time.time()))
         test_user_data = {
-            "username": "test_store",
-            "email": "test@store.it", 
+            "username": f"test_store_{timestamp}",
+            "email": f"test_store_{timestamp}@store.it", 
             "password": "testpass123",
             "role": "store_assist",  # CRITICAL: Using corrected role value
             "is_active": True
