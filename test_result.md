@@ -262,16 +262,19 @@ backend:
           comment: "🎉 USER ENTITY MANAGEMENT TESTING COMPLETED - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ POST /api/users (WITH ENTITY_MANAGEMENT): Successfully created user with entity_management field - field correctly saved and returned in response. ✅ ALL ENTITY_MANAGEMENT VALUES: All 3 valid values tested successfully - 'clienti', 'lead', 'both' all accepted and saved correctly. ✅ FIELD VALIDATION: Invalid values properly rejected (would return 422 for invalid enum values). ✅ GET /api/users INCLUDES FIELD: entity_management field present in GET response for all users, backward compatibility maintained. ✅ DATABASE PERSISTENCE: entity_management field correctly persisted in database and retrieved in subsequent requests. ✅ DEFAULT VALUE HANDLING: Field defaults to 'clienti' when not specified (as per model definition). SUCCESS RATE: 100% (12/12 tests passed) - User entity management system fully operational!"
 
   - task: "Responsabile Commessa Advanced Filters - Sub Agenzia Filter Bug Fix"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "🚨 CRITICAL FILTER BUG IDENTIFIED - RESPONSABILE COMMESSA SUB AGENZIA FILTER NOT WORKING! ✅ COMPREHENSIVE TESTING COMPLETED: Tested advanced filters for Responsabile Commessa (ale/admin123) as requested in review. ✅ FILTER POPULATION STATUS: Tipologia Contratto ✅ (shows Energia Fastweb, Telefonia Fastweb), Status ✅ (shows NUOVO, ATTIVO, etc.), Utente Creatore ✅ (shows 9 users), Sub Agenzia ❌ (EMPTY - only shows 'Tutte le Sub Agenzie'). ✅ FILTER APPLICATION WORKING: Tipologia and Status filters correctly trigger API calls with parameters (e.g., /api/clienti?tipologia_contratto=energia_fastweb) and update client list. ❌ ROOT CAUSE IDENTIFIED: Backend /api/clienti/filter-options endpoint uses WRONG FIELD NAME for Sub Agenzia query. Code searches for 'commessa_id' field but Sub Agenzia data structure uses 'commesse_autorizzate' field. ✅ DATA VERIFICATION: Sub Agenzia 'F2F' exists with commesse_autorizzate=['4cb70f28-6278-4d0f-b2b7-65f2b783f3f1'] matching user's authorized commessa, but backend query fails because it looks for non-existent 'commessa_id' field. 🔧 URGENT FIX REQUIRED: Change line 8956 in server.py from sub_agenzie_query['commessa_id'] to sub_agenzie_query['commesse_autorizzate'] to match actual data structure. This will populate Sub Agenzia dropdown with F2F option for Responsabile Commessa users."
+        - working: true
+          agent: "testing"
+          comment: "🎉 SUB AGENZIA FILTER FIX VERIFICATION COMPLETE - 100% SUCCESS! ✅ IMMEDIATE FIX TESTING COMPLETED: Tested the immediate fix for Sub Agenzia filter bug as requested in review. ✅ LOGIN RESPONSABILE COMMESSA (ale/admin123): Successfully authenticated with token, Role: responsabile_commessa, has access to Fastweb commessa (4cb70f28-6278-4d0f-b2b7-65f2b783f3f1). ✅ CRITICAL SUCCESS: GET /api/clienti/filter-options now returns Sub Agenzie in sub_agenzie field - NOT EMPTY! Found 1 sub agenzia option: F2F with correct ID '7c70d4b5-4be0-4707-8bca-dfe84a0b9dee'. ✅ F2F SUB AGENZIA VERIFIED: F2F sub agenzia found in filter with exact expected ID and label, confirming the fix works correctly. ✅ OTHER FILTERS STILL WORKING: All other filters continue to function - Tipologie Contratto (2 options), Status (5 options), Users (9 options) all populated correctly. ✅ DATA CONSISTENCY VERIFIED: F2F sub agenzia in database has commesse_autorizzate=['4cb70f28-6278-4d0f-b2b7-65f2b783f3f1'] matching user's authorized Fastweb commessa. ✅ BACKEND FIX CONFIRMED: The field name change from 'commessa_id' to 'commesse_autorizzate' at line 8956 is working correctly. 🎯 ALL SUCCESS CRITERIA MET: Sub Agenzie filter populated ✅, F2F with correct ID present ✅, other filters working ✅. 🎉 OBIETTIVO RAGGIUNTO: 'Utente Responsabile Commessa non funzionano i filtri Avanzati' problema COMPLETAMENTE RISOLTO! Responsabile Commessa può ora vedere Sub Agenzie autorizzate nei filtri avanzati. SUCCESS RATE: 100% (15/15 tests passed) - Sub Agenzia filter fix completely verified and operational!"
 
   - task: "Document Management System Complete Testing"
     implemented: true
