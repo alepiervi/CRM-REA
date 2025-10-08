@@ -29800,16 +29800,16 @@ def main():
 if __name__ == "__main__":
     tester = CRMAPITester()
     
-    print("🚀 Starting Store Assistant User Creation Test...")
+    print("🚀 Starting Client Creation Authorization Test for All 5 Roles...")
     print(f"🌐 Base URL: {tester.base_url}")
     print("=" * 80)
     
-    # Run the URGENT Store Assistant User Creation test
+    # Run the URGENT Client Creation Authorization test for all 5 roles
     print("\n" + "="*80)
-    print("🚨 RUNNING URGENT STORE ASSISTANT USER CREATION TEST")
+    print("🚨 RUNNING URGENT CLIENT CREATION AUTHORIZATION TEST FOR ALL 5 ROLES")
     print("="*80)
     
-    success = tester.test_store_assistant_user_creation_fix()
+    success = tester.test_client_creation_authorization_all_5_roles()
     
     # Print final summary
     print("\n" + "=" * 80)
