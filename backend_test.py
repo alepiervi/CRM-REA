@@ -1048,7 +1048,7 @@ class CRMAPITester:
                     
                     # Verify all fields are correctly stored
                     if (created_user.get('role') == 'store_assist' and 
-                        created_user.get('email') == 'test@store.it' and
+                        created_user.get('email') == test_user_data['email'] and
                         created_user.get('is_active') == True):
                         self.log_test("✅ All user data correct in database", True, "All fields match expected values")
                     else:
