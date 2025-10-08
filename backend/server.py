@@ -8813,7 +8813,7 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
     headers = [
         "ID Cliente", "Nome", "Cognome", "Telefono", "Email", "Codice Fiscale",
         "Data Nascita", "Provincia", "Comune", "Indirizzo", "Cap", 
-        "Sub Agenzia", "Commessa", "Servizio", "Tipologia Contratto", "Segmento",
+        "Sub Agenzia", "Commessa", "Servizio", "Tipologia Contratto", "Segmento", "Offerta",
         "Status", "Utente Creatore", "Data Creazione", "Note"
     ]
     
