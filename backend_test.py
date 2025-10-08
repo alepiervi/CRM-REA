@@ -29542,5 +29542,46 @@ def main():
 
 if __name__ == "__main__":
     tester = CRMAPITester()
-    # Run the urgent BackOffice Commessa client visibility test
-    tester.run_all_tests()
+    
+    print("🚀 Starting Store Assistant User Creation Test...")
+    print(f"🌐 Base URL: {tester.base_url}")
+    print("=" * 80)
+    
+    # Run the URGENT Store Assistant User Creation test
+    print("\n" + "="*80)
+    print("🚨 RUNNING URGENT STORE ASSISTANT USER CREATION TEST")
+    print("="*80)
+    
+    success = tester.test_store_assistant_user_creation_fix()
+    
+    # Print final summary
+    print("\n" + "=" * 80)
+    print("🎯 STORE ASSISTANT TEST SUMMARY")
+    print("=" * 80)
+    print(f"📊 Tests run: {tester.tests_run}")
+    print(f"✅ Tests passed: {tester.tests_passed}")
+    print(f"❌ Tests failed: {tester.tests_run - tester.tests_passed}")
+    print(f"📈 Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+    
+    # Highlight the critical test results
+    print("\n🎯 CRITICAL TEST RESULT:")
+    if success:
+        print("🎉 STORE ASSISTANT USER CREATION TEST: ✅ SUCCESS - MISMATCH RUOLO RISOLTO!")
+        print("🎉 CONFERMATO: Admin può creare utenti Store Assistant senza errori 422!")
+    else:
+        print("🚨 STORE ASSISTANT USER CREATION TEST: ❌ FAILED - PROBLEMA PERSISTE!")
+        print("🚨 AZIONE RICHIESTA: Verificare enum mapping frontend/backend!")
+    
+    print(f"\n🎯 OVERALL RESULT: {'✅ SUCCESS' if success else '❌ FAILED'}")
+    
+    # Cleanup created test users
+    if tester.created_resources['users']:
+        print(f"\n🧹 Cleaning up {len(tester.created_resources['users'])} test users...")
+        for user_id in tester.created_resources['users']:
+            try:
+                tester.make_request('DELETE', f'users/{user_id}', expected_status=200)
+                print(f"   ✅ Deleted test user: {user_id}")
+            except:
+                print(f"   ⚠️ Could not delete test user: {user_id}")
+    
+    exit(0 if success else 1)
