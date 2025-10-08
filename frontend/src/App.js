@@ -15829,7 +15829,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   value={selectedData.commessa_id} 
                   onChange={(e) => handleCommessaSelect(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                  disabled={!Array.isArray(cascadeCommesse) || (!cascadeCommesse.length && (user?.role === 'responsabile' || user?.role === 'backoffice'))}
+                  disabled={!Array.isArray(cascadeCommesse) || (!cascadeCommesse.length && (user?.role === 'responsabile_commessa' || user?.role === 'backoffice_commessa' || user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia'))}
                 >
                   <option value="">Seleziona Commessa...</option>
                   {Array.isArray(cascadeCommesse) && cascadeCommesse.map(commessa => (
