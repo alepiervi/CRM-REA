@@ -26188,10 +26188,17 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # URGENT TEST: Responsabile Commessa Client Creation Fix
+        # URGENT TEST: Debug 422 Error for Responsabile Commessa Client Creation
         print("\n" + "🚨" * 50)
-        print("🚨 URGENT TEST: RESPONSABILE COMMESSA CLIENT CREATION FIX")
+        print("🚨 URGENT TEST: DEBUG 422 ERROR FOR RESPONSABILE COMMESSA CLIENT CREATION")
         print("🚨" * 50)
+        
+        debug_422_success = self.test_responsabile_commessa_client_creation_422_debug()
+        
+        # Also run the existing fix test for comparison
+        print("\n" + "🔍" * 50)
+        print("🔍 COMPARISON TEST: EXISTING CLIENT CREATION FIX")
+        print("🔍" * 50)
         
         creation_fix_success = self.test_responsabile_commessa_client_creation_fix()
 
