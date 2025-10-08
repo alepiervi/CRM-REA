@@ -26726,6 +26726,33 @@ Duplicate,Test,+393471234567"""
         print(f"   🔧 4. Check Pydantic model validation for role_in_commessa enum")
         print(f"   🔧 5. Ensure check_commessa_access() function handles responsabile_commessa role correctly")
 
+    def run_excel_export_filiera_test(self):
+        """Run Excel export filiera completa test specifically"""
+        print("🚀 Starting Excel Export Filiera Completa Testing...")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Run the specific Excel export test
+        success = self.test_excel_export_filiera_completa_urgent()
+        
+        # Print final results
+        print("\n" + "=" * 80)
+        print("🎯 EXCEL EXPORT FILIERA COMPLETA TEST RESULTS")
+        print("=" * 80)
+        print(f"📊 Tests run: {self.tests_run}")
+        print(f"✅ Tests passed: {self.tests_passed}")
+        print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
+        print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        
+        if success:
+            print("\n🎉 EXCEL EXPORT FILIERA COMPLETA TEST: ✅ SUCCESS!")
+            print("🎉 CONFERMATO: Campo 'Offerta' presente e file Excel vero (.xlsx) generato!")
+        else:
+            print("\n🚨 EXCEL EXPORT FILIERA COMPLETA TEST: ❌ FAILED!")
+            print("🚨 PROBLEMA: Verificare implementazione export Excel con filiera completa")
+        
+        return success
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
