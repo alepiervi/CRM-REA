@@ -29326,5 +29326,5 @@ def main():
 
 if __name__ == "__main__":
     tester = CRMAPITester()
-    # Run the specific Excel export test as requested in the review
-    tester.run_excel_export_filiera_test()
+    # Run the urgent BackOffice Commessa client visibility test
+    tester.run_all_tests()
