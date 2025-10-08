@@ -29813,7 +29813,7 @@ if __name__ == "__main__":
     
     # Print final summary
     print("\n" + "=" * 80)
-    print("🎯 STORE ASSISTANT TEST SUMMARY")
+    print("🎯 CLIENT CREATION AUTHORIZATION TEST SUMMARY")
     print("=" * 80)
     print(f"📊 Tests run: {tester.tests_run}")
     print(f"✅ Tests passed: {tester.tests_passed}")
@@ -29823,22 +29823,12 @@ if __name__ == "__main__":
     # Highlight the critical test results
     print("\n🎯 CRITICAL TEST RESULT:")
     if success:
-        print("🎉 STORE ASSISTANT USER CREATION TEST: ✅ SUCCESS - MISMATCH RUOLO RISOLTO!")
-        print("🎉 CONFERMATO: Admin può creare utenti Store Assistant senza errori 422!")
+        print("🎉 CLIENT CREATION AUTHORIZATION TEST: ✅ SUCCESS - ALL 5 ROLES CAN CREATE CLIENTS!")
+        print("🎉 CONFERMATO: Tutti i 5 ruoli possono creare clienti nelle loro aree autorizzate!")
     else:
-        print("🚨 STORE ASSISTANT USER CREATION TEST: ❌ FAILED - PROBLEMA PERSISTE!")
-        print("🚨 AZIONE RICHIESTA: Verificare enum mapping frontend/backend!")
+        print("🚨 CLIENT CREATION AUTHORIZATION TEST: ❌ FAILED - SOME ROLES CANNOT CREATE CLIENTS!")
+        print("🚨 PROBLEMA PERSISTE: Alcuni ruoli non possono creare clienti!")
     
     print(f"\n🎯 OVERALL RESULT: {'✅ SUCCESS' if success else '❌ FAILED'}")
-    
-    # Cleanup created test users
-    if tester.created_resources['users']:
-        print(f"\n🧹 Cleaning up {len(tester.created_resources['users'])} test users...")
-        for user_id in tester.created_resources['users']:
-            try:
-                tester.make_request('DELETE', f'users/{user_id}', expected_status=200)
-                print(f"   ✅ Deleted test user: {user_id}")
-            except:
-                print(f"   ⚠️ Could not delete test user: {user_id}")
     
     exit(0 if success else 1)
