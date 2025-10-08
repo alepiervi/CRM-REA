@@ -1175,11 +1175,22 @@ class CRMAPITester:
                                     f"Full cascade: Sub Agenzia → Commessa → Servizio → Tipologia → Segmento ({len(segmenti_response)} segmenti)")
                                 
                                 # Store data for client creation test
+                                # Map tipologia name to correct enum value
+                                tipologia_enum = tipologia_name.lower().replace(' ', '_').rstrip('_')
+                                if tipologia_enum == 'energia_fastweb':
+                                    tipologia_enum = 'energia_fastweb'
+                                elif tipologia_enum == 'telefonia_fastweb':
+                                    tipologia_enum = 'telefonia_fastweb'
+                                elif 'ho_mobile' in tipologia_enum:
+                                    tipologia_enum = 'ho_mobile'
+                                elif 'telepass' in tipologia_enum:
+                                    tipologia_enum = 'telepass'
+                                
                                 cascade_data = {
                                     'sub_agenzia_id': sub_agenzia_id,
                                     'commessa_id': fastweb_id,
                                     'servizio_id': servizio_id,
-                                    'tipologia_contratto': tipologia_name.lower().replace(' ', '_').rstrip('_'),
+                                    'tipologia_contratto': tipologia_enum,
                                     'segmento': segmenti_response[0].get('tipo', 'privato')
                                 }
                                 
