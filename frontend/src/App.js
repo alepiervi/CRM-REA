@@ -15305,7 +15305,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const initializeFlowByRole = () => {
     if (!user) return;
     
-    if (user?.role === 'sub_agenzia' || user?.sub_agenzia_id) {
+    if (user?.role === 'sub_agenzia') {
       // SUB AGENZIA FLOW: Start with commesse selection
       console.log("🏢 Sub Agenzia Flow: Starting with commesse selection");
       const commesseArray = Array.isArray(commesse) ? commesse : [];
