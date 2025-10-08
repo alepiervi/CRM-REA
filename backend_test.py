@@ -1179,7 +1179,7 @@ class CRMAPITester:
                                     'sub_agenzia_id': sub_agenzia_id,
                                     'commessa_id': fastweb_id,
                                     'servizio_id': servizio_id,
-                                    'tipologia_contratto': tipologia_name.lower().replace(' ', '_'),
+                                    'tipologia_contratto': tipologia_name.lower().replace(' ', '_').rstrip('_'),
                                     'segmento': segmenti_response[0].get('tipo', 'privato')
                                 }
                                 
