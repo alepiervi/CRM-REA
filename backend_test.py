@@ -1040,7 +1040,7 @@ class CRMAPITester:
                 users = users_response if isinstance(users_response, list) else []
                 
                 # Find our created user
-                created_user = next((user for user in users if user.get('username') == 'test_store'), None)
+                created_user = next((user for user in users if user.get('username') == test_user_data['username']), None)
                 
                 if created_user:
                     self.log_test("✅ User persisted in database", True, 
