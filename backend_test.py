@@ -27716,6 +27716,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # Run the URGENT Client Creation Authorization test for all 5 roles
+        print("\n" + "="*80)
+        print("🚨 RUNNING URGENT CLIENT CREATION AUTHORIZATION TEST FOR ALL 5 ROLES")
+        print("="*80)
+        
+        client_creation_success = self.test_client_creation_authorization_all_5_roles()
+        
         # Run the URGENT BackOffice Commessa Client Visibility test
         print("\n" + "="*80)
         print("🚨 RUNNING URGENT BACKOFFICE COMMESSA CLIENT VISIBILITY TEST")
