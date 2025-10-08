@@ -12970,6 +12970,66 @@ async def manual_aruba_drive_upload(
 
 # ===== ENDPOINTS FOR CASCADING CLIENT CREATION FLOW =====
 
+@api_router.get("/cascade/sub-agenzie")
+async def get_cascade_sub_agenzie(
+    current_user: User = Depends(get_current_user)
+):
+    """Get sub agenzie authorized for current user based on role"""
+    try:
+        logging.info(f"🔍 CASCADE SUB AGENZIE: User {current_user.username} role: {current_user.role}")
+        
+        if current_user.role == "admin":
+            # Admin sees all sub agenzie
+            sub_agenzie_docs = await db.sub_agenzie.find({"is_active": True}).to_list(length=None)
+            
+        elif current_user.role in ["responsabile_commessa", "backoffice_commessa"]:
+            # Commessa roles: get sub agenzie that have authorized commesse matching user's commesse_autorizzate
+            user_commesse = current_user.commesse_autorizzate or []
+            if not user_commesse:
+                logging.info("📭 CASCADE: No commesse autorizzate for user, returning empty")
+                return []
+                
+            # Find sub agenzie that have these commesse in their commesse_autorizzate field
+            sub_agenzie_docs = await db.sub_agenzie.find({
+                "commesse_autorizzate": {"$in": user_commesse},
+                "is_active": True
+            }).to_list(length=None)
+            
+        elif current_user.role in ["responsabile_sub_agenzia", "backoffice_sub_agenzia"]:
+            # Sub agenzia roles: only their assigned sub agenzia
+            if not current_user.sub_agenzia_id:
+                logging.info("📭 CASCADE: No sub_agenzia_id for user, returning empty")
+                return []
+                
+            sub_agenzie_docs = await db.sub_agenzie.find({
+                "id": current_user.sub_agenzia_id,
+                "is_active": True
+            }).to_list(length=None)
+            
+        else:
+            # Other roles: check if they have specific sub_agenzia_id assigned
+            if current_user.sub_agenzia_id:
+                sub_agenzie_docs = await db.sub_agenzie.find({
+                    "id": current_user.sub_agenzia_id,
+                    "is_active": True
+                }).to_list(length=None)
+            else:
+                sub_agenzie_docs = []
+        
+        # Convert to proper format
+        sub_agenzie = []
+        for doc in sub_agenzie_docs:
+            if '_id' in doc:
+                del doc['_id']
+            sub_agenzie.append(doc)
+            
+        logging.info(f"✅ CASCADE SUB AGENZIE: Returning {len(sub_agenzie)} sub agenzie for user {current_user.username}")
+        return sub_agenzie
+        
+    except Exception as e:
+        logging.error(f"❌ CASCADE SUB AGENZIE ERROR: {type(e).__name__}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching sub agenzie: {str(e)}")
+
 @api_router.get("/cascade/commesse-by-subagenzia/{sub_agenzia_id}")
 async def get_commesse_by_subagenzia(
     sub_agenzia_id: str,
