@@ -1387,12 +1387,7 @@ class CRMAPITester:
             return True
         else:
             print(f"   🚨 ISSUES FOUND: Alcuni problemi identificati nel cascading o creazione clienti")
-            return Falseerate(commesse_autorizzate):
-                    print(f"      • Commessa {i+1}: {commessa_id}")
-            else:
-                self.log_test("❌ ALE7 NO COMMESSE_AUTORIZZATE", False, "ale7 has empty commesse_autorizzate - this is the problem!")
-                
-            # Verify sub_agenzia_id is populated
+            return False
             if sub_agenzia_id:
                 self.log_test("✅ ALE7 HAS SUB_AGENZIA_ID", True, f"Sub Agenzia ID: {sub_agenzia_id}")
             else:
