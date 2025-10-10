@@ -28397,6 +28397,11 @@ Duplicate,Test,+393471234567"""
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
+        if store_diagnosis_success:
+            print("🎉 STORE USER DIAGNOSIS TEST: ✅ SUCCESS - NO CRITICAL ISSUES FOUND!")
+        else:
+            print("🚨 STORE USER DIAGNOSIS TEST: ❌ FAILED - ROOT CAUSES IDENTIFIED!")
+            
         if client_creation_success:
             print("🎉 CLIENT CREATION AUTHORIZATION TEST: ✅ SUCCESS - ALL 5 ROLES CAN CREATE CLIENTS!")
         else:
@@ -28412,7 +28417,7 @@ Duplicate,Test,+393471234567"""
         else:
             print("🚨 RESPONSABILE COMMESSA RESOLUTION TEST: ❌ FAILED - PROBLEMS STILL EXIST!")
         
-        overall_success = client_creation_success and backoffice_success and success
+        overall_success = store_diagnosis_success and client_creation_success and backoffice_success and success
         if overall_success:
             print("\n🎉 OVERALL RESULT: ✅ SISTEMA UTILIZZABILE PER TUTTI I RUOLI COMMESSA!")
         else:
