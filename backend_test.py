@@ -31329,14 +31329,14 @@ def main():
 if __name__ == "__main__":
     tester = CRMAPITester()
     
-    print("🚀 Starting CRM API Testing - ALE7 403 ERROR DIAGNOSIS...")
+    print("🚀 Starting CRM API Testing - ALE7 CRITICAL DIAGNOSIS...")
     print(f"🌐 Base URL: {tester.base_url}")
-    print("🎯 FOCUS: Diagnosi urgente errore 403 creazione cliente Responsabile Store")
+    print("🎯 FOCUS: Diagnosi critica due problemi Responsabile Store - Cascading e 403 Error")
     print("=" * 80)
     
-    # Run specific test for ale7 403 error diagnosis
+    # Run specific test for ale7 cascading and 403 error diagnosis
     try:
-        result = tester.test_ale7_store_403_error_diagnosis()
+        result = tester.test_ale7_cascading_and_403_error_critical_diagnosis()
         
         # Print summary
         print(f"\n📊 Test Summary:")
@@ -31345,9 +31345,9 @@ if __name__ == "__main__":
         print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
         
         if result:
-            print("🎉 ALE7 403 ERROR DIAGNOSIS COMPLETE - ISSUE RESOLVED!")
+            print("🎉 ALE7 CRITICAL DIAGNOSIS COMPLETE - BOTH ISSUES RESOLVED!")
         else:
-            print("❌ ALE7 403 ERROR DIAGNOSIS COMPLETE - ISSUE IDENTIFIED!")
+            print("❌ ALE7 CRITICAL DIAGNOSIS COMPLETE - ISSUES IDENTIFIED!")
             
     except Exception as e:
         print(f"❌ Test failed with exception: {e}")
