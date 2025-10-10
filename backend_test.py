@@ -31949,17 +31949,22 @@ def main():
         
         return True
 
+    def run_ale7_post_restart_verification(self):
+        """Run immediate ale7 post-restart verification"""
+        print("🚨 RUNNING IMMEDIATE ALE7 POST-RESTART VERIFICATION...")
+        return self.test_ale7_post_restart_verification_immediate()
+
 if __name__ == "__main__":
     tester = CRMAPITester()
     
-    print("🚀 Starting CRM API Testing - ALE7 CRITICAL DIAGNOSIS...")
+    print("🚀 Starting CRM API Testing - ALE7 POST-RESTART VERIFICATION...")
     print(f"🌐 Base URL: {tester.base_url}")
-    print("🎯 FOCUS: Diagnosi critica due problemi Responsabile Store - Cascading e 403 Error")
+    print("🎯 FOCUS: Verifica immediata post-restart servizi - ale7 cascading authorization")
     print("=" * 80)
     
-    # Run specific test for ale7 cascading and 403 error diagnosis
+    # Run immediate ale7 post-restart verification as requested
     try:
-        result = tester.test_ale7_cascading_and_403_error_critical_diagnosis()
+        result = tester.run_ale7_post_restart_verification()
         
         # Print summary
         print(f"\n📊 Test Summary:")
@@ -31968,9 +31973,9 @@ if __name__ == "__main__":
         print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
         
         if result:
-            print("🎉 ALE7 CRITICAL DIAGNOSIS COMPLETE - BOTH ISSUES RESOLVED!")
+            print("🎉 ALE7 POST-RESTART VERIFICATION SUCCESSFUL!")
         else:
-            print("❌ ALE7 CRITICAL DIAGNOSIS COMPLETE - ISSUES IDENTIFIED!")
+            print("❌ ALE7 POST-RESTART VERIFICATION FAILED!")
             
     except Exception as e:
         print(f"❌ Test failed with exception: {e}")
