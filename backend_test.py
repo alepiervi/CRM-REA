@@ -1554,7 +1554,6 @@ class CRMAPITester:
             return True
         else:
             print(f"\n   🚨 ISSUES REMAIN: Uno o entrambi i problemi persistono")
-            return Falseponse: {response}")
             return False
 
         # **STEP 2: VERIFICA USER_COMMESSA_AUTHORIZATIONS RECORDS**
