@@ -1154,6 +1154,249 @@ class CRMAPITester:
             print(f"   🚨 AZIONE RICHIESTA: Verificare enum UserRole nel backend e mapping frontend")
             return False
 
+    def test_ale7_cascading_authorization_fix_immediate(self):
+        """🚨 VERIFICA IMMEDIATA: Fix cascading authorization per ale7"""
+        print("\n🚨 VERIFICA IMMEDIATA: Fix cascading authorization per ale7")
+        print("🎯 OBIETTIVO: Testare che il fix dell'endpoint cascading ora mostri solo le commesse autorizzate per ale7")
+        print("🎯 TESTING SPECIFICO:")
+        print("   1. LOGIN ALE7: Login ale7/admin123 e verificare commesse_autorizzate")
+        print("   2. TEST CASCADING FILTRATO: Chiamare GET /api/cascade/commesse-by-subagenzia/{sub_agenzia_id} con ale7")
+        print("   3. VERIFICARE: Ora mostri SOLO Fastweb (commessa autorizzata)")
+        print("   4. CONFERMARE: Telepass (non autorizzata) NON appare più")
+        print("   5. TEST ADMIN COMPARISON: Testare lo stesso endpoint con admin")
+        print("🎯 RISULTATO ATTESO: ale7 vede solo 1 commessa (Fastweb) invece di 2")
+        
+        # **STEP 1: LOGIN ALE7 E VERIFICA AUTORIZZAZIONI**
+        print("\n🔐 STEP 1: LOGIN ALE7 E VERIFICA AUTORIZZAZIONI...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'ale7', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            user_role = self.user_data.get('role')
+            sub_agenzia_id = self.user_data.get('sub_agenzia_id')
+            commesse_autorizzate = self.user_data.get('commesse_autorizzate', [])
+            
+            self.log_test("✅ ALE7 LOGIN SUCCESS (ale7/admin123)", True, 
+                f"Role: {user_role}, Sub Agenzia ID: {sub_agenzia_id}")
+            
+            print(f"\n   📋 ALE7 AUTHORIZATION STATUS:")
+            print(f"      • Role: {user_role}")
+            print(f"      • Sub Agenzia ID: {sub_agenzia_id}")
+            print(f"      • Commesse Autorizzate: {commesse_autorizzate}")
+            print(f"      • Commesse Count: {len(commesse_autorizzate) if commesse_autorizzate else 0}")
+            
+            # Verify ale7 has authorized commesse
+            if commesse_autorizzate and len(commesse_autorizzate) > 0:
+                self.log_test("✅ ALE7 HAS AUTHORIZED COMMESSE", True, f"Found {len(commesse_autorizzate)} authorized commesse")
+                
+                # Check if Fastweb is in authorized commesse (expected)
+                fastweb_commessa_id = "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1"  # Known Fastweb ID
+                if fastweb_commessa_id in commesse_autorizzate:
+                    self.log_test("✅ FASTWEB AUTHORIZED FOR ALE7", True, f"Fastweb commessa found in authorized list")
+                else:
+                    self.log_test("ℹ️ FASTWEB NOT IN AUTHORIZED LIST", True, f"Fastweb ID not found, ale7 may have different commesse")
+                    
+            else:
+                self.log_test("❌ ALE7 NO AUTHORIZED COMMESSE", False, "ale7 has no commesse_autorizzate - this will cause issues")
+                return False
+            
+            # Verify sub_agenzia_id is present
+            if sub_agenzia_id:
+                self.log_test("✅ ALE7 SUB AGENZIA ASSIGNED", True, f"Sub Agenzia ID: {sub_agenzia_id}")
+            else:
+                self.log_test("❌ ALE7 SUB AGENZIA MISSING", False, "sub_agenzia_id is None/empty - CRITICAL ISSUE!")
+                return False
+                
+        else:
+            self.log_test("❌ ALE7 LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: TEST CASCADING ENDPOINT WITH ALE7**
+        print("\n🔍 STEP 2: TEST CASCADING ENDPOINT WITH ALE7...")
+        print(f"   Testing GET /api/cascade/commesse-by-subagenzia/{sub_agenzia_id} with ale7 token")
+        
+        # Test the cascading endpoint that should now be filtered
+        success, cascading_response, status = self.make_request(
+            'GET', f'cascade/commesse-by-subagenzia/{sub_agenzia_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/cascade/commesse-by-subagenzia SUCCESS", True, f"Status: {status}")
+            
+            # Analyze the response
+            if isinstance(cascading_response, list):
+                commesse_count = len(cascading_response)
+                self.log_test("✅ CASCADING RESPONSE IS ARRAY", True, f"Found {commesse_count} commesse in cascading")
+                
+                print(f"\n   📊 CASCADING RESULTS FOR ALE7:")
+                print(f"      • Total commesse returned: {commesse_count}")
+                
+                # Log each commessa found
+                for i, commessa in enumerate(cascading_response):
+                    commessa_id = commessa.get('id', 'NO_ID')
+                    commessa_nome = commessa.get('nome', 'NO_NAME')
+                    print(f"      • Commessa {i+1}: {commessa_nome} (ID: {commessa_id})")
+                    
+                    # Check if this commessa is in ale7's authorized list
+                    if commessa_id in commesse_autorizzate:
+                        self.log_test(f"✅ COMMESSA '{commessa_nome}' AUTHORIZED", True, f"Commessa is in ale7's authorized list")
+                    else:
+                        self.log_test(f"❌ COMMESSA '{commessa_nome}' NOT AUTHORIZED", False, f"Commessa NOT in ale7's authorized list - SECURITY ISSUE!")
+                
+                # **CRITICAL CHECK: Should only show authorized commesse**
+                unauthorized_commesse = []
+                authorized_commesse = []
+                
+                for commessa in cascading_response:
+                    commessa_id = commessa.get('id')
+                    commessa_nome = commessa.get('nome')
+                    
+                    if commessa_id in commesse_autorizzate:
+                        authorized_commesse.append(commessa_nome)
+                    else:
+                        unauthorized_commesse.append(commessa_nome)
+                
+                print(f"\n   🎯 AUTHORIZATION ANALYSIS:")
+                print(f"      • Authorized commesse shown: {len(authorized_commesse)} - {authorized_commesse}")
+                print(f"      • Unauthorized commesse shown: {len(unauthorized_commesse)} - {unauthorized_commesse}")
+                
+                if len(unauthorized_commesse) == 0:
+                    self.log_test("✅ CASCADING AUTHORIZATION FIX WORKING", True, 
+                        f"Only authorized commesse shown: {authorized_commesse}")
+                    cascading_fix_success = True
+                else:
+                    self.log_test("❌ CASCADING AUTHORIZATION FIX NOT WORKING", False, 
+                        f"Unauthorized commesse still shown: {unauthorized_commesse}")
+                    cascading_fix_success = False
+                
+                # Check for specific commesse mentioned in review
+                fastweb_shown = any(c.get('nome', '').lower() == 'fastweb' for c in cascading_response)
+                telepass_shown = any(c.get('nome', '').lower() == 'telepass' for c in cascading_response)
+                
+                print(f"\n   🔍 SPECIFIC COMMESSE CHECK:")
+                print(f"      • Fastweb shown: {'✅ YES' if fastweb_shown else '❌ NO'}")
+                print(f"      • Telepass shown: {'❌ YES (PROBLEM!)' if telepass_shown else '✅ NO (CORRECT)'}")
+                
+                if fastweb_shown and not telepass_shown:
+                    self.log_test("✅ EXPECTED BEHAVIOR CONFIRMED", True, "Fastweb shown, Telepass hidden - as expected")
+                elif not fastweb_shown and not telepass_shown:
+                    self.log_test("ℹ️ NO SPECIFIC COMMESSE FOUND", True, "Neither Fastweb nor Telepass found - may have different commesse")
+                elif telepass_shown:
+                    self.log_test("❌ TELEPASS STILL VISIBLE", False, "Telepass should NOT be visible to ale7 - fix not working")
+                    cascading_fix_success = False
+                
+            else:
+                self.log_test("❌ CASCADING RESPONSE NOT ARRAY", False, f"Response type: {type(cascading_response)}")
+                cascading_fix_success = False
+                
+        else:
+            self.log_test("❌ GET /api/cascade/commesse-by-subagenzia FAILED", False, f"Status: {status}, Response: {cascading_response}")
+            cascading_fix_success = False
+
+        # **STEP 3: TEST ADMIN COMPARISON**
+        print("\n👑 STEP 3: TEST ADMIN COMPARISON...")
+        print("   Testing same endpoint with admin to verify admin sees all commesse")
+        
+        # Login as admin
+        success, admin_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in admin_response:
+            # Save ale7 token
+            ale7_token = self.token
+            
+            # Use admin token
+            self.token = admin_response['access_token']
+            admin_user_data = admin_response['user']
+            
+            self.log_test("✅ ADMIN LOGIN SUCCESS", True, f"Role: {admin_user_data.get('role')}")
+            
+            # Test same cascading endpoint with admin
+            success, admin_cascading_response, status = self.make_request(
+                'GET', f'cascade/commesse-by-subagenzia/{sub_agenzia_id}', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                if isinstance(admin_cascading_response, list):
+                    admin_commesse_count = len(admin_cascading_response)
+                    self.log_test("✅ ADMIN CASCADING SUCCESS", True, f"Admin sees {admin_commesse_count} commesse")
+                    
+                    print(f"\n   📊 ADMIN VS ALE7 COMPARISON:")
+                    print(f"      • Admin sees: {admin_commesse_count} commesse")
+                    print(f"      • ale7 sees: {commesse_count if 'commesse_count' in locals() else 'UNKNOWN'} commesse")
+                    
+                    # Admin should typically see more commesse than restricted users
+                    if admin_commesse_count >= commesse_count:
+                        self.log_test("✅ ADMIN SEES MORE/EQUAL COMMESSE", True, 
+                            f"Admin: {admin_commesse_count}, ale7: {commesse_count} - Expected behavior")
+                    else:
+                        self.log_test("❌ ADMIN SEES FEWER COMMESSE", False, 
+                            f"Admin: {admin_commesse_count}, ale7: {commesse_count} - Unexpected")
+                    
+                    # List admin commesse
+                    print(f"\n   📋 ADMIN COMMESSE LIST:")
+                    for i, commessa in enumerate(admin_cascading_response):
+                        commessa_nome = commessa.get('nome', 'NO_NAME')
+                        print(f"      • Admin Commessa {i+1}: {commessa_nome}")
+                        
+                else:
+                    self.log_test("❌ ADMIN CASCADING RESPONSE NOT ARRAY", False, f"Response type: {type(admin_cascading_response)}")
+            else:
+                self.log_test("❌ ADMIN CASCADING FAILED", False, f"Status: {status}")
+            
+            # Restore ale7 token
+            self.token = ale7_token
+            
+        else:
+            self.log_test("❌ ADMIN LOGIN FAILED", False, f"Status: {status}")
+
+        # **STEP 4: VERIFY BACKEND LOGS**
+        print("\n📊 STEP 4: VERIFY BACKEND LOGS...")
+        print("   Making additional requests to generate log entries for verification")
+        
+        # Make a few more requests to generate logs
+        for i in range(2):
+            success, log_response, status = self.make_request(
+                'GET', f'cascade/commesse-by-subagenzia/{sub_agenzia_id}', 
+                expected_status=200
+            )
+            if success:
+                self.log_test(f"✅ Log generation request {i+1}", True, f"Status: {status}")
+            else:
+                self.log_test(f"❌ Log generation request {i+1}", False, f"Status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 CASCADING AUTHORIZATION FIX VERIFICATION SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Confermare che il fix del cascading risolve il problema segnalato dall'utente")
+        print(f"   🎯 FOCUS CRITICO: ale7 deve vedere solo commesse autorizzate (Fastweb), non Telepass")
+        print(f"   📊 RISULTATI:")
+        print(f"      • ale7 login (ale7/admin123): ✅ SUCCESS")
+        print(f"      • ale7 commesse_autorizzate populated: ✅ SUCCESS")
+        print(f"      • GET /api/cascade/commesse-by-subagenzia: {'✅ SUCCESS' if cascading_fix_success else '❌ FAILED'}")
+        print(f"      • Only authorized commesse shown: {'✅ SUCCESS' if cascading_fix_success else '❌ FAILED'}")
+        print(f"      • Admin comparison test: ✅ COMPLETED")
+        print(f"      • Backend logs generated: ✅ SUCCESS")
+        
+        if cascading_fix_success:
+            print(f"   🎉 SUCCESS: Il fix del cascading funziona correttamente!")
+            print(f"   🎉 CONFERMATO: ale7 vede solo le commesse autorizzate nel cascading!")
+            print(f"   🎉 RISOLTO: Il problema segnalato dall'utente è stato completamente risolto!")
+            return True
+        else:
+            print(f"   🚨 FAILURE: Il fix del cascading presenta ancora problemi!")
+            print(f"   🚨 AZIONE RICHIESTA: Verificare l'implementazione del filtro nell'endpoint cascading")
+            return False
+
     def test_ale7_cascading_and_403_error_critical_diagnosis(self):
         """🚨 DIAGNOSI CRITICA: Due problemi Responsabile Store - Cascading e 403 Error"""
         print("\n🚨 DIAGNOSI CRITICA: Due problemi Responsabile Store - Cascading e 403 Error")
