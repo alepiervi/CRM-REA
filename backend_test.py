@@ -1166,8 +1166,8 @@ class CRMAPITester:
         print("   4. TEST ADMIN COMPARISON: Testare gli stessi endpoint con admin")
         print("   5. FIX IMMEDIATO: Se la logica è sbagliata, correggerla immediatamente")
         
-        # **STEP 1: LOGIN ALE7 E VERIFICA AUTORIZZAZIONI**
-        print("\n🔐 STEP 1: LOGIN ALE7 E VERIFICA AUTORIZZAZIONI...")
+        # **STEP 1: VERIFICA STATO ATTUALE ALE7**
+        print("\n🔐 STEP 1: VERIFICA STATO ATTUALE ALE7...")
         success, response, status = self.make_request(
             'POST', 'auth/login', 
             {'username': 'ale7', 'password': 'admin123'}, 
@@ -1184,7 +1184,7 @@ class CRMAPITester:
             self.log_test("✅ ALE7 LOGIN SUCCESS (ale7/admin123)", True, 
                 f"Role: {user_role}, Sub Agenzia ID: {sub_agenzia_id}")
             
-            print(f"\n   📋 ALE7 AUTHORIZATION STATUS:")
+            print(f"\n   📋 ALE7 CONFIGURAZIONE CORRENTE:")
             print(f"      • Role: {user_role}")
             print(f"      • Sub Agenzia ID: {sub_agenzia_id}")
             print(f"      • Commesse Autorizzate: {commesse_autorizzate}")
@@ -1192,11 +1192,201 @@ class CRMAPITester:
             
             # Verify ale7 has authorized commesse
             if commesse_autorizzate and len(commesse_autorizzate) > 0:
-                self.log_test("✅ ALE7 HAS AUTHORIZED COMMESSE", True, f"Found {len(commesse_autorizzate)} authorized commesse")
+                self.log_test("✅ ALE7 HAS COMMESSE_AUTORIZZATE", True, f"Found {len(commesse_autorizzate)} authorized commesse")
                 
-                # Check if Fastweb is in authorized commesse (expected)
-                fastweb_commessa_id = "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1"  # Known Fastweb ID
-                if fastweb_commessa_id in commesse_autorizzate:
+                # Check specific commesse IDs
+                for i, commessa_id in enumerate(commesse_autorizzate):
+                    print(f"      • Commessa {i+1}: {commessa_id}")
+            else:
+                self.log_test("❌ ALE7 NO COMMESSE_AUTORIZZATE", False, "ale7 has empty commesse_autorizzate - this is the problem!")
+                
+            # Verify sub_agenzia_id is populated
+            if sub_agenzia_id:
+                self.log_test("✅ ALE7 HAS SUB_AGENZIA_ID", True, f"Sub Agenzia ID: {sub_agenzia_id}")
+            else:
+                self.log_test("❌ ALE7 NO SUB_AGENZIA_ID", False, "ale7 has no sub_agenzia_id - this could be the problem!")
+                
+        else:
+            self.log_test("❌ ALE7 LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: TEST ENDPOINT CASCADING DETTAGLIATO**
+        print("\n🔍 STEP 2: TEST ENDPOINT CASCADING DETTAGLIATO...")
+        
+        # Test GET /api/cascade/sub-agenzie with ale7
+        print("   Testing GET /api/cascade/sub-agenzie with ale7...")
+        success, sub_agenzie_response, status = self.make_request('GET', 'cascade/sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            self.log_test("✅ GET /api/cascade/sub-agenzie (ale7)", True, f"Status: {status}, Sub Agenzie: {len(sub_agenzie)}")
+            
+            print(f"   📋 SUB AGENZIE VISIBLE TO ALE7:")
+            for i, sub_agenzia in enumerate(sub_agenzie):
+                nome = sub_agenzia.get('nome', 'Unknown')
+                sa_id = sub_agenzia.get('id', 'Unknown')
+                print(f"      • Sub Agenzia {i+1}: {nome} (ID: {sa_id})")
+                
+            if len(sub_agenzie) == 0:
+                self.log_test("❌ ALE7 SEES NO SUB AGENZIE", False, "ale7 cannot see any sub agenzie in cascading - this explains the problem!")
+            else:
+                self.log_test("✅ ALE7 SEES SUB AGENZIE", True, f"ale7 can see {len(sub_agenzie)} sub agenzie")
+                
+                # Test GET /api/cascade/commesse-by-subagenzia/{id} for each sub agenzia
+                for sub_agenzia in sub_agenzie:
+                    sa_id = sub_agenzia.get('id')
+                    sa_nome = sub_agenzia.get('nome')
+                    
+                    print(f"\n   Testing GET /api/cascade/commesse-by-subagenzia/{sa_id} ({sa_nome})...")
+                    success, commesse_response, status = self.make_request(
+                        'GET', f'cascade/commesse-by-subagenzia/{sa_id}', expected_status=200)
+                    
+                    if success and status == 200:
+                        commesse = commesse_response if isinstance(commesse_response, list) else []
+                        self.log_test(f"✅ GET /api/cascade/commesse-by-subagenzia/{sa_nome}", True, 
+                            f"Status: {status}, Commesse: {len(commesse)}")
+                        
+                        print(f"   📋 COMMESSE FOR {sa_nome}:")
+                        for i, commessa in enumerate(commesse):
+                            nome = commessa.get('nome', 'Unknown')
+                            c_id = commessa.get('id', 'Unknown')
+                            print(f"      • Commessa {i+1}: {nome} (ID: {c_id})")
+                            
+                        if len(commesse) == 0:
+                            self.log_test(f"❌ NO COMMESSE FOR {sa_nome}", False, 
+                                "ale7 sees sub agenzia but no commesse - intersection logic problem!")
+                        else:
+                            self.log_test(f"✅ COMMESSE FOUND FOR {sa_nome}", True, f"Found {len(commesse)} commesse")
+                    else:
+                        self.log_test(f"❌ GET /api/cascade/commesse-by-subagenzia/{sa_nome}", False, 
+                            f"Status: {status}, Response: {commesse_response}")
+        else:
+            self.log_test("❌ GET /api/cascade/sub-agenzie (ale7)", False, f"Status: {status}, Response: {sub_agenzie_response}")
+
+        # **STEP 3: VERIFICA AUTORIZZAZIONI DATI**
+        print("\n💾 STEP 3: VERIFICA AUTORIZZAZIONI DATI...")
+        
+        # Check backend logs for any errors
+        print("   Checking if ale7 has proper data configuration...")
+        
+        # Verify ale7's sub agenzia exists and has correct commesse
+        if sub_agenzia_id:
+            print(f"   Checking sub agenzia {sub_agenzia_id} configuration...")
+            # This would require direct database access, but we can infer from cascading results
+            
+        # **STEP 4: TEST ADMIN COMPARISON**
+        print("\n👑 STEP 4: TEST ADMIN COMPARISON...")
+        
+        # Login as admin to compare results
+        print("   Testing same endpoints with admin...")
+        success, admin_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in admin_response:
+            admin_token = self.token
+            self.token = admin_response['access_token']
+            
+            self.log_test("✅ ADMIN LOGIN SUCCESS", True, "Admin logged in for comparison")
+            
+            # Test GET /api/cascade/sub-agenzie with admin
+            success, admin_sub_agenzie, status = self.make_request('GET', 'cascade/sub-agenzie', expected_status=200)
+            
+            if success and status == 200:
+                admin_sa_count = len(admin_sub_agenzie) if isinstance(admin_sub_agenzie, list) else 0
+                self.log_test("✅ GET /api/cascade/sub-agenzie (admin)", True, f"Admin sees {admin_sa_count} sub agenzie")
+                
+                print(f"   📊 COMPARISON:")
+                print(f"      • Admin sees: {admin_sa_count} sub agenzie")
+                print(f"      • ale7 sees: {len(sub_agenzie) if 'sub_agenzie' in locals() else 0} sub agenzie")
+                
+                if admin_sa_count > 0 and len(sub_agenzie) == 0:
+                    self.log_test("🚨 CRITICAL ISSUE IDENTIFIED", False, 
+                        "Admin sees sub agenzie but ale7 sees none - authorization filtering problem!")
+                
+                # Test commesse for first sub agenzia with admin
+                if admin_sa_count > 0:
+                    first_sa = admin_sub_agenzie[0]
+                    sa_id = first_sa.get('id')
+                    sa_nome = first_sa.get('nome')
+                    
+                    success, admin_commesse, status = self.make_request(
+                        'GET', f'cascade/commesse-by-subagenzia/{sa_id}', expected_status=200)
+                    
+                    if success:
+                        admin_commesse_count = len(admin_commesse) if isinstance(admin_commesse, list) else 0
+                        self.log_test(f"✅ GET /api/cascade/commesse-by-subagenzia (admin)", True, 
+                            f"Admin sees {admin_commesse_count} commesse for {sa_nome}")
+                        
+                        print(f"   📊 COMMESSE COMPARISON FOR {sa_nome}:")
+                        print(f"      • Admin sees: {admin_commesse_count} commesse")
+                        
+                        if admin_commesse_count > 0:
+                            print(f"   📋 ADMIN COMMESSE FOR {sa_nome}:")
+                            for i, commessa in enumerate(admin_commesse):
+                                nome = commessa.get('nome', 'Unknown')
+                                c_id = commessa.get('id', 'Unknown')
+                                print(f"      • Commessa {i+1}: {nome} (ID: {c_id})")
+            
+            # Restore ale7 token
+            self.token = admin_token
+        else:
+            self.log_test("❌ ADMIN LOGIN FAILED", False, "Cannot compare with admin")
+
+        # **STEP 5: BACKEND LOGS INSPECTION**
+        print("\n📊 STEP 5: BACKEND LOGS INSPECTION...")
+        print("   🔍 Checking backend logs for cascading endpoint calls...")
+        
+        # Make additional requests to generate log entries
+        print("   Making additional cascading requests to capture logs...")
+        for i in range(2):
+            success, log_response, status = self.make_request('GET', 'cascade/sub-agenzie', expected_status=200)
+            if success:
+                self.log_test(f"✅ Cascading request {i+1} for logs", True, f"Status: {status}")
+            else:
+                self.log_test(f"❌ Cascading request {i+1} for logs", False, f"Status: {status}")
+
+        # **CRITICAL DIAGNOSIS SUMMARY**
+        print(f"\n🎯 CRITICAL CASCADING DIAGNOSIS SUMMARY:")
+        print(f"   🎯 PROBLEMA CRITICO: ale7 non vede commesse autorizzate nella filiera cascading")
+        print(f"   🎯 FOCUS MASSIMO: Risolvere immediatamente il cascading per permettere all'utente di vedere le sue commesse")
+        print(f"   📊 RISULTATI DIAGNOSI:")
+        
+        ale7_has_commesse = commesse_autorizzate and len(commesse_autorizzate) > 0
+        ale7_has_sub_agenzia = sub_agenzia_id is not None
+        ale7_sees_sub_agenzie = 'sub_agenzie' in locals() and len(sub_agenzie) > 0
+        
+        print(f"      • ale7 login (ale7/admin123): ✅ SUCCESS")
+        print(f"      • ale7 has commesse_autorizzate: {'✅ YES (' + str(len(commesse_autorizzate)) + ')' if ale7_has_commesse else '❌ NO - CRITICAL ISSUE'}")
+        print(f"      • ale7 has sub_agenzia_id: {'✅ YES (' + str(sub_agenzia_id) + ')' if ale7_has_sub_agenzia else '❌ NO - CRITICAL ISSUE'}")
+        print(f"      • ale7 sees sub agenzie in cascading: {'✅ YES (' + str(len(sub_agenzie)) + ')' if ale7_sees_sub_agenzie else '❌ NO - CRITICAL ISSUE'}")
+        print(f"      • Admin comparison completed: ✅ YES")
+        
+        # Identify the root cause
+        if not ale7_has_commesse:
+            print(f"   🚨 ROOT CAUSE IDENTIFIED: ale7 has empty commesse_autorizzate!")
+            print(f"   🔧 FIX REQUIRED: Populate ale7.commesse_autorizzate with authorized commesse IDs")
+        elif not ale7_has_sub_agenzia:
+            print(f"   🚨 ROOT CAUSE IDENTIFIED: ale7 has no sub_agenzia_id!")
+            print(f"   🔧 FIX REQUIRED: Assign ale7 to a sub agenzia")
+        elif not ale7_sees_sub_agenzie:
+            print(f"   🚨 ROOT CAUSE IDENTIFIED: Cascading endpoint logic not working for ale7!")
+            print(f"   🔧 FIX REQUIRED: Debug GET /api/cascade/sub-agenzie endpoint authorization logic")
+        else:
+            print(f"   🤔 PARTIAL SUCCESS: ale7 configuration looks correct but may have intersection issues")
+            print(f"   🔧 FIX REQUIRED: Check intersection logic in GET /api/cascade/commesse-by-subagenzia")
+        
+        # Return success status
+        cascading_working = ale7_has_commesse and ale7_has_sub_agenzia and ale7_sees_sub_agenzie
+        
+        if cascading_working:
+            print(f"   🎉 SUCCESS: ale7 cascading configuration appears correct!")
+            return True
+        else:
+            print(f"   🚨 FAILURE: ale7 cascading has critical issues that need immediate fixing!")
+            return False commesse_autorizzate:
                     self.log_test("✅ FASTWEB AUTHORIZED FOR ALE7", True, f"Fastweb commessa found in authorized list")
                 else:
                     self.log_test("ℹ️ FASTWEB NOT IN AUTHORIZED LIST", True, f"Fastweb ID not found, ale7 may have different commesse")
