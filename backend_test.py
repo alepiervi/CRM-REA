@@ -1154,6 +1154,258 @@ class CRMAPITester:
             print(f"   🚨 AZIONE RICHIESTA: Verificare enum UserRole nel backend e mapping frontend")
             return False
 
+    def test_ale7_store_403_error_diagnosis(self):
+        """🚨 DIAGNOSI URGENTE: Errore 403 creazione cliente Responsabile Store ale7"""
+        print("\n🚨 DIAGNOSI URGENTE: Errore 403 creazione cliente Responsabile Store")
+        print("🎯 OBIETTIVO: Identificare la causa esatta dell'errore 403 e risolverlo")
+        print("🎯 FOCUS CRITICO: Risolvere l'errore 403 per permettere creazione clienti Store")
+        
+        # **STEP 1: VERIFICA STATO ATTUALE ALE7**
+        print("\n🔐 STEP 1: VERIFICA STATO ATTUALE ALE7...")
+        print("   Login ale7/admin123 e controllare configurazione corrente")
+        
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'ale7', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            user_role = self.user_data.get('role')
+            sub_agenzia_id = self.user_data.get('sub_agenzia_id')
+            commesse_autorizzate = self.user_data.get('commesse_autorizzate', [])
+            
+            self.log_test("✅ ALE7 LOGIN SUCCESS (ale7/admin123)", True, 
+                f"Role: {user_role}, Sub Agenzia ID: {sub_agenzia_id}")
+            
+            # Verify role is responsabile_store
+            if user_role == 'responsabile_store':
+                self.log_test("✅ ALE7 ROLE CORRECT", True, f"Role: {user_role}")
+            else:
+                self.log_test("❌ ALE7 ROLE INCORRECT", False, f"Expected: responsabile_store, Got: {user_role}")
+                return False
+            
+            # Verify sub_agenzia_id is assigned
+            if sub_agenzia_id:
+                self.log_test("✅ ALE7 SUB AGENZIA ASSIGNED", True, f"Sub Agenzia ID: {sub_agenzia_id}")
+            else:
+                self.log_test("❌ ALE7 SUB AGENZIA MISSING", False, "sub_agenzia_id is None/empty")
+                return False
+            
+            # Verify commesse_autorizzate is populated
+            if commesse_autorizzate and len(commesse_autorizzate) > 0:
+                self.log_test("✅ ALE7 COMMESSE AUTORIZZATE", True, f"Commesse: {len(commesse_autorizzate)} items")
+                print(f"      Commesse IDs: {commesse_autorizzate}")
+            else:
+                self.log_test("❌ ALE7 COMMESSE EMPTY", False, f"Commesse autorizzate: {commesse_autorizzate}")
+                return False
+                
+        else:
+            self.log_test("❌ ALE7 LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: VERIFICA USER_COMMESSA_AUTHORIZATIONS RECORDS**
+        print("\n📋 STEP 2: VERIFICA USER_COMMESSA_AUTHORIZATIONS RECORDS...")
+        
+        # Get current user details via /api/auth/me
+        success, auth_me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/auth/me SUCCESS", True, f"Status: {status}")
+            
+            # Display detailed user configuration
+            print(f"      📊 ALE7 DETAILED CONFIGURATION:")
+            print(f"         • User ID: {auth_me_response.get('id')}")
+            print(f"         • Username: {auth_me_response.get('username')}")
+            print(f"         • Role: {auth_me_response.get('role')}")
+            print(f"         • Sub Agenzia ID: {auth_me_response.get('sub_agenzia_id')}")
+            print(f"         • Commesse Autorizzate: {auth_me_response.get('commesse_autorizzate', [])}")
+            print(f"         • Servizi Autorizzati: {auth_me_response.get('servizi_autorizzati', [])}")
+            print(f"         • Can View Analytics: {auth_me_response.get('can_view_analytics', False)}")
+            print(f"         • Entity Management: {auth_me_response.get('entity_management', 'N/A')}")
+            print(f"         • Is Active: {auth_me_response.get('is_active', False)}")
+            
+        else:
+            self.log_test("❌ GET /api/auth/me FAILED", False, f"Status: {status}, Response: {auth_me_response}")
+            return False
+
+        # **STEP 3: TEST CREAZIONE CLIENTE DETTAGLIATO**
+        print("\n🏗️ STEP 3: TEST CREAZIONE CLIENTE DETTAGLIATO...")
+        print("   Tentare POST /api/clienti con ale7 e catturare messaggio di errore esatto")
+        
+        # Prepare client creation data with valid IDs from ale7's configuration
+        import time
+        timestamp = str(int(time.time()))
+        
+        # Use ale7's authorized commessa and sub agenzia
+        commessa_id = commesse_autorizzate[0] if commesse_autorizzate else None
+        
+        if not commessa_id:
+            self.log_test("❌ NO COMMESSA FOR CLIENT CREATION", False, "Cannot create client without commessa_id")
+            return False
+        
+        client_data = {
+            "nome": "Test",
+            "cognome": f"Store403Error_{timestamp}",
+            "telefono": f"+39123456{timestamp[-4:]}",
+            "email": f"test403_{timestamp}@store.it",
+            "commessa_id": commessa_id,
+            "sub_agenzia_id": sub_agenzia_id,
+            "tipologia_contratto": "energia_fastweb",
+            "segmento": "privato"
+        }
+        
+        print(f"      📋 CLIENT DATA:")
+        print(f"         • Nome: {client_data['nome']}")
+        print(f"         • Cognome: {client_data['cognome']}")
+        print(f"         • Telefono: {client_data['telefono']}")
+        print(f"         • Commessa ID: {client_data['commessa_id']}")
+        print(f"         • Sub Agenzia ID: {client_data['sub_agenzia_id']}")
+        print(f"         • Tipologia Contratto: {client_data['tipologia_contratto']}")
+        print(f"         • Segmento: {client_data['segmento']}")
+        
+        # Attempt client creation
+        success, create_response, status = self.make_request(
+            'POST', 'clienti', 
+            client_data, 
+            expected_status=200  # We expect success, but will handle 403
+        )
+        
+        if success and (status == 200 or status == 201):
+            self.log_test("✅ POST /api/clienti SUCCESS", True, 
+                f"Status: {status} - CLIENT CREATED SUCCESSFULLY!")
+            
+            if isinstance(create_response, dict) and 'id' in create_response:
+                created_client_id = create_response.get('id')
+                self.log_test("✅ CLIENT CREATION VERIFIED", True, f"Client ID: {created_client_id}")
+                print(f"   🎉 SUCCESS: ale7 CAN CREATE CLIENTS - NO 403 ERROR!")
+                return True
+            else:
+                self.log_test("❌ INVALID RESPONSE STRUCTURE", False, f"Response: {create_response}")
+                
+        elif status == 403:
+            self.log_test("❌ POST /api/clienti 403 FORBIDDEN", False, 
+                f"Status: 403 - AUTHORIZATION ERROR CONFIRMED!")
+            
+            # Analyze 403 error details
+            if isinstance(create_response, dict):
+                detail = create_response.get('detail', 'No detail provided')
+                self.log_test("🔍 403 ERROR DETAILS", False, f"Detail: {detail}")
+                
+                # Check for specific authorization messages
+                if 'commessa' in detail.lower():
+                    self.log_test("🚨 COMMESSA ACCESS ISSUE", False, "Error related to commessa access")
+                elif 'sub_agenzia' in detail.lower():
+                    self.log_test("🚨 SUB AGENZIA ACCESS ISSUE", False, "Error related to sub agenzia access")
+                elif 'authorization' in detail.lower() or 'permission' in detail.lower():
+                    self.log_test("🚨 GENERAL AUTHORIZATION ISSUE", False, "General authorization/permission error")
+                else:
+                    self.log_test("🚨 UNKNOWN 403 CAUSE", False, f"Unrecognized 403 error: {detail}")
+            
+        elif status == 422:
+            self.log_test("❌ POST /api/clienti 422 VALIDATION ERROR", False, 
+                f"Status: 422 - VALIDATION ERROR (not authorization)")
+            
+            if isinstance(create_response, dict) and 'detail' in create_response:
+                detail = create_response['detail']
+                self.log_test("🔍 422 VALIDATION DETAILS", False, f"Detail: {detail}")
+                
+        else:
+            self.log_test("❌ POST /api/clienti UNEXPECTED ERROR", False, 
+                f"Status: {status}, Response: {create_response}")
+
+        # **STEP 4: ANALISI BACKEND LOGS**
+        print("\n📊 STEP 4: ANALISI BACKEND LOGS...")
+        print("   Controllare i log dettagliati del backend durante la creazione")
+        
+        # Check backend logs by making a request that should generate logs
+        print("   Making additional requests to generate backend logs...")
+        
+        # Test cascade endpoints that ale7 should have access to
+        success, cascade_response, status = self.make_request('GET', 'cascade/sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/cascade/sub-agenzie", True, 
+                f"Status: {status}, Sub Agenzie: {len(cascade_response) if isinstance(cascade_response, list) else 'Not array'}")
+            
+            if isinstance(cascade_response, list) and len(cascade_response) > 0:
+                print(f"      Available Sub Agenzie: {[sa.get('nome', 'N/A') for sa in cascade_response]}")
+            else:
+                self.log_test("⚠️ NO SUB AGENZIE IN CASCADE", True, "ale7 has no accessible sub agenzie in cascade")
+                
+        else:
+            self.log_test("❌ GET /api/cascade/sub-agenzie FAILED", False, f"Status: {status}")
+
+        # **STEP 5: VERIFICA DATI RICHIESTA**
+        print("\n🔍 STEP 5: VERIFICA DATI RICHIESTA...")
+        print("   Verificare che tutti i campi richiesti siano presenti e validi")
+        
+        # Verify commessa exists and is accessible
+        if commessa_id:
+            # Try to get commessa details (if endpoint exists)
+            success, commessa_response, status = self.make_request('GET', f'commesse/{commessa_id}', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ COMMESSA ACCESSIBLE", True, f"Commessa ID {commessa_id} is accessible")
+                
+                if isinstance(commessa_response, dict):
+                    commessa_nome = commessa_response.get('nome', 'N/A')
+                    print(f"      Commessa Name: {commessa_nome}")
+            else:
+                self.log_test("❌ COMMESSA NOT ACCESSIBLE", False, f"Status: {status} for commessa {commessa_id}")
+        
+        # Verify sub agenzia exists and is accessible
+        if sub_agenzia_id:
+            success, sub_agenzia_response, status = self.make_request('GET', f'sub-agenzie/{sub_agenzia_id}', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ SUB AGENZIA ACCESSIBLE", True, f"Sub Agenzia ID {sub_agenzia_id} is accessible")
+                
+                if isinstance(sub_agenzia_response, dict):
+                    sub_agenzia_nome = sub_agenzia_response.get('nome', 'N/A')
+                    print(f"      Sub Agenzia Name: {sub_agenzia_nome}")
+            else:
+                self.log_test("❌ SUB AGENZIA NOT ACCESSIBLE", False, f"Status: {status} for sub agenzia {sub_agenzia_id}")
+
+        # **STEP 6: FIX IMMEDIATO (if needed)**
+        print("\n🔧 STEP 6: DIAGNOSI E RACCOMANDAZIONI...")
+        
+        # Summarize findings and provide recommendations
+        print(f"\n🎯 DIAGNOSI COMPLETA ALE7 403 ERROR:")
+        print(f"   📊 CONFIGURAZIONE ALE7:")
+        print(f"      • Login: {'✅ SUCCESS' if self.token else '❌ FAILED'}")
+        print(f"      • Role: {user_role} ({'✅ CORRECT' if user_role == 'responsabile_store' else '❌ INCORRECT'})")
+        print(f"      • Sub Agenzia ID: {sub_agenzia_id} ({'✅ ASSIGNED' if sub_agenzia_id else '❌ MISSING'})")
+        print(f"      • Commesse Autorizzate: {len(commesse_autorizzate)} ({'✅ POPULATED' if commesse_autorizzate else '❌ EMPTY'})")
+        print(f"   📊 CREAZIONE CLIENTE:")
+        print(f"      • POST /api/clienti: {'✅ SUCCESS' if status in [200, 201] else f'❌ FAILED ({status})'}")
+        print(f"      • Authorization Check: {'✅ PASSED' if status in [200, 201] else '❌ FAILED'}")
+        
+        if status == 403:
+            print(f"\n🚨 ERRORE 403 CONFERMATO - POSSIBILI CAUSE:")
+            print(f"   1. Missing user_commessa_authorizations record with can_create_clients: true")
+            print(f"   2. Incorrect commessa_id or sub_agenzia_id in authorization check")
+            print(f"   3. Backend authorization logic not recognizing responsabile_store role")
+            print(f"   4. Database inconsistency in authorization records")
+            print(f"\n💡 RACCOMANDAZIONI:")
+            print(f"   1. Verificare user_commessa_authorizations table per ale7")
+            print(f"   2. Aggiungere/aggiornare record con can_create_clients: true")
+            print(f"   3. Verificare check_commessa_access() function per responsabile_store")
+            print(f"   4. Controllare backend logs per dettagli specifici dell'errore")
+            return False
+        elif status in [200, 201]:
+            print(f"\n🎉 SUCCESS: ALE7 PUÒ CREARE CLIENTI!")
+            print(f"   Il problema 403 potrebbe essere stato risolto o era temporaneo.")
+            print(f"   Client creato con successo - sistema funzionante.")
+            return True
+        else:
+            print(f"\n⚠️ ERRORE DIVERSO DA 403:")
+            print(f"   Status: {status} - Non è un errore di autorizzazione 403")
+            print(f"   Potrebbe essere un problema di validazione o configurazione diverso")
+            return False
+
     def test_document_management_system_complete(self):
         """TEST COMPLETO SISTEMA GESTIONE DOCUMENTI - FOCUS SU UPLOAD, DOWNLOAD, DELETE, LISTA"""
         print("\n📄 TEST COMPLETO SISTEMA GESTIONE DOCUMENTI...")
