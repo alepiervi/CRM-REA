@@ -135,6 +135,17 @@ CREDENZIALI: admin/admin123, ale7/admin123
 FOCUS: Risolvere configurazione utente e cascading completo."
 
 backend:
+  - task: "ALE7 Configuration Fix - Add Second Commessa and Resolve Empty Services"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 ALE7 CONFIGURATION FIX COMPLETE - 100% SUCCESS! ✅ URGENT TESTING COMPLETED: Successfully corrected ale7 configuration to have 2 commesse and resolved empty services dropdown as requested in review. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ COMMESSE IDENTIFICATION: Found 3 available commesse - Fastweb (4cb70f28-6278-4d0f-b2b7-65f2b783f3f1), Fotovoltaico (5ef3ae82-645a-43d4-82e0-a3b27da77a7c), Telepass (72d1a8da-10cb-4fa7-85fe-1f26ac9a9690). ✅ ALE7 CURRENT CONFIG VERIFIED: Found ale7 user (ID: 5722e291-c9e5-43e7-b188-c3ad54a48d2d), Role: responsabile_store, had only 1 commessa (Fastweb), needed second commessa. ✅ CRITICAL SUCCESS - SECOND COMMESSA ADDED: Successfully updated ale7.commesse_autorizzate from 1 to 2 commesse, added Fotovoltaico commessa to ale7 authorization. ✅ SUB AGENZIA CONFIGURATION FIXED: Updated ale7's sub agenzia (Presidio - Maximo, ID: 9b0b8890-81f6-4cdf-859e-48a8ae6e9856) to include both Fastweb and Fotovoltaico commesse in commesse_autorizzate. ✅ SERVIZI AUTHORIZATION CORRECTED: Fixed ale7.servizi_autorizzati from incorrect IDs to correct Fastweb servizi IDs (TLS: e000d779-2d13-4cde-afae-e498776a5493, NEGOZI: 9c1ece3f-8f6f-46c0-90a1-0440d94710d2). ✅ CASCADING VERIFICATION COMPLETE: ale7 login successful, GET /api/cascade/sub-agenzie returns 1 sub agenzia, GET /api/cascade/commesse-by-subagenzia returns 2 commesse (Fastweb + Fotovoltaico), GET /api/cascade/servizi-by-commessa returns 2 servizi for Fastweb (TLS + NEGOZI). ✅ COMPLETE FILIERA TESTED: Full cascading flow verified - Sub Agenzia → Commesse (2) → Servizi (2) → Tipologie (3) → Segmenti (2) - all dropdowns now populate correctly. ✅ CLIENT CREATION SUCCESS: POST /api/clienti with ale7 returns 200 Success, client created successfully with complete filiera data (ID: cd2b4dc2-6811-4d5b-a1da-9024b5836627). 🎯 CRITICAL OBJECTIVES ACHIEVED: 1) ale7 now has 2 commesse (Fastweb + Fotovoltaico) ✅, 2) Sub agenzia has both commesse authorized ✅, 3) Servizi dropdown populates with 2 Fastweb services ✅, 4) Complete cascading flow working ✅, 5) Client creation operational ✅. 🎉 OBIETTIVO RAGGIUNTO: ALE7 configuration completely fixed! ale7 can now see 2 commesse, services populate correctly in dropdowns, and client creation works with full filiera data. SUCCESS RATE: 100% (20/20 tests passed) - ALE7 configuration fix completely operational!"
   - task: "Client Creation Authorization for All 5 Roles - Complete Authorization Fix"
     implemented: true
     working: true
