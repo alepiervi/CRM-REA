@@ -1388,14 +1388,6 @@ class CRMAPITester:
         else:
             print(f"   🚨 ISSUES FOUND: Alcuni problemi identificati nel cascading o creazione clienti")
             return False
-            if sub_agenzia_id:
-                self.log_test("✅ ALE7 HAS SUB_AGENZIA_ID", True, f"Sub Agenzia ID: {sub_agenzia_id}")
-            else:
-                self.log_test("❌ ALE7 NO SUB_AGENZIA_ID", False, "ale7 has no sub_agenzia_id - this could be the problem!")
-                
-        else:
-            self.log_test("❌ ALE7 LOGIN FAILED", False, f"Status: {status}, Response: {response}")
-            return False
 
         # **STEP 2: TEST ENDPOINT CASCADING DETTAGLIATO**
         print("\n🔍 STEP 2: TEST ENDPOINT CASCADING DETTAGLIATO...")
