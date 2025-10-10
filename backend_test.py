@@ -1154,15 +1154,17 @@ class CRMAPITester:
             print(f"   🚨 AZIONE RICHIESTA: Verificare enum UserRole nel backend e mapping frontend")
             return False
 
-    def test_ale7_store_403_error_diagnosis(self):
-        """🚨 DIAGNOSI URGENTE: Errore 403 creazione cliente Responsabile Store ale7"""
-        print("\n🚨 DIAGNOSI URGENTE: Errore 403 creazione cliente Responsabile Store")
-        print("🎯 OBIETTIVO: Identificare la causa esatta dell'errore 403 e risolverlo")
-        print("🎯 FOCUS CRITICO: Risolvere l'errore 403 per permettere creazione clienti Store")
+    def test_ale7_cascading_and_403_error_critical_diagnosis(self):
+        """🚨 DIAGNOSI CRITICA: Due problemi Responsabile Store - Cascading e 403 Error"""
+        print("\n🚨 DIAGNOSI CRITICA: Due problemi Responsabile Store - Cascading e 403 Error")
+        print("🎯 PROBLEMI SEGNALATI:")
+        print("   1. Filiera cascading mostra commesse NON autorizzate per ale7")
+        print("   2. Errore 403 persiste durante creazione clienti")
+        print("🎯 OBIETTIVO: Identificare e risolvere entrambi i problemi immediatamente")
         
-        # **STEP 1: VERIFICA STATO ATTUALE ALE7**
-        print("\n🔐 STEP 1: VERIFICA STATO ATTUALE ALE7...")
-        print("   Login ale7/admin123 e controllare configurazione corrente")
+        # **STEP 1: VERIFICA CONFIGURAZIONE ALE7 ATTUALE**
+        print("\n🔐 STEP 1: VERIFICA CONFIGURAZIONE ALE7 ATTUALE...")
+        print("   Login ale7/admin123 e verificare sub_agenzia_id e commesse_autorizzate correnti")
         
         success, response, status = self.make_request(
             'POST', 'auth/login', 
@@ -1180,6 +1182,12 @@ class CRMAPITester:
             self.log_test("✅ ALE7 LOGIN SUCCESS (ale7/admin123)", True, 
                 f"Role: {user_role}, Sub Agenzia ID: {sub_agenzia_id}")
             
+            print(f"\n   📋 ALE7 CURRENT CONFIGURATION:")
+            print(f"      • Role: {user_role}")
+            print(f"      • Sub Agenzia ID: {sub_agenzia_id}")
+            print(f"      • Commesse Autorizzate: {commesse_autorizzate}")
+            print(f"      • Commesse Count: {len(commesse_autorizzate) if commesse_autorizzate else 0}")
+            
             # Verify role is responsabile_store
             if user_role == 'responsabile_store':
                 self.log_test("✅ ALE7 ROLE CORRECT", True, f"Role: {user_role}")
@@ -1187,23 +1195,366 @@ class CRMAPITester:
                 self.log_test("❌ ALE7 ROLE INCORRECT", False, f"Expected: responsabile_store, Got: {user_role}")
                 return False
             
-            # Verify sub_agenzia_id is assigned
+            # Check sub_agenzia_id assignment
             if sub_agenzia_id:
                 self.log_test("✅ ALE7 SUB AGENZIA ASSIGNED", True, f"Sub Agenzia ID: {sub_agenzia_id}")
             else:
-                self.log_test("❌ ALE7 SUB AGENZIA MISSING", False, "sub_agenzia_id is None/empty")
-                return False
+                self.log_test("❌ ALE7 SUB AGENZIA MISSING", False, "sub_agenzia_id is None/empty - CRITICAL ISSUE!")
+                print("   🚨 CRITICAL: Missing sub_agenzia_id will cause cascading and authorization issues!")
             
-            # Verify commesse_autorizzate is populated
+            # Check commesse_autorizzate
             if commesse_autorizzate and len(commesse_autorizzate) > 0:
-                self.log_test("✅ ALE7 COMMESSE AUTORIZZATE", True, f"Commesse: {len(commesse_autorizzate)} items")
-                print(f"      Commesse IDs: {commesse_autorizzate}")
+                self.log_test("✅ ALE7 COMMESSE AUTORIZZATE POPULATED", True, f"Commesse: {len(commesse_autorizzate)} items")
+                for i, commessa_id in enumerate(commesse_autorizzate):
+                    print(f"      Commessa {i+1}: {commessa_id}")
             else:
                 self.log_test("❌ ALE7 COMMESSE EMPTY", False, f"Commesse autorizzate: {commesse_autorizzate}")
-                return False
+                print("   🚨 CRITICAL: Empty commesse_autorizzate will cause authorization failures!")
                 
         else:
             self.log_test("❌ ALE7 LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: VERIFICA USER_COMMESSA_AUTHORIZATIONS RECORDS**
+        print("\n📋 STEP 2: VERIFICA USER_COMMESSA_AUTHORIZATIONS RECORDS...")
+        print("   Controllare se esistono record di autorizzazione per ale7")
+        
+        # Get user authorization info via auth/me endpoint
+        success, auth_me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/auth/me SUCCESS", True, f"Status: {status}")
+            
+            # Check if response contains authorization details
+            auth_user_id = auth_me_response.get('id')
+            auth_commesse = auth_me_response.get('commesse_autorizzate', [])
+            
+            print(f"\n   📋 AUTH/ME RESPONSE:")
+            print(f"      • User ID: {auth_user_id}")
+            print(f"      • Commesse from auth/me: {auth_commesse}")
+            print(f"      • Match with login data: {auth_commesse == commesse_autorizzate}")
+            
+            if auth_commesse == commesse_autorizzate:
+                self.log_test("✅ AUTH/ME DATA CONSISTENT", True, "Login and auth/me data match")
+            else:
+                self.log_test("❌ AUTH/ME DATA INCONSISTENT", False, f"Login: {commesse_autorizzate}, Auth/me: {auth_commesse}")
+        else:
+            self.log_test("❌ GET /api/auth/me FAILED", False, f"Status: {status}")
+
+        # **STEP 3: ANALISI ENDPOINTS CASCADING**
+        print("\n🔗 STEP 3: ANALISI ENDPOINTS CASCADING...")
+        print("   Testare GET /api/cascade/sub-agenzie e GET /api/cascade/commesse-by-subagenzia")
+        
+        # Test GET /api/cascade/sub-agenzie with ale7
+        print("\n   Testing GET /api/cascade/sub-agenzie with ale7...")
+        success, sub_agenzie_response, status = self.make_request('GET', 'cascade/sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/cascade/sub-agenzie SUCCESS", True, f"Status: {status}")
+            
+            if isinstance(sub_agenzie_response, list):
+                sub_agenzie_count = len(sub_agenzie_response)
+                self.log_test("✅ SUB AGENZIE RESPONSE IS ARRAY", True, f"Found {sub_agenzie_count} sub agenzie")
+                
+                print(f"\n   📋 SUB AGENZIE CASCADING RESULTS:")
+                print(f"      • Total sub agenzie returned: {sub_agenzie_count}")
+                
+                for i, sub_agenzia in enumerate(sub_agenzie_response):
+                    sa_id = sub_agenzia.get('id')
+                    sa_nome = sub_agenzia.get('nome')
+                    sa_commesse = sub_agenzia.get('commesse_autorizzate', [])
+                    print(f"      Sub Agenzia {i+1}: {sa_nome} (ID: {sa_id})")
+                    print(f"         Commesse: {sa_commesse}")
+                    
+                    # Check if this is ale7's sub agenzia
+                    if sa_id == sub_agenzia_id:
+                        print(f"         ✅ THIS IS ALE7'S SUB AGENZIA")
+                
+                # CRITICAL CHECK: Should ale7 see ALL sub agenzie or only authorized ones?
+                if sub_agenzie_count > 1:
+                    self.log_test("⚠️ MULTIPLE SUB AGENZIE VISIBLE", True, 
+                        f"ale7 sees {sub_agenzie_count} sub agenzie - verify if this is correct")
+                    print("   🔍 ANALYSIS: ale7 (responsabile_store) should only see authorized sub agenzie")
+                    print("   🚨 POTENTIAL ISSUE: If ale7 sees unauthorized sub agenzie, this is the cascading bug!")
+                else:
+                    self.log_test("✅ SINGLE SUB AGENZIA VISIBLE", True, 
+                        f"ale7 sees {sub_agenzie_count} sub agenzia - likely correct")
+                        
+            else:
+                self.log_test("❌ SUB AGENZIE RESPONSE NOT ARRAY", False, f"Response type: {type(sub_agenzie_response)}")
+        else:
+            self.log_test("❌ GET /api/cascade/sub-agenzie FAILED", False, f"Status: {status}, Response: {sub_agenzie_response}")
+
+        # Test commesse by sub agenzia if we have sub_agenzia_id
+        if sub_agenzia_id and sub_agenzie_response and isinstance(sub_agenzie_response, list):
+            print(f"\n   Testing GET /api/cascade/commesse-by-subagenzia/{sub_agenzia_id} with ale7...")
+            
+            success, commesse_response, status = self.make_request(
+                'GET', f'cascade/commesse-by-subagenzia/{sub_agenzia_id}', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/cascade/commesse-by-subagenzia SUCCESS", True, f"Status: {status}")
+                
+                if isinstance(commesse_response, list):
+                    commesse_count = len(commesse_response)
+                    self.log_test("✅ COMMESSE RESPONSE IS ARRAY", True, f"Found {commesse_count} commesse")
+                    
+                    print(f"\n   📋 COMMESSE CASCADING RESULTS:")
+                    print(f"      • Total commesse returned: {commesse_count}")
+                    
+                    authorized_commesse_found = []
+                    unauthorized_commesse_found = []
+                    
+                    for i, commessa in enumerate(commesse_response):
+                        c_id = commessa.get('id')
+                        c_nome = commessa.get('nome')
+                        print(f"      Commessa {i+1}: {c_nome} (ID: {c_id})")
+                        
+                        # Check if this commessa is in ale7's authorized list
+                        if c_id in commesse_autorizzate:
+                            authorized_commesse_found.append(c_id)
+                            print(f"         ✅ AUTHORIZED for ale7")
+                        else:
+                            unauthorized_commesse_found.append(c_id)
+                            print(f"         ❌ NOT AUTHORIZED for ale7")
+                    
+                    # CRITICAL ANALYSIS: Are unauthorized commesse being shown?
+                    if unauthorized_commesse_found:
+                        self.log_test("🚨 UNAUTHORIZED COMMESSE VISIBLE", False, 
+                            f"Found {len(unauthorized_commesse_found)} unauthorized commesse - THIS IS THE BUG!")
+                        print(f"      🚨 UNAUTHORIZED COMMESSE: {unauthorized_commesse_found}")
+                        print("      🚨 ROOT CAUSE: Cascading endpoint shows ALL commesse instead of filtering by authorization")
+                    else:
+                        self.log_test("✅ ONLY AUTHORIZED COMMESSE VISIBLE", True, 
+                            f"All {len(authorized_commesse_found)} commesse are authorized")
+                    
+                    if authorized_commesse_found:
+                        self.log_test("✅ AUTHORIZED COMMESSE PRESENT", True, 
+                            f"Found {len(authorized_commesse_found)} authorized commesse")
+                    else:
+                        self.log_test("❌ NO AUTHORIZED COMMESSE FOUND", False, 
+                            "No authorized commesse in cascading response")
+                        
+                else:
+                    self.log_test("❌ COMMESSE RESPONSE NOT ARRAY", False, f"Response type: {type(commesse_response)}")
+            else:
+                self.log_test("❌ GET /api/cascade/commesse-by-subagenzia FAILED", False, 
+                    f"Status: {status}, Response: {commesse_response}")
+
+        # **STEP 4: DIAGNOSI ERRORE 403 DETTAGLIATA**
+        print("\n🚨 STEP 4: DIAGNOSI ERRORE 403 DETTAGLIATA...")
+        print("   Tentare POST /api/clienti con ale7 e catturare messaggio di errore esatto")
+        
+        # Prepare test client data
+        test_client_data = {
+            "nome": "Test",
+            "cognome": "Cliente403",
+            "telefono": "+39123456789",
+            "email": "test403@example.com",
+            "commessa_id": commesse_autorizzate[0] if commesse_autorizzate else "test-commessa-id",
+            "sub_agenzia_id": sub_agenzia_id if sub_agenzia_id else "test-sub-agenzia-id",
+            "servizio_id": "test-servizio-id",
+            "tipologia_contratto": "energia_fastweb",
+            "segmento": "privato"
+        }
+        
+        print(f"\n   📋 TEST CLIENT DATA:")
+        for key, value in test_client_data.items():
+            print(f"      • {key}: {value}")
+        
+        # Attempt client creation
+        success, client_response, status = self.make_request(
+            'POST', 'clienti', 
+            test_client_data, 
+            expected_status=200  # We expect success, but might get 403
+        )
+        
+        if success and (status == 200 or status == 201):
+            self.log_test("✅ POST /api/clienti SUCCESS", True, f"Status: {status} - NO 403 ERROR!")
+            
+            if isinstance(client_response, dict) and 'id' in client_response:
+                client_id = client_response.get('id')
+                client_nome = client_response.get('nome')
+                self.log_test("✅ CLIENT CREATED SUCCESSFULLY", True, f"Client ID: {client_id}, Nome: {client_nome}")
+                print("   🎉 SUCCESS: ale7 can create clients - 403 error has been resolved!")
+            else:
+                self.log_test("❌ INVALID CLIENT RESPONSE", False, f"Response: {client_response}")
+                
+        elif status == 403:
+            self.log_test("🚨 POST /api/clienti 403 FORBIDDEN", False, f"Status: 403 - ERROR CONFIRMED!")
+            
+            # Analyze 403 error details
+            if isinstance(client_response, dict):
+                detail = client_response.get('detail', 'No detail provided')
+                self.log_test("🔍 403 ERROR DETAILS", False, f"Detail: {detail}")
+                
+                # Check for specific authorization error messages
+                if 'commessa' in detail.lower():
+                    print("      🚨 COMMESSA AUTHORIZATION ERROR")
+                elif 'sub agenzia' in detail.lower() or 'sub_agenzia' in detail.lower():
+                    print("      🚨 SUB AGENZIA AUTHORIZATION ERROR")
+                elif 'permission' in detail.lower() or 'authorized' in detail.lower():
+                    print("      🚨 GENERAL AUTHORIZATION ERROR")
+                else:
+                    print(f"      🚨 UNKNOWN 403 ERROR: {detail}")
+            
+            print("   🚨 CONFIRMED: ale7 still gets 403 error when creating clients")
+            
+        elif status == 400:
+            self.log_test("🚨 POST /api/clienti 400 BAD REQUEST", False, f"Status: 400 - VALIDATION ERROR!")
+            
+            if isinstance(client_response, dict):
+                detail = client_response.get('detail', 'No detail provided')
+                self.log_test("🔍 400 ERROR DETAILS", False, f"Detail: {detail}")
+                
+                # Check if it's actually an authorization error disguised as 400
+                if 'authorized' in detail.lower() or 'permission' in detail.lower():
+                    print("      🚨 AUTHORIZATION ERROR (reported as 400)")
+                elif 'sub agenzia' in detail.lower():
+                    print("      🚨 SUB AGENZIA VALIDATION ERROR")
+                else:
+                    print(f"      🚨 VALIDATION ERROR: {detail}")
+                    
+        else:
+            self.log_test("❌ POST /api/clienti UNEXPECTED ERROR", False, 
+                f"Status: {status}, Response: {client_response}")
+
+        # **STEP 5: VERIFICA DATI SUB AGENZIA**
+        print("\n🏢 STEP 5: VERIFICA DATI SUB AGENZIA...")
+        print("   Controllare che la sub agenzia di ale7 abbia le commesse corrette")
+        
+        if sub_agenzia_id:
+            # Get sub agenzia details (we'll need admin access for this)
+            print("   Switching to admin to check sub agenzia data...")
+            
+            # Save ale7 token
+            ale7_token = self.token
+            
+            # Login as admin
+            success, admin_response, status = self.make_request(
+                'POST', 'auth/login', 
+                {'username': 'admin', 'password': 'admin123'}, 
+                200, auth_required=False
+            )
+            
+            if success and 'access_token' in admin_response:
+                self.token = admin_response['access_token']
+                self.log_test("✅ ADMIN LOGIN FOR SUB AGENZIA CHECK", True, "Admin access obtained")
+                
+                # Get sub agenzie list to find ale7's sub agenzia
+                success, sub_agenzie_list, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+                
+                if success and isinstance(sub_agenzie_list, list):
+                    ale7_sub_agenzia = next((sa for sa in sub_agenzie_list if sa.get('id') == sub_agenzia_id), None)
+                    
+                    if ale7_sub_agenzia:
+                        sa_nome = ale7_sub_agenzia.get('nome')
+                        sa_commesse = ale7_sub_agenzia.get('commesse_autorizzate', [])
+                        sa_responsabile = ale7_sub_agenzia.get('responsabile_id')
+                        
+                        self.log_test("✅ ALE7 SUB AGENZIA FOUND", True, f"Nome: {sa_nome}")
+                        
+                        print(f"\n   📋 ALE7 SUB AGENZIA DETAILS:")
+                        print(f"      • Nome: {sa_nome}")
+                        print(f"      • ID: {sub_agenzia_id}")
+                        print(f"      • Responsabile ID: {sa_responsabile}")
+                        print(f"      • Commesse Autorizzate: {sa_commesse}")
+                        print(f"      • Commesse Count: {len(sa_commesse)}")
+                        
+                        # Check if sub agenzia commesse match user commesse
+                        if set(sa_commesse) == set(commesse_autorizzate):
+                            self.log_test("✅ SUB AGENZIA COMMESSE MATCH USER", True, 
+                                "Sub agenzia and user commesse are consistent")
+                        else:
+                            self.log_test("❌ SUB AGENZIA COMMESSE MISMATCH", False, 
+                                f"Sub agenzia: {sa_commesse}, User: {commesse_autorizzate}")
+                            print("      🚨 CRITICAL: Mismatch between sub agenzia and user commesse!")
+                        
+                        # Check if ale7 is the responsabile of this sub agenzia
+                        if sa_responsabile == self.user_data.get('id'):
+                            self.log_test("✅ ALE7 IS SUB AGENZIA RESPONSABILE", True, "Correct assignment")
+                        else:
+                            self.log_test("❌ ALE7 NOT SUB AGENZIA RESPONSABILE", False, 
+                                f"Sub agenzia responsabile: {sa_responsabile}, ale7 ID: {self.user_data.get('id')}")
+                        
+                        # Verify commesse exist and are active
+                        if sa_commesse:
+                            print(f"\n   Verifying commesse exist and are active...")
+                            success, commesse_list, status = self.make_request('GET', 'commesse', expected_status=200)
+                            
+                            if success and isinstance(commesse_list, list):
+                                existing_commesse = {c.get('id'): c.get('nome') for c in commesse_list if c.get('is_active', True)}
+                                
+                                valid_commesse = []
+                                invalid_commesse = []
+                                
+                                for commessa_id in sa_commesse:
+                                    if commessa_id in existing_commesse:
+                                        valid_commesse.append(commessa_id)
+                                        print(f"      ✅ Commessa {existing_commesse[commessa_id]} (ID: {commessa_id}) - EXISTS and ACTIVE")
+                                    else:
+                                        invalid_commesse.append(commessa_id)
+                                        print(f"      ❌ Commessa ID: {commessa_id} - NOT FOUND or INACTIVE")
+                                
+                                if invalid_commesse:
+                                    self.log_test("❌ INVALID COMMESSE REFERENCES", False, 
+                                        f"Found {len(invalid_commesse)} invalid commesse references")
+                                    print("      🚨 CRITICAL: Invalid commesse references will cause authorization failures!")
+                                else:
+                                    self.log_test("✅ ALL COMMESSE VALID", True, 
+                                        f"All {len(valid_commesse)} commesse exist and are active")
+                            else:
+                                self.log_test("❌ COULD NOT VERIFY COMMESSE", False, f"GET /api/commesse failed: {status}")
+                        
+                    else:
+                        self.log_test("❌ ALE7 SUB AGENZIA NOT FOUND", False, f"Sub agenzia ID {sub_agenzia_id} not found")
+                        print("      🚨 CRITICAL: ale7's sub_agenzia_id points to non-existent sub agenzia!")
+                else:
+                    self.log_test("❌ COULD NOT GET SUB AGENZIE LIST", False, f"GET /api/sub-agenzie failed: {status}")
+                
+                # Restore ale7 token
+                self.token = ale7_token
+            else:
+                self.log_test("❌ ADMIN LOGIN FAILED", False, "Could not get admin access for sub agenzia check")
+
+        # **FINAL SUMMARY AND DIAGNOSIS**
+        print(f"\n🎯 CRITICAL DIAGNOSIS SUMMARY:")
+        print(f"   🎯 PROBLEMA 1 - FILIERA CASCADING:")
+        if 'unauthorized_commesse_found' in locals() and unauthorized_commesse_found:
+            print(f"      🚨 CONFERMATO: Cascading mostra {len(unauthorized_commesse_found)} commesse NON autorizzate")
+            print(f"      🚨 COMMESSE NON AUTORIZZATE: {unauthorized_commesse_found}")
+            print(f"      🔧 FIX RICHIESTO: Filtrare endpoint cascading per mostrare solo commesse autorizzate")
+        else:
+            print(f"      ✅ Cascading sembra mostrare solo commesse autorizzate")
+        
+        print(f"\n   🎯 PROBLEMA 2 - ERRORE 403:")
+        if 'status' in locals() and status == 403:
+            print(f"      🚨 CONFERMATO: ale7 riceve errore 403 durante creazione clienti")
+            print(f"      🚨 DETTAGLI ERRORE: {client_response.get('detail', 'No details') if 'client_response' in locals() else 'Unknown'}")
+            print(f"      🔧 FIX RICHIESTO: Risolvere autorizzazioni per permettere creazione clienti")
+        elif 'status' in locals() and status == 400:
+            print(f"      🚨 ERRORE 400 (potrebbe essere autorizzazione): {client_response.get('detail', 'No details') if 'client_response' in locals() else 'Unknown'}")
+        elif 'status' in locals() and (status == 200 or status == 201):
+            print(f"      ✅ ale7 può creare clienti - errore 403 risolto!")
+        else:
+            print(f"      ❓ Stato creazione clienti non determinato")
+        
+        print(f"\n   🎯 CONFIGURAZIONE ALE7:")
+        print(f"      • Role: {user_role}")
+        print(f"      • Sub Agenzia ID: {sub_agenzia_id if sub_agenzia_id else 'MISSING'}")
+        print(f"      • Commesse Autorizzate: {len(commesse_autorizzate) if commesse_autorizzate else 0} items")
+        print(f"      • Configurazione: {'✅ COMPLETA' if sub_agenzia_id and commesse_autorizzate else '❌ INCOMPLETA'}")
+        
+        # Return success if both problems are resolved
+        cascading_ok = not ('unauthorized_commesse_found' in locals() and unauthorized_commesse_found)
+        client_creation_ok = 'status' in locals() and (status == 200 or status == 201)
+        
+        if cascading_ok and client_creation_ok:
+            print(f"\n   🎉 SUCCESS: Entrambi i problemi sono stati risolti!")
+            return True
+        else:
+            print(f"\n   🚨 ISSUES REMAIN: Uno o entrambi i problemi persistono")
+            return Falseponse: {response}")
             return False
 
         # **STEP 2: VERIFICA USER_COMMESSA_AUTHORIZATIONS RECORDS**
