@@ -31951,7 +31951,7 @@ if __name__ == "__main__":
     
     # Run immediate ale7 post-restart verification as requested
     try:
-        result = tester.run_ale7_post_restart_verification()
+        result = tester.test_ale7_post_restart_verification_immediate()
         
         # Print summary
         print(f"\n📊 Test Summary:")
