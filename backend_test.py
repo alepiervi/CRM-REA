@@ -27964,6 +27964,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # Run the URGENT Store User Issues Diagnosis test
+        print("\n" + "="*80)
+        print("🚨 RUNNING URGENT STORE USER ISSUES DIAGNOSIS TEST")
+        print("="*80)
+        
+        store_diagnosis_success = self.test_store_user_issues_diagnosis()
+        
         # Run the URGENT Client Creation Authorization test for all 5 roles
         print("\n" + "="*80)
         print("🚨 RUNNING URGENT CLIENT CREATION AUTHORIZATION TEST FOR ALL 5 ROLES")
