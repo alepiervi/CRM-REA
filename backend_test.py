@@ -30249,7 +30249,7 @@ Duplicate,Test,+393471234567"""
         else:
             print("🚨 RESPONSABILE COMMESSA RESOLUTION TEST: ❌ FAILED - PROBLEMS STILL EXIST!")
         
-        overall_success = store_diagnosis_success and client_creation_success and backoffice_success and success
+        overall_success = ale7_config_success and store_diagnosis_success and client_creation_success and backoffice_success and success
         if overall_success:
             print("\n🎉 OVERALL RESULT: ✅ SISTEMA UTILIZZABILE PER TUTTI I RUOLI COMMESSA!")
         else:
