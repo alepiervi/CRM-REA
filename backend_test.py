@@ -31195,24 +31195,41 @@ Duplicate,Test,+393471234567"""
 
 
 def main():
-    """Main test execution"""
+    """Main test execution - CASCADING AUTHORIZATION FIX VERIFICATION"""
+    print("🚀 Starting CRM Backend API Tests - CASCADING AUTHORIZATION FIX VERIFICATION...")
+    print("=" * 80)
+    
     tester = CRMAPITester()
     
     # Check if specific test is requested
     if len(sys.argv) > 1:
         test_name = sys.argv[1]
         
-        if test_name == "fastweb_delete":
+        if test_name == "cascading_fix":
+            success = tester.test_ale7_cascading_authorization_fix_immediate()
+            return 0 if success else 1
+        elif test_name == "fastweb_delete":
             success = tester.test_fastweb_servizio_delete_failure_analysis()
             return 0 if success else 1
         else:
             print(f"Unknown test: {test_name}")
-            print("Available tests: fastweb_delete")
+            print("Available tests: cascading_fix, fastweb_delete")
             return 1
     else:
-        # Run the specific test as requested
-        success = tester.test_fastweb_servizio_delete_failure_analysis()
-        return 0 if success else 1
+        # Run the cascading authorization fix test as default
+        success = tester.test_ale7_cascading_authorization_fix_immediate()
+        
+        # Print summary
+        print("\n" + "=" * 80)
+        print(f"📊 Test Summary: {tester.tests_passed}/{tester.tests_run} tests passed")
+        print(f"✅ Success Rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+        
+        if success:
+            print("🎉 Cascading authorization fix test passed!")
+            return 0
+        else:
+            print("❌ Cascading authorization fix test failed!")
+            return 1
 
     def test_aruba_drive_commesse_configuration_system(self):
         """TEST SISTEMA CONFIGURAZIONE ARUBA DRIVE PER COMMESSE - FOCUS SPECIFICO"""
