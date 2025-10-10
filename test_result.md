@@ -363,6 +363,9 @@ frontend:
         - working: "needs_testing"
           agent: "main"
           comment: "✅ FRONTEND AUTHORIZATION COMPLETA PER STORE/PRESIDI: Implementato accesso completo alla sezione Clienti per tutti i ruoli Store e Presidi (responsabile_store, responsabile_presidi, store_assist, promoter_presidi). MODIFICHE: 1) Navigation menu - aggiunta voce Clienti (riga ~1651) ✅ 2) Section authorization - accesso alla sezione clienti (riga 1722) ✅ 3) CreateClienteModal - integrazione nei flussi cascading (righe 4088, 15324, 15797, 15820) ✅ 4) Form creation - supporto per tutti i ruoli Store/Presidi ✅. COMPORTAMENTO: Stesso pattern di Agenti/Operatori - vedono solo propri clienti, accesso cascading completo, filtri di sicurezza implementati. PRONTO PER TEST MANUALI UTENTE."
+        - working: "needs_testing" 
+          agent: "main"
+          comment: "✅ PROBLEMI BACKEND RISOLTI - FRONTEND GIÀ CORRETTO: Il backend è stato completamente risolto (ale7 configurato con sub_agenzia_id e autorizzazioni). Il frontend aveva già la logica corretta: 1) I ruoli Store sono inclusi nel flusso cascading alla riga 15324 ✅ 2) Console logging corretto '👔 Sub Agenzia Flow + Agenti + Admin' alla riga 15326 ✅ 3) Endpoint GET /api/cascade/sub-agenzie chiamato correttamente ✅ 4) Tutti i ruoli Store/Presidi già nella logica di authorization frontend ✅. Il frontend non necessita modifiche - tutti i ruoli Store seguono il flusso corretto con fetchCascadeSubAgenzie(). PRONTO PER TEST UTENTE con ale7/admin123."
 
   - task: "Responsabile Sub Agenzia Role Flow Logic Fix - Line 15308 Bug Resolution"
     implemented: true
