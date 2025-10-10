@@ -13070,12 +13070,26 @@ async def get_commesse_by_subagenzia(
         
         logging.info(f"✅ CASCADE: Sub Agenzia found: {sub_agenzia.get('nome')}")
         
-        # Get authorized commesse IDs
-        authorized_commesse_ids = sub_agenzia.get("commesse_autorizzate", [])
-        logging.info(f"🔗 CASCADE: Authorized commesse IDs: {authorized_commesse_ids}")
+        # Get authorized commesse IDs from sub agenzia
+        sub_agenzia_commesse_ids = sub_agenzia.get("commesse_autorizzate", [])
+        logging.info(f"🔗 CASCADE: Sub Agenzia authorized commesse: {sub_agenzia_commesse_ids}")
+        
+        # CRITICAL FIX: Filter by user's individual authorized commesse
+        user_commesse_ids = getattr(current_user, 'commesse_autorizzate', [])
+        logging.info(f"👤 CASCADE: User authorized commesse: {user_commesse_ids}")
+        
+        # Get intersection of sub agenzia commesse AND user commesse
+        if current_user.role == UserRole.ADMIN:
+            # Admin sees all commesse in sub agenzia
+            authorized_commesse_ids = sub_agenzia_commesse_ids
+            logging.info(f"🔓 CASCADE: Admin access - showing all sub agenzia commesse")
+        else:
+            # Other users see only commesse they are authorized for within this sub agenzia
+            authorized_commesse_ids = list(set(sub_agenzia_commesse_ids) & set(user_commesse_ids))
+            logging.info(f"🔒 CASCADE: User filtered commesse (intersection): {authorized_commesse_ids}")
         
         if not authorized_commesse_ids:
-            logging.info("📭 CASCADE: No authorized commesse, returning empty array")
+            logging.info("📭 CASCADE: No authorized commesse after filtering, returning empty array")
             return []
         
         # Fetch authorized commesse
