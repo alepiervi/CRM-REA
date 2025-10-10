@@ -30150,6 +30150,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # Run the URGENT ALE7 Configuration Fix test
+        print("\n" + "="*80)
+        print("🚨 RUNNING URGENT ALE7 CONFIGURATION FIX TEST")
+        print("="*80)
+        
+        ale7_config_success = self.test_ale7_commessa_configuration_urgent()
+        
         # Run the CRITICAL Store User Configuration Fix test
         print("\n" + "="*80)
         print("🚨 RUNNING CRITICAL STORE USER CONFIGURATION FIX TEST")
