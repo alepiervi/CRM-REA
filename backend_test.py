@@ -31002,5 +31002,6 @@ if __name__ == "__main__":
         print(f"❌ Test failed with exception: {e}")
         import traceback
         traceback.print_exc()
+        result = False
     
-    exit(0 if success else 1)
+    exit(0 if result else 1)
