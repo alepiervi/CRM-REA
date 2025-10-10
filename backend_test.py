@@ -30224,6 +30224,11 @@ Duplicate,Test,+393471234567"""
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
+        if ale7_config_success:
+            print("🎉 ALE7 CONFIGURATION FIX TEST: ✅ SUCCESS - ALE7 NOW HAS 2 COMMESSE AND SERVICES POPULATE!")
+        else:
+            print("🚨 ALE7 CONFIGURATION FIX TEST: ❌ FAILED - ALE7 STILL HAS CONFIGURATION ISSUES!")
+            
         if store_diagnosis_success:
             print("🎉 STORE USER DIAGNOSIS TEST: ✅ SUCCESS - NO CRITICAL ISSUES FOUND!")
         else:
