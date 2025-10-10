@@ -28611,6 +28611,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # Run the CRITICAL Store User Configuration Fix test
+        print("\n" + "="*80)
+        print("🚨 RUNNING CRITICAL STORE USER CONFIGURATION FIX TEST")
+        print("="*80)
+        
+        store_config_fix_success = self.test_store_user_configuration_fix_critical()
+        
         # Run the URGENT Store User Issues Diagnosis test
         print("\n" + "="*80)
         print("🚨 RUNNING URGENT STORE USER ISSUES DIAGNOSIS TEST")
