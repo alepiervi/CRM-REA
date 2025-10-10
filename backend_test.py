@@ -1386,13 +1386,7 @@ class CRMAPITester:
             return True
         else:
             print(f"   🚨 FAILURE: ale7 cascading has critical issues that need immediate fixing!")
-            return False commesse_autorizzate:
-                    self.log_test("✅ FASTWEB AUTHORIZED FOR ALE7", True, f"Fastweb commessa found in authorized list")
-                else:
-                    self.log_test("ℹ️ FASTWEB NOT IN AUTHORIZED LIST", True, f"Fastweb ID not found, ale7 may have different commesse")
-                    
-            else:
-                self.log_test("❌ ALE7 NO AUTHORIZED COMMESSE", False, "ale7 has no commesse_autorizzate - this will cause issues")
+            return False
                 return False
             
             # Verify sub_agenzia_id is present
