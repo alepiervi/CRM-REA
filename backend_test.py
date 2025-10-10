@@ -1173,8 +1173,8 @@ class CRMAPITester:
         
         # Test basic health endpoint
         success, response, status = self.make_request('GET', 'auth/me', expected_status=401, auth_required=False)
-        if status == 401:
-            self.log_test("✅ Backend service active", True, "Backend responds to requests (401 expected without auth)")
+        if status in [401, 403]:  # Both are acceptable for unauthenticated requests
+            self.log_test("✅ Backend service active", True, f"Backend responds to requests ({status} expected without auth)")
         else:
             self.log_test("❌ Backend service issue", False, f"Unexpected status: {status}")
             return False
