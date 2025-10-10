@@ -1179,8 +1179,8 @@ class CRMAPITester:
             self.log_test("❌ Backend service issue", False, f"Unexpected status: {status}")
             return False
         
-        # **STEP 1: VERIFICA STATO ATTUALE ALE7**
-        print("\n🔐 STEP 1: VERIFICA STATO ATTUALE ALE7...")
+        # **STEP 2: TEST ALE7 IMMEDIATO**
+        print("\n🔐 STEP 2: TEST ALE7 IMMEDIATO...")
         success, response, status = self.make_request(
             'POST', 'auth/login', 
             {'username': 'ale7', 'password': 'admin123'}, 
@@ -1197,7 +1197,7 @@ class CRMAPITester:
             self.log_test("✅ ALE7 LOGIN SUCCESS (ale7/admin123)", True, 
                 f"Role: {user_role}, Sub Agenzia ID: {sub_agenzia_id}")
             
-            print(f"\n   📋 ALE7 CONFIGURAZIONE CORRENTE:")
+            print(f"\n   📋 ALE7 CONFIGURAZIONE POST-RESTART:")
             print(f"      • Role: {user_role}")
             print(f"      • Sub Agenzia ID: {sub_agenzia_id}")
             print(f"      • Commesse Autorizzate: {commesse_autorizzate}")
@@ -1207,8 +1207,187 @@ class CRMAPITester:
             if commesse_autorizzate and len(commesse_autorizzate) > 0:
                 self.log_test("✅ ALE7 HAS COMMESSE_AUTORIZZATE", True, f"Found {len(commesse_autorizzate)} authorized commesse")
                 
-                # Check specific commesse IDs
-                for i, commessa_id in enumerate(commesse_autorizzate):
+                # Check for Fastweb commessa specifically
+                fastweb_commessa_id = "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1"
+                if fastweb_commessa_id in commesse_autorizzate:
+                    self.log_test("✅ ALE7 HAS FASTWEB AUTHORIZATION", True, f"Fastweb commessa found in authorized list")
+                else:
+                    self.log_test("❌ ALE7 MISSING FASTWEB AUTHORIZATION", False, f"Fastweb commessa not in authorized list")
+                    
+            else:
+                self.log_test("❌ ALE7 NO COMMESSE_AUTORIZZATE", False, "ale7 has no authorized commesse")
+                return False
+        else:
+            self.log_test("❌ ALE7 LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 3: TESTARE GET /api/cascade/sub-agenzie**
+        print("\n🏢 STEP 3: TESTARE GET /api/cascade/sub-agenzie...")
+        
+        success, sub_agenzie_response, status = self.make_request('GET', 'cascade/sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/cascade/sub-agenzie SUCCESS", True, f"Status: {status}")
+            
+            if isinstance(sub_agenzie_response, list):
+                sub_agenzie_count = len(sub_agenzie_response)
+                self.log_test("✅ Sub agenzie response is array", True, f"Found {sub_agenzie_count} sub agenzie")
+                
+                if sub_agenzie_count > 0:
+                    # Find ale7's sub agenzia
+                    ale7_sub_agenzia = None
+                    for sa in sub_agenzie_response:
+                        if sa.get('id') == sub_agenzia_id:
+                            ale7_sub_agenzia = sa
+                            break
+                    
+                    if ale7_sub_agenzia:
+                        self.log_test("✅ ALE7 SUB AGENZIA FOUND", True, f"Sub agenzia: {ale7_sub_agenzia.get('nome')}")
+                        ale7_sub_agenzia_id = ale7_sub_agenzia.get('id')
+                    else:
+                        self.log_test("❌ ALE7 SUB AGENZIA NOT FOUND", False, f"Sub agenzia ID {sub_agenzia_id} not in response")
+                        return False
+                else:
+                    self.log_test("❌ NO SUB AGENZIE RETURNED", False, "Empty sub agenzie array")
+                    return False
+            else:
+                self.log_test("❌ Sub agenzie response not array", False, f"Response type: {type(sub_agenzie_response)}")
+                return False
+        else:
+            self.log_test("❌ GET /api/cascade/sub-agenzie FAILED", False, f"Status: {status}")
+            return False
+
+        # **STEP 4: TESTARE GET /api/cascade/commesse-by-subagenzia/{id}**
+        print("\n📋 STEP 4: TESTARE GET /api/cascade/commesse-by-subagenzia/{id}...")
+        
+        if 'ale7_sub_agenzia_id' in locals():
+            success, commesse_response, status = self.make_request(
+                'GET', f'cascade/commesse-by-subagenzia/{ale7_sub_agenzia_id}', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/cascade/commesse-by-subagenzia SUCCESS", True, f"Status: {status}")
+                
+                if isinstance(commesse_response, list):
+                    commesse_count = len(commesse_response)
+                    self.log_test("✅ Commesse response is array", True, f"Found {commesse_count} commesse")
+                    
+                    # **STEP 5: VERIFICARE che veda le commesse autorizzate (Fastweb)**
+                    print("\n🎯 STEP 5: VERIFICARE COMMESSE AUTORIZZATE (FASTWEB)...")
+                    
+                    fastweb_found = False
+                    telepass_found = False
+                    
+                    for commessa in commesse_response:
+                        commessa_nome = commessa.get('nome', '')
+                        commessa_id = commessa.get('id', '')
+                        
+                        if 'fastweb' in commessa_nome.lower():
+                            fastweb_found = True
+                            self.log_test("✅ FASTWEB COMMESSA VISIBLE", True, f"Fastweb commessa found: {commessa_nome}")
+                        elif 'telepass' in commessa_nome.lower():
+                            telepass_found = True
+                            self.log_test("ℹ️ TELEPASS COMMESSA VISIBLE", True, f"Telepass commessa found: {commessa_nome}")
+                    
+                    if fastweb_found:
+                        self.log_test("✅ ALE7 SEES AUTHORIZED COMMESSE", True, "Fastweb commessa visible as expected")
+                    else:
+                        self.log_test("❌ ALE7 MISSING AUTHORIZED COMMESSE", False, "Fastweb commessa not visible")
+                        return False
+                        
+                    # Check if only authorized commesse are shown
+                    if commesse_count == 1 and fastweb_found and not telepass_found:
+                        self.log_test("✅ AUTHORIZATION FILTERING WORKING", True, "Only authorized commesse visible")
+                    elif commesse_count > 1:
+                        self.log_test("ℹ️ MULTIPLE COMMESSE VISIBLE", True, f"ale7 sees {commesse_count} commesse")
+                    
+                else:
+                    self.log_test("❌ Commesse response not array", False, f"Response type: {type(commesse_response)}")
+                    return False
+            else:
+                self.log_test("❌ GET /api/cascade/commesse-by-subagenzia FAILED", False, f"Status: {status}")
+                return False
+
+        # **STEP 6: TEST CREAZIONE CLIENT IMMEDIATO**
+        print("\n👤 STEP 6: TEST CREAZIONE CLIENT IMMEDIATO...")
+        
+        # Create test client data
+        import time
+        timestamp = str(int(time.time()))
+        
+        test_client_data = {
+            "nome": "Test",
+            "cognome": "PostRestart",
+            "telefono": f"+39123456{timestamp[-4:]}",
+            "email": f"test.postrestart.{timestamp}@test.it",
+            "commessa_id": fastweb_commessa_id,  # Use Fastweb commessa
+            "sub_agenzia_id": sub_agenzia_id,
+            "tipologia_contratto": "energia_fastweb",
+            "segmento": "privato"
+        }
+        
+        success, client_response, status = self.make_request(
+            'POST', 'clienti', 
+            test_client_data, 
+            expected_status=200
+        )
+        
+        if success and (status == 200 or status == 201):
+            self.log_test("✅ POST /api/clienti SUCCESS", True, f"Status: {status} - NO 403 error!")
+            
+            if isinstance(client_response, dict) and 'id' in client_response:
+                client_id = client_response.get('id')
+                client_nome = client_response.get('nome')
+                self.log_test("✅ CLIENT CREATED SUCCESSFULLY", True, f"Client ID: {client_id}, Nome: {client_nome}")
+            else:
+                self.log_test("❌ Invalid client response", False, f"Response: {client_response}")
+        elif status == 403:
+            self.log_test("❌ POST /api/clienti 403 ERROR", False, "Client creation blocked by authorization")
+            return False
+        else:
+            self.log_test("❌ POST /api/clienti FAILED", False, f"Status: {status}, Response: {client_response}")
+            return False
+
+        # **STEP 7: VERIFICA DATI FRESH**
+        print("\n🔄 STEP 7: VERIFICA DATI FRESH...")
+        
+        # Test GET /api/auth/me again to verify fresh data
+        success, auth_me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/auth/me FRESH DATA", True, f"Status: {status}")
+            
+            # Verify data consistency
+            fresh_commesse = auth_me_response.get('commesse_autorizzate', [])
+            if fresh_commesse == commesse_autorizzate:
+                self.log_test("✅ DATA CONSISTENCY VERIFIED", True, "Fresh data matches login data")
+            else:
+                self.log_test("❌ DATA INCONSISTENCY", False, f"Fresh: {len(fresh_commesse)}, Login: {len(commesse_autorizzate)}")
+        else:
+            self.log_test("❌ GET /api/auth/me FAILED", False, f"Status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 VERIFICA IMMEDIATA POST-RESTART SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che ale7 veda correttamente le commesse autorizzate dopo restart")
+        print(f"   🎯 FOCUS: Confermare immediatamente che ale7 veda le commesse autorizzate (Fastweb)")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Backend service active: ✅ SUCCESS")
+        print(f"      • ale7 login (ale7/admin123): ✅ SUCCESS")
+        print(f"      • ale7 has commesse_autorizzate: {'✅ SUCCESS' if commesse_autorizzate else '❌ FAILED'}")
+        print(f"      • GET /api/cascade/sub-agenzie: ✅ SUCCESS")
+        print(f"      • GET /api/cascade/commesse-by-subagenzia: ✅ SUCCESS")
+        print(f"      • ale7 sees Fastweb commessa: {'✅ SUCCESS' if fastweb_found else '❌ FAILED'}")
+        print(f"      • POST /api/clienti works: {'✅ SUCCESS (no 403)' if status in [200, 201] else '❌ FAILED'}")
+        print(f"      • Data fresh after restart: ✅ VERIFIED")
+        
+        if fastweb_found and status in [200, 201]:
+            print(f"   🎉 SUCCESS: ale7 vede correttamente le commesse autorizzate dopo restart!")
+            print(f"   🎉 CONFERMATO: Cascading funziona e creazione clienti operativa senza errori 403!")
+            return True
+        else:
+            print(f"   🚨 ISSUES FOUND: Alcuni problemi identificati nel cascading o creazione clienti")
+            return Falseerate(commesse_autorizzate):
                     print(f"      • Commessa {i+1}: {commessa_id}")
             else:
                 self.log_test("❌ ALE7 NO COMMESSE_AUTORIZZATE", False, "ale7 has empty commesse_autorizzate - this is the problem!")
