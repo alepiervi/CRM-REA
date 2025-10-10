@@ -1154,17 +1154,30 @@ class CRMAPITester:
             print(f"   🚨 AZIONE RICHIESTA: Verificare enum UserRole nel backend e mapping frontend")
             return False
 
-    def test_ale7_cascading_store_urgent_diagnosis(self):
-        """🚨 DIAGNOSI URGENTE: Filiera cascading utente Store ale7 ancora non funziona"""
-        print("\n🚨 DIAGNOSI URGENTE: Filiera cascading utente Store ale7 ancora non funziona")
-        print("🎯 PROBLEMA CRITICO: L'utente ale7 ancora non vede le commesse autorizzate nella filiera cascading")
-        print("🎯 OBIETTIVO: Identificare immediatamente perché il cascading non funziona e risolvere all'istante")
+    def test_ale7_post_restart_verification_immediate(self):
+        """🚨 VERIFICA IMMEDIATA POST-RESTART: Cascading ale7 dopo restart servizi"""
+        print("\n🚨 VERIFICA IMMEDIATA POST-RESTART: Cascading ale7 dopo restart servizi")
+        print("🎯 OBIETTIVO: Verificare immediatamente che dopo il restart dei servizi ale7 veda correttamente le commesse autorizzate")
         print("🎯 TESTING IMMEDIATO:")
-        print("   1. VERIFICA STATO ATTUALE ALE7: Login ale7/admin123 e controllare configurazione corrente")
-        print("   2. TEST ENDPOINT CASCADING DETTAGLIATO: Testare GET /api/cascade/sub-agenzie e GET /api/cascade/commesse-by-subagenzia/{id}")
-        print("   3. VERIFICA AUTORIZZAZIONI DATI: Controllare che ale7 abbia commesse_autorizzate popolate")
-        print("   4. TEST ADMIN COMPARISON: Testare gli stessi endpoint con admin")
-        print("   5. FIX IMMEDIATO: Se la logica è sbagliata, correggerla immediatamente")
+        print("   1. VERIFICA SERVIZI ATTIVI: Controllare che backend sia ripartito correttamente")
+        print("   2. TEST ALE7 IMMEDIATO: Login ale7/admin123")
+        print("   3. TESTARE GET /api/cascade/sub-agenzie")
+        print("   4. TESTARE GET /api/cascade/commesse-by-subagenzia/{id}")
+        print("   5. VERIFICARE che veda le commesse autorizzate (Fastweb)")
+        print("   6. TEST CREAZIONE CLIENT IMMEDIATO: Tentare POST /api/clienti con ale7")
+        print("   7. VERIFICARE che funzioni senza errori 403")
+        print("   8. VERIFICA DATI FRESH: Assicurarsi che i dati siano freschi dopo restart")
+        
+        # **STEP 1: VERIFICA SERVIZI ATTIVI**
+        print("\n🔧 STEP 1: VERIFICA SERVIZI ATTIVI...")
+        
+        # Test basic health endpoint
+        success, response, status = self.make_request('GET', 'auth/me', expected_status=401, auth_required=False)
+        if status == 401:
+            self.log_test("✅ Backend service active", True, "Backend responds to requests (401 expected without auth)")
+        else:
+            self.log_test("❌ Backend service issue", False, f"Unexpected status: {status}")
+            return False
         
         # **STEP 1: VERIFICA STATO ATTUALE ALE7**
         print("\n🔐 STEP 1: VERIFICA STATO ATTUALE ALE7...")
