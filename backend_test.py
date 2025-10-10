@@ -1154,17 +1154,17 @@ class CRMAPITester:
             print(f"   🚨 AZIONE RICHIESTA: Verificare enum UserRole nel backend e mapping frontend")
             return False
 
-    def test_ale7_cascading_authorization_fix_immediate(self):
-        """🚨 VERIFICA IMMEDIATA: Fix cascading authorization per ale7"""
-        print("\n🚨 VERIFICA IMMEDIATA: Fix cascading authorization per ale7")
-        print("🎯 OBIETTIVO: Testare che il fix dell'endpoint cascading ora mostri solo le commesse autorizzate per ale7")
-        print("🎯 TESTING SPECIFICO:")
-        print("   1. LOGIN ALE7: Login ale7/admin123 e verificare commesse_autorizzate")
-        print("   2. TEST CASCADING FILTRATO: Chiamare GET /api/cascade/commesse-by-subagenzia/{sub_agenzia_id} con ale7")
-        print("   3. VERIFICARE: Ora mostri SOLO Fastweb (commessa autorizzata)")
-        print("   4. CONFERMARE: Telepass (non autorizzata) NON appare più")
-        print("   5. TEST ADMIN COMPARISON: Testare lo stesso endpoint con admin")
-        print("🎯 RISULTATO ATTESO: ale7 vede solo 1 commessa (Fastweb) invece di 2")
+    def test_ale7_cascading_store_urgent_diagnosis(self):
+        """🚨 DIAGNOSI URGENTE: Filiera cascading utente Store ale7 ancora non funziona"""
+        print("\n🚨 DIAGNOSI URGENTE: Filiera cascading utente Store ale7 ancora non funziona")
+        print("🎯 PROBLEMA CRITICO: L'utente ale7 ancora non vede le commesse autorizzate nella filiera cascading")
+        print("🎯 OBIETTIVO: Identificare immediatamente perché il cascading non funziona e risolvere all'istante")
+        print("🎯 TESTING IMMEDIATO:")
+        print("   1. VERIFICA STATO ATTUALE ALE7: Login ale7/admin123 e controllare configurazione corrente")
+        print("   2. TEST ENDPOINT CASCADING DETTAGLIATO: Testare GET /api/cascade/sub-agenzie e GET /api/cascade/commesse-by-subagenzia/{id}")
+        print("   3. VERIFICA AUTORIZZAZIONI DATI: Controllare che ale7 abbia commesse_autorizzate popolate")
+        print("   4. TEST ADMIN COMPARISON: Testare gli stessi endpoint con admin")
+        print("   5. FIX IMMEDIATO: Se la logica è sbagliata, correggerla immediatamente")
         
         # **STEP 1: LOGIN ALE7 E VERIFICA AUTORIZZAZIONI**
         print("\n🔐 STEP 1: LOGIN ALE7 E VERIFICA AUTORIZZAZIONI...")
