@@ -102,30 +102,37 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "TASK: Test immediato fix Responsabile Sub Agenzia - verifica dropdown popolato e creazione cliente funzionante
+user_problem_statement: "FIX IMMEDIATO: Aggiungere seconda commessa ad ale7 e risolvere servizi vuoti
 
-BUG FIX IMPLEMENTATO: Corretto bug logica ruolo alla riga 15308 da `if (user?.role === 'sub_agenzia' || user?.sub_agenzia_id)` a `if (user?.role === 'sub_agenzia')` per evitare che ale3 prenda il flusso sbagliato.
+OBIETTIVO: Correggere la configurazione di ale7 per avere 2 commesse e verificare che i servizi si popolino.
 
-PROBLEMA RISOLTO: 'Utente Responsabile Sub Agenzia non permette di salvare le anagrafiche dei clienti si provano a creare'
+AZIONI IMMEDIATE:
 
-TESTING IMMEDIATO:
-1. **LOGIN RESPONSABILE SUB AGENZIA**: Login ale3/admin123 → navigare Clienti
-2. **APERTURA CREATECLIENTEMODAL**: Cliccare 'Nuovo Cliente' → verificare modal si apre
-3. **VERIFICA FLUSSO CORRETTO**: Controllare console log per '👔 Responsabile Sub Agenzia Flow' (NON '🏢 Sub Agenzia Flow')
-4. **DROPDOWN SUB AGENZIA POPOLATO**: Verificare che dropdown Sub Agenzia ora mostri 'F2F' (non più solo placeholder)
-5. **CASCADING COMPLETO**: Testare filiera: Sub Agenzia (F2F) → Commessa (Fastweb) → Servizio → Tipologia → Segmento
-6. **CREAZIONE CLIENTE**: Compilare form completo e tentare salvataggio → verificare SUCCESS
+1. **IDENTIFICARE COMMESSE DISPONIBILI**:
+   - Login admin e ottenere lista completa commesse
+   - Identificare quali commesse dovrebbe avere ale7
 
-VERIFICA SUCCESS CRITERIA:
-- Console log mostra flusso corretto per responsabile_sub_agenzia ✅
-- Dropdown Sub Agenzia popolato con F2F ✅  
-- Cascading completo funzionante ✅
-- Cliente salvato con successo (no errori) ✅
+2. **AGGIORNARE ALE7 AUTORIZZAZIONI**:
+   - Aggiungere la seconda commessa mancante a ale7.commesse_autorizzate
+   - Assicurarsi che la sub agenzia abbia entrambe le commesse
 
-CREDENZIALI: ale3/admin123
-URL: https://client-tracker-99.preview.emergentagent.com
+3. **VERIFICARE SERVIZI FASTWEB**:
+   - Controllare che esistano servizi per la commessa Fastweb
+   - Testare endpoint GET /api/cascade/servizi-by-commessa/{fastweb_id}
+   - Verificare filtri di autorizzazione per servizi
 
-PRIORITÀ MASSIMA: ale3 deve poter salvare anagrafiche clienti senza errori!"
+4. **TEST CASCADING COMPLETO**:
+   - Login ale7 dopo fix
+   - Testare filiera completa: Commesse (2) → Servizi → Tipologie → etc
+   - Verificare che tutti i dropdown si popolino correttamente
+
+5. **VERIFICA CREAZIONE CLIENTE**:
+   - Testare che ale7 possa creare clienti con entrambe le commesse
+   - Verificare che tutto il flusso end-to-end funzioni
+
+CREDENZIALI: admin/admin123, ale7/admin123
+
+FOCUS: Risolvere configurazione utente e cascading completo."
 
 backend:
   - task: "Client Creation Authorization for All 5 Roles - Complete Authorization Fix"
