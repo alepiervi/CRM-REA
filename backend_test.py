@@ -30978,35 +30978,29 @@ def main():
 if __name__ == "__main__":
     tester = CRMAPITester()
     
-    print("🚀 Starting Client Creation Authorization Test for All 5 Roles...")
+    print("🚀 Starting CRM API Testing - ALE7 403 ERROR DIAGNOSIS...")
     print(f"🌐 Base URL: {tester.base_url}")
+    print("🎯 FOCUS: Diagnosi urgente errore 403 creazione cliente Responsabile Store")
     print("=" * 80)
     
-    # Run the URGENT Client Creation Authorization test for all 5 roles
-    print("\n" + "="*80)
-    print("🚨 RUNNING URGENT CLIENT CREATION AUTHORIZATION TEST FOR ALL 5 ROLES")
-    print("="*80)
-    
-    success = tester.test_client_creation_authorization_all_5_roles()
-    
-    # Print final summary
-    print("\n" + "=" * 80)
-    print("🎯 CLIENT CREATION AUTHORIZATION TEST SUMMARY")
-    print("=" * 80)
-    print(f"📊 Tests run: {tester.tests_run}")
-    print(f"✅ Tests passed: {tester.tests_passed}")
-    print(f"❌ Tests failed: {tester.tests_run - tester.tests_passed}")
-    print(f"📈 Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
-    
-    # Highlight the critical test results
-    print("\n🎯 CRITICAL TEST RESULT:")
-    if success:
-        print("🎉 CLIENT CREATION AUTHORIZATION TEST: ✅ SUCCESS - ALL 5 ROLES CAN CREATE CLIENTS!")
-        print("🎉 CONFERMATO: Tutti i 5 ruoli possono creare clienti nelle loro aree autorizzate!")
-    else:
-        print("🚨 CLIENT CREATION AUTHORIZATION TEST: ❌ FAILED - SOME ROLES CANNOT CREATE CLIENTS!")
-        print("🚨 PROBLEMA PERSISTE: Alcuni ruoli non possono creare clienti!")
-    
-    print(f"\n🎯 OVERALL RESULT: {'✅ SUCCESS' if success else '❌ FAILED'}")
+    # Run specific test for ale7 403 error diagnosis
+    try:
+        result = tester.test_ale7_store_403_error_diagnosis()
+        
+        # Print summary
+        print(f"\n📊 Test Summary:")
+        print(f"   Tests run: {tester.tests_run}")
+        print(f"   Tests passed: {tester.tests_passed}")
+        print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+        
+        if result:
+            print("🎉 ALE7 403 ERROR DIAGNOSIS COMPLETE - ISSUE RESOLVED!")
+        else:
+            print("❌ ALE7 403 ERROR DIAGNOSIS COMPLETE - ISSUE IDENTIFIED!")
+            
+    except Exception as e:
+        print(f"❌ Test failed with exception: {e}")
+        import traceback
+        traceback.print_exc()
     
     exit(0 if success else 1)
