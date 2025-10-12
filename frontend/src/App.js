@@ -4720,8 +4720,10 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
         ...formData,
         commesse_autorizzate: [...currentCommesse, commessaId],
       });
-      // Carica i servizi per la commessa selezionata (solo per responsabile/backoffice commessa)
-      if (formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") {
+      // Carica i servizi per la commessa selezionata (per responsabile/backoffice commessa e ruoli store/presidi)
+      if (formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" ||
+          formData.role === "responsabile_store" || formData.role === "responsabile_presidi" ||
+          formData.role === "store_assist" || formData.role === "promoter_presidi") {
         await fetchServiziForCommessaEdit(commessaId);
       } else {
         handleCommessaChange(commessaId);
