@@ -4111,7 +4111,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
 
           {/* RESPONSABILE/BACKOFFICE SUB AGENZIA, AGENTE SPECIALIZZATO, OPERATORE: Sub Agenzia → Commesse (multi) → Servizi (multi) */}
           {(formData.role === "responsabile_sub_agenzia" || formData.role === "backoffice_sub_agenzia" || 
-            formData.role === "agente_specializzato" || formData.role === "operatore" || formData.role === "responsabile_store" || formData.role === "responsabile_presidi" || formData.role === "store_assist" || formData.role === "promoter_presidi") && (
+            formData.role === "agente_specializzato" || formData.role === "operatore") && (
             <>
               <div>
                 <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
