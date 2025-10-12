@@ -4910,8 +4910,10 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
             </div>
           )}
 
-          {/* Campo Sub Agenzia - mostrato solo se assignment_type è "sub_agenzia" e non è responsabile/backoffice commessa */}
-          {formData.assignment_type === "sub_agenzia" && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
+          {/* Campo Sub Agenzia - mostrato solo se assignment_type è "sub_agenzia" e non è responsabile/backoffice commessa o store/presidi */}
+          {formData.assignment_type === "sub_agenzia" && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" || 
+            formData.role === "responsabile_store" || formData.role === "responsabile_presidi" || 
+            formData.role === "store_assist" || formData.role === "promoter_presidi") && (
             <div>
               <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
               <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
