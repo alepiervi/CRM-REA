@@ -5223,13 +5223,14 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
             </>
           )}
 
-          {/* STORE ASSISTANT e PROMOTER PRESIDI: Singola Sub Agenzia → Multi Commesse → Multi Servizi */}
+          {/* STORE ASSISTANT e PROMOTER PRESIDI: Singola Sub Agenzia → Multi Commesse → Servizi separati per commessa - EDIT */}
           {(formData.role === "store_assist" || formData.role === "promoter_presidi") && (
             <>
               <div>
                 <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
                 <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
                   setFormData(prev => ({ ...prev, sub_agenzia_id: value, commesse_autorizzate: [], servizi_autorizzati: [] }));
+                  setServiziPerCommessa({}); // Reset servizi cache
                 }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleziona sub agenzia" />
@@ -5270,28 +5271,51 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                 </div>
               )}
 
-              {/* Servizi delle commesse selezionate */}
-              {formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0 && servizi.length > 0 && (
-                <div className="col-span-2">
-                  <Label>Servizi Autorizzati *</Label>
-                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                    <div className="grid grid-cols-2 gap-2">
-                      {servizi.map((servizio) => (
-                        <div key={servizio.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`edit-servizio-assistant-${servizio.id}`}
-                            checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
-                            onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
-                          />
-                          <Label htmlFor={`edit-servizio-assistant-${servizio.id}`} className="text-sm font-normal cursor-pointer">
-                            {servizio.nome}
+              {/* Servizi separati per ogni commessa selezionata - ASSISTANT/PROMOTER EDIT */}
+              {formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0 && (
+                <div className="col-span-2 space-y-4">
+                  <Label className="text-lg font-semibold">Servizi Autorizzati per Commessa</Label>
+                  {formData.commesse_autorizzate.map((commessaId) => {
+                    const commessa = commesse.find(c => c.id === commessaId);
+                    const serviziCommessa = serviziPerCommessa[commessaId] || [];
+                    
+                    return (
+                      <div key={commessaId} className="border rounded-lg p-4 bg-white">
+                        <div className="flex items-center justify-between mb-3">
+                          <Label className="font-semibold text-orange-700">
+                            👨‍💼 {commessa?.nome || 'Commessa sconosciuta'} - Assistant/Promoter (Edit)
                           </Label>
+                          <span className="text-xs text-gray-500">
+                            {serviziCommessa.length} servizi disponibili
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Selezionati: {formData.servizi_autorizzati?.length || 0} servizi
+                        
+                        {serviziCommessa.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-2">
+                            {serviziCommessa.map((servizio) => (
+                              <div key={servizio.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`edit-servizio-assistant-${commessaId}-${servizio.id}`}
+                                  checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
+                                  onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
+                                />
+                                <Label htmlFor={`edit-servizio-assistant-${commessaId}-${servizio.id}`} className="text-sm cursor-pointer">
+                                  {servizio.nome}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-4 text-gray-500">
+                            <p className="text-sm">Caricamento servizi per {commessa?.nome}...</p>
+                            <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mt-2"></div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <p className="text-xs text-slate-500 mt-2">
+                    Totale servizi selezionati: {formData.servizi_autorizzati?.length || 0}
                   </p>
                 </div>
               )}
