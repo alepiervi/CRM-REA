@@ -3559,6 +3559,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
   const [isLoading, setIsLoading] = useState(false);
   const [servizi, setServizi] = useState([]);
   const [serviziDisponibili, setServiziDisponibili] = useState([]); // NEW: Servizi per UNIT/SUB selezionata
+  const [serviziPerCommessa, setServiziPerCommessa] = useState({}); // NEW: Servizi organizzati per commessa per responsabile_commessa
   const { toast } = useToast();
 
   // NEW: Fetch servizi quando si seleziona una UNIT
@@ -4351,6 +4352,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   const [isLoading, setIsLoading] = useState(false);
   const [servizi, setServizi] = useState([]);
   const [serviziDisponibili, setServiziDisponibili] = useState([]); // NEW: Servizi per UNIT/SUB selezionata
+  const [serviziPerCommessa, setServiziPerCommessa] = useState({}); // NEW: Servizi organizzati per commessa per responsabile_commessa
   const { toast } = useToast();
 
   // Load servizi when commesse_autorizzate changes
