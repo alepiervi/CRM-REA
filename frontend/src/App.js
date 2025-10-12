@@ -3562,6 +3562,36 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
   const [serviziPerCommessa, setServiziPerCommessa] = useState({}); // NEW: Servizi organizzati per commessa per responsabile_commessa
   const { toast } = useToast();
 
+  // NEW: Fetch servizi per una specifica commessa (per responsabile_commessa)
+  const fetchServiziForCommessa = async (commessaId) => {
+    try {
+      console.log('🔄 Fetching servizi for commessa:', commessaId);
+      const response = await axios.get(`${API}/cascade/servizi-by-commessa/${commessaId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const serviziCommessa = response.data;
+      console.log('✅ Servizi loaded for commessa:', commessaId, serviziCommessa);
+      
+      // Aggiungi i servizi alla cache organizzata per commessa
+      setServiziPerCommessa(prev => ({
+        ...prev,
+        [commessaId]: serviziCommessa
+      }));
+      
+    } catch (error) {
+      console.error('❌ Error fetching servizi for commessa:', error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei servizi per la commessa",
+        variant: "destructive",
+      });
+    }
+  };
+
   // NEW: Fetch servizi quando si seleziona una UNIT
   const handleUnitChange = async (unitId) => {
     if (!unitId) {
