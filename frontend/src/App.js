@@ -3743,18 +3743,34 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     }
   };
 
-  const handleCommessaAutorizzataChange = (commessaId, checked) => {
+  const handleCommessaAutorizzataChange = async (commessaId, checked) => {
     if (checked) {
       setFormData({
         ...formData,
         commesse_autorizzate: [...formData.commesse_autorizzate, commessaId],
       });
-      // Carica i servizi per la commessa selezionata
-      handleCommessaChange(commessaId);
+      // Carica i servizi per la commessa selezionata (solo per responsabile/backoffice commessa)
+      if (formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") {
+        await fetchServiziForCommessa(commessaId);
+      } else {
+        handleCommessaChange(commessaId);
+      }
     } else {
-      setFormData({
-        ...formData,
-        commesse_autorizzate: formData.commesse_autorizzate.filter((c) => c !== commessaId),
+      // Rimuovi commessa e i suoi servizi
+      setFormData(prevData => ({
+        ...prevData,
+        commesse_autorizzate: prevData.commesse_autorizzate.filter((c) => c !== commessaId),
+        servizi_autorizzati: prevData.servizi_autorizzati.filter(servizioId => {
+          // Rimuovi servizi che appartengono solo a questa commessa
+          const servizioCommessa = serviziPerCommessa[commessaId];
+          return !servizioCommessa?.some(s => s.id === servizioId);
+        })
+      }));
+      // Rimuovi servizi dalla cache
+      setServiziPerCommessa(prev => {
+        const newServizi = { ...prev };
+        delete newServizi[commessaId];
+        return newServizi;
       });
     }
   };
