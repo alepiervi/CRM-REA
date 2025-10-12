@@ -4424,6 +4424,36 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   const [serviziPerCommessa, setServiziPerCommessa] = useState({}); // NEW: Servizi organizzati per commessa per responsabile_commessa
   const { toast } = useToast();
 
+  // NEW: Fetch servizi per una specifica commessa (per responsabile_commessa) - EditModal version
+  const fetchServiziForCommessaEdit = async (commessaId) => {
+    try {
+      console.log('🔄 [EDIT] Fetching servizi for commessa:', commessaId);
+      const response = await axios.get(`${API}/cascade/servizi-by-commessa/${commessaId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const serviziCommessa = response.data;
+      console.log('✅ [EDIT] Servizi loaded for commessa:', commessaId, serviziCommessa);
+      
+      // Aggiungi i servizi alla cache organizzata per commessa
+      setServiziPerCommessa(prev => ({
+        ...prev,
+        [commessaId]: serviziCommessa
+      }));
+      
+    } catch (error) {
+      console.error('❌ [EDIT] Error fetching servizi for commessa:', error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei servizi per la commessa",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Load servizi when commesse_autorizzate changes
   useEffect(() => {
     if (formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0) {
