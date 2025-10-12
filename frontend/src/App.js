@@ -4944,21 +4944,21 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
             </>
           )}
 
-          {/* Campi condizionali per ruoli specializzati */}
+          {/* Campi condizionali per ruoli specializzati - EDIT MODAL */}
           {(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
             <>
-              <div>
+              <div className="col-span-2">
                 <Label>Commesse Autorizzate *</Label>
-                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
-                  <div className="space-y-2">
+                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                  <div className="grid grid-cols-2 gap-2">
                     {commesse.map((commessa) => (
                       <div key={commessa.id} className="flex items-center space-x-2">
                         <Checkbox
-                          id={commessa.id}
+                          id={`edit-commessa-${commessa.id}`}
                           checked={formData.commesse_autorizzate && formData.commesse_autorizzate.includes(commessa.id)}
                           onCheckedChange={(checked) => handleCommessaAutorizzataChange(commessa.id, checked)}
                         />
-                        <Label htmlFor={commessa.id} className="text-sm">
+                        <Label htmlFor={`edit-commessa-${commessa.id}`} className="text-sm font-normal cursor-pointer">
                           {commessa.nome}
                         </Label>
                       </div>
@@ -4966,31 +4966,55 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                   </div>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Selezionate: {formData.commesse_autorizzate ? formData.commesse_autorizzate.length : 0} commesse
+                  Selezionate: {formData.commesse_autorizzate?.length || 0} commesse
                 </p>
               </div>
 
-              {formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0 && servizi && servizi.length > 0 && (
-                <div>
-                  <Label>Servizi Autorizzati (opzionale)</Label>
-                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
-                    <div className="space-y-2">
-                      {servizi.map((servizio) => (
-                        <div key={servizio.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={servizio.id}
-                            checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
-                            onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
-                          />
-                          <Label htmlFor={servizio.id} className="text-sm">
-                            {servizio.nome}
+              {/* Servizi separati per ogni commessa selezionata - EDIT MODAL */}
+              {formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0 && (
+                <div className="col-span-2 space-y-4">
+                  <Label className="text-lg font-semibold">Servizi Autorizzati per Commessa</Label>
+                  {formData.commesse_autorizzate.map((commessaId) => {
+                    const commessa = commesse.find(c => c.id === commessaId);
+                    const serviziCommessa = serviziPerCommessa[commessaId] || [];
+                    
+                    return (
+                      <div key={commessaId} className="border rounded-lg p-4 bg-white">
+                        <div className="flex items-center justify-between mb-3">
+                          <Label className="font-semibold text-blue-700">
+                            📋 {commessa?.nome || 'Commessa sconosciuta'}
                           </Label>
+                          <span className="text-xs text-gray-500">
+                            {serviziCommessa.length} servizi disponibili
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Selezionati: {formData.servizi_autorizzati ? formData.servizi_autorizzati.length : 0} servizi
+                        
+                        {serviziCommessa.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-2">
+                            {serviziCommessa.map((servizio) => (
+                              <div key={servizio.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`edit-servizio-${commessaId}-${servizio.id}`}
+                                  checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
+                                  onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
+                                />
+                                <Label htmlFor={`edit-servizio-${commessaId}-${servizio.id}`} className="text-sm cursor-pointer">
+                                  {servizio.nome}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-4 text-gray-500">
+                            <p className="text-sm">Caricamento servizi per {commessa?.nome}...</p>
+                            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mt-2"></div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <p className="text-xs text-slate-500 mt-2">
+                    Totale servizi selezionati: {formData.servizi_autorizzati?.length || 0}
                   </p>
                 </div>
               )}
