@@ -4506,7 +4506,9 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   // Load servizi when commesse_autorizzate changes
   useEffect(() => {
     if (formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0) {
-      if (formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") {
+      if (formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" ||
+          formData.role === "responsabile_store" || formData.role === "responsabile_presidi" ||
+          formData.role === "store_assist" || formData.role === "promoter_presidi") {
         // Per questi ruoli, carica servizi per OGNI commessa autorizzata
         formData.commesse_autorizzate.forEach(commessaId => {
           fetchServiziForCommessaEdit(commessaId);
