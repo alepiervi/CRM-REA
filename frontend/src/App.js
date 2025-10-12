@@ -4478,6 +4478,18 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     }
   }, []);
 
+  // NEW: Load servizi for existing commesse when modal opens (for responsabile/backoffice commessa)
+  useEffect(() => {
+    if ((formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && 
+        user.commesse_autorizzate && user.commesse_autorizzate.length > 0) {
+      console.log('🔄 [EDIT MODAL MOUNT] Loading servizi for existing commesse:', user.commesse_autorizzate);
+      // Carica servizi per tutte le commesse già autorizzate dell'utente
+      user.commesse_autorizzate.forEach(commessaId => {
+        fetchServiziForCommessaEdit(commessaId);
+      });
+    }
+  }, []);
+
   // NEW: Fetch servizi quando si seleziona una UNIT
   const handleUnitChange = async (unitId) => {
     if (!unitId) {
