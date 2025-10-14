@@ -2032,7 +2032,7 @@ const Dashboard = () => {
 
 
       {/* 🎯 DESKTOP: Desktop Sidebar (hidden on mobile) */}
-      <div className="desktop-sidebar w-64 bg-white border-r border-slate-200 shadow-sm flex flex-col">
+      <div className="desktop-sidebar hidden lg:flex w-64 bg-white border-r border-slate-200 shadow-sm flex-col">
         {/* Desktop Header */}
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center space-x-3 mb-4">
