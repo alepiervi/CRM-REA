@@ -123,6 +123,17 @@ CREDENZIALI: admin/admin123
 FOCUS: Testing completo implementazione Area Manager."
 
 backend:
+  - task: "Area Manager Backend Implementation - Complete Authorization System"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ AREA MANAGER BACKEND IMPLEMENTATION COMPLETE: 1) USERROLE ENUM: Aggiunto AREA_MANAGER alla UserRole enum (riga 146). 2) CLIENT ACCESS: Integrato in GET /api/clienti endpoint con logica 'clients from assigned sub agenzie' (righe 8761-8777). 3) FILTER OPTIONS: Integrato in GET /api/clienti/filter-options con autorizzazioni per sub agenzie assegnate (righe 8947, 9016, 9035). 4) AUTHORIZATION LOGIC: Area Manager può vedere clienti di tutte le sub agenzie assegnate in sub_agenzie_autorizzate, supporta multi sub agenzia assignment. READY FOR TESTING: Verificare creazione Area Manager, assegnazione sub agenzie, accesso clienti filtrati."
   - task: "ALE7 Configuration Fix - Add Second Commessa and Resolve Empty Services"
     implemented: true
     working: true
