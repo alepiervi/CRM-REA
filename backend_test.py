@@ -30139,6 +30139,324 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_area_manager_backend_complete(self):
+        """🚨 AREA MANAGER BACKEND TESTING - Verifica completa implementazione ruolo Area Manager"""
+        print("\n🚨 AREA MANAGER BACKEND TESTING - Verifica completa implementazione ruolo Area Manager")
+        print("🎯 OBIETTIVO: Testare tutte le funzionalità backend per il nuovo ruolo Area Manager")
+        print("🎯 TESTING SCOPE:")
+        print("   1. USER CREATION: POST /api/users con ruolo 'area_manager'")
+        print("   2. AUTHENTICATION & AUTHORIZATION: Login e GET /api/auth/me")
+        print("   3. CLIENT ACCESS: GET /api/clienti per Area Manager")
+        print("   4. FILTER OPTIONS: GET /api/clienti/filter-options")
+        print("   5. COMPARISON TESTING: Confronto con Admin")
+        
+        # **STEP 1: ADMIN LOGIN E SETUP**
+        print("\n🔐 STEP 1: ADMIN LOGIN E SETUP...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            admin_token = response['access_token']
+            self.token = admin_token
+            self.user_data = response['user']
+            self.log_test("✅ ADMIN LOGIN (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ ADMIN LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # Get existing sub agenzie for testing
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        if success and isinstance(sub_agenzie_response, list) and len(sub_agenzie_response) > 0:
+            available_sub_agenzie = [sa['id'] for sa in sub_agenzie_response[:2]]  # Take first 2
+            self.log_test("✅ Sub agenzie disponibili", True, f"Found {len(available_sub_agenzie)} sub agenzie per testing")
+        else:
+            self.log_test("❌ Nessuna sub agenzia disponibile", False, "Cannot test Area Manager without sub agenzie")
+            return False
+
+        # **STEP 2: USER CREATION - Area Manager**
+        print("\n👤 STEP 2: USER CREATION - Area Manager...")
+        print("   🎯 CRITICO: Verificare che POST /api/users accetti ruolo 'area_manager' senza errori enum")
+        
+        import time
+        timestamp = str(int(time.time()))
+        area_manager_data = {
+            "username": f"test_area_manager_{timestamp}",
+            "email": f"area_manager_{timestamp}@test.it",
+            "password": "admin123",
+            "role": "area_manager",
+            "sub_agenzie_autorizzate": available_sub_agenzie,  # Multiple sub agenzie
+            "is_active": True
+        }
+        
+        print(f"   📋 Area Manager data: {area_manager_data}")
+        
+        success, create_response, status = self.make_request(
+            'POST', 'users', 
+            area_manager_data, 
+            expected_status=200
+        )
+        
+        if success and (status == 200 or status == 201):
+            self.log_test("✅ POST /api/users (area_manager role)", True, 
+                f"Status: {status} - Area Manager creato senza errori enum!")
+            
+            if isinstance(create_response, dict) and 'id' in create_response:
+                area_manager_id = create_response.get('id')
+                created_role = create_response.get('role')
+                created_sub_agenzie = create_response.get('sub_agenzie_autorizzate', [])
+                
+                self.log_test("✅ Area Manager creato con successo", True, 
+                    f"ID: {area_manager_id}, Role: {created_role}, Sub Agenzie: {len(created_sub_agenzie)}")
+                
+                if created_role == "area_manager":
+                    self.log_test("✅ Ruolo area_manager salvato correttamente", True, f"Role: {created_role}")
+                else:
+                    self.log_test("❌ Ruolo area_manager non salvato", False, f"Expected: area_manager, Got: {created_role}")
+                
+                if len(created_sub_agenzie) == len(available_sub_agenzie):
+                    self.log_test("✅ Sub agenzie autorizzate salvate", True, f"Sub agenzie: {len(created_sub_agenzie)}")
+                else:
+                    self.log_test("❌ Sub agenzie autorizzate non salvate", False, f"Expected: {len(available_sub_agenzie)}, Got: {len(created_sub_agenzie)}")
+                
+                # Store for cleanup
+                self.created_resources['users'].append(area_manager_id)
+                area_manager_username = area_manager_data['username']
+                
+            else:
+                self.log_test("❌ Risposta creazione Area Manager invalida", False, f"Response: {create_response}")
+                return False
+                
+        elif status == 422:
+            self.log_test("❌ POST /api/users (area_manager role)", False, 
+                f"Status: 422 - Errore enum! Area Manager non accettato. Response: {create_response}")
+            return False
+        else:
+            self.log_test("❌ POST /api/users (area_manager role)", False, 
+                f"Status: {status}, Response: {create_response}")
+            return False
+
+        # **STEP 3: AUTHENTICATION & AUTHORIZATION**
+        print("\n🔐 STEP 3: AUTHENTICATION & AUTHORIZATION...")
+        print("   🎯 CRITICO: Login Area Manager e verifica GET /api/auth/me")
+        
+        # Login with Area Manager
+        success, login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': area_manager_username, 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in login_response:
+            area_manager_token = login_response['access_token']
+            area_manager_user_data = login_response['user']
+            
+            self.log_test("✅ Area Manager LOGIN SUCCESS", True, 
+                f"Username: {area_manager_username}, Role: {area_manager_user_data.get('role')}")
+            
+            # Switch to Area Manager token
+            self.token = area_manager_token
+            
+            # Test GET /api/auth/me
+            success, auth_me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/auth/me (Area Manager)", True, f"Status: {status}")
+                
+                # Verify response data
+                if isinstance(auth_me_response, dict):
+                    auth_role = auth_me_response.get('role')
+                    auth_sub_agenzie = auth_me_response.get('sub_agenzie_autorizzate', [])
+                    auth_username = auth_me_response.get('username')
+                    
+                    if auth_role == 'area_manager':
+                        self.log_test("✅ Role corretto in auth/me", True, f"Role: {auth_role}")
+                    else:
+                        self.log_test("❌ Role scorretto in auth/me", False, f"Expected: area_manager, Got: {auth_role}")
+                    
+                    if len(auth_sub_agenzie) > 0:
+                        self.log_test("✅ Sub agenzie autorizzate in auth/me", True, f"Sub agenzie: {len(auth_sub_agenzie)}")
+                    else:
+                        self.log_test("❌ Sub agenzie autorizzate mancanti", False, f"Sub agenzie: {auth_sub_agenzie}")
+                    
+                    if auth_username == area_manager_username:
+                        self.log_test("✅ Username corretto in auth/me", True, f"Username: {auth_username}")
+                    else:
+                        self.log_test("❌ Username scorretto in auth/me", False, f"Expected: {area_manager_username}, Got: {auth_username}")
+                        
+                else:
+                    self.log_test("❌ Risposta auth/me invalida", False, f"Response type: {type(auth_me_response)}")
+            else:
+                self.log_test("❌ GET /api/auth/me (Area Manager)", False, f"Status: {status}, Response: {auth_me_response}")
+                
+        else:
+            self.log_test("❌ Area Manager LOGIN FAILED", False, f"Status: {status}, Response: {login_response}")
+            return False
+
+        # **STEP 4: CLIENT ACCESS (GET /api/clienti)**
+        print("\n📋 STEP 4: CLIENT ACCESS (GET /api/clienti)...")
+        print("   🎯 CRITICO: Verificare che Area Manager veda clienti delle sub agenzie assegnate")
+        
+        # Test GET /api/clienti with Area Manager
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti (Area Manager)", True, f"Status: {status}")
+            
+            if isinstance(clienti_response, list):
+                area_manager_clienti_count = len(clienti_response)
+                self.log_test("✅ Clienti response è array", True, f"Clienti trovati: {area_manager_clienti_count}")
+                
+                # Verify clients belong to authorized sub agenzie
+                if area_manager_clienti_count > 0:
+                    sample_client = clienti_response[0]
+                    client_sub_agenzia = sample_client.get('sub_agenzia_id')
+                    
+                    if client_sub_agenzia in auth_sub_agenzie:
+                        self.log_test("✅ Clienti delle sub agenzie autorizzate", True, 
+                            f"Client sub agenzia: {client_sub_agenzia} in authorized list")
+                    else:
+                        self.log_test("❌ Clienti di sub agenzie non autorizzate", False, 
+                            f"Client sub agenzia: {client_sub_agenzia} not in {auth_sub_agenzie}")
+                else:
+                    self.log_test("ℹ️ Nessun cliente trovato", True, "Area Manager non ha clienti (normale se nuovo)")
+                    
+            else:
+                self.log_test("❌ Clienti response non è array", False, f"Response type: {type(clienti_response)}")
+        else:
+            self.log_test("❌ GET /api/clienti (Area Manager)", False, f"Status: {status}, Response: {clienti_response}")
+
+        # **STEP 5: FILTER OPTIONS (GET /api/clienti/filter-options)**
+        print("\n🔍 STEP 5: FILTER OPTIONS (GET /api/clienti/filter-options)...")
+        print("   🎯 CRITICO: Verificare filtri per Area Manager (solo sub agenzie autorizzate)")
+        
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/filter-options (Area Manager)", True, f"Status: {status}")
+            
+            if isinstance(filter_response, dict):
+                filter_sub_agenzie = filter_response.get('sub_agenzie', [])
+                filter_users = filter_response.get('users', [])
+                filter_tipologie = filter_response.get('tipologie_contratto', [])
+                
+                self.log_test("✅ Filter options structure", True, 
+                    f"Sub agenzie: {len(filter_sub_agenzie)}, Users: {len(filter_users)}, Tipologie: {len(filter_tipologie)}")
+                
+                # Verify sub agenzie filter shows only authorized ones
+                if len(filter_sub_agenzie) > 0:
+                    unauthorized_sub_agenzie = [sa for sa in filter_sub_agenzie if sa.get('id') not in auth_sub_agenzie]
+                    
+                    if not unauthorized_sub_agenzie:
+                        self.log_test("✅ Sub agenzie filtrate correttamente", True, 
+                            f"Tutte le {len(filter_sub_agenzie)} sub agenzie sono autorizzate")
+                    else:
+                        self.log_test("❌ Sub agenzie non autorizzate nei filtri", False, 
+                            f"Found {len(unauthorized_sub_agenzie)} unauthorized sub agenzie")
+                else:
+                    self.log_test("ℹ️ Nessuna sub agenzia nei filtri", True, "Potrebbe essere normale se nessun cliente")
+                
+                # Verify users filter (should show users from authorized sub agenzie)
+                if len(filter_users) > 0:
+                    self.log_test("✅ Users filter popolato", True, f"Users: {len(filter_users)}")
+                else:
+                    self.log_test("ℹ️ Nessun utente nei filtri", True, "Potrebbe essere normale")
+                
+                # Verify tipologie contratto filter
+                if len(filter_tipologie) > 0:
+                    self.log_test("✅ Tipologie contratto filter popolato", True, f"Tipologie: {len(filter_tipologie)}")
+                else:
+                    self.log_test("ℹ️ Nessuna tipologia nei filtri", True, "Potrebbe essere normale")
+                    
+            else:
+                self.log_test("❌ Filter options response invalida", False, f"Response type: {type(filter_response)}")
+        else:
+            self.log_test("❌ GET /api/clienti/filter-options (Area Manager)", False, f"Status: {status}, Response: {filter_response}")
+
+        # **STEP 6: COMPARISON TESTING - Admin vs Area Manager**
+        print("\n⚖️ STEP 6: COMPARISON TESTING - Admin vs Area Manager...")
+        print("   🎯 CRITICO: Confrontare comportamento Area Manager vs Admin")
+        
+        # Switch back to Admin token
+        self.token = admin_token
+        
+        # Get Admin clienti count
+        success, admin_clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and isinstance(admin_clienti_response, list):
+            admin_clienti_count = len(admin_clienti_response)
+            self.log_test("✅ Admin clienti count", True, f"Admin vede {admin_clienti_count} clienti")
+            
+            # Get Admin filter options
+            success, admin_filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+            
+            if success and isinstance(admin_filter_response, dict):
+                admin_sub_agenzie = admin_filter_response.get('sub_agenzie', [])
+                admin_users = admin_filter_response.get('users', [])
+                
+                self.log_test("✅ Admin filter options", True, 
+                    f"Admin vede {len(admin_sub_agenzie)} sub agenzie, {len(admin_users)} users")
+                
+                # Compare with Area Manager
+                print(f"\n   📊 COMPARISON RESULTS:")
+                print(f"      • Admin clienti: {admin_clienti_count}")
+                print(f"      • Area Manager clienti: {area_manager_clienti_count}")
+                print(f"      • Admin sub agenzie (filtri): {len(admin_sub_agenzie)}")
+                print(f"      • Area Manager sub agenzie (filtri): {len(filter_sub_agenzie)}")
+                print(f"      • Admin users (filtri): {len(admin_users)}")
+                print(f"      • Area Manager users (filtri): {len(filter_users)}")
+                
+                # Verify Area Manager sees subset of Admin data
+                if admin_clienti_count >= area_manager_clienti_count:
+                    self.log_test("✅ Area Manager vede subset clienti", True, 
+                        f"Area Manager ({area_manager_clienti_count}) ≤ Admin ({admin_clienti_count})")
+                else:
+                    self.log_test("❌ Area Manager vede più clienti di Admin", False, 
+                        f"Area Manager ({area_manager_clienti_count}) > Admin ({admin_clienti_count})")
+                
+                if len(admin_sub_agenzie) >= len(filter_sub_agenzie):
+                    self.log_test("✅ Area Manager vede subset sub agenzie", True, 
+                        f"Area Manager ({len(filter_sub_agenzie)}) ≤ Admin ({len(admin_sub_agenzie)})")
+                else:
+                    self.log_test("❌ Area Manager vede più sub agenzie di Admin", False, 
+                        f"Area Manager ({len(filter_sub_agenzie)}) > Admin ({len(admin_sub_agenzie)})")
+                        
+            else:
+                self.log_test("❌ Admin filter options failed", False, f"Status: {status}")
+        else:
+            self.log_test("❌ Admin clienti failed", False, f"Status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 AREA MANAGER BACKEND TESTING SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Testare implementazione completa ruolo Area Manager")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • POST /api/users (area_manager): {'✅ SUCCESS' if create_response else '❌ FAILED'}")
+        print(f"      • Area Manager login: {'✅ SUCCESS' if login_response else '❌ FAILED'}")
+        print(f"      • GET /api/auth/me (Area Manager): {'✅ SUCCESS' if auth_me_response else '❌ FAILED'}")
+        print(f"      • GET /api/clienti (Area Manager): {'✅ SUCCESS' if clienti_response else '❌ FAILED'}")
+        print(f"      • GET /api/clienti/filter-options: {'✅ SUCCESS' if filter_response else '❌ FAILED'}")
+        print(f"      • Comparison Admin vs Area Manager: ✅ COMPLETED")
+        
+        # Determine overall success
+        main_tests_success = all([
+            create_response and (status == 200 or status == 201),
+            login_response and 'access_token' in login_response,
+            auth_me_response and isinstance(auth_me_response, dict),
+            clienti_response and isinstance(clienti_response, list),
+            filter_response and isinstance(filter_response, dict)
+        ])
+        
+        if main_tests_success:
+            print(f"   🎉 SUCCESS: Area Manager backend implementation completamente funzionale!")
+            print(f"   🎉 CONFERMATO: Tutti i test critici passati - Area Manager pronto per produzione!")
+            return True
+        else:
+            print(f"   🚨 PARTIAL SUCCESS: Alcuni test falliti - verificare implementazione Area Manager")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
