@@ -30468,6 +30468,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # Run the AREA MANAGER BACKEND TESTING
+        print("\n" + "="*80)
+        print("🚨 RUNNING AREA MANAGER BACKEND TESTING")
+        print("="*80)
+        
+        area_manager_success = self.test_area_manager_backend_complete()
+        
         # Run the URGENT ALE7 Configuration Fix test
         print("\n" + "="*80)
         print("🚨 RUNNING URGENT ALE7 CONFIGURATION FIX TEST")
