@@ -16112,8 +16112,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       partita_iva: formData.partita_iva,
       note: formData.note,
       
-      // Cascading selection data
-      sub_agenzia_id: selectedData.sub_agenzia_id,
+      // Cascading selection data - Area Manager uses form selection
+      sub_agenzia_id: user?.role === 'area_manager' ? formData.sub_agenzia_id : selectedData.sub_agenzia_id,
       commessa_id: selectedData.commessa_id,
       servizio_id: selectedData.servizio_id,
       tipologia_contratto: mapTipologiaContratto(selectedData.tipologia_contratto),
