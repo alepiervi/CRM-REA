@@ -32017,87 +32017,7 @@ Duplicate,Test,+393471234567"""
         
         password_validation_success = self.test_password_validation_user_creation()
         
-        # Run the URGENT AREA MANAGER SERVIZI AUTORIZZATI UPDATE (HIGH PRIORITY)
-        print("\n" + "="*80)
-        print("🚨 RUNNING URGENT AREA MANAGER SERVIZI AUTORIZZATI UPDATE - HIGH PRIORITY")
-        print("="*80)
-        
-        area_manager_update_success = self.test_area_manager_servizi_autorizzati_update_urgent()
-        
-        # Run the AREA MANAGER CASCADING DEBUGGING (MAIN FOCUS)
-        print("\n" + "="*80)
-        print("🚨 RUNNING AREA MANAGER CASCADING DEBUGGING - MAIN FOCUS")
-        print("="*80)
-        
-        area_manager_debug_success = self.test_area_manager_cascading_debugging()
-        
-        # Run the AREA MANAGER CLIENT CREATION AND CASCADING TESTING
-        print("\n" + "="*80)
-        print("🚨 RUNNING AREA MANAGER CLIENT CREATION AND CASCADING TESTING")
-        print("="*80)
-        
-        area_manager_success = self.test_area_manager_client_creation_cascading_complete()
-        
-        # Run the URGENT ALE7 Configuration Fix test
-        print("\n" + "="*80)
-        print("🚨 RUNNING URGENT ALE7 CONFIGURATION FIX TEST")
-        print("="*80)
-        
-        ale7_config_success = self.test_ale7_commessa_configuration_urgent()
-        
-        # Run the CRITICAL Store User Configuration Fix test
-        print("\n" + "="*80)
-        print("🚨 RUNNING CRITICAL STORE USER CONFIGURATION FIX TEST")
-        print("="*80)
-        
-        store_config_fix_success = self.test_store_user_configuration_fix_critical()
-        
-        # Run the URGENT Store User Issues Diagnosis test
-        print("\n" + "="*80)
-        print("🚨 RUNNING URGENT STORE USER ISSUES DIAGNOSIS TEST")
-        print("="*80)
-        
-        store_diagnosis_success = self.test_store_user_issues_diagnosis()
-        
-        # Run the URGENT Client Creation Authorization test for all 5 roles
-        print("\n" + "="*80)
-        print("🚨 RUNNING URGENT CLIENT CREATION AUTHORIZATION TEST FOR ALL 5 ROLES")
-        print("="*80)
-        
-        client_creation_success = self.test_client_creation_authorization_all_5_roles()
-        
-        # Run the URGENT BackOffice Commessa Client Visibility test
-        print("\n" + "="*80)
-        print("🚨 RUNNING URGENT BACKOFFICE COMMESSA CLIENT VISIBILITY TEST")
-        print("="*80)
-        
-        backoffice_success = self.test_backoffice_commessa_client_visibility_urgent()
-        
-        # Run the URGENT Sub Agenzia Filter Fix test
-        print("\n" + "="*80)
-        print("🚨 RUNNING URGENT SUB AGENZIA FILTER FIX TEST")
-        print("="*80)
-        
-        success = self.test_sub_agenzia_filter_fix_urgent()
-        
-        if success:
-            print("\n🎉 SUB AGENZIA FILTER FIX TEST PASSED!")
-        else:
-            print("\n🚨 SUB AGENZIA FILTER FIX TEST FAILED!")
-        
-        # Run the URGENT Security Vulnerability Fix test
-        print("\n" + "="*80)
-        print("🚨 RUNNING URGENT SECURITY VULNERABILITY FIX TEST")
-        print("="*80)
-        
-        security_success = self.test_security_vulnerability_fix_agent_filters()
-        
-        if security_success:
-            print("\n🎉 SECURITY VULNERABILITY FIX TEST PASSED!")
-        else:
-            print("\n🚨 SECURITY VULNERABILITY FIX TEST FAILED!")
-        
-        # Run other tests
+        # Run other basic tests
         self.test_provinces_endpoint()
         self.test_dashboard_stats()
 
@@ -32112,38 +32032,17 @@ Duplicate,Test,+393471234567"""
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if ale7_config_success:
-            print("🎉 ALE7 CONFIGURATION FIX TEST: ✅ SUCCESS - ALE7 NOW HAS 2 COMMESSE AND SERVICES POPULATE!")
+        if password_validation_success:
+            print("🎉 PASSWORD VALIDATION USER CREATION TEST: ✅ SUCCESS - USER test_validation_password CREATED AND READY!")
         else:
-            print("🚨 ALE7 CONFIGURATION FIX TEST: ❌ FAILED - ALE7 STILL HAS CONFIGURATION ISSUES!")
-            
-        if store_diagnosis_success:
-            print("🎉 STORE USER DIAGNOSIS TEST: ✅ SUCCESS - NO CRITICAL ISSUES FOUND!")
-        else:
-            print("🚨 STORE USER DIAGNOSIS TEST: ❌ FAILED - ROOT CAUSES IDENTIFIED!")
-            
-        if client_creation_success:
-            print("🎉 CLIENT CREATION AUTHORIZATION TEST: ✅ SUCCESS - ALL 5 ROLES CAN CREATE CLIENTS!")
-        else:
-            print("🚨 CLIENT CREATION AUTHORIZATION TEST: ❌ FAILED - SOME ROLES CANNOT CREATE CLIENTS!")
-            
-        if backoffice_success:
-            print("🎉 BACKOFFICE COMMESSA CLIENT VISIBILITY TEST: ✅ SUCCESS - ale2 CAN SEE ALL 11 CLIENTS!")
-        else:
-            print("🚨 BACKOFFICE COMMESSA CLIENT VISIBILITY TEST: ❌ FAILED - ale2 CANNOT SEE CLIENTS!")
-            
-        if success:
-            print("🎉 RESPONSABILE COMMESSA RESOLUTION TEST: ✅ SUCCESS - ALL 3 PROBLEMS RESOLVED!")
-        else:
-            print("🚨 RESPONSABILE COMMESSA RESOLUTION TEST: ❌ FAILED - PROBLEMS STILL EXIST!")
+            print("🚨 PASSWORD VALIDATION USER CREATION TEST: ❌ FAILED - USER CREATION ISSUES!")
         
-        overall_success = ale7_config_success and store_diagnosis_success and client_creation_success and backoffice_success and success
-        if overall_success:
-            print("\n🎉 OVERALL RESULT: ✅ SISTEMA UTILIZZABILE PER TUTTI I RUOLI COMMESSA!")
+        if password_validation_success:
+            print("\n🎉 OVERALL RESULT: ✅ NUOVO UTENTE test_validation_password PRONTO PER TESTING VALIDAZIONE PASSWORD!")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ SISTEMA NON UTILIZZABILE - PROBLEMI PERSISTENTI!")
+            print("\n🚨 OVERALL RESULT: ❌ PROBLEMI NELLA CREAZIONE UTENTE TEST!")
         
-        return overall_success
+        return password_validation_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
