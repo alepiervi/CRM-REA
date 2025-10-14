@@ -12987,7 +12987,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         variant: "destructive",
       });
     }
-  }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy]);
+  }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy, clientiFilterServizi, clientiFilterSegmento, clientiFilterCommesse]);
 
   const fetchCommesse = async () => {
     try {
