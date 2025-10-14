@@ -9049,8 +9049,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         def map_segmento_display(segmento):
             mapping = {
                 "privato": "Privato",
-                "business": "Business", 
-                "residenziale": "Residenziale"
+                "business": "Business"
             }
             return mapping.get(segmento, segmento.replace("_", " ").title())
         
