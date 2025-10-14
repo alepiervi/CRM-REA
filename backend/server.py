@@ -3250,6 +3250,32 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
         return user_data
     return current_user
 
+@api_router.post("/auth/change-password")
+async def change_password(password_data: PasswordChange, current_user: User = Depends(get_current_user)):
+    """Change user password - required on first login"""
+    
+    # Verify current password
+    user_doc = await db.users.find_one({"username": current_user.username})
+    if not user_doc or not verify_password(password_data.current_password, user_doc["password_hash"]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+    
+    # Hash new password
+    hashed_password = get_password_hash(password_data.new_password)
+    
+    # Update password and clear password change requirement
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {
+            "password_hash": hashed_password,
+            "password_change_required": False  # Clear the requirement
+        }}
+    )
+    
+    return {"message": "Password changed successfully"}
+
 # User management endpoints
 @api_router.post("/users", response_model=User)
 async def create_user(user_data: UserCreate, current_user: User = Depends(get_current_user)):
