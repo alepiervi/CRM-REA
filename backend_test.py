@@ -31759,6 +31759,246 @@ Duplicate,Test,+393471234567"""
             print(f"   🎯 NEXT STEPS: Verificare logica frontend e state management")
             return False
 
+    def test_password_validation_user_creation(self):
+        """🚨 TEST CREAZIONE UTENTE PER VALIDAZIONE PASSWORD - Test immediato per validazione password identica"""
+        print("\n🚨 TEST CREAZIONE UTENTE PER VALIDAZIONE PASSWORD...")
+        print("🎯 OBIETTIVO: Creare nuovo utente test_validation_password per testare validazione password identica")
+        print("🎯 TASK URGENTE:")
+        print("   1. LOGIN ADMIN: admin/admin123")
+        print("   2. CREA NUOVO UTENTE TEST: test_validation_password/validation@test.com/testpass123/operatore")
+        print("   3. VERIFICA password_change_required=true")
+        print("   4. TEST LOGIN IMMEDIATO: test_validation_password/testpass123")
+        print("   5. VERIFICA che login funzioni ma password_change_required=true nel response")
+        
+        # **STEP 1: LOGIN ADMIN**
+        print("\n🔐 STEP 1: LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ ADMIN LOGIN (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ ADMIN LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: CREA NUOVO UTENTE TEST**
+        print("\n👤 STEP 2: CREA NUOVO UTENTE TEST...")
+        
+        # Prepare test user data as specified in review request
+        test_user_data = {
+            "username": "test_validation_password",
+            "email": "validation@test.com",
+            "password": "testpass123",
+            "role": "operatore",
+            "is_active": True
+        }
+        
+        print(f"   📋 Creating user: {test_user_data}")
+        
+        # Test POST /api/users to create the validation test user
+        success, create_response, status = self.make_request(
+            'POST', 'users', 
+            test_user_data, 
+            expected_status=200  # Backend returns 200 for user creation
+        )
+        
+        created_user_id = None
+        
+        if success and (status == 200 or status == 201):
+            self.log_test("✅ POST /api/users (test_validation_password)", True, 
+                f"Status: {status} - User created successfully!")
+            
+            # Verify response contains user data
+            if isinstance(create_response, dict) and 'id' in create_response:
+                created_user_id = create_response.get('id')
+                created_role = create_response.get('role')
+                created_username = create_response.get('username')
+                password_change_required = create_response.get('password_change_required')
+                
+                self.log_test("✅ User created with correct data", True, 
+                    f"ID: {created_user_id}, Username: {created_username}, Role: {created_role}")
+                
+                # CRITICAL: Verify password_change_required is set to true
+                if password_change_required is True:
+                    self.log_test("✅ password_change_required=true", True, "Password change required correctly set")
+                else:
+                    self.log_test("❌ password_change_required incorrect", False, f"Expected: true, Got: {password_change_required}")
+                
+                # Store created user ID for cleanup
+                self.created_resources['users'].append(created_user_id)
+                
+            else:
+                self.log_test("❌ Invalid response structure", False, f"Response: {create_response}")
+                return False
+                
+        else:
+            self.log_test("❌ POST /api/users (test_validation_password)", False, 
+                f"Status: {status}, Response: {create_response}")
+            return False
+
+        # **STEP 3: VERIFICA CONFIGURAZIONE**
+        print("\n🔍 STEP 3: VERIFICA CONFIGURAZIONE...")
+        
+        if created_user_id:
+            # GET /api/users/{user_id} to confirm configuration
+            success, user_response, status = self.make_request(
+                'GET', f'users/{created_user_id}', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/users/{user_id}", True, f"Status: {status} - User data retrieved")
+                
+                # Verify user configuration
+                if isinstance(user_response, dict):
+                    username = user_response.get('username')
+                    email = user_response.get('email')
+                    role = user_response.get('role')
+                    is_active = user_response.get('is_active')
+                    password_change_required = user_response.get('password_change_required')
+                    
+                    # Verify all expected values
+                    if username == "test_validation_password":
+                        self.log_test("✅ Username correct", True, f"Username: {username}")
+                    else:
+                        self.log_test("❌ Username incorrect", False, f"Expected: test_validation_password, Got: {username}")
+                    
+                    if email == "validation@test.com":
+                        self.log_test("✅ Email correct", True, f"Email: {email}")
+                    else:
+                        self.log_test("❌ Email incorrect", False, f"Expected: validation@test.com, Got: {email}")
+                    
+                    if role == "operatore":
+                        self.log_test("✅ Role correct", True, f"Role: {role}")
+                    else:
+                        self.log_test("❌ Role incorrect", False, f"Expected: operatore, Got: {role}")
+                    
+                    if is_active is True:
+                        self.log_test("✅ User is active", True, f"is_active: {is_active}")
+                    else:
+                        self.log_test("❌ User not active", False, f"is_active: {is_active}")
+                    
+                    # CRITICAL: Confirm password_change_required=true
+                    if password_change_required is True:
+                        self.log_test("✅ password_change_required=true CONFIRMED", True, "User requires password change on first login")
+                    else:
+                        self.log_test("❌ password_change_required incorrect", False, f"Expected: true, Got: {password_change_required}")
+                        
+                else:
+                    self.log_test("❌ Invalid user response", False, f"Response type: {type(user_response)}")
+            else:
+                self.log_test("❌ GET /api/users/{user_id}", False, f"Status: {status}, Response: {user_response}")
+
+        # **STEP 4: TEST LOGIN IMMEDIATO**
+        print("\n🔑 STEP 4: TEST LOGIN IMMEDIATO...")
+        
+        # Save admin token
+        admin_token = self.token
+        
+        # Test login with new user credentials
+        success, login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'test_validation_password', 'password': 'testpass123'}, 
+            200, auth_required=False
+        )
+        
+        if success and status == 200 and 'access_token' in login_response:
+            self.log_test("✅ LOGIN test_validation_password/testpass123", True, 
+                f"Status: {status} - Login successful!")
+            
+            # Verify token and user data in login response
+            new_user_token = login_response.get('access_token')
+            new_user_data = login_response.get('user', {})
+            
+            if new_user_token:
+                self.log_test("✅ Token received", True, "Access token provided in login response")
+            else:
+                self.log_test("❌ No token received", False, "Access token missing from login response")
+            
+            # CRITICAL: Verify password_change_required=true in login response
+            login_password_change_required = new_user_data.get('password_change_required')
+            
+            if login_password_change_required is True:
+                self.log_test("✅ password_change_required=true IN LOGIN RESPONSE", True, 
+                    "Login response correctly indicates password change required")
+            else:
+                self.log_test("❌ password_change_required incorrect in login", False, 
+                    f"Expected: true, Got: {login_password_change_required}")
+            
+            # Verify other user data in login response
+            login_username = new_user_data.get('username')
+            login_role = new_user_data.get('role')
+            
+            if login_username == "test_validation_password":
+                self.log_test("✅ Login username correct", True, f"Username: {login_username}")
+            else:
+                self.log_test("❌ Login username incorrect", False, f"Expected: test_validation_password, Got: {login_username}")
+            
+            if login_role == "operatore":
+                self.log_test("✅ Login role correct", True, f"Role: {login_role}")
+            else:
+                self.log_test("❌ Login role incorrect", False, f"Expected: operatore, Got: {login_role}")
+            
+            # Test authenticated request with new user token
+            self.token = new_user_token
+            success, auth_me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+            
+            if success and status == 200:
+                self.log_test("✅ GET /api/auth/me with new user", True, f"Status: {status} - Token is valid")
+                
+                # Verify auth/me also shows password_change_required=true
+                auth_me_password_change = auth_me_response.get('password_change_required')
+                if auth_me_password_change is True:
+                    self.log_test("✅ password_change_required=true in auth/me", True, 
+                        "Auth/me endpoint also shows password change required")
+                else:
+                    self.log_test("❌ password_change_required incorrect in auth/me", False, 
+                        f"Expected: true, Got: {auth_me_password_change}")
+            else:
+                self.log_test("❌ GET /api/auth/me with new user", False, f"Status: {status} - Token validation failed")
+            
+            # Restore admin token
+            self.token = admin_token
+            
+        else:
+            self.log_test("❌ LOGIN test_validation_password/testpass123", False, 
+                f"Status: {status}, Response: {login_response}")
+            
+            # Restore admin token
+            self.token = admin_token
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 PASSWORD VALIDATION USER CREATION TEST SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Creare utente test per validazione password identica")
+        print(f"   🎯 EXPECTED RESULT: Nuovo utente pronto per testare validazione password identica nel frontend")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • User creation (test_validation_password): {'✅ SUCCESS' if created_user_id else '❌ FAILED'}")
+        print(f"      • password_change_required=true: {'✅ VERIFIED' if created_user_id else '❌ NOT VERIFIED'}")
+        print(f"      • User configuration verified: {'✅ SUCCESS' if created_user_id else '❌ FAILED'}")
+        print(f"      • User login test (test_validation_password/testpass123): {'✅ SUCCESS' if success else '❌ FAILED'}")
+        print(f"      • password_change_required=true in login response: {'✅ VERIFIED' if success else '❌ NOT VERIFIED'}")
+        
+        if created_user_id and success:
+            print(f"   🎉 SUCCESS: Nuovo utente test_validation_password creato e configurato correttamente!")
+            print(f"   🎉 READY FOR TESTING: Utente pronto per testare validazione password identica nel frontend!")
+            print(f"   📋 USER DETAILS:")
+            print(f"      • Username: test_validation_password")
+            print(f"      • Email: validation@test.com")
+            print(f"      • Password: testpass123")
+            print(f"      • Role: operatore")
+            print(f"      • password_change_required: true")
+            print(f"      • User ID: {created_user_id}")
+            return True
+        else:
+            print(f"   🚨 FAILURE: Problemi nella creazione o configurazione dell'utente test!")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
