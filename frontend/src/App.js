@@ -12950,7 +12950,9 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     status_values: [],
     segmenti: [],
     sub_agenzie: [],
-    users: []
+    users: [],
+    servizi: [],       // NEW: Servizi filter options
+    commesse: []       // NEW: Commesse filter options
   });
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
