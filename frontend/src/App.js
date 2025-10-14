@@ -16189,6 +16189,12 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
         {/* CASCADING SELECTION FLOW */}
         {!showClientForm && (
           <div className="space-y-6">
+            {/* DEBUGGING: Area Manager Fix Status */}
+            {user?.role === 'area_manager' && (
+              <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded text-sm">
+                🚨 DEBUG: Area Manager Fix Attivo - Commesse: {cascadeCommesse?.length || 0} | User Commesse: {user?.commesse_autorizzate?.length || 0}
+              </div>
+            )}
             
             {/* STEP INDICATOR */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
