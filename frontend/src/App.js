@@ -16266,9 +16266,18 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   disabled={!Array.isArray(cascadeCommesse) || (!cascadeCommesse.length && (user?.role === 'responsabile_commessa' || user?.role === 'backoffice_commessa' || user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'agente_specializzato' || user?.role === 'operatore' || user?.role === 'responsabile_store' || user?.role === 'responsabile_presidi' || user?.role === 'store_assist' || user?.role === 'promoter_presidi'))}
                 >
                   <option value="">Seleziona Commessa...</option>
-                  {Array.isArray(cascadeCommesse) && cascadeCommesse.map(commessa => (
-                    <option key={commessa?.id || Math.random()} value={commessa?.id}>{commessa?.nome || 'Nome non disponibile'}</option>
-                  ))}
+                  {/* AREA MANAGER CRITICAL FIX: Use user.commesse_autorizzate as fallback */}
+                  {user?.role === 'area_manager' && (!Array.isArray(cascadeCommesse) || cascadeCommesse.length === 0) && Array.isArray(user?.commesse_autorizzate) ? (
+                    // Fallback: Show commesse directly from user authorization if cascade failed
+                    commesse.filter(c => user.commesse_autorizzate.includes(c.id)).map(commessa => (
+                      <option key={commessa?.id || Math.random()} value={commessa?.id}>{commessa?.nome || 'Nome non disponibile'}</option>
+                    ))
+                  ) : (
+                    // Normal cascade logic for all other cases
+                    Array.isArray(cascadeCommesse) && cascadeCommesse.map(commessa => (
+                      <option key={commessa?.id || Math.random()} value={commessa?.id}>{commessa?.nome || 'Nome non disponibile'}</option>
+                    ))
+                  )}
                 </select>
               </div>
 
