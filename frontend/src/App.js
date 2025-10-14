@@ -15515,8 +15515,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     
     // Now convert display name to backend enum
     const mappings = {
-      'Privato': 'privato',           // FIXED: Privato → privato (not residenziale)
-      'Residenziale': 'residenziale', // Keep for backward compatibility
+      'Privato': 'privato',           // FIXED: Privato → privato
+      'Business': 'business'          // Only Privato and Business supported
       'Business': 'business'
     };
     
