@@ -534,6 +534,123 @@ const AuthProvider = ({ children }) => {
   );
 };
 
+// Password Change Modal Component
+const PasswordChangeModal = () => {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { showPasswordChangeModal, changePassword } = useAuth();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "❌ Password non corrispondono",
+        description: "La nuova password e la conferma non coincidono",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "❌ Password troppo breve",
+        description: "La password deve essere di almeno 6 caratteri",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const result = await changePassword(currentPassword, newPassword);
+    setIsLoading(false);
+
+    if (result.success) {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  };
+
+  if (!showPasswordChangeModal) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">🔒 Cambio Password Richiesto</h2>
+          <p className="text-gray-600 mt-2">
+            Per motivi di sicurezza, devi cambiare la password al primo accesso.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Password Attuale *
+            </label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nuova Password *
+            </label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+              minLength={6}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Conferma Nuova Password *
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Cambiando...
+              </div>
+            ) : (
+              "Cambia Password"
+            )}
+          </button>
+        </form>
+
+        <p className="text-xs text-gray-500 mt-4 text-center">
+          La password deve essere di almeno 6 caratteri
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // Login Component
 const Login = () => {
   const [username, setUsername] = useState("");
