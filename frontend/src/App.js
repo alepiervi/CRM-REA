@@ -13618,6 +13618,60 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               </SelectContent>
             </Select>
           </div>
+
+          {/* NEW: Servizi Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Servizi</label>
+            <Select value={clientiFilterServizi} onValueChange={setClientiFilterServizi}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Tutti i Servizi" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i Servizi</SelectItem>
+                {filterOptions.servizi.map((servizio) => (
+                  <SelectItem key={servizio.value} value={servizio.value}>
+                    {servizio.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* NEW: Segmento Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Segmento</label>
+            <Select value={clientiFilterSegmento} onValueChange={setClientiFilterSegmento}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Tutti i Segmenti" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i Segmenti</SelectItem>
+                {filterOptions.segmenti.map((segmento) => (
+                  <SelectItem key={segmento.value} value={segmento.value}>
+                    {segmento.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* NEW: Commesse Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Commesse</label>
+            <Select value={clientiFilterCommesse} onValueChange={setClientiFilterCommesse}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Tutte le Commesse" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le Commesse</SelectItem>
+                {filterOptions.commesse.map((commessa) => (
+                  <SelectItem key={commessa.value} value={commessa.value}>
+                    {commessa.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Clear All Filters Button */}
