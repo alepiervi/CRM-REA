@@ -1426,8 +1426,8 @@ const Dashboard = () => {
     console.log("- Commesse array length:", commesse.length);
     console.log("- Commesse IDs:", commesse.map(c => c.id));
     
-    if (user.role === "responsabile_commessa") {
-      // Per responsabile commessa, mostra solo le commesse autorizzate
+    if (user.role === "responsabile_commessa" || user.role === "area_manager") {
+      // Per responsabile commessa e area manager, mostra solo le commesse autorizzate
       if (!user.commesse_autorizzate || user.commesse_autorizzate.length === 0) {
         console.log("❌ Nessuna commessa autorizzata trovata!");
         
@@ -1449,7 +1449,7 @@ const Dashboard = () => {
         user.commesse_autorizzate.includes(commessa.id)
       );
       
-      console.log("✅ Commesse filtrate:", filteredCommesse);
+      console.log(`✅ ${user.role} - Commesse filtrate:`, filteredCommesse);
       return filteredCommesse;
     } else {
       // Per admin e altri ruoli, mostra tutte le commesse
