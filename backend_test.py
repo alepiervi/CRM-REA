@@ -32010,12 +32010,12 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # Run the URGENT AREA MANAGER DROPDOWN DEBUG (HIGHEST PRIORITY)
+        # Run the URGENT PASSWORD VALIDATION USER CREATION TEST (HIGHEST PRIORITY)
         print("\n" + "="*80)
-        print("🚨 RUNNING URGENT AREA MANAGER DROPDOWN DEBUG - HIGHEST PRIORITY")
+        print("🚨 RUNNING URGENT PASSWORD VALIDATION USER CREATION TEST - HIGHEST PRIORITY")
         print("="*80)
         
-        area_manager_dropdown_success = self.test_area_manager_dropdown_debug_urgent()
+        password_validation_success = self.test_password_validation_user_creation()
         
         # Run the URGENT AREA MANAGER SERVIZI AUTORIZZATI UPDATE (HIGH PRIORITY)
         print("\n" + "="*80)
