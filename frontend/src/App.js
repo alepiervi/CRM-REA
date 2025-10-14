@@ -15616,7 +15616,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       setCascadeCommesse([]); // Will be loaded after sub agenzia selection
       // Fetch authorized sub agenzie for this user
       fetchCascadeSubAgenzie();
-    } else if (user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'agente_specializzato' || user?.role === 'operatore' || user?.role === 'responsabile_store' || user?.role === 'responsabile_presidi' || user?.role === 'store_assist' || user?.role === 'promoter_presidi' || user?.role === 'admin') {
+    } else if (user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'agente_specializzato' || user?.role === 'operatore' || user?.role === 'responsabile_store' || user?.role === 'responsabile_presidi' || user?.role === 'store_assist' || user?.role === 'promoter_presidi' || user?.role === 'area_manager' || user?.role === 'admin') {
       // SUB AGENZIA ROLES + AGENTI + ADMIN: Start with sub agenzia selection
       console.log("👔 Sub Agenzia Flow + Agenti + Admin: Starting with sub agenzia selection");
       setCascadeCommesse([]); // Will be loaded after sub agenzia selection
