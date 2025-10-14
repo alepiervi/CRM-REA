@@ -34086,14 +34086,14 @@ def main():
 if __name__ == "__main__":
     tester = CRMAPITester()
     
-    print("🚀 Starting CRM API Testing - AREA MANAGER BACKEND TESTING...")
+    print("🚀 Starting CRM API Testing - PASSWORD VALIDATION USER CREATION...")
     print(f"🌐 Base URL: {tester.base_url}")
-    print("🎯 FOCUS: Verifica completa implementazione ruolo Area Manager")
+    print("🎯 FOCUS: Creazione utente test per validazione password identica")
     print("=" * 80)
     
-    # Run Area Manager backend testing as requested
+    # Run password validation user creation test as requested
     try:
-        result = tester.test_area_manager_backend_complete()
+        result = tester.run_all_tests()
         
         # Print summary
         print(f"\n📊 Test Summary:")
