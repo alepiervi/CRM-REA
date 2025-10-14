@@ -30880,6 +30880,323 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_area_manager_cascading_debugging(self):
+        """🚨 AREA MANAGER CASCADING DEBUGGING - Verifica endpoint cascading per Area Manager esistente"""
+        print("\n🚨 AREA MANAGER CASCADING DEBUGGING - Verifica endpoint cascading per Area Manager esistente")
+        print("🎯 OBIETTIVO: Debugging specifico per verificare perché l'Area Manager test_area_manager_clienti non vede le commesse nel cascading frontend")
+        print("🎯 DEBUGGING SCOPE:")
+        print("   1. VERIFICA USER DATA: Login test_area_manager_clienti/admin123 e GET /api/auth/me")
+        print("   2. CASCADING ENDPOINTS DEBUGGING: GET /api/cascade/sub-agenzie e GET /api/cascade/commesse-by-subagenzia")
+        print("   3. FRONTEND INITIALIZATION CHECK: Verificare cosa succede quando frontend chiama gli endpoint")
+        print("   4. COMPARISON WITH ADMIN: Testare stessi endpoint con admin per confronto")
+        print("🎯 EXPECTED BEHAVIOR:")
+        print("   • GET /api/auth/me deve mostrare sub_agenzie_autorizzate: [array con 2 sub agenzie]")
+        print("   • GET /api/auth/me deve mostrare commesse_autorizzate: [array con commesse]")
+        print("   • GET /api/cascade/sub-agenzie deve ritornare 2 sub agenzie")
+        print("   • GET /api/cascade/commesse-by-subagenzia deve ritornare commesse per ogni sub agenzia")
+        
+        # **STEP 1: VERIFICA USER DATA - Area Manager Login**
+        print("\n🔐 STEP 1: VERIFICA USER DATA - Area Manager Login...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'test_area_manager_clienti', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            user_role = self.user_data.get('role')
+            user_id = self.user_data.get('id')
+            username = self.user_data.get('username')
+            
+            self.log_test("✅ AREA MANAGER LOGIN (test_area_manager_clienti/admin123)", True, 
+                f"Role: {user_role}, ID: {user_id}, Username: {username}")
+            
+            # Verify it's actually an Area Manager
+            if user_role == "area_manager":
+                self.log_test("✅ Role verification", True, f"Confirmed Area Manager role: {user_role}")
+            else:
+                self.log_test("❌ Role verification", False, f"Expected area_manager, got: {user_role}")
+                return False
+                
+        else:
+            self.log_test("❌ AREA MANAGER LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: GET /api/auth/me - Verifica sub_agenzie_autorizzate e commesse_autorizzate**
+        print("\n📋 STEP 2: GET /api/auth/me - Verifica sub_agenzie_autorizzate e commesse_autorizzate...")
+        
+        success, auth_me_response, status = self.make_request('GET', 'auth/me', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/auth/me SUCCESS", True, f"Status: {status}")
+            
+            # Extract critical fields
+            sub_agenzie_autorizzate = auth_me_response.get('sub_agenzie_autorizzate', [])
+            commesse_autorizzate = auth_me_response.get('commesse_autorizzate', [])
+            
+            print(f"\n   📊 AREA MANAGER AUTHORIZATION DATA:")
+            print(f"      • sub_agenzie_autorizzate: {sub_agenzie_autorizzate}")
+            print(f"      • commesse_autorizzate: {commesse_autorizzate}")
+            print(f"      • sub_agenzie count: {len(sub_agenzie_autorizzate)}")
+            print(f"      • commesse count: {len(commesse_autorizzate)}")
+            
+            # CRITICAL QUESTION 1: L'Area Manager ha sub_agenzie_autorizzate popolate?
+            if len(sub_agenzie_autorizzate) >= 2:
+                self.log_test("✅ CRITICAL: sub_agenzie_autorizzate popolate", True, 
+                    f"Found {len(sub_agenzie_autorizzate)} sub agenzie (expected ≥2)")
+            elif len(sub_agenzie_autorizzate) == 1:
+                self.log_test("⚠️ CRITICAL: sub_agenzie_autorizzate parziali", True, 
+                    f"Found {len(sub_agenzie_autorizzate)} sub agenzia (expected 2)")
+            else:
+                self.log_test("❌ CRITICAL: sub_agenzie_autorizzate VUOTE", False, 
+                    f"Found {len(sub_agenzie_autorizzate)} sub agenzie (expected 2)")
+            
+            # CRITICAL QUESTION 2: L'Area Manager ha commesse_autorizzate popolate?
+            if len(commesse_autorizzate) > 0:
+                self.log_test("✅ CRITICAL: commesse_autorizzate popolate", True, 
+                    f"Found {len(commesse_autorizzate)} commesse")
+            else:
+                self.log_test("❌ CRITICAL: commesse_autorizzate VUOTE", False, 
+                    f"Found {len(commesse_autorizzate)} commesse (expected >0)")
+            
+        else:
+            self.log_test("❌ GET /api/auth/me FAILED", False, f"Status: {status}, Response: {auth_me_response}")
+            return False
+
+        # **STEP 3: CASCADING ENDPOINTS DEBUGGING - GET /api/cascade/sub-agenzie**
+        print("\n🔗 STEP 3: CASCADING ENDPOINTS DEBUGGING - GET /api/cascade/sub-agenzie...")
+        
+        success, sub_agenzie_response, status = self.make_request('GET', 'cascade/sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/cascade/sub-agenzie SUCCESS", True, f"Status: {status}")
+            
+            if isinstance(sub_agenzie_response, list):
+                sub_agenzie_count = len(sub_agenzie_response)
+                
+                print(f"\n   📊 SUB AGENZIE CASCADING RESPONSE:")
+                print(f"      • Count: {sub_agenzie_count}")
+                
+                for i, sub_agenzia in enumerate(sub_agenzie_response):
+                    sa_id = sub_agenzia.get('id', 'NO_ID')
+                    sa_nome = sub_agenzia.get('nome', 'NO_NAME')
+                    print(f"      • Sub Agenzia {i+1}: {sa_nome} (ID: {sa_id})")
+                
+                # CRITICAL QUESTION 3: Gli endpoint di cascading ritornano dati non vuoti?
+                if sub_agenzie_count >= 2:
+                    self.log_test("✅ CRITICAL: Sub agenzie cascading ritorna 2+ sub agenzie", True, 
+                        f"Found {sub_agenzie_count} sub agenzie (expected 2)")
+                elif sub_agenzie_count == 1:
+                    self.log_test("⚠️ CRITICAL: Sub agenzie cascading ritorna 1 sub agenzia", True, 
+                        f"Found {sub_agenzie_count} sub agenzia (expected 2)")
+                else:
+                    self.log_test("❌ CRITICAL: Sub agenzie cascading VUOTO", False, 
+                        f"Found {sub_agenzie_count} sub agenzie (expected 2)")
+                    
+            else:
+                self.log_test("❌ Sub agenzie response not array", False, f"Response type: {type(sub_agenzie_response)}")
+                sub_agenzie_response = []
+                
+        else:
+            self.log_test("❌ GET /api/cascade/sub-agenzie FAILED", False, f"Status: {status}, Response: {sub_agenzie_response}")
+            sub_agenzie_response = []
+
+        # **STEP 4: GET /api/cascade/commesse-by-subagenzia per ogni sub agenzia**
+        print("\n🔗 STEP 4: GET /api/cascade/commesse-by-subagenzia per ogni sub agenzia...")
+        
+        total_commesse_found = 0
+        
+        if isinstance(sub_agenzie_response, list) and len(sub_agenzie_response) > 0:
+            for i, sub_agenzia in enumerate(sub_agenzie_response):
+                sa_id = sub_agenzia.get('id')
+                sa_nome = sub_agenzia.get('nome', 'Unknown')
+                
+                if sa_id:
+                    print(f"\n   Testing commesse for Sub Agenzia {i+1}: {sa_nome} (ID: {sa_id})")
+                    
+                    success, commesse_response, status = self.make_request(
+                        'GET', f'cascade/commesse-by-subagenzia/{sa_id}', expected_status=200)
+                    
+                    if success and status == 200:
+                        self.log_test(f"✅ GET /api/cascade/commesse-by-subagenzia/{sa_nome}", True, f"Status: {status}")
+                        
+                        if isinstance(commesse_response, list):
+                            commesse_count = len(commesse_response)
+                            total_commesse_found += commesse_count
+                            
+                            print(f"      • Commesse count: {commesse_count}")
+                            
+                            for j, commessa in enumerate(commesse_response):
+                                c_id = commessa.get('id', 'NO_ID')
+                                c_nome = commessa.get('nome', 'NO_NAME')
+                                print(f"      • Commessa {j+1}: {c_nome} (ID: {c_id})")
+                            
+                            if commesse_count > 0:
+                                self.log_test(f"✅ Sub Agenzia {sa_nome} ha commesse", True, 
+                                    f"Found {commesse_count} commesse")
+                            else:
+                                self.log_test(f"❌ Sub Agenzia {sa_nome} NESSUNA commessa", False, 
+                                    f"Found {commesse_count} commesse")
+                                    
+                        else:
+                            self.log_test(f"❌ Commesse response not array for {sa_nome}", False, 
+                                f"Response type: {type(commesse_response)}")
+                            
+                    else:
+                        self.log_test(f"❌ GET /api/cascade/commesse-by-subagenzia/{sa_nome} FAILED", False, 
+                            f"Status: {status}, Response: {commesse_response}")
+                else:
+                    self.log_test(f"❌ Sub Agenzia {i+1} missing ID", False, "Cannot test commesse without ID")
+        else:
+            self.log_test("❌ No sub agenzie to test commesse", False, "Cannot test commesse endpoints")
+
+        # **STEP 5: COMPARISON WITH ADMIN**
+        print("\n👑 STEP 5: COMPARISON WITH ADMIN...")
+        
+        # Save Area Manager token
+        area_manager_token = self.token
+        
+        # Login as admin
+        success, admin_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in admin_response:
+            self.token = admin_response['access_token']
+            admin_user_data = admin_response['user']
+            
+            self.log_test("✅ ADMIN LOGIN (admin/admin123)", True, f"Role: {admin_user_data['role']}")
+            
+            # Test admin GET /api/cascade/sub-agenzie
+            success, admin_sub_agenzie, status = self.make_request('GET', 'cascade/sub-agenzie', expected_status=200)
+            
+            if success and status == 200:
+                admin_sub_agenzie_count = len(admin_sub_agenzie) if isinstance(admin_sub_agenzie, list) else 0
+                self.log_test("✅ ADMIN GET /api/cascade/sub-agenzie", True, 
+                    f"Status: {status}, Count: {admin_sub_agenzie_count}")
+                
+                print(f"\n   📊 ADMIN vs AREA MANAGER COMPARISON:")
+                print(f"      • Admin sub agenzie: {admin_sub_agenzie_count}")
+                print(f"      • Area Manager sub agenzie: {len(sub_agenzie_response) if isinstance(sub_agenzie_response, list) else 0}")
+                
+                # Test admin commesse for first sub agenzia
+                if isinstance(admin_sub_agenzie, list) and len(admin_sub_agenzie) > 0:
+                    first_sa = admin_sub_agenzie[0]
+                    sa_id = first_sa.get('id')
+                    sa_nome = first_sa.get('nome', 'Unknown')
+                    
+                    success, admin_commesse, status = self.make_request(
+                        'GET', f'cascade/commesse-by-subagenzia/{sa_id}', expected_status=200)
+                    
+                    if success and status == 200:
+                        admin_commesse_count = len(admin_commesse) if isinstance(admin_commesse, list) else 0
+                        self.log_test(f"✅ ADMIN commesse for {sa_nome}", True, 
+                            f"Status: {status}, Count: {admin_commesse_count}")
+                        
+                        print(f"      • Admin commesse for {sa_nome}: {admin_commesse_count}")
+                        print(f"      • Area Manager total commesse found: {total_commesse_found}")
+                        
+            else:
+                self.log_test("❌ ADMIN GET /api/cascade/sub-agenzie FAILED", False, f"Status: {status}")
+                
+        else:
+            self.log_test("❌ ADMIN LOGIN FAILED", False, f"Status: {status}")
+
+        # Restore Area Manager token
+        self.token = area_manager_token
+
+        # **STEP 6: FRONTEND INITIALIZATION CHECK**
+        print("\n🖥️ STEP 6: FRONTEND INITIALIZATION CHECK...")
+        print("   Simulating frontend dropdown population sequence...")
+        
+        # Simulate the exact sequence frontend would use
+        print("\n   1. Frontend calls GET /api/cascade/sub-agenzie to populate sub agenzie dropdown...")
+        success, frontend_sub_agenzie, status = self.make_request('GET', 'cascade/sub-agenzie', expected_status=200)
+        
+        if success and isinstance(frontend_sub_agenzie, list):
+            self.log_test("✅ Frontend sub agenzie dropdown data", True, 
+                f"Would populate dropdown with {len(frontend_sub_agenzie)} options")
+            
+            print("\n   2. For each sub agenzia, frontend calls GET /api/cascade/commesse-by-subagenzia...")
+            
+            frontend_total_commesse = 0
+            for sub_agenzia in frontend_sub_agenzie:
+                sa_id = sub_agenzia.get('id')
+                sa_nome = sub_agenzia.get('nome', 'Unknown')
+                
+                if sa_id:
+                    success, frontend_commesse, status = self.make_request(
+                        'GET', f'cascade/commesse-by-subagenzia/{sa_id}', expected_status=200)
+                    
+                    if success and isinstance(frontend_commesse, list):
+                        commesse_count = len(frontend_commesse)
+                        frontend_total_commesse += commesse_count
+                        
+                        print(f"      • {sa_nome}: {commesse_count} commesse available for dropdown")
+                        
+            print(f"\n   📊 FRONTEND DROPDOWN SIMULATION RESULTS:")
+            print(f"      • Sub Agenzie dropdown options: {len(frontend_sub_agenzie)}")
+            print(f"      • Total Commesse available across all sub agenzie: {frontend_total_commesse}")
+            
+            if frontend_total_commesse > 0:
+                self.log_test("✅ Frontend would have commesse options", True, 
+                    f"Total {frontend_total_commesse} commesse available")
+            else:
+                self.log_test("❌ Frontend would have EMPTY commesse dropdown", False, 
+                    "No commesse available - this explains the empty dropdown!")
+                    
+        else:
+            self.log_test("❌ Frontend sub agenzie dropdown would be empty", False, 
+                "No sub agenzie data available")
+
+        # **FINAL DIAGNOSIS**
+        print(f"\n🎯 AREA MANAGER CASCADING DEBUGGING - FINAL DIAGNOSIS:")
+        print(f"   🎯 CRITICAL QUESTIONS ANSWERED:")
+        
+        # Question 1: L'Area Manager ha commesse_autorizzate popolate?
+        commesse_count = len(auth_me_response.get('commesse_autorizzate', [])) if 'auth_me_response' in locals() else 0
+        print(f"      1. Area Manager ha commesse_autorizzate popolate? {'✅ YES (' + str(commesse_count) + ')' if commesse_count > 0 else '❌ NO (0)'}")
+        
+        # Question 2: Gli endpoint di cascading ritornano dati per Area Manager?
+        sub_agenzie_count = len(sub_agenzie_response) if isinstance(sub_agenzie_response, list) else 0
+        print(f"      2. Endpoint cascading ritorna dati per Area Manager? {'✅ YES (' + str(sub_agenzie_count) + ' sub agenzie)' if sub_agenzie_count > 0 else '❌ NO (0 sub agenzie)'}")
+        
+        # Question 3: C'è un problema di autorizzazioni negli endpoint?
+        auth_problem = sub_agenzie_count == 0 or total_commesse_found == 0
+        print(f"      3. C'è un problema di autorizzazioni negli endpoint? {'❌ YES - authorization issue' if auth_problem else '✅ NO - authorization working'}")
+        
+        # Question 4: Le sub agenzie dell'Area Manager hanno commesse_autorizzate?
+        print(f"      4. Sub agenzie hanno commesse disponibili? {'✅ YES (' + str(total_commesse_found) + ' total)' if total_commesse_found > 0 else '❌ NO (0 total)'}")
+        
+        print(f"\n   🎯 ROOT CAUSE ANALYSIS:")
+        if commesse_count == 0:
+            print(f"      🚨 PRIMARY ISSUE: Area Manager user has EMPTY commesse_autorizzate field")
+            print(f"      🔧 SOLUTION: Populate commesse_autorizzate for test_area_manager_clienti user")
+        elif sub_agenzie_count == 0:
+            print(f"      🚨 PRIMARY ISSUE: Area Manager user has EMPTY sub_agenzie_autorizzate field")
+            print(f"      🔧 SOLUTION: Populate sub_agenzie_autorizzate for test_area_manager_clienti user")
+        elif total_commesse_found == 0:
+            print(f"      🚨 PRIMARY ISSUE: Sub agenzie assigned to Area Manager have NO commesse_autorizzate")
+            print(f"      🔧 SOLUTION: Ensure sub agenzie have commesse_autorizzate populated")
+        else:
+            print(f"      ✅ NO OBVIOUS BACKEND ISSUES: All data appears to be populated correctly")
+            print(f"      🤔 POSSIBLE FRONTEND ISSUE: Check frontend cascading logic and state management")
+        
+        print(f"\n   🎯 DEBUG FOCUS: Trovare perché il dropdown commesse è vuoto nel frontend")
+        if total_commesse_found > 0:
+            print(f"      ✅ Backend provides {total_commesse_found} commesse - frontend should populate dropdown")
+            print(f"      🔍 INVESTIGATE: Frontend cascading state management and API call sequence")
+        else:
+            print(f"      ❌ Backend provides 0 commesse - this explains empty frontend dropdown")
+            print(f"      🔍 INVESTIGATE: Area Manager user configuration and sub agenzia commesse assignment")
+        
+        # Return success if we found the root cause
+        return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
