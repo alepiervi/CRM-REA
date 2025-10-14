@@ -482,6 +482,35 @@ const AuthProvider = ({ children }) => {
     }
   };
 
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      await axios.post(`${API}/auth/change-password`, {
+        current_password: currentPassword,
+        new_password: newPassword
+      });
+      
+      // Update user data to reflect password change
+      const updatedUser = { ...user, password_change_required: false };
+      setUser(updatedUser);
+      setShowPasswordChangeModal(false);
+      
+      toast({
+        title: "✅ Password cambiata con successo",
+        description: "La tua password è stata aggiornata.",
+        variant: "default"
+      });
+      
+      return { success: true };
+    } catch (error) {
+      toast({
+        title: "❌ Errore cambio password",
+        description: error.response?.data?.detail || "Errore durante il cambio password",
+        variant: "destructive"
+      });
+      return { success: false };
+    }
+  };
+
   return (
     <AuthContext.Provider 
       value={{ 
@@ -494,7 +523,10 @@ const AuthProvider = ({ children }) => {
         showSessionWarning: showSessionWarning || false,
         timeLeft: timeLeft || 0,
         extendSession: extendSession || (() => {}),
-        stopCountdown: stopCountdown || (() => {})
+        stopCountdown: stopCountdown || (() => {}),
+        showPasswordChangeModal,
+        setShowPasswordChangeModal,
+        changePassword
       }}
     >
       {children}
