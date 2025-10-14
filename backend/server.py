@@ -9013,6 +9013,12 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 sub_agenzie_query["id"] = current_user.sub_agenzia_id
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}
+        elif current_user.role == UserRole.AREA_MANAGER:
+            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+                # Area Manager sees all their assigned sub agenzie
+                sub_agenzie_query["id"] = {"$in": current_user.sub_agenzie_autorizzate}
+            else:
+                sub_agenzie_query = {"_id": {"$exists": False}}
         # Admin sees all sub agenzie
         
         sub_agenzie_cursor = db.sub_agenzie.find(sub_agenzie_query)
