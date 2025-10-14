@@ -32624,14 +32624,14 @@ def main():
 if __name__ == "__main__":
     tester = CRMAPITester()
     
-    print("🚀 Starting CRM API Testing - ALE7 POST-RESTART VERIFICATION...")
+    print("🚀 Starting CRM API Testing - AREA MANAGER BACKEND TESTING...")
     print(f"🌐 Base URL: {tester.base_url}")
-    print("🎯 FOCUS: Verifica immediata post-restart servizi - ale7 cascading authorization")
+    print("🎯 FOCUS: Verifica completa implementazione ruolo Area Manager")
     print("=" * 80)
     
-    # Run immediate ale7 post-restart verification as requested
+    # Run Area Manager backend testing as requested
     try:
-        result = tester.test_ale7_post_restart_verification_immediate()
+        result = tester.test_area_manager_backend_complete()
         
         # Print summary
         print(f"\n📊 Test Summary:")
