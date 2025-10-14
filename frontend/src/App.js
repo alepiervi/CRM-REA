@@ -15770,59 +15770,6 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     }
   };
 
-  const fetchAreaManagerCommesse = async () => {
-    try {
-      console.log("🌍 AREA MANAGER: Fetching all authorized sub agenzie and their commesse");
-      
-      // First fetch authorized sub agenzie
-      const subAgenzieResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/sub-agenzie`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      const authorizedSubAgenzie = subAgenzieResponse.data || [];
-      console.log("🌍 AREA MANAGER: Got authorized sub agenzie:", authorizedSubAgenzie);
-      setCascadeSubAgenzie(authorizedSubAgenzie);
-      
-      // Now fetch commesse from each sub agenzia
-      const allCommesse = [];
-      const commesseMap = new Map(); // To avoid duplicates
-      
-      for (const subAgenzia of authorizedSubAgenzie) {
-        try {
-          console.log(`🌍 AREA MANAGER: Fetching commesse for sub agenzia ${subAgenzia.nome} (${subAgenzia.id})`);
-          const commesseResponse = await axios.get(
-            `${process.env.REACT_APP_BACKEND_URL}/api/cascade/commesse-by-subagenzia/${subAgenzia.id}`, 
-            {
-              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            }
-          );
-          
-          const subAgenziaCommesse = commesseResponse.data || [];
-          console.log(`🌍 AREA MANAGER: Got ${subAgenziaCommesse.length} commesse for ${subAgenzia.nome}`);
-          
-          // Add commesse to map to avoid duplicates
-          subAgenziaCommesse.forEach(commessa => {
-            if (commessa && commessa.id && !commesseMap.has(commessa.id)) {
-              commesseMap.set(commessa.id, commessa);
-            }
-          });
-        } catch (error) {
-          console.error(`❌ AREA MANAGER: Error fetching commesse for sub agenzia ${subAgenzia.id}:`, error);
-        }
-      }
-      
-      // Convert map to array
-      const uniqueCommesse = Array.from(commesseMap.values());
-      console.log(`🌍 AREA MANAGER: Total unique commesse found: ${uniqueCommesse.length}`);
-      setCascadeCommesse(uniqueCommesse);
-      
-    } catch (error) {
-      console.error("❌ AREA MANAGER: Error in fetchAreaManagerCommesse:", error);
-      setCascadeSubAgenzie([]);
-      setCascadeCommesse([]);
-    }
-  };
-
   // ===== CASCADE HANDLERS =====
   
   const handleSubAgenziaSelect = async (subAgenziaId) => {
