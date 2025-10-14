@@ -2751,7 +2751,7 @@ const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
 
   return (
     <Dialog open={!!lead} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Users className="w-5 h-5" />
@@ -3076,7 +3076,7 @@ const CreateLeadModal = ({ onClose, onSuccess, units, customFields }) => {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Crea Nuovo Lead</DialogTitle>
           <DialogDescription>
@@ -5728,7 +5728,7 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse, servizi }) => {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifica Unit</DialogTitle>
           <DialogDescription>
@@ -14994,7 +14994,7 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsa
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nuova Sub Agenzia</DialogTitle>
         </DialogHeader>
@@ -15256,7 +15256,7 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifica Sub Agenzia</DialogTitle>
           <DialogDescription>
@@ -16589,7 +16589,7 @@ const ImportClientiModal = ({ isOpen, onClose, commesse, subAgenzie, selectedCom
         onClose();
       }
     }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Upload className="w-5 h-5" />
@@ -17183,7 +17183,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Edit className="w-5 h-5 text-blue-600" />
