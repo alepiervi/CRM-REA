@@ -5487,7 +5487,7 @@ const UnitsManagement = ({ selectedUnit }) => {
                   </div>
                   
                   {/* Action Buttons */}
-                  <div className="flex space-x-2 pt-3 border-t">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-3 border-t">
                     <Button
                       size="sm"
                       variant="outline"
