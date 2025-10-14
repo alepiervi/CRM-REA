@@ -31494,6 +31494,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # Run the URGENT AREA MANAGER SERVIZI AUTORIZZATI UPDATE (HIGHEST PRIORITY)
+        print("\n" + "="*80)
+        print("🚨 RUNNING URGENT AREA MANAGER SERVIZI AUTORIZZATI UPDATE - HIGHEST PRIORITY")
+        print("="*80)
+        
+        area_manager_update_success = self.test_area_manager_servizi_autorizzati_update_urgent()
+        
         # Run the AREA MANAGER CASCADING DEBUGGING (MAIN FOCUS)
         print("\n" + "="*80)
         print("🚨 RUNNING AREA MANAGER CASCADING DEBUGGING - MAIN FOCUS")
