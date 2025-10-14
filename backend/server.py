@@ -8956,7 +8956,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         status_values = list(set(status_from_clients + common_status))
         
         # Get ALL segmenti available
-        segmenti_values = ["privato", "business", "residenziale"]
+        segmenti_values = ["privato", "business"]
         
         # Get ALL sub agenzie from sub_agenzie collection (filtered by user permissions)
         sub_agenzie_query = {}
