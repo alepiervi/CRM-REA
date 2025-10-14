@@ -541,6 +541,7 @@ const PasswordChangeModal = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { showPasswordChangeModal, changePassword } = useAuth();
+  const { toast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
