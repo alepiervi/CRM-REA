@@ -8324,7 +8324,7 @@ async def delete_offerta(
 async def get_segmenti(current_user: User = Depends(get_current_user)):
     """Get available segmenti"""
     return [
-        {"value": "residenziale", "label": "Residenziale"},
+        {"value": "privato", "label": "Privato"},
         {"value": "business", "label": "Business"}
     ]
 
