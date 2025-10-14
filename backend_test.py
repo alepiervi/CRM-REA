@@ -31208,6 +31208,13 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
+        # Run the AREA MANAGER CASCADING DEBUGGING (MAIN FOCUS)
+        print("\n" + "="*80)
+        print("🚨 RUNNING AREA MANAGER CASCADING DEBUGGING - MAIN FOCUS")
+        print("="*80)
+        
+        area_manager_debug_success = self.test_area_manager_cascading_debugging()
+        
         # Run the AREA MANAGER CLIENT CREATION AND CASCADING TESTING
         print("\n" + "="*80)
         print("🚨 RUNNING AREA MANAGER CLIENT CREATION AND CASCADING TESTING")
