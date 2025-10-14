@@ -13133,6 +13133,19 @@ async def get_cascade_sub_agenzie(
                 "is_active": True
             }).to_list(length=None)
             
+        elif current_user.role == "area_manager":
+            # Area Manager: sees multiple assigned sub agenzie
+            user_sub_agenzie = getattr(current_user, 'sub_agenzie_autorizzate', [])
+            if not user_sub_agenzie:
+                logging.info("📭 CASCADE: No sub_agenzie_autorizzate for Area Manager, returning empty")
+                return []
+                
+            logging.info(f"🌍 CASCADE: Area Manager authorized sub agenzie: {user_sub_agenzie}")
+            sub_agenzie_docs = await db.sub_agenzie.find({
+                "id": {"$in": user_sub_agenzie},
+                "is_active": True
+            }).to_list(length=None)
+            
         else:
             # Other roles: check if they have specific sub_agenzia_id assigned
             if current_user.sub_agenzia_id:
