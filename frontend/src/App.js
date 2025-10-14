@@ -12939,6 +12939,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [clientiFilterTipologia, setClientiFilterTipologia] = useState('all');
   const [clientiFilterSubAgenzia, setClientiFilterSubAgenzia] = useState('all');
   const [clientiFilterCreatedBy, setClientiFilterCreatedBy] = useState('all');
+  // NEW: Additional filter states
+  const [clientiFilterServizi, setClientiFilterServizi] = useState('all');
+  const [clientiFilterSegmento, setClientiFilterSegmento] = useState('all');
+  const [clientiFilterCommesse, setClientiFilterCommesse] = useState('all');
   const [users, setUsers] = useState([]);
   // Dynamic filter options
   const [filterOptions, setFilterOptions] = useState({
