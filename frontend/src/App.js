@@ -4001,7 +4001,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
               {serviziDisponibili.length > 0 ? (
                 <div>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {serviziDisponibili.map((servizio) => (
                         <div key={servizio.id} className="flex items-center space-x-2">
                           <Checkbox
@@ -4038,7 +4038,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
               <div className="col-span-2">
                 <Label>Commesse Autorizzate *</Label>
                 <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {commesse.map((commessa) => (
                       <div key={commessa.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -4078,7 +4078,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                         </div>
                         
                         {serviziCommessa.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {serviziCommessa.map((servizio) => (
                               <div key={servizio.id} className="flex items-center space-x-2">
                                 <Checkbox
@@ -4148,7 +4148,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                   <div className="col-span-2">
                     <Label>Commesse Autorizzate *</Label>
                     <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {commesseDisponibili.map((commessa) => (
                           <div key={commessa.id} className="flex items-center space-x-2">
                             <Checkbox
@@ -4175,7 +4175,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                 <div className="col-span-2">
                   <Label>Servizi Autorizzati *</Label>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {servizi.map((servizio) => (
                         <div key={servizio.id} className="flex items-center space-x-2">
                           <Checkbox
@@ -4230,7 +4230,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
               <div className="col-span-2">
                 <Label>Sub Agenzie Autorizzate *</Label>
                 <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {subAgenzie.map((subAgenzia) => (
                       <div key={subAgenzia.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -4255,7 +4255,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                 <div className="col-span-2">
                   <Label>Commesse Autorizzate *</Label>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {commesse.map((commessa) => (
                         <div key={commessa.id} className="flex items-center space-x-2">
                           <Checkbox
@@ -4296,7 +4296,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                         </div>
                         
                         {serviziCommessa.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {serviziCommessa.map((servizio) => (
                               <div key={servizio.id} className="flex items-center space-x-2">
                                 <Checkbox
@@ -4354,7 +4354,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                 <div className="col-span-2">
                   <Label>Commesse Autorizzate *</Label>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {commesse.map((commessa) => (
                         <div key={commessa.id} className="flex items-center space-x-2">
                           <Checkbox
@@ -4395,7 +4395,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                         </div>
                         
                         {serviziCommessa.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {serviziCommessa.map((servizio) => (
                               <div key={servizio.id} className="flex items-center space-x-2">
                                 <Checkbox
@@ -4947,7 +4947,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
               {serviziDisponibili.length > 0 ? (
                 <>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {serviziDisponibili.map((servizio) => (
                         <div key={servizio.id} className="flex items-center space-x-2">
                           <Checkbox
@@ -5029,7 +5029,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
               <div className="col-span-2">
                 <Label>Commesse Autorizzate *</Label>
                 <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {commesse.map((commessa) => (
                       <div key={commessa.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -5069,7 +5069,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                         </div>
                         
                         {serviziCommessa.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {serviziCommessa.map((servizio) => (
                               <div key={servizio.id} className="flex items-center space-x-2">
                                 <Checkbox
@@ -5131,7 +5131,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
               <div className="col-span-2">
                 <Label>Sub Agenzie Autorizzate *</Label>
                 <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {subAgenzie.map((subAgenzia) => (
                       <div key={subAgenzia.id} className="flex items-center space-x-2">
                         <Checkbox
@@ -5156,7 +5156,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                 <div className="col-span-2">
                   <Label>Commesse Autorizzate *</Label>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {commesse.map((commessa) => (
                         <div key={commessa.id} className="flex items-center space-x-2">
                           <Checkbox
@@ -5197,7 +5197,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                         </div>
                         
                         {serviziCommessa.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {serviziCommessa.map((servizio) => (
                               <div key={servizio.id} className="flex items-center space-x-2">
                                 <Checkbox
@@ -5255,7 +5255,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                 <div className="col-span-2">
                   <Label>Commesse Autorizzate *</Label>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {commesse.map((commessa) => (
                         <div key={commessa.id} className="flex items-center space-x-2">
                           <Checkbox
@@ -5296,7 +5296,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                         </div>
                         
                         {serviziCommessa.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {serviziCommessa.map((servizio) => (
                               <div key={servizio.id} className="flex items-center space-x-2">
                                 <Checkbox
@@ -8092,7 +8092,7 @@ const DocumentsManagement = ({
                 </div>
                 
                 {permissions.canDownload && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <Button
                       variant="outline"
                       size="sm"
