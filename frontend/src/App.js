@@ -17227,7 +17227,22 @@ const App = () => {
           />
           <Route
             path="/dashboard"
-            element={user ? <Dashboard /> : <Navigate to="/login" replace />}
+            element={
+              user ? (
+                user.password_change_required ? (
+                  <div className="flex items-center justify-center min-h-screen bg-gray-100">
+                    <div className="text-center">
+                      <h2 className="text-2xl font-bold text-gray-800 mb-4">🔒 Cambio Password Richiesto</h2>
+                      <p className="text-gray-600">Devi cambiare la password prima di accedere al sistema.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <Dashboard />
+                )
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
           />
         </Routes>
       </BrowserRouter>
