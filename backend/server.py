@@ -3290,6 +3290,7 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
     user_dict.setdefault("commesse_autorizzate", [])
     user_dict.setdefault("servizi_autorizzati", [])
     user_dict.setdefault("sub_agenzie_autorizzate", [])
+    user_dict.setdefault("password_change_required", True)  # Force password change on first login
     user_dict.setdefault("created_at", datetime.now(timezone.utc))
     user_dict.setdefault("last_login", None)
     
