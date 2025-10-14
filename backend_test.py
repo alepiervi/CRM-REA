@@ -31770,9 +31770,16 @@ Duplicate,Test,+393471234567"""
             print("❌ Authentication failed - stopping tests")
             return False
         
-        # Run the URGENT AREA MANAGER SERVIZI AUTORIZZATI UPDATE (HIGHEST PRIORITY)
+        # Run the URGENT AREA MANAGER DROPDOWN DEBUG (HIGHEST PRIORITY)
         print("\n" + "="*80)
-        print("🚨 RUNNING URGENT AREA MANAGER SERVIZI AUTORIZZATI UPDATE - HIGHEST PRIORITY")
+        print("🚨 RUNNING URGENT AREA MANAGER DROPDOWN DEBUG - HIGHEST PRIORITY")
+        print("="*80)
+        
+        area_manager_dropdown_success = self.test_area_manager_dropdown_debug_urgent()
+        
+        # Run the URGENT AREA MANAGER SERVIZI AUTORIZZATI UPDATE (HIGH PRIORITY)
+        print("\n" + "="*80)
+        print("🚨 RUNNING URGENT AREA MANAGER SERVIZI AUTORIZZATI UPDATE - HIGH PRIORITY")
         print("="*80)
         
         area_manager_update_success = self.test_area_manager_servizi_autorizzati_update_urgent()
