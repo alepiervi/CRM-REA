@@ -1744,7 +1744,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row overflow-hidden">
+    <div className="h-screen bg-slate-50 flex flex-col lg:flex-row overflow-hidden">
       {/* Professional Session Warning Banner */}
       {showSessionWarning && timeLeft > 0 && (
         <div data-session-banner className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 border-b-4 border-orange-600 text-white shadow-2xl animate-in slide-in-from-top duration-700 ease-out">
