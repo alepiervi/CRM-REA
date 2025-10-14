@@ -9175,8 +9175,7 @@ async def export_clienti_excel(
             segmento = cliente.get("segmento", "")
             enriched_cliente["segmento_display"] = {
                 "privato": "Privato",
-                "business": "Business",
-                "residenziale": "Residenziale"
+                "business": "Business"
             }.get(segmento, segmento)
             
             # Get offerta name
