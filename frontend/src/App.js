@@ -3913,6 +3913,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                   <SelectItem value="store_assist">Store Assistant</SelectItem>
                   <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
                   <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
+                  <SelectItem value="area_manager">Area Manager</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -4850,6 +4851,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                   <SelectItem value="store_assist">Store Assistant</SelectItem>
                   <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
                   <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
+                  <SelectItem value="area_manager">Area Manager</SelectItem>
                 </SelectContent>
               </Select>
             </div>
