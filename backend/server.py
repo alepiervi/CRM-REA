@@ -8989,6 +8989,40 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         users_cursor = db.users.find(users_query)
         users = await users_cursor.to_list(length=None)
         
+        # NEW: Get servizi authorized for current user
+        servizi_query = {}
+        if current_user.role == UserRole.ADMIN:
+            # Admin sees all servizi
+            pass  
+        else:
+            # Other users see only servizi they are authorized for
+            if hasattr(current_user, 'servizi_autorizzati') and current_user.servizi_autorizzati:
+                servizi_query["id"] = {"$in": current_user.servizi_autorizzati}
+            elif hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                # If no direct servizi authorization, get servizi from authorized commesse
+                servizi_query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+        
+        servizi_cursor = db.servizi.find(servizi_query)
+        servizi = await servizi_cursor.to_list(length=None)
+        
+        # NEW: Get commesse authorized for current user
+        commesse_query = {}
+        if current_user.role == UserRole.ADMIN:
+            # Admin sees all commesse
+            pass
+        else:
+            # Other users see only their authorized commesse
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                commesse_query["id"] = {"$in": current_user.commesse_autorizzate}
+            elif hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
+                # Get commesse from user's sub agenzia
+                sub_agenzia = await db.sub_agenzie.find_one({"id": current_user.sub_agenzia_id})
+                if sub_agenzia and sub_agenzia.get("commesse_autorizzate"):
+                    commesse_query["id"] = {"$in": sub_agenzia["commesse_autorizzate"]}
+        
+        commesse_cursor = db.commesse.find(commesse_query)
+        commesse = await commesse_cursor.to_list(length=None)
+        
         # Map enum values to display names
         def map_tipologia_display(tipologia):
             mapping = {
