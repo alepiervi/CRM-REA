@@ -503,7 +503,7 @@ const Login = () => {
     if (result.success) {
       toast({
         title: "Accesso effettuato",
-        description: "Benvenuto in ELON!",
+        description: "Benvenuto in Nureal!",
       });
       // Redirect to dashboard after successful login
       navigate("/dashboard");
