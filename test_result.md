@@ -125,11 +125,11 @@ FOCUS: Testing completo implementazione Area Manager."
 backend:
   - task: "Area Manager Backend Implementation - Complete Authorization System"
     implemented: true
-    working: "needs_retesting"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
