@@ -478,7 +478,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Area Manager Backend Implementation - Complete Authorization System"
     - "Area Manager Frontend Implementation - Complete UI Integration"
   stuck_tasks: []
   test_all: false
