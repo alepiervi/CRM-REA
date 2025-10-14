@@ -12814,7 +12814,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
                 </div>
                 
                 {/* Actions */}
-                <div className="flex justify-end space-x-2 mt-4">
+                <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
                   <Button
                     variant="outline"
                     size="sm"
