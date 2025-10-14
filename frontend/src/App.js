@@ -13056,6 +13056,16 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       if (clientiFilterCreatedBy && clientiFilterCreatedBy !== 'all') {
         params.append('created_by', clientiFilterCreatedBy);
       }
+      // NEW: Additional filters
+      if (clientiFilterServizi && clientiFilterServizi !== 'all') {
+        params.append('servizio_id', clientiFilterServizi);
+      }
+      if (clientiFilterSegmento && clientiFilterSegmento !== 'all') {
+        params.append('segmento', clientiFilterSegmento);
+      }
+      if (clientiFilterCommesse && clientiFilterCommesse !== 'all') {
+        params.append('commessa_id_filter', clientiFilterCommesse);
+      }
       params.append('limit', '50');
       
       const response = await axios.get(`${API}/clienti?${params}`);
