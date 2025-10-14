@@ -2050,7 +2050,7 @@ const Dashboard = () => {
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {getNavItems().map((item) => (
             <button
               key={item.id}
