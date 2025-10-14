@@ -196,6 +196,7 @@ class User(BaseModel):
     sub_agenzie_autorizzate: List[str] = []  # IDs sub agenzie per responsabile/backoffice sub agenzia
     can_view_analytics: bool = False      # Se può vedere analytics (responsabili sì, backoffice no)
     entity_management: EntityType = EntityType.CLIENTI  # NEW: what entities this user can manage
+    password_change_required: bool = True  # NEW: Force password change on first login
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login: Optional[datetime] = None
 
