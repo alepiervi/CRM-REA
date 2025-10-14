@@ -546,6 +546,15 @@ const PasswordChangeModal = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (currentPassword === newPassword) {
+      toast({
+        title: "❌ Password identica",
+        description: "La nuova password deve essere diversa da quella attuale",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       toast({
         title: "❌ Password non corrispondono",
