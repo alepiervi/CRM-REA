@@ -13684,6 +13684,9 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               setClientiFilterTipologia('all');
               setClientiFilterStatus('all');
               setClientiFilterCreatedBy('all');
+              setClientiFilterServizi('all');
+              setClientiFilterSegmento('all');
+              setClientiFilterCommesse('all');
             }}
           >
             <X className="w-4 h-4 mr-2" />
