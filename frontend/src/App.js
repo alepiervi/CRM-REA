@@ -15704,6 +15704,36 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   
   const fetchAreaManagerCommesse = async () => {
     try {
+      console.log("🚨 AREA MANAGER DEBUG: START fetchAreaManagerCommesse");
+      console.log("🚨 User role:", user?.role);
+      console.log("🚨 User commesse_autorizzate:", user?.commesse_autorizzate);
+      
+      // CRITICAL: Use user.commesse_autorizzate directly as fallback
+      if (user?.commesse_autorizzate && user.commesse_autorizzate.length > 0) {
+        console.log("🚨 AREA MANAGER CRITICAL FIX: Using user.commesse_autorizzate directly");
+        
+        // Get all commesse from backend and filter by user authorized
+        const allCommesseResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/commesse`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        const allCommesse = allCommesseResponse.data || [];
+        const authorizedCommesse = allCommesse.filter(commessa => 
+          user.commesse_autorizzate.includes(commessa.id)
+        );
+        
+        console.log("🚨 AREA MANAGER CRITICAL FIX: Authorized commesse:", authorizedCommesse);
+        setCascadeCommesse(authorizedCommesse);
+        
+        // Also set sub agenzie for completeness
+        const subAgenzieResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/sub-agenzie`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setCascadeSubAgenzie(subAgenzieResponse.data || []);
+        
+        return; // Exit early with direct method
+      }
+      
       console.log("🌍 AREA MANAGER: Fetching all authorized sub agenzie and their commesse");
       
       // First fetch authorized sub agenzie
