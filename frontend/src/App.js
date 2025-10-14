@@ -653,9 +653,10 @@ const PasswordChangeModal = () => {
           </button>
         </form>
 
-        <p className="text-xs text-gray-500 mt-4 text-center">
-          La password deve essere di almeno 6 caratteri
-        </p>
+        <div className="text-xs text-gray-500 mt-4 space-y-1">
+          <p>• La password deve essere di almeno 6 caratteri</p>
+          <p>• La nuova password deve essere diversa da quella attuale</p>
+        </div>
       </div>
     </div>
   );
