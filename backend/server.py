@@ -3410,6 +3410,33 @@ async def update_user(user_id: str, user_update: UserUpdate, current_user: User 
             else:
                 update_data[field] = value
     
+    # Area Manager: Auto-populate commesse_autorizzate from assigned sub agenzie (if sub_agenzie_autorizzate changed or role changed to area_manager)
+    is_becoming_area_manager = user_update.role == UserRole.AREA_MANAGER
+    is_already_area_manager = user.get("role") == "area_manager"
+    sub_agenzie_changed = user_update.sub_agenzie_autorizzate is not None
+    
+    if (is_becoming_area_manager or is_already_area_manager) and sub_agenzie_changed:
+        # Get sub agenzie to use (new ones if provided, otherwise existing ones)
+        sub_agenzie_to_use = user_update.sub_agenzie_autorizzate if user_update.sub_agenzie_autorizzate is not None else user.get("sub_agenzie_autorizzate", [])
+        
+        if sub_agenzie_to_use:
+            # Get all commesse from assigned sub agenzie
+            sub_agenzie_docs = await db.sub_agenzie.find({
+                "id": {"$in": sub_agenzie_to_use},
+                "is_active": True
+            }).to_list(length=None)
+            
+            # Collect all commesse from these sub agenzie
+            all_commesse = set()
+            for sub_agenzia in sub_agenzie_docs:
+                sub_commesse = sub_agenzia.get("commesse_autorizzate", [])
+                all_commesse.update(sub_commesse)
+            
+            update_data["commesse_autorizzate"] = list(all_commesse)
+            print(f"🌍 AREA MANAGER UPDATE AUTO-POPULATION: User {user_id} - Sub Agenzie: {len(sub_agenzie_to_use)}, Commesse: {len(update_data['commesse_autorizzate'])}")
+        else:
+            update_data["commesse_autorizzate"] = []
+    
     # Update user
     await db.users.update_one(
         {"id": user_id},
