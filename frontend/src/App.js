@@ -16459,45 +16459,6 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
           {/* I campi Commessa, Servizio, Tipologia e Segmento sono già stati selezionati nel flusso cascading sopra */}
           {/* Questi dati vengono utilizzati automaticamente dai selectedData */}
-          
-          {/* DEBUG: Area Manager Check */}
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm">
-            🔍 DEBUG SUB AGENZIA: Role={user?.role} | Sub Agenzie Auth={user?.sub_agenzie_autorizzate?.length || 0} | Cascade Sub Agenzie={cascadeSubAgenzie?.length || 0}
-          </div>
-
-          {/* AREA MANAGER: Campo Sub Agenzia obbligatorio */}
-          {user?.role === 'area_manager' && (
-            <div className="bg-green-100 border-2 border-green-500 p-4 rounded">
-              <Label htmlFor="sub_agenzia_id" className="text-lg font-bold">Sub Agenzia * (Area Manager)</Label>
-              <select 
-                id="sub_agenzia_id"
-                value={formData.sub_agenzia_id || ''} 
-                onChange={(e) => setFormData({...formData, sub_agenzia_id: e.target.value})}
-                className="w-full p-3 border-2 border-green-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-lg"
-                required
-              >
-                <option value="">Seleziona Sub Agenzia...</option>
-                {user?.sub_agenzie_autorizzate?.map(subAgenziaId => {
-                  const subAgenzia = cascadeSubAgenzie.find(sa => sa.id === subAgenziaId);
-                  return subAgenzia ? (
-                    <option key={subAgenzia.id} value={subAgenzia.id}>
-                      {subAgenzia.nome}
-                    </option>
-                  ) : null;
-                })}
-              </select>
-              <p className="text-sm text-red-600 mt-1 font-bold">
-                🚨 CAMPO AREA MANAGER: Seleziona a quale sub agenzia assegnare questo cliente
-              </p>
-            </div>
-          )}
-
-          {/* FALLBACK: Se non Area Manager */}
-          {user?.role !== 'area_manager' && (
-            <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded text-sm">
-              ℹ️ Campo Sub Agenzia non visibile - Ruolo utente: {user?.role}
-            </div>
-          )}
 
           <div>
             <Label htmlFor="indirizzo">Indirizzo</Label>
