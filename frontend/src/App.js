@@ -402,6 +402,22 @@ const AuthProvider = ({ children }) => {
       localStorage.setItem("token", access_token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
       
+      // Check if user needs to change password
+      if (userData.password_change_required) {
+        setShowPasswordChangeModal(true);
+        toast({
+          title: "⚠️ Cambio Password Richiesto", 
+          description: "Devi cambiare la password al primo accesso per motivi di sicurezza.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "✅ Login effettuato con successo", 
+          description: `Benvenuto/a, ${userData.username}!`,
+          variant: "default"
+        });
+      }
+      
       return { success: true };
     } catch (error) {
       console.error("Login error:", error);
