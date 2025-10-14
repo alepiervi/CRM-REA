@@ -9032,6 +9032,15 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
             # Agenti, Operatori, Store e Presidi see only themselves
             users_query["id"] = current_user.id
+        elif current_user.role == UserRole.AREA_MANAGER:
+            # Area Manager sees all users from their assigned sub agenzie
+            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+                users_query["$or"] = [
+                    {"sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}},
+                    {"id": current_user.id}  # Include self
+                ]
+            else:
+                users_query["id"] = current_user.id
         else:
             # Other non-admin users see limited set based on their organization
             if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
