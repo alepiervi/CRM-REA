@@ -8758,6 +8758,25 @@ async def get_clienti(
         print(f"🏪 {current_user.role} ACCESS: User {current_user.username} - only own clients")
         query["created_by"] = current_user.id
         
+    elif current_user.role == UserRole.AREA_MANAGER:
+        # Area Manager: vede clienti delle sub agenzie a lui assegnate
+        print(f"🌍 AREA_MANAGER ACCESS: User {current_user.username} - clients from assigned sub agenzie")
+        if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+            # Trova tutti gli utenti delle sub agenzie autorizzate
+            users_in_sub_agenzie = await db.users.find({
+                "sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}
+            }).to_list(length=None)
+            
+            user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
+            user_ids_in_sub_agenzie.append(current_user.id)  # Include anche i propri clienti
+            
+            query["created_by"] = {"$in": user_ids_in_sub_agenzie}
+            print(f"🔍 AREA_MANAGER: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(current_user.sub_agenzie_autorizzate)} sub agenzie")
+        else:
+            # Se non ha sub agenzie assegnate, vede solo i propri clienti
+            print(f"⚠️ AREA_MANAGER: No sub agenzie assigned - only own clients")
+            query["created_by"] = current_user.id
+        
     else:
         # Ruolo non riconosciuto - accesso negato
         print(f"❌ UNKNOWN ROLE: {current_user.role} for user {current_user.username}")
