@@ -16387,6 +16387,34 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                 <div><strong>Segmento:</strong> {cascadeSegmenti?.find(s => s.id === selectedData.segmento)?.nome}</div>
               </div>
             </div>
+
+          {/* AREA MANAGER: Campo Sub Agenzia all'inizio */}
+          {user?.role === 'area_manager' && (
+            <div>
+              <Label htmlFor="sub_agenzia_id" className="text-base font-semibold">Sub Agenzia *</Label>
+              <select 
+                id="sub_agenzia_id"
+                value={formData.sub_agenzia_id || ''} 
+                onChange={(e) => setFormData({...formData, sub_agenzia_id: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                required
+              >
+                <option value="">Seleziona Sub Agenzia...</option>
+                {user?.sub_agenzie_autorizzate?.map(subAgenziaId => {
+                  const subAgenzia = cascadeSubAgenzie.find(sa => sa.id === subAgenziaId);
+                  return subAgenzia ? (
+                    <option key={subAgenzia.id} value={subAgenzia.id}>
+                      {subAgenzia.nome}
+                    </option>
+                  ) : null;
+                })}
+              </select>
+              <p className="text-sm text-gray-600 mt-1">
+                Seleziona a quale sub agenzia assegnare questo cliente
+              </p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="nome">Nome *</Label>
