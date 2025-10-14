@@ -16960,7 +16960,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                 <div>
                   <Label className="text-sm font-medium text-slate-600">Segmento</Label>
                   <p className="text-sm">
-                    {cliente.segmento === 'residenziale' ? 'Residenziale' : 
+                    {cliente.segmento === 'privato' ? 'Privato' : 
                      cliente.segmento === 'business' ? 'Business' : 
                      cliente.segmento}
                   </p>
