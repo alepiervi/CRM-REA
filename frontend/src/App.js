@@ -2068,7 +2068,7 @@ const Dashboard = () => {
         </nav>
 
         {/* Desktop Hierarchical Selectors - Moved here to prevent navigation interference */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50">
+        <div className="p-3 border-t border-slate-200 bg-slate-50 flex-shrink-0">
           {/* 1. SELETTORE COMMESSA */}
           <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
             1. Seleziona Commessa
