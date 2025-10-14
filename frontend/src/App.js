@@ -17623,7 +17623,7 @@ const ArubaDriveConfigModal = ({
               <p>• Puoi testare la connessione dopo aver salvato</p>
             </div>
 
-            <div className="flex space-x-2 pt-4">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
               <Button
                 type="submit"
                 disabled={isLoading}
