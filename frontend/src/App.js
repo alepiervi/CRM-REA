@@ -15680,7 +15680,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       fetchCascadeSubAgenzie();
     } else if (user?.role === 'area_manager') {
       // AREA MANAGER: Load sub agenzie and then auto-populate all commesse
-      console.log("🌍 Area Manager Flow: Loading all authorized sub agenzie and their commesse");
+      console.log("🚨 Area Manager Flow: CHIAMATA fetchAreaManagerCommesse per utente:", user?.username);
+      console.log("🚨 User data completo:", user);
       setCascadeCommesse([]); 
       fetchAreaManagerCommesse();
     } else if (user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'agente_specializzato' || user?.role === 'operatore' || user?.role === 'responsabile_store' || user?.role === 'responsabile_presidi' || user?.role === 'store_assist' || user?.role === 'promoter_presidi' || user?.role === 'admin') {
