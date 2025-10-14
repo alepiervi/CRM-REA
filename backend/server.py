@@ -3929,7 +3929,6 @@ async def upload_document(
                         elif enum_type == "segmento":
                             mappings = {
                                 'privato': 'Privato',
-                                'residenziale': 'Residenziale',
                                 'business': 'Business'
                             }
                         else:
