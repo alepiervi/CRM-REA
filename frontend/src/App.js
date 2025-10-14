@@ -2253,7 +2253,7 @@ const Dashboard = () => {
         </header>
 
         {/* 🎯 RESPONSIVE: Page Content */}
-        <main className="flex-1 overflow-y-auto mobile-container p-3 md:p-6">
+        <main className="flex-1 h-screen overflow-y-auto mobile-container p-3 md:p-6">
           {renderTabContent()}
         </main>
       </div>
