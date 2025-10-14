@@ -15517,7 +15517,6 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     const mappings = {
       'Privato': 'privato',           // FIXED: Privato → privato
       'Business': 'business'          // Only Privato and Business supported
-      'Business': 'business'
     };
     
     const enumValue = mappings[displayValue] || displayValue;
