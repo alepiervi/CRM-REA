@@ -8691,6 +8691,9 @@ async def get_clienti(
     status: Optional[str] = None,
     tipologia_contratto: Optional[str] = None,
     created_by: Optional[str] = None,
+    servizio_id: Optional[str] = None,  # NEW: Servizi filter
+    segmento: Optional[str] = None,     # NEW: Segmento filter  
+    commessa_id_filter: Optional[str] = None,  # NEW: Commesse filter (separate from main commessa_id)
     limit: int = 100,
     current_user: User = Depends(get_current_user)
 ):
