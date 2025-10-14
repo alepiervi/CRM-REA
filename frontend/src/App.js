@@ -9778,7 +9778,7 @@ const LeadQualificationManagement = ({ selectedUnit, units }) => {
                   <div className="text-xs text-slate-500">
                     Stadio attuale: {getStageLabel(selectedLead.stage)}
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                     <Button type="submit" className="flex-1">
                       <MessageCircle className="w-4 h-4 mr-2" />
                       Invia Risposta
