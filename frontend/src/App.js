@@ -2599,7 +2599,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                       </div>
                     </div>
                     
-                    <div className="flex space-x-2 pt-2 border-t border-slate-100">
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-2 border-t border-slate-100">
                       <Button
                         onClick={() => setSelectedLead(lead)}
                         variant="outline"
