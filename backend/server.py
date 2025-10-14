@@ -142,6 +142,8 @@ class UserRole(str, Enum):
     STORE_ASSIST = "store_assist"
     RESPONSABILE_PRESIDI = "responsabile_presidi"
     PROMOTER_PRESIDI = "promoter_presidi"
+    # Ruolo Area Manager
+    AREA_MANAGER = "area_manager"
 
 class LeadStatus(str, Enum):
     NUOVO = "nuovo"
