@@ -129,6 +129,7 @@ const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const { toast } = useToast(); // Add toast hook
   // REDESIGNED: Single-timer session management state
   const [showSessionWarning, setShowSessionWarning] = useState(false);
