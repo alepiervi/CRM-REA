@@ -12674,7 +12674,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
                   
                   {/* Commesse autorizzate */}
                   {unit.commesse_autorizzate && unit.commesse_autorizzate.length > 0 && (
-                    <div className="mt-4">
+                    <div className="mt-3">
                       <Label className="text-xs text-slate-500 mb-2 block">Commesse Autorizzate</Label>
                       <div className="flex flex-wrap gap-1">
                         {unit.commesse_autorizzate.map((commessaId) => {
