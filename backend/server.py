@@ -3414,7 +3414,7 @@ async def update_user(user_id: str, user_update: UserUpdate, current_user: User 
             else:
                 update_data[field] = value
     
-    # Area Manager: Auto-populate commesse_autorizzate from assigned sub agenzie (if sub_agenzie_autorizzate changed or role changed to area_manager)
+    # Area Manager: Auto-populate commesse_autorizzate and servizi_autorizzati from assigned sub agenzie (if sub_agenzie_autorizzate changed or role changed to area_manager)
     is_becoming_area_manager = user_update.role == UserRole.AREA_MANAGER
     is_already_area_manager = user.get("role") == "area_manager"
     sub_agenzie_changed = user_update.sub_agenzie_autorizzate is not None
@@ -3424,22 +3424,27 @@ async def update_user(user_id: str, user_update: UserUpdate, current_user: User 
         sub_agenzie_to_use = user_update.sub_agenzie_autorizzate if user_update.sub_agenzie_autorizzate is not None else user.get("sub_agenzie_autorizzate", [])
         
         if sub_agenzie_to_use:
-            # Get all commesse from assigned sub agenzie
+            # Get all commesse and servizi from assigned sub agenzie
             sub_agenzie_docs = await db.sub_agenzie.find({
                 "id": {"$in": sub_agenzie_to_use},
                 "is_active": True
             }).to_list(length=None)
             
-            # Collect all commesse from these sub agenzie
+            # Collect all commesse and servizi from these sub agenzie
             all_commesse = set()
+            all_servizi = set()
             for sub_agenzia in sub_agenzie_docs:
                 sub_commesse = sub_agenzia.get("commesse_autorizzate", [])
+                sub_servizi = sub_agenzia.get("servizi_autorizzati", [])
                 all_commesse.update(sub_commesse)
+                all_servizi.update(sub_servizi)
             
             update_data["commesse_autorizzate"] = list(all_commesse)
-            print(f"🌍 AREA MANAGER UPDATE AUTO-POPULATION: User {user_id} - Sub Agenzie: {len(sub_agenzie_to_use)}, Commesse: {len(update_data['commesse_autorizzate'])}")
+            update_data["servizi_autorizzati"] = list(all_servizi)
+            print(f"🌍 AREA MANAGER UPDATE AUTO-POPULATION: User {user_id} - Sub Agenzie: {len(sub_agenzie_to_use)}, Commesse: {len(update_data['commesse_autorizzate'])}, Servizi: {len(update_data['servizi_autorizzati'])}")
         else:
             update_data["commesse_autorizzate"] = []
+            update_data["servizi_autorizzati"] = []
     
     # Update user
     await db.users.update_one(
