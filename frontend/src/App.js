@@ -17230,6 +17230,7 @@ const App = () => {
           />
         </Routes>
       </BrowserRouter>
+      <PasswordChangeModal />
       <Toaster />
     </div>
   );
