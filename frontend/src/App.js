@@ -13546,7 +13546,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       {/* Advanced Filters Section */}
       <div className="bg-blue-50 p-4 rounded-lg border">
         <h3 className="text-lg font-semibold mb-4 text-gray-800">Filtri Avanzati</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-3 md:gap-4">
           {/* Sub Agenzia Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Sub Agenzia</label>
