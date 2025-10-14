@@ -8329,7 +8329,7 @@ const DocumentsManagement = ({
               )}
               
               {/* Action Buttons */}
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <Button
                   onClick={() => {
                     if (selectedEntity && uploadFiles.length > 0) {
