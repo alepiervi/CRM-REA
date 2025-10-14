@@ -3262,6 +3262,13 @@ async def change_password(password_data: PasswordChange, current_user: User = De
             detail="Current password is incorrect"
         )
     
+    # Check that new password is different from current password
+    if password_data.current_password == password_data.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La nuova password deve essere diversa da quella attuale"
+        )
+    
     # Hash new password
     hashed_password = get_password_hash(password_data.new_password)
     
