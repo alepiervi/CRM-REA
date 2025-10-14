@@ -3287,22 +3287,26 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
     user_dict.setdefault("created_at", datetime.now(timezone.utc))
     user_dict.setdefault("last_login", None)
     
-    # Area Manager: Auto-populate commesse_autorizzate from assigned sub agenzie
+    # Area Manager: Auto-populate commesse_autorizzate and servizi_autorizzati from assigned sub agenzie
     if user_data.role == UserRole.AREA_MANAGER and user_dict.get("sub_agenzie_autorizzate"):
-        # Get all commesse from assigned sub agenzie
+        # Get all commesse and servizi from assigned sub agenzie
         sub_agenzie_docs = await db.sub_agenzie.find({
             "id": {"$in": user_dict["sub_agenzie_autorizzate"]},
             "is_active": True
         }).to_list(length=None)
         
-        # Collect all commesse from these sub agenzie
+        # Collect all commesse and servizi from these sub agenzie
         all_commesse = set()
+        all_servizi = set()
         for sub_agenzia in sub_agenzie_docs:
             sub_commesse = sub_agenzia.get("commesse_autorizzate", [])
+            sub_servizi = sub_agenzia.get("servizi_autorizzati", [])
             all_commesse.update(sub_commesse)
+            all_servizi.update(sub_servizi)
         
         user_dict["commesse_autorizzate"] = list(all_commesse)
-        print(f"🌍 AREA MANAGER AUTO-POPULATION: {user_data.username} - Sub Agenzie: {len(user_dict['sub_agenzie_autorizzate'])}, Commesse: {len(user_dict['commesse_autorizzate'])}")
+        user_dict["servizi_autorizzati"] = list(all_servizi)
+        print(f"🌍 AREA MANAGER AUTO-POPULATION: {user_data.username} - Sub Agenzie: {len(user_dict['sub_agenzie_autorizzate'])}, Commesse: {len(user_dict['commesse_autorizzate'])}, Servizi: {len(user_dict['servizi_autorizzati'])}")
     
     # Create User object and save to database
     user_obj = User(**user_dict)
