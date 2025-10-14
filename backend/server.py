@@ -8799,6 +8799,17 @@ async def get_clienti(
     if created_by:
         query["created_by"] = created_by
     
+    # NEW: Additional filter parameters
+    if servizio_id and servizio_id != "all":
+        query["servizio_id"] = servizio_id
+    
+    if segmento and segmento != "all":
+        query["segmento"] = segmento
+    
+    if commessa_id_filter and commessa_id_filter != "all":
+        # Use separate field name to avoid conflict with main commessa_id parameter
+        query["commessa_id"] = commessa_id_filter
+    
     print(f"🔍 FINAL QUERY for {current_user.role}: {query}")
     
     clienti = await db.clienti.find(query).sort("created_at", -1).limit(limit).to_list(length=None)
