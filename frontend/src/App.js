@@ -2077,7 +2077,7 @@ const Dashboard = () => {
             )}
           </Label>
           <Select value={selectedCommessa} onValueChange={handleCommessaChange}>
-            <SelectTrigger className="mt-1">
+            <SelectTrigger className="mt-1 h-8 text-sm">
               <SelectValue placeholder="Seleziona commessa" />
             </SelectTrigger>
             <SelectContent>
@@ -2103,7 +2103,7 @@ const Dashboard = () => {
                 )}
               </Label>
               <Select value={selectedServizio || "all"} onValueChange={handleServizioChange}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 h-8 text-sm">
                   <SelectValue placeholder="Seleziona servizio" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2132,7 +2132,7 @@ const Dashboard = () => {
                 )}
               </Label>
               <Select value={selectedTipologiaContratto} onValueChange={handleTipologiaContrattoChange}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 h-8 text-sm">
                   <SelectValue placeholder="Seleziona tipologia" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2162,7 +2162,7 @@ const Dashboard = () => {
                 )}
               </Label>
               <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 h-8 text-sm">
                   <SelectValue placeholder="Seleziona unit" />
                 </SelectTrigger>
                 <SelectContent>
