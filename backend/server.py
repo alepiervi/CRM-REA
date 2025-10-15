@@ -967,7 +967,7 @@ class Cliente(BaseModel):
     servizio_id: Optional[str] = None
     tipologia_contratto: Optional[TipologiaContratto] = None
     segmento: Optional[Segmento] = None
-    status: ClienteStatus = ClienteStatus.NUOVO
+    status: ClienteStatus = ClienteStatus.DA_INSERIRE
     dati_aggiuntivi: Dict[str, Any] = {}
     created_by: str
     assigned_to: Optional[str] = None
