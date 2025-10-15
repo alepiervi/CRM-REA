@@ -18090,27 +18090,39 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const [segmenti, setSegmenti] = useState([]);
   const [offertaInfo, setOffertaInfo] = useState(null);
 
-  // Funzioni per rilevare i campi condizionali basati sulla tipologia contratto originale
+  // Funzioni per rilevare i campi condizionali basati sui dati del cliente esistente
   const isEditEnergiaFastweb = () => {
-    const tipologia = cliente?.tipologia_contratto?.toLowerCase() || '';
-    return tipologia.includes('energia') || 
-           tipologia.includes('fotovoltaico') || 
-           tipologia.includes('solare') || 
-           tipologia.includes('pod') ||
-           tipologia.includes('luce') ||
-           tipologia.includes('gas');
+    // Controlla se il cliente ha già campi Energia Fastweb popolati
+    if (cliente?.codice_pod) return true;
+    
+    // Oppure controlla dal nome della tipologia se disponibile
+    const tipologiaName = editTipologieContratto.find(t => t.value === cliente?.tipologia_contratto)?.label?.toLowerCase() || '';
+    return tipologiaName.includes('energia') || 
+           tipologiaName.includes('fotovoltaico') || 
+           tipologiaName.includes('solare') || 
+           tipologiaName.includes('pod') ||
+           tipologiaName.includes('luce') ||
+           tipologiaName.includes('gas');
   };
 
   const isEditTelefoniaFastweb = () => {
-    const tipologia = cliente?.tipologia_contratto?.toLowerCase() || '';
-    return tipologia.includes('telefonia') || 
-           tipologia.includes('mobile') ||
-           tipologia.includes('sim') ||
-           tipologia.includes('voce') ||
-           tipologia.includes('dati');
+    // Controlla se il cliente ha già campi Telefonia popolati
+    if (cliente?.tecnologia || cliente?.codice_migrazione || cliente?.gestore) return true;
+    
+    // Oppure controlla dal nome della tipologia se disponibile
+    const tipologiaName = editTipologieContratto.find(t => t.value === cliente?.tipologia_contratto)?.label?.toLowerCase() || '';
+    return tipologiaName.includes('telefonia') || 
+           tipologiaName.includes('mobile') ||
+           tipologiaName.includes('sim') ||
+           tipologiaName.includes('voce') ||
+           tipologiaName.includes('dati');
   };
 
   const isEditBusinessSegment = () => {
+    // Controlla se il cliente ha già Partita IVA (indicatore di Business)
+    if (cliente?.partita_iva) return true;
+    
+    // Oppure controlla dal segmento
     const segmento = cliente?.segmento?.toLowerCase() || '';
     return segmento === 'business';
   };
