@@ -1013,15 +1013,11 @@ class ClienteCreate(BaseModel):
     note: Optional[str] = None
     
     # Campi sistema esistenti
-    cap: Optional[str] = None
-    codice_fiscale: Optional[str] = None
-    partita_iva: Optional[str] = None
     commessa_id: str
     sub_agenzia_id: str
     servizio_id: Optional[str] = None
-    tipologia_contratto: Optional[TipologiaContratto] = None  # Nuovo campo
-    segmento: Optional[Segmento] = None  # Nuovo campo
-    note: Optional[str] = None
+    tipologia_contratto: Optional[TipologiaContratto] = None
+    segmento: Optional[Segmento] = None
     dati_aggiuntivi: Dict[str, Any] = {}
 
 class ClienteUpdate(BaseModel):
