@@ -32249,21 +32249,12 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Core authentication tests
-        if not self.test_authentication():
-            print("❌ Authentication failed - stopping tests")
-            return False
-        
-        # Run the URGENT PASSWORD VALIDATION USER CREATION TEST (HIGHEST PRIORITY)
+        # Run the URGENT DATABASE CLIENTI CLEANUP TEST (HIGHEST PRIORITY)
         print("\n" + "="*80)
-        print("🚨 RUNNING URGENT PASSWORD VALIDATION USER CREATION TEST - HIGHEST PRIORITY")
+        print("🚨 RUNNING URGENT DATABASE CLIENTI CLEANUP TEST - HIGHEST PRIORITY")
         print("="*80)
         
-        password_validation_success = self.test_password_validation_user_creation()
-        
-        # Run other basic tests
-        self.test_provinces_endpoint()
-        self.test_dashboard_stats()
+        database_cleanup_success = self.test_database_clienti_cleanup_urgent()
 
         # Print final summary
         print("\n" + "=" * 80)
