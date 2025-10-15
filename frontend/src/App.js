@@ -18039,6 +18039,32 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const [servizi, setServizi] = useState([]);
   const [editTipologieContratto, setEditTipologieContratto] = useState([]);
   const [segmenti, setSegmenti] = useState([]);
+  const [offertaInfo, setOffertaInfo] = useState(null);
+
+  // Funzioni per rilevare i campi condizionali basati sulla tipologia contratto originale
+  const isEditEnergiaFastweb = () => {
+    const tipologia = cliente?.tipologia_contratto?.toLowerCase() || '';
+    return tipologia.includes('energia') || 
+           tipologia.includes('fotovoltaico') || 
+           tipologia.includes('solare') || 
+           tipologia.includes('pod') ||
+           tipologia.includes('luce') ||
+           tipologia.includes('gas');
+  };
+
+  const isEditTelefoniaFastweb = () => {
+    const tipologia = cliente?.tipologia_contratto?.toLowerCase() || '';
+    return tipologia.includes('telefonia') || 
+           tipologia.includes('mobile') ||
+           tipologia.includes('sim') ||
+           tipologia.includes('voce') ||
+           tipologia.includes('dati');
+  };
+
+  const isEditBusinessSegment = () => {
+    const segmento = cliente?.segmento?.toLowerCase() || '';
+    return segmento === 'business';
+  };
 
   useEffect(() => {
     if (formData.commessa_id) {
