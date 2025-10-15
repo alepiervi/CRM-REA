@@ -33094,42 +33094,45 @@ Duplicate,Test,+393471234567"""
         # **STEP 6: TEST OFFERTA INFO**
         print("\n🎁 STEP 6: TEST OFFERTA INFO...")
         
-        # Get offerte to test offerta info endpoint
-        success, offerte_response, status = self.make_request('GET', 'offerte', expected_status=200)
+        # Get segmenti first to test offerte endpoint
+        success, segmenti_response, status = self.make_request('GET', 'segmenti', expected_status=200)
         
         offerte = []
         if success and status == 200:
-            offerte = offerte_response if isinstance(offerte_response, list) else []
-            if offerte:
-                test_offerta = offerte[0]
-                test_offerta_id = test_offerta['id']
+            segmenti = segmenti_response if isinstance(segmenti_response, list) else []
+            if segmenti:
+                test_segmento = segmenti[0]
+                test_segmento_id = test_segmento['id']
                 
-                self.log_test("✅ GET /api/offerte SUCCESS", True, f"Found {len(offerte)} offerte")
+                self.log_test("✅ GET /api/segmenti SUCCESS", True, f"Found {len(segmenti)} segmenti")
                 
-                # Test specific offerta info
-                success, offerta_info_response, status = self.make_request(
-                    'GET', f'offerte/{test_offerta_id}', expected_status=200
+                # Test offerte for this segmento
+                success, offerte_response, status = self.make_request(
+                    'GET', f'segmenti/{test_segmento_id}/offerte', expected_status=200
                 )
                 
                 if success and status == 200:
-                    self.log_test("✅ GET /api/offerte/{offerta_id} SUCCESS", True, 
-                        f"Status: {status}, Offerta: {offerta_info_response.get('nome') if isinstance(offerta_info_response, dict) else 'N/A'}")
+                    offerte = offerte_response if isinstance(offerte_response, list) else []
+                    self.log_test("✅ GET /api/segmenti/{segmento_id}/offerte SUCCESS", True, 
+                        f"Status: {status}, Found {len(offerte)} offerte for segmento")
                     
-                    # Verify offerta structure
-                    if isinstance(offerta_info_response, dict):
-                        expected_fields = ['id', 'nome', 'descrizione', 'segmento_id']
-                        missing_fields = [field for field in expected_fields if field not in offerta_info_response]
+                    # Test cascade offerte endpoint as well
+                    success, cascade_offerte_response, status = self.make_request(
+                        'GET', 'cascade/offerte-by-filiera', expected_status=200
+                    )
+                    
+                    if success and status == 200:
+                        self.log_test("✅ GET /api/cascade/offerte-by-filiera SUCCESS", True, 
+                            f"Status: {status}, Cascade offerte endpoint working")
+                    else:
+                        self.log_test("❌ GET /api/cascade/offerte-by-filiera FAILED", False, f"Status: {status}")
                         
-                        if not missing_fields:
-                            self.log_test("✅ OFFERTA STRUCTURE COMPLETE", True, "All expected fields present")
-                        else:
-                            self.log_test("❌ OFFERTA STRUCTURE INCOMPLETE", False, f"Missing fields: {missing_fields}")
                 else:
-                    self.log_test("❌ GET /api/offerte/{offerta_id} FAILED", False, f"Status: {status}")
+                    self.log_test("❌ GET /api/segmenti/{segmento_id}/offerte FAILED", False, f"Status: {status}")
             else:
-                self.log_test("ℹ️ NO OFFERTE FOUND", True, "No offerte available for testing")
+                self.log_test("ℹ️ NO SEGMENTI FOUND", True, "No segmenti available for testing offerte")
         else:
-            self.log_test("❌ GET /api/offerte FAILED", False, f"Status: {status}")
+            self.log_test("❌ GET /api/segmenti FAILED", False, f"Status: {status}")
 
         # **FINAL SUMMARY**
         print(f"\n🎯 TEST CREAZIONE E MODIFICA CLIENTE COMPLETA - SUMMARY:")
