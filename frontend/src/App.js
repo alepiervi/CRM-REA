@@ -18321,7 +18321,22 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Mappa i campi frontend ai nomi backend
+    const backendData = {
+      ...formData,
+      telefono2: formData.cellulare  // Mappa cellulare -> telefono2
+    };
+    
+    // Rimuovi il campo cellulare dal backend data
+    delete backendData.cellulare;
+    
+    console.log("🔄 Submitting edit cliente data:", {
+      frontend_data: formData,
+      backend_data: backendData
+    });
+    
+    onSubmit(backendData);
   };
 
   // handleChange già definito sopra
