@@ -11,7 +11,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, ValidationError
 from typing import List, Optional, Dict, Any
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from enum import Enum
