@@ -559,6 +559,21 @@ backend:
           ✅ BACKEND STATUS UPDATE: Updated default client status to 'da_inserire' from 'nuovo'.
           
           TESTING REQUIRED: Complete client edit flow verification with all conditional fields, status updates, and field restrictions."
+        - working: "needs_testing"
+          agent: "main" 
+          comment: "🔧 MAJOR EDIT MODAL FIXES - CONDITIONAL LOGIC & PAYMENT VISIBILITY COMPLETE:
+          
+          ✅ CONDITIONAL LOGIC ENHANCEMENT: Updated isEditEnergiaFastweb() and isEditTelefoniaFastweb() functions to properly detect fields based on existing client data AND tipologia names. Now checks if client has populated conditional fields (codice_pod, tecnologia, etc.) OR matches tipologia names.
+          
+          ✅ BUSINESS/PRIVATO SEGMENTO LOGIC: Implemented proper Business vs Privato detection - shows Ragione Sociale + Partita IVA for Business clients, only Codice Fiscale for Privato. Added visual indicators and segmento detection logic.
+          
+          ✅ OFFERTA DISPLAY IMPROVED: Enhanced offerta visualization with proper name display, description, and fallback to ID slice when name unavailable. Added fetchTipologieByServizio() to resolve tipologia names.
+          
+          ✅ PAYMENT FIELDS FULL VISIBILITY: Made ALL payment fields (IBAN, Numero Carta) ALWAYS visible for authorized users (Admin, Backoffice). Numero carta COMPLETELY visible (no masking) with font-mono styling. Added active/inactive status indicators and warning messages for populated but non-selected payment methods.
+          
+          ✅ FIELD STRUCTURE REORGANIZATION: Reorganized sections logically - Dati Fiscali with conditional Business fields, separate Indirizzo section, comprehensive Payment section with full visibility for all users.
+          
+          TESTING REQUIRED: Verify conditional field logic works for existing clients, payment fields are fully visible, Business/Privato segmento detection, and offerta display shows correct information."
 
   - task: "Excel Export Conditional Fields Implementation - Include New Client Form Fields"
     implemented: true
