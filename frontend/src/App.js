@@ -16523,9 +16523,9 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       email: formData.email || null,
       telefono: formData.telefono,
       telefono2: formData.cellulare || '', // Map cellulare -> telefono2 for backend  
-      data_nascita: formData.data_nascita ? formData.data_nascita : null,
+      data_nascita: formatDateForBackend(formData.data_nascita),
       luogo_nascita: formData.luogo_nascita || '',
-      codice_fiscale: formData.codice_fiscale,
+      codice_fiscale: formData.codice_fiscale || '', // Campo richiesto
       
       // Address data  
       indirizzo: formData.indirizzo,
