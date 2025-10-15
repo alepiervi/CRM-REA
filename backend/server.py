@@ -908,8 +908,8 @@ class Cliente(BaseModel):
     numero_ordine: Optional[str] = None
     account: Optional[str] = None
     ragione_sociale: Optional[str] = None  # Solo se Business
-    cognome: Optional[str] = None  # Temporaneamente opzionale per compatibilità DB
-    nome: Optional[str] = None  # Temporaneamente opzionale per compatibilità DB
+    cognome: str  # Obbligatorio
+    nome: str  # Obbligatorio
     data_nascita: Optional[date] = None
     luogo_nascita: Optional[str] = None
     comune_residenza: Optional[str] = None
@@ -970,8 +970,8 @@ class ClienteCreate(BaseModel):
     numero_ordine: Optional[str] = None
     account: Optional[str] = None
     ragione_sociale: Optional[str] = None  # Solo se Business
-    cognome: Optional[str] = None  # Temporaneamente opzionale per compatibilità DB
-    nome: Optional[str] = None  # Temporaneamente opzionale per compatibilità DB
+    cognome: str  # Obbligatorio
+    nome: str  # Obbligatorio
     data_nascita: Optional[date] = None
     luogo_nascita: Optional[str] = None
     comune_residenza: Optional[str] = None
