@@ -15902,17 +15902,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     const commessaId = selectedData.commessa_id;
     const commessa = cascadeCommesse.find(c => c.id === commessaId);
     
-    // Debug temporaneo per vedere i nomi delle commesse
-    console.log("🔍 DEBUG Energia Fastweb:", {
-      commessaId,
-      commessaNome: commessa?.nome,
-      tutteCommesse: cascadeCommesse.map(c => c.nome),
-      isEnergia: commessa?.nome?.toLowerCase().includes('energia')
-    });
+    if (!commessa) return false;
     
-    // Riconoscimento più flessibile
-    const nome = commessa?.nome?.toLowerCase() || '';
-    return nome.includes('energia fastweb') || nome.includes('energia') || nome.includes('fotovoltaico');
+    // Riconoscimento per commesse legate all'energia/fotovoltaico
+    const nome = commessa.nome?.toLowerCase() || '';
+    return nome.includes('energia') || 
+           nome.includes('fotovoltaico') || 
+           nome.includes('solare') || 
+           nome.includes('pod') ||
+           nome.includes('luce') ||
+           nome.includes('gas');
   };
 
   // Funzioni per gestire i campi convergenza multipli
