@@ -16710,131 +16710,482 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             </div>
           )}
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="nome">Nome *</Label>
-              <Input
-                id="nome"
-                value={formData.nome}
-                onChange={(e) => setFormData({...formData, nome: e.target.value})}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="cognome">Cognome *</Label>
-              <Input
-                id="cognome"
-                value={formData.cognome}
-                onChange={(e) => setFormData({...formData, cognome: e.target.value})}
-                required
-              />
-            </div>
-          </div>
+          {/* ===== NUOVA STRUTTURA COMPLETA SCHEDA CLIENTE ===== */}
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-              />
+          {/* CAMPI BASE SEMPRE PRESENTI */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Informazioni Base</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="numero_ordine">Numero Ordine</Label>
+                <Input
+                  id="numero_ordine"
+                  value={formData.numero_ordine}
+                  onChange={(e) => setFormData({...formData, numero_ordine: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="account">Account</Label>
+                <Input
+                  id="account"
+                  value={formData.account}
+                  onChange={(e) => setFormData({...formData, account: e.target.value})}
+                />
+              </div>
+              {isBusinessSegment() && (
+                <div>
+                  <Label htmlFor="ragione_sociale">Ragione Sociale *</Label>
+                  <Input
+                    id="ragione_sociale"
+                    value={formData.ragione_sociale}
+                    onChange={(e) => setFormData({...formData, ragione_sociale: e.target.value})}
+                    required
+                  />
+                </div>
+              )}
             </div>
-            <div>
-              <Label htmlFor="telefono">Telefono *</Label>
-              <Input
-                id="telefono"
-                value={formData.telefono}
-                onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-                required
-              />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="cognome">Cognome *</Label>
+                <Input
+                  id="cognome"
+                  value={formData.cognome}
+                  onChange={(e) => setFormData({...formData, cognome: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="nome">Nome *</Label>
+                <Input
+                  id="nome"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="data_nascita">Nato/a</Label>
+                <Input
+                  id="data_nascita"
+                  type="date"
+                  value={formData.data_nascita}
+                  onChange={(e) => setFormData({...formData, data_nascita: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="luogo_nascita">A</Label>
+                <Input
+                  id="luogo_nascita"
+                  value={formData.luogo_nascita}
+                  onChange={(e) => setFormData({...formData, luogo_nascita: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="comune_residenza">Comune Residenza</Label>
+                <Input
+                  id="comune_residenza"
+                  value={formData.comune_residenza}
+                  onChange={(e) => setFormData({...formData, comune_residenza: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="provincia">Provincia</Label>
+                <select
+                  id="provincia"
+                  value={formData.provincia}
+                  onChange={(e) => setFormData({...formData, provincia: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Seleziona Provincia...</option>
+                  {PROVINCE_ITALIANE.map(prov => (
+                    <option key={prov} value={prov}>{prov}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="cap">Cap</Label>
+                <Input
+                  id="cap"
+                  value={formData.cap}
+                  onChange={(e) => setFormData({...formData, cap: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="indirizzo">Indirizzo</Label>
+                <Input
+                  id="indirizzo"
+                  value={formData.indirizzo}
+                  onChange={(e) => setFormData({...formData, indirizzo: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="telefono">Telefono *</Label>
+                <Input
+                  id="telefono"
+                  value={formData.telefono}
+                  onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="telefono2">Telefono 2</Label>
+                <Input
+                  id="telefono2"
+                  value={formData.telefono2}
+                  onChange={(e) => setFormData({...formData, telefono2: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {isBusinessSegment() && (
+                <div>
+                  <Label htmlFor="partita_iva">Partita Iva *</Label>
+                  <Input
+                    id="partita_iva"
+                    value={formData.partita_iva}
+                    onChange={(e) => setFormData({...formData, partita_iva: e.target.value})}
+                    required
+                  />
+                </div>
+              )}
+              <div>
+                <Label htmlFor="codice_fiscale">Codice Fiscale *</Label>
+                <Input
+                  id="codice_fiscale"
+                  value={formData.codice_fiscale}
+                  onChange={(e) => setFormData({...formData, codice_fiscale: e.target.value})}
+                  required
+                />
+              </div>
             </div>
           </div>
 
-          {/* I campi Commessa, Servizio, Tipologia e Segmento sono già stati selezionati nel flusso cascading sopra */}
-          {/* Questi dati vengono utilizzati automaticamente dai selectedData */}
+          {/* SEZIONE DOCUMENTO */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Documento</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="tipo_documento">Tipo Documento</Label>
+                <select
+                  id="tipo_documento"
+                  value={formData.tipo_documento}
+                  onChange={(e) => setFormData({...formData, tipo_documento: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Seleziona Tipo...</option>
+                  {TIPI_DOCUMENTO.map(tipo => (
+                    <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="numero_documento">Numero documento</Label>
+                <Input
+                  id="numero_documento"
+                  value={formData.numero_documento}
+                  onChange={(e) => setFormData({...formData, numero_documento: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="data_rilascio">Data rilascio</Label>
+                <Input
+                  id="data_rilascio"
+                  type="date"
+                  value={formData.data_rilascio}
+                  onChange={(e) => setFormData({...formData, data_rilascio: e.target.value})}
+                />
+              </div>
+            </div>
 
-          <div>
-            <Label htmlFor="indirizzo">Indirizzo</Label>
-            <Input
-              id="indirizzo"
-              value={formData.indirizzo}
-              onChange={(e) => setFormData({...formData, indirizzo: e.target.value})}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="luogo_rilascio">Luogo Rilascio</Label>
+                <Input
+                  id="luogo_rilascio"
+                  value={formData.luogo_rilascio}
+                  onChange={(e) => setFormData({...formData, luogo_rilascio: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="scadenza_documento">Scadenza</Label>
+                <Input
+                  id="scadenza_documento"
+                  type="date"
+                  value={formData.scadenza_documento}
+                  onChange={(e) => setFormData({...formData, scadenza_documento: e.target.value})}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="citta">Città</Label>
-              <Input
-                id="citta"
-                value={formData.citta}
-                onChange={(e) => setFormData({...formData, citta: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="provincia">Provincia</Label>
-              <Input
-                id="provincia"
-                value={formData.provincia}
-                onChange={(e) => setFormData({...formData, provincia: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="cap">CAP</Label>
-              <Input
-                id="cap"
-                value={formData.cap}
-                onChange={(e) => setFormData({...formData, cap: e.target.value})}
-              />
-            </div>
-          </div>
+          {/* SEZIONE TELEFONIA FASTWEB */}
+          {isTelefoniaFastweb() && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">📞 Telefonia Fastweb</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="tecnologia">Tecnologia</Label>
+                  <select
+                    id="tecnologia"
+                    value={formData.tecnologia}
+                    onChange={(e) => setFormData({...formData, tecnologia: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona Tecnologia...</option>
+                    {TECNOLOGIE.map(tech => (
+                      <option key={tech.value} value={tech.value}>{tech.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="codice_migrazione">Codice Migrazione</Label>
+                  <Input
+                    id="codice_migrazione"
+                    value={formData.codice_migrazione}
+                    onChange={(e) => setFormData({...formData, codice_migrazione: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="gestore">Gestore</Label>
+                  <Input
+                    id="gestore"
+                    value={formData.gestore}
+                    onChange={(e) => setFormData({...formData, gestore: e.target.value})}
+                  />
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="codice_fiscale">Codice Fiscale</Label>
-              <Input
-                id="codice_fiscale"
-                value={formData.codice_fiscale}
-                onChange={(e) => setFormData({...formData, codice_fiscale: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="partita_iva">Partita IVA</Label>
-              <Input
-                id="partita_iva"
-                value={formData.partita_iva}
-                onChange={(e) => setFormData({...formData, partita_iva: e.target.value})}
-              />
-            </div>
-          </div>
+              {/* CONVERGENZA */}
+              <div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="convergenza"
+                    checked={formData.convergenza}
+                    onChange={(e) => setFormData({...formData, convergenza: e.target.checked})}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <Label htmlFor="convergenza">Convergenza</Label>
+                </div>
 
-          <div>
-            <Label htmlFor="note">Note</Label>
-            <Textarea
-              id="note"
-              value={formData.note}
-              onChange={(e) => setFormData({...formData, note: e.target.value})}
-            />
-          </div>
+                {formData.convergenza && (
+                  <div className="mt-4 space-y-3">
+                    {convergenzaItems.map((item, index) => (
+                      <div key={index} className="border p-4 rounded-lg bg-gray-50">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div>
+                            <Label>Numero Cellulare</Label>
+                            <Input
+                              value={item.numero_cellulare}
+                              onChange={(e) => updateConvergenzaItem(index, 'numero_cellulare', e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label>ICCID</Label>
+                            <Input
+                              value={item.iccid}
+                              onChange={(e) => updateConvergenzaItem(index, 'iccid', e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label>Operatore</Label>
+                            <Input
+                              value={item.operatore}
+                              onChange={(e) => updateConvergenzaItem(index, 'operatore', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-between mt-2">
+                          <Button
+                            type="button"
+                            onClick={addConvergenzaItem}
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600"
+                          >
+                            + Aggiungi
+                          </Button>
+                          {convergenzaItems.length > 1 && (
+                            <Button
+                              type="button"
+                              onClick={() => removeConvergenzaItem(index)}
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600"
+                            >
+                              Rimuovi
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-            <DialogFooter className="mt-6">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setShowClientForm(false)}
-                className="mr-2"
+          {/* SEZIONE ENERGIA FASTWEB */}
+          {isEnergiaFastweb() && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">⚡ Energia Fastweb</h3>
+              
+              <div>
+                <Label htmlFor="codice_pod">Codice Pod</Label>
+                <Input
+                  id="codice_pod"
+                  value={formData.codice_pod}
+                  onChange={(e) => setFormData({...formData, codice_pod: e.target.value})}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* SEZIONE MODALITÀ PAGAMENTO */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">💳 Modalità Pagamento</h3>
+            
+            <div>
+              <Label htmlFor="modalita_pagamento">Modalità pagamento</Label>
+              <select
+                id="modalita_pagamento"
+                value={formData.modalita_pagamento}
+                onChange={(e) => setFormData({...formData, modalita_pagamento: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
               >
-                ← Torna alla Selezione
-              </Button>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Annulla
-              </Button>
-              <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                ✅ Crea Cliente
-              </Button>
-            </DialogFooter>
+                <option value="">Seleziona Modalità...</option>
+                {MODALITA_PAGAMENTO.map(modalita => (
+                  <option key={modalita.value} value={modalita.value}>{modalita.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {formData.modalita_pagamento === 'iban' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="iban">IBAN</Label>
+                  <Input
+                    id="iban"
+                    value={formData.iban}
+                    onChange={(e) => setFormData({...formData, iban: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="intestatario_diverso">Intestatario se diverso</Label>
+                  <Input
+                    id="intestatario_diverso"
+                    value={formData.intestatario_diverso}
+                    onChange={(e) => setFormData({...formData, intestatario_diverso: e.target.value})}
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.modalita_pagamento === 'carta_credito' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="numero_carta">Numero Carta</Label>
+                  <Input
+                    id="numero_carta"
+                    value={formData.numero_carta}
+                    onChange={(e) => setFormData({...formData, numero_carta: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="mese_carta">Mese</Label>
+                  <select
+                    id="mese_carta"
+                    value={formData.mese_carta}
+                    onChange={(e) => setFormData({...formData, mese_carta: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Mese...</option>
+                    {Array.from({length: 12}, (_, i) => (
+                      <option key={i+1} value={String(i+1).padStart(2, '0')}>
+                        {String(i+1).padStart(2, '0')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="anno_carta">Anno</Label>
+                  <select
+                    id="anno_carta"
+                    value={formData.anno_carta}
+                    onChange={(e) => setFormData({...formData, anno_carta: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Anno...</option>
+                    {Array.from({length: 10}, (_, i) => {
+                      const year = new Date().getFullYear() + i;
+                      return (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* SEZIONE NOTE */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">📝 Note</h3>
+            
+            <div>
+              <Label htmlFor="note">Note</Label>
+              <textarea
+                id="note"
+                rows={3}
+                value={formData.note}
+                onChange={(e) => setFormData({...formData, note: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Note aggiuntive..."
+              />
+            </div>
+          </div>
+            
+          <DialogFooter className="mt-6">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setShowClientForm(false)}
+              className="mr-2"
+            >
+              ← Torna alla Selezione
+            </Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit" className="bg-green-600 hover:bg-green-700">
+              ✅ Crea Cliente
+            </Button>
+          </DialogFooter>
           </form>
         )}
 
