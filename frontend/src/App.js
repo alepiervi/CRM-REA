@@ -18301,116 +18301,291 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </CardContent>
           </Card>
 
-          {/* Dati Organizzativi */}
+          {/* Dati Organizzativi (NON MODIFICABILI) */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Dati Organizzativi</CardTitle>
+              <CardTitle className="text-lg">Dati Organizzativi <span className="text-sm text-gray-500">(Non modificabili)</span></CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Commessa *</Label>
-                  <Select value={formData.commessa_id} onValueChange={(value) => handleCommessaChange(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona commessa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {commesse.map((commessa) => (
-                        <SelectItem key={commessa.id} value={commessa.id}>
-                          {commessa.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-sm font-medium text-gray-600">Commessa</Label>
+                  <p className="text-sm p-2 bg-gray-50 border rounded">
+                    {commesse.find(c => c.id === cliente?.commessa_id)?.nome || 'Non disponibile'}
+                  </p>
                 </div>
                 <div>
-                  <Label>Sub Agenzia</Label>
-                  <Select value={formData.sub_agenzia_id} onValueChange={(value) => handleChange('sub_agenzia_id', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona sub agenzia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subAgenzie.map((subAgenzia) => (
-                        <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
-                          {subAgenzia.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-sm font-medium text-gray-600">Sub Agenzia</Label>
+                  <p className="text-sm p-2 bg-gray-50 border rounded">
+                    {subAgenzie.find(sa => sa.id === cliente?.sub_agenzia_id)?.nome || 'Non disponibile'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Servizio</Label>
+                  <p className="text-sm p-2 bg-gray-50 border rounded">
+                    {servizi.find(s => s.id === cliente?.servizio_id)?.nome || 'Non disponibile'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Tipologia Contratto</Label>
+                  <p className="text-sm p-2 bg-gray-50 border rounded">
+                    {cliente?.tipologia_contratto === 'energia_fastweb' ? 'Energia Fastweb' :
+                     cliente?.tipologia_contratto === 'telefonia_fastweb' ? 'Telefonia Fastweb' :
+                     cliente?.tipologia_contratto === 'ho_mobile' ? 'Ho Mobile' :
+                     cliente?.tipologia_contratto === 'telepass' ? 'Telepass' :
+                     cliente?.tipologia_contratto || 'Non disponibile'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Segmento</Label>
+                  <p className="text-sm p-2 bg-gray-50 border rounded">
+                    {cliente?.segmento === 'privato' ? 'Privato' :
+                     cliente?.segmento === 'business' ? 'Business' :
+                     cliente?.segmento || 'Non disponibile'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Offerta Attivata</Label>
+                  <p className="text-sm p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
+                    {offertaInfo?.nome || cliente?.offerta_id || 'Nessuna offerta'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Campi Business (condizionali) */}
+          {isEditBusinessSegment() && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">🏢 Dati Business</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="ragione_sociale">Ragione Sociale</Label>
+                    <Input
+                      id="ragione_sociale"
+                      value={formData.ragione_sociale}
+                      onChange={(e) => handleChange('ragione_sociale', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Documento */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">📄 Documento Identità</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="tipo_documento">Tipo Documento</Label>
+                  <select
+                    id="tipo_documento"
+                    value={formData.tipo_documento}
+                    onChange={(e) => handleChange('tipo_documento', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona tipo documento</option>
+                    <option value="carta_identita">Carta d'Identità</option>
+                    <option value="patente">Patente</option>
+                    <option value="passaporto">Passaporto</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="numero_documento">Numero Documento</Label>
+                  <Input
+                    id="numero_documento"
+                    value={formData.numero_documento}
+                    onChange={(e) => handleChange('numero_documento', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="data_rilascio">Data Rilascio</Label>
+                  <Input
+                    id="data_rilascio"
+                    type="date"
+                    value={formData.data_rilascio}
+                    onChange={(e) => handleChange('data_rilascio', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="luogo_rilascio">Luogo Rilascio</Label>
+                  <Input
+                    id="luogo_rilascio"
+                    value={formData.luogo_rilascio}
+                    onChange={(e) => handleChange('luogo_rilascio', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="scadenza_documento">Scadenza Documento</Label>
+                  <Input
+                    id="scadenza_documento"
+                    type="date"
+                    value={formData.scadenza_documento}
+                    onChange={(e) => handleChange('scadenza_documento', e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* SEZIONE TELEFONIA FASTWEB */}
+          {isEditTelefoniaFastweb() && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">📞 Telefonia Fastweb</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="tecnologia">Tecnologia</Label>
+                    <select
+                      id="tecnologia"
+                      value={formData.tecnologia}
+                      onChange={(e) => handleChange('tecnologia', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="">Seleziona tecnologia</option>
+                      <option value="fibra">Fibra</option>
+                      <option value="adsl">ADSL</option>
+                      <option value="fwa">FWA</option>
+                      <option value="mobile">Mobile</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="codice_migrazione">Codice Migrazione</Label>
+                    <Input
+                      id="codice_migrazione"
+                      value={formData.codice_migrazione}
+                      onChange={(e) => handleChange('codice_migrazione', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="gestore">Gestore Attuale</Label>
+                    <Input
+                      id="gestore"
+                      value={formData.gestore}
+                      onChange={(e) => handleChange('gestore', e.target.value)}
+                      placeholder="es. TIM, Vodafone, WindTre..."
+                    />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="convergenza"
+                      checked={formData.convergenza}
+                      onChange={(e) => handleChange('convergenza', e.target.checked)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <Label htmlFor="convergenza">Convergenza (Fisso + Mobile)</Label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* SEZIONE ENERGIA FASTWEB */}
+          {isEditEnergiaFastweb() && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">⚡ Energia Fastweb</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div>
+                  <Label htmlFor="codice_pod">Codice Pod</Label>
+                  <Input
+                    id="codice_pod"
+                    value={formData.codice_pod}
+                    onChange={(e) => handleChange('codice_pod', e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* SEZIONE MODALITÀ PAGAMENTO */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">💳 Modalità Pagamento</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label>Modalità Pagamento</Label>
+                  <select
+                    value={formData.modalita_pagamento}
+                    onChange={(e) => handleChange('modalita_pagamento', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona modalità</option>
+                    <option value="iban">IBAN</option>
+                    <option value="carta_credito">Carta di Credito</option>
+                  </select>
                 </div>
                 
-                {/* Nuovi campi */}
-                <div>
-                  <Label>Servizio</Label>
-                  <Select 
-                    value={formData.servizio_id || ""} 
-                    onValueChange={(value) => handleServizioChange(value)}
-                    disabled={!formData.commessa_id}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona servizio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {servizi.map((servizio) => (
-                        <SelectItem key={servizio.id} value={servizio.id}>
-                          {servizio.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Tipologia Contratto</Label>
-                  <Select 
-                    value={formData.tipologia_contratto || ""} 
-                    onValueChange={(value) => handleChange('tipologia_contratto', value)}
-                    disabled={!formData.servizio_id}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona tipologia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {editTipologieContratto.map((tipologia) => (
-                        <SelectItem key={tipologia.value} value={tipologia.value}>
-                          {tipologia.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Segmento</Label>
-                  <Select 
-                    value={formData.segmento || ""} 
-                    onValueChange={(value) => handleChange('segmento', value)}
-                    disabled={!formData.tipologia_contratto}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona segmento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {segmenti.map((segmento) => (
-                        <SelectItem key={segmento.value} value={segmento.value}>
-                          {segmento.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nuovo">Nuovo</SelectItem>
-                      <SelectItem value="contattato">Contattato</SelectItem>
-                      <SelectItem value="in_lavorazione">In Lavorazione</SelectItem>
-                      <SelectItem value="convertito">Convertito</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {formData.modalita_pagamento === 'iban' && (
+                  <div>
+                    <Label htmlFor="iban">IBAN</Label>
+                    <Input
+                      id="iban"
+                      value={formData.iban}
+                      onChange={(e) => handleChange('iban', e.target.value)}
+                      placeholder="IT00 0000 0000 0000 0000 0000 000"
+                    />
+                  </div>
+                )}
+                
+                {formData.modalita_pagamento === 'carta_credito' && (
+                  <div>
+                    <Label htmlFor="numero_carta">Numero Carta</Label>
+                    <Input
+                      id="numero_carta"
+                      value={formData.numero_carta}
+                      onChange={(e) => handleChange('numero_carta', e.target.value)}
+                      placeholder="**** **** **** 1234"
+                    />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">📊 Status Cliente</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <Label>Status</Label>
+                <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inserito">Inserito</SelectItem>
+                    <SelectItem value="ko">KO</SelectItem>
+                    <SelectItem value="infoline">Infoline</SelectItem>
+                    <SelectItem value="inviata_consumer">Inviata Consumer</SelectItem>
+                    <SelectItem value="problematiche_inserimento">Problematiche Inserimento</SelectItem>
+                    <SelectItem value="attesa_documenti_clienti">Attesa Documenti Clienti</SelectItem>
+                    <SelectItem value="non_acquisibile_richiesta_escalation">Non Acquisibile Richiesta Escalation</SelectItem>
+                    <SelectItem value="in_gestione_struttura_consulente">In Gestione Struttura/Consulente</SelectItem>
+                    <SelectItem value="non_risponde">Non Risponde</SelectItem>
+                    <SelectItem value="passata_al_bo">Passata al BO</SelectItem>
+                    <SelectItem value="da_inserire">Da Inserire</SelectItem>
+                    <SelectItem value="inserito_sotto_altro_canale">Inserito Sotto Altro Canale</SelectItem>
+                    <SelectItem value="proveniente_da_altro_canale">Proveniente da Altro Canale</SelectItem>
+                    <SelectItem value="scontrinare">Scontrinare</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
