@@ -18052,6 +18052,27 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
 
 // Edit Cliente Modal Component  
 const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
+  // Helper per formattare le date per input[type="date"]
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    
+    try {
+      // Se è già una data in formato YYYY-MM-DD, restituiscila così
+      if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateString;
+      }
+      
+      // Altrimenti converte da ISO string o altro formato
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      
+      return date.toISOString().split('T')[0];
+    } catch (error) {
+      console.error("Error formatting date:", dateString, error);
+      return '';
+    }
+  };
+
   // Debug logging per verificare i dati del cliente
   console.log("🔍 DEBUG EditClienteModal - Dati cliente ricevuti:", {
     cliente_id: cliente?.id,
@@ -18061,6 +18082,11 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       data_rilascio: cliente?.data_rilascio,
       luogo_rilascio: cliente?.luogo_rilascio,
       scadenza_documento: cliente?.scadenza_documento
+    },
+    formatted_dates: {
+      data_nascita: formatDateForInput(cliente?.data_nascita),
+      data_rilascio: formatDateForInput(cliente?.data_rilascio),
+      scadenza_documento: formatDateForInput(cliente?.scadenza_documento)
     },
     all_cliente_keys: cliente ? Object.keys(cliente) : 'no cliente'
   });
