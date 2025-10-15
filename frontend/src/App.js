@@ -16505,6 +16505,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     console.log("Selected data:", selectedData);
     console.log("Form data:", formData);
     
+    // Helper per convertire le date in formato MongoDB compatibile
+    const formatDateForBackend = (dateValue) => {
+      if (!dateValue) return null;
+      if (typeof dateValue === 'string') {
+        // Se è già una stringa, assicuriamoci che sia in formato YYYY-MM-DD
+        return dateValue.split('T')[0]; // Rimuove eventuali parti time
+      }
+      return null;
+    };
+
     // Create clean form data with cascading selections + ALL client data
     const cleanFormData = {
       // Client personal data (basic)
