@@ -18443,14 +18443,26 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Offerta Attivata</Label>
-                  <p className="text-sm p-2 bg-blue-50 border border-blue-200 rounded text-blue-800 font-semibold">
-                    {offertaInfo?.nome || 
-                     (cliente?.offerta_id ? `Offerta ID: ${cliente.offerta_id.slice(0, 8)}...` : '') || 
-                     'Nessuna offerta selezionata'}
-                  </p>
-                  {offertaInfo?.descrizione && (
-                    <p className="text-xs text-blue-600 mt-1">
-                      {offertaInfo.descrizione}
+                  {isLoadingOfferta ? (
+                    <p className="text-sm p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800">
+                      🔄 Caricamento offerta...
+                    </p>
+                  ) : offertaInfo ? (
+                    <div className="text-sm p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
+                      <p className="font-semibold">{offertaInfo.nome}</p>
+                      {offertaInfo.descrizione && (
+                        <p className="text-xs text-blue-600 mt-1">{offertaInfo.descrizione}</p>
+                      )}
+                      <p className="text-xs text-gray-600 mt-1">ID: {offertaInfo.id}</p>
+                    </div>
+                  ) : cliente?.offerta_id ? (
+                    <div className="text-sm p-2 bg-amber-50 border border-amber-200 rounded text-amber-800">
+                      <p>⚠️ Offerta ID: {cliente.offerta_id.slice(0, 8)}...</p>
+                      <p className="text-xs">Impossibile caricare dettagli offerta</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm p-2 bg-gray-50 border border-gray-200 rounded text-gray-600">
+                      Nessuna offerta selezionata
                     </p>
                   )}
                 </div>
