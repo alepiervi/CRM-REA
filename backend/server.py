@@ -920,7 +920,7 @@ class Cliente(BaseModel):
     telefono: str  # Obbligatorio
     telefono2: Optional[str] = None
     partita_iva: Optional[str] = None  # Solo se Business
-    codice_fiscale: str  # Obbligatorio
+    codice_fiscale: Optional[str] = None  # Cambiato a opzionale per compatibilità DB
     
     # Documento
     tipo_documento: Optional[TipoDocumento] = None
@@ -982,7 +982,7 @@ class ClienteCreate(BaseModel):
     telefono: str  # Obbligatorio
     telefono2: Optional[str] = None
     partita_iva: Optional[str] = None  # Solo se Business
-    codice_fiscale: str  # Obbligatorio
+    codice_fiscale: Optional[str] = None  # Cambiato a opzionale per compatibilità DB
     
     # Documento
     tipo_documento: Optional[TipoDocumento] = None
