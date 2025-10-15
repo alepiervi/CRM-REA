@@ -14066,13 +14066,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                       {subAgenzie.find(sa => sa.id === cliente.sub_agenzia_id)?.nome || 'N/A'}
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        variant={
-                          cliente.status === "convertito" ? "default" :
-                          cliente.status === "in_lavorazione" ? "secondary" : "outline"
-                        }
-                      >
-                        {cliente.status.replace('_', ' ').toUpperCase()}
+                      <Badge variant={getClienteStatusVariant(cliente.status)}>
+                        {formatClienteStatus(cliente.status)}
                       </Badge>
                     </TableCell>
                     <TableCell>
