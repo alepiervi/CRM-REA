@@ -18134,8 +18134,24 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     if (cliente?.offerta_id) {
       fetchOffertaInfo(cliente.offerta_id);
     }
+    // Carica tipologie contratto per risolvere i nomi
+    if (formData.servizio_id) {
+      fetchTipologieByServizio(formData.servizio_id);
+    }
     fetchSegmenti();
   }, []);
+
+  const fetchTipologieByServizio = async (servizioId) => {
+    try {
+      const response = await axios.get(`${API}/cascade/tipologie-by-servizio/${servizioId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setEditTipologieContratto(response.data);
+    } catch (error) {
+      console.error("Error fetching tipologie:", error);
+      setEditTipologieContratto([]);
+    }
+  };
 
   useEffect(() => {
     if (formData.servizio_id && formData.commessa_id) {
