@@ -16512,8 +16512,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       cognome: formData.cognome,
       email: formData.email || null,
       telefono: formData.telefono,
-      telefono2: formData.cellulare || '', // Map cellulare -> telefono2 for backend
-      data_nascita: formData.data_nascita || null,
+      telefono2: formData.cellulare || '', // Map cellulare -> telefono2 for backend  
+      data_nascita: formData.data_nascita ? formData.data_nascita : null,
       luogo_nascita: formData.luogo_nascita || '',
       codice_fiscale: formData.codice_fiscale,
       
