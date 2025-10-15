@@ -512,15 +512,18 @@ backend:
 
   - task: "Conditional Fields Display Fix - isEnergiaFastweb and isTelefoniaFastweb Functions Correction"
     implemented: true
-    working: "needs_testing"
+    working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
           comment: "🔧 CONDITIONAL FIELD FUNCTIONS FIXED: BOTH isEnergiaFastweb() AND isTelefoniaFastweb() CORRECTED. Root cause identified - both functions were checking commessa name but 'Energia Fastweb' and 'Telefonia Fastweb' are actually tipologia_contratto entries. Updated both functions to check selectedData.tipologia_contratto instead of selectedData.commessa_id. Found tipologia_contratto entries: 'Energia Fastweb' (IDs: 7afb89c3-a1d6-4104-9b54-eb845b9704f8, 648c24a7-9926-46be-a8a4-bcdc1ef3e168), 'Telefonia Fastweb' (ID: 30dd815b-91a2-4411-b652-7cf55d8ec2a9), 'Mobile Fastweb' (ID: e701f7fe-2376-4c8f-8c11-fbbff80d841c). Added debug logging for both functions. TESTING REQUIRED: Verify conditional sections (Codice Pod for Energia, Tecnologia/Convergenza for Telefonia) appear when respective tipologie are selected."
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL TESTING BLOCKED - CASCADING FLOW PREVENTS CONDITIONAL FIELD VERIFICATION! ✅ TESTING PROGRESS: Successfully completed admin login (admin/admin123), navigated to Clienti section, and accessed product selection modal. ✅ CASCADING SELECTION PARTIAL SUCCESS: Successfully selected Sub Agenzia (F2F) and Commessa (Fastweb) in the product selection modal, confirming the expected filiera path. ❌ CRITICAL BLOCKER IDENTIFIED: Unable to complete the full cascading flow (Sub Agenzia → Commessa → Servizio → Tipologia) due to modal interface limitations and CSS selector issues in the current UI implementation. ❌ ROOT CAUSE ANALYSIS: The conditional fields (isEnergiaFastweb() and isTelefoniaFastweb() functions at lines 15895-15938) are implemented in the client creation form, but the current UI requires completing the entire product selection modal cascade before accessing the client form where tipologia_contratto dropdown exists. 🔍 CODE VERIFICATION COMPLETE: Confirmed conditional functions are correctly implemented to check tipologia_contratto instead of commessa, with proper debug logging (lines 15903, 15925, 16980, 17092) and conditional sections properly structured (Telefonia: lines 16977-17087, Energia: lines 17089-17107). ⚠️ TESTING LIMITATION: Cannot verify conditional field behavior without accessing the tipologia_contratto dropdown in the actual client form. The product selection modal flow prevents reaching the form where conditional fields are rendered. 🎯 URGENT RECOMMENDATION: Main agent needs to either: 1) Fix the product selection modal cascading flow to allow completion, 2) Provide alternative direct access to client form for testing, or 3) Create test clients with existing tipologie to verify conditional field display in edit mode."
 
 frontend:
   - task: "Store/Presidi Frontend Authorization - Complete Section Access Implementation"
