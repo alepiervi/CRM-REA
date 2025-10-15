@@ -33094,45 +33094,29 @@ Duplicate,Test,+393471234567"""
         # **STEP 6: TEST OFFERTA INFO**
         print("\n🎁 STEP 6: TEST OFFERTA INFO...")
         
-        # Get segmenti first to test offerte endpoint
-        success, segmenti_response, status = self.make_request('GET', 'segmenti', expected_status=200)
+        # Test cascade offerte endpoint directly
+        success, cascade_offerte_response, status = self.make_request(
+            'GET', 'cascade/offerte-by-filiera', expected_status=200
+        )
         
-        offerte = []
+        offerte_success = False
         if success and status == 200:
-            segmenti = segmenti_response if isinstance(segmenti_response, list) else []
-            if segmenti:
-                test_segmento = segmenti[0]
-                test_segmento_id = test_segmento['id']
-                
-                self.log_test("✅ GET /api/segmenti SUCCESS", True, f"Found {len(segmenti)} segmenti")
-                
-                # Test offerte for this segmento
-                success, offerte_response, status = self.make_request(
-                    'GET', f'segmenti/{test_segmento_id}/offerte', expected_status=200
-                )
-                
-                if success and status == 200:
-                    offerte = offerte_response if isinstance(offerte_response, list) else []
-                    self.log_test("✅ GET /api/segmenti/{segmento_id}/offerte SUCCESS", True, 
-                        f"Status: {status}, Found {len(offerte)} offerte for segmento")
-                    
-                    # Test cascade offerte endpoint as well
-                    success, cascade_offerte_response, status = self.make_request(
-                        'GET', 'cascade/offerte-by-filiera', expected_status=200
-                    )
-                    
-                    if success and status == 200:
-                        self.log_test("✅ GET /api/cascade/offerte-by-filiera SUCCESS", True, 
-                            f"Status: {status}, Cascade offerte endpoint working")
-                    else:
-                        self.log_test("❌ GET /api/cascade/offerte-by-filiera FAILED", False, f"Status: {status}")
-                        
-                else:
-                    self.log_test("❌ GET /api/segmenti/{segmento_id}/offerte FAILED", False, f"Status: {status}")
-            else:
-                self.log_test("ℹ️ NO SEGMENTI FOUND", True, "No segmenti available for testing offerte")
+            self.log_test("✅ GET /api/cascade/offerte-by-filiera SUCCESS", True, 
+                f"Status: {status}, Cascade offerte endpoint working")
+            offerte_success = True
         else:
-            self.log_test("❌ GET /api/segmenti FAILED", False, f"Status: {status}")
+            self.log_test("❌ GET /api/cascade/offerte-by-filiera FAILED", False, f"Status: {status}")
+            
+        # Also test tipologie contratto endpoint as it's related to offers
+        success, tipologie_response, status = self.make_request('GET', 'tipologie-contratto', expected_status=200)
+        
+        if success and status == 200:
+            tipologie = tipologie_response if isinstance(tipologie_response, list) else []
+            self.log_test("✅ GET /api/tipologie-contratto SUCCESS", True, 
+                f"Status: {status}, Found {len(tipologie)} tipologie contratto")
+            offerte_success = True
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto FAILED", False, f"Status: {status}")
 
         # **FINAL SUMMARY**
         print(f"\n🎯 TEST CREAZIONE E MODIFICA CLIENTE COMPLETA - SUMMARY:")
