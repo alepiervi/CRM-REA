@@ -114,6 +114,55 @@ import {
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Helper functions
+const formatDate = (dateString) => {
+  const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+  return new Date(dateString).toLocaleDateString('it-IT', options);
+};
+
+// Helper function per formattare gli status dei clienti
+const formatClienteStatus = (status) => {
+  const statusMapping = {
+    'inserito': 'Inserito',
+    'ko': 'KO',
+    'infoline': 'Infoline',
+    'inviata_consumer': 'Inviata Consumer',
+    'problematiche_inserimento': 'Problematiche Inserimento',
+    'attesa_documenti_clienti': 'Attesa Documenti Clienti',
+    'non_acquisibile_richiesta_escalation': 'Non Acquisibile Richiesta Escalation',
+    'in_gestione_struttura_consulente': 'In Gestione Struttura/Consulente',
+    'non_risponde': 'Non Risponde',
+    'passata_al_bo': 'Passata al BO',
+    'da_inserire': 'Da Inserire',
+    'inserito_sotto_altro_canale': 'Inserito Sotto Altro Canale',
+    'proveniente_da_altro_canale': 'Proveniente da Altro Canale',
+    'scontrinare': 'Scontrinare'
+  };
+  
+  return statusMapping[status] || status?.replace('_', ' ').toUpperCase() || 'Non specificato';
+};
+
+// Helper function per il colore degli status
+const getClienteStatusVariant = (status) => {
+  switch(status) {
+    case 'inserito':
+    case 'inviata_consumer':
+      return 'default';
+    case 'ko':
+    case 'problematiche_inserimento':
+    case 'non_acquisibile_richiesta_escalation':
+      return 'destructive';
+    case 'infoline':
+    case 'in_gestione_struttura_consulente':
+      return 'secondary';
+    case 'da_inserire':
+    case 'attesa_documenti_clienti':
+      return 'outline';
+    default:
+      return 'secondary';
+  }
+};
+
 // Auth Context
 const AuthContext = React.createContext();
 
