@@ -18098,7 +18098,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     email: cliente?.email || '',
     telefono: cliente?.telefono || '',
     cellulare: cliente?.telefono2 || '',
-    data_nascita: cliente?.data_nascita || '',
+    data_nascita: formatDateForInput(cliente?.data_nascita),
     luogo_nascita: cliente?.luogo_nascita || '',
     codice_fiscale: cliente?.codice_fiscale || '',
     provincia: cliente?.provincia || '',
@@ -18117,9 +18117,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     // Documento
     tipo_documento: cliente?.tipo_documento || '',
     numero_documento: cliente?.numero_documento || '',
-    data_rilascio: cliente?.data_rilascio || '',
+    data_rilascio: formatDateForInput(cliente?.data_rilascio),
     luogo_rilascio: cliente?.luogo_rilascio || '',
-    scadenza_documento: cliente?.scadenza_documento || '',
+    scadenza_documento: formatDateForInput(cliente?.scadenza_documento),
     
     // Campi Telefonia Fastweb
     tecnologia: cliente?.tecnologia || '',
