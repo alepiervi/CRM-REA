@@ -848,10 +848,20 @@ class SubAgenziaUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 class ClienteStatus(str, Enum):
-    NUOVO = "nuovo"
-    IN_LAVORAZIONE = "in_lavorazione"
-    CONTATTATO = "contattato"
-    CONVERTITO = "convertito"
+    INSERITO = "inserito"
+    KO = "ko"
+    INFOLINE = "infoline"
+    INVIATA_CONSUMER = "inviata_consumer"
+    PROBLEMATICHE_INSERIMENTO = "problematiche_inserimento"
+    ATTESA_DOCUMENTI_CLIENTI = "attesa_documenti_clienti"
+    NON_ACQUISIBILE_RICHIESTA_ESCALATION = "non_acquisibile_richiesta_escalation"
+    IN_GESTIONE_STRUTTURA_CONSULENTE = "in_gestione_struttura_consulente"
+    NON_RISPONDE = "non_risponde"
+    PASSATA_AL_BO = "passata_al_bo"
+    DA_INSERIRE = "da_inserire"
+    INSERITO_SOTTO_ALTRO_CANALE = "inserito_sotto_altro_canale"
+    PROVENIENTE_DA_ALTRO_CANALE = "proveniente_da_altro_canale"
+    SCONTRINARE = "scontrinare"
 
 class TipologiaContratto(str, Enum):
     ENERGIA_FASTWEB = "energia_fastweb"
