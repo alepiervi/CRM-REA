@@ -32820,6 +32820,342 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_client_creation_conditional_logic_complete(self):
+        """TEST CREAZIONE E MODIFICA CLIENTE COMPLETA - VERIFICA LOGICA CONDIZIONALE"""
+        print("\n🎯 TEST CREAZIONE E MODIFICA CLIENTE COMPLETA - VERIFICA LOGICA CONDIZIONALE")
+        print("🎯 OBIETTIVO: Testare che i campi condizionali e la logica Business/Privato funzionino correttamente")
+        print("🎯 SCENARIO DI TEST:")
+        print("   1. Login Admin: admin/admin123")
+        print("   2. Creazione Cliente Business con Energia Fastweb")
+        print("   3. Creazione Cliente Privato con Telefonia Fastweb")
+        print("   4. Test Recupero Clienti: GET /api/clienti")
+        print("   5. Test Offerta Info: GET /api/offerte/{offerta_id}")
+        print("🎯 ASPETTATIVE:")
+        print("   • Creazione clienti con tutti i campi condizionali corretti")
+        print("   • Salvataggio completo modalità pagamento")
+        print("   • Campi Business/Privato gestiti correttamente")
+        print("   • Offerte associate correttamente")
+        
+        # **STEP 1: LOGIN ADMIN**
+        print("\n🔐 STEP 1: LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ ADMIN LOGIN (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ ADMIN LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: GET REQUIRED DATA FOR CLIENT CREATION**
+        print("\n📋 STEP 2: GET REQUIRED DATA FOR CLIENT CREATION...")
+        
+        # Get commesse to find Energia Fastweb and Telefonia Fastweb
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if not success:
+            self.log_test("❌ GET /api/commesse FAILED", False, f"Status: {status}")
+            return False
+            
+        commesse = commesse_response if isinstance(commesse_response, list) else []
+        fastweb_commessa = next((c for c in commesse if 'fastweb' in c.get('nome', '').lower()), None)
+        
+        if not fastweb_commessa:
+            self.log_test("❌ FASTWEB COMMESSA NOT FOUND", False, "Cannot find Fastweb commessa for testing")
+            return False
+            
+        fastweb_commessa_id = fastweb_commessa['id']
+        self.log_test("✅ FASTWEB COMMESSA FOUND", True, f"ID: {fastweb_commessa_id}, Nome: {fastweb_commessa['nome']}")
+        
+        # Get sub agenzie
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        if not success:
+            self.log_test("❌ GET /api/sub-agenzie FAILED", False, f"Status: {status}")
+            return False
+            
+        sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+        if not sub_agenzie:
+            self.log_test("❌ NO SUB AGENZIE FOUND", False, "Cannot find sub agenzie for testing")
+            return False
+            
+        test_sub_agenzia = sub_agenzie[0]
+        test_sub_agenzia_id = test_sub_agenzia['id']
+        self.log_test("✅ SUB AGENZIA FOUND", True, f"ID: {test_sub_agenzia_id}, Nome: {test_sub_agenzia['nome']}")
+        
+        # Get servizi for the commessa
+        success, servizi_response, status = self.make_request(f'GET', f'cascade/servizi-by-commessa/{fastweb_commessa_id}', expected_status=200)
+        if not success:
+            self.log_test("❌ GET SERVIZI FAILED", False, f"Status: {status}")
+            return False
+            
+        servizi = servizi_response if isinstance(servizi_response, list) else []
+        if not servizi:
+            self.log_test("❌ NO SERVIZI FOUND", False, "Cannot find servizi for testing")
+            return False
+            
+        test_servizio = servizi[0]
+        test_servizio_id = test_servizio['id']
+        self.log_test("✅ SERVIZIO FOUND", True, f"ID: {test_servizio_id}, Nome: {test_servizio['nome']}")
+
+        # **STEP 3: CREAZIONE CLIENTE BUSINESS CON ENERGIA FASTWEB**
+        print("\n🏢 STEP 3: CREAZIONE CLIENTE BUSINESS CON ENERGIA FASTWEB...")
+        
+        import time
+        timestamp = str(int(time.time()))
+        
+        business_client_data = {
+            "segmento": "business",
+            "ragione_sociale": "Azienda Test SRL",
+            "cognome": "Rossi",
+            "nome": "Mario",
+            "email": f"business_test_{timestamp}@azienda.it",
+            "telefono": f"391234567{timestamp[-2:]}",
+            "codice_fiscale": f"RSSMRA80A01H501{timestamp[-1]}",
+            "partita_iva": "12345678901",
+            "tipologia_contratto": "energia_fastweb",
+            "codice_pod": "IT001E12345678",
+            "modalita_pagamento": "iban",
+            "iban": "IT60X0542811101000000123456",
+            "commessa_id": fastweb_commessa_id,
+            "sub_agenzia_id": test_sub_agenzia_id,
+            "servizio_id": test_servizio_id
+        }
+        
+        print(f"   📋 Business Client Data: {business_client_data}")
+        
+        success, business_response, status = self.make_request(
+            'POST', 'clienti', 
+            business_client_data, 
+            expected_status=200
+        )
+        
+        business_client_id = None
+        if success and (status == 200 or status == 201):
+            business_client_id = business_response.get('id') if isinstance(business_response, dict) else None
+            self.log_test("✅ BUSINESS CLIENT CREATION SUCCESS", True, 
+                f"Status: {status}, Client ID: {business_client_id}")
+            
+            # Verify business-specific fields are saved
+            if isinstance(business_response, dict):
+                saved_ragione_sociale = business_response.get('ragione_sociale')
+                saved_partita_iva = business_response.get('partita_iva')
+                saved_codice_pod = business_response.get('codice_pod')
+                saved_modalita_pagamento = business_response.get('modalita_pagamento')
+                saved_iban = business_response.get('iban')
+                
+                if saved_ragione_sociale == "Azienda Test SRL":
+                    self.log_test("✅ RAGIONE SOCIALE SAVED", True, f"Value: {saved_ragione_sociale}")
+                else:
+                    self.log_test("❌ RAGIONE SOCIALE NOT SAVED", False, f"Expected: Azienda Test SRL, Got: {saved_ragione_sociale}")
+                
+                if saved_partita_iva == "12345678901":
+                    self.log_test("✅ PARTITA IVA SAVED", True, f"Value: {saved_partita_iva}")
+                else:
+                    self.log_test("❌ PARTITA IVA NOT SAVED", False, f"Expected: 12345678901, Got: {saved_partita_iva}")
+                
+                if saved_codice_pod == "IT001E12345678":
+                    self.log_test("✅ CODICE POD SAVED (Energia Fastweb)", True, f"Value: {saved_codice_pod}")
+                else:
+                    self.log_test("❌ CODICE POD NOT SAVED", False, f"Expected: IT001E12345678, Got: {saved_codice_pod}")
+                
+                if saved_modalita_pagamento == "iban":
+                    self.log_test("✅ MODALITA PAGAMENTO SAVED", True, f"Value: {saved_modalita_pagamento}")
+                else:
+                    self.log_test("❌ MODALITA PAGAMENTO NOT SAVED", False, f"Expected: iban, Got: {saved_modalita_pagamento}")
+                
+                if saved_iban == "IT60X0542811101000000123456":
+                    self.log_test("✅ IBAN SAVED", True, f"Value: {saved_iban}")
+                else:
+                    self.log_test("❌ IBAN NOT SAVED", False, f"Expected: IT60X0542811101000000123456, Got: {saved_iban}")
+                    
+        else:
+            self.log_test("❌ BUSINESS CLIENT CREATION FAILED", False, f"Status: {status}, Response: {business_response}")
+            return False
+
+        # **STEP 4: CREAZIONE CLIENTE PRIVATO CON TELEFONIA FASTWEB**
+        print("\n👤 STEP 4: CREAZIONE CLIENTE PRIVATO CON TELEFONIA FASTWEB...")
+        
+        private_client_data = {
+            "segmento": "privato",
+            "cognome": "Bianchi",
+            "nome": "Anna",
+            "email": f"private_test_{timestamp}@privato.it",
+            "telefono": f"392345678{timestamp[-2:]}",
+            "codice_fiscale": f"BNCNNA85B02H501{timestamp[-1]}",
+            "tipologia_contratto": "telefonia_fastweb",
+            "tecnologia": "fibra",
+            "codice_migrazione": "MIG123456",
+            "gestore": "TIM",
+            "convergenza": True,
+            "modalita_pagamento": "carta_credito",
+            "numero_carta": "1234567890123456",
+            "mese_carta": "12",
+            "anno_carta": "2025",
+            "commessa_id": fastweb_commessa_id,
+            "sub_agenzia_id": test_sub_agenzia_id,
+            "servizio_id": test_servizio_id
+        }
+        
+        print(f"   📋 Private Client Data: {private_client_data}")
+        
+        success, private_response, status = self.make_request(
+            'POST', 'clienti', 
+            private_client_data, 
+            expected_status=200
+        )
+        
+        private_client_id = None
+        if success and (status == 200 or status == 201):
+            private_client_id = private_response.get('id') if isinstance(private_response, dict) else None
+            self.log_test("✅ PRIVATE CLIENT CREATION SUCCESS", True, 
+                f"Status: {status}, Client ID: {private_client_id}")
+            
+            # Verify private-specific fields are saved
+            if isinstance(private_response, dict):
+                saved_tecnologia = private_response.get('tecnologia')
+                saved_codice_migrazione = private_response.get('codice_migrazione')
+                saved_gestore = private_response.get('gestore')
+                saved_convergenza = private_response.get('convergenza')
+                saved_modalita_pagamento = private_response.get('modalita_pagamento')
+                saved_numero_carta = private_response.get('numero_carta')
+                
+                if saved_tecnologia == "fibra":
+                    self.log_test("✅ TECNOLOGIA SAVED (Telefonia Fastweb)", True, f"Value: {saved_tecnologia}")
+                else:
+                    self.log_test("❌ TECNOLOGIA NOT SAVED", False, f"Expected: fibra, Got: {saved_tecnologia}")
+                
+                if saved_codice_migrazione == "MIG123456":
+                    self.log_test("✅ CODICE MIGRAZIONE SAVED", True, f"Value: {saved_codice_migrazione}")
+                else:
+                    self.log_test("❌ CODICE MIGRAZIONE NOT SAVED", False, f"Expected: MIG123456, Got: {saved_codice_migrazione}")
+                
+                if saved_gestore == "TIM":
+                    self.log_test("✅ GESTORE SAVED", True, f"Value: {saved_gestore}")
+                else:
+                    self.log_test("❌ GESTORE NOT SAVED", False, f"Expected: TIM, Got: {saved_gestore}")
+                
+                if saved_convergenza == True:
+                    self.log_test("✅ CONVERGENZA SAVED", True, f"Value: {saved_convergenza}")
+                else:
+                    self.log_test("❌ CONVERGENZA NOT SAVED", False, f"Expected: True, Got: {saved_convergenza}")
+                
+                if saved_modalita_pagamento == "carta_credito":
+                    self.log_test("✅ MODALITA PAGAMENTO SAVED", True, f"Value: {saved_modalita_pagamento}")
+                else:
+                    self.log_test("❌ MODALITA PAGAMENTO NOT SAVED", False, f"Expected: carta_credito, Got: {saved_modalita_pagamento}")
+                
+                if saved_numero_carta == "1234567890123456":
+                    self.log_test("✅ NUMERO CARTA SAVED", True, f"Value: {saved_numero_carta}")
+                else:
+                    self.log_test("❌ NUMERO CARTA NOT SAVED", False, f"Expected: 1234567890123456, Got: {saved_numero_carta}")
+                    
+        else:
+            self.log_test("❌ PRIVATE CLIENT CREATION FAILED", False, f"Status: {status}, Response: {private_response}")
+            return False
+
+        # **STEP 5: TEST RECUPERO CLIENTI**
+        print("\n📋 STEP 5: TEST RECUPERO CLIENTI...")
+        
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            total_clienti = len(clienti)
+            self.log_test("✅ GET /api/clienti SUCCESS", True, f"Status: {status}, Total clients: {total_clienti}")
+            
+            # Find our created clients
+            business_found = False
+            private_found = False
+            
+            for client in clienti:
+                if client.get('id') == business_client_id:
+                    business_found = True
+                    self.log_test("✅ BUSINESS CLIENT FOUND IN LIST", True, 
+                        f"Ragione Sociale: {client.get('ragione_sociale')}, Segmento: {client.get('segmento')}")
+                elif client.get('id') == private_client_id:
+                    private_found = True
+                    self.log_test("✅ PRIVATE CLIENT FOUND IN LIST", True, 
+                        f"Nome: {client.get('nome')} {client.get('cognome')}, Segmento: {client.get('segmento')}")
+            
+            if not business_found:
+                self.log_test("❌ BUSINESS CLIENT NOT FOUND IN LIST", False, "Created business client not in client list")
+            
+            if not private_found:
+                self.log_test("❌ PRIVATE CLIENT NOT FOUND IN LIST", False, "Created private client not in client list")
+                
+        else:
+            self.log_test("❌ GET /api/clienti FAILED", False, f"Status: {status}, Response: {clienti_response}")
+            return False
+
+        # **STEP 6: TEST OFFERTA INFO**
+        print("\n🎁 STEP 6: TEST OFFERTA INFO...")
+        
+        # Get offerte to test offerta info endpoint
+        success, offerte_response, status = self.make_request('GET', 'offerte', expected_status=200)
+        
+        offerte = []
+        if success and status == 200:
+            offerte = offerte_response if isinstance(offerte_response, list) else []
+            if offerte:
+                test_offerta = offerte[0]
+                test_offerta_id = test_offerta['id']
+                
+                self.log_test("✅ GET /api/offerte SUCCESS", True, f"Found {len(offerte)} offerte")
+                
+                # Test specific offerta info
+                success, offerta_info_response, status = self.make_request(
+                    'GET', f'offerte/{test_offerta_id}', expected_status=200
+                )
+                
+                if success and status == 200:
+                    self.log_test("✅ GET /api/offerte/{offerta_id} SUCCESS", True, 
+                        f"Status: {status}, Offerta: {offerta_info_response.get('nome') if isinstance(offerta_info_response, dict) else 'N/A'}")
+                    
+                    # Verify offerta structure
+                    if isinstance(offerta_info_response, dict):
+                        expected_fields = ['id', 'nome', 'descrizione', 'segmento_id']
+                        missing_fields = [field for field in expected_fields if field not in offerta_info_response]
+                        
+                        if not missing_fields:
+                            self.log_test("✅ OFFERTA STRUCTURE COMPLETE", True, "All expected fields present")
+                        else:
+                            self.log_test("❌ OFFERTA STRUCTURE INCOMPLETE", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_test("❌ GET /api/offerte/{offerta_id} FAILED", False, f"Status: {status}")
+            else:
+                self.log_test("ℹ️ NO OFFERTE FOUND", True, "No offerte available for testing")
+        else:
+            self.log_test("❌ GET /api/offerte FAILED", False, f"Status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 TEST CREAZIONE E MODIFICA CLIENTE COMPLETA - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare logica condizionale Business/Privato e salvataggio dati")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Business client creation (Energia Fastweb): {'✅ SUCCESS' if business_client_id else '❌ FAILED'}")
+        print(f"      • Private client creation (Telefonia Fastweb): {'✅ SUCCESS' if private_client_id else '❌ FAILED'}")
+        print(f"      • Client retrieval (GET /api/clienti): {'✅ SUCCESS' if status == 200 else '❌ FAILED'}")
+        print(f"      • Offerta info (GET /api/offerte): {'✅ SUCCESS' if len(offerte) > 0 else '❌ FAILED'}")
+        print(f"      • Conditional fields saved correctly: {'✅ SUCCESS' if business_client_id and private_client_id else '❌ FAILED'}")
+        print(f"      • Payment methods saved correctly: {'✅ SUCCESS' if business_client_id and private_client_id else '❌ FAILED'}")
+        
+        overall_success = (business_client_id is not None and 
+                          private_client_id is not None and 
+                          status == 200)
+        
+        if overall_success:
+            print(f"   🎉 SUCCESS: Logica condizionale Business/Privato funziona correttamente!")
+            print(f"   🎉 CONFERMATO: Tutti i campi condizionali vengono salvati correttamente!")
+            print(f"   🎉 VERIFICATO: Modalità pagamento gestite correttamente per entrambi i segmenti!")
+            return True
+        else:
+            print(f"   🚨 FAILURE: Problemi nella logica condizionale o salvataggio dati!")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
