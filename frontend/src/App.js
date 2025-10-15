@@ -16505,20 +16505,60 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     console.log("Selected data:", selectedData);
     console.log("Form data:", formData);
     
-    // Create clean form data with cascading selections + client data
+    // Create clean form data with cascading selections + ALL client data
     const cleanFormData = {
-      // Client personal data
+      // Client personal data (basic)
       nome: formData.nome,
       cognome: formData.cognome,
       email: formData.email || null,
       telefono: formData.telefono,
+      telefono2: formData.cellulare || '', // Map cellulare -> telefono2 for backend
+      data_nascita: formData.data_nascita || null,
+      luogo_nascita: formData.luogo_nascita || '',
+      codice_fiscale: formData.codice_fiscale,
+      
+      // Address data
       indirizzo: formData.indirizzo,
-      citta: formData.citta,
+      comune: formData.comune || '', // Map comune -> comune for backend
       provincia: formData.provincia,
       cap: formData.cap,
-      codice_fiscale: formData.codice_fiscale,
-      partita_iva: formData.partita_iva,
-      note: formData.note,
+      
+      // Business data
+      ragione_sociale: formData.ragione_sociale || '',
+      partita_iva: formData.partita_iva || '',
+      
+      // Additional fields
+      numero_ordine: formData.numero_ordine || '',
+      account: formData.account || '',
+      
+      // Document data
+      tipo_documento: formData.tipo_documento || '',
+      numero_documento: formData.numero_documento || '',
+      data_rilascio: formData.data_rilascio || null,
+      luogo_rilascio: formData.luogo_rilascio || '',
+      scadenza_documento: formData.scadenza_documento || null,
+      
+      // Telefonia Fastweb conditional fields
+      tecnologia: formData.tecnologia || '',
+      codice_migrazione: formData.codice_migrazione || '',
+      gestore: formData.gestore || '',
+      convergenza: Boolean(formData.convergenza),
+      convergenza_items: formData.convergenza_items || [],
+      
+      // Energia Fastweb conditional fields
+      codice_pod: formData.codice_pod || '',
+      
+      // Payment data
+      modalita_pagamento: formData.modalita_pagamento || '',
+      iban: formData.iban || '',
+      intestatario_diverso: formData.intestatario_diverso || '',
+      numero_carta: formData.numero_carta || '',
+      mese_carta: formData.mese_carta || '',
+      anno_carta: formData.anno_carta || '',
+      
+      // Notes
+      note: formData.note || '',
+      note_backoffice: formData.note_backoffice || '',
       
       // Cascading selection data - Area Manager uses form selection
       sub_agenzia_id: user?.role === 'area_manager' ? formData.sub_agenzia_id : selectedData.sub_agenzia_id,
