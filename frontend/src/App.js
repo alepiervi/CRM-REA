@@ -15885,6 +15885,47 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     { value: 'carta_credito', label: 'Carta di Credito' }
   ];
 
+  // Helper functions per campi condizionali
+  const isBusinessSegment = () => {
+    const segmentoId = selectedData.segmento;
+    const segmento = cascadeSegmenti.find(s => s.id === segmentoId);
+    return segmento?.nome?.toLowerCase() === 'business';
+  };
+
+  const isTelefoniaFastweb = () => {
+    const commessaId = selectedData.commessa_id;
+    const commessa = cascadeCommesse.find(c => c.id === commessaId);
+    return commessa?.nome?.toLowerCase().includes('telefonia fastweb');
+  };
+
+  const isEnergiaFastweb = () => {
+    const commessaId = selectedData.commessa_id;
+    const commessa = cascadeCommesse.find(c => c.id === commessaId);
+    return commessa?.nome?.toLowerCase().includes('energia fastweb');
+  };
+
+  // Funzioni per gestire i campi convergenza multipli
+  const addConvergenzaItem = () => {
+    setConvergenzaItems([...convergenzaItems, {
+      numero_cellulare: '',
+      iccid: '',
+      operatore: ''
+    }]);
+  };
+
+  const removeConvergenzaItem = (index) => {
+    if (convergenzaItems.length > 1) {
+      setConvergenzaItems(convergenzaItems.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateConvergenzaItem = (index, field, value) => {
+    const updated = convergenzaItems.map((item, i) => 
+      i === index ? { ...item, [field]: value } : item
+    );
+    setConvergenzaItems(updated);
+  };
+
   // LEGACY STATES (keep for compatibility)
   const [servizi, setServizi] = useState([]);
   const [createTipologieContratto, setCreateTipologieContratto] = useState([]);
