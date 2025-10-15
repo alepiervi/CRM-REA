@@ -18183,13 +18183,18 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   const fetchTipologieByServizio = async (servizioId) => {
     try {
+      setIsLoadingTipologie(true);
+      console.log("🔄 Loading tipologie for servizio:", servizioId);
       const response = await axios.get(`${API}/cascade/tipologie-by-servizio/${servizioId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setEditTipologieContratto(response.data);
+      console.log("✅ Tipologie loaded:", response.data.length);
     } catch (error) {
-      console.error("Error fetching tipologie:", error);
+      console.error("❌ Error fetching tipologie:", error);
       setEditTipologieContratto([]);
+    } finally {
+      setIsLoadingTipologie(false);
     }
   };
 
