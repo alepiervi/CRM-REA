@@ -17983,25 +17983,57 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
 // Edit Cliente Modal Component  
 const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
   const [formData, setFormData] = useState({
+    // Dati base
     nome: cliente?.nome || '',
     cognome: cliente?.cognome || '',
     email: cliente?.email || '',
     telefono: cliente?.telefono || '',
+    cellulare: cliente?.cellulare || '',
     data_nascita: cliente?.data_nascita || '',
     luogo_nascita: cliente?.luogo_nascita || '',
     codice_fiscale: cliente?.codice_fiscale || '',
-    partita_iva: cliente?.partita_iva || '',
-    indirizzo: cliente?.indirizzo || '',
-    citta: cliente?.citta || '',
     provincia: cliente?.provincia || '',
+    comune: cliente?.comune || '',
+    indirizzo: cliente?.indirizzo || '',
     cap: cliente?.cap || '',
+    
+    // Dati Business
+    ragione_sociale: cliente?.ragione_sociale || '',
+    partita_iva: cliente?.partita_iva || '',
+    
+    // Documento
+    tipo_documento: cliente?.tipo_documento || '',
+    numero_documento: cliente?.numero_documento || '',
+    data_rilascio: cliente?.data_rilascio || '',
+    luogo_rilascio: cliente?.luogo_rilascio || '',
+    scadenza_documento: cliente?.scadenza_documento || '',
+    
+    // Campi Telefonia Fastweb
+    tecnologia: cliente?.tecnologia || '',
+    codice_migrazione: cliente?.codice_migrazione || '',
+    gestore: cliente?.gestore || '',
+    convergenza: cliente?.convergenza || false,
+    
+    // Campi Energia Fastweb
+    codice_pod: cliente?.codice_pod || '',
+    
+    // Modalità Pagamento
+    modalita_pagamento: cliente?.modalita_pagamento || '',
+    iban: cliente?.iban || '',
+    numero_carta: cliente?.numero_carta || '',
+    
+    // Campi NON modificabili (solo visualizzazione)
     commessa_id: cliente?.commessa_id || '',
     sub_agenzia_id: cliente?.sub_agenzia_id || '',
     servizio_id: cliente?.servizio_id || '',
     tipologia_contratto: cliente?.tipologia_contratto || '',
     segmento: cliente?.segmento || '',
-    status: cliente?.status || 'nuovo',
-    note: cliente?.note || ''
+    offerta_id: cliente?.offerta_id || '',
+    
+    // Note e Status
+    status: cliente?.status || 'da_inserire',
+    note: cliente?.note || '',
+    note_backoffice: cliente?.note_backoffice || ''
   });
 
   const [servizi, setServizi] = useState([]);
