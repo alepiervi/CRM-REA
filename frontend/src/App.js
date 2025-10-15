@@ -16534,9 +16534,9 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       // Document data
       tipo_documento: formData.tipo_documento || '',
       numero_documento: formData.numero_documento || '',
-      data_rilascio: formData.data_rilascio || null,
+      data_rilascio: formData.data_rilascio ? formData.data_rilascio : null,
       luogo_rilascio: formData.luogo_rilascio || '',
-      scadenza_documento: formData.scadenza_documento || null,
+      scadenza_documento: formData.scadenza_documento ? formData.scadenza_documento : null,
       
       // Telefonia Fastweb conditional fields
       tecnologia: formData.tecnologia || '',
