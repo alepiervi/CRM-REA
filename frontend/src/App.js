@@ -18070,6 +18070,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     if (formData.commessa_id) {
       fetchServizi(formData.commessa_id);
     }
+    if (cliente?.offerta_id) {
+      fetchOffertaInfo(cliente.offerta_id);
+    }
     fetchSegmenti();
   }, []);
 
