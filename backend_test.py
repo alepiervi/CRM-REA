@@ -32455,18 +32455,43 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 AZIONE RICHIESTA: Verificare implementazione endpoints cascading e dati tipologie")
             return False
 
+    def run_excel_export_test(self):
+        """Run Excel export post-riavvio test specifically"""
+        print("🚀 Starting Excel Export Post-Riavvio Test...")
+        print(f"🌐 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Run the specific test
+        success = self.test_excel_export_post_riavvio_headers_verification()
+        
+        # Print summary
+        print("\n" + "=" * 80)
+        print("🎯 EXCEL EXPORT TEST SUMMARY")
+        print("=" * 80)
+        print(f"📊 Tests run: {self.tests_run}")
+        print(f"✅ Tests passed: {self.tests_passed}")
+        print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
+        print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        
+        if success:
+            print("\n🎉 EXCEL EXPORT TEST: ✅ SUCCESS - HEADERS UPDATED AFTER RESTART!")
+        else:
+            print("\n🚨 EXCEL EXPORT TEST: ❌ FAILED - HEADERS NOT UPDATED!")
+        
+        return success
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the SPECIFIC CASCADING TEST REQUESTED
+        # Run the SPECIFIC EXCEL EXPORT TEST REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING ADMIN CASCADING ENDPOINTS TEST - AS REQUESTED")
+        print("🎯 RUNNING EXCEL EXPORT POST-RIAVVIO TEST - AS REQUESTED")
         print("="*80)
         
-        cascading_success = self.test_admin_cascading_endpoints_complete()
+        excel_success = self.test_excel_export_post_riavvio_headers_verification()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -32479,17 +32504,17 @@ Duplicate,Test,+393471234567"""
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if cascading_success:
-            print("🎉 ADMIN CASCADING ENDPOINTS TEST: ✅ SUCCESS - BACKEND PROVIDES ALL CASCADING DATA!")
+        if excel_success:
+            print("🎉 EXCEL EXPORT POST-RIAVVIO TEST: ✅ SUCCESS - HEADERS UPDATED AFTER RESTART!")
         else:
-            print("🚨 ADMIN CASCADING ENDPOINTS TEST: ❌ FAILED - CASCADING DATA INCOMPLETE!")
+            print("🚨 EXCEL EXPORT POST-RIAVVIO TEST: ❌ FAILED - HEADERS NOT UPDATED!")
         
-        if cascading_success:
-            print("\n🎉 OVERALL RESULT: ✅ BACKEND CASCADING ENDPOINTS WORKING CORRECTLY!")
+        if excel_success:
+            print("\n🎉 OVERALL RESULT: ✅ EXCEL EXPORT WITH UPDATED HEADERS WORKING CORRECTLY!")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ BACKEND CASCADING ENDPOINTS NEED ATTENTION!")
+            print("\n🚨 OVERALL RESULT: ❌ EXCEL EXPORT HEADERS NEED ATTENTION!")
         
-        return cascading_success
+        return excel_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
