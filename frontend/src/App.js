@@ -18324,7 +18324,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="cellulare">Cellulare</Label>
+                  <Label htmlFor="cellulare">Telefono 2</Label>
                   <Input
                     id="cellulare"
                     value={formData.cellulare}
@@ -18332,7 +18332,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="data_nascita">Data di Nascita</Label>
+                  <Label htmlFor="data_nascita">Nato/a</Label>
                   <Input
                     id="data_nascita"
                     type="date"
@@ -18341,12 +18341,12 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="luogo_nascita">Luogo di Nascita</Label>
+                  <Label htmlFor="luogo_nascita">A</Label>
                   <Input
                     id="luogo_nascita"
                     value={formData.luogo_nascita}
                     onChange={(e) => handleChange('luogo_nascita', e.target.value)}
-                    placeholder="Inserisci luogo di nascita"
+                    placeholder="Luogo di nascita"
                   />
                 </div>
                 <div>
@@ -18359,19 +18359,21 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="provincia">Provincia</Label>
+                  <Label htmlFor="numero_ordine">Numero Ordine</Label>
                   <Input
-                    id="provincia"
-                    value={formData.provincia}
-                    onChange={(e) => handleChange('provincia', e.target.value)}
+                    id="numero_ordine"
+                    value={formData.numero_ordine}
+                    onChange={(e) => handleChange('numero_ordine', e.target.value)}
+                    placeholder="Inserisci numero ordine"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="comune">Comune</Label>
+                  <Label htmlFor="account">Account</Label>
                   <Input
-                    id="comune"
-                    value={formData.comune}
-                    onChange={(e) => handleChange('comune', e.target.value)}
+                    id="account"
+                    value={formData.account}
+                    onChange={(e) => handleChange('account', e.target.value)}
+                    placeholder="Inserisci account"
                   />
                 </div>
               </div>
