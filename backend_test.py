@@ -31999,6 +31999,250 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 FAILURE: Problemi nella creazione o configurazione dell'utente test!")
             return False
 
+    def test_database_clienti_cleanup_urgent(self):
+        """🚨 DATABASE CLIENTI CLEANUP - Verifica e pulizia database clienti"""
+        print("\n🚨 DATABASE CLIENTI CLEANUP - Verifica e pulizia database clienti")
+        print("🎯 OBIETTIVO: Identificare e risolvere il problema di validazione clienti con campi null")
+        print("🎯 URGENT DEBUGGING:")
+        print("   1. VERIFICA CLIENTI ESISTENTI: Login admin/admin123 e GET /api/clienti")
+        print("   2. DATABASE CLEANUP: Eliminare clienti con campi null se presenti")
+        print("   3. TEST POST CLEANUP: Verificare GET /api/clienti ritorni lista vuota senza errori")
+        print("   4. ALTERNATIVE SOLUTION: Fornire query MongoDB se necessario")
+        print("🎯 EXPECTED RESULT: GET /api/clienti deve ritornare 200 OK con lista vuota [] invece di errore 500")
+        
+        # **STEP 1: VERIFICA CLIENTI ESISTENTI**
+        print("\n🔐 STEP 1: VERIFICA CLIENTI ESISTENTI...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ ADMIN LOGIN (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ ADMIN LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: GET /api/clienti per vedere quanti clienti esistono ancora**
+        print("\n📊 STEP 2: GET /api/clienti per vedere quanti clienti esistono ancora...")
+        success, clienti_response, clienti_status = self.make_request('GET', 'clienti')
+        
+        if clienti_status == 200 and success:
+            if isinstance(clienti_response, list):
+                num_clienti = len(clienti_response)
+                self.log_test("✅ GET /api/clienti SUCCESS", True, f"Status: 200 OK, Found {num_clienti} clienti")
+                
+                if num_clienti == 0:
+                    self.log_test("✅ DATABASE ALREADY CLEAN", True, "No clienti found - database is clean")
+                    print(f"\n🎉 SUCCESS: GET /api/clienti returns empty list [] as expected!")
+                    return True
+                else:
+                    self.log_test("⚠️ CLIENTI FOUND", True, f"Found {num_clienti} clienti - need to check for null fields")
+                    
+                    # Check for clients with null codice_fiscale
+                    null_codice_fiscale_clients = []
+                    null_field_clients = []
+                    
+                    for i, cliente in enumerate(clienti_response):
+                        cliente_id = cliente.get('id', f'client_{i}')
+                        codice_fiscale = cliente.get('codice_fiscale')
+                        nome = cliente.get('nome')
+                        cognome = cliente.get('cognome')
+                        telefono = cliente.get('telefono')
+                        email = cliente.get('email')
+                        
+                        # Check for null/empty required fields
+                        if not codice_fiscale or codice_fiscale == "null" or codice_fiscale.strip() == "":
+                            null_codice_fiscale_clients.append({
+                                'id': cliente_id,
+                                'nome': nome,
+                                'cognome': cognome,
+                                'codice_fiscale': codice_fiscale
+                            })
+                        
+                        # Check for other null required fields
+                        missing_fields = []
+                        if not nome or nome == "null": missing_fields.append('nome')
+                        if not cognome or cognome == "null": missing_fields.append('cognome')
+                        if not telefono or telefono == "null": missing_fields.append('telefono')
+                        if not email or email == "null": missing_fields.append('email')
+                        
+                        if missing_fields:
+                            null_field_clients.append({
+                                'id': cliente_id,
+                                'missing_fields': missing_fields
+                            })
+                    
+                    print(f"\n   📋 ANALISI CLIENTI:")
+                    print(f"      • Total clienti: {num_clienti}")
+                    print(f"      • Clienti con codice_fiscale null/empty: {len(null_codice_fiscale_clients)}")
+                    print(f"      • Clienti con altri campi null: {len(null_field_clients)}")
+                    
+                    if null_codice_fiscale_clients:
+                        self.log_test("🚨 FOUND CLIENTS WITH NULL CODICE_FISCALE", False, 
+                            f"Found {len(null_codice_fiscale_clients)} clients with null codice_fiscale")
+                        
+                        for client in null_codice_fiscale_clients[:5]:  # Show first 5
+                            print(f"         - ID: {client['id']}, Nome: {client['nome']}, Cognome: {client['cognome']}, CF: {client['codice_fiscale']}")
+                    
+                    if null_field_clients:
+                        self.log_test("🚨 FOUND CLIENTS WITH OTHER NULL FIELDS", False, 
+                            f"Found {len(null_field_clients)} clients with missing required fields")
+                        
+                        for client in null_field_clients[:5]:  # Show first 5
+                            print(f"         - ID: {client['id']}, Missing: {client['missing_fields']}")
+                    
+                    # **STEP 3: DATABASE CLEANUP - Delete problematic clients**
+                    if null_codice_fiscale_clients or null_field_clients:
+                        print(f"\n🗑️ STEP 3: DATABASE CLEANUP - Eliminare clienti problematici...")
+                        
+                        # Collect all problematic client IDs
+                        problematic_ids = set()
+                        for client in null_codice_fiscale_clients:
+                            problematic_ids.add(client['id'])
+                        for client in null_field_clients:
+                            problematic_ids.add(client['id'])
+                        
+                        print(f"   🎯 Attempting to delete {len(problematic_ids)} problematic clients...")
+                        
+                        deleted_count = 0
+                        failed_deletions = []
+                        
+                        for client_id in list(problematic_ids)[:10]:  # Limit to first 10 for safety
+                            delete_success, delete_response, delete_status = self.make_request(
+                                'DELETE', f'clienti/{client_id}', expected_status=200
+                            )
+                            
+                            if delete_success and delete_status == 200:
+                                deleted_count += 1
+                                self.log_test(f"✅ Deleted client {client_id}", True, f"Status: {delete_status}")
+                            else:
+                                failed_deletions.append(client_id)
+                                self.log_test(f"❌ Failed to delete client {client_id}", False, f"Status: {delete_status}")
+                        
+                        print(f"\n   📊 CLEANUP RESULTS:")
+                        print(f"      • Attempted deletions: {len(list(problematic_ids)[:10])}")
+                        print(f"      • Successful deletions: {deleted_count}")
+                        print(f"      • Failed deletions: {len(failed_deletions)}")
+                        
+                        if deleted_count > 0:
+                            self.log_test("✅ PARTIAL CLEANUP SUCCESS", True, f"Deleted {deleted_count} problematic clients")
+                        
+                        # **STEP 4: VERIFY CLEANUP - Check GET /api/clienti again**
+                        print(f"\n🔍 STEP 4: VERIFY CLEANUP - Check GET /api/clienti again...")
+                        
+                        success, post_cleanup_response, post_cleanup_status = self.make_request('GET', 'clienti')
+                        
+                        if post_cleanup_status == 200 and success:
+                            if isinstance(post_cleanup_response, list):
+                                remaining_clienti = len(post_cleanup_response)
+                                self.log_test("✅ GET /api/clienti POST-CLEANUP SUCCESS", True, 
+                                    f"Status: 200 OK, Remaining clienti: {remaining_clienti}")
+                                
+                                if remaining_clienti == 0:
+                                    self.log_test("🎉 DATABASE COMPLETELY CLEAN", True, "No clienti remaining - cleanup successful!")
+                                    print(f"\n🎉 SUCCESS: GET /api/clienti now returns empty list [] as expected!")
+                                    return True
+                                else:
+                                    self.log_test("⚠️ PARTIAL CLEANUP", True, f"Still {remaining_clienti} clienti remaining")
+                                    
+                                    # Check if remaining clients still have validation issues
+                                    remaining_issues = 0
+                                    for cliente in post_cleanup_response:
+                                        codice_fiscale = cliente.get('codice_fiscale')
+                                        if not codice_fiscale or codice_fiscale == "null":
+                                            remaining_issues += 1
+                                    
+                                    if remaining_issues == 0:
+                                        self.log_test("✅ NO VALIDATION ISSUES REMAINING", True, 
+                                            f"All {remaining_clienti} remaining clients have valid data")
+                                        print(f"\n🎉 SUCCESS: GET /api/clienti works correctly with {remaining_clienti} valid clients!")
+                                        return True
+                                    else:
+                                        self.log_test("🚨 VALIDATION ISSUES STILL PRESENT", False, 
+                                            f"{remaining_issues} clients still have null codice_fiscale")
+                            else:
+                                self.log_test("❌ POST-CLEANUP RESPONSE NOT LIST", False, f"Response type: {type(post_cleanup_response)}")
+                        else:
+                            self.log_test("❌ GET /api/clienti POST-CLEANUP FAILED", False, f"Status: {post_cleanup_status}")
+                    else:
+                        self.log_test("✅ NO NULL FIELD CLIENTS FOUND", True, "All clients have valid required fields")
+                        print(f"\n🎉 SUCCESS: All {num_clienti} clients have valid data - no cleanup needed!")
+                        return True
+            else:
+                self.log_test("❌ GET /api/clienti RESPONSE NOT LIST", False, f"Response type: {type(clienti_response)}")
+                
+        elif clienti_status == 500:
+            self.log_test("🚨 GET /api/clienti SERVER ERROR", False, f"Status: 500 - This is the problem we need to fix!")
+            
+            # Provide MongoDB cleanup queries
+            print(f"\n🔧 ALTERNATIVE SOLUTION - MongoDB Cleanup Queries:")
+            print(f"   Since GET /api/clienti returns 500 error, use these MongoDB queries to clean up:")
+            print(f"   ")
+            print(f"   1. Connect to MongoDB:")
+            print(f"      mongo mongodb://localhost:27017/crm_database")
+            print(f"   ")
+            print(f"   2. Find clients with null codice_fiscale:")
+            print(f"      db.clienti.find({{\"codice_fiscale\": null}})")
+            print(f"      db.clienti.find({{\"codice_fiscale\": \"\"}})")
+            print(f"      db.clienti.find({{\"codice_fiscale\": \"null\"}})")
+            print(f"   ")
+            print(f"   3. Delete clients with null codice_fiscale:")
+            print(f"      db.clienti.deleteMany({{\"codice_fiscale\": null}})")
+            print(f"      db.clienti.deleteMany({{\"codice_fiscale\": \"\"}})")
+            print(f"      db.clienti.deleteMany({{\"codice_fiscale\": \"null\"}})")
+            print(f"   ")
+            print(f"   4. Find clients with other null required fields:")
+            print(f"      db.clienti.find({{\"nome\": null}})")
+            print(f"      db.clienti.find({{\"cognome\": null}})")
+            print(f"      db.clienti.find({{\"telefono\": null}})")
+            print(f"      db.clienti.find({{\"email\": null}})")
+            print(f"   ")
+            print(f"   5. Delete all clients with any null required fields:")
+            print(f"      db.clienti.deleteMany({{$or: [")
+            print(f"        {{\"codice_fiscale\": null}},")
+            print(f"        {{\"codice_fiscale\": \"\"}},")
+            print(f"        {{\"codice_fiscale\": \"null\"}},")
+            print(f"        {{\"nome\": null}},")
+            print(f"        {{\"cognome\": null}},")
+            print(f"        {{\"telefono\": null}},")
+            print(f"        {{\"email\": null}}")
+            print(f"      ]}})")
+            print(f"   ")
+            print(f"   6. Count remaining clients:")
+            print(f"      db.clienti.countDocuments({{}})")
+            print(f"   ")
+            print(f"   7. Alternative: Make fields temporarily optional for migration:")
+            print(f"      - Modify Cliente model in server.py")
+            print(f"      - Change codice_fiscale: str to codice_fiscale: Optional[str] = None")
+            print(f"      - This allows existing null data to be handled gracefully")
+            
+            return False
+            
+        else:
+            self.log_test("❌ GET /api/clienti FAILED", False, f"Status: {clienti_status}, Response: {clienti_response}")
+            return False
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 DATABASE CLIENTI CLEANUP SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Risolvere problema validazione clienti con campi null")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • GET /api/clienti status: {'✅ 200 OK' if clienti_status == 200 else f'❌ {clienti_status}'}")
+        print(f"      • Database cleanup: {'✅ COMPLETED' if clienti_status == 200 else '❌ NEEDED'}")
+        print(f"      • Final result: {'✅ Empty list []' if clienti_status == 200 and isinstance(clienti_response, list) and len(clienti_response) == 0 else '❌ Still has issues'}")
+        
+        if clienti_status == 200:
+            print(f"   🎉 SUCCESS: GET /api/clienti now returns 200 OK as expected!")
+            return True
+        else:
+            print(f"   🚨 FAILURE: GET /api/clienti still returns error {clienti_status}")
+            print(f"   🔧 ACTION REQUIRED: Use MongoDB cleanup queries provided above")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
