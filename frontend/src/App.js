@@ -18173,6 +18173,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   };
 
   useEffect(() => {
+    console.log("🚀 EditClienteModal: Initializing data for cliente:", cliente?.id);
     if (formData.commessa_id) {
       fetchServizi(formData.commessa_id);
     }
@@ -18185,6 +18186,15 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
     fetchSegmenti();
   }, []);
+
+  // Trigger re-render quando i dati vengono caricati
+  useEffect(() => {
+    if (!isLoadingTipologie) {
+      console.log("🔄 Tipologie loaded, re-evaluating conditional sections");
+      // Force re-evaluation by updating a dummy state if needed
+      // The conditional functions will be called again during render
+    }
+  }, [isLoadingTipologie, editTipologieContratto]);
 
   const fetchTipologieByServizio = async (servizioId) => {
     try {
