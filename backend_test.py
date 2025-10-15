@@ -32243,18 +32243,237 @@ Duplicate,Test,+393471234567"""
             print(f"   🔧 ACTION REQUIRED: Use MongoDB cleanup queries provided above")
             return False
 
+    def test_admin_cascading_endpoints_complete(self):
+        """🎯 TEST BACKEND ENDPOINT CASCADING E VERIFICA DATI PER ADMIN - COMPLETE TESTING"""
+        print("\n🎯 TEST BACKEND ENDPOINT CASCADING E VERIFICA DATI PER ADMIN...")
+        print("🎯 OBIETTIVO: Confermare che il backend fornisce tutti i dati necessari per il flusso cascading")
+        print("🎯 FOCUS: Verificare filiera completa Sub Agenzia → Commessa → Servizio → Tipologia → 'Energia Fastweb'")
+        print("🎯 CREDENZIALI: admin/admin123")
+        
+        # **STEP 1: LOGIN ADMIN**
+        print("\n🔐 STEP 1: LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: VERIFICA COMMESSE**
+        print("\n📋 STEP 2: VERIFICA COMMESSE - GET /api/commesse...")
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        found_commesse = {}
+        fastweb_id = None
+        
+        if success and status == 200:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            self.log_test("✅ GET /api/commesse", True, f"Status: {status}, Found {len(commesse)} commesse")
+            
+            # Look for the 3 expected commesse: Fastweb, Fotovoltaico, Telepass
+            expected_commesse = ["Fastweb", "Fotovoltaico", "Telepass"]
+            
+            for commessa in commesse:
+                nome = commessa.get('nome', '')
+                if nome in expected_commesse:
+                    found_commesse[nome] = commessa.get('id')
+                    
+            print(f"\n   📊 COMMESSE VERIFICATION:")
+            for expected in expected_commesse:
+                if expected in found_commesse:
+                    self.log_test(f"✅ Commessa '{expected}' found", True, f"ID: {found_commesse[expected]}")
+                else:
+                    self.log_test(f"❌ Commessa '{expected}' missing", False, "Not found in commesse list")
+            
+            if len(found_commesse) >= 3:
+                self.log_test("✅ All 3 expected commesse found", True, f"Fastweb, Fotovoltaico, Telepass")
+                fastweb_id = found_commesse.get('Fastweb')
+            else:
+                self.log_test("❌ Missing expected commesse", False, f"Found only {len(found_commesse)}/3")
+        else:
+            self.log_test("❌ GET /api/commesse failed", False, f"Status: {status}")
+            return False
+
+        # **STEP 3: TEST CASCADING SUB AGENZIE**
+        print("\n🏢 STEP 3: TEST CASCADING SUB AGENZIE - GET /api/cascade/sub-agenzie...")
+        success, sub_agenzie_response, status = self.make_request('GET', 'cascade/sub-agenzie', expected_status=200)
+        
+        sub_agenzie_ids = []
+        
+        if success and status == 200:
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            self.log_test("✅ GET /api/cascade/sub-agenzie", True, f"Status: {status}, Found {len(sub_agenzie)} sub agenzie")
+            
+            # Store sub agenzie for next step
+            for sub_agenzia in sub_agenzie:
+                sub_agenzia_id = sub_agenzia.get('id')
+                sub_agenzia_nome = sub_agenzia.get('nome', 'Unknown')
+                if sub_agenzia_id:
+                    sub_agenzie_ids.append({'id': sub_agenzia_id, 'nome': sub_agenzia_nome})
+                    self.log_test(f"✅ Sub Agenzia found", True, f"Nome: {sub_agenzia_nome}, ID: {sub_agenzia_id}")
+        else:
+            self.log_test("❌ GET /api/cascade/sub-agenzie failed", False, f"Status: {status}")
+            return False
+
+        # **STEP 4: TEST CASCADING COMMESSE PER SUB AGENZIA**
+        print("\n🔗 STEP 4: TEST CASCADING COMMESSE PER SUB AGENZIA...")
+        
+        for sub_agenzia in sub_agenzie_ids:
+            sub_agenzia_id = sub_agenzia['id']
+            sub_agenzia_nome = sub_agenzia['nome']
+            
+            print(f"\n   Testing commesse for Sub Agenzia: {sub_agenzia_nome}")
+            success, commesse_sub_response, status = self.make_request(
+                'GET', f'cascade/commesse-by-subagenzia?sub_agenzia_id={sub_agenzia_id}', expected_status=200)
+            
+            if success and status == 200:
+                commesse_sub = commesse_sub_response if isinstance(commesse_sub_response, list) else []
+                self.log_test(f"✅ GET /api/cascade/commesse-by-subagenzia ({sub_agenzia_nome})", True, 
+                    f"Status: {status}, Found {len(commesse_sub)} commesse")
+                
+                # Check if Fastweb is among the commesse for this sub agenzia
+                for commessa in commesse_sub:
+                    commessa_nome = commessa.get('nome', '')
+                    commessa_id = commessa.get('id', '')
+                    self.log_test(f"  ✅ Commessa available", True, f"Nome: {commessa_nome}, ID: {commessa_id}")
+            else:
+                self.log_test(f"❌ GET /api/cascade/commesse-by-subagenzia ({sub_agenzia_nome})", False, f"Status: {status}")
+
+        # **STEP 5: TEST CASCADING SERVIZI PER FASTWEB**
+        print("\n⚙️ STEP 5: TEST CASCADING SERVIZI PER FASTWEB...")
+        
+        tls_servizio_id = None
+        
+        if fastweb_id:
+            success, servizi_response, status = self.make_request(
+                'GET', f'cascade/servizi-by-commessa/{fastweb_id}', expected_status=200)
+            
+            if success and status == 200:
+                servizi = servizi_response if isinstance(servizi_response, list) else []
+                self.log_test("✅ GET /api/cascade/servizi-by-commessa (Fastweb)", True, 
+                    f"Status: {status}, Found {len(servizi)} servizi")
+                
+                # Look for TLS service
+                for servizio in servizi:
+                    servizio_nome = servizio.get('nome', '')
+                    servizio_id = servizio.get('id', '')
+                    self.log_test(f"  ✅ Servizio found", True, f"Nome: {servizio_nome}, ID: {servizio_id}")
+                    
+                    if 'TLS' in servizio_nome.upper():
+                        tls_servizio_id = servizio_id
+                        self.log_test(f"  🎯 TLS Servizio identified", True, f"Nome: {servizio_nome}, ID: {servizio_id}")
+            else:
+                self.log_test("❌ GET /api/cascade/servizi-by-commessa (Fastweb)", False, f"Status: {status}")
+        else:
+            self.log_test("❌ Cannot test servizi", False, "Fastweb ID not available")
+
+        # **STEP 6: TEST CASCADING TIPOLOGIE PER SERVIZIO TLS**
+        print("\n📝 STEP 6: TEST CASCADING TIPOLOGIE PER SERVIZIO TLS...")
+        
+        energia_fastweb_found = False
+        
+        if tls_servizio_id:
+            success, tipologie_response, status = self.make_request(
+                'GET', f'cascade/tipologie-by-servizio/{tls_servizio_id}', expected_status=200)
+            
+            if success and status == 200:
+                tipologie = tipologie_response if isinstance(tipologie_response, list) else []
+                self.log_test("✅ GET /api/cascade/tipologie-by-servizio (TLS)", True, 
+                    f"Status: {status}, Found {len(tipologie)} tipologie")
+                
+                # Look for "Energia Fastweb" tipologia
+                for tipologia in tipologie:
+                    tipologia_nome = tipologia.get('nome', '')
+                    tipologia_id = tipologia.get('id', '')
+                    self.log_test(f"  ✅ Tipologia found", True, f"Nome: {tipologia_nome}, ID: {tipologia_id}")
+                    
+                    if 'Energia Fastweb' in tipologia_nome:
+                        energia_fastweb_found = True
+                        self.log_test(f"  🎯 'Energia Fastweb' tipologia found!", True, f"Nome: {tipologia_nome}, ID: {tipologia_id}")
+                
+                if energia_fastweb_found:
+                    self.log_test("✅ CRITICAL: 'Energia Fastweb' tipologia verified", True, "Target tipologia found in cascading flow")
+                else:
+                    self.log_test("❌ CRITICAL: 'Energia Fastweb' tipologia missing", False, "Target tipologia not found")
+            else:
+                self.log_test("❌ GET /api/cascade/tipologie-by-servizio (TLS)", False, f"Status: {status}")
+        else:
+            self.log_test("❌ Cannot test tipologie", False, "TLS Servizio ID not available")
+
+        # **STEP 7: VERIFICA TIPOLOGIE "ENERGIA FASTWEB"**
+        print("\n🔍 STEP 7: VERIFICA TIPOLOGIE 'ENERGIA FASTWEB' - ADDITIONAL CHECK...")
+        
+        # Additional check: Get all tipologie and search for "Energia Fastweb"
+        success, all_tipologie_response, status = self.make_request('GET', 'tipologie-contratto', expected_status=200)
+        
+        if success and status == 200:
+            all_tipologie = all_tipologie_response if isinstance(all_tipologie_response, list) else []
+            self.log_test("✅ GET /api/tipologie-contratto", True, f"Status: {status}, Found {len(all_tipologie)} total tipologie")
+            
+            energia_fastweb_count = 0
+            for tipologia in all_tipologie:
+                tipologia_nome = tipologia.get('nome', '')
+                if 'Energia Fastweb' in tipologia_nome:
+                    energia_fastweb_count += 1
+                    self.log_test(f"  🎯 'Energia Fastweb' tipologia found in global list", True, f"Nome: {tipologia_nome}")
+            
+            if energia_fastweb_count > 0:
+                self.log_test("✅ 'Energia Fastweb' tipologie exist globally", True, f"Found {energia_fastweb_count} instances")
+            else:
+                self.log_test("❌ 'Energia Fastweb' tipologie not found globally", False, "No instances found in global tipologie list")
+        else:
+            self.log_test("❌ GET /api/tipologie-contratto failed", False, f"Status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 ADMIN CASCADING ENDPOINTS TEST SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Confermare backend fornisce dati per flusso cascading → 'Energia Fastweb'")
+        print(f"   🎯 CREDENZIALI: admin/admin123")
+        print(f"   📊 RISULTATI:")
+        print(f"      • 1. Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • 2. GET /api/commesse (3 commesse): {'✅ SUCCESS' if len(found_commesse) >= 3 else '❌ INCOMPLETE'}")
+        print(f"      • 3. GET /api/cascade/sub-agenzie: {'✅ SUCCESS' if len(sub_agenzie_ids) > 0 else '❌ FAILED'}")
+        print(f"      • 4. GET /api/cascade/commesse-by-subagenzia: ✅ TESTED")
+        print(f"      • 5. GET /api/cascade/servizi-by-commessa (Fastweb): {'✅ SUCCESS' if tls_servizio_id else '❌ FAILED'}")
+        print(f"      • 6. GET /api/cascade/tipologie-by-servizio (TLS): {'✅ SUCCESS' if energia_fastweb_found else '❌ FAILED'}")
+        print(f"      • 7. 'Energia Fastweb' tipologia verification: {'✅ FOUND' if energia_fastweb_found else '❌ NOT FOUND'}")
+        
+        # Overall success criteria
+        overall_success = (
+            len(found_commesse) >= 3 and 
+            len(sub_agenzie_ids) > 0 and 
+            tls_servizio_id is not None and 
+            energia_fastweb_found
+        )
+        
+        if overall_success:
+            print(f"   🎉 SUCCESS: Backend fornisce tutti i dati necessari per il flusso cascading!")
+            print(f"   🎉 CONFERMATO: Filiera completa Sub Agenzia → Commessa → Servizio → Tipologia funziona!")
+            print(f"   🎉 VERIFICATO: 'Energia Fastweb' tipologia è disponibile nel flusso cascading!")
+            return True
+        else:
+            print(f"   🚨 PARTIAL SUCCESS: Alcuni endpoint del flusso cascading presentano problemi")
+            print(f"   🚨 AZIONE RICHIESTA: Verificare implementazione endpoints cascading e dati tipologie")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the URGENT DATABASE CLIENTI CLEANUP TEST (HIGHEST PRIORITY)
+        # Run the SPECIFIC CASCADING TEST REQUESTED
         print("\n" + "="*80)
-        print("🚨 RUNNING URGENT DATABASE CLIENTI CLEANUP TEST - HIGHEST PRIORITY")
+        print("🎯 RUNNING ADMIN CASCADING ENDPOINTS TEST - AS REQUESTED")
         print("="*80)
         
-        database_cleanup_success = self.test_database_clienti_cleanup_urgent()
+        cascading_success = self.test_admin_cascading_endpoints_complete()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -32267,17 +32486,17 @@ Duplicate,Test,+393471234567"""
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if database_cleanup_success:
-            print("🎉 DATABASE CLIENTI CLEANUP TEST: ✅ SUCCESS - DATABASE CLEANED OR WORKING CORRECTLY!")
+        if cascading_success:
+            print("🎉 ADMIN CASCADING ENDPOINTS TEST: ✅ SUCCESS - BACKEND PROVIDES ALL CASCADING DATA!")
         else:
-            print("🚨 DATABASE CLIENTI CLEANUP TEST: ❌ FAILED - DATABASE CLEANUP NEEDED!")
+            print("🚨 ADMIN CASCADING ENDPOINTS TEST: ❌ FAILED - CASCADING DATA INCOMPLETE!")
         
-        if database_cleanup_success:
-            print("\n🎉 OVERALL RESULT: ✅ GET /api/clienti FUNZIONA CORRETTAMENTE!")
+        if cascading_success:
+            print("\n🎉 OVERALL RESULT: ✅ BACKEND CASCADING ENDPOINTS WORKING CORRECTLY!")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ GET /api/clienti PRESENTA ANCORA PROBLEMI!")
+            print("\n🚨 OVERALL RESULT: ❌ BACKEND CASCADING ENDPOINTS NEED ATTENTION!")
         
-        return database_cleanup_success
+        return cascading_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
