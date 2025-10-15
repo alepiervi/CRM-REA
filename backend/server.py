@@ -9084,10 +9084,21 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
     ws = wb.active
     ws.title = "Clienti Report"
     
-    # Headers
+    # Headers - Include all new client form fields
     headers = [
-        "ID Cliente", "Nome", "Cognome", "Telefono", "Email", "Codice Fiscale",
+        "ID Cliente", "Nome", "Cognome", "Telefono", "Cellulare", "Email", "Codice Fiscale",
         "Data Nascita", "Provincia", "Comune", "Indirizzo", "Cap", 
+        # Business fields
+        "Ragione Sociale", "Partita IVA",
+        # Document fields
+        "Tipo Documento", "Numero Documento", "Data Rilascio", "Luogo Rilascio", "Scadenza Documento",
+        # Telefonia Fastweb conditional fields
+        "Tecnologia", "Codice Migrazione", "Gestore", "Convergenza",
+        # Energia Fastweb conditional fields
+        "Codice Pod",
+        # Payment fields
+        "Modalità Pagamento", "IBAN", "Numero Carta",
+        # System fields
         "Sub Agenzia", "Commessa", "Servizio", "Tipologia Contratto", "Segmento", "Offerta",
         "Status", "Utente Creatore", "Data Creazione", "Note"
     ]
