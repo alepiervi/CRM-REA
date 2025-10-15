@@ -32851,12 +32851,12 @@ Duplicate,Test,+393471234567"""
         else:
             print("🚨 COMPLETE BACKEND POST-MODIFICATIONS TEST: ❌ FAILED - ISSUES FOUND!")
         
-        if excel_success:
-            print("\n🎉 OVERALL RESULT: ✅ EXCEL EXPORT WITH UPDATED HEADERS WORKING CORRECTLY!")
+        if backend_success:
+            print("\n🎉 OVERALL RESULT: ✅ COMPLETE BACKEND SYSTEM WORKING CORRECTLY!")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ EXCEL EXPORT HEADERS NEED ATTENTION!")
+            print("\n🚨 OVERALL RESULT: ❌ BACKEND SYSTEM NEEDS ATTENTION!")
         
-        return excel_success
+        return backend_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
