@@ -1519,6 +1519,20 @@ const Dashboard = () => {
     }
   };
 
+  const fetchOfferteBySegmento = async (segmentoId) => {
+    try {
+      console.log("🔄 Loading offerte for segmento:", segmentoId);
+      const response = await axios.get(`${API}/segmenti/${segmentoId}/offerte`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setAvailableOfferte(response.data);
+      console.log("✅ Available offerte loaded:", response.data.length);
+    } catch (error) {
+      console.error("❌ Error fetching offerte:", error);
+      setAvailableOfferte([]);
+    }
+  };
+
   // Funzione rimossa da qui - spostata nel componente EditClienteModal
 
   const fetchOfferte = async (segmentoId) => {
