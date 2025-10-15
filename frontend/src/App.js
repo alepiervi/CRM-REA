@@ -15789,18 +15789,66 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
   // CLIENT FORM DATA (shown after offerta selection)
   const [formData, setFormData] = useState({
-    nome: '',
-    cognome: '',
-    email: '',
-    telefono: '',
-    indirizzo: '',
-    citta: '',
-    provincia: '',
+    // Campi base sempre presenti
+    numero_ordine: '',
+    account: '',
+    ragione_sociale: '', // Solo se Business
+    cognome: '', // Obbligatorio
+    nome: '', // Obbligatorio
+    data_nascita: '',
+    luogo_nascita: '',
+    comune_residenza: '',
+    provincia: '', // Sigla provincia
     cap: '',
-    codice_fiscale: '',
-    partita_iva: '',
-    note: ''
+    indirizzo: '',
+    email: '',
+    telefono: '', // Obbligatorio
+    telefono2: '',
+    partita_iva: '', // Solo se Business
+    codice_fiscale: '', // Obbligatorio
+    
+    // Documento
+    tipo_documento: '',
+    numero_documento: '',
+    data_rilascio: '',
+    luogo_rilascio: '',
+    scadenza_documento: '',
+    
+    // Campi specifici Telefonia Fastweb
+    tecnologia: '',
+    codice_migrazione: '',
+    gestore: '',
+    convergenza: false,
+    convergenza_items: [{
+      numero_cellulare: '',
+      iccid: '',
+      operatore: ''
+    }],
+    
+    // Campi specifici Energia Fastweb
+    codice_pod: '',
+    
+    // Modalità pagamento
+    modalita_pagamento: '',
+    iban: '',
+    intestatario_diverso: '',
+    numero_carta: '',
+    mese_carta: '',
+    anno_carta: '',
+    
+    // Note
+    note: '',
+    
+    // Campo Area Manager
+    sub_agenzia_id: ''
   });
+
+  // State per gestire i campi convergenza multipli
+  const [convergenzaItems, setConvergenzaItems] = useState([{
+    numero_cellulare: '',
+    iccid: '',
+    operatore: ''
+  }]);
 
   // LEGACY STATES (keep for compatibility)
   const [servizi, setServizi] = useState([]);
