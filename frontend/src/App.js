@@ -18121,6 +18121,84 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const [isLoadingOfferta, setIsLoadingOfferta] = useState(false);
   const [availableOfferte, setAvailableOfferte] = useState([]);
 
+  // Definizione di tutte le funzioni PRIMA del useEffect
+  const fetchServizi = async (commessaId) => {
+    try {
+      const response = await axios.get(`${API}/cascade/servizi-by-commessa/${commessaId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setServizi(response.data);
+    } catch (error) {
+      console.error("Error fetching servizi:", error);
+      setServizi([]);
+    }
+  };
+
+  const fetchSegmenti = async () => {
+    try {
+      const response = await axios.get(`${API}/segmenti`);
+      setSegmenti(response.data);
+    } catch (error) {
+      console.error("Error fetching segmenti:", error);
+      setSegmenti([]);
+    }
+  };
+
+  const fetchTipologieByServizio = async (servizioId) => {
+    try {
+      setIsLoadingTipologie(true);
+      console.log("🔄 Loading tipologie for servizio:", servizioId);
+      const response = await axios.get(`${API}/cascade/tipologie-by-servizio/${servizioId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setEditTipologieContratto(response.data);
+      console.log("✅ Tipologie loaded:", response.data.length);
+    } catch (error) {
+      console.error("❌ Error fetching tipologie:", error);
+      setEditTipologieContratto([]);
+    } finally {
+      setIsLoadingTipologie(false);
+    }
+  };
+
+  const fetchOffertaInfo = async (offertaId) => {
+    try {
+      setIsLoadingOfferta(true);
+      console.log("🔄 Loading offerta info for ID:", offertaId);
+      const response = await axios.get(`${API}/offerte/${offertaId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setOffertaInfo(response.data);
+      console.log("✅ Offerta loaded:", response.data);
+    } catch (error) {
+      console.error("❌ Error fetching offerta info:", error);
+      setOffertaInfo(null);
+    } finally {
+      setIsLoadingOfferta(false);
+    }
+  };
+
+  const fetchOfferteBySegmento = async (segmentoId) => {
+    try {
+      console.log("🔄 Loading offerte for segmento:", segmentoId);
+      const response = await axios.get(`${API}/segmenti/${segmentoId}/offerte`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setAvailableOfferte(response.data);
+      console.log("✅ Available offerte loaded:", response.data.length);
+    } catch (error) {
+      console.error("❌ Error fetching offerte:", error);
+      setAvailableOfferte([]);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   // Funzioni per rilevare i campi condizionali basati sui dati del cliente esistente
   const isEditEnergiaFastweb = () => {
     // Prima priorità: controlla se il cliente ha già campi Energia Fastweb popolati
