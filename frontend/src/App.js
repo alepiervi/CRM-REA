@@ -18577,7 +18577,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </Card>
           )}
 
-          {/* SEZIONE MODALITÀ PAGAMENTO */}
+          {/* SEZIONE MODALITÀ PAGAMENTO - SEMPRE VISIBILE */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">💳 Modalità Pagamento</CardTitle>
@@ -18591,33 +18591,63 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     onChange={(e) => handleChange('modalita_pagamento', e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
-                    <option value="">Seleziona modalità</option>
+                    <option value="">Nessuna modalità selezionata</option>
                     <option value="iban">IBAN</option>
                     <option value="carta_credito">Carta di Credito</option>
                   </select>
                 </div>
                 
-                {formData.modalita_pagamento === 'iban' && (
-                  <div>
-                    <Label htmlFor="iban">IBAN</Label>
-                    <Input
-                      id="iban"
-                      value={formData.iban}
-                      onChange={(e) => handleChange('iban', e.target.value)}
-                      placeholder="IT00 0000 0000 0000 0000 0000 000"
-                    />
-                  </div>
-                )}
+                {/* IBAN - Sempre visibile se presente */}
+                <div>
+                  <Label htmlFor="iban" className="flex items-center gap-2">
+                    IBAN
+                    {formData.modalita_pagamento === 'iban' && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">ATTIVO</span>}
+                  </Label>
+                  <Input
+                    id="iban"
+                    value={formData.iban}
+                    onChange={(e) => handleChange('iban', e.target.value)}
+                    placeholder="IT00 0000 0000 0000 0000 0000 000"
+                    className={formData.modalita_pagamento === 'iban' ? 'border-green-200 bg-green-50' : ''}
+                  />
+                  {formData.iban && formData.modalita_pagamento !== 'iban' && (
+                    <p className="text-xs text-amber-600 mt-1">⚠️ IBAN presente ma non selezionato come modalità attiva</p>
+                  )}
+                </div>
                 
-                {formData.modalita_pagamento === 'carta_credito' && (
-                  <div>
-                    <Label htmlFor="numero_carta">Numero Carta</Label>
-                    <Input
-                      id="numero_carta"
-                      value={formData.numero_carta}
-                      onChange={(e) => handleChange('numero_carta', e.target.value)}
-                      placeholder="**** **** **** 1234"
-                    />
+                {/* Numero Carta - Sempre visibile e COMPLETAMENTE leggibile per utenti autorizzati */}
+                <div>
+                  <Label htmlFor="numero_carta" className="flex items-center gap-2">
+                    Numero Carta di Credito
+                    {formData.modalita_pagamento === 'carta_credito' && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">ATTIVO</span>}
+                  </Label>
+                  <Input
+                    id="numero_carta"
+                    type="text"
+                    value={formData.numero_carta}
+                    onChange={(e) => handleChange('numero_carta', e.target.value)}
+                    placeholder="1234 5678 9012 3456"
+                    className={formData.modalita_pagamento === 'carta_credito' ? 'border-blue-200 bg-blue-50 font-mono' : 'font-mono'}
+                  />
+                  {formData.numero_carta && (
+                    <div className="text-xs text-gray-600 mt-1 bg-gray-50 p-2 rounded font-mono">
+                      <strong>Numero completo:</strong> {formData.numero_carta}
+                      {formData.modalita_pagamento !== 'carta_credito' && (
+                        <span className="text-amber-600 ml-2">⚠️ Carta presente ma non selezionata come modalità attiva</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Riepilogo modalità pagamento */}
+                {formData.modalita_pagamento && (
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Modalità Attiva:</h4>
+                    <p className="text-sm">
+                      {formData.modalita_pagamento === 'iban' ? `💰 IBAN: ${formData.iban || 'Non inserito'}` : 
+                       formData.modalita_pagamento === 'carta_credito' ? `💳 Carta: ${formData.numero_carta || 'Non inserita'}` : 
+                       'Nessuna modalità selezionata'}
+                    </p>
                   </div>
                 )}
               </div>
