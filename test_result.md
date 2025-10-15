@@ -574,6 +574,25 @@ backend:
           ✅ FIELD STRUCTURE REORGANIZATION: Reorganized sections logically - Dati Fiscali with conditional Business fields, separate Indirizzo section, comprehensive Payment section with full visibility for all users.
           
           TESTING REQUIRED: Verify conditional field logic works for existing clients, payment fields are fully visible, Business/Privato segmento detection, and offerta display shows correct information."
+        - working: "needs_testing"
+          agent: "main"
+          comment: "🚨 CRITICAL FIXES APPLIED BASED ON USER FEEDBACK - COMPLETE FIELD PARITY & ROBUST CONDITIONAL LOGIC:
+          
+          ✅ COMPLETE FIELD PARITY: Added missing 'Luogo di Nascita' field in edit modal to match creation form. ALL fields from creation now present in edit modal.
+          
+          ✅ ROBUST CONDITIONAL LOGIC: Completely rewrote isEditEnergiaFastweb() and isEditTelefoniaFastweb() with three-tier detection: 1) Existing populated fields (codice_pod, tecnologia, etc.), 2) Tipologia name matching from loaded data, 3) Direct tipologia value matching. Added comprehensive debug logging.
+          
+          ✅ LOADING STATES & TIMING FIX: Added isLoadingTipologie and isLoadingOfferta states to prevent race conditions. Functions now properly wait for data loading before evaluation. Added useEffect to trigger re-evaluation when tipologie data loads.
+          
+          ✅ ENHANCED OFFERTA DISPLAY: Improved offerta visualization with loading states, proper error handling, and complete offerta information display (name, description, ID).
+          
+          ✅ CONVERGENZA & SIM VISUALIZATION: Enhanced convergenza section to show associated SIM cards with complete details (numero, operatore, tecnologia, piano) when convergenza is active.
+          
+          ✅ PAYMENT DEBUG VISIBILITY: Added debug information for payment methods to help identify loading issues. All payment fields (IBAN, Carta) now show complete data without masking.
+          
+          ✅ DATA FETCHING IMPROVEMENTS: Enhanced fetchTipologieByServizio() and fetchOffertaInfo() with proper loading states and comprehensive logging for debugging.
+          
+          TESTING REQUIRED: Verify ALL creation fields are now present in edit modal, conditional logic works correctly with loaded data, payment fields show correct values, convergenza shows SIM details, and offerta displays properly."
 
   - task: "Excel Export Conditional Fields Implementation - Include New Client Form Fields"
     implemented: true
