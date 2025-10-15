@@ -15899,13 +15899,20 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   };
 
   const isEnergiaFastweb = () => {
-    const commessaId = selectedData.commessa_id;
-    const commessa = cascadeCommesse.find(c => c.id === commessaId);
+    const tipologiaId = selectedData.tipologia_contratto;
+    const tipologia = cascadeTipologie.find(t => t.id === tipologiaId);
     
-    if (!commessa) return false;
+    if (!tipologia) return false;
     
-    // Riconoscimento per commesse legate all'energia/fotovoltaico
-    const nome = commessa.nome?.toLowerCase() || '';
+    // Riconoscimento per tipologie legate all'energia/fotovoltaico
+    const nome = tipologia.nome?.toLowerCase() || '';
+    console.log("🔍 isEnergiaFastweb DEBUG:", {
+      tipologiaId,
+      tipologia_nome: tipologia.nome,
+      nome_lower: nome,
+      result: nome.includes('energia')
+    });
+    
     return nome.includes('energia') || 
            nome.includes('fotovoltaico') || 
            nome.includes('solare') || 
