@@ -702,9 +702,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "COMPLETE CLIENT EDIT MODAL OVERHAUL - Conditional Fields, Non-Modifiable Fields, New Status System"
+    - "Area Manager Frontend Implementation - Complete UI Integration"
   stuck_tasks:
-    - "COMPLETE CLIENT EDIT MODAL OVERHAUL - Conditional Fields, Non-Modifiable Fields, New Status System"
+    - "Area Manager Frontend Implementation - Complete UI Integration"
   test_all: false
   test_priority: "high_first"
 
