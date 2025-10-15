@@ -18092,7 +18092,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     // Modalità Pagamento
     modalita_pagamento: cliente?.modalita_pagamento || '',
     iban: cliente?.iban || '',
-    intestatario_iban: cliente?.intestatario_iban || '',
+    intestatario_diverso: cliente?.intestatario_diverso || '',
     numero_carta: cliente?.numero_carta || '',
     mese_carta: cliente?.mese_carta || '',
     anno_carta: cliente?.anno_carta || '',
