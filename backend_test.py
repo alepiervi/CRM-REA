@@ -33141,14 +33141,14 @@ Duplicate,Test,+393471234567"""
         print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
         print(f"      • Business client creation (Energia Fastweb): {'✅ SUCCESS' if business_client_id else '❌ FAILED'}")
         print(f"      • Private client creation (Telefonia Fastweb): {'✅ SUCCESS' if private_client_id else '❌ FAILED'}")
-        print(f"      • Client retrieval (GET /api/clienti): {'✅ SUCCESS' if status == 200 else '❌ FAILED'}")
-        print(f"      • Offerta info (GET /api/offerte): {'✅ SUCCESS' if len(offerte) > 0 else '❌ FAILED'}")
+        print(f"      • Client retrieval (GET /api/clienti): {'✅ SUCCESS' if clienti_response and isinstance(clienti_response, list) else '❌ FAILED'}")
+        print(f"      • Offerta info (GET /api/segmenti/offerte): {'✅ SUCCESS' if segmenti_response and isinstance(segmenti_response, list) else '❌ FAILED'}")
         print(f"      • Conditional fields saved correctly: {'✅ SUCCESS' if business_client_id and private_client_id else '❌ FAILED'}")
         print(f"      • Payment methods saved correctly: {'✅ SUCCESS' if business_client_id and private_client_id else '❌ FAILED'}")
         
         overall_success = (business_client_id is not None and 
                           private_client_id is not None and 
-                          status == 200)
+                          clienti_response and isinstance(clienti_response, list))
         
         if overall_success:
             print(f"   🎉 SUCCESS: Logica condizionale Business/Privato funziona correttamente!")
