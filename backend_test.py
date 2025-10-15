@@ -32828,12 +32828,12 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the SPECIFIC EXCEL EXPORT TEST REQUESTED
+        # Run the COMPLETE BACKEND POST-MODIFICATIONS TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING EXCEL EXPORT POST-RIAVVIO TEST - AS REQUESTED")
+        print("🎯 RUNNING COMPLETE BACKEND POST-MODIFICATIONS TEST - AS REQUESTED")
         print("="*80)
         
-        excel_success = self.test_excel_export_post_riavvio_headers_verification()
+        backend_success = self.test_complete_backend_post_modifications()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -32846,10 +32846,10 @@ Duplicate,Test,+393471234567"""
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if excel_success:
-            print("🎉 EXCEL EXPORT POST-RIAVVIO TEST: ✅ SUCCESS - HEADERS UPDATED AFTER RESTART!")
+        if backend_success:
+            print("🎉 COMPLETE BACKEND POST-MODIFICATIONS TEST: ✅ SUCCESS - ALL ENDPOINTS WORKING!")
         else:
-            print("🚨 EXCEL EXPORT POST-RIAVVIO TEST: ❌ FAILED - HEADERS NOT UPDATED!")
+            print("🚨 COMPLETE BACKEND POST-MODIFICATIONS TEST: ❌ FAILED - ISSUES FOUND!")
         
         if excel_success:
             print("\n🎉 OVERALL RESULT: ✅ EXCEL EXPORT WITH UPDATED HEADERS WORKING CORRECTLY!")
