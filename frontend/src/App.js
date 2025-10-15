@@ -1453,6 +1453,18 @@ const Dashboard = () => {
     }
   };
 
+  const fetchOffertaInfo = async (offertaId) => {
+    try {
+      const response = await axios.get(`${API}/offerte/${offertaId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setOffertaInfo(response.data);
+    } catch (error) {
+      console.error("Error fetching offerta info:", error);
+      setOffertaInfo(null);
+    }
+  };
+
   const fetchOfferte = async (segmentoId) => {
     try {
       const response = await axios.get(`${API}/segmenti/${segmentoId}/offerte`);
