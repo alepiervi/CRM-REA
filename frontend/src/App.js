@@ -16583,7 +16583,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       created_via: 'cascading_modal'
     };
     
-    console.log("🎯 CLEAN CASCADING FORM DATA:", cleanFormData);
+    console.log("🎯 CLEAN CASCADING FORM DATA:", {
+      total_fields: Object.keys(cleanFormData).length,
+      required_fields: {
+        nome: cleanFormData.nome,
+        cognome: cleanFormData.cognome, 
+        codice_fiscale: cleanFormData.codice_fiscale,
+        telefono: cleanFormData.telefono
+      },
+      full_data: cleanFormData
+    });
     console.log("🎯 CALLING onSubmit FUNCTION...");
     
     // Call the onSubmit function passed from parent
