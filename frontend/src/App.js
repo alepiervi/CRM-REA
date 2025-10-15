@@ -18237,21 +18237,13 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </CardContent>
           </Card>
 
-          {/* Dati Fiscali */}
+          {/* Dati Fiscali e Indirizzo */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Dati Fiscali</CardTitle>
+              <CardTitle className="text-lg">🏠 Dati Fiscali e Indirizzo</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="codice_fiscale">Codice Fiscale</Label>
-                  <Input
-                    id="codice_fiscale"
-                    value={formData.codice_fiscale}
-                    onChange={(e) => handleChange('codice_fiscale', e.target.value)}
-                  />
-                </div>
                 <div>
                   <Label htmlFor="partita_iva">Partita IVA</Label>
                   <Input
@@ -18260,47 +18252,20 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     onChange={(e) => handleChange('partita_iva', e.target.value)}
                   />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Indirizzo */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Indirizzo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label htmlFor="indirizzo">Via/Piazza</Label>
-                  <Input
-                    id="indirizzo"
-                    value={formData.indirizzo}
-                    onChange={(e) => handleChange('indirizzo', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="citta">Città</Label>
-                  <Input
-                    id="citta"
-                    value={formData.citta}
-                    onChange={(e) => handleChange('citta', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="provincia">Provincia</Label>
-                  <Input
-                    id="provincia"
-                    value={formData.provincia}
-                    onChange={(e) => handleChange('provincia', e.target.value)}
-                  />
-                </div>
                 <div>
                   <Label htmlFor="cap">CAP</Label>
                   <Input
                     id="cap"
                     value={formData.cap}
                     onChange={(e) => handleChange('cap', e.target.value)}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="indirizzo">Via/Piazza</Label>
+                  <Input
+                    id="indirizzo"
+                    value={formData.indirizzo}
+                    onChange={(e) => handleChange('indirizzo', e.target.value)}
                   />
                 </div>
               </div>
