@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 def test_role_based_document_access():
-    base_url = "https://dynamic-crm-1.preview.emergentagent.com/api"
+    base_url = "https://area-manager-ui-1.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     
