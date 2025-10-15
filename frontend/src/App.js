@@ -18124,26 +18124,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   };
 
-  const handleCommessaChange = (commessaId) => {
-    setFormData(prev => ({
-      ...prev, 
-      commessa_id: commessaId,
-      servizio_id: '',
-      tipologia_contratto: '',
-      segmento: ''
-    }));
-    fetchServizi(commessaId);
-    setEditTipologieContratto([]);
-  };
-
-  const handleServizioChange = (servizioId) => {
-    setFormData(prev => ({
-      ...prev,
-      servizio_id: servizioId,
-      tipologia_contratto: '',
-      segmento: ''
-    }));
-  };
+  // Funzioni per gestire i campi modificabili (i dati organizzativi non sono più modificabili)
 
   const handleSubmit = (e) => {
     e.preventDefault();
