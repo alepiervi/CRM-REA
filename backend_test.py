@@ -32267,17 +32267,17 @@ Duplicate,Test,+393471234567"""
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if password_validation_success:
-            print("🎉 PASSWORD VALIDATION USER CREATION TEST: ✅ SUCCESS - USER test_validation_password CREATED AND READY!")
+        if database_cleanup_success:
+            print("🎉 DATABASE CLIENTI CLEANUP TEST: ✅ SUCCESS - DATABASE CLEANED OR WORKING CORRECTLY!")
         else:
-            print("🚨 PASSWORD VALIDATION USER CREATION TEST: ❌ FAILED - USER CREATION ISSUES!")
+            print("🚨 DATABASE CLIENTI CLEANUP TEST: ❌ FAILED - DATABASE CLEANUP NEEDED!")
         
-        if password_validation_success:
-            print("\n🎉 OVERALL RESULT: ✅ NUOVO UTENTE test_validation_password PRONTO PER TESTING VALIDAZIONE PASSWORD!")
+        if database_cleanup_success:
+            print("\n🎉 OVERALL RESULT: ✅ GET /api/clienti FUNZIONA CORRETTAMENTE!")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ PROBLEMI NELLA CREAZIONE UTENTE TEST!")
+            print("\n🚨 OVERALL RESULT: ❌ GET /api/clienti PRESENTA ANCORA PROBLEMI!")
         
-        return password_validation_success
+        return database_cleanup_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
