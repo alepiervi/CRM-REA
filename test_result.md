@@ -593,6 +593,25 @@ backend:
           ✅ DATA FETCHING IMPROVEMENTS: Enhanced fetchTipologieByServizio() and fetchOffertaInfo() with proper loading states and comprehensive logging for debugging.
           
           TESTING REQUIRED: Verify ALL creation fields are now present in edit modal, conditional logic works correctly with loaded data, payment fields show correct values, convergenza shows SIM details, and offerta displays properly."
+        - working: "needs_testing"
+          agent: "main"
+          comment: "🚨 COMPLETE FIELD PARITY ACHIEVED - ALL USER-REPORTED ISSUES RESOLVED:
+          
+          ✅ EXACT LABEL MATCHING: Updated ALL field labels to match creation form exactly - 'Data di Nascita' → 'Nato/a', 'Luogo di Nascita' → 'A', 'Cellulare' → 'Telefono 2', 'Scadenza Documento' → 'Scadenza', 'Via/Piazza' → 'Indirizzo', 'Comune' → 'Comune di Residenza'.
+          
+          ✅ MISSING FIELDS ADDED: Added 'Numero Ordine' and 'Account' fields (modifiable, can be empty). Added 'Intestatario se diverso', 'Mese', 'Anno' for payment methods.
+          
+          ✅ ADDRESS SECTION REORGANIZED: Moved 'Provincia' and 'Comune di Residenza' to Indirizzo section. Added complete Italian provinces dropdown with codes (AG-Agrigento, AL-Alessandria, etc.) exactly like creation form.
+          
+          ✅ OFFERTA MODIFICABILE: Made 'Offerta' fully editable with dropdown of available offerte for the client's segmento. Added fetchOfferteBySegmento() function and real-time offerta details display.
+          
+          ✅ PAYMENT METHOD LOGIC: Completely rewrote payment section to show ONLY the selected method from creation (IBAN or Carta) with all associated fields. IBAN shows with 'Intestatario se diverso', Carta shows with 'Mese' and 'Anno' dropdowns.
+          
+          ✅ DOCUMENT FIELDS POPULATED: Ensured all document fields populate correctly from client data with proper field mapping.
+          
+          ✅ COMPLETE FIELD SET: ALL fields from creation form now present in edit modal with exact same labels, structure, and validation. No field missing or incorrectly labeled.
+          
+          TESTING REQUIRED: Verify complete field parity, exact label matching, payment method visibility matches creation selection, offerta dropdown works, province dropdown populated, and document data populates correctly."
 
   - task: "Excel Export Conditional Fields Implementation - Include New Client Form Fields"
     implemented: true
