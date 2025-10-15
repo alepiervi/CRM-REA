@@ -935,7 +935,7 @@ class Cliente(BaseModel):
     # Documento
     tipo_documento: Optional[TipoDocumento] = None
     numero_documento: Optional[str] = None
-    data_rilascio: Optional[date] = None
+    data_rilascio: Optional[str] = None  # Changed from date to str to fix BSON serialization
     luogo_rilascio: Optional[str] = None
     scadenza_documento: Optional[date] = None
     
@@ -997,7 +997,7 @@ class ClienteCreate(BaseModel):
     # Documento
     tipo_documento: Optional[TipoDocumento] = None
     numero_documento: Optional[str] = None
-    data_rilascio: Optional[date] = None
+    data_rilascio: Optional[str] = None  # Changed from date to str to fix BSON serialization
     luogo_rilascio: Optional[str] = None
     scadenza_documento: Optional[date] = None
     
@@ -1052,7 +1052,7 @@ class ClienteUpdate(BaseModel):
     # Documento
     tipo_documento: Optional[TipoDocumento] = None
     numero_documento: Optional[str] = None
-    data_rilascio: Optional[date] = None
+    data_rilascio: Optional[str] = None  # Changed from date to str to fix BSON serialization
     luogo_rilascio: Optional[str] = None
     scadenza_documento: Optional[date] = None
     
