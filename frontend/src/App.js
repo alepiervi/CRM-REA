@@ -18599,28 +18599,41 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   </p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-600">Offerta Attivata</Label>
+                  <Label htmlFor="offerta_id">Offerta</Label>
+                  <select
+                    id="offerta_id"
+                    value={formData.offerta_id}
+                    onChange={(e) => {
+                      handleChange('offerta_id', e.target.value);
+                      if (e.target.value) {
+                        fetchOffertaInfo(e.target.value);
+                      } else {
+                        setOffertaInfo(null);
+                      }
+                    }}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona offerta</option>
+                    {availableOfferte.map((offerta) => (
+                      <option key={offerta.id} value={offerta.id}>
+                        {offerta.nome}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {/* Mostra dettagli offerta selezionata */}
                   {isLoadingOfferta ? (
-                    <p className="text-sm p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800">
-                      🔄 Caricamento offerta...
-                    </p>
+                    <p className="text-xs text-yellow-600 mt-1">🔄 Caricamento dettagli offerta...</p>
                   ) : offertaInfo ? (
-                    <div className="text-sm p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
-                      <p className="font-semibold">{offertaInfo.nome}</p>
+                    <div className="text-xs bg-blue-50 border border-blue-200 rounded mt-2 p-2">
+                      <p><strong>Offerta:</strong> {offertaInfo.nome}</p>
                       {offertaInfo.descrizione && (
-                        <p className="text-xs text-blue-600 mt-1">{offertaInfo.descrizione}</p>
+                        <p><strong>Descrizione:</strong> {offertaInfo.descrizione}</p>
                       )}
-                      <p className="text-xs text-gray-600 mt-1">ID: {offertaInfo.id}</p>
+                      <p><strong>ID:</strong> {offertaInfo.id}</p>
                     </div>
-                  ) : cliente?.offerta_id ? (
-                    <div className="text-sm p-2 bg-amber-50 border border-amber-200 rounded text-amber-800">
-                      <p>⚠️ Offerta ID: {cliente.offerta_id.slice(0, 8)}...</p>
-                      <p className="text-xs">Impossibile caricare dettagli offerta</p>
-                    </div>
-                  ) : (
-                    <p className="text-sm p-2 bg-gray-50 border border-gray-200 rounded text-gray-600">
-                      Nessuna offerta selezionata
-                    </p>
+                  ) : formData.offerta_id && (
+                    <p className="text-xs text-amber-600 mt-1">⚠️ Offerta selezionata ma dettagli non disponibili</p>
                   )}
                 </div>
               </div>
