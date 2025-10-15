@@ -33126,7 +33126,7 @@ Duplicate,Test,+393471234567"""
         print(f"      • Business client creation (Energia Fastweb): {'✅ SUCCESS' if business_client_id else '❌ FAILED'}")
         print(f"      • Private client creation (Telefonia Fastweb): {'✅ SUCCESS' if private_client_id else '❌ FAILED'}")
         print(f"      • Client retrieval (GET /api/clienti): {'✅ SUCCESS' if clienti_response and isinstance(clienti_response, list) else '❌ FAILED'}")
-        print(f"      • Offerta info (GET /api/segmenti/offerte): {'✅ SUCCESS' if segmenti_response and isinstance(segmenti_response, list) else '❌ FAILED'}")
+        print(f"      • Offerta info (GET /api/cascade/offerte-by-filiera): {'✅ SUCCESS' if offerte_success else '❌ FAILED'}")
         print(f"      • Conditional fields saved correctly: {'✅ SUCCESS' if business_client_id and private_client_id else '❌ FAILED'}")
         print(f"      • Payment methods saved correctly: {'✅ SUCCESS' if business_client_id and private_client_id else '❌ FAILED'}")
         
