@@ -18708,7 +18708,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="scadenza_documento">Scadenza Documento</Label>
+                  <Label htmlFor="scadenza_documento">Scadenza</Label>
                   <Input
                     id="scadenza_documento"
                     type="date"
