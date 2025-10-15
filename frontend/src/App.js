@@ -18071,7 +18071,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     cognome: cliente?.cognome || '',
     email: cliente?.email || '',
     telefono: cliente?.telefono || '',
-    cellulare: cliente?.cellulare || '',
+    cellulare: cliente?.telefono2 || '',
     data_nascita: cliente?.data_nascita || '',
     luogo_nascita: cliente?.luogo_nascita || '',
     codice_fiscale: cliente?.codice_fiscale || '',
