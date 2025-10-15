@@ -578,10 +578,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Area Manager Frontend Implementation - Complete UI Integration"
-  stuck_tasks: []
+    - "Conditional Fields Display Fix - isEnergiaFastweb and isTelefoniaFastweb Functions Correction"
+  stuck_tasks:
+    - "Conditional Fields Display Fix - isEnergiaFastweb and isTelefoniaFastweb Functions Correction"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "stuck_first"
 
 agent_communication:
    - agent: "main"
