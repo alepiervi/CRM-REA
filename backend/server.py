@@ -277,7 +277,7 @@ class Lead(BaseModel):
     nome: str
     cognome: str
     telefono: str
-    email: Optional[str] = None  # Changed from EmailStr to str to handle invalid email formats
+    email: str  # Obbligatorio  # Changed from EmailStr to str to handle invalid email formats
     provincia: Optional[str] = None  # Made optional to fix validation errors
     tipologia_abitazione: Optional[HouseType] = None  # Made optional to fix validation errors
     ip_address: Optional[str] = None
@@ -299,7 +299,7 @@ class LeadCreate(BaseModel):
     nome: str
     cognome: str
     telefono: str
-    email: Optional[str] = None  # Changed from EmailStr to str to handle invalid email formats
+    email: str  # Obbligatorio  # Changed from EmailStr to str to handle invalid email formats
     provincia: Optional[str] = None  # Made optional to fix validation errors
     tipologia_abitazione: Optional[HouseType] = None  # Made optional to fix validation errors
     ip_address: Optional[str] = None
@@ -916,7 +916,7 @@ class Cliente(BaseModel):
     provincia: Optional[str] = None  # Sigla provincia
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
-    email: Optional[str] = None
+    email: str  # Obbligatorio
     telefono: str  # Obbligatorio
     telefono2: Optional[str] = None
     partita_iva: Optional[str] = None  # Solo se Business
@@ -978,7 +978,7 @@ class ClienteCreate(BaseModel):
     provincia: Optional[str] = None  # Sigla provincia
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
-    email: Optional[str] = None
+    email: str  # Obbligatorio
     telefono: str  # Obbligatorio
     telefono2: Optional[str] = None
     partita_iva: Optional[str] = None  # Solo se Business
@@ -1033,7 +1033,7 @@ class ClienteUpdate(BaseModel):
     provincia: Optional[str] = None
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
-    email: Optional[str] = None
+    email: str  # Obbligatorio
     telefono: Optional[str] = None
     telefono2: Optional[str] = None
     partita_iva: Optional[str] = None
