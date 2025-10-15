@@ -18388,12 +18388,140 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <Label htmlFor="indirizzo">Via/Piazza</Label>
+                  <Label htmlFor="indirizzo">Indirizzo</Label>
                   <Input
                     id="indirizzo"
                     value={formData.indirizzo}
                     onChange={(e) => handleChange('indirizzo', e.target.value)}
+                    placeholder="Via/Piazza, numero civico"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="comune">Comune di Residenza</Label>
+                  <Input
+                    id="comune"
+                    value={formData.comune}
+                    onChange={(e) => handleChange('comune', e.target.value)}
+                    placeholder="Inserisci comune"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="provincia">Provincia</Label>
+                  <select
+                    id="provincia"
+                    value={formData.provincia}
+                    onChange={(e) => handleChange('provincia', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona provincia</option>
+                    <option value="AG">AG - Agrigento</option>
+                    <option value="AL">AL - Alessandria</option>
+                    <option value="AN">AN - Ancona</option>
+                    <option value="AO">AO - Aosta</option>
+                    <option value="AR">AR - Arezzo</option>
+                    <option value="AP">AP - Ascoli Piceno</option>
+                    <option value="AT">AT - Asti</option>
+                    <option value="AV">AV - Avellino</option>
+                    <option value="BA">BA - Bari</option>
+                    <option value="BT">BT - Barletta-Andria-Trani</option>
+                    <option value="BL">BL - Belluno</option>
+                    <option value="BN">BN - Benevento</option>
+                    <option value="BG">BG - Bergamo</option>
+                    <option value="BI">BI - Biella</option>
+                    <option value="BO">BO - Bologna</option>
+                    <option value="BZ">BZ - Bolzano</option>
+                    <option value="BS">BS - Brescia</option>
+                    <option value="BR">BR - Brindisi</option>
+                    <option value="CA">CA - Cagliari</option>
+                    <option value="CL">CL - Caltanissetta</option>
+                    <option value="CB">CB - Campobasso</option>
+                    <option value="CE">CE - Caserta</option>
+                    <option value="CT">CT - Catania</option>
+                    <option value="CZ">CZ - Catanzaro</option>
+                    <option value="CH">CH - Chieti</option>
+                    <option value="CO">CO - Como</option>
+                    <option value="CS">CS - Cosenza</option>
+                    <option value="CR">CR - Cremona</option>
+                    <option value="KR">KR - Crotone</option>
+                    <option value="CN">CN - Cuneo</option>
+                    <option value="EN">EN - Enna</option>
+                    <option value="FM">FM - Fermo</option>
+                    <option value="FE">FE - Ferrara</option>
+                    <option value="FI">FI - Firenze</option>
+                    <option value="FG">FG - Foggia</option>
+                    <option value="FC">FC - Forlì-Cesena</option>
+                    <option value="FR">FR - Frosinone</option>
+                    <option value="GE">GE - Genova</option>
+                    <option value="GO">GO - Gorizia</option>
+                    <option value="GR">GR - Grosseto</option>
+                    <option value="IM">IM - Imperia</option>
+                    <option value="IS">IS - Isernia</option>
+                    <option value="AQ">AQ - L'Aquila</option>
+                    <option value="SP">SP - La Spezia</option>
+                    <option value="LT">LT - Latina</option>
+                    <option value="LE">LE - Lecce</option>
+                    <option value="LC">LC - Lecco</option>
+                    <option value="LI">LI - Livorno</option>
+                    <option value="LO">LO - Lodi</option>
+                    <option value="LU">LU - Lucca</option>
+                    <option value="MC">MC - Macerata</option>
+                    <option value="MN">MN - Mantova</option>
+                    <option value="MS">MS - Massa-Carrara</option>
+                    <option value="MT">MT - Matera</option>
+                    <option value="ME">ME - Messina</option>
+                    <option value="MI">MI - Milano</option>
+                    <option value="MO">MO - Modena</option>
+                    <option value="MB">MB - Monza e Brianza</option>
+                    <option value="NA">NA - Napoli</option>
+                    <option value="NO">NO - Novara</option>
+                    <option value="NU">NU - Nuoro</option>
+                    <option value="OR">OR - Oristano</option>
+                    <option value="PD">PD - Padova</option>
+                    <option value="PA">PA - Palermo</option>
+                    <option value="PR">PR - Parma</option>
+                    <option value="PV">PV - Pavia</option>
+                    <option value="PG">PG - Perugia</option>
+                    <option value="PU">PU - Pesaro e Urbino</option>
+                    <option value="PE">PE - Pescara</option>
+                    <option value="PC">PC - Piacenza</option>
+                    <option value="PI">PI - Pisa</option>
+                    <option value="PT">PT - Pistoia</option>
+                    <option value="PN">PN - Pordenone</option>
+                    <option value="PZ">PZ - Potenza</option>
+                    <option value="PO">PO - Prato</option>
+                    <option value="RG">RG - Ragusa</option>
+                    <option value="RA">RA - Ravenna</option>
+                    <option value="RC">RC - Reggio Calabria</option>
+                    <option value="RE">RE - Reggio Emilia</option>
+                    <option value="RI">RI - Rieti</option>
+                    <option value="RN">RN - Rimini</option>
+                    <option value="RM">RM - Roma</option>
+                    <option value="RO">RO - Rovigo</option>
+                    <option value="SA">SA - Salerno</option>
+                    <option value="SS">SS - Sassari</option>
+                    <option value="SV">SV - Savona</option>
+                    <option value="SI">SI - Siena</option>
+                    <option value="SR">SR - Siracusa</option>
+                    <option value="SO">SO - Sondrio</option>
+                    <option value="SU">SU - Sud Sardegna</option>
+                    <option value="TA">TA - Taranto</option>
+                    <option value="TE">TE - Teramo</option>
+                    <option value="TR">TR - Terni</option>
+                    <option value="TO">TO - Torino</option>
+                    <option value="TP">TP - Trapani</option>
+                    <option value="TN">TN - Trento</option>
+                    <option value="TV">TV - Treviso</option>
+                    <option value="TS">TS - Trieste</option>
+                    <option value="UD">UD - Udine</option>
+                    <option value="VA">VA - Varese</option>
+                    <option value="VE">VE - Venezia</option>
+                    <option value="VB">VB - Verbano-Cusio-Ossola</option>
+                    <option value="VC">VC - Vercelli</option>
+                    <option value="VR">VR - Verona</option>
+                    <option value="VV">VV - Vibo Valentia</option>
+                    <option value="VI">VI - Vicenza</option>
+                    <option value="VT">VT - Viterbo</option>
+                  </select>
                 </div>
                 <div>
                   <Label htmlFor="cap">CAP</Label>
@@ -18401,6 +18529,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     id="cap"
                     value={formData.cap}
                     onChange={(e) => handleChange('cap', e.target.value)}
+                    placeholder="00000"
                   />
                 </div>
               </div>
