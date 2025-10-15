@@ -937,7 +937,7 @@ class Cliente(BaseModel):
     numero_documento: Optional[str] = None
     data_rilascio: Optional[str] = None  # Changed from date to str to fix BSON serialization
     luogo_rilascio: Optional[str] = None
-    scadenza_documento: Optional[date] = None
+    scadenza_documento: Optional[str] = None  # Changed from date to str to fix BSON serialization
     
     # Campi specifici Telefonia Fastweb
     tecnologia: Optional[Tecnologia] = None
@@ -999,7 +999,7 @@ class ClienteCreate(BaseModel):
     numero_documento: Optional[str] = None
     data_rilascio: Optional[str] = None  # Changed from date to str to fix BSON serialization
     luogo_rilascio: Optional[str] = None
-    scadenza_documento: Optional[date] = None
+    scadenza_documento: Optional[str] = None  # Changed from date to str to fix BSON serialization
     
     # Campi specifici Telefonia Fastweb
     tecnologia: Optional[Tecnologia] = None
@@ -1054,7 +1054,7 @@ class ClienteUpdate(BaseModel):
     numero_documento: Optional[str] = None
     data_rilascio: Optional[str] = None  # Changed from date to str to fix BSON serialization
     luogo_rilascio: Optional[str] = None
-    scadenza_documento: Optional[date] = None
+    scadenza_documento: Optional[str] = None  # Changed from date to str to fix BSON serialization
     
     # Campi specifici Telefonia Fastweb
     tecnologia: Optional[Tecnologia] = None
