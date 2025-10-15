@@ -505,6 +505,10 @@ backend:
     stuck_count: 0
     priority: "critical"
     needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "main"
+          comment: "🔧 ISENERGIAFASTWEB FUNCTION FIXED: Root cause identified - function was checking commessa name but 'Energia Fastweb' is actually a tipologia_contratto. Updated function to check selectedData.tipologia_contratto instead of selectedData.commessa_id. Found tipologia_contratto entries with 'Energia Fastweb ' (IDs: 7afb89c3-a1d6-4104-9b54-eb845b9704f8, 648c24a7-9926-46be-a8a4-bcdc1ef3e168). Added debug logging to track when condition is met. TESTING REQUIRED: Verify Codice Pod field appears when 'Energia Fastweb' tipologia is selected in client creation form."
 
 frontend:
   - task: "Store/Presidi Frontend Authorization - Complete Section Access Implementation"
