@@ -18302,58 +18302,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   }, [isLoadingTipologie, editTipologieContratto]);
 
-  const fetchTipologieByServizio = async (servizioId) => {
-    try {
-      setIsLoadingTipologie(true);
-      console.log("🔄 Loading tipologie for servizio:", servizioId);
-      const response = await axios.get(`${API}/cascade/tipologie-by-servizio/${servizioId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      setEditTipologieContratto(response.data);
-      console.log("✅ Tipologie loaded:", response.data.length);
-    } catch (error) {
-      console.error("❌ Error fetching tipologie:", error);
-      setEditTipologieContratto([]);
-    } finally {
-      setIsLoadingTipologie(false);
-    }
-  };
-
-  useEffect(() => {
-    if (formData.servizio_id && formData.commessa_id) {
-      fetchEditTipologieContratto(formData.commessa_id, formData.servizio_id);
-    }
-  }, [formData.servizio_id, formData.commessa_id]);
-
-  const fetchServizi = async (commessaId) => {
-    try {
-      const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
-      setServizi(response.data);
-    } catch (error) {
-      console.error("Error fetching servizi:", error);
-      setServizi([]);
-    }
-  };
-
-  const fetchEditTipologieContratto = async (commessaId, servizioId) => {
-    try {
-      const response = await axios.get(`${API}/tipologie-contratto?commessa_id=${commessaId}&servizio_id=${servizioId}`);
-      setEditTipologieContratto(response.data);
-    } catch (error) {
-      console.error("Error fetching tipologie contratto:", error);
-      setEditTipologieContratto([]);
-    }
-  };
-
-  const fetchSegmenti = async () => {
-    try {
-      const response = await axios.get(`${API}/segmenti`);
-      setSegmenti(response.data);
-    } catch (error) {
-      console.error("Error fetching segmenti:", error);
-      setSegmenti([]);
-    }
-  };
+  // Funzioni duplicate rimosse - ora definite prima del useEffect
 
   // Funzioni per gestire i campi modificabili (i dati organizzativi non sono più modificabili)
 
