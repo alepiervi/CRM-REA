@@ -17992,12 +17992,8 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
               </div>
               <div>
                 <Label className="text-sm font-medium text-slate-600">Status</Label>
-                <Badge variant={
-                  cliente.status === "convertito" ? "default" :
-                  cliente.status === "in_lavorazione" ? "secondary" : 
-                  "outline"
-                }>
-                  {cliente.status ? cliente.status.replace('_', ' ').toUpperCase() : 'Non specificato'}
+                <Badge variant={getClienteStatusVariant(cliente.status)}>
+                  {formatClienteStatus(cliente.status)}
                 </Badge>
               </div>
               <div>
