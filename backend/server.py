@@ -917,7 +917,7 @@ class Cliente(BaseModel):
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
     email: Optional[str] = None
-    telefono: str  # Obbligatorio
+    telefono: Optional[str] = None  # Temporaneamente opzionale per compatibilità DB
     telefono2: Optional[str] = None
     partita_iva: Optional[str] = None  # Solo se Business
     codice_fiscale: Optional[str] = None  # Cambiato a opzionale per compatibilità DB
@@ -979,7 +979,7 @@ class ClienteCreate(BaseModel):
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
     email: Optional[str] = None
-    telefono: str  # Obbligatorio
+    telefono: Optional[str] = None  # Temporaneamente opzionale per compatibilità DB
     telefono2: Optional[str] = None
     partita_iva: Optional[str] = None  # Solo se Business
     codice_fiscale: Optional[str] = None  # Cambiato a opzionale per compatibilità DB
