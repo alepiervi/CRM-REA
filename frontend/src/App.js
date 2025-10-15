@@ -15893,9 +15893,25 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   };
 
   const isTelefoniaFastweb = () => {
-    const commessaId = selectedData.commessa_id;
-    const commessa = cascadeCommesse.find(c => c.id === commessaId);
-    return commessa?.nome?.toLowerCase().includes('telefonia fastweb');
+    const tipologiaId = selectedData.tipologia_contratto;
+    const tipologia = cascadeTipologie.find(t => t.id === tipologiaId);
+    
+    if (!tipologia) return false;
+    
+    // Riconoscimento per tipologie legate alla telefonia
+    const nome = tipologia.nome?.toLowerCase() || '';
+    console.log("🔍 isTelefoniaFastweb DEBUG:", {
+      tipologiaId,
+      tipologia_nome: tipologia.nome,
+      nome_lower: nome,
+      result: nome.includes('telefonia') || nome.includes('mobile')
+    });
+    
+    return nome.includes('telefonia') || 
+           nome.includes('mobile') ||
+           nome.includes('sim') ||
+           nome.includes('voce') ||
+           nome.includes('dati');
   };
 
   const isEnergiaFastweb = () => {
