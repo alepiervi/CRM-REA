@@ -699,9 +699,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Conditional Fields Display Fix - isEnergiaFastweb and isTelefoniaFastweb Functions Correction"
+    - "COMPLETE CLIENT EDIT MODAL OVERHAUL - Conditional Fields, Non-Modifiable Fields, New Status System"
   stuck_tasks:
-    - "Conditional Fields Display Fix - isEnergiaFastweb and isTelefoniaFastweb Functions Correction"
+    - "COMPLETE CLIENT EDIT MODAL OVERHAUL - Conditional Fields, Non-Modifiable Fields, New Status System"
   test_all: false
   test_priority: "high_first"
 
