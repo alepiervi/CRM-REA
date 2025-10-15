@@ -18311,9 +18311,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     onSubmit(formData);
   };
 
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  // handleChange già definito sopra
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
