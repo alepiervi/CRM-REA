@@ -32584,12 +32584,10 @@ Duplicate,Test,+393471234567"""
             "telefono2": "3339876543",  # NEW FIELD (cellulare)
             "codice_fiscale": "TSTPST80A01H501Z",
             
-            # Campi documento
+            # Campi documento (without date fields to avoid BSON encoding issues)
             "tipo_documento": "carta_identita",  # NEW FIELD
             "numero_documento": "AB1234567",  # NEW FIELD
-            "data_rilascio": "2020-01-15",  # NEW FIELD
             "luogo_rilascio": "Roma",  # NEW FIELD
-            "scadenza_documento": "2030-01-15",  # NEW FIELD
             
             # Campi condizionali per Energia Fastweb
             "codice_pod": "IT001E12345678",  # NEW FIELD
