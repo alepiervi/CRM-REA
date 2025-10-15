@@ -703,7 +703,7 @@ class CRMAPITester:
         try:
             import requests
             
-            url = f"{self.base_url}/clienti/export-excel"
+            url = f"{self.base_url}/clienti/export/excel"
             headers = {'Authorization': f'Bearer {self.token}'}
             
             response = requests.get(url, headers=headers, timeout=30)
