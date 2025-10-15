@@ -18899,11 +18899,11 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                       />
                     </div>
                     <div>
-                      <Label htmlFor="intestatario_iban">Intestatario se diverso</Label>
+                      <Label htmlFor="intestatario_diverso">Intestatario se diverso</Label>
                       <Input
-                        id="intestatario_iban"
-                        value={formData.intestatario_iban}
-                        onChange={(e) => handleChange('intestatario_iban', e.target.value)}
+                        id="intestatario_diverso"
+                        value={formData.intestatario_diverso}
+                        onChange={(e) => handleChange('intestatario_diverso', e.target.value)}
                         placeholder="Nome e Cognome intestatario (se diverso dal cliente)"
                       />
                     </div>
