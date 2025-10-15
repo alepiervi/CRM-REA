@@ -18152,7 +18152,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           {/* Dati Personali */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Dati Personali</CardTitle>
+              <CardTitle className="text-lg">👤 Dati Personali</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -18192,6 +18192,14 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   />
                 </div>
                 <div>
+                  <Label htmlFor="cellulare">Cellulare</Label>
+                  <Input
+                    id="cellulare"
+                    value={formData.cellulare}
+                    onChange={(e) => handleChange('cellulare', e.target.value)}
+                  />
+                </div>
+                <div>
                   <Label htmlFor="data_nascita">Data di Nascita</Label>
                   <Input
                     id="data_nascita"
@@ -18201,11 +18209,28 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="luogo_nascita">Luogo di Nascita</Label>
+                  <Label htmlFor="codice_fiscale">Codice Fiscale *</Label>
                   <Input
-                    id="luogo_nascita"
-                    value={formData.luogo_nascita}
-                    onChange={(e) => handleChange('luogo_nascita', e.target.value)}
+                    id="codice_fiscale"
+                    value={formData.codice_fiscale}
+                    onChange={(e) => handleChange('codice_fiscale', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="provincia">Provincia</Label>
+                  <Input
+                    id="provincia"
+                    value={formData.provincia}
+                    onChange={(e) => handleChange('provincia', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="comune">Comune</Label>
+                  <Input
+                    id="comune"
+                    value={formData.comune}
+                    onChange={(e) => handleChange('comune', e.target.value)}
                   />
                 </div>
               </div>
