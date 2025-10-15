@@ -18623,7 +18623,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     />
                   </div>
                 </div>
-                <div className="mt-4">
+                <div className="mt-4 space-y-3">
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -18632,7 +18632,43 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                       onChange={(e) => handleChange('convergenza', e.target.checked)}
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
-                    <Label htmlFor="convergenza">Convergenza (Fisso + Mobile)</Label>
+                    <Label htmlFor="convergenza" className="font-medium">Convergenza (Fisso + Mobile)</Label>
+                  </div>
+                  
+                  {/* Mostra SIM associate se convergenza è attiva */}
+                  {formData.convergenza && (
+                    <div className="ml-6 p-3 bg-blue-50 border border-blue-200 rounded">
+                      <h4 className="text-sm font-semibold text-blue-800 mb-2">📱 SIM Associate alla Convergenza</h4>
+                      {cliente?.convergenza_items && cliente.convergenza_items.length > 0 ? (
+                        <div className="space-y-2">
+                          {cliente.convergenza_items.map((sim, index) => (
+                            <div key={index} className="bg-white p-2 rounded border text-sm">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <strong>Numero:</strong> {sim.numero_cellulare || 'Non specificato'}
+                                </div>
+                                <div>
+                                  <strong>Operatore:</strong> {sim.operatore_attuale || 'Non specificato'}
+                                </div>
+                                <div>
+                                  <strong>Tecnologia:</strong> {sim.tecnologia || 'Non specificato'}
+                                </div>
+                                <div>
+                                  <strong>Piano:</strong> {sim.piano_tariffario || 'Non specificato'}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-blue-600">Nessuna SIM associata trovata</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Informazioni sulla convergenza */}
+                  <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                    <strong>Info:</strong> La convergenza combina servizi fissi (internet/telefono) e mobili (SIM) in un'unica offerta.
                   </div>
                 </div>
               </CardContent>
