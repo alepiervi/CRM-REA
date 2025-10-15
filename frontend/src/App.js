@@ -18864,7 +18864,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </Card>
           )}
 
-          {/* SEZIONE MODALITÀ PAGAMENTO - SEMPRE VISIBILE */}
+          {/* SEZIONE MODALITÀ PAGAMENTO - SOLO QUELLA SELEZIONATA */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">💳 Modalità Pagamento</CardTitle>
@@ -18875,69 +18875,102 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <Label>Modalità Pagamento</Label>
-                  <select
-                    value={formData.modalita_pagamento}
-                    onChange={(e) => handleChange('modalita_pagamento', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    <option value="">Nessuna modalità selezionata</option>
-                    <option value="iban">IBAN</option>
-                    <option value="carta_credito">Carta di Credito</option>
-                  </select>
+                  <Label>Modalità Pagamento Selezionata</Label>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+                    <strong>
+                      {formData.modalita_pagamento === 'iban' ? '💰 IBAN (Bonifico Bancario)' : 
+                       formData.modalita_pagamento === 'carta_credito' ? '💳 Carta di Credito' : 
+                       '❌ Nessuna modalità selezionata'}
+                    </strong>
+                  </div>
                 </div>
                 
-                {/* IBAN - Sempre visibile se presente */}
-                <div>
-                  <Label htmlFor="iban" className="flex items-center gap-2">
-                    IBAN
-                    {formData.modalita_pagamento === 'iban' && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">ATTIVO</span>}
-                  </Label>
-                  <Input
-                    id="iban"
-                    value={formData.iban}
-                    onChange={(e) => handleChange('iban', e.target.value)}
-                    placeholder="IT00 0000 0000 0000 0000 0000 000"
-                    className={formData.modalita_pagamento === 'iban' ? 'border-green-200 bg-green-50' : ''}
-                  />
-                  {formData.iban && formData.modalita_pagamento !== 'iban' && (
-                    <p className="text-xs text-amber-600 mt-1">⚠️ IBAN presente ma non selezionato come modalità attiva</p>
-                  )}
-                </div>
-                
-                {/* Numero Carta - Sempre visibile e COMPLETAMENTE leggibile per utenti autorizzati */}
-                <div>
-                  <Label htmlFor="numero_carta" className="flex items-center gap-2">
-                    Numero Carta di Credito
-                    {formData.modalita_pagamento === 'carta_credito' && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">ATTIVO</span>}
-                  </Label>
-                  <Input
-                    id="numero_carta"
-                    type="text"
-                    value={formData.numero_carta}
-                    onChange={(e) => handleChange('numero_carta', e.target.value)}
-                    placeholder="1234 5678 9012 3456"
-                    className={formData.modalita_pagamento === 'carta_credito' ? 'border-blue-200 bg-blue-50 font-mono' : 'font-mono'}
-                  />
-                  {formData.numero_carta && (
-                    <div className="text-xs text-gray-600 mt-1 bg-gray-50 p-2 rounded font-mono">
-                      <strong>Numero completo:</strong> {formData.numero_carta}
-                      {formData.modalita_pagamento !== 'carta_credito' && (
-                        <span className="text-amber-600 ml-2">⚠️ Carta presente ma non selezionata come modalità attiva</span>
-                      )}
+                {/* Campi IBAN - Solo se modalità selezionata */}
+                {formData.modalita_pagamento === 'iban' && (
+                  <>
+                    <div>
+                      <Label htmlFor="iban">IBAN</Label>
+                      <Input
+                        id="iban"
+                        value={formData.iban}
+                        onChange={(e) => handleChange('iban', e.target.value)}
+                        placeholder="IT00 0000 0000 0000 0000 0000 000"
+                        className="font-mono"
+                      />
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <Label htmlFor="intestatario_iban">Intestatario se diverso</Label>
+                      <Input
+                        id="intestatario_iban"
+                        value={formData.intestatario_iban}
+                        onChange={(e) => handleChange('intestatario_iban', e.target.value)}
+                        placeholder="Nome e Cognome intestatario (se diverso dal cliente)"
+                      />
+                    </div>
+                  </>
+                )}
                 
-                {/* Riepilogo modalità pagamento */}
-                {formData.modalita_pagamento && (
-                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Modalità Attiva:</h4>
-                    <p className="text-sm">
-                      {formData.modalita_pagamento === 'iban' ? `💰 IBAN: ${formData.iban || 'Non inserito'}` : 
-                       formData.modalita_pagamento === 'carta_credito' ? `💳 Carta: ${formData.numero_carta || 'Non inserita'}` : 
-                       'Nessuna modalità selezionata'}
-                    </p>
+                {/* Campi Carta di Credito - Solo se modalità selezionata */}
+                {formData.modalita_pagamento === 'carta_credito' && (
+                  <>
+                    <div>
+                      <Label htmlFor="numero_carta">Numero Carta di Credito</Label>
+                      <Input
+                        id="numero_carta"
+                        type="text"
+                        value={formData.numero_carta}
+                        onChange={(e) => handleChange('numero_carta', e.target.value)}
+                        placeholder="1234 5678 9012 3456"
+                        className="font-mono bg-blue-50"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="mese_carta">Mese</Label>
+                        <select
+                          id="mese_carta"
+                          value={formData.mese_carta}
+                          onChange={(e) => handleChange('mese_carta', e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                        >
+                          <option value="">Mese</option>
+                          <option value="01">01 - Gennaio</option>
+                          <option value="02">02 - Febbraio</option>
+                          <option value="03">03 - Marzo</option>
+                          <option value="04">04 - Aprile</option>
+                          <option value="05">05 - Maggio</option>
+                          <option value="06">06 - Giugno</option>
+                          <option value="07">07 - Luglio</option>
+                          <option value="08">08 - Agosto</option>
+                          <option value="09">09 - Settembre</option>
+                          <option value="10">10 - Ottobre</option>
+                          <option value="11">11 - Novembre</option>
+                          <option value="12">12 - Dicembre</option>
+                        </select>
+                      </div>
+                      <div>
+                        <Label htmlFor="anno_carta">Anno</Label>
+                        <select
+                          id="anno_carta"
+                          value={formData.anno_carta}
+                          onChange={(e) => handleChange('anno_carta', e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                        >
+                          <option value="">Anno</option>
+                          {Array.from({length: 20}, (_, i) => {
+                            const year = new Date().getFullYear() + i;
+                            return <option key={year} value={year}>{year}</option>;
+                          })}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
+                
+                {/* Messaggio se nessuna modalità selezionata */}
+                {!formData.modalita_pagamento && (
+                  <div className="text-center p-4 text-gray-600 bg-gray-50 rounded">
+                    Nessuna modalità di pagamento è stata selezionata durante la creazione del cliente
                   </div>
                 )}
               </div>
