@@ -669,12 +669,17 @@ class CRMAPITester:
             print(f"   🚨 FAILURE: L'endpoint GET /api/documents presenta ancora problemi!")
             return False
 
-    def test_excel_export_filiera_completa_urgent(self):
-        """🚨 TEST URGENTE EXPORT EXCEL CLIENTI CON FILIERA COMPLETA - VERIFICA CAMPO OFFERTA"""
-        print("\n🚨 TEST URGENTE EXPORT EXCEL CLIENTI CON FILIERA COMPLETA...")
-        print("🎯 OBIETTIVO: Verificare che export Excel generi file Excel vero (.xlsx) con filiera completa inclusa Offerta")
-        print("🎯 FOCUS CRITICO: Campo 'Offerta' deve essere presente negli headers e popolato nei dati")
-        print("🎯 HEADERS ATTESI (17 colonne): ID Cliente, Nome, Cognome, Telefono, Email, Codice Fiscale, Data Nascita, Provincia, Comune, Indirizzo, Cap, Sub Agenzia, Commessa, Servizio, Tipologia Contratto, Segmento, **Offerta**, Status, Utente Creatore, Data Creazione, Note")
+    def test_excel_export_conditional_fields_verification(self):
+        """🚨 TEST EXCEL EXPORT FUNCTIONALITY - VERIFICA INCLUSIONE NUOVI CAMPI"""
+        print("\n🚨 TEST EXCEL EXPORT FUNCTIONALITY - VERIFICA INCLUSIONE NUOVI CAMPI...")
+        print("🎯 OBIETTIVO: Verificare che tutti i nuovi campi del form cliente (inclusi quelli condizionali per Energia e Telefonia Fastweb) siano inclusi nell'export Excel")
+        print("🎯 FOCUS CRITICO: Campi condizionali devono essere presenti negli headers Excel:")
+        print("   • codice_pod (campo Energia Fastweb)")
+        print("   • tecnologia (campo Telefonia Fastweb)")
+        print("   • codice_migrazione (campo Telefonia Fastweb)")
+        print("   • gestore (campo Telefonia Fastweb)")
+        print("   • convergenza (campo Telefonia Fastweb)")
+        print("🎯 HEADERS ATTESI: Tutti i campi documento + campi condizionali + modalita_pagamento + note")
         
         # **STEP 1: TEST ADMIN LOGIN E EXPORT EXCEL**
         print("\n🔐 STEP 1: TEST ADMIN LOGIN E EXPORT EXCEL...")
