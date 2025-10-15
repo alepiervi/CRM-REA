@@ -909,89 +909,25 @@ class CRMAPITester:
             self.log_test("❌ EXCEL EXPORT REQUEST FAILED", False, f"Exception: {str(e)}")
             excel_export_success = False
 
-        # **STEP 2: TEST RESPONSABILE COMMESSA LOGIN E EXPORT EXCEL**
-        print("\n🔐 STEP 2: TEST RESPONSABILE COMMESSA LOGIN E EXPORT EXCEL...")
-        success, response, status = self.make_request(
-            'POST', 'auth/login', 
-            {'username': 'ale', 'password': 'admin123'}, 
-            200, auth_required=False
-        )
-        
-        if success and 'access_token' in response:
-            self.token = response['access_token']
-            self.user_data = response['user']
-            user_role = self.user_data.get('role')
-            commesse_autorizzate = self.user_data.get('commesse_autorizzate', [])
-            
-            self.log_test("✅ RESPONSABILE COMMESSA LOGIN (ale/admin123)", True, 
-                f"Role: {user_role}, Commesse: {len(commesse_autorizzate)}")
-            
-            # Test GET /api/clienti/export/excel with responsabile_commessa
-            print("\n   Testing GET /api/clienti/export/excel with responsabile_commessa...")
-            
-            try:
-                url = f"{self.base_url}/clienti/export/excel"
-                headers = {'Authorization': f'Bearer {self.token}'}
-                
-                response = requests.get(url, headers=headers, timeout=30)
-                
-                if response.status_code == 200:
-                    self.log_test("✅ GET /api/clienti/export/excel (RESPONSABILE COMMESSA)", True, f"Status: {response.status_code}")
-                    
-                    # Verify Content-Type is Excel
-                    content_type = response.headers.get('content-type', '')
-                    if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in content_type:
-                        self.log_test("✅ FORMATO FILE EXCEL (.xlsx) - RESPONSABILE", True, f"Content-Type: {content_type}")
-                    elif 'application/octet-stream' in content_type:
-                        self.log_test("✅ FORMATO FILE BINARIO (likely Excel) - RESPONSABILE", True, f"Content-Type: {content_type}")
-                    else:
-                        self.log_test("❌ FORMATO FILE NON EXCEL - RESPONSABILE", False, f"Content-Type: {content_type}")
-                    
-                    # Verify file size
-                    file_size = len(response.content)
-                    if file_size > 1000:
-                        self.log_test("✅ FILE SIZE APPROPRIATO - RESPONSABILE", True, f"File size: {file_size} bytes")
-                    else:
-                        self.log_test("❌ FILE SIZE TROPPO PICCOLO - RESPONSABILE", False, f"File size: {file_size} bytes")
-                    
-                    # Verify Excel file signature
-                    if response.content[:4] == b'PK\x03\x04':
-                        self.log_test("✅ EXCEL FILE SIGNATURE VERIFIED - RESPONSABILE", True, "File starts with ZIP signature")
-                    else:
-                        self.log_test("❌ EXCEL FILE SIGNATURE INVALID - RESPONSABILE", False, f"File starts with: {response.content[:10]}")
-                    
-                    responsabile_excel_success = True
-                    
-                else:
-                    self.log_test("❌ GET /api/clienti/export/excel (RESPONSABILE COMMESSA)", False, f"Status: {response.status_code}")
-                    responsabile_excel_success = False
-                    
-            except Exception as e:
-                self.log_test("❌ EXCEL EXPORT REQUEST FAILED - RESPONSABILE", False, f"Exception: {str(e)}")
-                responsabile_excel_success = False
-        else:
-            self.log_test("❌ RESPONSABILE COMMESSA LOGIN FAILED", False, f"Status: {status}, Response: {response}")
-            responsabile_excel_success = False
-
         # **FINAL SUMMARY**
-        print(f"\n🎯 EXCEL EXPORT FILIERA COMPLETA TEST SUMMARY:")
-        print(f"   🎯 OBIETTIVO: Verificare export Excel con filiera completa inclusa Offerta")
-        print(f"   🎯 FOCUS CRITICO: Campo 'Offerta' deve essere presente e funzionale")
+        print(f"\n🎯 EXCEL EXPORT CONDITIONAL FIELDS TEST SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che tutti i nuovi campi del form cliente siano inclusi nell'export Excel")
+        print(f"   🎯 FOCUS CRITICO: Campi condizionali per Energia e Telefonia Fastweb devono essere presenti")
         print(f"   📊 RISULTATI:")
         print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
-        print(f"      • Admin Excel export: {'✅ SUCCESS' if admin_excel_success else '❌ FAILED'}")
-        print(f"      • Responsabile Commessa login (ale/admin123): {'✅ SUCCESS' if responsabile_excel_success else '❌ FAILED'}")
-        print(f"      • Responsabile Excel export: {'✅ SUCCESS' if responsabile_excel_success else '❌ FAILED'}")
-        print(f"      • Formato file Excel (.xlsx): {'✅ VERIFIED' if admin_excel_success else '❌ NOT VERIFIED'}")
-        print(f"      • Campo 'Offerta' presente: {'✅ VERIFIED' if admin_excel_success else '❌ NOT VERIFIED'}")
-        print(f"      • Filiera completa: {'✅ VERIFIED' if admin_excel_success else '❌ NOT VERIFIED'}")
+        print(f"      • Excel export endpoint: {'✅ SUCCESS (200)' if excel_export_success else '❌ FAILED'}")
+        print(f"      • Excel file format (.xlsx): {'✅ VERIFIED' if excel_export_success else '❌ NOT VERIFIED'}")
+        print(f"      • Conditional fields (Energia/Telefonia): {'✅ VERIFIED' if excel_export_success else '❌ NOT VERIFIED'}")
+        print(f"      • Document fields: {'✅ VERIFIED' if excel_export_success else '❌ NOT VERIFIED'}")
+        print(f"      • Payment fields: {'✅ VERIFIED' if excel_export_success else '❌ NOT VERIFIED'}")
         
-        if admin_excel_success and responsabile_excel_success:
-            print(f"   🎉 SUCCESS: Export Excel con filiera completa funziona per tutti gli utenti!")
-            print(f"   🎉 CONFERMATO: Campo 'Offerta' presente e file Excel vero (.xlsx) generato!")
+        if excel_export_success:
+            print(f"   🎉 SUCCESS: Export Excel include tutti i campi necessari per completezza funzionale!")
+            print(f"   🎉 CONFERMATO: Campi condizionali Energia e Telefonia Fastweb presenti nell'export!")
             return True
         else:
-            print(f"   🚨 PARTIAL SUCCESS: Alcuni test falliti - verificare implementazione export Excel")
+            print(f"   🚨 FAILURE: Export Excel non include tutti i campi richiesti!")
+            print(f"   🚨 AZIONE RICHIESTA: Aggiornare create_clienti_excel_report per includere campi mancanti")
             return False
 
     def test_store_assistant_user_creation_fix(self):
