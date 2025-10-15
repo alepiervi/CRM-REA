@@ -15850,6 +15850,41 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     operatore: ''
   }]);
 
+  // Costanti per i dropdown
+  const PROVINCE_ITALIANE = [
+    "AG", "AL", "AN", "AO", "AR", "AP", "AT", "AV", "BA", "BT", "BL", "BN", "BG", "BI", "BO", "BZ", 
+    "BS", "BR", "CA", "CL", "CB", "CI", "CE", "CT", "CZ", "CH", "CO", "CS", "CR", "KR", "CN", 
+    "EN", "FM", "FE", "FI", "FG", "FC", "FR", "GE", "GO", "GR", "IM", "IS", "SP", "AQ", "LT", 
+    "LE", "LC", "LI", "LO", "LU", "MC", "MN", "MS", "MT", "VS", "ME", "MI", "MO", "MB", "NA", 
+    "NO", "NU", "OG", "OT", "OR", "PD", "PA", "PR", "PV", "PG", "PU", "PE", "PC", "PI", "PT", 
+    "PN", "PZ", "PO", "RG", "RA", "RC", "RE", "RI", "RN", "RM", "RO", "SA", "SS", "SV", "SI", 
+    "SR", "SO", "TA", "TE", "TR", "TO", "TP", "TN", "TV", "TS", "UD", "VA", "VE", "VB", "VC", 
+    "VR", "VV", "VI", "VT"
+  ];
+
+  const TIPI_DOCUMENTO = [
+    { value: 'carta_identita', label: "Carta d'identità" },
+    { value: 'patente', label: 'Patente' },
+    { value: 'passaporto', label: 'Passaporto' }
+  ];
+
+  const TECNOLOGIE = [
+    { value: 'fibra', label: 'FIBRA' },
+    { value: 'ngn_gpon', label: 'NGN GPON' },
+    { value: 'vula', label: 'VULA' },
+    { value: 'svula', label: 'SVULA' },
+    { value: 'bs_nga', label: 'BS_NGA' },
+    { value: 'bs_gpon', label: 'BS_GPON' },
+    { value: 'adsl', label: 'ADSL' },
+    { value: 'adsl_ws', label: 'ADSL_WS' },
+    { value: 'fwa', label: 'FWA' }
+  ];
+
+  const MODALITA_PAGAMENTO = [
+    { value: 'iban', label: 'IBAN' },
+    { value: 'carta_credito', label: 'Carta di Credito' }
+  ];
+
   // LEGACY STATES (keep for compatibility)
   const [servizi, setServizi] = useState([]);
   const [createTipologieContratto, setCreateTipologieContratto] = useState([]);
