@@ -520,7 +520,7 @@ backend:
     status_history:
         - working: "needs_testing"
           agent: "main"
-          comment: "🔧 ISENERGIAFASTWEB FUNCTION FIXED: Root cause identified - function was checking commessa name but 'Energia Fastweb' is actually a tipologia_contratto. Updated function to check selectedData.tipologia_contratto instead of selectedData.commessa_id. Found tipologia_contratto entries with 'Energia Fastweb ' (IDs: 7afb89c3-a1d6-4104-9b54-eb845b9704f8, 648c24a7-9926-46be-a8a4-bcdc1ef3e168). Added debug logging to track when condition is met. TESTING REQUIRED: Verify Codice Pod field appears when 'Energia Fastweb' tipologia is selected in client creation form."
+          comment: "🔧 CONDITIONAL FIELD FUNCTIONS FIXED: BOTH isEnergiaFastweb() AND isTelefoniaFastweb() CORRECTED. Root cause identified - both functions were checking commessa name but 'Energia Fastweb' and 'Telefonia Fastweb' are actually tipologia_contratto entries. Updated both functions to check selectedData.tipologia_contratto instead of selectedData.commessa_id. Found tipologia_contratto entries: 'Energia Fastweb' (IDs: 7afb89c3-a1d6-4104-9b54-eb845b9704f8, 648c24a7-9926-46be-a8a4-bcdc1ef3e168), 'Telefonia Fastweb' (ID: 30dd815b-91a2-4411-b652-7cf55d8ec2a9), 'Mobile Fastweb' (ID: e701f7fe-2376-4c8f-8c11-fbbff80d841c). Added debug logging for both functions. TESTING REQUIRED: Verify conditional sections (Codice Pod for Energia, Tecnologia/Convergenza for Telefonia) appear when respective tipologie are selected."
 
 frontend:
   - task: "Store/Presidi Frontend Authorization - Complete Section Access Implementation"
