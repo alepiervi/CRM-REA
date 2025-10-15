@@ -18274,6 +18274,15 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   />
                 </div>
                 <div>
+                  <Label htmlFor="luogo_nascita">Luogo di Nascita</Label>
+                  <Input
+                    id="luogo_nascita"
+                    value={formData.luogo_nascita}
+                    onChange={(e) => handleChange('luogo_nascita', e.target.value)}
+                    placeholder="Inserisci luogo di nascita"
+                  />
+                </div>
+                <div>
                   <Label htmlFor="codice_fiscale">Codice Fiscale *</Label>
                   <Input
                     id="codice_fiscale"
