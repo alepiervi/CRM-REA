@@ -18094,39 +18094,77 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   // Funzioni per rilevare i campi condizionali basati sui dati del cliente esistente
   const isEditEnergiaFastweb = () => {
-    // Controlla se il cliente ha già campi Energia Fastweb popolati
-    if (cliente?.codice_pod) return true;
+    // Prima priorità: controlla se il cliente ha già campi Energia Fastweb popolati
+    if (cliente?.codice_pod) {
+      console.log("🔍 isEditEnergiaFastweb: TRUE - codice_pod present:", cliente.codice_pod);
+      return true;
+    }
     
-    // Oppure controlla dal nome della tipologia se disponibile
-    const tipologiaName = editTipologieContratto.find(t => t.value === cliente?.tipologia_contratto)?.label?.toLowerCase() || '';
-    return tipologiaName.includes('energia') || 
-           tipologiaName.includes('fotovoltaico') || 
-           tipologiaName.includes('solare') || 
-           tipologiaName.includes('pod') ||
-           tipologiaName.includes('luce') ||
-           tipologiaName.includes('gas');
+    // Seconda priorità: controlla dal nome della tipologia se disponibile
+    if (editTipologieContratto.length > 0) {
+      const tipologia = editTipologieContratto.find(t => t.value === cliente?.tipologia_contratto);
+      const tipologiaName = tipologia?.label?.toLowerCase() || '';
+      const isEnergia = tipologiaName.includes('energia') || 
+                       tipologiaName.includes('fotovoltaico') || 
+                       tipologiaName.includes('solare') || 
+                       tipologiaName.includes('pod') ||
+                       tipologiaName.includes('luce') ||
+                       tipologiaName.includes('gas');
+      console.log("🔍 isEditEnergiaFastweb: Tipologia check:", {tipologiaName, isEnergia});
+      return isEnergia;
+    }
+    
+    // Terza priorità: controlla direttamente il valore della tipologia contratto
+    const tipologiaValue = cliente?.tipologia_contratto?.toLowerCase() || '';
+    const isEnergiaByValue = tipologiaValue.includes('energia') || tipologiaValue.includes('fastweb');
+    console.log("🔍 isEditEnergiaFastweb: Direct value check:", {tipologiaValue, isEnergiaByValue});
+    return isEnergiaByValue;
   };
 
   const isEditTelefoniaFastweb = () => {
-    // Controlla se il cliente ha già campi Telefonia popolati
-    if (cliente?.tecnologia || cliente?.codice_migrazione || cliente?.gestore) return true;
+    // Prima priorità: controlla se il cliente ha già campi Telefonia popolati
+    if (cliente?.tecnologia || cliente?.codice_migrazione || cliente?.gestore || cliente?.convergenza) {
+      console.log("🔍 isEditTelefoniaFastweb: TRUE - fields present:", {
+        tecnologia: cliente.tecnologia,
+        codice_migrazione: cliente.codice_migrazione, 
+        gestore: cliente.gestore,
+        convergenza: cliente.convergenza
+      });
+      return true;
+    }
     
-    // Oppure controlla dal nome della tipologia se disponibile
-    const tipologiaName = editTipologieContratto.find(t => t.value === cliente?.tipologia_contratto)?.label?.toLowerCase() || '';
-    return tipologiaName.includes('telefonia') || 
-           tipologiaName.includes('mobile') ||
-           tipologiaName.includes('sim') ||
-           tipologiaName.includes('voce') ||
-           tipologiaName.includes('dati');
+    // Seconda priorità: controlla dal nome della tipologia se disponibile
+    if (editTipologieContratto.length > 0) {
+      const tipologia = editTipologieContratto.find(t => t.value === cliente?.tipologia_contratto);
+      const tipologiaName = tipologia?.label?.toLowerCase() || '';
+      const isTelefonia = tipologiaName.includes('telefonia') || 
+                         tipologiaName.includes('mobile') ||
+                         tipologiaName.includes('sim') ||
+                         tipologiaName.includes('voce') ||
+                         tipologiaName.includes('dati');
+      console.log("🔍 isEditTelefoniaFastweb: Tipologia check:", {tipologiaName, isTelefonia});
+      return isTelefonia;
+    }
+    
+    // Terza priorità: controlla direttamente il valore della tipologia contratto
+    const tipologiaValue = cliente?.tipologia_contratto?.toLowerCase() || '';
+    const isTelefoniaByValue = tipologiaValue.includes('telefonia') || tipologiaValue.includes('mobile') || tipologiaValue.includes('fastweb');
+    console.log("🔍 isEditTelefoniaFastweb: Direct value check:", {tipologiaValue, isTelefoniaByValue});
+    return isTelefoniaByValue;
   };
 
   const isEditBusinessSegment = () => {
-    // Controlla se il cliente ha già Partita IVA (indicatore di Business)
-    if (cliente?.partita_iva) return true;
+    // Prima priorità: controlla se il cliente ha già Partita IVA (indicatore di Business)
+    if (cliente?.partita_iva && cliente.partita_iva.trim() !== '') {
+      console.log("🔍 isEditBusinessSegment: TRUE - partita_iva present:", cliente.partita_iva);
+      return true;
+    }
     
-    // Oppure controlla dal segmento
+    // Seconda priorità: controlla dal segmento
     const segmento = cliente?.segmento?.toLowerCase() || '';
-    return segmento === 'business';
+    const isBusiness = segmento === 'business';
+    console.log("🔍 isEditBusinessSegment: Segmento check:", {segmento, isBusiness});
+    return isBusiness;
   };
 
   useEffect(() => {
