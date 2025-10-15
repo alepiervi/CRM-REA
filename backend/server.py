@@ -903,26 +903,64 @@ class ConvergenzaItem(BaseModel):
 class Cliente(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     cliente_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])  # Short ID
-    nome: str
-    cognome: str
-    email: Optional[EmailStr] = None
-    telefono: str
-    indirizzo: Optional[str] = None
-    citta: Optional[str] = None
-    provincia: Optional[str] = None
+    
+    # Campi base sempre presenti
+    numero_ordine: Optional[str] = None
+    account: Optional[str] = None
+    ragione_sociale: Optional[str] = None  # Solo se Business
+    cognome: str  # Obbligatorio
+    nome: str  # Obbligatorio
+    data_nascita: Optional[date] = None
+    luogo_nascita: Optional[str] = None
+    comune_residenza: Optional[str] = None
+    provincia: Optional[str] = None  # Sigla provincia
     cap: Optional[str] = None
-    codice_fiscale: Optional[str] = None
-    partita_iva: Optional[str] = None
+    indirizzo: Optional[str] = None
+    email: Optional[str] = None
+    telefono: str  # Obbligatorio
+    telefono2: Optional[str] = None
+    partita_iva: Optional[str] = None  # Solo se Business
+    codice_fiscale: str  # Obbligatorio
+    
+    # Documento
+    tipo_documento: Optional[TipoDocumento] = None
+    numero_documento: Optional[str] = None
+    data_rilascio: Optional[date] = None
+    luogo_rilascio: Optional[str] = None
+    scadenza_documento: Optional[date] = None
+    
+    # Campi specifici Telefonia Fastweb
+    tecnologia: Optional[Tecnologia] = None
+    codice_migrazione: Optional[str] = None
+    gestore: Optional[str] = None
+    convergenza: bool = False
+    convergenza_items: List[ConvergenzaItem] = []
+    
+    # Campi specifici Energia Fastweb  
+    codice_pod: Optional[str] = None
+    
+    # Modalità pagamento
+    modalita_pagamento: Optional[ModalitaPagamento] = None
+    iban: Optional[str] = None
+    intestatario_diverso: Optional[str] = None
+    numero_carta: Optional[str] = None
+    mese_carta: Optional[str] = None
+    anno_carta: Optional[str] = None
+    
+    # Note
+    note: Optional[str] = None
+    note_backoffice: Optional[str] = None  # Solo in modifica
+    
+    # Campi sistema esistenti
     commessa_id: str
     sub_agenzia_id: str
     servizio_id: Optional[str] = None
-    tipologia_contratto: Optional[TipologiaContratto] = None  # Nuovo campo
-    segmento: Optional[Segmento] = None  # Nuovo campo
+    tipologia_contratto: Optional[TipologiaContratto] = None
+    segmento: Optional[Segmento] = None
     status: ClienteStatus = ClienteStatus.NUOVO
-    note: Optional[str] = None
-    dati_aggiuntivi: Dict[str, Any] = {}  # Campi personalizzati per commessa
-    created_by: str  # User ID di chi ha creato il cliente
-    assigned_to: Optional[str] = None  # User ID assegnato per lavorazione
+    dati_aggiuntivi: Dict[str, Any] = {}
+    created_by: str
+    assigned_to: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
     last_contact: Optional[datetime] = None
