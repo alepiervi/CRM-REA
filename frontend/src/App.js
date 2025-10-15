@@ -18593,15 +18593,32 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           {/* Note */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Note</CardTitle>
+              <CardTitle className="text-lg">📝 Note</CardTitle>
             </CardHeader>
             <CardContent>
-              <Textarea
-                value={formData.note}
-                onChange={(e) => handleChange('note', e.target.value)}
-                placeholder="Note aggiuntive..."
-                rows={4}
-              />
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="note">Note Cliente</Label>
+                  <Textarea
+                    id="note"
+                    value={formData.note}
+                    onChange={(e) => handleChange('note', e.target.value)}
+                    placeholder="Note aggiuntive del cliente..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="note_backoffice">Note Back Office</Label>
+                  <Textarea
+                    id="note_backoffice"
+                    value={formData.note_backoffice}
+                    onChange={(e) => handleChange('note_backoffice', e.target.value)}
+                    placeholder="Note interne del Back Office..."
+                    rows={3}
+                    className="border-orange-200 focus:border-orange-500"
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
