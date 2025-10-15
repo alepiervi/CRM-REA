@@ -14151,13 +14151,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     <p className="text-sm text-slate-500 font-mono">ID: {cliente.cliente_id}</p>
                   </div>
                   <Badge 
-                    variant={
-                      cliente.status === "convertito" ? "default" :
-                      cliente.status === "in_lavorazione" ? "secondary" : "outline"
-                    }
+                    variant={getClienteStatusVariant(cliente.status)}
                     className="text-xs"
                   >
-                    {cliente.status.replace('_', ' ').toUpperCase()}
+                    {formatClienteStatus(cliente.status)}
                   </Badge>
                 </div>
                 
