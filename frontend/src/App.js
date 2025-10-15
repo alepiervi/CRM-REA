@@ -16583,9 +16583,17 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     
     // Reset all form data after submit
     setFormData({
-      nome: '', cognome: '', email: '', telefono: '', indirizzo: '', 
-      citta: '', provincia: '', cap: '', codice_fiscale: '', partita_iva: '',
-      note: ''
+      nome: '', cognome: '', email: '', telefono: '', cellulare: '', 
+      data_nascita: '', luogo_nascita: '', codice_fiscale: '', 
+      indirizzo: '', comune: '', provincia: '', cap: '', 
+      ragione_sociale: '', partita_iva: '', numero_ordine: '', account: '',
+      tipo_documento: '', numero_documento: '', data_rilascio: '', 
+      luogo_rilascio: '', scadenza_documento: '',
+      tecnologia: '', codice_migrazione: '', gestore: '', convergenza: false,
+      convergenza_items: [], codice_pod: '',
+      modalita_pagamento: '', iban: '', intestatario_diverso: '', 
+      numero_carta: '', mese_carta: '', anno_carta: '',
+      note: '', note_backoffice: ''
     });
     
     setSelectedData({
