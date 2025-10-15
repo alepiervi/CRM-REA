@@ -33162,12 +33162,12 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the COMPLETE BACKEND POST-MODIFICATIONS TEST AS REQUESTED
+        # Run the CLIENT CREATION CONDITIONAL LOGIC TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING COMPLETE BACKEND POST-MODIFICATIONS TEST - AS REQUESTED")
+        print("🎯 RUNNING CLIENT CREATION CONDITIONAL LOGIC TEST - AS REQUESTED")
         print("="*80)
         
-        backend_success = self.test_complete_backend_post_modifications()
+        backend_success = self.test_client_creation_conditional_logic_complete()
 
         # Print final summary
         print("\n" + "=" * 80)
