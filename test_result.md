@@ -536,11 +536,11 @@ backend:
 
   - task: "COMPLETE CLIENT EDIT MODAL OVERHAUL - Conditional Fields, Non-Modifiable Fields, New Status System"
     implemented: true
-    working: "needs_testing"
+    working: false
     file: "/app/frontend/src/App.js, /app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
