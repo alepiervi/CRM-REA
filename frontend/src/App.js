@@ -18382,9 +18382,16 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Offerta Attivata</Label>
-                  <p className="text-sm p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
-                    {offertaInfo?.nome || cliente?.offerta_id || 'Nessuna offerta'}
+                  <p className="text-sm p-2 bg-blue-50 border border-blue-200 rounded text-blue-800 font-semibold">
+                    {offertaInfo?.nome || 
+                     (cliente?.offerta_id ? `Offerta ID: ${cliente.offerta_id.slice(0, 8)}...` : '') || 
+                     'Nessuna offerta selezionata'}
                   </p>
+                  {offertaInfo?.descrizione && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      {offertaInfo.descrizione}
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
