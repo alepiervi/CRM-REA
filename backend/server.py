@@ -895,6 +895,11 @@ PROVINCE_ITALIANE = [
     "VR", "VV", "VI", "VT"
 ]
 
+class ConvergenzaItem(BaseModel):
+    numero_cellulare: Optional[str] = None
+    iccid: Optional[str] = None
+    operatore: Optional[str] = None
+
 class Cliente(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     cliente_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])  # Short ID
