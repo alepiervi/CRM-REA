@@ -863,6 +863,38 @@ class Segmento(str, Enum):
     PRIVATO = "privato"
     BUSINESS = "business"
 
+class TipoDocumento(str, Enum):
+    CARTA_IDENTITA = "carta_identita"
+    PATENTE = "patente"
+    PASSAPORTO = "passaporto"
+
+class Tecnologia(str, Enum):
+    FIBRA = "fibra"
+    NGN_GPON = "ngn_gpon"
+    VULA = "vula"
+    SVULA = "svula"
+    BS_NGA = "bs_nga"
+    BS_GPON = "bs_gpon"
+    ADSL = "adsl"
+    ADSL_WS = "adsl_ws"
+    FWA = "fwa"
+
+class ModalitaPagamento(str, Enum):
+    IBAN = "iban"
+    CARTA_CREDITO = "carta_credito"
+
+# Sigle Province Italiane per dropdown
+PROVINCE_ITALIANE = [
+    "AG", "AL", "AN", "AO", "AR", "AP", "AT", "AV", "BA", "BT", "BL", "BN", "BG", "BI", "BO", "BZ", 
+    "BS", "BR", "CA", "CL", "CB", "CI", "CE", "CT", "CZ", "CH", "CO", "CS", "CR", "KR", "CN", 
+    "EN", "FM", "FE", "FI", "FG", "FC", "FR", "GE", "GO", "GR", "IM", "IS", "SP", "AQ", "LT", 
+    "LE", "LC", "LI", "LO", "LU", "MC", "MN", "MS", "MT", "VS", "ME", "MI", "MO", "MB", "NA", 
+    "NO", "NU", "OG", "OT", "OR", "PD", "PA", "PR", "PV", "PG", "PU", "PE", "PC", "PI", "PT", 
+    "PN", "PZ", "PO", "RG", "RA", "RC", "RE", "RI", "RN", "RM", "RO", "SA", "SS", "SV", "SI", 
+    "SR", "SO", "TA", "TE", "TR", "TO", "TP", "TN", "TV", "TS", "UD", "VA", "VE", "VB", "VC", 
+    "VR", "VV", "VI", "VT"
+]
+
 class Cliente(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     cliente_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])  # Short ID
