@@ -18382,6 +18382,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   // handleChange già definito sopra
 
+  // Debug: Verifica che il componente arrivi al render finale
+  console.log("🎯 EditClienteModal: RENDERING COMPLETE - All functions defined, ready to render JSX");
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
