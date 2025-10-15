@@ -18089,6 +18089,8 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const [editTipologieContratto, setEditTipologieContratto] = useState([]);
   const [segmenti, setSegmenti] = useState([]);
   const [offertaInfo, setOffertaInfo] = useState(null);
+  const [isLoadingTipologie, setIsLoadingTipologie] = useState(true);
+  const [isLoadingOfferta, setIsLoadingOfferta] = useState(false);
 
   // Funzioni per rilevare i campi condizionali basati sui dati del cliente esistente
   const isEditEnergiaFastweb = () => {
