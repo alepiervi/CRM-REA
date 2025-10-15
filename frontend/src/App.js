@@ -18052,6 +18052,19 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
 
 // Edit Cliente Modal Component  
 const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
+  // Debug logging per verificare i dati del cliente
+  console.log("🔍 DEBUG EditClienteModal - Dati cliente ricevuti:", {
+    cliente_id: cliente?.id,
+    documento_fields: {
+      tipo_documento: cliente?.tipo_documento,
+      numero_documento: cliente?.numero_documento,
+      data_rilascio: cliente?.data_rilascio,
+      luogo_rilascio: cliente?.luogo_rilascio,
+      scadenza_documento: cliente?.scadenza_documento
+    },
+    all_cliente_keys: cliente ? Object.keys(cliente) : 'no cliente'
+  });
+
   const [formData, setFormData] = useState({
     // Dati base
     nome: cliente?.nome || '',
