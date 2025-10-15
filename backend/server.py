@@ -920,7 +920,7 @@ class Cliente(BaseModel):
     ragione_sociale: Optional[str] = None  # Solo se Business
     cognome: str  # Obbligatorio
     nome: str  # Obbligatorio
-    data_nascita: Optional[date] = None
+    data_nascita: Optional[str] = None  # Changed from date to str to fix BSON serialization
     luogo_nascita: Optional[str] = None
     comune_residenza: Optional[str] = None
     provincia: Optional[str] = None  # Sigla provincia
@@ -982,7 +982,7 @@ class ClienteCreate(BaseModel):
     ragione_sociale: Optional[str] = None  # Solo se Business
     cognome: str  # Obbligatorio
     nome: str  # Obbligatorio
-    data_nascita: Optional[date] = None
+    data_nascita: Optional[str] = None  # Changed from date to str to fix BSON serialization
     luogo_nascita: Optional[str] = None
     comune_residenza: Optional[str] = None
     provincia: Optional[str] = None  # Sigla provincia
@@ -1037,7 +1037,7 @@ class ClienteUpdate(BaseModel):
     ragione_sociale: Optional[str] = None
     cognome: Optional[str] = None
     nome: Optional[str] = None
-    data_nascita: Optional[date] = None
+    data_nascita: Optional[str] = None  # Changed from date to str to fix BSON serialization
     luogo_nascita: Optional[str] = None
     comune_residenza: Optional[str] = None
     provincia: Optional[str] = None
