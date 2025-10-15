@@ -18302,19 +18302,19 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </CardContent>
           </Card>
 
-          {/* Dati Fiscali e Indirizzo */}
+          {/* Indirizzo */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">🏠 Dati Fiscali e Indirizzo</CardTitle>
+              <CardTitle className="text-lg">🏠 Indirizzo</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="partita_iva">Partita IVA</Label>
+                <div className="md:col-span-2">
+                  <Label htmlFor="indirizzo">Via/Piazza</Label>
                   <Input
-                    id="partita_iva"
-                    value={formData.partita_iva}
-                    onChange={(e) => handleChange('partita_iva', e.target.value)}
+                    id="indirizzo"
+                    value={formData.indirizzo}
+                    onChange={(e) => handleChange('indirizzo', e.target.value)}
                   />
                 </div>
                 <div>
@@ -18323,14 +18323,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     id="cap"
                     value={formData.cap}
                     onChange={(e) => handleChange('cap', e.target.value)}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="indirizzo">Via/Piazza</Label>
-                  <Input
-                    id="indirizzo"
-                    value={formData.indirizzo}
-                    onChange={(e) => handleChange('indirizzo', e.target.value)}
                   />
                 </div>
               </div>
