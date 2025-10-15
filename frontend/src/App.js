@@ -18051,6 +18051,10 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     indirizzo: cliente?.indirizzo || '',
     cap: cliente?.cap || '',
     
+    // Campi aggiuntivi mancanti
+    numero_ordine: cliente?.numero_ordine || '',
+    account: cliente?.account || '',
+    
     // Dati Business
     ragione_sociale: cliente?.ragione_sociale || '',
     partita_iva: cliente?.partita_iva || '',
