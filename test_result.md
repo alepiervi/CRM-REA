@@ -590,11 +590,12 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Excel Export Conditional Fields Implementation - Include New Client Form Fields"
     - "Conditional Fields Display Fix - isEnergiaFastweb and isTelefoniaFastweb Functions Correction"
   stuck_tasks:
     - "Conditional Fields Display Fix - isEnergiaFastweb and isTelefoniaFastweb Functions Correction"
   test_all: false
-  test_priority: "stuck_first"
+  test_priority: "high_first"
 
 agent_communication:
    - agent: "main"
