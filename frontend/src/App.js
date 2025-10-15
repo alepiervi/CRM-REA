@@ -18676,7 +18676,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Servizio</Label>
                   <p className="text-sm p-2 bg-gray-50 border rounded">
-                    {servizi.find(s => s.id === cliente?.servizio_id)?.nome || 'Non disponibile'}
+                    {Array.isArray(servizi) && servizi.find(s => s?.id === cliente?.servizio_id)?.nome || 'Non disponibile'}
                   </p>
                 </div>
                 <div>
