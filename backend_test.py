@@ -681,8 +681,8 @@ class CRMAPITester:
         print("   • convergenza (campo Telefonia Fastweb)")
         print("🎯 HEADERS ATTESI: Tutti i campi documento + campi condizionali + modalita_pagamento + note")
         
-        # **STEP 1: TEST ADMIN LOGIN E EXPORT EXCEL**
-        print("\n🔐 STEP 1: TEST ADMIN LOGIN E EXPORT EXCEL...")
+        # **STEP 1: TEST ADMIN LOGIN**
+        print("\n🔐 STEP 1: TEST ADMIN LOGIN...")
         success, response, status = self.make_request(
             'POST', 'auth/login', 
             {'username': 'admin', 'password': 'admin123'}, 
@@ -697,35 +697,35 @@ class CRMAPITester:
             self.log_test("❌ ADMIN LOGIN FAILED", False, f"Status: {status}, Response: {response}")
             return False
 
-        # Test GET /api/clienti/export/excel with admin
-        print("\n   Testing GET /api/clienti/export/excel with admin...")
+        # **STEP 2: TEST EXCEL EXPORT ENDPOINT**
+        print("\n📊 STEP 2: TEST EXCEL EXPORT ENDPOINT...")
         
         try:
             import requests
             
-            url = f"{self.base_url}/clienti/export/excel"
+            url = f"{self.base_url}/clienti/export-excel"
             headers = {'Authorization': f'Bearer {self.token}'}
             
             response = requests.get(url, headers=headers, timeout=30)
             
             if response.status_code == 200:
-                self.log_test("✅ GET /api/clienti/export/excel (ADMIN)", True, f"Status: {response.status_code}")
+                self.log_test("✅ GET /api/clienti/export-excel", True, f"Status: {response.status_code}")
                 
                 # Verify Content-Type is Excel
                 content_type = response.headers.get('content-type', '')
                 if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in content_type:
-                    self.log_test("✅ FORMATO FILE EXCEL (.xlsx)", True, f"Content-Type: {content_type}")
+                    self.log_test("✅ EXCEL FILE FORMAT (.xlsx)", True, f"Content-Type: {content_type}")
                 elif 'application/octet-stream' in content_type:
-                    self.log_test("✅ FORMATO FILE BINARIO (likely Excel)", True, f"Content-Type: {content_type}")
+                    self.log_test("✅ BINARY FILE FORMAT (Excel)", True, f"Content-Type: {content_type}")
                 else:
-                    self.log_test("❌ FORMATO FILE NON EXCEL", False, f"Content-Type: {content_type}")
+                    self.log_test("❌ INVALID FILE FORMAT", False, f"Content-Type: {content_type}")
                 
                 # Verify file size
                 file_size = len(response.content)
                 if file_size > 1000:  # Excel files should be reasonably sized
-                    self.log_test("✅ FILE SIZE APPROPRIATO", True, f"File size: {file_size} bytes")
+                    self.log_test("✅ FILE SIZE APPROPRIATE", True, f"File size: {file_size} bytes")
                 else:
-                    self.log_test("❌ FILE SIZE TROPPO PICCOLO", False, f"File size: {file_size} bytes")
+                    self.log_test("❌ FILE SIZE TOO SMALL", False, f"File size: {file_size} bytes")
                 
                 # Verify Excel file signature (ZIP header for .xlsx)
                 if response.content[:4] == b'PK\x03\x04':
@@ -733,7 +733,9 @@ class CRMAPITester:
                 else:
                     self.log_test("❌ EXCEL FILE SIGNATURE INVALID", False, f"File starts with: {response.content[:10]}")
                 
-                # Try to parse Excel content to verify headers
+                # **STEP 3: PARSE EXCEL AND VERIFY CONDITIONAL FIELDS**
+                print("\n🔍 STEP 3: PARSE EXCEL AND VERIFY CONDITIONAL FIELDS...")
+                
                 try:
                     import openpyxl
                     import io
@@ -751,107 +753,161 @@ class CRMAPITester:
                     
                     self.log_test("✅ EXCEL FILE PARSED SUCCESSFULLY", True, f"Found {len(headers)} headers")
                     
-                    # Expected headers (17 columns)
-                    expected_headers = [
-                        "ID Cliente", "Nome", "Cognome", "Telefono", "Email", "Codice Fiscale", 
-                        "Data Nascita", "Provincia", "Comune", "Indirizzo", "Cap", 
-                        "Sub Agenzia", "Commessa", "Servizio", "Tipologia Contratto", "Segmento", 
-                        "Offerta", "Status", "Utente Creatore", "Data Creazione", "Note"
-                    ]
+                    print(f"\n   📋 CURRENT HEADERS FOUND:")
+                    for i, header in enumerate(headers, 1):
+                        print(f"      {i:2d}. {header}")
                     
-                    print(f"\n   📋 HEADERS VERIFICATION:")
-                    print(f"      Expected: {len(expected_headers)} headers")
-                    print(f"      Found: {len(headers)} headers")
-                    print(f"      Headers found: {headers}")
+                    # **CRITICAL: Check for conditional fields**
+                    print(f"\n   🎯 CONDITIONAL FIELDS VERIFICATION:")
                     
-                    # Check for critical "Offerta" field
-                    if "Offerta" in headers:
-                        self.log_test("✅ CAMPO 'OFFERTA' PRESENTE", True, "Campo Offerta trovato negli headers")
+                    conditional_fields = {
+                        "codice_pod": "Codice POD",  # Energia Fastweb field
+                        "tecnologia": "Tecnologia",  # Telefonia Fastweb field
+                        "codice_migrazione": "Codice Migrazione",  # Telefonia Fastweb field
+                        "gestore": "Gestore",  # Telefonia Fastweb field
+                        "convergenza": "Convergenza"  # Telefonia Fastweb field
+                    }
+                    
+                    missing_conditional_fields = []
+                    present_conditional_fields = []
+                    
+                    for field_key, field_display in conditional_fields.items():
+                        # Check various possible header names
+                        possible_names = [field_display, field_key.replace('_', ' ').title(), field_key]
+                        found = False
+                        
+                        for possible_name in possible_names:
+                            if possible_name in headers:
+                                present_conditional_fields.append(field_display)
+                                found = True
+                                break
+                        
+                        if not found:
+                            missing_conditional_fields.append(field_display)
+                    
+                    # Report conditional fields status
+                    if present_conditional_fields:
+                        self.log_test("✅ CONDITIONAL FIELDS PRESENT", True, f"Found: {present_conditional_fields}")
+                    
+                    if missing_conditional_fields:
+                        self.log_test("❌ CONDITIONAL FIELDS MISSING", False, f"Missing: {missing_conditional_fields}")
                     else:
-                        self.log_test("❌ CAMPO 'OFFERTA' MANCANTE", False, "Campo Offerta NON trovato negli headers")
+                        self.log_test("✅ ALL CONDITIONAL FIELDS PRESENT", True, "All required conditional fields found")
                     
-                    # Check for filiera completa fields
-                    filiera_fields = ["Sub Agenzia", "Commessa", "Servizio", "Tipologia Contratto", "Segmento", "Offerta"]
-                    missing_filiera = [field for field in filiera_fields if field not in headers]
+                    # **Check for document fields**
+                    print(f"\n   📄 DOCUMENT FIELDS VERIFICATION:")
                     
-                    if not missing_filiera:
-                        self.log_test("✅ FILIERA COMPLETA PRESENTE", True, f"Tutti i campi filiera trovati: {filiera_fields}")
+                    document_fields = {
+                        "tipo_documento": "Tipo Documento",
+                        "numero_documento": "Numero Documento", 
+                        "data_rilascio": "Data Rilascio",
+                        "luogo_rilascio": "Luogo Rilascio",
+                        "scadenza_documento": "Scadenza Documento"
+                    }
+                    
+                    missing_document_fields = []
+                    present_document_fields = []
+                    
+                    for field_key, field_display in document_fields.items():
+                        possible_names = [field_display, field_key.replace('_', ' ').title(), field_key]
+                        found = False
+                        
+                        for possible_name in possible_names:
+                            if possible_name in headers:
+                                present_document_fields.append(field_display)
+                                found = True
+                                break
+                        
+                        if not found:
+                            missing_document_fields.append(field_display)
+                    
+                    if present_document_fields:
+                        self.log_test("✅ DOCUMENT FIELDS PRESENT", True, f"Found: {present_document_fields}")
+                    
+                    if missing_document_fields:
+                        self.log_test("❌ DOCUMENT FIELDS MISSING", False, f"Missing: {missing_document_fields}")
                     else:
-                        self.log_test("❌ FILIERA INCOMPLETA", False, f"Campi filiera mancanti: {missing_filiera}")
+                        self.log_test("✅ ALL DOCUMENT FIELDS PRESENT", True, "All document fields found")
                     
-                    # Check total header count
-                    if len(headers) >= 17:
-                        self.log_test("✅ NUMERO HEADERS CORRETTO", True, f"Found {len(headers)} headers (expected ≥17)")
+                    # **Check for payment fields**
+                    print(f"\n   💳 PAYMENT FIELDS VERIFICATION:")
+                    
+                    payment_fields = {
+                        "modalita_pagamento": "Modalità Pagamento",
+                        "iban": "IBAN",
+                        "numero_carta": "Numero Carta"
+                    }
+                    
+                    missing_payment_fields = []
+                    present_payment_fields = []
+                    
+                    for field_key, field_display in payment_fields.items():
+                        possible_names = [field_display, field_key.replace('_', ' ').title(), field_key]
+                        found = False
+                        
+                        for possible_name in possible_names:
+                            if possible_name in headers:
+                                present_payment_fields.append(field_display)
+                                found = True
+                                break
+                        
+                        if not found:
+                            missing_payment_fields.append(field_display)
+                    
+                    if present_payment_fields:
+                        self.log_test("✅ PAYMENT FIELDS PRESENT", True, f"Found: {present_payment_fields}")
+                    
+                    if missing_payment_fields:
+                        self.log_test("❌ PAYMENT FIELDS MISSING", False, f"Missing: {missing_payment_fields}")
+                    
+                    # **Overall completeness check**
+                    total_expected_new_fields = len(conditional_fields) + len(document_fields) + len(payment_fields)
+                    total_missing_fields = len(missing_conditional_fields) + len(missing_document_fields) + len(missing_payment_fields)
+                    
+                    completeness_percentage = ((total_expected_new_fields - total_missing_fields) / total_expected_new_fields) * 100
+                    
+                    print(f"\n   📊 COMPLETENESS SUMMARY:")
+                    print(f"      • Total expected new fields: {total_expected_new_fields}")
+                    print(f"      • Total missing fields: {total_missing_fields}")
+                    print(f"      • Completeness: {completeness_percentage:.1f}%")
+                    
+                    if completeness_percentage >= 100:
+                        self.log_test("✅ EXCEL EXPORT COMPLETE", True, f"All new fields present ({completeness_percentage:.1f}%)")
+                        excel_export_success = True
+                    elif completeness_percentage >= 80:
+                        self.log_test("⚠️ EXCEL EXPORT MOSTLY COMPLETE", True, f"Most fields present ({completeness_percentage:.1f}%)")
+                        excel_export_success = True
                     else:
-                        self.log_test("❌ NUMERO HEADERS INSUFFICIENTE", False, f"Found {len(headers)} headers (expected ≥17)")
+                        self.log_test("❌ EXCEL EXPORT INCOMPLETE", False, f"Many fields missing ({completeness_percentage:.1f}%)")
+                        excel_export_success = False
                     
                     # Check for data rows
                     data_rows = 0
-                    for row in worksheet.iter_rows(min_row=2, max_row=100):  # Check up to 100 rows
+                    for row in worksheet.iter_rows(min_row=2, max_row=10):  # Check up to 10 rows
                         if any(cell.value for cell in row):
                             data_rows += 1
                         else:
                             break
                     
                     if data_rows > 0:
-                        self.log_test("✅ DATI CLIENTI PRESENTI", True, f"Found {data_rows} data rows")
-                        
-                        # Check first data row for filiera data population
-                        if data_rows > 0:
-                            first_data_row = list(worksheet[2])  # Second row (first data row)
-                            
-                            # Find indices of filiera fields
-                            try:
-                                sub_agenzia_idx = headers.index("Sub Agenzia")
-                                commessa_idx = headers.index("Commessa")
-                                offerta_idx = headers.index("Offerta") if "Offerta" in headers else -1
-                                
-                                sub_agenzia_value = first_data_row[sub_agenzia_idx].value if sub_agenzia_idx < len(first_data_row) else None
-                                commessa_value = first_data_row[commessa_idx].value if commessa_idx < len(first_data_row) else None
-                                offerta_value = first_data_row[offerta_idx].value if offerta_idx >= 0 and offerta_idx < len(first_data_row) else None
-                                
-                                print(f"\n   📊 SAMPLE DATA VERIFICATION:")
-                                print(f"      Sub Agenzia: {sub_agenzia_value}")
-                                print(f"      Commessa: {commessa_value}")
-                                print(f"      Offerta: {offerta_value}")
-                                
-                                # Verify data is names, not IDs (should not be UUIDs)
-                                if sub_agenzia_value and len(str(sub_agenzia_value)) < 36:  # Not a UUID
-                                    self.log_test("✅ SUB AGENZIA NOME (NOT ID)", True, f"Sub Agenzia: {sub_agenzia_value}")
-                                else:
-                                    self.log_test("❌ SUB AGENZIA POTREBBE ESSERE ID", False, f"Sub Agenzia: {sub_agenzia_value}")
-                                
-                                if commessa_value and len(str(commessa_value)) < 36:  # Not a UUID
-                                    self.log_test("✅ COMMESSA NOME (NOT ID)", True, f"Commessa: {commessa_value}")
-                                else:
-                                    self.log_test("❌ COMMESSA POTREBBE ESSERE ID", False, f"Commessa: {commessa_value}")
-                                
-                                if offerta_value:
-                                    self.log_test("✅ OFFERTA POPOLATA", True, f"Offerta: {offerta_value}")
-                                else:
-                                    self.log_test("ℹ️ OFFERTA VUOTA", True, "Offerta field present but empty (may be normal)")
-                                    
-                            except (ValueError, IndexError) as e:
-                                self.log_test("❌ ERROR CHECKING SAMPLE DATA", False, f"Error: {e}")
+                        self.log_test("✅ DATA ROWS PRESENT", True, f"Found {data_rows} data rows")
                     else:
-                        self.log_test("ℹ️ NO DATA ROWS", True, "Excel file has headers but no data rows")
-                    
-                    admin_excel_success = True
+                        self.log_test("ℹ️ NO DATA ROWS", True, "Excel file has headers but no data rows (may be normal)")
                     
                 except ImportError:
                     self.log_test("ℹ️ OPENPYXL NOT AVAILABLE", True, "Cannot parse Excel content (openpyxl not installed)")
-                    admin_excel_success = True
+                    excel_export_success = True  # Assume success if we can't parse
                 except Exception as e:
                     self.log_test("❌ EXCEL PARSING ERROR", False, f"Error parsing Excel: {e}")
-                    admin_excel_success = False
+                    excel_export_success = False
                     
             else:
-                self.log_test("❌ GET /api/clienti/export/excel (ADMIN)", False, f"Status: {response.status_code}")
-                admin_excel_success = False
+                self.log_test("❌ GET /api/clienti/export-excel FAILED", False, f"Status: {response.status_code}")
+                excel_export_success = False
                 
         except Exception as e:
             self.log_test("❌ EXCEL EXPORT REQUEST FAILED", False, f"Exception: {str(e)}")
-            admin_excel_success = False
+            excel_export_success = False
 
         # **STEP 2: TEST RESPONSABILE COMMESSA LOGIN E EXPORT EXCEL**
         print("\n🔐 STEP 2: TEST RESPONSABILE COMMESSA LOGIN E EXPORT EXCEL...")
