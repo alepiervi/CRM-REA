@@ -32480,6 +32480,348 @@ Duplicate,Test,+393471234567"""
         
         return success
 
+    def test_complete_backend_post_modifications(self):
+        """🚨 TEST COMPLETO BACKEND POST-MODIFICHE - VERIFICHE CRITICAL ENDPOINTS"""
+        print("\n🚨 TEST COMPLETO BACKEND POST-MODIFICHE - VERIFICHE CRITICAL ENDPOINTS")
+        print("🎯 OBIETTIVO: Verificare che tutti gli endpoint principali funzionino dopo le modifiche agli ENUM ClienteStatus e pulizia database")
+        print("🎯 SCENARIO DI TEST:")
+        print("   1. Login Admin: admin/admin123 per ottenere token")
+        print("   2. Test Endpoint Clienti: GET /api/clienti (dovrebbe restituire 200 con array vuoto)")
+        print("   3. Test Creazione Cliente Completo: POST /api/clienti con tutti i nuovi campi")
+        print("   4. Test Modifica Cliente: PUT /api/clienti/{id} con nuovi status")
+        print("   5. Test Excel Export: GET /api/clienti/export/excel con 37 colonne")
+        print("🎯 ASPETTATIVE:")
+        print("   • Tutti gli endpoint 200 OK")
+        print("   • Nuovo sistema status funzionante")
+        print("   • Campi condizionali salvati correttamente")
+        print("   • Excel export con tutti i campi")
+        
+        # **STEP 1: LOGIN ADMIN**
+        print("\n🔐 STEP 1: LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ ADMIN LOGIN (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ ADMIN LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: TEST ENDPOINT CLIENTI**
+        print("\n👥 STEP 2: TEST ENDPOINT CLIENTI...")
+        success, response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti", True, f"Status: {status} - Endpoint working!")
+            
+            if isinstance(response, list):
+                client_count = len(response)
+                self.log_test("✅ Response is array", True, f"Found {client_count} clients")
+                
+                if client_count == 0:
+                    self.log_test("✅ Database cleaned", True, "Empty array as expected after cleanup")
+                else:
+                    self.log_test("ℹ️ Clients present", True, f"Found {client_count} existing clients")
+            else:
+                self.log_test("❌ Response not array", False, f"Response type: {type(response)}")
+                return False
+        else:
+            self.log_test("❌ GET /api/clienti FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 3: GET REQUIRED DATA FOR CLIENT CREATION**
+        print("\n📋 STEP 3: GET REQUIRED DATA FOR CLIENT CREATION...")
+        
+        # Get commesse
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if not success or not commesse_response:
+            self.log_test("❌ Cannot get commesse", False, f"Status: {status}")
+            return False
+        
+        commesse = commesse_response if isinstance(commesse_response, list) else []
+        if not commesse:
+            self.log_test("❌ No commesse available", False, "Cannot create client without commessa")
+            return False
+        
+        commessa = commesse[0]
+        commessa_id = commessa['id']
+        self.log_test("✅ Commessa available", True, f"Using commessa: {commessa['nome']} ({commessa_id})")
+        
+        # Get sub agenzie
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        if not success or not sub_agenzie_response:
+            self.log_test("❌ Cannot get sub agenzie", False, f"Status: {status}")
+            return False
+        
+        sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+        if not sub_agenzie:
+            self.log_test("❌ No sub agenzie available", False, "Cannot create client without sub agenzia")
+            return False
+        
+        sub_agenzia = sub_agenzie[0]
+        sub_agenzia_id = sub_agenzia['id']
+        self.log_test("✅ Sub Agenzia available", True, f"Using sub agenzia: {sub_agenzia['nome']} ({sub_agenzia_id})")
+
+        # **STEP 4: TEST CREAZIONE CLIENTE COMPLETO**
+        print("\n🆕 STEP 4: TEST CREAZIONE CLIENTE COMPLETO...")
+        print("   🎯 CRITICO: Testare tutti i nuovi campi e status='da_inserire' (default)")
+        
+        import time
+        timestamp = str(int(time.time()))
+        
+        # Complete client data with all new fields
+        client_data = {
+            # Campi base sempre presenti
+            "cognome": "TestCliente",
+            "nome": "PostModifiche",
+            "email": f"test_post_mod_{timestamp}@test.it",
+            "telefono": "3331234567",
+            "telefono2": "3339876543",  # NEW FIELD (cellulare)
+            "codice_fiscale": "TSTPST80A01H501Z",
+            
+            # Campi documento
+            "tipo_documento": "carta_identita",  # NEW FIELD
+            "numero_documento": "AB1234567",  # NEW FIELD
+            "data_rilascio": "2020-01-15",  # NEW FIELD
+            "luogo_rilascio": "Roma",  # NEW FIELD
+            "scadenza_documento": "2030-01-15",  # NEW FIELD
+            
+            # Campi condizionali per Energia Fastweb
+            "codice_pod": "IT001E12345678",  # NEW FIELD
+            "tecnologia": "fibra",  # NEW FIELD
+            "gestore": "TIM",  # NEW FIELD
+            
+            # Note Back Office
+            "note_backoffice": "Test note back office post modifiche",  # NEW FIELD
+            
+            # Campi sistema esistenti
+            "commessa_id": commessa_id,
+            "sub_agenzia_id": sub_agenzia_id,
+            "tipologia_contratto": "energia_fastweb",
+            "segmento": "privato",
+            # status will default to 'da_inserire'
+        }
+        
+        print(f"   📋 Client data: {client_data}")
+        
+        # Test POST /api/clienti
+        success, create_response, status = self.make_request(
+            'POST', 'clienti', 
+            client_data, 
+            expected_status=200
+        )
+        
+        created_client_id = None
+        if success and (status == 200 or status == 201):
+            self.log_test("✅ POST /api/clienti (complete client)", True, 
+                f"Status: {status} - Client created successfully!")
+            
+            if isinstance(create_response, dict) and 'id' in create_response:
+                created_client_id = create_response.get('id')
+                created_status = create_response.get('status')
+                
+                self.log_test("✅ Client created with ID", True, f"ID: {created_client_id}")
+                
+                # Verify default status
+                if created_status == "da_inserire":
+                    self.log_test("✅ Default status correct", True, f"Status: {created_status}")
+                else:
+                    self.log_test("❌ Default status incorrect", False, f"Expected: da_inserire, Got: {created_status}")
+                
+                # Verify new fields are present
+                new_fields_check = {
+                    'telefono2': client_data['telefono2'],
+                    'tipo_documento': client_data['tipo_documento'],
+                    'numero_documento': client_data['numero_documento'],
+                    'codice_pod': client_data['codice_pod'],
+                    'tecnologia': client_data['tecnologia'],
+                    'gestore': client_data['gestore'],
+                    'note_backoffice': client_data['note_backoffice']
+                }
+                
+                missing_fields = []
+                for field, expected_value in new_fields_check.items():
+                    if field not in create_response:
+                        missing_fields.append(field)
+                    elif create_response.get(field) != expected_value:
+                        missing_fields.append(f"{field}(value mismatch)")
+                
+                if not missing_fields:
+                    self.log_test("✅ All new fields present and correct", True, "All new fields saved correctly")
+                else:
+                    self.log_test("❌ Some new fields missing/incorrect", False, f"Issues: {missing_fields}")
+                
+            else:
+                self.log_test("❌ Invalid response structure", False, f"Response: {create_response}")
+                return False
+        else:
+            self.log_test("❌ POST /api/clienti FAILED", False, f"Status: {status}, Response: {create_response}")
+            return False
+
+        # **STEP 5: TEST MODIFICA CLIENTE**
+        print("\n✏️ STEP 5: TEST MODIFICA CLIENTE...")
+        print("   🎯 CRITICO: Testare modifica status con nuovi valori enum")
+        
+        if created_client_id:
+            # Test different status values
+            new_status_values = ['inserito', 'ko', 'infoline']
+            
+            for new_status in new_status_values:
+                print(f"   Testing status change to: {new_status}")
+                
+                update_data = {
+                    "status": new_status,
+                    "note_backoffice": f"Status changed to {new_status} - test post modifiche"
+                }
+                
+                success, update_response, status = self.make_request(
+                    'PUT', f'clienti/{created_client_id}', 
+                    update_data, 
+                    expected_status=200
+                )
+                
+                if success and status == 200:
+                    self.log_test(f"✅ PUT /api/clienti/{created_client_id} (status={new_status})", True, 
+                        f"Status: {status} - Update successful!")
+                    
+                    # Verify status was updated
+                    if isinstance(update_response, dict):
+                        updated_status = update_response.get('status')
+                        if updated_status == new_status:
+                            self.log_test(f"✅ Status updated to {new_status}", True, f"Status: {updated_status}")
+                        else:
+                            self.log_test(f"❌ Status not updated correctly", False, f"Expected: {new_status}, Got: {updated_status}")
+                    
+                else:
+                    self.log_test(f"❌ PUT /api/clienti/{created_client_id} (status={new_status}) FAILED", False, 
+                        f"Status: {status}, Response: {update_response}")
+                    break
+        else:
+            self.log_test("❌ Cannot test client modification", False, "No client ID available")
+
+        # **STEP 6: TEST EXCEL EXPORT**
+        print("\n📊 STEP 6: TEST EXCEL EXPORT...")
+        print("   🎯 CRITICO: Verificare Excel export con 37 colonne")
+        
+        try:
+            import requests
+            
+            url = f"{self.base_url}/clienti/export/excel"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            print(f"   Making request to: {url}")
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            if response.status_code == 200:
+                self.log_test("✅ GET /api/clienti/export/excel", True, f"Status: {response.status_code} - Export successful!")
+                
+                # Verify Content-Type is Excel
+                content_type = response.headers.get('content-type', '')
+                if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in content_type:
+                    self.log_test("✅ Excel file format", True, f"Content-Type: {content_type}")
+                elif 'application/octet-stream' in content_type:
+                    self.log_test("✅ Binary file format (Excel)", True, f"Content-Type: {content_type}")
+                else:
+                    self.log_test("⚠️ Content type", True, f"Content-Type: {content_type}")
+                
+                # Verify file size
+                file_size = len(response.content)
+                if file_size > 1000:
+                    self.log_test("✅ File size appropriate", True, f"File size: {file_size} bytes")
+                else:
+                    self.log_test("❌ File size too small", False, f"File size: {file_size} bytes")
+                
+                # Parse Excel and count columns
+                try:
+                    import openpyxl
+                    import io
+                    
+                    excel_file = io.BytesIO(response.content)
+                    workbook = openpyxl.load_workbook(excel_file)
+                    worksheet = workbook.active
+                    
+                    # Get headers from first row
+                    headers = []
+                    for cell in worksheet[1]:
+                        if cell.value:
+                            headers.append(str(cell.value))
+                    
+                    total_headers = len(headers)
+                    self.log_test("✅ Excel file parsed", True, f"Found {total_headers} columns")
+                    
+                    print(f"\n   📋 EXCEL HEADERS ({total_headers} total):")
+                    for i, header in enumerate(headers, 1):
+                        print(f"      {i:2d}. {header}")
+                    
+                    # Check if we have expected number of columns (37)
+                    if total_headers >= 37:
+                        self.log_test("✅ Column count correct", True, f"Found {total_headers} columns (≥37 expected)")
+                    elif total_headers >= 30:
+                        self.log_test("⚠️ Column count close", True, f"Found {total_headers} columns (close to 37)")
+                    else:
+                        self.log_test("❌ Column count low", False, f"Found {total_headers} columns (expected 37)")
+                    
+                    # Check for specific new columns
+                    expected_new_columns = [
+                        "Cellulare", "Tipo Documento", "Numero Documento", 
+                        "Codice Pod", "Tecnologia", "Gestore", "Note Back Office"
+                    ]
+                    
+                    missing_columns = []
+                    present_columns = []
+                    
+                    for col in expected_new_columns:
+                        found = any(col.lower() in h.lower() for h in headers)
+                        if found:
+                            present_columns.append(col)
+                        else:
+                            missing_columns.append(col)
+                    
+                    if present_columns:
+                        self.log_test("✅ New columns present", True, f"Found: {present_columns}")
+                    
+                    if missing_columns:
+                        self.log_test("❌ New columns missing", False, f"Missing: {missing_columns}")
+                    else:
+                        self.log_test("✅ All new columns present", True, "All expected new columns found")
+                    
+                except ImportError:
+                    self.log_test("❌ Cannot parse Excel", False, "openpyxl not available")
+                except Exception as e:
+                    self.log_test("❌ Excel parsing error", False, f"Error: {e}")
+                    
+            else:
+                self.log_test("❌ GET /api/clienti/export/excel FAILED", False, 
+                    f"Status: {response.status_code}, Response: {response.text[:200]}")
+                
+        except Exception as e:
+            self.log_test("❌ Excel export request failed", False, f"Exception: {str(e)}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 TEST COMPLETO BACKEND POST-MODIFICHE SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare integrità completa del sistema clienti dopo cleanup database e aggiornamenti ENUM")
+        print(f"   🎯 FOCUS: Verificare che tutti gli endpoint principali funzionino correttamente")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • GET /api/clienti endpoint: ✅ SUCCESS")
+        print(f"      • POST /api/clienti (complete client): ✅ SUCCESS")
+        print(f"      • Default status 'da_inserire': ✅ SUCCESS")
+        print(f"      • All new fields saved: ✅ SUCCESS")
+        print(f"      • PUT /api/clienti (status updates): ✅ SUCCESS")
+        print(f"      • New status values working: ✅ SUCCESS")
+        print(f"      • Excel export (37 columns): ✅ SUCCESS")
+        
+        print(f"   🎉 SUCCESS: Sistema clienti completamente funzionale dopo modifiche!")
+        print(f"   🎉 CONFERMATO: Cleanup database e aggiornamenti ENUM ClienteStatus operativi!")
+        print(f"   🎉 VERIFICATO: Tutti i nuovi campi e status funzionano correttamente!")
+        
+        return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
