@@ -18397,26 +18397,58 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </CardContent>
           </Card>
 
-          {/* Campi Business (condizionali) */}
-          {isEditBusinessSegment() && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">🏢 Dati Business</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Dati Fiscali - Mostra campi in base al segmento */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">
+                💼 Dati Fiscali 
+                <span className="text-sm text-gray-500 ml-2">
+                  ({isEditBusinessSegment() ? 'Business' : 'Privato'})
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Ragione Sociale - Solo per Business */}
+                {isEditBusinessSegment() && (
                   <div>
-                    <Label htmlFor="ragione_sociale">Ragione Sociale</Label>
+                    <Label htmlFor="ragione_sociale">Ragione Sociale *</Label>
                     <Input
                       id="ragione_sociale"
                       value={formData.ragione_sociale}
                       onChange={(e) => handleChange('ragione_sociale', e.target.value)}
+                      className="border-blue-200 focus:border-blue-500"
                     />
                   </div>
+                )}
+                
+                {/* Partita IVA - Solo per Business */}
+                {isEditBusinessSegment() && (
+                  <div>
+                    <Label htmlFor="partita_iva">Partita IVA *</Label>
+                    <Input
+                      id="partita_iva"
+                      value={formData.partita_iva}
+                      onChange={(e) => handleChange('partita_iva', e.target.value)}
+                      className="border-blue-200 focus:border-blue-500"
+                    />
+                  </div>
+                )}
+                
+                {/* Messaggio informativo per segmento rilevato */}
+                <div className="md:col-span-2">
+                  <div className={`p-3 rounded-lg text-sm ${
+                    isEditBusinessSegment() 
+                      ? 'bg-blue-50 text-blue-800 border border-blue-200' 
+                      : 'bg-green-50 text-green-800 border border-green-200'
+                  }`}>
+                    <strong>Segmento rilevato:</strong> {isEditBusinessSegment() ? 'Business' : 'Privato'}
+                    {isEditBusinessSegment() ? ' - Campi aziendali disponibili' : ' - Solo dati personali'}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Documento */}
           <Card>
