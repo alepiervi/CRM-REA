@@ -16975,7 +16975,11 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
           </div>
 
           {/* SEZIONE TELEFONIA FASTWEB */}
-          {isTelefoniaFastweb() && (
+          {(() => {
+            const showTelefoniaSection = isTelefoniaFastweb();
+            console.log("🔍 RENDER CHECK - Telefonia Fastweb section:", showTelefoniaSection);
+            return showTelefoniaSection;
+          })() && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">📞 Telefonia Fastweb</h3>
               
