@@ -102,67 +102,98 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "CONVERGENZA ITEMS OFFERTA SIM BACKEND TESTING
+user_problem_statement: "CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM
 
-OBIETTIVO: Verificare che il campo offerta_sim venga correttamente salvato e recuperato dal database quando si creano clienti con convergenza items.
+OBIETTIVO: Verificare che quando si creano clienti con MULTIPLE convergenza_items (es. 2-3 SIM), TUTTI gli item vengano salvati nel database e recuperati correttamente.
 
 CONTESTO:
-- Ho aggiunto il campo offerta_sim: Optional[str] = None al modello ConvergenzaItem nel backend (server.py riga 912)
-- Il frontend già invia questo campo quando si creano clienti con convergenza
-- Questo fix risolve il problema della visualizzazione dei dati convergenza nell'EditClienteModal
+- L'utente ha segnalato che quando ci sono più SIM aggiunte, nell'EditClienteModal non vede i dati di tutte le SIM
+- Il frontend ha il loop .map() che dovrebbe visualizzare tutte le SIM
+- Devo verificare che il problema non sia nel backend (tutti gli item salvati e recuperati)
 
 TEST DA ESEGUIRE:
 
-1. **Login Admin**: 
+1. **Login Admin**:
    - Credenziali: admin/admin123
-   - Verificare autenticazione
-
-2. **Test Creazione Cliente con Convergenza Items**:
-   - POST /api/clienti con dati cliente che includono convergenza_items
-   - Struttura convergenza_items: [{ numero_cellulare, iccid, operatore, offerta_sim }]
-   - Esempio convergenza_items:
-     ```json
-     {
-       \"convergenza\": true,
-       \"convergenza_items\": [
-         {
-           \"numero_cellulare\": \"3331234567\",
-           \"iccid\": \"89390123456789012345\",
-           \"operatore\": \"TIM\",
-           \"offerta_sim\": \"Offerta Voce 100GB\"
-         }
-       ]
-     }
-     ```
-   - Verificare response 200/201 Success
-   - Annotare cliente_id creato
-
-3. **Verifica Persistenza Database**:
-   - GET /api/clienti/{cliente_id} per recuperare il cliente appena creato
-   - Verificare che il campo convergenza_items contenga tutti i campi:
-     - numero_cellulare ✓
-     - iccid ✓
-     - operatore ✓
-     - **offerta_sim ✓** (questo è il nuovo campo da verificare!)
    
-4. **Test Multiple Convergenza Items**:
-   - Creare un cliente con più convergenza_items (2-3 items)
-   - Ogni item deve avere offerta_sim diversa
-   - Verificare che tutti vengano salvati correttamente
+2. **Test Creazione Cliente con 3 Convergenza Items**:
+   - POST /api/clienti con 3 convergenza_items distinti
+   - Esempio payload:
+   ```json
+   {
+     \"convergenza\": true,
+     \"convergenza_items\": [
+       {
+         \"numero_cellulare\": \"3331111111\",
+         \"iccid\": \"89390111111111111111\",
+         \"operatore\": \"TIM\",
+         \"offerta_sim\": \"Offerta 1 - 100GB\"
+       },
+       {
+         \"numero_cellulare\": \"3332222222\",
+         \"iccid\": \"89390222222222222222\",
+         \"operatore\": \"Vodafone\",
+         \"offerta_sim\": \"Offerta 2 - 50GB\"
+       },
+       {
+         \"numero_cellulare\": \"3333333333\",
+         \"iccid\": \"89390333333333333333\",
+         \"operatore\": \"WindTre\",
+         \"offerta_sim\": \"Offerta 3 - 200GB\"
+       }
+     ]
+   }
+   ```
+   - Verificare response 200 Success
+   - Annotare cliente_id
 
-5. **Test Optional Field**:
-   - Creare cliente con convergenza_items che non includono offerta_sim (campo opzionale)
-   - Verificare che il cliente venga comunque creato senza errori
-   - Verificare che offerta_sim sia null/None nel database
+3. **Verifica Persistenza TUTTI i 3 Items**:
+   - GET /api/clienti/{cliente_id}
+   - **CRITICO**: Verificare che convergenza_items contenga ESATTAMENTE 3 items
+   - Verificare che ogni item abbia tutti i campi:
+     * Item 1: numero_cellulare=3331111111, operatore=TIM, offerta_sim=\"Offerta 1 - 100GB\"
+     * Item 2: numero_cellulare=3332222222, operatore=Vodafone, offerta_sim=\"Offerta 2 - 50GB\"  
+     * Item 3: numero_cellulare=3333333333, operatore=WindTre, offerta_sim=\"Offerta 3 - 200GB\"
+
+4. **Test GET Lista Clienti**:
+   - GET /api/clienti (lista completa)
+   - Trovare il cliente appena creato nella lista
+   - Verificare che nella lista il cliente abbia convergenza_items con LENGTH=3
+
+5. **Test Ordine Items**:
+   - Verificare che l'ordine degli items sia preservato (stesso ordine di creazione)
+   - Item[0] deve essere TIM, Item[1] Vodafone, Item[2] WindTre
+
+6. **Test Array Integrità**:
+   - Verificare che convergenza_items sia un array valido
+   - Nessun item null/undefined
+   - Tutti gli items hanno la stessa struttura
+
+DATI CLIENTE TEST:
+```json
+{
+  \"nome\": \"Mario\",
+  \"cognome\": \"Multi SIM Test\",
+  \"email\": \"mario.multisim@test.com\",
+  \"telefono\": \"3331234567\",
+  \"codice_fiscale\": \"MLTSMS85M01H501T\",
+  \"commessa_id\": \"[usa prima commessa disponibile]\",
+  \"sub_agenzia_id\": \"[usa prima sub agenzia disponibile]\",
+  \"tipologia_contratto\": \"telefonia_fastweb\",
+  \"segmento\": \"privato\"
+}
+```
 
 CRITERI DI SUCCESSO:
-✅ Cliente creato con convergenza_items che includono offerta_sim
-✅ Campo offerta_sim salvato correttamente nel database
-✅ GET cliente ritorna convergenza_items completi con offerta_sim
-✅ Multiple convergenza_items gestiti correttamente
-✅ Campo offerta_sim opzionale (può essere omesso senza errori)
+✅ Cliente creato con 3 convergenza_items
+✅ GET /api/clienti/{id} ritorna ESATTAMENTE 3 items (non 1 o 2)
+✅ Ogni item ha tutti i campi compilati correttamente
+✅ L'ordine degli items è preservato
+✅ GET /api/clienti (lista) mostra il cliente con 3 items
+✅ Array integrità verificata (no null/undefined)
 
-FOCUS: Verificare che il nuovo campo offerta_sim funzioni correttamente end-to-end."
+FOCUS CRITICO: 
+**Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
   - task: "Convergenza Items Offerta SIM Backend Testing - Complete Field Implementation Verification"
