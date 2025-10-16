@@ -19256,6 +19256,45 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </Card>
           )}
 
+          {/* SEZIONE DATI MOBILE */}
+          {isEditMobile() && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">📱 Dati Mobile</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-blue-800 mb-2">SIM Associate</h4>
+                  {cliente?.mobile_items && cliente.mobile_items.length > 0 ? (
+                    <div className="space-y-2">
+                      {cliente.mobile_items.map((mobile, index) => (
+                        <div key={index} className="bg-white p-3 rounded border text-sm">
+                          <h5 className="font-semibold text-gray-700 mb-2">SIM #{index + 1}</h5>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <strong>Telefono da Portare:</strong> {mobile.telefono_da_portare || 'Non specificato'}
+                            </div>
+                            <div>
+                              <strong>ICCID:</strong> {mobile.iccid || 'Non specificato'}
+                            </div>
+                            <div>
+                              <strong>Operatore:</strong> {mobile.operatore || 'Non specificato'}
+                            </div>
+                            <div>
+                              <strong>Titolare se Diverso:</strong> {mobile.titolare_diverso || 'Non specificato'}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">Nessuna SIM mobile associata</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* SEZIONE MODALITÀ PAGAMENTO - SOLO QUELLA SELEZIONATA */}
           <Card>
             <CardHeader>
