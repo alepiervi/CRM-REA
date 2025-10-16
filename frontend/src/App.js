@@ -18928,9 +18928,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">📄 Documento Identità</CardTitle>
-              <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                Debug: tipo={formData.tipo_documento}, numero={formData.numero_documento}, rilascio={formData.data_rilascio}
-              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
