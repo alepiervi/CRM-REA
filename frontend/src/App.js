@@ -18310,7 +18310,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const isEditEnergiaFastweb = () => {
     try {
       // Prima priorità: controlla se il cliente ha già campi Energia Fastweb popolati
-      if (cliente?.codice_pod) {
+      if (cliente?.codice_pod && cliente.codice_pod.trim() !== '') {
         console.log("🔍 isEditEnergiaFastweb: TRUE - codice_pod present:", cliente.codice_pod);
         return true;
       }
@@ -18329,9 +18329,10 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
         if (isEnergia) return true;
       }
       
-      // Terza priorità: controlla direttamente il valore della tipologia contratto
+      // Terza priorità: controlla direttamente il valore della tipologia contratto - MA ESCLUDE TELEFONIA
       const tipologiaValue = (cliente?.tipologia_contratto || '').toLowerCase();
-      const isEnergiaByValue = tipologiaValue.includes('energia') || tipologiaValue.includes('fastweb');
+      // NON deve includere "fastweb" generico perché "telefonia_fastweb" è diverso da "energia_fastweb"
+      const isEnergiaByValue = tipologiaValue.includes('energia') && !tipologiaValue.includes('telefonia');
       console.log("🔍 isEditEnergiaFastweb: Direct value check:", {tipologiaValue, isEnergiaByValue});
       return isEnergiaByValue;
     } catch (error) {
