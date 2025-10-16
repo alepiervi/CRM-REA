@@ -865,7 +865,8 @@ class ClienteStatus(str, Enum):
 
 class TipologiaContratto(str, Enum):
     ENERGIA_FASTWEB = "energia_fastweb"
-    TELEFONIA_FASTWEB = "telefonia_fastweb" 
+    TELEFONIA_FASTWEB = "telefonia_fastweb"
+    MOBILE_FASTWEB = "mobile_fastweb"
     HO_MOBILE = "ho_mobile"
     TELEPASS = "telepass"
 
