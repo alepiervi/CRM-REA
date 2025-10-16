@@ -15928,7 +15928,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const [convergenzaItems, setConvergenzaItems] = useState([{
     numero_cellulare: '',
     iccid: '',
-    operatore: ''
+    operatore: '',
+    offerta_sim: ''
   }]);
 
   // Costanti per i dropdown
