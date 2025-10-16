@@ -16602,6 +16602,12 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       selectedData_offerta: selectedData.offerta_id,
       full_data: cleanFormData
     });
+    console.log("🔍 DEBUG selectedData before submit:", {
+      selectedData: selectedData,
+      offerta_id: selectedData.offerta_id,
+      has_offerta: Boolean(selectedData.offerta_id)
+    });
+    
     console.log("🎯 CALLING onSubmit FUNCTION...");
     
     // Call the onSubmit function passed from parent
