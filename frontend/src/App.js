@@ -18442,7 +18442,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   };
 
   useEffect(() => {
-    console.log("🚀 EditClienteModal: Initializing data for cliente:", cliente?.id);
     if (formData.commessa_id) {
       fetchServizi(formData.commessa_id);
     }
