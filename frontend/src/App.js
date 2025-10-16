@@ -19039,6 +19039,14 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   {formData.convergenza && (
                     <div className="ml-6 p-3 bg-blue-50 border border-blue-200 rounded">
                       <h4 className="text-sm font-semibold text-blue-800 mb-2">📱 SIM Associate alla Convergenza</h4>
+                      {(() => {
+                        console.log("🔍 DEBUG CONVERGENZA ITEMS:", {
+                          has_convergenza_items: Boolean(cliente?.convergenza_items),
+                          items_count: cliente?.convergenza_items?.length || 0,
+                          items_data: cliente?.convergenza_items
+                        });
+                        return null;
+                      })()}
                       {cliente?.convergenza_items && cliente.convergenza_items.length > 0 ? (
                         <div className="space-y-2">
                           {cliente.convergenza_items.map((sim, index) => (
