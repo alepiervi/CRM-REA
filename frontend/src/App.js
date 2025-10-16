@@ -1521,12 +1521,12 @@ const Dashboard = () => {
 
   const fetchOfferteBySegmento = async (segmentoId) => {
     try {
-      console.log("🔄 Loading offerte for segmento:", segmentoId);
-      const response = await axios.get(`${API}/segmenti/${segmentoId}/offerte`, {
+      // Use the new /api/offerte endpoint with segmento filter
+      const response = await axios.get(`${API}/offerte`, {
+        params: { segmento: segmentoId, is_active: true },
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setAvailableOfferte(response.data);
-      console.log("✅ Available offerte loaded:", response.data.length);
     } catch (error) {
       console.error("❌ Error fetching offerte:", error);
       setAvailableOfferte([]);
