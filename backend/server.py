@@ -911,6 +911,12 @@ class ConvergenzaItem(BaseModel):
     operatore: Optional[str] = None
     offerta_sim: Optional[str] = None
 
+class MobileItem(BaseModel):
+    telefono_da_portare: Optional[str] = None
+    iccid: Optional[str] = None
+    operatore: Optional[str] = None
+    titolare_diverso: Optional[str] = None
+
 class Cliente(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     cliente_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])  # Short ID
