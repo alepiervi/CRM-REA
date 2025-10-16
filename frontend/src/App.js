@@ -16529,7 +16529,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       
       // Address data  
       indirizzo: formData.indirizzo,
-      comune_residenza: formData.comune || '', // Map comune -> comune_residenza for backend
+      comune_residenza: formData.comune_residenza || '', // Map comune_residenza -> comune_residenza for backend
       provincia: formData.provincia,
       cap: formData.cap,
       
