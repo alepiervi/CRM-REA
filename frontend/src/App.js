@@ -18845,13 +18845,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     )}
                   </select>
                   
-                  {/* Debug: mostra numero offerte caricate */}
-                  {availableOfferte && availableOfferte.length > 0 && (
-                    <p className="text-xs text-green-600 mt-1">
-                      ✅ {availableOfferte.length} offerte disponibili
-                    </p>
-                  )}
-                  
                   {/* Mostra dettagli offerta selezionata */}
                   {isLoadingOfferta ? (
                     <p className="text-xs text-yellow-600 mt-1">🔄 Caricamento dettagli offerta...</p>
