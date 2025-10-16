@@ -8559,28 +8559,20 @@ async def get_all_offerte(
         # Build filiera filter: show generic offerte OR matching specific offerte
         filiera_conditions = []
         
-        # Always include generic offerte (no filiera set)
-        filiera_conditions.append({
-            "$and": [
-                {"$or": [
-                    {"commessa_id": {"$exists": False}},
-                    {"commessa_id": None},
-                    {"commessa_id": ""}
-                ]},
-                {"$or": [
-                    {"servizio_id": {"$exists": False}},
-                    {"servizio_id": None},
-                    {"servizio_id": ""}
-                ]},
-                {"$or": [
-                    {"tipologia_contratto_id": {"$exists": False}},
-                    {"tipologia_contratto_id": None},
-                    {"tipologia_contratto_id": ""}
-                ]}
+        # Generic offerte: missing commessa OR servizio (but can have tipologia and segmento)
+        generic_offerta_condition = {
+            "$or": [
+                {"commessa_id": {"$exists": False}},
+                {"commessa_id": None},
+                {"commessa_id": ""},
+                {"servizio_id": {"$exists": False}},
+                {"servizio_id": None},
+                {"servizio_id": ""}
             ]
-        })
+        }
+        filiera_conditions.append(generic_offerta_condition)
         
-        # If filiera params provided, also include matching specific offerte
+        # Specific offerte: match all provided filiera params
         if commessa_id or servizio_id or tipologia_contratto_id:
             specific_match = {"$and": []}
             
