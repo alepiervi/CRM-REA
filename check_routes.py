@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://nureal-hub.preview.emergentagent.com"
+    base_url = "https://offerte-cascade.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:
