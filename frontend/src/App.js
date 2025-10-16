@@ -16390,7 +16390,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   };
 
   const handleSegmentoSelect = async (segmentoId) => {
-    console.log("🎯 Segmento selected:", segmentoId);
+    console.log("🔄🔄🔄 LOADING OFFERTE FOR SEGMENTO:", segmentoId);
     setSelectedData(prev => ({ ...prev, segmento: segmentoId }));
     
     try {
@@ -16414,17 +16414,24 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       );
       
       if (!response.ok) {
-        console.error(`❌ CASCADE API Error: ${response.status} ${response.statusText}`);
+        console.error("❌❌❌ OFFERTE REQUEST FAILED:", response.status, response.statusText);
+        setCascadeOfferte([]);
         return;
       }
       
       const offerte = await response.json();
-      console.log("✅ CASCADE: Offerte loaded successfully:", offerte);
+      console.log("✅✅✅ CASCADE: Offerte loaded successfully:", {
+        segmentoId: segmentoId,
+        count: offerte?.length || 0,
+        offerte: offerte,
+        firstOfferta: offerte?.[0]
+      });
       setCascadeOfferte(offerte);
       
       setSelectedData(prev => ({ ...prev, offerta_id: '' }));
     } catch (error) {
-      console.error("Error loading offerte:", error);
+      console.error("❌❌❌ Error loading offerte:", error);
+      setCascadeOfferte([]);
     }
   };
 
