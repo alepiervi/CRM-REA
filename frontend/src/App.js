@@ -1980,8 +1980,6 @@ const Dashboard = () => {
           ) : <div>Non autorizzato</div>;
         case "sub-agenzie":
           return user.role === "admin" ? <SubAgenzieManagement selectedUnit={selectedUnit} selectedCommessa={selectedCommessa} units={units} commesse={commesse} subAgenzie={subAgenzie} /> : <div>Non autorizzato</div>;
-        case "offerte":
-          return user.role === "admin" ? <OfferteManagement segmenti={segmenti} /> : <div>Non autorizzato</div>;
         case "clienti":
           console.log("Rendering ClientiManagement with props:", { selectedUnit, selectedCommessa, units: units?.length, commesse: commesse?.length, subAgenzie: subAgenzie?.length });
           if (user.role === "admin" || user.role === "responsabile_commessa" || user.role === "backoffice_commessa" || user.role === "responsabile_sub_agenzia" || user.role === "backoffice_sub_agenzia" || user.role === "agente_specializzato" || user.role === "operatore" || user.role === "responsabile_store" || user.role === "responsabile_presidi" || user.role === "store_assist" || user.role === "promoter_presidi" || user.role === "area_manager") {
