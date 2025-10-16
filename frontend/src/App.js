@@ -18193,6 +18193,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     codice_migrazione: cliente?.codice_migrazione || '',
     gestore: cliente?.gestore || '',
     convergenza: cliente?.convergenza || false,
+    convergenza_items: cliente?.convergenza_items || [],
     
     // Campi Energia Fastweb
     codice_pod: cliente?.codice_pod || '',
