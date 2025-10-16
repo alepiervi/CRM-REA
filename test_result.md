@@ -827,7 +827,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Convergenza Items Offerta SIM Backend Testing - Complete Field Implementation Verification"
+    - "Convergenza Items Multiple SIM Debug - Verifica Persistenza Multipli Item"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
