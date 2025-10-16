@@ -952,6 +952,7 @@ class Cliente(BaseModel):
     gestore: Optional[str] = None
     convergenza: bool = False
     convergenza_items: List[ConvergenzaItem] = []
+    mobile_items: List[MobileItem] = []
     
     # Campi specifici Energia Fastweb  
     codice_pod: Optional[str] = None
@@ -1016,6 +1017,7 @@ class ClienteCreate(BaseModel):
     gestore: Optional[str] = None
     convergenza: bool = False
     convergenza_items: List[ConvergenzaItem] = []
+    mobile_items: List[MobileItem] = []
     
     # Campi specifici Energia Fastweb  
     codice_pod: Optional[str] = None
