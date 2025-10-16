@@ -8523,14 +8523,23 @@ async def create_offerta(
 @api_router.get("/offerte", response_model=List[OffertaModel])
 async def get_all_offerte(
     segmento: Optional[str] = None,
+    commessa_id: Optional[str] = None,
+    servizio_id: Optional[str] = None,
+    tipologia_contratto_id: Optional[str] = None,
     is_active: Optional[bool] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get all offerte with optional filters"""
+    """Get all offerte with optional filters for entire filiera (commessa, servizio, tipologia, segmento)"""
     try:
         query = {}
         if segmento:
             query["segmento_id"] = segmento
+        if commessa_id:
+            query["commessa_id"] = commessa_id
+        if servizio_id:
+            query["servizio_id"] = servizio_id
+        if tipologia_contratto_id:
+            query["tipologia_contratto_id"] = tipologia_contratto_id
         if is_active is not None:
             query["is_active"] = is_active
         
