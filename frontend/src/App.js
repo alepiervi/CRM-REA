@@ -18458,7 +18458,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       telefono2: formData.cellulare  // Mappa cellulare -> telefono2
     };
     
-    // Rimuovi il campo cellulare dal backend data
+    // Rimuovi i campi frontend che non devono essere inviati al backend
     delete backendData.cellulare;
     
     console.log("🔄 Submitting edit cliente data:", {
