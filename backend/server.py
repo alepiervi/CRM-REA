@@ -1082,7 +1082,8 @@ class ClienteUpdate(BaseModel):
     # Campi sistema esistenti
     servizio_id: Optional[str] = None
     tipologia_contratto: Optional[TipologiaContratto] = None
-    segmento: Optional[Segmento] = None  
+    segmento: Optional[Segmento] = None
+    offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     status: Optional[ClienteStatus] = None
     note: Optional[str] = None
     dati_aggiuntivi: Optional[Dict[str, Any]] = None
