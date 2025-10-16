@@ -34355,12 +34355,12 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the CONVERGENZA ITEMS OFFERTA SIM BACKEND TESTING AS REQUESTED
+        # Run the CONVERGENZA ITEMS MULTIPLE SIM DEBUG AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING CONVERGENZA ITEMS OFFERTA SIM BACKEND TESTING - AS REQUESTED")
+        print("🎯 RUNNING CONVERGENZA ITEMS MULTIPLE SIM DEBUG - AS REQUESTED")
         print("="*80)
         
-        backend_success = self.test_convergenza_items_offerta_sim_backend()
+        backend_success = self.test_convergenza_items_multiple_sim_debug()
 
         # Print final summary
         print("\n" + "=" * 80)
