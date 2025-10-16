@@ -860,4 +860,35 @@ agent_communication:
     - agent: "testing"
       message: "🎉 CLIENT CREATION CONDITIONAL LOGIC TESTING COMPLETE - 95.5% SUCCESS! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested complete client creation and modification logic for both Business and Private segments with conditional fields as requested in review. ✅ SCENARIO TESTED: 1) Admin login (admin/admin123) ✅, 2) Business client creation with Energia Fastweb ✅, 3) Private client creation with Telefonia Fastweb ✅, 4) Client retrieval verification ✅, 5) Offer info endpoints ✅. ✅ BUSINESS CLIENT SUCCESS: Created 'Azienda Test SRL' with all conditional fields - ragione_sociale, partita_iva '12345678901', tipologia_contratto 'energia_fastweb', codice_pod 'IT001E12345678', modalita_pagamento 'iban', iban 'IT60X0542811101000000123456'. All Business-specific fields saved correctly. ✅ PRIVATE CLIENT SUCCESS: Created 'Anna Bianchi' with all conditional fields - tecnologia 'fibra', codice_migrazione 'MIG123456', gestore 'TIM', convergenza true, modalita_pagamento 'carta_credito', numero_carta '1234567890123456'. All Private-specific fields saved correctly. ✅ PAYMENT METHODS VERIFIED: IBAN payment method working correctly for Business segment with complete banking details. Credit card payment method working correctly for Private segment with card details (number, month, year). ✅ DATA PERSISTENCE CONFIRMED: Both clients successfully retrieved via GET /api/clienti with all conditional data intact and correct segmento values. ✅ CONDITIONAL LOGIC WORKING: Backend correctly handles Business vs Private conditional fields, saves appropriate data based on segmento, and maintains data integrity. 🎯 ALL OBJECTIVES ACHIEVED: Conditional logic Business/Privato functions perfectly, all conditional fields saved correctly, payment methods managed properly for both segments, data retrieval successful. SUCCESS RATE: 95.5% (21/22 tests passed) - Client creation conditional logic system fully operational!"
     - agent: "testing"
+
+
+  - task: "Convergenza Items Offerta SIM Field - Backend Model Update"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ CONVERGENZA ITEMS OFFERTA SIM FIELD ADDED TO BACKEND: 1) MODEL UPDATE: Aggiunto campo offerta_sim: Optional[str] = None al modello ConvergenzaItem (riga 912 in server.py) per supportare il campo Offerta SIM aggiunto nel frontend. 2) REASON: Il frontend (sia CreateClienteModal che EditClienteModal) già include e invia il campo offerta_sim, ma il backend non lo salvava perché mancava nel modello Pydantic. 3) IMPACT: Ora quando un cliente viene creato con convergenza items che includono offerta_sim, questo campo verrà correttamente salvato nel database. 4) EDITCLIENTE FIX: Risolve il problema della visualizzazione dei dati convergenza nell'EditClienteModal - ora i dati offerta_sim verranno visualizzati correttamente perché saranno effettivamente presenti nel database. 5) BACKEND RESTARTED: Backend riavviato con successo. TESTING RICHIESTO: 1) Verificare creazione cliente con convergenza items che includono offerta_sim, 2) Verificare che il campo venga salvato nel database, 3) Verificare visualizzazione nell'EditClienteModal."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Convergenza Items Offerta SIM Field - Backend Model Update"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "🔧 CONVERGENZA OFFERTA SIM FIELD IMPLEMENTATO: Ho identificato e risolto il problema della visualizzazione dei dati convergenza nell'EditClienteModal. Il modello backend ConvergenzaItem non includeva il campo offerta_sim che il frontend già utilizzava. Ho aggiunto offerta_sim: Optional[str] = None al modello (riga 912 server.py) e riavviato il backend. Ora i dati convergenza verranno salvati completamente nel database e saranno visibili nell'EditClienteModal. PRONTO PER TESTING: Verificare creazione/modifica clienti con convergenza items."
+
       message: "🚨 CRITICAL OFFERTA DEBUG ISSUE IDENTIFIED - SELECTEDDATA.OFFERTA_ID NOT POPULATED! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested complete offerta debug scenario as requested in review (admin/admin123 → Clienti → Nuovo Cliente → complete cascading F2F→Fastweb→TLS→Telefonia Fastweb→Business→Offerta selection). ✅ CASCADING FLOW SUCCESS: Complete filiera successfully completed - Sub Agenzia (F2F), Commessa (Fastweb), Servizio (TLS), Tipologia (Telefonia Fastweb), Segmento (Business), Offerta ('Telefonia 2' ID: 72b503f0-9c99-4900-a30f-9db2bd562235) all selected correctly. ✅ CLIENT FORM LOADED: Successfully reached client creation form with Telefonia Fastweb conditional fields visible (Tecnologia, Codice Migrazione, Gestore, Convergenza, Modalità Pagamento). ✅ FORM VALIDATION WORKING: Form shows proper validation (Nome field required), conditional fields for Business segment (Ragione Sociale, Partita IVA) and Telefonia Fastweb fields displayed correctly. ❌ CRITICAL ISSUE IDENTIFIED: NO DEBUG MESSAGES FOUND IN CONSOLE! Expected debug messages '🔍 DEBUG selectedData before submit' and '🎯 CLEAN CASCADING FORM DATA' are completely missing from console output. ❌ ROOT CAUSE ANALYSIS: 1) Debug logging may be disabled in frontend code, 2) selectedData object is not being populated with offerta_id during cascading selection, 3) Submit process is not triggering the debug code paths, 4) Console messages may be cleared before capture. ❌ OFFERTA_ID POPULATION ISSUE: No offerta_id references found in any console messages, suggesting the selectedData.offerta_id field is not being set when offerta is selected in cascading form. 🎯 CRITICAL FINDINGS: Despite successful offerta selection ('Telefonia 2' with valid ID), the debug logging system shows no evidence that selectedData.offerta_id is being populated, which explains why offerta_id is not saved during client creation. 🔧 URGENT FIXES REQUIRED: 1) Enable/verify debug logging in frontend cascading code, 2) Investigate selectedData population logic for offerta_id field, 3) Verify offerta selection triggers proper state updates, 4) Add console.log statements to track offerta_id flow through cascading system. SUCCESS RATE: 70% (7/10 criteria met) - Cascading and form loading successful, but critical debug logging and offerta_id population issues identified."
