@@ -18536,7 +18536,11 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     id="cellulare"
                     value={formData.cellulare}
                     onChange={(e) => handleChange('cellulare', e.target.value)}
+                    placeholder="Numero telefono cellulare"
                   />
+                  <div className="text-xs text-gray-500 mt-1">
+                    Debug: formData.cellulare = "{formData.cellulare}", cliente.telefono2 = "{cliente?.telefono2}"
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="data_nascita">Nato/a</Label>
