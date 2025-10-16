@@ -8588,20 +8588,11 @@ async def get_all_offerte(
                 specific_match["$and"].append({"servizio_id": servizio_id})
             
             if tipologia_contratto_id:
-                # Handle tipologia: can be UUID or enum string
-                tipologia_ids = [tipologia_contratto_id]
-                
-                # Check if it's an enum string (no hyphens = not UUID)
-                if '-' not in tipologia_contratto_id:
-                    # It's an enum string like "telefonia_fastweb" - find matching UUIDs
-                    tipologie_docs = await db.tipologie_contratto.find({}).to_list(length=None)
-                    matching_tip_uuids = [
-                        tip["id"] for tip in tipologie_docs 
-                        if tip.get("tipo_enum", "").lower() == tipologia_contratto_id.lower()
-                    ]
-                    tipologia_ids.extend(matching_tip_uuids)
-                
-                specific_match["$and"].append({"tipologia_contratto_id": {"$in": tipologia_ids}})
+                # Handle tipologia: only filter if it's a UUID
+                if '-' in tipologia_contratto_id and len(tipologia_contratto_id) > 20:
+                    # It's a UUID - filter by it
+                    specific_match["$and"].append({"tipologia_contratto_id": tipologia_contratto_id})
+                # If it's an enum string (no match possible), don't filter by tipologia
             
             if specific_match["$and"]:
                 filiera_conditions.append(specific_match)
