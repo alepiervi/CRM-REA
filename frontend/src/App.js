@@ -1575,6 +1575,9 @@ const Dashboard = () => {
     try {
       const response = await axios.post(`${API}/offerte`, {
         ...offertaData,
+        commessa_id: selectedCommessa !== 'all' ? selectedCommessa : null,
+        servizio_id: selectedServizio !== 'all' ? selectedServizio : null,
+        tipologia_contratto_id: selectedTipologia,
         segmento_id: selectedSegmento
       });
       
