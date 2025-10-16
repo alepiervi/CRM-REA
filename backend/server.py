@@ -8511,6 +8511,27 @@ async def create_offerta(
         logger.error(f"Error creating offerta: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nella creazione: {str(e)}")
 
+@api_router.get("/offerte", response_model=List[OffertaModel])
+async def get_all_offerte(
+    segmento: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all offerte with optional filters"""
+    try:
+        query = {}
+        if segmento:
+            query["segmento_id"] = segmento
+        if is_active is not None:
+            query["is_active"] = is_active
+        
+        offerte = await db.offerte.find(query).to_list(length=None)
+        return [OffertaModel(**off) for off in offerte]
+        
+    except Exception as e:
+        logger.error(f"Error fetching offerte: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero offerte: {str(e)}")
+
 @api_router.get("/offerte/{offerta_id}", response_model=OffertaModel)
 async def get_offerta(
     offerta_id: str,
