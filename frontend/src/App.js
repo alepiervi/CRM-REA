@@ -17206,8 +17206,12 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
           {/* SEZIONE TELEFONIA FASTWEB */}
           {(() => {
-            const showTelefoniaSection = isTelefoniaFastweb();
-            console.log("🔍 RENDER CHECK - Telefonia Fastweb section:", showTelefoniaSection);
+            const showTelefoniaSection = isTelefoniaFastweb() && !isMobile();
+            console.log("🔍 RENDER CHECK - Telefonia Fastweb section:", showTelefoniaSection, {
+              isTelefonia: isTelefoniaFastweb(),
+              isMobile: isMobile(),
+              shouldShow: showTelefoniaSection
+            });
             return showTelefoniaSection;
           })() && (
             <div className="space-y-4">
