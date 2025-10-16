@@ -18830,7 +18830,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   <Label htmlFor="offerta_id">Offerta</Label>
                   <select
                     id="offerta_id"
-                    value={formData.offerta_id}
+                    value={formData.offerta_id || ""}
                     onChange={(e) => {
                       handleChange('offerta_id', e.target.value);
                       if (e.target.value) {
@@ -18842,11 +18842,15 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">Seleziona offerta</option>
-                    {availableOfferte.map((offerta) => (
-                      <option key={offerta.id} value={offerta.id}>
-                        {offerta.nome}
-                      </option>
-                    ))}
+                    {availableOfferte && availableOfferte.length > 0 ? (
+                      availableOfferte.map((offerta) => (
+                        <option key={offerta.id} value={offerta.id}>
+                          {offerta.nome}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>Caricamento offerte...</option>
+                    )}
                   </select>
                   
                   {/* Mostra dettagli offerta selezionata */}
