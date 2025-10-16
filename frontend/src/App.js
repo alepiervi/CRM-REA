@@ -18643,9 +18643,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     onChange={(e) => handleChange('comune_residenza', e.target.value)}
                     placeholder="Inserisci comune"
                   />
-                  <div className="text-xs text-gray-500 mt-1">
-                    Debug: formData.comune_residenza = "{formData.comune_residenza}", cliente.comune_residenza = "{cliente?.comune_residenza}"
-                  </div>
                 </div>
                 <div>
                   <Label htmlFor="provincia">Provincia</Label>
