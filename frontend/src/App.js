@@ -18119,6 +18119,19 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
 
 // Edit Cliente Modal Component  
 const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
+  // Array delle tecnologie - stesso del form di creazione
+  const TECNOLOGIE = [
+    { value: 'fibra', label: 'FIBRA' },
+    { value: 'ngn_gpon', label: 'NGN GPON' },
+    { value: 'vula', label: 'VULA' },
+    { value: 'svula', label: 'SVULA' },
+    { value: 'bs_nga', label: 'BS_NGA' },
+    { value: 'bs_gpon', label: 'BS_GPON' },
+    { value: 'adsl', label: 'ADSL' },
+    { value: 'adsl_ws', label: 'ADSL_WS' },
+    { value: 'fwa', label: 'FWA' }
+  ];
+
   // Helper per formattare le date per input[type="date"]
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
