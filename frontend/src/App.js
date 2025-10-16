@@ -16024,7 +16024,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     setConvergenzaItems([...convergenzaItems, {
       numero_cellulare: '',
       iccid: '',
-      operatore: ''
+      operatore: '',
+      offerta_sim: ''
     }]);
   };
 
