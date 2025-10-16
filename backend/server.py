@@ -13784,27 +13784,11 @@ async def get_offerte_by_filiera(
 ):
     """Get offerte based on entire selection chain (commessa, servizio, tipologia, segmento)"""
     try:
-        # Convert segmento UUID to string "privato" or "business" if needed
-        # Check if segmento_id is a UUID, if so, get the segmento name
-        segmento_filter = segmento_id
-        try:
-            segmento_doc = await db.segmenti.find_one({"id": segmento_id})
-            if segmento_doc:
-                segmento_name = segmento_doc.get('nome', '').lower()
-                if 'privato' in segmento_name:
-                    segmento_filter = 'privato'
-                elif 'business' in segmento_name:
-                    segmento_filter = 'business'
-        except:
-            pass
-        
-        # Query offerte:
-        # 1. Match segmento_id (privato/business)
-        # 2. Must be active
-        # 3. AND (no filiera fields set OR filiera fields match)
+        # Query offerte: match segmento_id directly (can be UUID or string "privato"/"business")
+        # Show generic offerte (no filiera) OR specific matching offerte
         offerte_docs = await db.offerte.find({
             "$and": [
-                {"segmento_id": segmento_filter},
+                {"segmento_id": segmento_id},  # Match directly - can be UUID or string
                 {"is_active": True},
                 {"$or": [
                     # Generic offerte (no filiera specified) - always shown
