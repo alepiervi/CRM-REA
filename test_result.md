@@ -726,9 +726,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Area Manager Frontend Implementation - Complete UI Integration"
+    - "Offerta Debug - Client Creation selectedData.offerta_id Issue Investigation"
   stuck_tasks:
-    - "Area Manager Frontend Implementation - Complete UI Integration"
+    - "Offerta Debug - Client Creation selectedData.offerta_id Issue Investigation"
   test_all: false
   test_priority: "high_first"
 
