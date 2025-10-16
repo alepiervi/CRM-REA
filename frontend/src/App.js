@@ -1893,7 +1893,6 @@ const Dashboard = () => {
         { id: "call-center", label: "Call Center", icon: PhoneCall },
         { id: "commesse", label: "Commesse", icon: Building },
         { id: "sub-agenzie", label: "Unit & Sub Agenzie", icon: Store },
-        { id: "offerte", label: "Offerte", icon: Tag },
         { id: "clienti", label: "Clienti", icon: UserCheck },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
