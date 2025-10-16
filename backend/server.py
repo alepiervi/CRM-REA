@@ -13740,14 +13740,50 @@ async def get_offerte_by_filiera(
     """Get offerte based on entire selection chain (commessa, servizio, tipologia, segmento)"""
     try:
         # Query offerte based on the full selection chain
-        offerte_docs = await db.offerte.find({
+        query = {
             "segmento_id": segmento_id,
             "is_active": True
+        }
+        
+        # Add optional filters if offerta has these fields set
+        # Offerte can be linked to specific commessa/servizio/tipologia or be generic
+        query["$or"] = [
+            {
+                "commessa_id": {"$in": [None, commessa_id]},
+                "servizio_id": {"$in": [None, servizio_id]},
+                "tipologia_contratto_id": {"$in": [None, tipologia_id]}
+            }
+        ]
+        
+        offerte_docs = await db.offerte.find({
+            "segmento_id": segmento_id,
+            "is_active": True,
+            "$or": [
+                # Offerte generiche (senza filtri specifici)
+                {
+                    "$or": [
+                        {"commessa_id": {"$exists": False}},
+                        {"commessa_id": None},
+                        {"commessa_id": commessa_id}
+                    ],
+                    "$or": [
+                        {"servizio_id": {"$exists": False}},
+                        {"servizio_id": None},
+                        {"servizio_id": servizio_id}
+                    ],
+                    "$or": [
+                        {"tipologia_contratto_id": {"$exists": False}},
+                        {"tipologia_contratto_id": None},
+                        {"tipologia_contratto_id": tipologia_id}
+                    ]
+                }
+            ]
         }).to_list(length=None)
         
         if not offerte_docs:
             # No fallback - return empty array if no offerte are found
-            logging.info(f"📭 CASCADE: No active offerte found for segmento {segmento_id}, returning empty array")
+            logging.info(f"📭 CASCADE: No active offerte found for filiera, returning empty array")
+            return []
             return []
         
         # Convert to JSON serializable format
