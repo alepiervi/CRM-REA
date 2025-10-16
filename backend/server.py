@@ -13739,49 +13739,49 @@ async def get_offerte_by_filiera(
 ):
     """Get offerte based on entire selection chain (commessa, servizio, tipologia, segmento)"""
     try:
-        # Query offerte based on the full selection chain
-        query = {
-            "segmento_id": segmento_id,
-            "is_active": True
-        }
+        # Convert segmento UUID to string "privato" or "business" if needed
+        # Check if segmento_id is a UUID, if so, get the segmento name
+        segmento_filter = segmento_id
+        try:
+            segmento_doc = await db.segmenti.find_one({"id": segmento_id})
+            if segmento_doc:
+                segmento_name = segmento_doc.get('nome', '').lower()
+                if 'privato' in segmento_name:
+                    segmento_filter = 'privato'
+                elif 'business' in segmento_name:
+                    segmento_filter = 'business'
+        except:
+            pass
         
-        # Add optional filters if offerta has these fields set
-        # Offerte can be linked to specific commessa/servizio/tipologia or be generic
-        query["$or"] = [
-            {
-                "commessa_id": {"$in": [None, commessa_id]},
-                "servizio_id": {"$in": [None, servizio_id]},
-                "tipologia_contratto_id": {"$in": [None, tipologia_id]}
-            }
-        ]
-        
+        # Query offerte:
+        # 1. Match segmento_id (privato/business)
+        # 2. Must be active
+        # 3. AND (no filiera fields set OR filiera fields match)
         offerte_docs = await db.offerte.find({
-            "segmento_id": segmento_id,
-            "is_active": True,
-            "$or": [
-                # Offerte generiche (senza filtri specifici)
-                {
-                    "$or": [
-                        {"commessa_id": {"$exists": False}},
-                        {"commessa_id": None},
-                        {"commessa_id": commessa_id}
-                    ],
-                    "$or": [
-                        {"servizio_id": {"$exists": False}},
-                        {"servizio_id": None},
-                        {"servizio_id": servizio_id}
-                    ],
-                    "$or": [
-                        {"tipologia_contratto_id": {"$exists": False}},
-                        {"tipologia_contratto_id": None},
-                        {"tipologia_contratto_id": tipologia_id}
-                    ]
-                }
+            "$and": [
+                {"segmento_id": segmento_filter},
+                {"is_active": True},
+                {"$or": [
+                    # Generic offerte (no filiera specified) - always shown
+                    {"commessa_id": {"$in": [None, ""]}},
+                    {"commessa_id": {"$exists": False}},
+                    # OR specific offerte that match the filiera
+                    {"$and": [
+                        {"commessa_id": commessa_id},
+                        {"$or": [
+                            {"servizio_id": {"$in": [None, "", servizio_id]}},
+                            {"servizio_id": {"$exists": False}}
+                        ]},
+                        {"$or": [
+                            {"tipologia_contratto_id": {"$in": [None, "", tipologia_id]}},
+                            {"tipologia_contratto_id": {"$exists": False}}
+                        ]}
+                    ]}
+                ]}
             ]
         }).to_list(length=None)
         
         if not offerte_docs:
-            # No fallback - return empty array if no offerte are found
             logging.info(f"📭 CASCADE: No active offerte found for filiera, returning empty array")
             return []
             return []
