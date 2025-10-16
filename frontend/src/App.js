@@ -16432,17 +16432,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   };
 
   const handleOffertaSelect = (offertaId) => {
-    console.log("💡💡💡 OFFERTA SELECTED - CRITICAL DEBUG:", {
-      offertaId: offertaId,
-      offertaType: typeof offertaId,
-      isValid: Boolean(offertaId),
-      timestamp: new Date().toLocaleTimeString()
-    });
-    
     const newSelectedData = { ...selectedData, offerta_id: offertaId };
     setSelectedData(newSelectedData);
-    
-    console.log("💡💡💡 UPDATED selectedData:", newSelectedData);
     
     // Show client form after offerta selection
     setShowClientForm(true);
