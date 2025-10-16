@@ -33364,18 +33364,331 @@ Duplicate,Test,+393471234567"""
             print(f"   🚨 AZIONE RICHIESTA: Check backend logs for remaining BSON or validation errors")
             return False
 
+    def test_client_creation_422_error_investigation(self):
+        """🚨 OBIETTIVO: Testare completamente la creazione di un cliente tramite POST /api/clienti per verificare se esiste ancora un errore 422"""
+        print("\n🚨 CLIENT CREATION 422 ERROR INVESTIGATION...")
+        print("🎯 OBIETTIVO: Testare completamente la creazione di un cliente tramite POST /api/clienti per verificare se esiste ancora un errore 422")
+        print("🎯 CONTESTO: L'utente ha riportato un errore 422 durante la creazione di clienti dal frontend")
+        print("🎯 FOCUS: Verificare enum mapping (tipologia_contratto e segmento) e validazioni")
+        
+        # **STEP 1: LOGIN ADMIN**
+        print("\n🔐 STEP 1: LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: TEST CLIENT CREATION - CASO BASE**
+        print("\n👤 STEP 2: TEST CLIENT CREATION - CASO BASE...")
+        print("   🎯 Dati minimi richiesti: nome, cognome, email, telefono, codice_fiscale, commessa_id, sub_agenzia_id")
+        
+        # Get available commesse and sub agenzie first
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if not success or not commesse_response:
+            self.log_test("❌ Cannot get commesse", False, f"Status: {status}")
+            return False
+            
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        if not success or not sub_agenzie_response:
+            self.log_test("❌ Cannot get sub agenzie", False, f"Status: {status}")
+            return False
+        
+        # Find valid commessa and sub agenzia
+        commessa_id = None
+        sub_agenzia_id = None
+        
+        if isinstance(commesse_response, list) and len(commesse_response) > 0:
+            commessa_id = commesse_response[0]['id']
+            self.log_test("✅ Found commessa", True, f"Using commessa ID: {commessa_id}")
+        
+        if isinstance(sub_agenzie_response, list) and len(sub_agenzie_response) > 0:
+            sub_agenzia_id = sub_agenzie_response[0]['id']
+            self.log_test("✅ Found sub agenzia", True, f"Using sub agenzia ID: {sub_agenzia_id}")
+        
+        if not commessa_id or not sub_agenzia_id:
+            self.log_test("❌ Missing required IDs", False, "Cannot proceed without commessa_id and sub_agenzia_id")
+            return False
+
+        # Test basic client creation
+        import time
+        timestamp = str(int(time.time()))
+        
+        basic_client_data = {
+            "nome": "Mario",
+            "cognome": "Rossi", 
+            "email": f"mario.rossi.{timestamp}@test.it",
+            "telefono": "+39 333 1234567",
+            "codice_fiscale": f"RSSMRA80A01H501{timestamp[-1]}",
+            "commessa_id": commessa_id,
+            "sub_agenzia_id": sub_agenzia_id,
+            "tipologia_contratto": "energia_fastweb",
+            "segmento": "privato"
+        }
+        
+        print(f"   📋 Basic client data: {basic_client_data}")
+        
+        success, create_response, status = self.make_request(
+            'POST', 'clienti', 
+            basic_client_data, 
+            expected_status=200
+        )
+        
+        basic_creation_success = False
+        if success and status == 200:
+            self.log_test("✅ Basic client creation SUCCESS", True, f"Status: {status} - No 422 error!")
+            basic_creation_success = True
+            
+            if isinstance(create_response, dict) and 'id' in create_response:
+                client_id = create_response['id']
+                self.log_test("✅ Client created with ID", True, f"Client ID: {client_id}")
+            else:
+                self.log_test("❌ Invalid response structure", False, f"Response: {create_response}")
+                
+        elif status == 422:
+            self.log_test("❌ Basic client creation FAILED", False, f"Status: 422 - Validation Error!")
+            
+            # Analyze validation error details
+            if isinstance(create_response, dict) and 'detail' in create_response:
+                detail = create_response['detail']
+                self.log_test("🔍 422 Error Details", False, f"Detail: {detail}")
+                
+                # Check for enum validation errors
+                if isinstance(detail, list):
+                    for error in detail:
+                        if isinstance(error, dict):
+                            field = error.get('loc', [])
+                            msg = error.get('msg', '')
+                            if 'tipologia_contratto' in str(field):
+                                self.log_test("🚨 TIPOLOGIA_CONTRATTO ERROR", False, f"Field: {field}, Message: {msg}")
+                            elif 'segmento' in str(field):
+                                self.log_test("🚨 SEGMENTO ERROR", False, f"Field: {field}, Message: {msg}")
+                            else:
+                                self.log_test("🔍 Other validation error", False, f"Field: {field}, Message: {msg}")
+            return False
+        else:
+            self.log_test("❌ Basic client creation UNEXPECTED", False, f"Status: {status}, Response: {create_response}")
+            return False
+
+        # **STEP 3: TEST CLIENT CREATION - CON TUTTI I CAMPI**
+        print("\n📋 STEP 3: TEST CLIENT CREATION - CON TUTTI I CAMPI...")
+        print("   🎯 Testare con tutti i campi opzionali presenti ma vuoti o null")
+        
+        complete_client_data = {
+            "nome": "Giulia",
+            "cognome": "Bianchi",
+            "email": f"giulia.bianchi.{timestamp}@test.it",
+            "telefono": "+39 347 9876543",
+            "codice_fiscale": f"BNCGLI85M15F205{timestamp[-1]}",
+            "commessa_id": commessa_id,
+            "sub_agenzia_id": sub_agenzia_id,
+            "tipologia_contratto": "energia_fastweb",
+            "segmento": "privato",
+            # Optional fields with empty/null values
+            "numero_ordine": "",
+            "account": "",
+            "ragione_sociale": None,
+            "data_nascita": None,
+            "luogo_nascita": "",
+            "comune_residenza": "",
+            "provincia": "",
+            "cap": "",
+            "indirizzo": "",
+            "telefono2": "",
+            "partita_iva": None,
+            "tipo_documento": None,
+            "numero_documento": "",
+            "data_rilascio": None,
+            "luogo_rilascio": "",
+            "scadenza_documento": None,
+            "tecnologia": None,
+            "codice_migrazione": "",
+            "gestore": "",
+            "convergenza": False,
+            "convergenza_items": [],
+            "codice_pod": "",
+            "modalita_pagamento": None,
+            "iban": "",
+            "intestatario_diverso": "",
+            "numero_carta": "",
+            "mese_carta": "",
+            "anno_carta": "",
+            "note": ""
+        }
+        
+        success, complete_response, status = self.make_request(
+            'POST', 'clienti', 
+            complete_client_data, 
+            expected_status=200
+        )
+        
+        complete_creation_success = False
+        if success and status == 200:
+            self.log_test("✅ Complete client creation SUCCESS", True, f"Status: {status} - Handles optional fields correctly!")
+            complete_creation_success = True
+        elif status == 422:
+            self.log_test("❌ Complete client creation FAILED", False, f"Status: 422 - Optional fields causing validation errors!")
+            
+            if isinstance(complete_response, dict) and 'detail' in complete_response:
+                detail = complete_response['detail']
+                self.log_test("🔍 Complete client 422 details", False, f"Detail: {detail}")
+        else:
+            self.log_test("❌ Complete client creation UNEXPECTED", False, f"Status: {status}")
+
+        # **STEP 4: TEST VALIDAZIONI ENUM**
+        print("\n🔍 STEP 4: TEST VALIDAZIONI ENUM...")
+        
+        # Test valid tipologia_contratto values
+        valid_tipologie = ["energia_fastweb", "telefonia_fastweb", "ho_mobile", "telepass"]
+        tipologie_success = 0
+        
+        for tipologia in valid_tipologie:
+            test_data = basic_client_data.copy()
+            test_data['email'] = f"test.{tipologia}.{timestamp}@test.it"
+            test_data['codice_fiscale'] = f"TSTCOD80A01H501{len(tipologia)}"
+            test_data['tipologia_contratto'] = tipologia
+            
+            success, response, status = self.make_request('POST', 'clienti', test_data, expected_status=200)
+            
+            if success and status == 200:
+                self.log_test(f"✅ Tipologia '{tipologia}' valid", True, f"Status: {status}")
+                tipologie_success += 1
+            else:
+                self.log_test(f"❌ Tipologia '{tipologia}' invalid", False, f"Status: {status}")
+
+        # Test valid segmento values
+        valid_segmenti = ["privato", "business"]
+        segmenti_success = 0
+        
+        for segmento in valid_segmenti:
+            test_data = basic_client_data.copy()
+            test_data['email'] = f"test.{segmento}.{timestamp}@test.it"
+            test_data['codice_fiscale'] = f"TSTSEG80A01H501{len(segmento)}"
+            test_data['segmento'] = segmento
+            
+            success, response, status = self.make_request('POST', 'clienti', test_data, expected_status=200)
+            
+            if success and status == 200:
+                self.log_test(f"✅ Segmento '{segmento}' valid", True, f"Status: {status}")
+                segmenti_success += 1
+            else:
+                self.log_test(f"❌ Segmento '{segmento}' invalid", False, f"Status: {status}")
+
+        # Test invalid enum values
+        print("\n   Testing invalid enum values...")
+        
+        # Test invalid tipologia_contratto
+        invalid_tipologia_data = basic_client_data.copy()
+        invalid_tipologia_data['email'] = f"invalid.tipologia.{timestamp}@test.it"
+        invalid_tipologia_data['tipologia_contratto'] = "invalid_tipologia"
+        
+        success, response, status = self.make_request('POST', 'clienti', invalid_tipologia_data, expected_status=422)
+        
+        invalid_tipologia_rejected = False
+        if status == 422:
+            self.log_test("✅ Invalid tipologia_contratto correctly rejected", True, f"Status: 422 as expected")
+            invalid_tipologia_rejected = True
+        else:
+            self.log_test("❌ Invalid tipologia_contratto not rejected", False, f"Status: {status}")
+
+        # Test invalid segmento
+        invalid_segmento_data = basic_client_data.copy()
+        invalid_segmento_data['email'] = f"invalid.segmento.{timestamp}@test.it"
+        invalid_segmento_data['segmento'] = "invalid_segmento"
+        
+        success, response, status = self.make_request('POST', 'clienti', invalid_segmento_data, expected_status=422)
+        
+        invalid_segmento_rejected = False
+        if status == 422:
+            self.log_test("✅ Invalid segmento correctly rejected", True, f"Status: 422 as expected")
+            invalid_segmento_rejected = True
+        else:
+            self.log_test("❌ Invalid segmento not rejected", False, f"Status: {status}")
+
+        # **STEP 5: TEST DATE FORMAT**
+        print("\n📅 STEP 5: TEST DATE FORMAT...")
+        print("   🎯 Verificare che data_nascita, data_rilascio, scadenza_documento come null o stringa ISO siano accettati")
+        
+        # Test with null dates
+        null_dates_data = basic_client_data.copy()
+        null_dates_data['email'] = f"null.dates.{timestamp}@test.it"
+        null_dates_data['data_nascita'] = None
+        null_dates_data['data_rilascio'] = None
+        null_dates_data['scadenza_documento'] = None
+        
+        success, response, status = self.make_request('POST', 'clienti', null_dates_data, expected_status=200)
+        
+        null_dates_success = False
+        if success and status == 200:
+            self.log_test("✅ Null dates accepted", True, f"Status: {status}")
+            null_dates_success = True
+        else:
+            self.log_test("❌ Null dates rejected", False, f"Status: {status}")
+
+        # Test with ISO date strings
+        iso_dates_data = basic_client_data.copy()
+        iso_dates_data['email'] = f"iso.dates.{timestamp}@test.it"
+        iso_dates_data['data_nascita'] = "1990-05-15"
+        iso_dates_data['data_rilascio'] = "2020-01-10"
+        iso_dates_data['scadenza_documento'] = "2030-01-10"
+        
+        success, response, status = self.make_request('POST', 'clienti', iso_dates_data, expected_status=200)
+        
+        iso_dates_success = False
+        if success and status == 200:
+            self.log_test("✅ ISO date strings accepted", True, f"Status: {status}")
+            iso_dates_success = True
+        else:
+            self.log_test("❌ ISO date strings rejected", False, f"Status: {status}")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 CLIENT CREATION 422 ERROR INVESTIGATION SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Identificare ESATTAMENTE quale campo causa 422 se presente")
+        print(f"   🎯 RISULTATO ATTESO: 200 OK per creazione cliente con dati validi, 422 con dettagli specifici per dati invalid")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Basic client creation (energia_fastweb, privato): {'✅ SUCCESS' if basic_creation_success else '❌ FAILED'}")
+        print(f"      • Complete client creation (all optional fields): {'✅ SUCCESS' if complete_creation_success else '❌ FAILED'}")
+        print(f"      • Valid tipologie_contratto accepted: {tipologie_success}/{len(valid_tipologie)} ({'✅ ALL' if tipologie_success == len(valid_tipologie) else '❌ SOME FAILED'})")
+        print(f"      • Valid segmenti accepted: {segmenti_success}/{len(valid_segmenti)} ({'✅ ALL' if segmenti_success == len(valid_segmenti) else '❌ SOME FAILED'})")
+        print(f"      • Invalid enum values rejected: {'✅ SUCCESS' if invalid_tipologia_rejected and invalid_segmento_rejected else '❌ FAILED'}")
+        print(f"      • Date format handling: {'✅ SUCCESS' if null_dates_success and iso_dates_success else '❌ FAILED'}")
+        
+        overall_success = (basic_creation_success and complete_creation_success and 
+                          tipologie_success == len(valid_tipologie) and 
+                          segmenti_success == len(valid_segmenti) and
+                          invalid_tipologia_rejected and invalid_segmento_rejected and
+                          null_dates_success and iso_dates_success)
+        
+        if overall_success:
+            print(f"   🎉 SUCCESS: Client creation works correctly - No 422 errors found!")
+            print(f"   🎉 CONFERMATO: Backend accepts valid enum values and handles optional fields correctly!")
+            return True
+        else:
+            print(f"   🚨 FAILURE: Client creation still has 422 validation issues!")
+            print(f"   🚨 AZIONE RICHIESTA: Check validation error details above for specific field issues")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the CLIENT CREATION 500 ERROR FIX TEST AS REQUESTED
+        # Run the CLIENT CREATION 422 ERROR INVESTIGATION AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING CLIENT CREATION 500 ERROR FIX TEST - AS REQUESTED")
+        print("🎯 RUNNING CLIENT CREATION 422 ERROR INVESTIGATION - AS REQUESTED")
         print("="*80)
         
-        backend_success = self.test_client_creation_500_error_fix()
+        backend_success = self.test_client_creation_422_error_investigation()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -33389,14 +33702,14 @@ Duplicate,Test,+393471234567"""
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
         if backend_success:
-            print("🎉 CLIENT CREATION 500 ERROR FIX TEST: ✅ SUCCESS - ERRORS RESOLVED!")
+            print("🎉 CLIENT CREATION 422 ERROR INVESTIGATION: ✅ SUCCESS - NO 422 ERRORS FOUND!")
         else:
-            print("🚨 CLIENT CREATION 500 ERROR FIX TEST: ❌ FAILED - ISSUES REMAIN!")
+            print("🚨 CLIENT CREATION 422 ERROR INVESTIGATION: ❌ FAILED - 422 ERRORS DETECTED!")
         
         if backend_success:
-            print("\n🎉 OVERALL RESULT: ✅ CLIENT CREATION 500 ERROR COMPLETELY FIXED!")
+            print("\n🎉 OVERALL RESULT: ✅ CLIENT CREATION WORKING CORRECTLY!")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ CLIENT CREATION 500 ERROR NEEDS ATTENTION!")
+            print("\n🚨 OVERALL RESULT: ❌ CLIENT CREATION 422 ERROR NEEDS ATTENTION!")
         
         return backend_success
 
