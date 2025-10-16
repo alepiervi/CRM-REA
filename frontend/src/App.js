@@ -18367,9 +18367,11 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
         if (isTelefonia) return true;
       }
       
-      // Terza priorità: controlla direttamente il valore della tipologia contratto
+      // Terza priorità: controlla direttamente il valore della tipologia contratto - SPECIFICO PER TELEFONIA
       const tipologiaValue = (cliente?.tipologia_contratto || '').toLowerCase();
-      const isTelefoniaByValue = tipologiaValue.includes('telefonia') || tipologiaValue.includes('mobile') || tipologiaValue.includes('fastweb');
+      const isTelefoniaByValue = tipologiaValue.includes('telefonia') || 
+                                tipologiaValue.includes('mobile') || 
+                                (tipologiaValue.includes('fastweb') && tipologiaValue.includes('telefonia'));
       console.log("🔍 isEditTelefoniaFastweb: Direct value check:", {tipologiaValue, isTelefoniaByValue});
       return isTelefoniaByValue;
     } catch (error) {
