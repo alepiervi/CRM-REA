@@ -16591,6 +16591,15 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
         codice_fiscale: cleanFormData.codice_fiscale,
         telefono: cleanFormData.telefono
       },
+      cascading_data: {
+        sub_agenzia_id: cleanFormData.sub_agenzia_id,
+        commessa_id: cleanFormData.commessa_id,
+        servizio_id: cleanFormData.servizio_id,
+        tipologia_contratto: cleanFormData.tipologia_contratto,
+        segmento: cleanFormData.segmento,
+        offerta_id: cleanFormData.offerta_id
+      },
+      selectedData_offerta: selectedData.offerta_id,
       full_data: cleanFormData
     });
     console.log("🎯 CALLING onSubmit FUNCTION...");
