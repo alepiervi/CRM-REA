@@ -17344,6 +17344,81 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             </div>
           )}
 
+          {/* SEZIONE DATI MOBILE */}
+          {(() => {
+            const showMobileSection = isMobile();
+            console.log("🔍 RENDER CHECK - Mobile section:", showMobileSection);
+            return showMobileSection;
+          })() && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">📱 Dati Mobile</h3>
+              
+              <div className="space-y-4">
+                {mobileItems.map((item, index) => (
+                  <div key={index} className="p-4 border rounded-lg bg-gray-50">
+                    <h4 className="font-semibold text-gray-700 mb-3">SIM #{index + 1}</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Telefono da Portare</Label>
+                        <Input
+                          value={item.telefono_da_portare}
+                          onChange={(e) => updateMobileItem(index, 'telefono_da_portare', e.target.value)}
+                          placeholder="Numero di telefono"
+                        />
+                      </div>
+                      <div>
+                        <Label>ICCID</Label>
+                        <Input
+                          value={item.iccid}
+                          onChange={(e) => updateMobileItem(index, 'iccid', e.target.value)}
+                          placeholder="Codice ICCID"
+                        />
+                      </div>
+                      <div>
+                        <Label>Operatore</Label>
+                        <Input
+                          value={item.operatore}
+                          onChange={(e) => updateMobileItem(index, 'operatore', e.target.value)}
+                          placeholder="Nome operatore"
+                        />
+                      </div>
+                      <div>
+                        <Label>Titolare se Diverso</Label>
+                        <Input
+                          value={item.titolare_diverso}
+                          onChange={(e) => updateMobileItem(index, 'titolare_diverso', e.target.value)}
+                          placeholder="Nome titolare"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-between mt-2">
+                      <Button
+                        type="button"
+                        onClick={addMobileItem}
+                        variant="outline"
+                        size="sm"
+                        className="text-green-600"
+                      >
+                        + Aggiungi SIM
+                      </Button>
+                      {mobileItems.length > 1 && (
+                        <Button
+                          type="button"
+                          onClick={() => removeMobileItem(index)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600"
+                        >
+                          Rimuovi
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* SEZIONE MODALITÀ PAGAMENTO */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">💳 Modalità Pagamento</h3>
