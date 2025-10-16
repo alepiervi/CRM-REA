@@ -8533,22 +8533,9 @@ async def get_all_offerte(
     try:
         query_conditions = []
         
-        # Handle segmento - convert UUID to string if needed
+        # Handle segmento - use UUID directly (no conversion needed)
         if segmento:
-            segmento_filter = segmento
-            # If segmento looks like UUID, try to get the name
-            if len(segmento) > 20 and '-' in segmento:
-                try:
-                    segmento_doc = await db.segmenti.find_one({"id": segmento})
-                    if segmento_doc:
-                        segmento_name = segmento_doc.get('nome', '').lower()
-                        if 'privato' in segmento_name:
-                            segmento_filter = 'privato'
-                        elif 'business' in segmento_name:
-                            segmento_filter = 'business'
-                except:
-                    pass
-            query_conditions.append({"segmento_id": segmento_filter})
+            query_conditions.append({"segmento_id": segmento})
         
         if is_active is not None:
             query_conditions.append({"is_active": is_active})
