@@ -1242,6 +1242,9 @@ class OffertaModel(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     nome: str
     descrizione: Optional[str] = None
+    commessa_id: Optional[str] = None  # ADDED: Link to commessa
+    servizio_id: Optional[str] = None  # ADDED: Link to servizio
+    tipologia_contratto_id: Optional[str] = None  # ADDED: Link to tipologia contratto
     segmento_id: str
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -1251,12 +1254,18 @@ class OffertaModel(BaseModel):
 class OffertaCreate(BaseModel):
     nome: str
     descrizione: Optional[str] = None
+    commessa_id: Optional[str] = None  # ADDED: Link to commessa
+    servizio_id: Optional[str] = None  # ADDED: Link to servizio
+    tipologia_contratto_id: Optional[str] = None  # ADDED: Link to tipologia contratto
     segmento_id: str
     is_active: bool = True
 
 class OffertaUpdate(BaseModel):
     nome: Optional[str] = None
     descrizione: Optional[str] = None
+    commessa_id: Optional[str] = None  # ADDED: Link to commessa
+    servizio_id: Optional[str] = None  # ADDED: Link to servizio
+    tipologia_contratto_id: Optional[str] = None  # ADDED: Link to tipologia contratto
     is_active: Optional[bool] = None
 
 # Helper functions
