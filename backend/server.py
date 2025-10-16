@@ -8558,24 +8558,52 @@ async def get_all_offerte(
         
         # Always include generic offerte (no filiera set)
         filiera_conditions.append({
-            "$or": [
-                {"commessa_id": {"$exists": False}},
-                {"commessa_id": None},
-                {"commessa_id": ""}
+            "$and": [
+                {"$or": [
+                    {"commessa_id": {"$exists": False}},
+                    {"commessa_id": None},
+                    {"commessa_id": ""}
+                ]},
+                {"$or": [
+                    {"servizio_id": {"$exists": False}},
+                    {"servizio_id": None},
+                    {"servizio_id": ""}
+                ]},
+                {"$or": [
+                    {"tipologia_contratto_id": {"$exists": False}},
+                    {"tipologia_contratto_id": None},
+                    {"tipologia_contratto_id": ""}
+                ]}
             ]
         })
         
         # If filiera params provided, also include matching specific offerte
         if commessa_id or servizio_id or tipologia_contratto_id:
-            specific_match = {}
-            if commessa_id:
-                specific_match["commessa_id"] = commessa_id
-            if servizio_id:
-                specific_match["servizio_id"] = servizio_id
-            if tipologia_contratto_id:
-                specific_match["tipologia_contratto_id"] = tipologia_contratto_id
+            specific_match = {"$and": []}
             
-            if specific_match:
+            if commessa_id:
+                specific_match["$and"].append({"commessa_id": commessa_id})
+            
+            if servizio_id:
+                specific_match["$and"].append({"servizio_id": servizio_id})
+            
+            if tipologia_contratto_id:
+                # Handle tipologia: can be UUID or enum string
+                tipologia_ids = [tipologia_contratto_id]
+                
+                # Check if it's an enum string (no hyphens = not UUID)
+                if '-' not in tipologia_contratto_id:
+                    # It's an enum string like "telefonia_fastweb" - find matching UUIDs
+                    tipologie_docs = await db.tipologie_contratto.find({}).to_list(length=None)
+                    matching_tip_uuids = [
+                        tip["id"] for tip in tipologie_docs 
+                        if tip.get("tipo_enum", "").lower() == tipologia_contratto_id.lower()
+                    ]
+                    tipologia_ids.extend(matching_tip_uuids)
+                
+                specific_match["$and"].append({"tipologia_contratto_id": {"$in": tipologia_ids}})
+            
+            if specific_match["$and"]:
                 filiera_conditions.append(specific_match)
         
         # Combine all conditions
