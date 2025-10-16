@@ -17206,7 +17206,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   <div className="mt-4 space-y-3">
                     {convergenzaItems.map((item, index) => (
                       <div key={index} className="border p-4 rounded-lg bg-gray-50">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
                             <Label>Numero Cellulare</Label>
                             <Input
@@ -17226,6 +17226,14 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                             <Input
                               value={item.operatore}
                               onChange={(e) => updateConvergenzaItem(index, 'operatore', e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label>Offerta SIM</Label>
+                            <Input
+                              value={item.offerta_sim}
+                              onChange={(e) => updateConvergenzaItem(index, 'offerta_sim', e.target.value)}
+                              placeholder="Nome offerta SIM"
                             />
                           </div>
                         </div>
