@@ -8531,17 +8531,62 @@ async def get_all_offerte(
 ):
     """Get all offerte with optional filters for entire filiera (commessa, servizio, tipologia, segmento)"""
     try:
-        query = {}
+        query_conditions = []
+        
+        # Handle segmento - convert UUID to string if needed
         if segmento:
-            query["segmento_id"] = segmento
-        if commessa_id:
-            query["commessa_id"] = commessa_id
-        if servizio_id:
-            query["servizio_id"] = servizio_id
-        if tipologia_contratto_id:
-            query["tipologia_contratto_id"] = tipologia_contratto_id
+            segmento_filter = segmento
+            # If segmento looks like UUID, try to get the name
+            if len(segmento) > 20 and '-' in segmento:
+                try:
+                    segmento_doc = await db.segmenti.find_one({"id": segmento})
+                    if segmento_doc:
+                        segmento_name = segmento_doc.get('nome', '').lower()
+                        if 'privato' in segmento_name:
+                            segmento_filter = 'privato'
+                        elif 'business' in segmento_name:
+                            segmento_filter = 'business'
+                except:
+                    pass
+            query_conditions.append({"segmento_id": segmento_filter})
+        
         if is_active is not None:
-            query["is_active"] = is_active
+            query_conditions.append({"is_active": is_active})
+        
+        # Build filiera filter: show generic offerte OR matching specific offerte
+        filiera_conditions = []
+        
+        # Always include generic offerte (no filiera set)
+        filiera_conditions.append({
+            "$or": [
+                {"commessa_id": {"$exists": False}},
+                {"commessa_id": None},
+                {"commessa_id": ""}
+            ]
+        })
+        
+        # If filiera params provided, also include matching specific offerte
+        if commessa_id or servizio_id or tipologia_contratto_id:
+            specific_match = {}
+            if commessa_id:
+                specific_match["commessa_id"] = commessa_id
+            if servizio_id:
+                specific_match["servizio_id"] = servizio_id
+            if tipologia_contratto_id:
+                specific_match["tipologia_contratto_id"] = tipologia_contratto_id
+            
+            if specific_match:
+                filiera_conditions.append(specific_match)
+        
+        # Combine all conditions
+        if filiera_conditions:
+            query_conditions.append({"$or": filiera_conditions})
+        
+        # Final query
+        if query_conditions:
+            query = {"$and": query_conditions} if len(query_conditions) > 1 else query_conditions[0]
+        else:
+            query = {}
         
         offerte = await db.offerte.find(query).to_list(length=None)
         return [OffertaModel(**off) for off in offerte]
