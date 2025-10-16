@@ -1531,7 +1531,6 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setAvailableOfferte(response.data);
-      console.log(`✅ Loaded ${response.data.length} offerte for segmento: ${segmentoId || 'all'}`);
     } catch (error) {
       console.error("❌ Error fetching offerte:", error);
       setAvailableOfferte([]);
@@ -18346,7 +18345,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setAvailableOfferte(response.data);
-      console.log(`✅ Loaded ${response.data.length} offerte for segmento: ${segmentoId || 'all'}`);
     } catch (error) {
       console.error("❌ Error fetching offerte:", error);
       setAvailableOfferte([]);
