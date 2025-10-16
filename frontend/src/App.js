@@ -1521,11 +1521,17 @@ const Dashboard = () => {
   const fetchOfferteBySegmento = async (segmentoId) => {
     try {
       // Use the new /api/offerte endpoint with segmento filter
+      const params = { is_active: true };
+      if (segmentoId) {
+        params.segmento = segmentoId;
+      }
+      
       const response = await axios.get(`${API}/offerte`, {
-        params: { segmento: segmentoId, is_active: true },
+        params: params,
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setAvailableOfferte(response.data);
+      console.log(`✅ Loaded ${response.data.length} offerte for segmento: ${segmentoId || 'all'}`);
     } catch (error) {
       console.error("❌ Error fetching offerte:", error);
       setAvailableOfferte([]);
@@ -18330,11 +18336,17 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const fetchOfferteBySegmento = async (segmentoId) => {
     try {
       // Use the new /api/offerte endpoint with segmento filter
+      const params = { is_active: true };
+      if (segmentoId) {
+        params.segmento = segmentoId;
+      }
+      
       const response = await axios.get(`${API}/offerte`, {
-        params: { segmento: segmentoId, is_active: true },
+        params: params,
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setAvailableOfferte(response.data);
+      console.log(`✅ Loaded ${response.data.length} offerte for segmento: ${segmentoId || 'all'}`);
     } catch (error) {
       console.error("❌ Error fetching offerte:", error);
       setAvailableOfferte([]);
