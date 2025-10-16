@@ -7,7 +7,7 @@ import requests
 import json
 
 class CascadingAuthTest:
-    def __init__(self, base_url="https://area-manager-ui-1.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://nureal-hub.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.ale7_token = None
         self.admin_token = None
