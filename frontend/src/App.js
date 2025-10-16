@@ -19042,13 +19042,13 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                                   <strong>Numero:</strong> {sim.numero_cellulare || 'Non specificato'}
                                 </div>
                                 <div>
-                                  <strong>Operatore:</strong> {sim.operatore_attuale || 'Non specificato'}
+                                  <strong>ICCID:</strong> {sim.iccid || 'Non specificato'}
                                 </div>
                                 <div>
-                                  <strong>Tecnologia:</strong> {sim.tecnologia || 'Non specificato'}
+                                  <strong>Operatore:</strong> {sim.operatore || 'Non specificato'}
                                 </div>
                                 <div>
-                                  <strong>Piano:</strong> {sim.piano_tariffario || 'Non specificato'}
+                                  <strong>Offerta SIM:</strong> {sim.offerta_sim || 'Non specificato'}
                                 </div>
                               </div>
                             </div>
