@@ -19098,9 +19098,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">💳 Modalità Pagamento</CardTitle>
-              <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                Debug: modalita={formData.modalita_pagamento}, iban={formData.iban}, carta={formData.numero_carta}
-              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
