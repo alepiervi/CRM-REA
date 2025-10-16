@@ -18317,15 +18317,17 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
         params.segmento = segmentoId;
       }
       
-      // Add filiera parameters from cliente data
+      // Add filiera parameters from cliente data - USE UUIDs not enums!
       if (cliente?.commessa_id) {
         params.commessa_id = cliente.commessa_id;
       }
       if (cliente?.servizio_id) {
         params.servizio_id = cliente.servizio_id;
       }
-      if (cliente?.tipologia_contratto) {
-        params.tipologia_contratto_id = cliente.tipologia_contratto;
+      // For tipologia, we need to get the UUID, not the enum string
+      // The cliente might have tipologia_contratto_id or we need to find it from tipologia_contratto
+      if (cliente?.tipologia_contratto_id) {
+        params.tipologia_contratto_id = cliente.tipologia_contratto_id;
       }
       
       const response = await axios.get(`${API}/offerte`, {
