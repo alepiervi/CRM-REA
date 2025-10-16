@@ -18156,6 +18156,11 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   // Debug logging per verificare i dati del cliente
   console.log("🔍 DEBUG EditClienteModal - Dati cliente ricevuti:", {
     cliente_id: cliente?.id,
+    telefono_fields: {
+      telefono: cliente?.telefono,
+      telefono2: cliente?.telefono2,
+      cellulare: cliente?.cellulare // Questo potrebbe essere undefined
+    },
     documento_fields: {
       tipo_documento: cliente?.tipo_documento,
       numero_documento: cliente?.numero_documento,
