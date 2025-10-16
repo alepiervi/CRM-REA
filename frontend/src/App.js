@@ -16050,6 +16050,29 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     setConvergenzaItems(updated);
   };
 
+  // Funzioni per gestire i campi mobile multipli
+  const addMobileItem = () => {
+    setMobileItems([...mobileItems, {
+      telefono_da_portare: '',
+      iccid: '',
+      operatore: '',
+      titolare_diverso: ''
+    }]);
+  };
+
+  const removeMobileItem = (index) => {
+    if (mobileItems.length > 1) {
+      setMobileItems(mobileItems.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateMobileItem = (index, field, value) => {
+    const updated = mobileItems.map((item, i) => 
+      i === index ? { ...item, [field]: value } : item
+    );
+    setMobileItems(updated);
+  };
+
   // LEGACY STATES (keep for compatibility)
   const [servizi, setServizi] = useState([]);
   const [createTipologieContratto, setCreateTipologieContratto] = useState([]);
