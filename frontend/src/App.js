@@ -16581,6 +16581,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       commessa_id: selectedData.commessa_id,
       servizio_id: selectedData.servizio_id,
       tipologia_contratto: mapTipologiaContratto(selectedData.tipologia_contratto),
+      tipologia_contratto_id: selectedData.tipologia_contratto,  // ADDED: Save UUID for filtering
       segmento: mapSegmento(selectedData.segmento),
       offerta_id: selectedData.offerta_id,
       
