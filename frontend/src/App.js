@@ -18526,6 +18526,34 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   };
 
+  const isEditMobile = () => {
+    try {
+      // Prima priorità: controlla se il cliente ha già mobile_items popolati
+      if (cliente?.mobile_items && cliente.mobile_items.length > 0) {
+        console.log("🔍 isEditMobile: TRUE - mobile_items present:", cliente.mobile_items.length);
+        return true;
+      }
+      
+      // Seconda priorità: controlla dal nome della tipologia se disponibile
+      if (Array.isArray(editTipologieContratto) && editTipologieContratto.length > 0) {
+        const tipologia = editTipologieContratto.find(t => t && t.value === cliente?.tipologia_contratto);
+        const tipologiaName = (tipologia?.label || '').toLowerCase();
+        const isMobile = tipologiaName.includes('mobile');
+        console.log("📱 isEditMobile: Tipologia check:", {tipologiaName, isMobile});
+        if (isMobile) return true;
+      }
+      
+      // Terza priorità: controlla direttamente il valore della tipologia contratto
+      const tipologiaValue = (cliente?.tipologia_contratto || '').toLowerCase();
+      const isMobileByValue = tipologiaValue.includes('mobile');
+      console.log("📱 isEditMobile: Direct value check:", {tipologiaValue, isMobileByValue});
+      return isMobileByValue;
+    } catch (error) {
+      console.error("❌ Error in isEditMobile:", error);
+      return false;
+    }
+  };
+
   const isEditTelefoniaFastweb = () => {
     try {
       // Prima priorità: controlla se il cliente ha già campi Telefonia popolati
