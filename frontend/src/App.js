@@ -16835,15 +16835,33 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               {selectedData.segmento && (
                 <div className="space-y-2">
                   <Label className="text-base font-semibold text-gray-700">💡 Offerta</Label>
+                  
+                  {/* DEBUG INFO */}
+                  <div className="bg-yellow-50 p-2 border border-yellow-200 rounded text-xs">
+                    <div><strong>DEBUG OFFERTE:</strong></div>
+                    <div>• Segmento ID: {selectedData.segmento}</div>
+                    <div>• Offerte caricate: {cascadeOfferte?.length || 0}</div>
+                    <div>• Offerte array: {JSON.stringify(cascadeOfferte?.map(o => ({id: o?.id, nome: o?.nome})) || 'empty')}</div>
+                    <div>• selectedData.offerta_id: "{selectedData.offerta_id || 'empty'}"</div>
+                  </div>
+                  
                   <select 
-                    value={selectedData.offerta_id} 
-                    onChange={(e) => handleOffertaSelect(e.target.value)}
+                    value={selectedData.offerta_id || ''} 
+                    onChange={(e) => {
+                      console.log("🎯🎯🎯 DROPDOWN ONCHANGE TRIGGERED:", e.target.value);
+                      handleOffertaSelect(e.target.value);
+                    }}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">Seleziona Offerta...</option>
-                    {Array.isArray(cascadeOfferte) && cascadeOfferte.map(offerta => (
-                      <option key={offerta?.id || Math.random()} value={offerta?.id}>{offerta?.nome || 'Nome non disponibile'}</option>
-                    ))}
+                    {Array.isArray(cascadeOfferte) && cascadeOfferte.length > 0 ? 
+                      cascadeOfferte.map(offerta => (
+                        <option key={offerta?.id || Math.random()} value={offerta?.id}>
+                          {offerta?.nome || 'Nome non disponibile'} (ID: {offerta?.id?.slice(0,8)}...)
+                        </option>
+                      )) : 
+                      <option value="" disabled>Nessuna offerta disponibile</option>
+                    }
                   </select>
                 </div>
               )}
