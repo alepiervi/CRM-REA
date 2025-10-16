@@ -16617,6 +16617,12 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       has_offerta: Boolean(selectedData.offerta_id)
     });
     
+    console.log("📱 CONVERGENZA DATA BEING SENT:", {
+      convergenza: cleanFormData.convergenza,
+      convergenza_items_count: cleanFormData.convergenza_items.length,
+      convergenza_items: cleanFormData.convergenza_items
+    });
+    
     console.log("🎯 CALLING onSubmit FUNCTION...");
     
     // Call the onSubmit function passed from parent
