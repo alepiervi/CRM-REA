@@ -15932,6 +15932,14 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     offerta_sim: ''
   }]);
 
+  // State per gestire i campi mobile multipli
+  const [mobileItems, setMobileItems] = useState([{
+    telefono_da_portare: '',
+    iccid: '',
+    operatore: '',
+    titolare_diverso: ''
+  }]);
+
   // Costanti per i dropdown
   const PROVINCE_ITALIANE = [
     "AG", "AL", "AN", "AO", "AR", "AP", "AT", "AV", "BA", "BT", "BL", "BN", "BG", "BI", "BO", "BZ", 
