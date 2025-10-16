@@ -18202,29 +18202,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   };
 
-  // Debug logging per verificare i dati del cliente
-  console.log("🔍 DEBUG EditClienteModal - Dati cliente ricevuti:", {
-    cliente_id: cliente?.id,
-    telefono_fields: {
-      telefono: cliente?.telefono,
-      telefono2: cliente?.telefono2,
-      cellulare: cliente?.cellulare // Questo potrebbe essere undefined
-    },
-    documento_fields: {
-      tipo_documento: cliente?.tipo_documento,
-      numero_documento: cliente?.numero_documento,
-      data_rilascio: cliente?.data_rilascio,
-      luogo_rilascio: cliente?.luogo_rilascio,
-      scadenza_documento: cliente?.scadenza_documento
-    },
-    formatted_dates: {
-      data_nascita: formatDateForInput(cliente?.data_nascita),
-      data_rilascio: formatDateForInput(cliente?.data_rilascio),
-      scadenza_documento: formatDateForInput(cliente?.scadenza_documento)
-    },
-    all_cliente_keys: cliente ? Object.keys(cliente) : 'no cliente'
-  });
-
   const [formData, setFormData] = useState({
     // Dati base
     nome: cliente?.nome || '',
