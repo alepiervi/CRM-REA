@@ -909,6 +909,7 @@ class ConvergenzaItem(BaseModel):
     numero_cellulare: Optional[str] = None
     iccid: Optional[str] = None
     operatore: Optional[str] = None
+    offerta_sim: Optional[str] = None
 
 class Cliente(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
