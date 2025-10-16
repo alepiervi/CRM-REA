@@ -8511,6 +8511,25 @@ async def create_offerta(
         logger.error(f"Error creating offerta: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nella creazione: {str(e)}")
 
+@api_router.get("/offerte/{offerta_id}", response_model=OffertaModel)
+async def get_offerta(
+    offerta_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get single offerta by ID"""
+    try:
+        offerta = await db.offerte.find_one({"id": offerta_id})
+        if not offerta:
+            raise HTTPException(status_code=404, detail="Offerta non trovata")
+        
+        return OffertaModel(**offerta)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching offerta: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero offerta: {str(e)}")
+
 @api_router.put("/offerte/{offerta_id}")
 async def update_offerta(
     offerta_id: str,
