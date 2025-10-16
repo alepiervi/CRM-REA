@@ -18307,10 +18307,22 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   const fetchOfferteBySegmento = async (segmentoId) => {
     try {
-      // Use the new /api/offerte endpoint with segmento filter
+      // Use the new /api/offerte endpoint with full filiera filters
       const params = { is_active: true };
+      
       if (segmentoId) {
         params.segmento = segmentoId;
+      }
+      
+      // Add filiera parameters from cliente data
+      if (cliente?.commessa_id) {
+        params.commessa_id = cliente.commessa_id;
+      }
+      if (cliente?.servizio_id) {
+        params.servizio_id = cliente.servizio_id;
+      }
+      if (cliente?.tipologia_contratto) {
+        params.tipologia_contratto_id = cliente.tipologia_contratto;
       }
       
       const response = await axios.get(`${API}/offerte`, {
