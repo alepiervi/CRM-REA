@@ -18942,10 +18942,16 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                     >
                       <option value="">Seleziona tecnologia</option>
-                      <option value="fibra">Fibra</option>
+                      <option value="fibra">Fibra FTTH</option>
+                      <option value="fibra_misto">Fibra Misto</option>
                       <option value="adsl">ADSL</option>
-                      <option value="fwa">FWA</option>
-                      <option value="mobile">Mobile</option>
+                      <option value="vdsl">VDSL</option>
+                      <option value="fwa">FWA (Fixed Wireless Access)</option>
+                      <option value="mobile_4g">Mobile 4G/LTE</option>
+                      <option value="mobile_5g">Mobile 5G</option>
+                      <option value="satellite">Satellite</option>
+                      <option value="isdn">ISDN</option>
+                      <option value="dialup">Dial-up</option>
                     </select>
                   </div>
                   <div>
