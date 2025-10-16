@@ -1510,7 +1510,6 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setOffertaInfo(response.data);
-      console.log("✅ Offerta loaded:", response.data);
     } catch (error) {
       console.error("❌ Error fetching offerta info:", error);
       setOffertaInfo(null);
@@ -18320,7 +18319,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setOffertaInfo(response.data);
-      console.log("✅ Offerta loaded:", response.data);
     } catch (error) {
       console.error("❌ Error fetching offerta info:", error);
       setOffertaInfo(null);
