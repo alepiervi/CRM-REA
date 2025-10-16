@@ -16558,14 +16558,14 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       account: formData.account || '',
       
       // Document data
-      tipo_documento: formData.tipo_documento || '',
+      tipo_documento: formData.tipo_documento || null, // FIX: Send null instead of empty string for enum fields
       numero_documento: formData.numero_documento || '',
       data_rilascio: formatDateForBackend(formData.data_rilascio),
       luogo_rilascio: formData.luogo_rilascio || '',
       scadenza_documento: formatDateForBackend(formData.scadenza_documento),
       
       // Telefonia Fastweb conditional fields
-      tecnologia: formData.tecnologia || '',
+      tecnologia: formData.tecnologia || null, // FIX: Send null instead of empty string for enum fields
       codice_migrazione: formData.codice_migrazione || '',
       gestore: formData.gestore || '',
       convergenza: Boolean(formData.convergenza),
@@ -16575,7 +16575,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       codice_pod: formData.codice_pod || '',
       
       // Payment data
-      modalita_pagamento: formData.modalita_pagamento || '',
+      modalita_pagamento: formData.modalita_pagamento || null, // FIX: Send null instead of empty string for enum fields
       iban: formData.iban || '',
       intestatario_diverso: formData.intestatario_diverso || '',
       numero_carta: formData.numero_carta || '',
