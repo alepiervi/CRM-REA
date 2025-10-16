@@ -18464,10 +18464,8 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     if (formData.servizio_id) {
       fetchTipologieByServizio(formData.servizio_id);
     }
-    // Carica offerte per il segmento del cliente
-    if (formData.segmento) {
-      fetchOfferteBySegmento(formData.segmento);
-    }
+    // Carica offerte per il segmento del cliente (o tutte se segmento non disponibile)
+    fetchOfferteBySegmento(formData.segmento);
     fetchSegmenti();
   }, []);
 
