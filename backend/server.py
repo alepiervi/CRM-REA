@@ -1029,6 +1029,7 @@ class ClienteCreate(BaseModel):
     sub_agenzia_id: str
     servizio_id: Optional[str] = None
     tipologia_contratto: Optional[TipologiaContratto] = None
+    tipologia_contratto_id: Optional[str] = None  # ADDED: UUID for filtering offerte
     segmento: Optional[Segmento] = None
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     dati_aggiuntivi: Dict[str, Any] = {}
