@@ -34046,6 +34046,309 @@ Duplicate,Test,+393471234567"""
         
         return True
 
+    def test_convergenza_items_multiple_sim_debug(self):
+        """🚨 CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM"""
+        print("\n🚨 CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM")
+        print("🎯 OBIETTIVO: Verificare che quando si creano clienti con MULTIPLE convergenza_items (es. 2-3 SIM), TUTTI gli item vengano salvati nel database e recuperati correttamente")
+        print("🎯 CONTESTO: L'utente ha segnalato che quando ci sono più SIM aggiunte, nell'EditClienteModal non vede i dati di tutte le SIM")
+        print("🎯 FOCUS CRITICO: Verificare che il problema non sia nel backend (tutti gli item salvati e recuperati)")
+        
+        # **STEP 1: LOGIN ADMIN**
+        print("\n🔐 STEP 1: LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ ADMIN LOGIN (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ ADMIN LOGIN FAILED", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: GET REQUIRED DATA FOR CLIENT CREATION**
+        print("\n📋 STEP 2: GET REQUIRED DATA FOR CLIENT CREATION...")
+        
+        # Get first available commessa
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if success and isinstance(commesse_response, list) and len(commesse_response) > 0:
+            commessa_id = commesse_response[0]['id']
+            self.log_test("✅ COMMESSA AVAILABLE", True, f"Using commessa ID: {commessa_id}")
+        else:
+            self.log_test("❌ NO COMMESSE AVAILABLE", False, f"Status: {status}")
+            return False
+            
+        # Get first available sub agenzia
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        if success and isinstance(sub_agenzie_response, list) and len(sub_agenzie_response) > 0:
+            sub_agenzia_id = sub_agenzie_response[0]['id']
+            self.log_test("✅ SUB AGENZIA AVAILABLE", True, f"Using sub agenzia ID: {sub_agenzia_id}")
+        else:
+            self.log_test("❌ NO SUB AGENZIE AVAILABLE", False, f"Status: {status}")
+            return False
+
+        # **STEP 3: TEST CREAZIONE CLIENTE CON 3 CONVERGENZA ITEMS**
+        print("\n📱 STEP 3: TEST CREAZIONE CLIENTE CON 3 CONVERGENZA ITEMS...")
+        print("   🎯 CRITICO: Creare cliente con ESATTAMENTE 3 convergenza_items distinti")
+        
+        # Prepare client data with 3 convergenza items as specified in review
+        import time
+        timestamp = str(int(time.time()))
+        
+        client_data = {
+            "nome": "Mario",
+            "cognome": "Multi SIM Test",
+            "email": "mario.multisim@test.com",
+            "telefono": "3331234567",
+            "codice_fiscale": "MLTSMS85M01H501T",
+            "commessa_id": commessa_id,
+            "sub_agenzia_id": sub_agenzia_id,
+            "tipologia_contratto": "telefonia_fastweb",
+            "segmento": "privato",
+            "convergenza": True,
+            "convergenza_items": [
+                {
+                    "numero_cellulare": "3331111111",
+                    "iccid": "89390111111111111111",
+                    "operatore": "TIM",
+                    "offerta_sim": "Offerta 1 - 100GB"
+                },
+                {
+                    "numero_cellulare": "3332222222",
+                    "iccid": "89390222222222222222",
+                    "operatore": "Vodafone",
+                    "offerta_sim": "Offerta 2 - 50GB"
+                },
+                {
+                    "numero_cellulare": "3333333333",
+                    "iccid": "89390333333333333333",
+                    "operatore": "WindTre",
+                    "offerta_sim": "Offerta 3 - 200GB"
+                }
+            ]
+        }
+        
+        print(f"   📋 Client data with 3 convergenza_items:")
+        print(f"      • Item 1: {client_data['convergenza_items'][0]['numero_cellulare']} - {client_data['convergenza_items'][0]['operatore']} - {client_data['convergenza_items'][0]['offerta_sim']}")
+        print(f"      • Item 2: {client_data['convergenza_items'][1]['numero_cellulare']} - {client_data['convergenza_items'][1]['operatore']} - {client_data['convergenza_items'][1]['offerta_sim']}")
+        print(f"      • Item 3: {client_data['convergenza_items'][2]['numero_cellulare']} - {client_data['convergenza_items'][2]['operatore']} - {client_data['convergenza_items'][2]['offerta_sim']}")
+        
+        # Create client with 3 convergenza items
+        success, create_response, status = self.make_request(
+            'POST', 'clienti', 
+            client_data, 
+            expected_status=200
+        )
+        
+        if success and (status == 200 or status == 201):
+            self.log_test("✅ POST /api/clienti with 3 convergenza_items", True, f"Status: {status} Success")
+            
+            # Extract client ID
+            if isinstance(create_response, dict) and 'id' in create_response:
+                cliente_id = create_response['id']
+                cliente_name = f"{create_response.get('nome', '')} {create_response.get('cognome', '')}"
+                self.log_test("✅ Cliente created successfully", True, f"ID: {cliente_id}, Name: {cliente_name}")
+                
+                # Store for cleanup
+                self.created_resources.setdefault('clienti', []).append(cliente_id)
+                
+            else:
+                self.log_test("❌ Invalid response structure", False, f"Response: {create_response}")
+                return False
+                
+        else:
+            self.log_test("❌ POST /api/clienti with 3 convergenza_items", False, f"Status: {status}, Response: {create_response}")
+            return False
+
+        # **STEP 4: VERIFICA PERSISTENZA TUTTI I 3 ITEMS**
+        print("\n🔍 STEP 4: VERIFICA PERSISTENZA TUTTI I 3 ITEMS...")
+        print("   🎯 CRITICO: Verificare che convergenza_items contenga ESATTAMENTE 3 items")
+        
+        # Get the created client
+        success, get_response, status = self.make_request('GET', f'clienti/{cliente_id}', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/{cliente_id}", True, f"Status: {status} Success")
+            
+            if isinstance(get_response, dict):
+                convergenza_items = get_response.get('convergenza_items', [])
+                convergenza_flag = get_response.get('convergenza', False)
+                
+                # CRITICAL: Verify exactly 3 items
+                items_count = len(convergenza_items)
+                if items_count == 3:
+                    self.log_test("✅ CONVERGENZA_ITEMS COUNT CORRECT", True, f"Found EXACTLY 3 items (not 1 or 2)")
+                else:
+                    self.log_test("❌ CONVERGENZA_ITEMS COUNT INCORRECT", False, f"Expected 3, got {items_count}")
+                    return False
+                
+                # Verify convergenza flag
+                if convergenza_flag:
+                    self.log_test("✅ CONVERGENZA FLAG CORRECT", True, f"Convergenza: {convergenza_flag}")
+                else:
+                    self.log_test("❌ CONVERGENZA FLAG INCORRECT", False, f"Convergenza: {convergenza_flag}")
+                
+                # **STEP 5: VERIFY EACH ITEM HAS ALL FIELDS**
+                print("\n📋 STEP 5: VERIFY EACH ITEM HAS ALL FIELDS...")
+                
+                expected_items = [
+                    {"numero_cellulare": "3331111111", "operatore": "TIM", "offerta_sim": "Offerta 1 - 100GB"},
+                    {"numero_cellulare": "3332222222", "operatore": "Vodafone", "offerta_sim": "Offerta 2 - 50GB"},
+                    {"numero_cellulare": "3333333333", "operatore": "WindTre", "offerta_sim": "Offerta 3 - 200GB"}
+                ]
+                
+                all_items_correct = True
+                
+                for i, expected_item in enumerate(expected_items):
+                    if i < len(convergenza_items):
+                        actual_item = convergenza_items[i]
+                        
+                        # Check each field
+                        numero_match = actual_item.get('numero_cellulare') == expected_item['numero_cellulare']
+                        operatore_match = actual_item.get('operatore') == expected_item['operatore']
+                        offerta_match = actual_item.get('offerta_sim') == expected_item['offerta_sim']
+                        
+                        if numero_match and operatore_match and offerta_match:
+                            self.log_test(f"✅ Item {i+1} ALL FIELDS CORRECT", True, 
+                                f"Numero: {actual_item.get('numero_cellulare')}, Operatore: {actual_item.get('operatore')}, Offerta: {actual_item.get('offerta_sim')}")
+                        else:
+                            self.log_test(f"❌ Item {i+1} FIELDS INCORRECT", False, 
+                                f"Expected: {expected_item}, Got: {actual_item}")
+                            all_items_correct = False
+                    else:
+                        self.log_test(f"❌ Item {i+1} MISSING", False, f"Item {i+1} not found in convergenza_items")
+                        all_items_correct = False
+                
+                if not all_items_correct:
+                    return False
+                
+            else:
+                self.log_test("❌ Invalid GET response structure", False, f"Response type: {type(get_response)}")
+                return False
+                
+        else:
+            self.log_test("❌ GET /api/clienti/{cliente_id}", False, f"Status: {status}, Response: {get_response}")
+            return False
+
+        # **STEP 6: TEST GET LISTA CLIENTI**
+        print("\n📋 STEP 6: TEST GET LISTA CLIENTI...")
+        print("   🎯 CRITICO: Verificare che nella lista il cliente abbia convergenza_items con LENGTH=3")
+        
+        success, list_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti (lista completa)", True, f"Status: {status} Success")
+            
+            if isinstance(list_response, list):
+                # Find our created client in the list
+                created_client = next((client for client in list_response if client.get('id') == cliente_id), None)
+                
+                if created_client:
+                    list_convergenza_items = created_client.get('convergenza_items', [])
+                    list_items_count = len(list_convergenza_items)
+                    
+                    if list_items_count == 3:
+                        self.log_test("✅ CLIENT IN LIST HAS 3 CONVERGENZA_ITEMS", True, f"Found {list_items_count} items in list")
+                    else:
+                        self.log_test("❌ CLIENT IN LIST INCORRECT ITEMS COUNT", False, f"Expected 3, got {list_items_count} in list")
+                        return False
+                else:
+                    self.log_test("❌ CREATED CLIENT NOT FOUND IN LIST", False, "Client not found in clienti list")
+                    return False
+            else:
+                self.log_test("❌ Invalid list response structure", False, f"Response type: {type(list_response)}")
+                return False
+        else:
+            self.log_test("❌ GET /api/clienti (lista completa)", False, f"Status: {status}")
+            return False
+
+        # **STEP 7: TEST ORDINE ITEMS**
+        print("\n🔄 STEP 7: TEST ORDINE ITEMS...")
+        print("   🎯 CRITICO: Verificare che l'ordine degli items sia preservato (stesso ordine di creazione)")
+        
+        # Re-get the client to verify order
+        success, order_response, status = self.make_request('GET', f'clienti/{cliente_id}', expected_status=200)
+        
+        if success and status == 200:
+            convergenza_items = order_response.get('convergenza_items', [])
+            
+            # Check order: Item[0] deve essere TIM, Item[1] Vodafone, Item[2] WindTre
+            expected_order = ["TIM", "Vodafone", "WindTre"]
+            actual_order = [item.get('operatore') for item in convergenza_items]
+            
+            if actual_order == expected_order:
+                self.log_test("✅ ITEMS ORDER PRESERVED", True, f"Order: {actual_order}")
+            else:
+                self.log_test("❌ ITEMS ORDER NOT PRESERVED", False, f"Expected: {expected_order}, Got: {actual_order}")
+                return False
+        else:
+            self.log_test("❌ Could not verify items order", False, f"Status: {status}")
+            return False
+
+        # **STEP 8: TEST ARRAY INTEGRITÀ**
+        print("\n🔍 STEP 8: TEST ARRAY INTEGRITÀ...")
+        print("   🎯 CRITICO: Verificare che convergenza_items sia un array valido, nessun item null/undefined")
+        
+        # Check array integrity
+        if isinstance(convergenza_items, list):
+            self.log_test("✅ CONVERGENZA_ITEMS IS VALID ARRAY", True, f"Array type: {type(convergenza_items)}")
+            
+            # Check for null/undefined items
+            null_items = [i for i, item in enumerate(convergenza_items) if item is None]
+            if not null_items:
+                self.log_test("✅ NO NULL ITEMS", True, "All items are non-null")
+            else:
+                self.log_test("❌ NULL ITEMS FOUND", False, f"Null items at indices: {null_items}")
+                return False
+            
+            # Check that all items have the same structure
+            required_fields = ['numero_cellulare', 'iccid', 'operatore', 'offerta_sim']
+            structure_valid = True
+            
+            for i, item in enumerate(convergenza_items):
+                if not isinstance(item, dict):
+                    self.log_test(f"❌ Item {i+1} NOT DICT", False, f"Item type: {type(item)}")
+                    structure_valid = False
+                    continue
+                
+                missing_fields = [field for field in required_fields if field not in item]
+                if missing_fields:
+                    self.log_test(f"❌ Item {i+1} MISSING FIELDS", False, f"Missing: {missing_fields}")
+                    structure_valid = False
+                else:
+                    self.log_test(f"✅ Item {i+1} STRUCTURE VALID", True, f"All required fields present")
+            
+            if not structure_valid:
+                return False
+                
+        else:
+            self.log_test("❌ CONVERGENZA_ITEMS NOT ARRAY", False, f"Type: {type(convergenza_items)}")
+            return False
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 CONVERGENZA ITEMS MULTIPLE SIM DEBUG - FINAL SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare persistenza multipli convergenza_items nel backend")
+        print(f"   🎯 FOCUS CRITICO: Il problema segnalato dall'utente NON è nel backend")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Cliente creato con 3 convergenza_items: ✅ SUCCESS")
+        print(f"      • GET /api/clienti/{{id}} ritorna ESATTAMENTE 3 items: ✅ SUCCESS")
+        print(f"      • Ogni item ha tutti i campi compilati correttamente: ✅ SUCCESS")
+        print(f"      • L'ordine degli items è preservato: ✅ SUCCESS")
+        print(f"      • GET /api/clienti (lista) mostra il cliente con 3 items: ✅ SUCCESS")
+        print(f"      • Array integrità verificata (no null/undefined): ✅ SUCCESS")
+        
+        print(f"\n   🎉 SUCCESS: BACKEND SALVA E RESTITUISCE TUTTI GLI ITEMS CORRETTAMENTE!")
+        print(f"   🎉 CONFERMATO: Il backend persiste tutti i 3 convergenza_items senza perdite")
+        print(f"   🎉 VERIFICATO: GET /api/clienti/{{id}} ritorna tutti i dati delle SIM")
+        print(f"   🎯 CONCLUSIONE: Il problema nell'EditClienteModal NON è nel backend!")
+        print(f"   🔍 RACCOMANDAZIONE: Investigare il frontend - possibile problema nel loop .map() o nel state management")
+        
+        return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
