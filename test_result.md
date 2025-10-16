@@ -783,9 +783,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Offerta Debug - Client Creation selectedData.offerta_id Issue Investigation"
-  stuck_tasks:
-    - "Offerta Debug - Client Creation selectedData.offerta_id Issue Investigation"
+    - "Convergenza Items Offerta SIM Backend Testing - Complete Field Implementation Verification"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
