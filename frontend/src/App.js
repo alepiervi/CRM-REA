@@ -16027,6 +16027,25 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
            nome.includes('gas');
   };
 
+  // Funzione per verificare se la tipologia contratto contiene "Mobile"
+  const isMobile = () => {
+    const tipologiaId = selectedData.tipologia_contratto;
+    if (!tipologiaId) return false;
+    
+    const tipologia = cascadeTipologie.find(t => t.id === tipologiaId);
+    if (!tipologia) return false;
+    
+    const nome = tipologia.nome?.toLowerCase() || '';
+    console.log("📱 isMobile DEBUG:", {
+      tipologiaId,
+      tipologia_nome: tipologia.nome,
+      nome_lower: nome,
+      result: nome.includes('mobile')
+    });
+    
+    return nome.includes('mobile');
+  };
+
   // Funzioni per gestire i campi convergenza multipli
   const addConvergenzaItem = () => {
     setConvergenzaItems([...convergenzaItems, {
