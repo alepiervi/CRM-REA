@@ -16561,7 +16561,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       codice_migrazione: formData.codice_migrazione || '',
       gestore: formData.gestore || '',
       convergenza: Boolean(formData.convergenza),
-      convergenza_items: formData.convergenza_items || [],
+      convergenza_items: formData.convergenza ? convergenzaItems : [],
       
       // Energia Fastweb conditional fields
       codice_pod: formData.codice_pod || '',
