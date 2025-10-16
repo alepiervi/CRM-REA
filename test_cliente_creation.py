@@ -7,7 +7,7 @@ BACKEND_URL = "https://nureal-hub.preview.emergentagent.com"
 # Login as admin
 login_response = requests.post(
     f"{BACKEND_URL}/api/auth/login",
-    json={"email": "admin", "password": "admin123"}
+    json={"username": "admin", "password": "admin123"}
 )
 
 if login_response.status_code != 200:
