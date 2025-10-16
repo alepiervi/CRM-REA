@@ -18169,7 +18169,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     luogo_nascita: cliente?.luogo_nascita || '',
     codice_fiscale: cliente?.codice_fiscale || '',
     provincia: cliente?.provincia || '',
-    comune: cliente?.comune || '',
+    comune: cliente?.comune_residenza || '',
     indirizzo: cliente?.indirizzo || '',
     cap: cliente?.cap || '',
     
