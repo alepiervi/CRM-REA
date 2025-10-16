@@ -8556,41 +8556,42 @@ async def get_all_offerte(
         if is_active is not None:
             query_conditions.append({"is_active": is_active})
         
-        # Build filiera filter: show generic offerte OR matching specific offerte
+        # Build filiera filter
+        # Logic: Show offerte that match tipologia+segmento (commessa/servizio are optional)
         filiera_conditions = []
         
-        # Generic offerte: missing commessa OR servizio (but can have tipologia and segmento)
-        generic_offerta_condition = {
-            "$or": [
-                {"commessa_id": {"$exists": False}},
-                {"commessa_id": None},
-                {"commessa_id": ""},
-                {"servizio_id": {"$exists": False}},
-                {"servizio_id": None},
-                {"servizio_id": ""}
-            ]
-        }
-        filiera_conditions.append(generic_offerta_condition)
+        # MANDATORY: tipologia must match if provided
+        if tipologia_contratto_id and '-' in tipologia_contratto_id and len(tipologia_contratto_id) > 20:
+            # Offerte with matching tipologia OR no tipologia set
+            filiera_conditions.append({
+                "$or": [
+                    {"tipologia_contratto_id": tipologia_contratto_id},
+                    {"tipologia_contratto_id": {"$exists": False}},
+                    {"tipologia_contratto_id": None},
+                    {"tipologia_contratto_id": ""}
+                ]
+            })
         
-        # Specific offerte: match all provided filiera params
-        if commessa_id or servizio_id or tipologia_contratto_id:
-            specific_match = {"$and": []}
-            
-            if commessa_id:
-                specific_match["$and"].append({"commessa_id": commessa_id})
-            
-            if servizio_id:
-                specific_match["$and"].append({"servizio_id": servizio_id})
-            
-            if tipologia_contratto_id:
-                # Handle tipologia: only filter if it's a UUID
-                if '-' in tipologia_contratto_id and len(tipologia_contratto_id) > 20:
-                    # It's a UUID - filter by it
-                    specific_match["$and"].append({"tipologia_contratto_id": tipologia_contratto_id})
-                # If it's an enum string (no match possible), don't filter by tipologia
-            
-            if specific_match["$and"]:
-                filiera_conditions.append(specific_match)
+        # Commessa/Servizio are optional: offerte can be generic (NULL) or match exactly
+        if commessa_id:
+            filiera_conditions.append({
+                "$or": [
+                    {"commessa_id": commessa_id},
+                    {"commessa_id": {"$exists": False}},
+                    {"commessa_id": None},
+                    {"commessa_id": ""}
+                ]
+            })
+        
+        if servizio_id:
+            filiera_conditions.append({
+                "$or": [
+                    {"servizio_id": servizio_id},
+                    {"servizio_id": {"$exists": False}},
+                    {"servizio_id": None},
+                    {"servizio_id": ""}
+                ]
+            })
         
         # Combine all conditions
         if filiera_conditions:
