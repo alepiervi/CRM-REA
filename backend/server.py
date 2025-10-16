@@ -1073,6 +1073,7 @@ class ClienteUpdate(BaseModel):
     gestore: Optional[str] = None
     convergenza: Optional[bool] = None
     convergenza_items: Optional[List[ConvergenzaItem]] = None
+    mobile_items: Optional[List[MobileItem]] = None
     
     # Campi specifici Energia Fastweb
     codice_pod: Optional[str] = None
