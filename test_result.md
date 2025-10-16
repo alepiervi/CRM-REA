@@ -102,25 +102,67 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "IMPLEMENTAZIONE AREA MANAGER - Completare implementazione del nuovo ruolo Area Manager
+user_problem_statement: "CONVERGENZA ITEMS OFFERTA SIM BACKEND TESTING
 
-OBIETTIVO: Completare l'implementazione del ruolo Area Manager con funzionalità complete per gestione produzione e clienti.
+OBIETTIVO: Verificare che il campo offerta_sim venga correttamente salvato e recuperato dal database quando si creano clienti con convergenza items.
 
-AZIONI COMPLETATE:
-1. ✅ Backend UserRole enum aggiornato con AREA_MANAGER
-2. ✅ Backend autorizzazioni per endpoint /api/clienti e /api/clienti/filter-options 
-3. ✅ Frontend CreateUserModal e EditUserModal aggiornati con sezione Area Manager
-4. ✅ Frontend logica di navigazione e cascading include Area Manager
-5. ✅ Controllo sintattico App.js completato senza errori
+CONTESTO:
+- Ho aggiunto il campo offerta_sim: Optional[str] = None al modello ConvergenzaItem nel backend (server.py riga 912)
+- Il frontend già invia questo campo quando si creano clienti con convergenza
+- Questo fix risolve il problema della visualizzazione dei dati convergenza nell'EditClienteModal
 
-PROSSIMI STEP:
-1. **TEST BACKEND**: Verificare che tutti gli endpoint backend supportino correttamente il ruolo Area Manager
-2. **TEST FRONTEND**: Verificare creazione utente Area Manager e funzionalità complete
-3. **TEST INTEGRAZIONE**: Verificare che Area Manager possa vedere produzione e clienti delle sub agenzie assegnate
+TEST DA ESEGUIRE:
 
-CREDENZIALI: admin/admin123
+1. **Login Admin**: 
+   - Credenziali: admin/admin123
+   - Verificare autenticazione
 
-FOCUS: Testing completo implementazione Area Manager."
+2. **Test Creazione Cliente con Convergenza Items**:
+   - POST /api/clienti con dati cliente che includono convergenza_items
+   - Struttura convergenza_items: [{ numero_cellulare, iccid, operatore, offerta_sim }]
+   - Esempio convergenza_items:
+     ```json
+     {
+       \"convergenza\": true,
+       \"convergenza_items\": [
+         {
+           \"numero_cellulare\": \"3331234567\",
+           \"iccid\": \"89390123456789012345\",
+           \"operatore\": \"TIM\",
+           \"offerta_sim\": \"Offerta Voce 100GB\"
+         }
+       ]
+     }
+     ```
+   - Verificare response 200/201 Success
+   - Annotare cliente_id creato
+
+3. **Verifica Persistenza Database**:
+   - GET /api/clienti/{cliente_id} per recuperare il cliente appena creato
+   - Verificare che il campo convergenza_items contenga tutti i campi:
+     - numero_cellulare ✓
+     - iccid ✓
+     - operatore ✓
+     - **offerta_sim ✓** (questo è il nuovo campo da verificare!)
+   
+4. **Test Multiple Convergenza Items**:
+   - Creare un cliente con più convergenza_items (2-3 items)
+   - Ogni item deve avere offerta_sim diversa
+   - Verificare che tutti vengano salvati correttamente
+
+5. **Test Optional Field**:
+   - Creare cliente con convergenza_items che non includono offerta_sim (campo opzionale)
+   - Verificare che il cliente venga comunque creato senza errori
+   - Verificare che offerta_sim sia null/None nel database
+
+CRITERI DI SUCCESSO:
+✅ Cliente creato con convergenza_items che includono offerta_sim
+✅ Campo offerta_sim salvato correttamente nel database
+✅ GET cliente ritorna convergenza_items completi con offerta_sim
+✅ Multiple convergenza_items gestiti correttamente
+✅ Campo offerta_sim opzionale (può essere omesso senza errori)
+
+FOCUS: Verificare che il nuovo campo offerta_sim funzioni correttamente end-to-end."
 
 backend:
   - task: "Area Manager Backend Implementation - Complete Authorization System"
