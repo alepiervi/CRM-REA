@@ -8533,9 +8533,22 @@ async def get_all_offerte(
     try:
         query_conditions = []
         
-        # Handle segmento - use UUID directly (no conversion needed)
+        # Handle segmento - support both UUID and string ("privato"/"business")
         if segmento:
-            query_conditions.append({"segmento_id": segmento})
+            segmento_ids = [segmento]  # Start with the provided value
+            
+            # If it's a string like "privato" or "business", find all matching UUID segmenti
+            if segmento in ["privato", "business"]:
+                # Find all segmenti with this name
+                segmenti_docs = await db.segmenti.find({}).to_list(length=None)
+                matching_uuids = [
+                    seg["id"] for seg in segmenti_docs 
+                    if seg.get("nome", "").lower() == segmento.lower()
+                ]
+                segmento_ids.extend(matching_uuids)
+            
+            # Query: match if segmento_id is in any of the identified IDs
+            query_conditions.append({"segmento_id": {"$in": segmento_ids}})
         
         if is_active is not None:
             query_conditions.append({"is_active": is_active})
