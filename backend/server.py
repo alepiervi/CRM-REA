@@ -8556,46 +8556,44 @@ async def get_all_offerte(
         if is_active is not None:
             query_conditions.append({"is_active": is_active})
         
-        # Build filiera filter
-        # Logic: Show offerte that match tipologia+segmento (commessa/servizio are optional)
-        filiera_conditions = []
+        # Build filiera filter - SIMPLIFIED
+        # Show ONLY offerte that match: segmento + tipologia (mandatory) + (commessa/servizio if set)
         
-        # MANDATORY: tipologia must match if provided
-        if tipologia_contratto_id and '-' in tipologia_contratto_id and len(tipologia_contratto_id) > 20:
-            # Offerte with matching tipologia OR no tipologia set
-            filiera_conditions.append({
+        final_conditions = []
+        
+        # 1. MANDATORY: tipologia must match (or be empty in offerta)
+        if tipologia_contratto_id and '-' in tipologia_contratto_id:
+            final_conditions.append({
                 "$or": [
                     {"tipologia_contratto_id": tipologia_contratto_id},
-                    {"tipologia_contratto_id": {"$exists": False}},
                     {"tipologia_contratto_id": None},
                     {"tipologia_contratto_id": ""}
                 ]
             })
         
-        # Commessa/Servizio are optional: offerte can be generic (NULL) or match exactly
+        # 2. Commessa: if provided, offerta must match OR be null
         if commessa_id:
-            filiera_conditions.append({
+            final_conditions.append({
                 "$or": [
                     {"commessa_id": commessa_id},
-                    {"commessa_id": {"$exists": False}},
                     {"commessa_id": None},
                     {"commessa_id": ""}
                 ]
             })
         
+        # 3. Servizio: if provided, offerta must match OR be null
         if servizio_id:
-            filiera_conditions.append({
+            final_conditions.append({
                 "$or": [
                     {"servizio_id": servizio_id},
-                    {"servizio_id": {"$exists": False}},
                     {"servizio_id": None},
                     {"servizio_id": ""}
                 ]
             })
         
-        # Combine all conditions
-        if filiera_conditions:
-            query_conditions.append({"$or": filiera_conditions})
+        # Add these to query_conditions
+        if final_conditions:
+            query_conditions.extend(final_conditions)
         
         # Final query
         if query_conditions:
