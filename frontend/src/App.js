@@ -11545,6 +11545,14 @@ const CommesseManagement = ({
     try {
       const response = await axios.post(`${API}/servizi`, servizioData);
       setServizi([...servizi, response.data]);
+      
+      // Refresh filter options for ClientiManagement
+      try {
+        await axios.get(`${API}/clienti/filter-options`);
+      } catch (error) {
+        console.error("Error refreshing filter options:", error);
+      }
+      
       toast({
         title: "Successo",
         description: "Servizio creato con successo",
