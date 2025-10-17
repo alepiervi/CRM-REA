@@ -9814,6 +9814,431 @@ async def export_clienti_excel(
         logging.error(f"Error in clienti Excel export: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Errore nell'export Excel: {str(e)}")
 
+
+# ============================================
+# ANALYTICS ENDPOINTS
+# ============================================
+
+@api_router.get("/analytics/pivot")
+async def get_pivot_analytics(
+    sub_agenzia_ids: Optional[str] = Query(None),  # Comma-separated IDs
+    status_values: Optional[str] = Query(None),  # Comma-separated values
+    tipologia_contratto_values: Optional[str] = Query(None),
+    segmento_values: Optional[str] = Query(None),
+    offerta_ids: Optional[str] = Query(None),
+    created_by_ids: Optional[str] = Query(None),
+    convergenza: Optional[bool] = Query(None),
+    data_da: Optional[str] = Query(None),  # Format: YYYY-MM-DD
+    data_a: Optional[str] = Query(None),  # Format: YYYY-MM-DD
+    current_user: User = Depends(get_current_user)
+):
+    """Get pivot analytics with multiple filters and date range"""
+    try:
+        # Build query
+        query = {}
+        
+        # Role-based access control
+        if current_user.role == UserRole.ADMIN:
+            pass
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            if current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            else:
+                query["_id"] = {"$exists": False}
+        elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+            if current_user.commesse_autorizzate and current_user.sub_agenzia_id:
+                query["$and"] = [
+                    {"commessa_id": {"$in": current_user.commesse_autorizzate}},
+                    {"sub_agenzia_id": current_user.sub_agenzia_id}
+                ]
+            else:
+                query["_id"] = {"$exists": False}
+        
+        # Apply filters
+        if sub_agenzia_ids:
+            ids = [id.strip() for id in sub_agenzia_ids.split(",")]
+            query["sub_agenzia_id"] = {"$in": ids}
+        
+        if status_values:
+            statuses = [s.strip() for s in status_values.split(",")]
+            query["status"] = {"$in": statuses}
+        
+        if tipologia_contratto_values:
+            tipologie = [t.strip() for t in tipologia_contratto_values.split(",")]
+            query["tipologia_contratto"] = {"$in": tipologie}
+        
+        if segmento_values:
+            segmenti = [s.strip() for s in segmento_values.split(",")]
+            query["segmento"] = {"$in": segmenti}
+        
+        if offerta_ids:
+            ids = [id.strip() for id in offerta_ids.split(",")]
+            query["offerta_id"] = {"$in": ids}
+        
+        if created_by_ids:
+            ids = [id.strip() for id in created_by_ids.split(",")]
+            query["created_by"] = {"$in": ids}
+        
+        if convergenza is not None:
+            query["convergenza"] = convergenza
+        
+        # Date range filter
+        if data_da or data_a:
+            date_query = {}
+            if data_da:
+                date_query["$gte"] = datetime.strptime(data_da, "%Y-%m-%d")
+            if data_a:
+                # Add 1 day to include the end date
+                end_date = datetime.strptime(data_a, "%Y-%m-%d") + timedelta(days=1)
+                date_query["$lt"] = end_date
+            query["created_at"] = date_query
+        
+        # Get all matching clienti
+        clienti = await db.clienti.find(query).to_list(length=None)
+        
+        # Calculate metrics
+        total_clienti = len(clienti)
+        
+        # Count by sub agenzia
+        sub_agenzia_counts = {}
+        for cliente in clienti:
+            sa_id = cliente.get("sub_agenzia_id", "Non specificato")
+            sub_agenzia_counts[sa_id] = sub_agenzia_counts.get(sa_id, 0) + 1
+        
+        # Count by status
+        status_counts = {}
+        for cliente in clienti:
+            status = cliente.get("status", "Non specificato")
+            status_counts[status] = status_counts.get(status, 0) + 1
+        
+        # Count by tipologia contratto
+        tipologia_counts = {}
+        for cliente in clienti:
+            tipologia = cliente.get("tipologia_contratto", "Non specificato")
+            tipologia_counts[tipologia] = tipologia_counts.get(tipologia, 0) + 1
+        
+        # Count by segmento
+        segmento_counts = {}
+        for cliente in clienti:
+            segmento = cliente.get("segmento", "Non specificato")
+            segmento_counts[segmento] = segmento_counts.get(segmento, 0) + 1
+        
+        # Count by offerta
+        offerta_counts = {}
+        for cliente in clienti:
+            offerta_id = cliente.get("offerta_id", "Non specificato")
+            offerta_counts[offerta_id] = offerta_counts.get(offerta_id, 0) + 1
+        
+        # Count by creator
+        creator_counts = {}
+        for cliente in clienti:
+            creator_id = cliente.get("created_by", "Non specificato")
+            creator_counts[creator_id] = creator_counts.get(creator_id, 0) + 1
+        
+        # Count convergenza
+        convergenza_counts = {"Si": 0, "No": 0}
+        for cliente in clienti:
+            if cliente.get("convergenza"):
+                convergenza_counts["Si"] += 1
+            else:
+                convergenza_counts["No"] += 1
+        
+        # Enrich with names
+        enriched_sub_agenzia = {}
+        for sa_id, count in sub_agenzia_counts.items():
+            if sa_id != "Non specificato":
+                sa = await db.sub_agenzie.find_one({"id": sa_id})
+                name = sa.get("nome") if sa else sa_id
+            else:
+                name = "Non specificato"
+            enriched_sub_agenzia[name] = count
+        
+        enriched_offerta = {}
+        for off_id, count in offerta_counts.items():
+            if off_id != "Non specificato":
+                offerta = await db.offerte.find_one({"id": off_id})
+                name = offerta.get("nome") if offerta else off_id
+            else:
+                name = "Non specificato"
+            enriched_offerta[name] = count
+        
+        enriched_creator = {}
+        for creator_id, count in creator_counts.items():
+            if creator_id != "Non specificato":
+                user = await db.users.find_one({"id": creator_id})
+                name = user.get("username") if user else creator_id
+            else:
+                name = "Non specificato"
+            enriched_creator[name] = count
+        
+        # Calculate percentages
+        def calc_percentages(counts_dict):
+            if total_clienti == 0:
+                return {k: 0 for k in counts_dict.keys()}
+            return {k: round((v / total_clienti) * 100, 2) for k, v in counts_dict.items()}
+        
+        # Comparison with previous period (same duration before data_da)
+        previous_period_count = 0
+        if data_da and data_a:
+            start = datetime.strptime(data_da, "%Y-%m-%d")
+            end = datetime.strptime(data_a, "%Y-%m-%d")
+            duration = (end - start).days
+            
+            prev_start = start - timedelta(days=duration)
+            prev_end = start
+            
+            prev_query = query.copy()
+            prev_query["created_at"] = {
+                "$gte": prev_start,
+                "$lt": prev_end
+            }
+            previous_period_count = await db.clienti.count_documents(prev_query)
+        
+        # Calculate trend
+        trend = None
+        if previous_period_count > 0:
+            trend = round(((total_clienti - previous_period_count) / previous_period_count) * 100, 2)
+        
+        return {
+            "total_clienti": total_clienti,
+            "previous_period_count": previous_period_count,
+            "trend_percentage": trend,
+            "breakdown": {
+                "sub_agenzia": {
+                    "counts": enriched_sub_agenzia,
+                    "percentages": calc_percentages(enriched_sub_agenzia)
+                },
+                "status": {
+                    "counts": status_counts,
+                    "percentages": calc_percentages(status_counts)
+                },
+                "tipologia_contratto": {
+                    "counts": tipologia_counts,
+                    "percentages": calc_percentages(tipologia_counts)
+                },
+                "segmento": {
+                    "counts": segmento_counts,
+                    "percentages": calc_percentages(segmento_counts)
+                },
+                "offerta": {
+                    "counts": enriched_offerta,
+                    "percentages": calc_percentages(enriched_offerta)
+                },
+                "created_by": {
+                    "counts": enriched_creator,
+                    "percentages": calc_percentages(enriched_creator)
+                },
+                "convergenza": {
+                    "counts": convergenza_counts,
+                    "percentages": calc_percentages(convergenza_counts)
+                }
+            }
+        }
+        
+    except Exception as e:
+        logging.error(f"Error in pivot analytics: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Errore analytics pivot: {str(e)}")
+
+
+@api_router.get("/analytics/sub-agenzie")
+async def get_sub_agenzie_analytics(
+    data_da: Optional[str] = Query(None),
+    data_a: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Get analytics for each sub agenzia"""
+    try:
+        # Build base query with date filter
+        base_query = {}
+        
+        if data_da or data_a:
+            date_query = {}
+            if data_da:
+                date_query["$gte"] = datetime.strptime(data_da, "%Y-%m-%d")
+            if data_a:
+                end_date = datetime.strptime(data_a, "%Y-%m-%d") + timedelta(days=1)
+                date_query["$lt"] = end_date
+            base_query["created_at"] = date_query
+        
+        # Get all sub agenzie based on user role
+        if current_user.role == UserRole.ADMIN:
+            sub_agenzie = await db.sub_agenzie.find({}).to_list(length=None)
+        elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+            if current_user.sub_agenzia_id:
+                sub_agenzie = await db.sub_agenzie.find({"id": current_user.sub_agenzia_id}).to_list(length=1)
+            else:
+                sub_agenzie = []
+        else:
+            # For other roles, get sub agenzie from their authorized commesse
+            sub_agenzie = await db.sub_agenzie.find({}).to_list(length=None)
+        
+        result = []
+        
+        for sub_agenzia in sub_agenzie:
+            sa_id = sub_agenzia["id"]
+            
+            # Query for this sub agenzia
+            query = base_query.copy()
+            query["sub_agenzia_id"] = sa_id
+            
+            # Apply role-based filters
+            if current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+                if current_user.commesse_autorizzate:
+                    query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            
+            clienti = await db.clienti.find(query).to_list(length=None)
+            
+            # Total clienti
+            total = len(clienti)
+            
+            # Clienti by status
+            status_breakdown = {}
+            for cliente in clienti:
+                status = cliente.get("status", "Non specificato")
+                status_breakdown[status] = status_breakdown.get(status, 0) + 1
+            
+            # Clienti by tipologia contratto
+            tipologia_breakdown = {}
+            for cliente in clienti:
+                tipologia = cliente.get("tipologia_contratto", "Non specificato")
+                tipologia_breakdown[tipologia] = tipologia_breakdown.get(tipologia, 0) + 1
+            
+            # Top creators
+            creator_counts = {}
+            for cliente in clienti:
+                creator_id = cliente.get("created_by")
+                if creator_id:
+                    creator_counts[creator_id] = creator_counts.get(creator_id, 0) + 1
+            
+            # Enrich creator names
+            top_creators = []
+            for creator_id, count in sorted(creator_counts.items(), key=lambda x: x[1], reverse=True)[:5]:
+                user = await db.users.find_one({"id": creator_id})
+                top_creators.append({
+                    "name": user.get("username") if user else creator_id,
+                    "count": count
+                })
+            
+            # Performance over time (last 30 days or date range)
+            timeline = []
+            if data_da and data_a:
+                start = datetime.strptime(data_da, "%Y-%m-%d")
+                end = datetime.strptime(data_a, "%Y-%m-%d")
+                days = (end - start).days + 1
+                
+                for i in range(days):
+                    day = start + timedelta(days=i)
+                    day_end = day + timedelta(days=1)
+                    
+                    day_query = query.copy()
+                    day_query["created_at"] = {"$gte": day, "$lt": day_end}
+                    
+                    count = await db.clienti.count_documents(day_query)
+                    timeline.append({
+                        "date": day.strftime("%Y-%m-%d"),
+                        "count": count
+                    })
+            
+            result.append({
+                "sub_agenzia_id": sa_id,
+                "sub_agenzia_name": sub_agenzia.get("nome"),
+                "total_clienti": total,
+                "status_breakdown": status_breakdown,
+                "tipologia_breakdown": tipologia_breakdown,
+                "top_creators": top_creators,
+                "timeline": timeline
+            })
+        
+        return result
+        
+    except Exception as e:
+        logging.error(f"Error in sub agenzie analytics: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Errore analytics sub agenzie: {str(e)}")
+
+
+@api_router.get("/analytics/pivot/export")
+async def export_pivot_analytics(
+    sub_agenzia_ids: Optional[str] = Query(None),
+    status_values: Optional[str] = Query(None),
+    tipologia_contratto_values: Optional[str] = Query(None),
+    segmento_values: Optional[str] = Query(None),
+    offerta_ids: Optional[str] = Query(None),
+    created_by_ids: Optional[str] = Query(None),
+    convergenza: Optional[bool] = Query(None),
+    data_da: Optional[str] = Query(None),
+    data_a: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Export pivot analytics to Excel"""
+    try:
+        # Get pivot data using the same logic
+        pivot_data = await get_pivot_analytics(
+            sub_agenzia_ids=sub_agenzia_ids,
+            status_values=status_values,
+            tipologia_contratto_values=tipologia_contratto_values,
+            segmento_values=segmento_values,
+            offerta_ids=offerta_ids,
+            created_by_ids=created_by_ids,
+            convergenza=convergenza,
+            data_da=data_da,
+            data_a=data_a,
+            current_user=current_user
+        )
+        
+        # Create Excel file
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Pivot Analytics"
+        
+        # Header styling
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        
+        # Summary section
+        ws.cell(1, 1, "RIEPILOGO").font = header_font
+        ws.cell(1, 1).fill = header_fill
+        ws.cell(2, 1, "Totale Clienti")
+        ws.cell(2, 2, pivot_data["total_clienti"])
+        ws.cell(3, 1, "Periodo Precedente")
+        ws.cell(3, 2, pivot_data["previous_period_count"])
+        ws.cell(4, 1, "Trend %")
+        ws.cell(4, 2, pivot_data["trend_percentage"])
+        
+        # Breakdown sections
+        row = 6
+        for category, data in pivot_data["breakdown"].items():
+            ws.cell(row, 1, category.upper().replace("_", " ")).font = header_font
+            ws.cell(row, 1).fill = header_fill
+            ws.cell(row, 2, "Conteggio").font = header_font
+            ws.cell(row, 2).fill = header_fill
+            ws.cell(row, 3, "Percentuale").font = header_font
+            ws.cell(row, 3).fill = header_fill
+            row += 1
+            
+            for key, count in data["counts"].items():
+                ws.cell(row, 1, key)
+                ws.cell(row, 2, count)
+                ws.cell(row, 3, f"{data['percentages'].get(key, 0)}%")
+                row += 1
+            
+            row += 1
+        
+        # Save file
+        filename = f"pivot_analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filepath = f"/tmp/{filename}"
+        wb.save(filepath)
+        
+        return FileResponse(
+            path=filepath,
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            filename=filename
+        )
+        
+    except Exception as e:
+        logging.error(f"Error in pivot export: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Errore export pivot: {str(e)}")
+
+
 @api_router.get("/clienti/{cliente_id}", response_model=Cliente)
 async def get_cliente(cliente_id: str, current_user: User = Depends(get_current_user)):
     """Get specific cliente with role-based access control"""
