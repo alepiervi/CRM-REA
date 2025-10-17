@@ -1304,17 +1304,6 @@ const Dashboard = () => {
   
   const { user, logout, setUser, showSessionWarning, timeLeft, extendSession, stopCountdown } = useAuth();
   const { toast } = useToast();
-  
-  // Set default tab based on role
-  const getDefaultTab = () => {
-    if (user.role === "admin" || user.role === "referente") {
-      return "dashboard";
-    }
-    // For roles that manage only clients (no dashboard access)
-    return "pivot";
-  };
-  
-  const [activeTab, setActiveTab] = useState(getDefaultTab());
 
   // 🎯 MOBILE-FRIENDLY: Detect screen size
   useEffect(() => {
