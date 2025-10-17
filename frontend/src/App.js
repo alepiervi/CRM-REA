@@ -8238,48 +8238,89 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
               >
                 📊 Dashboard Overview
               </button>
+              
+              {user.role === "admin" && (
+                <>
+                  <button
+                    onClick={() => setActiveTab("agents")}
+                    className={`py-4 px-4 rounded-lg font-semibold text-base transition-all ${
+                      activeTab === "agents" 
+                        ? "bg-green-600 text-white shadow-md" 
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    👥 Analytics Agenti
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("referenti")}
+                    className={`py-4 px-4 rounded-lg font-semibold text-base transition-all ${
+                      activeTab === "referenti" 
+                        ? "bg-purple-600 text-white shadow-md" 
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    🎯 Analytics Referenti
+                  </button>
+                </>
+              )}
+              
               <button
-                onClick={() => setActiveTab("agents")}
+                onClick={() => setActiveTab("pivot")}
                 className={`py-4 px-4 rounded-lg font-semibold text-base transition-all ${
-                  activeTab === "agents" 
-                    ? "bg-green-600 text-white shadow-md" 
+                  activeTab === "pivot" 
+                    ? "bg-indigo-600 text-white shadow-md" 
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
-                👥 Analytics Agenti
+                🔍 Pivot Analytics
               </button>
+              
               <button
-                onClick={() => setActiveTab("referenti")}
+                onClick={() => setActiveTab("sub-agenzie")}
                 className={`py-4 px-4 rounded-lg font-semibold text-base transition-all ${
-                  activeTab === "referenti" 
-                    ? "bg-purple-600 text-white shadow-md" 
+                  activeTab === "sub-agenzie" 
+                    ? "bg-teal-600 text-white shadow-md" 
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
-                🎯 Analytics Referenti
+                🏢 Sub Agenzie
               </button>
             </div>
           </div>
         </div>
 
         {/* DESKTOP TABS */}
-        <TabsList className="hidden md:grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="dashboard" className="text-base font-semibold">
-            📊 Dashboard Overview
-          </TabsTrigger>
-          <TabsTrigger value="agents" className="text-base font-semibold">
-            👥 Analytics Agenti
-          </TabsTrigger>
-          <TabsTrigger value="referenti" className="text-base font-semibold">
-            🎯 Analytics Referenti
-          </TabsTrigger>
-          <TabsTrigger value="pivot" className="text-base font-semibold">
-            🔍 Pivot Analytics
-          </TabsTrigger>
-          <TabsTrigger value="sub-agenzie" className="text-base font-semibold">
-            🏢 Sub Agenzie
-          </TabsTrigger>
-        </TabsList>
+        {user.role === "admin" ? (
+          <TabsList className="hidden md:grid w-full grid-cols-5 mb-6">
+            <TabsTrigger value="dashboard" className="text-base font-semibold">
+              📊 Dashboard Overview
+            </TabsTrigger>
+            <TabsTrigger value="agents" className="text-base font-semibold">
+              👥 Analytics Agenti
+            </TabsTrigger>
+            <TabsTrigger value="referenti" className="text-base font-semibold">
+              🎯 Analytics Referenti
+            </TabsTrigger>
+            <TabsTrigger value="pivot" className="text-base font-semibold">
+              🔍 Pivot Analytics
+            </TabsTrigger>
+            <TabsTrigger value="sub-agenzie" className="text-base font-semibold">
+              🏢 Sub Agenzie
+            </TabsTrigger>
+          </TabsList>
+        ) : (
+          <TabsList className="hidden md:grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="dashboard" className="text-base font-semibold">
+              📊 Dashboard Overview
+            </TabsTrigger>
+            <TabsTrigger value="pivot" className="text-base font-semibold">
+              🔍 Pivot Analytics
+            </TabsTrigger>
+            <TabsTrigger value="sub-agenzie" className="text-base font-semibold">
+              🏢 Sub Agenzie
+            </TabsTrigger>
+          </TabsList>
+        )}
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
