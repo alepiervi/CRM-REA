@@ -17540,6 +17540,27 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             </div>
           )}
 
+          {/* SEZIONE TELEPASS */}
+          {(() => {
+            const showTelepassSection = isTelepass();
+            console.log("🔍 RENDER CHECK - Telepass section:", showTelepassSection);
+            return showTelepassSection;
+          })() && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">🚗 Telepass</h3>
+              
+              <div>
+                <Label htmlFor="obu">OBU</Label>
+                <Input
+                  id="obu"
+                  value={formData.obu}
+                  onChange={(e) => setFormData({...formData, obu: e.target.value})}
+                  placeholder="Inserisci codice OBU"
+                />
+              </div>
+            </div>
+          )}
+
           {/* SEZIONE MODALITÀ PAGAMENTO */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">💳 Modalità Pagamento</h3>
