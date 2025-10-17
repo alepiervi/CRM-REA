@@ -10121,9 +10121,14 @@ async def get_sub_agenzie_analytics(
         elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA, UserRole.AREA_MANAGER]:
             # For these roles, get sub agenzie from their authorized commesse
             if current_user.commesse_autorizzate:
-                sub_agenzie = await db.sub_agenzie.find({
+                sub_agenzie_query = {
                     "commesse_autorizzate": {"$in": current_user.commesse_autorizzate}
-                }).to_list(length=None)
+                }
+                # Filter by authorized services
+                if current_user.servizi_autorizzati:
+                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
+                
+                sub_agenzie = await db.sub_agenzie.find(sub_agenzie_query).to_list(length=None)
             else:
                 sub_agenzie = []
         else:
