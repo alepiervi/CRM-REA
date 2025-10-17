@@ -18788,6 +18788,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     // Campi Energia Fastweb
     codice_pod: cliente?.codice_pod || '',
     
+    // Campi Telepass
+    obu: cliente?.obu || '',
+    
     // Modalità Pagamento
     modalita_pagamento: cliente?.modalita_pagamento || '',
     iban: cliente?.iban || '',
