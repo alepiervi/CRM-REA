@@ -7249,138 +7249,299 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   const renderPivot = () => {
     return (
       <div className="p-6 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">📊 Pivot Analytics Personalizzate</CardTitle>
-            <CardDescription>Analizza i dati clienti con filtri multipli</CardDescription>
+        {/* Header Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
+          <h2 className="text-3xl font-bold mb-2">📊 Pivot Analytics Personalizzate</h2>
+          <p className="text-blue-100">Analizza i dati dei clienti con filtri avanzati e visualizzazioni interattive</p>
+        </div>
+
+        {/* Filtri Section */}
+        <Card className="shadow-lg">
+          <CardHeader className="bg-gray-50">
+            <CardTitle className="flex items-center gap-2">
+              🔍 Filtri di Ricerca
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Filtri */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              {/* Range Date */}
               <div>
-                <Label>Range Date</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="date"
-                    value={pivotFilters.data_da}
-                    onChange={(e) => setPivotFilters({...pivotFilters, data_da: e.target.value})}
-                  />
-                  <Input
-                    type="date"
-                    value={pivotFilters.data_a}
-                    onChange={(e) => setPivotFilters({...pivotFilters, data_a: e.target.value})}
-                  />
+                <Label className="text-base font-semibold mb-3 block">📅 Periodo di Analisi</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-gray-600">Data Inizio</Label>
+                    <Input
+                      type="date"
+                      value={pivotFilters.data_da}
+                      onChange={(e) => setPivotFilters({...pivotFilters, data_da: e.target.value})}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Data Fine</Label>
+                    <Input
+                      type="date"
+                      value={pivotFilters.data_a}
+                      onChange={(e) => setPivotFilters({...pivotFilters, data_a: e.target.value})}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
               </div>
-              
+
+              {/* Sub Agenzia - Checkboxes */}
               <div>
-                <Label>Sub Agenzia (Multi-select)</Label>
-                <select
-                  multiple
-                  className="w-full border rounded p-2"
-                  value={pivotFilters.sub_agenzia_ids}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions, option => option.value);
-                    setPivotFilters({...pivotFilters, sub_agenzia_ids: selected});
-                  }}
-                >
+                <Label className="text-base font-semibold mb-3 block">🏢 Sub Agenzie</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-48 overflow-y-auto p-3 bg-gray-50 rounded-lg">
                   {subAgenzie.map(sa => (
-                    <option key={sa.id} value={sa.id}>{sa.nome}</option>
+                    <label key={sa.id} className="flex items-center space-x-2 cursor-pointer hover:bg-white p-2 rounded">
+                      <input
+                        type="checkbox"
+                        checked={pivotFilters.sub_agenzia_ids.includes(sa.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setPivotFilters({
+                              ...pivotFilters,
+                              sub_agenzia_ids: [...pivotFilters.sub_agenzia_ids, sa.id]
+                            });
+                          } else {
+                            setPivotFilters({
+                              ...pivotFilters,
+                              sub_agenzia_ids: pivotFilters.sub_agenzia_ids.filter(id => id !== sa.id)
+                            });
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">{sa.nome}</span>
+                    </label>
                   ))}
-                </select>
-              </div>
-              
-              <div>
-                <Label>Status (Multi-select)</Label>
-                <select
-                  multiple
-                  className="w-full border rounded p-2"
-                  value={pivotFilters.status_values}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions, option => option.value);
-                    setPivotFilters({...pivotFilters, status_values: selected});
-                  }}
-                >
-                  {STATUS_CLIENTI.map(s => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button onClick={fetchPivotAnalytics} disabled={pivotLoading}>
-                {pivotLoading ? "Caricamento..." : "Aggiorna Dati"}
-              </Button>
-              <Button onClick={exportPivotAnalytics} variant="outline">
-                📥 Export Excel
-              </Button>
-            </div>
-            
-            {/* Risultati */}
-            {pivotData && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Totale Clienti</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">{pivotData.total_clienti}</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Periodo Precedente</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-3xl font-bold">{pivotData.previous_period_count}</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Trend</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className={`text-3xl font-bold ${pivotData.trend_percentage > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {pivotData.trend_percentage}%
-                      </p>
-                    </CardContent>
-                  </Card>
                 </div>
-                
-                {/* Breakdown Tables */}
-                {Object.entries(pivotData.breakdown).map(([category, data]) => (
-                  <Card key={category}>
-                    <CardHeader>
-                      <CardTitle className="capitalize">{category.replace('_', ' ')}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+              </div>
+
+              {/* Status - Checkboxes */}
+              <div>
+                <Label className="text-base font-semibold mb-3 block">📊 Status</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-48 overflow-y-auto p-3 bg-gray-50 rounded-lg">
+                  {STATUS_CLIENTI.map(s => (
+                    <label key={s.value} className="flex items-center space-x-2 cursor-pointer hover:bg-white p-2 rounded">
+                      <input
+                        type="checkbox"
+                        checked={pivotFilters.status_values.includes(s.value)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setPivotFilters({
+                              ...pivotFilters,
+                              status_values: [...pivotFilters.status_values, s.value]
+                            });
+                          } else {
+                            setPivotFilters({
+                              ...pivotFilters,
+                              status_values: pivotFilters.status_values.filter(v => v !== s.value)
+                            });
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">{s.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Convergenza */}
+              <div>
+                <Label className="text-base font-semibold mb-3 block">📱 Convergenza</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="convergenza"
+                      checked={pivotFilters.convergenza === null}
+                      onChange={() => setPivotFilters({...pivotFilters, convergenza: null})}
+                      className="border-gray-300"
+                    />
+                    <span className="text-sm">Tutti</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="convergenza"
+                      checked={pivotFilters.convergenza === true}
+                      onChange={() => setPivotFilters({...pivotFilters, convergenza: true})}
+                      className="border-gray-300"
+                    />
+                    <span className="text-sm">Sì</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="convergenza"
+                      checked={pivotFilters.convergenza === false}
+                      onChange={() => setPivotFilters({...pivotFilters, convergenza: false})}
+                      className="border-gray-300"
+                    />
+                    <span className="text-sm">No</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button 
+                  onClick={fetchPivotAnalytics} 
+                  disabled={pivotLoading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {pivotLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Caricamento...
+                    </>
+                  ) : (
+                    <>
+                      🔄 Aggiorna Dati
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  onClick={exportPivotAnalytics} 
+                  variant="outline"
+                  className="border-green-600 text-green-600 hover:bg-green-50"
+                >
+                  📥 Export Excel
+                </Button>
+                <Button
+                  onClick={() => {
+                    setPivotFilters({
+                      sub_agenzia_ids: [],
+                      status_values: [],
+                      tipologia_contratto_values: [],
+                      segmento_values: [],
+                      offerta_ids: [],
+                      created_by_ids: [],
+                      convergenza: null,
+                      data_da: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
+                      data_a: format(new Date(), 'yyyy-MM-dd')
+                    });
+                    setPivotData(null);
+                  }}
+                  variant="outline"
+                  className="border-red-600 text-red-600 hover:bg-red-50"
+                >
+                  🔄 Reset Filtri
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Loading State */}
+        {pivotLoading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        )}
+
+        {/* Risultati */}
+        {!pivotLoading && pivotData && (
+          <div className="space-y-6">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="shadow-lg hover:shadow-xl transition-shadow">
+                <CardHeader className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                  <CardTitle className="text-lg">📊 Totale Clienti</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <p className="text-4xl font-bold text-blue-600">{pivotData.total_clienti}</p>
+                  <p className="text-sm text-gray-500 mt-2">Nel periodo selezionato</p>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg hover:shadow-xl transition-shadow">
+                <CardHeader className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                  <CardTitle className="text-lg">📅 Periodo Precedente</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <p className="text-4xl font-bold text-purple-600">{pivotData.previous_period_count}</p>
+                  <p className="text-sm text-gray-500 mt-2">Stesso periodo prima</p>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg hover:shadow-xl transition-shadow">
+                <CardHeader className={`bg-gradient-to-br ${pivotData.trend_percentage >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'} text-white`}>
+                  <CardTitle className="text-lg">📈 Trend</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <p className={`text-4xl font-bold ${pivotData.trend_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {pivotData.trend_percentage > 0 ? '+' : ''}{pivotData.trend_percentage}%
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {pivotData.trend_percentage >= 0 ? '↗ In crescita' : '↘ In calo'}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Breakdown Tables */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Object.entries(pivotData.breakdown).map(([category, data]) => (
+                <Card key={category} className="shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <CardTitle className="capitalize text-lg">
+                      {category === 'sub_agenzia' && '🏢 '}{category === 'status' && '📊 '}
+                      {category === 'tipologia_contratto' && '📑 '}{category === 'segmento' && '🎯 '}
+                      {category === 'offerta' && '📦 '}{category === 'created_by' && '👤 '}
+                      {category === 'convergenza' && '📱 '}
+                      {category.replace('_', ' ')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead>
-                          <tr className="border-b">
-                            <th className="text-left p-2">Nome</th>
-                            <th className="text-right p-2">Conteggio</th>
-                            <th className="text-right p-2">Percentuale</th>
+                          <tr className="border-b-2 border-gray-200">
+                            <th className="text-left p-3 text-sm font-semibold text-gray-700">Nome</th>
+                            <th className="text-right p-3 text-sm font-semibold text-gray-700">Conteggio</th>
+                            <th className="text-right p-3 text-sm font-semibold text-gray-700">%</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {Object.entries(data.counts).map(([key, count]) => (
-                            <tr key={key} className="border-b">
-                              <td className="p-2">{key}</td>
-                              <td className="text-right p-2">{count}</td>
-                              <td className="text-right p-2">{data.percentages[key]}%</td>
+                          {Object.entries(data.counts).sort((a, b) => b[1] - a[1]).map(([key, count]) => (
+                            <tr key={key} className="border-b border-gray-100 hover:bg-blue-50 transition-colors">
+                              <td className="p-3 text-sm font-medium text-gray-800">{key}</td>
+                              <td className="text-right p-3 text-sm">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  {count}
+                                </span>
+                              </td>
+                              <td className="text-right p-3 text-sm font-semibold text-gray-700">
+                                {data.percentages[key]}%
+                              </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
-                    </CardContent>
-                  </Card>
-                ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!pivotLoading && !pivotData && (
+          <Card className="shadow-lg">
+            <CardContent className="py-12">
+              <div className="text-center text-gray-500">
+                <div className="text-6xl mb-4">📊</div>
+                <h3 className="text-xl font-semibold mb-2">Nessun dato disponibile</h3>
+                <p className="text-sm">Seleziona i filtri e clicca su "Aggiorna Dati" per visualizzare le statistiche</p>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   };
