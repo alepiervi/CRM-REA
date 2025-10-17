@@ -8327,61 +8327,64 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
           {renderDashboard()}
         </TabsContent>
 
-        {/* Agents Tab */}
-        <TabsContent value="agents" className="space-y-6">
-          {/* Header Section */}
-          <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-lg p-6 text-white">
-            <h2 className="text-3xl font-bold mb-2">👥 Analytics Agenti</h2>
-            <p className="text-green-100">Analisi dettagliate delle performance individuali degli agenti</p>
-          </div>
+        {/* Agents Tab - Only for Admin */}
+        {user.role === "admin" && (
+          <TabsContent value="agents" className="space-y-6">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-lg p-6 text-white">
+              <h2 className="text-3xl font-bold mb-2">👥 Analytics Agenti</h2>
+              <p className="text-green-100">Analisi dettagliate delle performance individuali degli agenti</p>
+            </div>
 
-          <Card className="shadow-lg">
-            <CardHeader className="bg-gray-50">
-              <CardTitle className="flex items-center gap-2">
-                🔍 Seleziona Agente per Analytics Dettagliate
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <Select value={selectedAgent} onValueChange={(value) => {
-                setSelectedAgent(value);
-                if (value) fetchAgentAnalytics(value);
-              }}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Seleziona agente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {agents.map((agent) => (
-                    <SelectItem key={agent.id} value={agent.id}>
-                      👤 {agent.username} ({agent.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-
-          {loading ? (
             <Card className="shadow-lg">
-              <CardContent className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                <p className="mt-4 text-slate-600">Caricamento analytics agente...</p>
+              <CardHeader className="bg-gray-50">
+                <CardTitle className="flex items-center gap-2">
+                  🔍 Seleziona Agente per Analytics Dettagliate
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <Select value={selectedAgent} onValueChange={(value) => {
+                  setSelectedAgent(value);
+                  if (value) fetchAgentAnalytics(value);
+                }}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleziona agente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agents.map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        👤 {agent.username} ({agent.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </CardContent>
             </Card>
-          ) : analyticsData && selectedAgent ? (
-            renderAgentAnalytics()
-          ) : (
-            <Card className="shadow-lg border-l-4 border-green-500">
-              <CardContent className="p-12 text-center">
-                <Users className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                <p className="text-xl font-semibold text-slate-700 mb-2">Seleziona un agente</p>
-                <p className="text-slate-500">Scegli un agente dal menu a tendina per visualizzare le analytics dettagliate</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
 
-        {/* Referenti Tab */}
-        <TabsContent value="referenti" className="space-y-6">
+            {loading ? (
+              <Card className="shadow-lg">
+                <CardContent className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                  <p className="mt-4 text-slate-600">Caricamento analytics agente...</p>
+                </CardContent>
+              </Card>
+            ) : analyticsData && selectedAgent ? (
+              renderAgentAnalytics()
+            ) : (
+              <Card className="shadow-lg border-l-4 border-green-500">
+                <CardContent className="p-12 text-center">
+                  <Users className="w-16 h-16 text-green-400 mx-auto mb-4" />
+                  <p className="text-xl font-semibold text-slate-700 mb-2">Seleziona un agente</p>
+                  <p className="text-slate-500">Scegli un agente dal menu a tendina per visualizzare le analytics dettagliate</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        )}
+
+        {/* Referenti Tab - Only for Admin */}
+        {user.role === "admin" && (
+          <TabsContent value="referenti" className="space-y-6">
           {user.role === "admin" ? (
             <>
               {/* Header Section */}
