@@ -7023,19 +7023,19 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
     fetchFilterOptions();
   }, []);
 
-  // NEW: Load pivot data when filters change
+  // NEW: Load pivot data automatically when tab opens (once)
   useEffect(() => {
-    if (activeTab === "pivot") {
+    if (activeTab === "pivot" && !pivotData) {
       fetchPivotAnalytics();
     }
-  }, [activeTab, pivotFilters]);
+  }, [activeTab]);
 
   // NEW: Load sub agenzie data when tab changes
   useEffect(() => {
-    if (activeTab === "sub-agenzie") {
+    if (activeTab === "sub-agenzie" && subAgenzieData.length === 0) {
       fetchSubAgenzieAnalytics();
     }
-  }, [activeTab, pivotFilters.data_da, pivotFilters.data_a]);
+  }, [activeTab]);
 
       if (selectedUnit && selectedUnit !== "all") {
         params.append('unit_id', selectedUnit);
