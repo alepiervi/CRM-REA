@@ -6858,6 +6858,159 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
     }
   };
 
+
+  // NEW: Fetch Pivot Analytics
+  const fetchPivotAnalytics = async () => {
+    try {
+      setPivotLoading(true);
+      const params = new URLSearchParams();
+      
+      if (pivotFilters.sub_agenzia_ids.length > 0) {
+        params.append('sub_agenzia_ids', pivotFilters.sub_agenzia_ids.join(','));
+      }
+      if (pivotFilters.status_values.length > 0) {
+        params.append('status_values', pivotFilters.status_values.join(','));
+      }
+      if (pivotFilters.tipologia_contratto_values.length > 0) {
+        params.append('tipologia_contratto_values', pivotFilters.tipologia_contratto_values.join(','));
+      }
+      if (pivotFilters.segmento_values.length > 0) {
+        params.append('segmento_values', pivotFilters.segmento_values.join(','));
+      }
+      if (pivotFilters.offerta_ids.length > 0) {
+        params.append('offerta_ids', pivotFilters.offerta_ids.join(','));
+      }
+      if (pivotFilters.created_by_ids.length > 0) {
+        params.append('created_by_ids', pivotFilters.created_by_ids.join(','));
+      }
+      if (pivotFilters.convergenza !== null) {
+        params.append('convergenza', pivotFilters.convergenza);
+      }
+      if (pivotFilters.data_da) {
+        params.append('data_da', pivotFilters.data_da);
+      }
+      if (pivotFilters.data_a) {
+        params.append('data_a', pivotFilters.data_a);
+      }
+      
+      const response = await axios.get(`${API}/analytics/pivot?${params}`);
+      setPivotData(response.data);
+      setPivotLoading(false);
+    } catch (error) {
+      console.error("Error fetching pivot analytics:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento analytics pivot",
+        variant: "destructive"
+      });
+      setPivotLoading(false);
+    }
+  };
+
+  // NEW: Fetch Sub Agenzie Analytics
+  const fetchSubAgenzieAnalytics = async () => {
+    try {
+      setSubAgenzieLoading(true);
+      const params = new URLSearchParams();
+      
+      if (pivotFilters.data_da) {
+        params.append('data_da', pivotFilters.data_da);
+      }
+      if (pivotFilters.data_a) {
+        params.append('data_a', pivotFilters.data_a);
+      }
+      
+      const response = await axios.get(`${API}/analytics/sub-agenzie?${params}`);
+      setSubAgenzieData(response.data);
+      setSubAgenzieLoading(false);
+    } catch (error) {
+      console.error("Error fetching sub agenzie analytics:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento analytics sub agenzie",
+        variant: "destructive"
+      });
+      setSubAgenzieLoading(false);
+    }
+  };
+
+  // NEW: Fetch Filter Options
+  const fetchFilterOptions = async () => {
+    try {
+      const [offerteRes, usersRes] = await Promise.all([
+        axios.get(`${API}/offerte`),
+        axios.get(`${API}/users`)
+      ]);
+      
+      setFilterOptions({
+        offerte: offerteRes.data,
+        users: usersRes.data
+      });
+    } catch (error) {
+      console.error("Error fetching filter options:", error);
+    }
+  };
+
+  // NEW: Export Pivot to Excel
+  const exportPivotAnalytics = async () => {
+    try {
+      const params = new URLSearchParams();
+      
+      if (pivotFilters.sub_agenzia_ids.length > 0) {
+        params.append('sub_agenzia_ids', pivotFilters.sub_agenzia_ids.join(','));
+      }
+      if (pivotFilters.status_values.length > 0) {
+        params.append('status_values', pivotFilters.status_values.join(','));
+      }
+      if (pivotFilters.tipologia_contratto_values.length > 0) {
+        params.append('tipologia_contratto_values', pivotFilters.tipologia_contratto_values.join(','));
+      }
+      if (pivotFilters.segmento_values.length > 0) {
+        params.append('segmento_values', pivotFilters.segmento_values.join(','));
+      }
+      if (pivotFilters.offerta_ids.length > 0) {
+        params.append('offerta_ids', pivotFilters.offerta_ids.join(','));
+      }
+      if (pivotFilters.created_by_ids.length > 0) {
+        params.append('created_by_ids', pivotFilters.created_by_ids.join(','));
+      }
+      if (pivotFilters.convergenza !== null) {
+        params.append('convergenza', pivotFilters.convergenza);
+      }
+      if (pivotFilters.data_da) {
+        params.append('data_da', pivotFilters.data_da);
+      }
+      if (pivotFilters.data_a) {
+        params.append('data_a', pivotFilters.data_a);
+      }
+      
+      const response = await axios.get(`${API}/analytics/pivot/export?${params}`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `pivot_analytics_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast({
+        title: "Successo",
+        description: "Export completato con successo"
+      });
+    } catch (error) {
+      console.error("Error exporting pivot:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'export dei dati",
+        variant: "destructive"
+      });
+    }
+  };
+
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
