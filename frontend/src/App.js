@@ -13528,6 +13528,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       setAllClienti(allClienti.map(cliente => 
         cliente.id === clienteId ? response.data : cliente
       ));
+      
+      // Refresh filter options to include new data
+      fetchFilterOptions();
+      
       toast({
         title: "Successo",
         description: "Cliente aggiornato con successo",
