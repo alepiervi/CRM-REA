@@ -7539,25 +7539,52 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   const renderSubAgenzie = () => {
     return (
       <div className="p-6 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">🏢 Analytics per Sub Agenzia</CardTitle>
-            <CardDescription>Performance dettagliate di ogni sub agenzia</CardDescription>
+        {/* Header Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
+          <h2 className="text-3xl font-bold mb-2">🏢 Analytics per Sub Agenzia</h2>
+          <p className="text-blue-100">Analisi comparativa delle performance di ogni sub agenzia</p>
+        </div>
+
+        {/* Filtri Section */}
+        <Card className="shadow-lg">
+          <CardHeader className="bg-gray-50">
+            <CardTitle className="flex items-center gap-2">
+              📅 Periodo di Analisi
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 mb-4">
-              <Input
-                type="date"
-                value={pivotFilters.data_da}
-                onChange={(e) => setPivotFilters({...pivotFilters, data_da: e.target.value})}
-              />
-              <Input
-                type="date"
-                value={pivotFilters.data_a}
-                onChange={(e) => setPivotFilters({...pivotFilters, data_a: e.target.value})}
-              />
-              <Button onClick={fetchSubAgenzieAnalytics} disabled={subAgenzieLoading}>
-                Aggiorna
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div>
+                <Label className="text-sm text-gray-600 mb-2 block">Data Inizio</Label>
+                <Input
+                  type="date"
+                  value={pivotFilters.data_da}
+                  onChange={(e) => setPivotFilters({...pivotFilters, data_da: e.target.value})}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <Label className="text-sm text-gray-600 mb-2 block">Data Fine</Label>
+                <Input
+                  type="date"
+                  value={pivotFilters.data_a}
+                  onChange={(e) => setPivotFilters({...pivotFilters, data_a: e.target.value})}
+                  className="w-full"
+                />
+              </div>
+              <Button 
+                onClick={fetchSubAgenzieAnalytics} 
+                disabled={subAgenzieLoading}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                {subAgenzieLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Caricamento...
+                  </>
+                ) : (
+                  <>🔄 Aggiorna Dati</>
+                )}
               </Button>
             </div>
           </CardContent>
