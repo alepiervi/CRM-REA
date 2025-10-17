@@ -8446,7 +8446,8 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
+          </TabsContent>
+        )}
 
         
         {/* Pivot Analytics Tab */}
