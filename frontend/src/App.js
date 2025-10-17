@@ -16803,7 +16803,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       tipo_documento: '', numero_documento: '', data_rilascio: '', 
       luogo_rilascio: '', scadenza_documento: '',
       tecnologia: '', codice_migrazione: '', gestore: '', convergenza: false,
-      convergenza_items: [], codice_pod: '',
+      convergenza_items: [], codice_pod: '', obu: '',
       modalita_pagamento: '', iban: '', intestatario_diverso: '', 
       numero_carta: '', mese_carta: '', anno_carta: '',
       note: '', note_backoffice: ''
