@@ -6898,11 +6898,6 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
       setPivotLoading(false);
     } catch (error) {
       console.error("Error fetching pivot analytics:", error);
-      toast({
-        title: "Errore",
-        description: "Errore nel caricamento analytics pivot",
-        variant: "destructive"
-      });
       setPivotLoading(false);
     }
   };
@@ -6925,11 +6920,6 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
       setSubAgenzieLoading(false);
     } catch (error) {
       console.error("Error fetching sub agenzie analytics:", error);
-      toast({
-        title: "Errore",
-        description: "Errore nel caricamento analytics sub agenzie",
-        variant: "destructive"
-      });
       setSubAgenzieLoading(false);
     }
   };
