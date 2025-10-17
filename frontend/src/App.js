@@ -6823,6 +6823,26 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
     }
   }, [selectedUnit, activeTab, dateRange]);
 
+  // NEW: Load initial data for filters
+  useEffect(() => {
+    fetchSubAgenzie();
+    fetchFilterOptions();
+  }, []);
+
+  // NEW: Load pivot data automatically when tab opens (once)
+  useEffect(() => {
+    if (activeTab === "pivot" && !pivotData) {
+      fetchPivotAnalytics();
+    }
+  }, [activeTab]);
+
+  // NEW: Load sub agenzie data when tab changes
+  useEffect(() => {
+    if (activeTab === "sub-agenzie" && subAgenzieData.length === 0) {
+      fetchSubAgenzieAnalytics();
+    }
+  }, [activeTab]);
+
   const fetchUsers = async () => {
     try {
       const params = new URLSearchParams();
