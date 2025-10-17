@@ -12,7 +12,7 @@ import uuid
 import subprocess
 
 class ArubaSimulationTester:
-    def __init__(self, base_url="https://offerte-cascade.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://mobil-analytics-1.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None

@@ -1,61 +1,73 @@
 <analysis>
-The previous AI engineer diligently built out the Nureal CRM, focusing heavily on client and project management. Initial work involved integrating the  role with extensive backend authorization and frontend UI updates, including cascading selectors and user creation/editing forms. A mandatory password change feature was added. Subsequently, a major client creation form overhaul introduced numerous conditional fields and nested forms, which necessitated resolving backend Pydantic model mismatches and database cleanup. The engineer then debugged and fixed conditional rendering for Codice Pod and Telefonia Fastweb fields in the client creation form, identifying that the logic was incorrectly checking  instead of . The Excel export functionality was also updated to include all new client fields. More recently, the focus shifted to refining the client *edit* modal (), addressing numerous field mismatches, label inconsistencies, conditional logic failures, offer display issues, and payment data visibility, culminating in a series of deep debugging sessions with the . The current challenge is a  error from the backend during client creation, indicating a Pydantic validation failure despite previous attempts to format dates and ensure all required fields are sent. The  was also identified as not being saved correctly due to  being  before submission, which was then traced to  not being called, finally to an issue where the  for creation was not fully including . The very last issue is a 422 error from backend, pointing to a Pydantic validation issue.
+The AI engineer's work focused on expanding and refining the Nureal CRM. Initial tasks involved debugging client creation (422 errors due to empty strings for enum fields) and correctly handling Offerte display/filtering in , including adding Offerta SIM to Convergenza items. Subsequent efforts addressed a  data misalignment in the .
+
+Key feature additions included: implementing conditional Dati Mobile fields when Mobile is in  (requiring backend model updates and complex frontend conditional rendering), adding Telepass functionality with an OBU field, and overhauling the client list preview and advanced filters for dynamic updates and comprehensive status display. A major  rewrite was performed to show all client details, with several iterations to re-add conditional logic and display offer names.
+
+The Excel export functionality was completely rebuilt to handle multiple SIMs (convergenza and mobile) per client as separate rows, including all fields and offer names. Most recently, a comprehensive Analytics section was introduced with Pivot Analytics and Sub Agenzie tabs. The engineer is currently debugging an  error, specifically related to  being called within fetch functions in the  component. The process has been highly iterative, with frequent user feedback driving continuous refinement and bug fixes.
 </analysis>
 
 <product_requirements>
-The Nureal CRM manages clients and Commesse (projects) with dynamic filters respecting user authorization. A multi-step cascading selection (Sub Agenzia -> Commessa -> Servizio -> Tipologia Contratto -> Segmento -> Offerta) is crucial for new client creation. Role-based access control, including , dictates data visibility and permissions. User creation/modification forms support dynamic multi-selection. The UI is responsive with a fixed-height desktop sidebar. A mandatory password change on first login is implemented. A detailed client creation form features extensive fields with conditional visibility (e.g., Ragione Sociale for Business, Tecnologia for Telefonia Fastweb, Codice Pod for Energia Fastweb), mandatory/optional statuses, and nested Convergenza items. All client data must be exportable to Excel. The client modification form should mirror the creation form's conditional logic, display all fields (even if empty), make specific organizational fields read-only, show the activated offer, include Note Back Office, display full credit card numbers, and use updated client statuses.
+The Nureal CRM requires robust client and project management, featuring a multi-step cascading selection for client creation, conditional field visibility, and role-based access. User management includes mandatory password changes. The client creation form has extensive fields like Ragione Sociale for Business, Codice Pod for Energia Fastweb, and nested Convergenza items.
+
+All client data must be exportable to Excel, with each associated SIM (convergenza or mobile) generating a separate row, including all client fields (even empty ones) and the SIM's offer name. The client modification form mirrors creation logic, displays all fields, makes organizational fields read-only, shows activated offers, includes Note Back Office, displays full credit card numbers, and uses updated client statuses. Offerte must be user-creatable, dynamically linked to the full cascading filiera, and visible/editable in client forms.
+
+New requirements added during development include:
+- Displaying all Convergenza SIM data in .
+- Adding Dati Mobile fields (Telefono da portare, ICCID, Operatore, Titolare se diverso) when Mobile is in , mutually exclusive with Telefonia Fastweb.
+- Adding a Telepass section with an OBU field, mutually exclusive with other conditional sections.
+- Redefining client list columns in the Clienti preview.
+- Ensuring all advanced filters (Status, Commessa, Servizi, Tipologie Contratto) are dynamic and update automatically.
+- Implementing an Analytics section with Pivot tables (multi-select, date range filter, export to Excel) and a Sub Agenzie comparative analysis, with improved UI.
 </product_requirements>
 
 <key_technical_concepts>
-- **Full Stack**: React.js (frontend), FastAPI (Python, backend).
-- **Database**: MongoDB (asynchronous access via Motor), UUIDs for IDs.
-- **Architecture**: Monolithic, core logic in  and .
-- **Data Modeling**: Pydantic models (API validation, Enums, Optional fields).
-- **Authentication**: JWT-based session management, mandatory password change.
-- **UI Components**: React Select, Tailwind CSS.
+- **Full Stack**: React.js (frontend) for UI, FastAPI (Python) for backend API.
+- **Database**: MongoDB with Motor, utilizing UUIDs for primary keys and relationships.
+- **Architecture**: Monolithic, with core logic in  and .
+- **Data Modeling**: Pydantic for API request/response validation, Pydantic Enums, Optional fields.
+- **API Communication**: Axios for frontend API calls to FastAPI.
+- **UI Components**: React Select, custom UI components (Card, Dialog, Tabs), Tailwind CSS for styling.
+- **Conditional Rendering**: Extensive use of conditional logic for field and section visibility.
+- **Error Handling**: Explicit handling for  related to enum values and nulls.
 </key_technical_concepts>
 
 <code_architecture>
-The application is a monolith consisting of a React frontend and a FastAPI backend.
-
 
 
 -   ****
-    -   **Importance**: Orchestrates the entire React UI, manages application state, handles API interactions, and renders dynamic, role-based interfaces, including complex forms and cascading selectors.
+    -   **Importance**: Centralizes the React application, managing UI, state, API interactions, and rendering forms with complex conditional and cascading logic. Contains , , , , and  components.
     -   **Summary of Changes**:
-        1.  **Area Manager & Client Form**: Integrated Area Manager, refactored client creation form for new fields and conditional logic, including , , .
-        2.  **Conditional Field Logic Fixes**: Corrected  and  to check  instead of , added debug logging. Expanded  options for Telefonia Fastweb.
-        3.  **Edit Client Modal Overhaul ()**: Made , , , ,  non-modifiable. Added Note Back Office, dynamic offer display, and conditional fields based on client data. Implemented comprehensive fixes for data mapping ( for ,  for , , ), corrected conditional logic (, ), added loading states, and restructured function definitions to avoid  errors. Addressed various label inconsistencies (e.g., Nato/a, Telefono 2). Ensured payment details and document data are correctly displayed and submitted.
-        4.  **Create Client Modal ()**: Fixed  to include all form fields (expanded from 11 to 40+). Corrected  mapping and date formatting for submission.
+        1.  ****: Synchronized  state with  before submit, added  state,  functions,  helper, and UI for Dati Mobile. Implemented  helper and UI for Telepass field. Ensured mutual exclusivity of Telefonia Fastweb, Energia Fastweb, Dati Mobile, and Telepass sections. Fixed enum fields sending  instead of empty strings.
+        2.  ****: Corrected  display logic. Added  and  helpers,  to , and UI for Dati Mobile and Telepass sections. Ensured mutual exclusivity of conditional sections. Fixed enum fields sending  instead of empty strings on update. Added debug logs for .
+        3.  ****: Completely restructured to display all client fields (even empty), organized into 9 cards with dynamic sections for multiple SIMs and notes. Re-added conditional logic and fetched offer names by ID. Added  helper and Telepass section.
+        4.  ****: Modified client table columns to match new preview requirements. Updated filter logic to use a frontend  constant and dynamically refresh other filters () after client CRUD operations.
+        5.  ****: Added states (, , ), , ,  functions. Integrated Pivot Analytics and Sub Agenzie as new tabs with improved UI (checkboxes for multi-select). Debugged and removed duplicated JSX and  issues related to  within fetch functions.
+        6.  **Global**: Added  constant, and imported , ,  icons.
 
 -   ****
-    -   **Importance**: Defines all FastAPI endpoints, handles database models, implements business logic, and enforces authorization rules.
+    -   **Importance**: Defines all FastAPI endpoints, handles data models, implements business logic, and interacts with MongoDB.
     -   **Summary of Changes**:
-        1.  **Client Model Expansion**: Added new client form fields and Enums.
-        2.  **User Role & Authorization**: Updated user roles, API endpoints, and filtering logic for .
-        3.  **Client Status Update**: Replaced  enum with 14 new statuses (e.g., , , ), changed default status to .
-        4.  **Excel Export**: Updated  to include all 37 new client form fields for comprehensive data export.
-        5.  **Pydantic & MongoDB Fixes**: Resolved  due to old  values by cleaning the database. Converted date fields from  to  in Pydantic models and handled date serialization for MongoDB to prevent . Ensured  is always sent.
+        1.  **Models (, , )**: Added ,  to client models. Added  and .
+        2.  ** Model**: Added .
+        3.  ** Model**: Created new Pydantic model () with , , ,  fields.
+        4.  ** Enum**: Added  to resolve 422 validation errors.
+        5.  **Offer Endpoints**:  and  (with improved filtering by filiera).
+        6.  **Excel Export ()**: Completely re-written  and  functions to expand clients with multiple SIMs into multiple rows, include all client fields (even if empty), and display SIM offer names.
+        7.  **Analytics Endpoints**: Added new endpoints  and  for fetching data for pivot tables and sub-agency specific analytics.
 </code_architecture>
 
 <pending_tasks>
--   Implement comprehensive frontend testing for the entire new client form structure and its complex conditional logic across all relevant user roles.
--   Address the  error from the backend during client creation.
+- Fix the  error occurring in  by correctly managing  or replacing it with  for fetch functions.
+- Ensure dynamic data loading for Pivot Analytics and Sub Agenzie tabs upon selection.
+- Refine the graphical presentation of the Analytics section.
 </pending_tasks>
 
 <current_work>
-The AI engineer is currently debugging a critical issue where creating a new client from the frontend results in a  error from the backend. This indicates a Pydantic validation failure.
+The AI engineer is currently addressing an  error in the  component. This error, , appears in the console, specifically pointing to calls within  (App.js:7021:1) and related fetch functions (, ).
 
-Before this, significant progress was made:
-1.  **Frontend Cascading Logic**: The cascading selection for offers was thoroughly debugged, confirming that  is now correctly populated in  and correctly passed to the  function in .
-2.  ** Submission**: The  function in  was expanded to send over 40 fields (including , , , and all conditional fields) to the backend.
-3.  **Backend Date Handling**: Date fields were converted from  objects to ISO strings in the backend Pydantic models to prevent BSON encoding errors with MongoDB.
-4.  **Required Fields**: The  field, previously causing validation errors, is now confirmed to be sent.
-
-Despite these fixes, the 422 error persists, implying another Pydantic validation failure on the backend that needs to be identified and resolved.
+The problem has been identified as  (or similar hook logic) being invoked inside these asynchronous data fetching functions, which are not direct function components. The immediate task is to remove or refactor these  calls to comply with React's Rules of Hooks. This likely involves replacing them with  for debugging purposes or passing the  function as a parameter if it needs to be called from these helpers.
 </current_work>
 
 <optional_next_step>
-Check the backend logs for the specific Pydantic validation error causing the 422 status.
+Remove the  calls from the , , and  functions in .
 </optional_next_step>
-

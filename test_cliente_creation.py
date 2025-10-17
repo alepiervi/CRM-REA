@@ -2,7 +2,7 @@
 import requests
 import json
 
-BACKEND_URL = "https://offerte-cascade.preview.emergentagent.com"
+BACKEND_URL = "https://mobil-analytics-1.preview.emergentagent.com"
 
 # Login as admin
 login_response = requests.post(
