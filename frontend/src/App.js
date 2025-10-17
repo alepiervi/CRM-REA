@@ -13237,6 +13237,24 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   );
 };
 
+// Costanti globali per filtri e dropdown
+const STATUS_CLIENTI = [
+  { value: 'inserito', label: 'Inserito' },
+  { value: 'ko', label: 'KO' },
+  { value: 'infoline', label: 'Infoline' },
+  { value: 'inviata_consumer', label: 'Inviata Consumer' },
+  { value: 'problematiche_inserimento', label: 'Problematiche Inserimento' },
+  { value: 'attesa_documenti_clienti', label: 'Attesa Documenti Clienti' },
+  { value: 'non_acquisibile_richiesta_escalation', label: 'Non Acquisibile - Richiesta Escalation' },
+  { value: 'in_gestione_struttura_consulente', label: 'In Gestione Struttura Consulente' },
+  { value: 'non_risponde', label: 'Non Risponde' },
+  { value: 'passata_al_bo', label: 'Passata al BO' },
+  { value: 'da_inserire', label: 'Da Inserire' },
+  { value: 'inserito_sotto_altro_canale', label: 'Inserito Sotto Altro Canale' },
+  { value: 'proveniente_da_altro_canale', label: 'Proveniente da Altro Canale' },
+  { value: 'scontrinare', label: 'Scontrinare' }
+];
+
 // Clienti Management Component
 const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: commesseFromParent, subAgenzie: subAgenzieFromParent, servizi: serviziFromParent }) => {
   const [clienti, setClienti] = useState([]);
