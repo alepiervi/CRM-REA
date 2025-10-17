@@ -1999,10 +1999,18 @@ const Dashboard = () => {
             return <div>Non autorizzato</div>;
           }
         case "analytics":
-          if (user.role === "responsabile_commessa") {
-            return <ResponsabileCommessaAnalytics selectedUnit={selectedUnit} selectedTipologiaContratto={selectedTipologiaContratto} units={units} commesse={commesse} />;
+          // Roles with access to full Analytics (Pivot + Sub Agenzie)
+          if (
+            user.role === "admin" || 
+            user.role === "responsabile_commessa" || 
+            user.role === "backoffice_commessa" || 
+            user.role === "responsabile_sub_agenzia" || 
+            user.role === "backoffice_sub_agenzia" || 
+            user.role === "area_manager"
+          ) {
+            return <AnalyticsManagement selectedUnit={selectedUnit} units={units} />;
           }
-          return <AnalyticsManagement selectedUnit={selectedUnit} units={units} />;
+          return <div className="p-8 text-center text-slate-600">Non autorizzato ad accedere alla sezione Analytics</div>;
         default:
           return <DashboardStats selectedUnit={selectedUnit} />;
       }
