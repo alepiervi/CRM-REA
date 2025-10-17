@@ -10932,6 +10932,10 @@ async def get_responsabile_commessa_dashboard(
     # Query clienti delle commesse autorizzate
     clienti_query = {"commessa_id": {"$in": accessible_commesse}, "is_active": True}
     
+    # Filter by authorized services
+    if current_user.servizi_autorizzati:
+        clienti_query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+    
     # Filtro per tipologia contratto
     if tipologia_contratto and tipologia_contratto != "all":
         clienti_query["tipologia_contratto"] = tipologia_contratto
