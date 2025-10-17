@@ -16140,6 +16140,25 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     return nome.includes('mobile');
   };
 
+  // Funzione per verificare se la tipologia contratto contiene "Telepass"
+  const isTelepass = () => {
+    const tipologiaId = selectedData.tipologia_contratto;
+    if (!tipologiaId) return false;
+    
+    const tipologia = cascadeTipologie.find(t => t.id === tipologiaId);
+    if (!tipologia) return false;
+    
+    const nome = tipologia.nome?.toLowerCase() || '';
+    console.log("🚗 isTelepass DEBUG:", {
+      tipologiaId,
+      tipologia_nome: tipologia.nome,
+      nome_lower: nome,
+      result: nome.includes('telepass')
+    });
+    
+    return nome.includes('telepass');
+  };
+
   // Funzioni per gestire i campi convergenza multipli
   const addConvergenzaItem = () => {
     setConvergenzaItems([...convergenzaItems, {
