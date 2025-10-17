@@ -14061,15 +14061,14 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefono</TableHead>
-                  <TableHead>Commessa</TableHead>
-                  <TableHead>Sub Agenzia</TableHead>
+                  <TableHead>Numero Ordine</TableHead>
                   <TableHead>Stato</TableHead>
+                  <TableHead>Tipologia Contratto</TableHead>
+                  <TableHead>Segmento</TableHead>
+                  <TableHead>Sub Agenzia</TableHead>
                   <TableHead>Creato da</TableHead>
                   <TableHead>Data Creazione</TableHead>
+                  <TableHead>Nome Completo</TableHead>
                   <TableHead>Azioni</TableHead>
                 </TableRow>
               </TableHeader>
