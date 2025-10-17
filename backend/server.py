@@ -9602,7 +9602,7 @@ async def export_clienti_excel(
     created_by: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user)
 ):
-    """Export clienti to Excel with enhanced filters"""
+    """Export clienti to Excel with enhanced filters and expanded SIM rows"""
     try:
         # Build query based on user role and filters (reuse logic from main endpoint)
         query = {}
@@ -9639,56 +9639,112 @@ async def export_clienti_excel(
         # Get clienti with enriched data
         clienti = await db.clienti.find(query).sort("created_at", -1).to_list(length=None)
         
-        # Enrich data with related info for Excel export
-        enriched_clienti = []
+        # Enrich data with related info and expand SIM rows
+        expanded_rows = []
         for cliente in clienti:
-            enriched_cliente = dict(cliente)
+            base_cliente = dict(cliente)
             
             # Get sub agenzia name
             if cliente.get("sub_agenzia_id"):
                 sub_agenzia = await db.sub_agenzie.find_one({"id": cliente["sub_agenzia_id"]})
-                enriched_cliente["sub_agenzia_name"] = sub_agenzia.get("nome") if sub_agenzia else ""
+                base_cliente["sub_agenzia_name"] = sub_agenzia.get("nome") if sub_agenzia else ""
+            else:
+                base_cliente["sub_agenzia_name"] = ""
             
             # Get commessa name
             if cliente.get("commessa_id"):
                 commessa = await db.commesse.find_one({"id": cliente["commessa_id"]})
-                enriched_cliente["commessa_name"] = commessa.get("nome") if commessa else ""
+                base_cliente["commessa_name"] = commessa.get("nome") if commessa else ""
+            else:
+                base_cliente["commessa_name"] = ""
             
             # Get servizio name
             if cliente.get("servizio_id"):
                 servizio = await db.servizi.find_one({"id": cliente["servizio_id"]})
-                enriched_cliente["servizio_name"] = servizio.get("nome") if servizio else ""
+                base_cliente["servizio_name"] = servizio.get("nome") if servizio else ""
+            else:
+                base_cliente["servizio_name"] = ""
             
-            # Map tipologia contratto and segmento to display names
+            # Map tipologia contratto to display name
             tipologia = cliente.get("tipologia_contratto", "")
-            enriched_cliente["tipologia_contratto_display"] = {
-                "energia_fastweb": "Energia Fastweb",
-                "fotovoltaico": "Fotovoltaico", 
-                "efficientamento_energetico": "Efficientamento Energetico"
-            }.get(tipologia, tipologia)
+            base_cliente["tipologia_contratto_display"] = tipologia.replace("_", " ").title() if tipologia else ""
             
+            # Map segmento to display name
             segmento = cliente.get("segmento", "")
-            enriched_cliente["segmento_display"] = {
-                "privato": "Privato",
-                "business": "Business"
-            }.get(segmento, segmento)
+            base_cliente["segmento_display"] = segmento.capitalize() if segmento else ""
             
-            # Get offerta name
+            # Get offerta name (principale del cliente)
             if cliente.get("offerta_id"):
                 offerta = await db.offerte.find_one({"id": cliente["offerta_id"]})
-                enriched_cliente["offerta_name"] = offerta.get("nome") if offerta else ""
+                base_cliente["offerta_name"] = offerta.get("nome") if offerta else ""
             else:
-                enriched_cliente["offerta_name"] = ""
+                base_cliente["offerta_name"] = ""
             
             # Get creator name
             if cliente.get("created_by"):
                 creator = await db.users.find_one({"id": cliente["created_by"]})
-                enriched_cliente["created_by_name"] = creator.get("username") if creator else ""
+                base_cliente["created_by_name"] = creator.get("username") if creator else ""
+            else:
+                base_cliente["created_by_name"] = ""
             
-            enriched_clienti.append(enriched_cliente)
+            # Check if cliente has SIM items (convergenza or mobile)
+            convergenza_items = cliente.get("convergenza_items", [])
+            mobile_items = cliente.get("mobile_items", [])
+            
+            # If cliente has SIM items, create one row per SIM
+            if convergenza_items or mobile_items:
+                # Process convergenza items
+                for idx, sim in enumerate(convergenza_items):
+                    row = base_cliente.copy()
+                    row["sim_type"] = "Convergenza"
+                    row["sim_index"] = idx + 1
+                    row["sim_numero_cellulare"] = sim.get("numero_cellulare", "")
+                    row["sim_iccid"] = sim.get("iccid", "")
+                    row["sim_operatore"] = sim.get("operatore", "")
+                    row["sim_telefono_da_portare"] = ""
+                    row["sim_titolare_diverso"] = ""
+                    
+                    # Get offerta SIM name
+                    if sim.get("offerta_sim"):
+                        # offerta_sim could be an ID or a name, check if it's an ID (UUID format)
+                        if len(sim["offerta_sim"]) > 30:  # Likely an ID
+                            offerta_sim = await db.offerte.find_one({"id": sim["offerta_sim"]})
+                            row["sim_offerta_name"] = offerta_sim.get("nome") if offerta_sim else sim["offerta_sim"]
+                        else:
+                            row["sim_offerta_name"] = sim["offerta_sim"]
+                    else:
+                        row["sim_offerta_name"] = ""
+                    
+                    expanded_rows.append(row)
+                
+                # Process mobile items
+                for idx, mobile in enumerate(mobile_items):
+                    row = base_cliente.copy()
+                    row["sim_type"] = "Mobile"
+                    row["sim_index"] = idx + 1
+                    row["sim_numero_cellulare"] = ""
+                    row["sim_iccid"] = mobile.get("iccid", "")
+                    row["sim_operatore"] = mobile.get("operatore", "")
+                    row["sim_telefono_da_portare"] = mobile.get("telefono_da_portare", "")
+                    row["sim_titolare_diverso"] = mobile.get("titolare_diverso", "")
+                    row["sim_offerta_name"] = ""  # Mobile items don't have offerta
+                    
+                    expanded_rows.append(row)
+            else:
+                # No SIM items, add single row with empty SIM fields
+                row = base_cliente.copy()
+                row["sim_type"] = ""
+                row["sim_index"] = ""
+                row["sim_numero_cellulare"] = ""
+                row["sim_iccid"] = ""
+                row["sim_operatore"] = ""
+                row["sim_telefono_da_portare"] = ""
+                row["sim_titolare_diverso"] = ""
+                row["sim_offerta_name"] = ""
+                expanded_rows.append(row)
         
         # Create Excel file
-        excel_file_path = await create_clienti_excel_report(enriched_clienti, f"clienti_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+        excel_file_path = await create_clienti_excel_report(expanded_rows, f"clienti_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         
         # Return Excel file
         return FileResponse(
