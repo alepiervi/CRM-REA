@@ -7886,7 +7886,13 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
         </div>
 
         {/* 🖥️ DESKTOP VIEW */}
-        <div className="hidden md:block space-y-6">
+        <div className="hidden md:block p-6 space-y-6">
+          {/* Header Section */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
+            <h2 className="text-3xl font-bold mb-2">📊 Dashboard Overview</h2>
+            <p className="text-blue-100">Panoramica completa delle performance e analytics del sistema</p>
+          </div>
+
           {/* Desktop Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
