@@ -19715,7 +19715,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           )}
 
           {/* SEZIONE DATI MOBILE */}
-          {isEditMobile() && (
+          {isEditMobile() && !isEditTelepass() && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">📱 Dati Mobile</CardTitle>
