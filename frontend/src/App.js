@@ -11623,6 +11623,13 @@ const CommesseManagement = ({
       // Refresh commesse list
       await fetchCommesse();
       
+      // Refresh filter options for ClientiManagement
+      try {
+        await axios.get(`${API}/clienti/filter-options`);
+      } catch (error) {
+        console.error("Error refreshing filter options:", error);
+      }
+      
       toast({
         title: "Successo",
         description: "Commessa eliminata con successo",
