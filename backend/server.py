@@ -958,6 +958,9 @@ class Cliente(BaseModel):
     # Campi specifici Energia Fastweb  
     codice_pod: Optional[str] = None
     
+    # Campi specifici Telepass
+    obu: Optional[str] = None
+    
     # Modalità pagamento
     modalita_pagamento: Optional[ModalitaPagamento] = None
     iban: Optional[str] = None
@@ -1022,6 +1025,9 @@ class ClienteCreate(BaseModel):
     
     # Campi specifici Energia Fastweb  
     codice_pod: Optional[str] = None
+    
+    # Campi specifici Telepass
+    obu: Optional[str] = None
     
     # Modalità pagamento
     modalita_pagamento: Optional[ModalitaPagamento] = None
