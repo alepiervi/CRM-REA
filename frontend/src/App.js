@@ -11661,6 +11661,13 @@ const CommesseManagement = ({
         fetchServizi(selectedCommessa.id);
       }
       
+      // Refresh filter options for ClientiManagement
+      try {
+        await axios.get(`${API}/clienti/filter-options`);
+      } catch (error) {
+        console.error("Error refreshing filter options:", error);
+      }
+      
       toast({
         title: "Successo",
         description: "Servizio eliminato con successo",
