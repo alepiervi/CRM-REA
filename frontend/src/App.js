@@ -18198,7 +18198,474 @@ const AppWithAuth = () => (
 
 // View Cliente Modal Component
 const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) => {
+  const [offertaInfo, setOffertaInfo] = useState(null);
+  
   if (!cliente) return null;
+  
+  const getCommessaName = (id) => commesse.find(c => c.id === id)?.nome || 'Non specificato';
+  const getSubAgenziaName = (id) => subAgenzie.find(s => s.id === id)?.nome || 'Non specificato';
+  const getServizioName = (id) => servizi.find(s => s.id === id)?.nome || 'Non specificato';
+
+  // Fetch offerta info when component mounts
+  useEffect(() => {
+    const fetchOfferta = async () => {
+      if (cliente.offerta_id) {
+        try {
+          const response = await axios.get(`${API}/offerte/${cliente.offerta_id}`);
+          setOffertaInfo(response.data);
+        } catch (error) {
+          console.error("Error fetching offerta:", error);
+        }
+      }
+    };
+    fetchOfferta();
+  }, [cliente.offerta_id]);
+
+  // Helper per verificare se mostrare sezioni condizionali
+  const isTelefoniaFastweb = () => {
+    const tipologia = cliente.tipologia_contratto?.toLowerCase() || '';
+    return tipologia.includes('telefonia') && !tipologia.includes('mobile');
+  };
+
+  const isMobile = () => {
+    const tipologia = cliente.tipologia_contratto?.toLowerCase() || '';
+    return tipologia.includes('mobile');
+  };
+
+  const isEnergiaFastweb = () => {
+    const tipologia = cliente.tipologia_contratto?.toLowerCase() || '';
+    return tipologia.includes('energia') || cliente.codice_pod;
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <UserCheck className="w-5 h-5 text-blue-600" />
+            <span>Anagrafica Completa Cliente: {cliente.nome} {cliente.cognome}</span>
+          </DialogTitle>
+          <DialogDescription>
+            Visualizzazione completa di tutti i dati anagrafici del cliente
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          {/* Dati Anagrafici */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <User className="w-4 h-4 mr-2" />
+                Dati Anagrafici
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Numero Ordine</Label>
+                <p className="text-sm font-mono">{cliente.numero_ordine || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Account</Label>
+                <p className="text-sm">{cliente.account || 'Non specificato'}</p>
+              </div>
+              {cliente.segmento === 'business' && (
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Ragione Sociale</Label>
+                  <p className="text-sm">{cliente.ragione_sociale || 'Non specificato'}</p>
+                </div>
+              )}
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Cognome</Label>
+                <p className="text-sm">{cliente.cognome || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Nome</Label>
+                <p className="text-sm">{cliente.nome || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Nato/a</Label>
+                <p className="text-sm">{cliente.data_nascita || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">A (Luogo Nascita)</Label>
+                <p className="text-sm">{cliente.luogo_nascita || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Comune Residenza</Label>
+                <p className="text-sm">{cliente.comune_residenza || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Provincia Residenza</Label>
+                <p className="text-sm">{cliente.provincia_residenza || 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Indirizzo */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <MapPin className="w-4 h-4 mr-2" />
+                Indirizzo
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Via/Piazza</Label>
+                <p className="text-sm">{cliente.indirizzo || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">N. Civico</Label>
+                <p className="text-sm">{cliente.numero_civico || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Comune</Label>
+                <p className="text-sm">{cliente.comune || cliente.citta || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Provincia</Label>
+                <p className="text-sm">{cliente.provincia || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">CAP</Label>
+                <p className="text-sm">{cliente.cap || 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contatti */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Phone className="w-4 h-4 mr-2" />
+                Contatti
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Email</Label>
+                <p className="text-sm">{cliente.email || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Telefono</Label>
+                <p className="text-sm">{cliente.telefono || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Cellulare</Label>
+                <p className="text-sm">{cliente.cellulare || 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dati Fiscali */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                Dati Fiscali
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Codice Fiscale</Label>
+                <p className="text-sm font-mono">{cliente.codice_fiscale || 'Non specificato'}</p>
+              </div>
+              {cliente.segmento === 'business' && (
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Partita IVA</Label>
+                  <p className="text-sm font-mono">{cliente.partita_iva || 'Non specificato'}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Documento */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                Documento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Tipo Documento</Label>
+                <p className="text-sm uppercase">{cliente.tipo_documento || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Numero Documento</Label>
+                <p className="text-sm font-mono">{cliente.numero_documento || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Rilasciato Il</Label>
+                <p className="text-sm">{cliente.data_rilascio || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Da (Luogo Rilascio)</Label>
+                <p className="text-sm">{cliente.luogo_rilascio || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Scadenza</Label>
+                <p className="text-sm">{cliente.scadenza_documento || 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dati Organizzativi */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Building className="w-4 h-4 mr-2" />
+                Dati Organizzativi
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Sub Agenzia</Label>
+                <p className="text-sm">{getSubAgenziaName(cliente.sub_agenzia_id)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Commessa</Label>
+                <p className="text-sm">{getCommessaName(cliente.commessa_id)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Servizio</Label>
+                <p className="text-sm">{getServizioName(cliente.servizio_id)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Tipologia Contratto</Label>
+                <p className="text-sm capitalize">
+                  {cliente.tipologia_contratto?.replace(/_/g, ' ') || 'Non specificato'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Segmento</Label>
+                <p className="text-sm capitalize">
+                  {cliente.segmento || 'Non specificato'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Offerta</Label>
+                <p className="text-sm">{offertaInfo?.nome || cliente.offerta_id || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Status</Label>
+                <Badge variant={getClienteStatusVariant(cliente.status)}>
+                  {formatClienteStatus(cliente.status)}
+                </Badge>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Data Creazione</Label>
+                <p className="text-sm">{new Date(cliente.created_at).toLocaleDateString('it-IT')}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sezione Telefonia Fastweb - Condizionale */}
+        {isTelefoniaFastweb() && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Phone className="w-4 h-4 mr-2" />
+                Telefonia Fastweb
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Tecnologia</Label>
+                  <p className="text-sm uppercase">{cliente.tecnologia || 'Non specificato'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Codice Migrazione</Label>
+                  <p className="text-sm">{cliente.codice_migrazione || 'Non specificato'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Gestore</Label>
+                  <p className="text-sm">{cliente.gestore || 'Non specificato'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Convergenza</Label>
+                  <p className="text-sm">{cliente.convergenza ? 'Attiva' : 'Non attiva'}</p>
+                </div>
+              </div>
+
+              {/* SIM Convergenza */}
+              {cliente.convergenza && cliente.convergenza_items && cliente.convergenza_items.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-blue-800 mb-2">SIM Associate alla Convergenza</h4>
+                  <div className="space-y-2">
+                    {cliente.convergenza_items.map((sim, index) => (
+                      <div key={index} className="p-3 border rounded bg-gray-50">
+                        <h5 className="font-semibold mb-2">SIM #{index + 1}</h5>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <strong>Numero Cellulare:</strong> {sim.numero_cellulare || 'Non specificato'}
+                          </div>
+                          <div>
+                            <strong>ICCID:</strong> {sim.iccid || 'Non specificato'}
+                          </div>
+                          <div>
+                            <strong>Operatore:</strong> {sim.operatore || 'Non specificato'}
+                          </div>
+                          <div>
+                            <strong>Offerta SIM:</strong> {sim.offerta_sim || 'Non specificato'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Sezione Dati Mobile - Condizionale */}
+        {isMobile() && cliente.mobile_items && cliente.mobile_items.length > 0 && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Smartphone className="w-4 h-4 mr-2" />
+                Dati Mobile
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {cliente.mobile_items.map((mobile, index) => (
+                  <div key={index} className="p-3 border rounded bg-gray-50">
+                    <h5 className="font-semibold mb-2">SIM #{index + 1}</h5>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <strong>Telefono da Portare:</strong> {mobile.telefono_da_portare || 'Non specificato'}
+                      </div>
+                      <div>
+                        <strong>ICCID:</strong> {mobile.iccid || 'Non specificato'}
+                      </div>
+                      <div>
+                        <strong>Operatore:</strong> {mobile.operatore || 'Non specificato'}
+                      </div>
+                      <div>
+                        <strong>Titolare se Diverso:</strong> {mobile.titolare_diverso || 'Non specificato'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Sezione Energia Fastweb - Condizionale */}
+        {isEnergiaFastweb() && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Zap className="w-4 h-4 mr-2" />
+                Energia Fastweb
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Codice POD</Label>
+                <p className="text-sm font-mono">{cliente.codice_pod || 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Modalità Pagamento */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <CreditCard className="w-4 h-4 mr-2" />
+              Modalità Pagamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Modalità Pagamento</Label>
+                <p className="text-sm uppercase">{cliente.modalita_pagamento || 'Non specificato'}</p>
+              </div>
+              {cliente.modalita_pagamento === 'iban' && (
+                <>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">IBAN</Label>
+                    <p className="text-sm font-mono">{cliente.iban || 'Non specificato'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Intestatario se Diverso</Label>
+                    <p className="text-sm">{cliente.intestatario_diverso || 'Non specificato'}</p>
+                  </div>
+                </>
+              )}
+              {cliente.modalita_pagamento === 'carta_credito' && (
+                <>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Numero Carta</Label>
+                    <p className="text-sm font-mono">{cliente.numero_carta || 'Non specificato'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Intestatario Carta</Label>
+                    <p className="text-sm">{cliente.intestatario_carta || 'Non specificato'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">CVV</Label>
+                    <p className="text-sm">{cliente.cvv_carta || 'Non specificato'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Mese Scadenza</Label>
+                    <p className="text-sm">{cliente.mese_carta || 'Non specificato'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Anno Scadenza</Label>
+                    <p className="text-sm">{cliente.anno_carta || 'Non specificato'}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Note */}
+        {cliente.note && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                Note
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm whitespace-pre-wrap">{cliente.note}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Note Back Office */}
+        {cliente.note_back_office && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                Note Back Office
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm whitespace-pre-wrap">{cliente.note_back_office}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        <DialogFooter className="mt-6">
+          <Button onClick={onClose}>Chiudi</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
   
   const getCommessaName = (id) => commesse.find(c => c.id === id)?.nome || 'Non specificato';
   const getSubAgenziaName = (id) => subAgenzie.find(s => s.id === id)?.nome || 'Non specificato';
