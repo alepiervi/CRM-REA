@@ -19753,6 +19753,26 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </Card>
           )}
 
+          {/* SEZIONE TELEPASS */}
+          {isEditTelepass() && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">🚗 Telepass</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div>
+                  <Label htmlFor="obu">OBU</Label>
+                  <Input
+                    id="obu"
+                    value={formData.obu}
+                    onChange={(e) => handleChange('obu', e.target.value)}
+                    placeholder="Inserisci codice OBU"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* SEZIONE MODALITÀ PAGAMENTO - SOLO QUELLA SELEZIONATA */}
           <Card>
             <CardHeader>
