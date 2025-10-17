@@ -19696,7 +19696,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           )}
 
           {/* SEZIONE ENERGIA FASTWEB */}
-          {isEditEnergiaFastweb() && (
+          {isEditEnergiaFastweb() && !isEditTelepass() && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">⚡ Energia Fastweb</CardTitle>
