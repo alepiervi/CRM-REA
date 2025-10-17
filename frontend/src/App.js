@@ -7951,11 +7951,13 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
           {/* Desktop Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Line Chart - Leads Trend */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Andamento Lead (Ultimi 14 giorni)</CardTitle>
+            <Card className="shadow-lg">
+              <CardHeader className="bg-gray-50">
+                <CardTitle className="flex items-center gap-2">
+                  📈 Andamento Lead (Ultimi 14 giorni)
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -7976,11 +7978,13 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
             </Card>
 
             {/* Pie Chart - Esiti Breakdown */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Distribuzione Esiti</CardTitle>
+            <Card className="shadow-lg">
+              <CardHeader className="bg-gray-50">
+                <CardTitle className="flex items-center gap-2">
+                  📊 Distribuzione Esiti
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
