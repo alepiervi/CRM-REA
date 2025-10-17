@@ -6781,7 +6781,18 @@ const ResponsabileCommessaAnalytics = ({ selectedUnit, selectedTipologiaContratt
 };
 
 const AnalyticsManagement = ({ selectedUnit, units }) => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const { user } = useAuth();
+  
+  // Set default tab based on role
+  const getDefaultTab = () => {
+    if (user.role === "admin" || user.role === "referente") {
+      return "dashboard";
+    }
+    // For roles that manage only clients (no dashboard access)
+    return "pivot";
+  };
+  
+  const [activeTab, setActiveTab] = useState(getDefaultTab());
   const [analyticsData, setAnalyticsData] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [chartData, setChartData] = useState([]);
