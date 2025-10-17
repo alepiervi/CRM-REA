@@ -6823,6 +6823,17 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Set default tab based on role
+  const getDefaultTab = () => {
+    if (user.role === "admin" || user.role === "referente") {
+      return "dashboard";
+    }
+    // For roles that manage only clients (no dashboard access)
+    return "pivot";
+  };
+  
+  const [activeTab, setActiveTab] = useState(getDefaultTab());
 
   useEffect(() => {
     if (user.role === "admin" || user.role === "referente") {
