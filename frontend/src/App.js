@@ -11491,6 +11491,13 @@ const CommesseManagement = ({
       // Aggiorna la lista delle commesse
       await fetchCommesse();
       
+      // Refresh filter options for ClientiManagement
+      try {
+        await axios.get(`${API}/clienti/filter-options`);
+      } catch (error) {
+        console.error("Error refreshing filter options:", error);
+      }
+      
       // Se la commessa modificata è quella selezionata, aggiorna anche quella
       if (selectedCommessa && selectedCommessa.id === commessaId) {
         setSelectedCommessa(response.data);
