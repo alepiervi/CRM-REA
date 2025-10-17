@@ -9864,7 +9864,7 @@ async def get_pivot_analytics(
         # Role-based access control
         if current_user.role == UserRole.ADMIN:
             pass
-        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA, UserRole.AREA_MANAGER]:
             if current_user.commesse_autorizzate:
                 query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
             else:
