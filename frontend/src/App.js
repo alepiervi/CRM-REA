@@ -16730,6 +16730,9 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       // Energia Fastweb conditional fields
       codice_pod: formData.codice_pod || '',
       
+      // Telepass conditional fields
+      obu: formData.obu || '',
+      
       // Payment data
       modalita_pagamento: formData.modalita_pagamento || null, // FIX: Send null instead of empty string for enum fields
       iban: formData.iban || '',
