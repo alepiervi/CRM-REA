@@ -8376,19 +8376,21 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
               ) : analyticsData && selectedReferente ? (
                 renderReferenteAnalytics()
               ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <Users2 className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                    <p className="text-slate-600">Seleziona un referente per visualizzare le analytics</p>
+                <Card className="shadow-lg border-l-4 border-purple-500">
+                  <CardContent className="p-12 text-center">
+                    <Users2 className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                    <p className="text-xl font-semibold text-slate-700 mb-2">Seleziona un referente</p>
+                    <p className="text-slate-500">Scegli un referente dal menu a tendina per visualizzare le analytics del team</p>
                   </CardContent>
                 </Card>
               )}
             </>
           ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <ShieldCheck className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <p className="text-slate-600">Solo gli amministratori possono visualizzare le analytics dei referenti</p>
+            <Card className="shadow-lg border-l-4 border-red-500">
+              <CardContent className="p-12 text-center">
+                <ShieldCheck className="w-16 h-16 text-red-400 mx-auto mb-4" />
+                <p className="text-xl font-semibold text-slate-700 mb-2">Accesso Limitato</p>
+                <p className="text-slate-500">Solo gli amministratori possono visualizzare le analytics dei referenti</p>
               </CardContent>
             </Card>
           )}
