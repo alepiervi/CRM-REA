@@ -7638,31 +7638,45 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
         </div>
         
         {/* Tabella Comparativa */}
-        <Card>
-          <CardHeader>
-            <CardTitle>📊 Tabella Comparativa Sub Agenzie</CardTitle>
+        <Card className="shadow-lg">
+          <CardHeader className="bg-gray-50">
+            <CardTitle className="flex items-center gap-2">
+              📊 Tabella Comparativa Sub Agenzie
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Sub Agenzia</th>
-                  <th className="text-right p-2">Totale Clienti</th>
-                  <th className="text-right p-2">Top Creator</th>
-                </tr>
-              </thead>
-              <tbody>
-                {subAgenzieData.map(sa => (
-                  <tr key={sa.sub_agenzia_id} className="border-b">
-                    <td className="p-2">{sa.sub_agenzia_name}</td>
-                    <td className="text-right p-2">{sa.total_clienti}</td>
-                    <td className="text-right p-2">
-                      {sa.top_creators[0]?.name || 'N/A'} ({sa.top_creators[0]?.count || 0})
-                    </td>
+          <CardContent className="pt-6">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-gray-300 bg-gray-50">
+                    <th className="text-left p-3 font-bold text-gray-700">Sub Agenzia</th>
+                    <th className="text-right p-3 font-bold text-gray-700">Totale Clienti</th>
+                    <th className="text-right p-3 font-bold text-gray-700">Top Creator</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {subAgenzieData.map((sa, idx) => (
+                    <tr key={sa.sub_agenzia_id} className={`border-b hover:bg-blue-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                      <td className="p-3 font-medium">🏢 {sa.sub_agenzia_name}</td>
+                      <td className="text-right p-3">
+                        <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">
+                          {sa.total_clienti}
+                        </span>
+                      </td>
+                      <td className="text-right p-3">
+                        {sa.top_creators[0]?.name ? (
+                          <span className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
+                            👤 {sa.top_creators[0].name} ({sa.top_creators[0].count})
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">N/A</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </div>
