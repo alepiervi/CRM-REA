@@ -19026,7 +19026,11 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     // Mappa i campi frontend ai nomi backend
     const backendData = {
       ...formData,
-      telefono2: formData.cellulare  // Mappa cellulare -> telefono2
+      telefono2: formData.cellulare,  // Mappa cellulare -> telefono2
+      // FIX: Convert empty strings to null for enum fields
+      tipo_documento: formData.tipo_documento || null,
+      tecnologia: formData.tecnologia || null,
+      modalita_pagamento: formData.modalita_pagamento || null
     };
     
     // Rimuovi i campi frontend che non devono essere inviati al backend
