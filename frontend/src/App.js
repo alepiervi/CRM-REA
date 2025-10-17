@@ -18281,6 +18281,11 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
     return tipologia.includes('energia') || cliente.codice_pod;
   };
 
+  const isTelepass = () => {
+    const tipologia = cliente.tipologia_contratto?.toLowerCase() || '';
+    return tipologia.includes('telepass') || cliente.obu;
+  };
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
