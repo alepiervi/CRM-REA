@@ -10145,9 +10145,16 @@ async def get_sub_agenzie_analytics(
             query["sub_agenzia_id"] = sa_id
             
             # Apply role-based filters
-            if current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            if current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA, UserRole.AREA_MANAGER]:
                 if current_user.commesse_autorizzate:
                     query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+                # Filter by authorized services
+                if current_user.servizi_autorizzati:
+                    query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+            elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+                # Filter by authorized services
+                if current_user.servizi_autorizzati:
+                    query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
             
             clienti = await db.clienti.find(query).to_list(length=None)
             
