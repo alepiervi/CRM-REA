@@ -7015,6 +7015,28 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+
+
+  // NEW: Load initial data for filters
+  useEffect(() => {
+    fetchSubAgenzie();
+    fetchFilterOptions();
+  }, []);
+
+  // NEW: Load pivot data when filters change
+  useEffect(() => {
+    if (activeTab === "pivot") {
+      fetchPivotAnalytics();
+    }
+  }, [activeTab, pivotFilters]);
+
+  // NEW: Load sub agenzie data when tab changes
+  useEffect(() => {
+    if (activeTab === "sub-agenzie") {
+      fetchSubAgenzieAnalytics();
+    }
+  }, [activeTab, pivotFilters.data_da, pivotFilters.data_a]);
+
       if (selectedUnit && selectedUnit !== "all") {
         params.append('unit_id', selectedUnit);
       }
