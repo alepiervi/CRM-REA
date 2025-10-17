@@ -7243,6 +7243,245 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   // Charts color schemes
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316'];
 
+
+
+  // NEW: Render Pivot Analytics
+  const renderPivot = () => {
+    return (
+      <div className="p-6 space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">📊 Pivot Analytics Personalizzate</CardTitle>
+            <CardDescription>Analizza i dati clienti con filtri multipli</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Filtri */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label>Range Date</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="date"
+                    value={pivotFilters.data_da}
+                    onChange={(e) => setPivotFilters({...pivotFilters, data_da: e.target.value})}
+                  />
+                  <Input
+                    type="date"
+                    value={pivotFilters.data_a}
+                    onChange={(e) => setPivotFilters({...pivotFilters, data_a: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label>Sub Agenzia (Multi-select)</Label>
+                <select
+                  multiple
+                  className="w-full border rounded p-2"
+                  value={pivotFilters.sub_agenzia_ids}
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions, option => option.value);
+                    setPivotFilters({...pivotFilters, sub_agenzia_ids: selected});
+                  }}
+                >
+                  {subAgenzie.map(sa => (
+                    <option key={sa.id} value={sa.id}>{sa.nome}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <Label>Status (Multi-select)</Label>
+                <select
+                  multiple
+                  className="w-full border rounded p-2"
+                  value={pivotFilters.status_values}
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions, option => option.value);
+                    setPivotFilters({...pivotFilters, status_values: selected});
+                  }}
+                >
+                  {STATUS_CLIENTI.map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button onClick={fetchPivotAnalytics} disabled={pivotLoading}>
+                {pivotLoading ? "Caricamento..." : "Aggiorna Dati"}
+              </Button>
+              <Button onClick={exportPivotAnalytics} variant="outline">
+                📥 Export Excel
+              </Button>
+            </div>
+            
+            {/* Risultati */}
+            {pivotData && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Totale Clienti</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-3xl font-bold">{pivotData.total_clienti}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Periodo Precedente</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-3xl font-bold">{pivotData.previous_period_count}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Trend</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className={`text-3xl font-bold ${pivotData.trend_percentage > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {pivotData.trend_percentage}%
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Breakdown Tables */}
+                {Object.entries(pivotData.breakdown).map(([category, data]) => (
+                  <Card key={category}>
+                    <CardHeader>
+                      <CardTitle className="capitalize">{category.replace('_', ' ')}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-2">Nome</th>
+                            <th className="text-right p-2">Conteggio</th>
+                            <th className="text-right p-2">Percentuale</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(data.counts).map(([key, count]) => (
+                            <tr key={key} className="border-b">
+                              <td className="p-2">{key}</td>
+                              <td className="text-right p-2">{count}</td>
+                              <td className="text-right p-2">{data.percentages[key]}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  // NEW: Render Sub Agenzie Analytics
+  const renderSubAgenzie = () => {
+    return (
+      <div className="p-6 space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">🏢 Analytics per Sub Agenzia</CardTitle>
+            <CardDescription>Performance dettagliate di ogni sub agenzia</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 mb-4">
+              <Input
+                type="date"
+                value={pivotFilters.data_da}
+                onChange={(e) => setPivotFilters({...pivotFilters, data_da: e.target.value})}
+              />
+              <Input
+                type="date"
+                value={pivotFilters.data_a}
+                onChange={(e) => setPivotFilters({...pivotFilters, data_a: e.target.value})}
+              />
+              <Button onClick={fetchSubAgenzieAnalytics} disabled={subAgenzieLoading}>
+                Aggiorna
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Cards per ogni sub agenzia */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {subAgenzieData.map(sa => (
+            <Card key={sa.sub_agenzia_id}>
+              <CardHeader>
+                <CardTitle>{sa.sub_agenzia_name}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-500">Totale Clienti</p>
+                  <p className="text-2xl font-bold">{sa.total_clienti}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm font-semibold mb-2">Breakdown Status:</p>
+                  {Object.entries(sa.status_breakdown).map(([status, count]) => (
+                    <div key={status} className="flex justify-between text-sm">
+                      <span>{status}</span>
+                      <span className="font-semibold">{count}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <div>
+                  <p className="text-sm font-semibold mb-2">Top Creatori:</p>
+                  {sa.top_creators.map((creator, idx) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span>{creator.name}</span>
+                      <span className="font-semibold">{creator.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {/* Tabella Comparativa */}
+        <Card>
+          <CardHeader>
+            <CardTitle>📊 Tabella Comparativa Sub Agenzie</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Sub Agenzia</th>
+                  <th className="text-right p-2">Totale Clienti</th>
+                  <th className="text-right p-2">Top Creator</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subAgenzieData.map(sa => (
+                  <tr key={sa.sub_agenzia_id} className="border-b">
+                    <td className="p-2">{sa.sub_agenzia_name}</td>
+                    <td className="text-right p-2">{sa.total_clienti}</td>
+                    <td className="text-right p-2">
+                      {sa.top_creators[0]?.name || 'N/A'} ({sa.top_creators[0]?.count || 0})
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   const renderDashboard = () => {
     if (loading) {
       return (
