@@ -8754,8 +8754,32 @@ async def get_sub_agenzie(
         # Admin vede tutte
         if commessa_id:
             query["commesse_autorizzate"] = {"$in": [commessa_id]}
+    elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+        # Questi ruoli vedono solo la loro sub agenzia
+        # Cerca l'autorizzazione per ottenere la sub_agenzia_id
+        authorizations = await db.user_commessa_authorizations.find({
+            "user_id": current_user.id,
+            "is_active": True
+        }).to_list(length=None)
+        
+        if not authorizations:
+            return []
+        
+        # Raccoglie tutte le sub agenzie autorizzate
+        sub_agenzia_ids = []
+        for auth in authorizations:
+            if auth.get("sub_agenzia_id"):
+                sub_agenzia_ids.append(auth["sub_agenzia_id"])
+        
+        if not sub_agenzia_ids:
+            return []
+        
+        query["id"] = {"$in": sub_agenzia_ids}
+        
+        if commessa_id:
+            query["commesse_autorizzate"] = {"$in": [commessa_id]}
     else:
-        # Altri vedono solo quelle delle loro commesse
+        # Altri ruoli vedono le sub agenzie delle loro commesse
         accessible_commesse = await get_user_accessible_commesse(current_user)
         query["commesse_autorizzate"] = {"$in": accessible_commesse}
         
