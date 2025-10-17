@@ -14216,10 +14216,15 @@ async def get_cascade_sub_agenzie(
         else:
             # Other roles: check if they have specific sub_agenzia_id assigned
             if current_user.sub_agenzia_id:
-                sub_agenzie_docs = await db.sub_agenzie.find({
+                query = {
                     "id": current_user.sub_agenzia_id,
                     "is_active": True
-                }).to_list(length=None)
+                }
+                # Filter by authorized services
+                if current_user.servizi_autorizzati:
+                    query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
+                
+                sub_agenzie_docs = await db.sub_agenzie.find(query).to_list(length=None)
             else:
                 sub_agenzie_docs = []
         
