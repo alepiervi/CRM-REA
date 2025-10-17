@@ -14169,21 +14169,31 @@ async def get_cascade_sub_agenzie(
                 return []
                 
             # Find sub agenzie that have these commesse in their commesse_autorizzate field
-            sub_agenzie_docs = await db.sub_agenzie.find({
+            query = {
                 "commesse_autorizzate": {"$in": user_commesse},
                 "is_active": True
-            }).to_list(length=None)
+            }
+            # Filter by authorized services
+            if current_user.servizi_autorizzati:
+                query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
+            
+            sub_agenzie_docs = await db.sub_agenzie.find(query).to_list(length=None)
             
         elif current_user.role in ["responsabile_sub_agenzia", "backoffice_sub_agenzia"]:
             # Sub agenzia roles: only their assigned sub agenzia
             if not current_user.sub_agenzia_id:
                 logging.info("📭 CASCADE: No sub_agenzia_id for user, returning empty")
                 return []
-                
-            sub_agenzie_docs = await db.sub_agenzie.find({
+            
+            query = {
                 "id": current_user.sub_agenzia_id,
                 "is_active": True
-            }).to_list(length=None)
+            }
+            # Filter by authorized services
+            if current_user.servizi_autorizzati:
+                query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
+                
+            sub_agenzie_docs = await db.sub_agenzie.find(query).to_list(length=None)
             
         elif current_user.role == "area_manager":
             # Area Manager: sees multiple assigned sub agenzie
@@ -14193,10 +14203,15 @@ async def get_cascade_sub_agenzie(
                 return []
                 
             logging.info(f"🌍 CASCADE: Area Manager authorized sub agenzie: {user_sub_agenzie}")
-            sub_agenzie_docs = await db.sub_agenzie.find({
+            query = {
                 "id": {"$in": user_sub_agenzie},
                 "is_active": True
-            }).to_list(length=None)
+            }
+            # Filter by authorized services
+            if current_user.servizi_autorizzati:
+                query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
+            
+            sub_agenzie_docs = await db.sub_agenzie.find(query).to_list(length=None)
             
         else:
             # Other roles: check if they have specific sub_agenzia_id assigned
