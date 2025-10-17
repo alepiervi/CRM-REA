@@ -18607,7 +18607,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
         )}
 
         {/* Sezione Energia Fastweb - Condizionale */}
-        {isEnergiaFastweb() && (
+        {isEnergiaFastweb() && !isTelepass() && (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
@@ -18619,6 +18619,24 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
               <div>
                 <Label className="text-sm font-medium text-slate-600">Codice POD</Label>
                 <p className="text-sm font-mono">{cliente.codice_pod || 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Sezione Telepass - Condizionale */}
+        {isTelepass() && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Zap className="w-4 h-4 mr-2" />
+                Telepass
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">OBU</Label>
+                <p className="text-sm font-mono">{cliente.obu || 'Non specificato'}</p>
               </div>
             </CardContent>
           </Card>
