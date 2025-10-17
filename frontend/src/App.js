@@ -8335,22 +8335,30 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
         <TabsContent value="referenti" className="space-y-6">
           {user.role === "admin" ? (
             <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Seleziona Referente per Analytics Dettagliate</CardTitle>
+              {/* Header Section */}
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-6 text-white">
+                <h2 className="text-3xl font-bold mb-2">🎯 Analytics Referenti</h2>
+                <p className="text-purple-100">Monitoraggio delle performance dei referenti e dei loro team</p>
+              </div>
+
+              <Card className="shadow-lg">
+                <CardHeader className="bg-gray-50">
+                  <CardTitle className="flex items-center gap-2">
+                    🔍 Seleziona Referente per Analytics Dettagliate
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                   <Select value={selectedReferente} onValueChange={(value) => {
                     setSelectedReferente(value);
                     if (value) fetchReferenteAnalytics(value);
                   }}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Seleziona referente" />
                     </SelectTrigger>
                     <SelectContent>
                       {referenti.map((referente) => (
                         <SelectItem key={referente.id} value={referente.id}>
-                          {referente.username} ({referente.email})
+                          👤 {referente.username} ({referente.email})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -8359,10 +8367,10 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
               </Card>
 
               {loading ? (
-                <Card>
+                <Card className="shadow-lg">
                   <CardContent className="p-8 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-slate-600">Caricamento analytics...</p>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                    <p className="mt-4 text-slate-600">Caricamento analytics referente...</p>
                   </CardContent>
                 </Card>
               ) : analyticsData && selectedReferente ? (
