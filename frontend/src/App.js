@@ -17447,7 +17447,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
           {/* SEZIONE ENERGIA FASTWEB */}
           {(() => {
-            const showEnergiaSection = isEnergiaFastweb();
+            const showEnergiaSection = isEnergiaFastweb() && !isTelepass();
             console.log("🔍 RENDER CHECK - Energia Fastweb section:", showEnergiaSection);
             return showEnergiaSection;
           })() && (
