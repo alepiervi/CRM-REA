@@ -7591,36 +7591,46 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
         </Card>
         
         {/* Cards per ogni sub agenzia */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {subAgenzieData.map(sa => (
-            <Card key={sa.sub_agenzia_id}>
-              <CardHeader>
-                <CardTitle>{sa.sub_agenzia_name}</CardTitle>
+            <Card key={sa.sub_agenzia_id} className="shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-t-lg">
+                <CardTitle className="flex items-center gap-2">
+                  🏢 {sa.sub_agenzia_name}
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-500">Totale Clienti</p>
-                  <p className="text-2xl font-bold">{sa.total_clienti}</p>
+              <CardContent className="pt-6 space-y-4">
+                <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+                  <p className="text-sm text-gray-600 mb-1">Totale Clienti</p>
+                  <p className="text-3xl font-bold text-blue-600">{sa.total_clienti}</p>
                 </div>
                 
-                <div>
-                  <p className="text-sm font-semibold mb-2">Breakdown Status:</p>
-                  {Object.entries(sa.status_breakdown).map(([status, count]) => (
-                    <div key={status} className="flex justify-between text-sm">
-                      <span>{status}</span>
-                      <span className="font-semibold">{count}</span>
-                    </div>
-                  ))}
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    📊 Breakdown Status:
+                  </p>
+                  <div className="space-y-2">
+                    {Object.entries(sa.status_breakdown).map(([status, count]) => (
+                      <div key={status} className="flex justify-between items-center p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
+                        <span className="text-sm font-medium">{status}</span>
+                        <span className="font-bold text-blue-600">{count}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
-                <div>
-                  <p className="text-sm font-semibold mb-2">Top Creatori:</p>
-                  {sa.top_creators.map((creator, idx) => (
-                    <div key={idx} className="flex justify-between text-sm">
-                      <span>{creator.name}</span>
-                      <span className="font-semibold">{creator.count}</span>
-                    </div>
-                  ))}
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    🏆 Top Creatori:
+                  </p>
+                  <div className="space-y-2">
+                    {sa.top_creators.map((creator, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
+                        <span className="text-sm font-medium">👤 {creator.name}</span>
+                        <span className="font-bold text-green-600">{creator.count}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
