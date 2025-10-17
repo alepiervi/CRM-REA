@@ -9550,6 +9550,9 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         if current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
             if current_user.sub_agenzia_id:
                 sub_agenzie_query["id"] = current_user.sub_agenzia_id
+                # Filter by authorized services
+                if current_user.servizi_autorizzati:
+                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}  # No results
         elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
@@ -9565,12 +9568,18 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             if current_user.sub_agenzia_id:
                 # Agenti, Operatori, Store e Presidi see only their own sub agenzia
                 sub_agenzie_query["id"] = current_user.sub_agenzia_id
+                # Filter by authorized services (if applicable)
+                if current_user.servizi_autorizzati:
+                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}
         elif current_user.role == UserRole.AREA_MANAGER:
             if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
                 # Area Manager sees all their assigned sub agenzie
                 sub_agenzie_query["id"] = {"$in": current_user.sub_agenzie_autorizzate}
+                # Filter by authorized services
+                if current_user.servizi_autorizzati:
+                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}
         # Admin sees all sub agenzie
