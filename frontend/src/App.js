@@ -14075,40 +14075,53 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               <TableBody>
                 {getFilteredClients().map((cliente) => (
                   <TableRow key={cliente.id}>
+                    {/* Numero Ordine */}
                     <TableCell>
-                      <span className="font-mono text-sm">{cliente.cliente_id}</span>
+                      <span className="font-mono text-sm">{cliente.numero_ordine || 'N/A'}</span>
                     </TableCell>
+                    {/* Stato */}
+                    <TableCell>
+                      <Badge variant={getClienteStatusVariant(cliente.status)}>
+                        {formatClienteStatus(cliente.status)}
+                      </Badge>
+                    </TableCell>
+                    {/* Tipologia Contratto */}
+                    <TableCell>
+                      <span className="text-sm capitalize">
+                        {cliente.tipologia_contratto?.replace(/_/g, ' ') || 'N/A'}
+                      </span>
+                    </TableCell>
+                    {/* Segmento */}
+                    <TableCell>
+                      <span className="text-sm capitalize">
+                        {cliente.segmento || 'N/A'}
+                      </span>
+                    </TableCell>
+                    {/* Sub Agenzia */}
+                    <TableCell>
+                      {subAgenzie.find(sa => sa.id === cliente.sub_agenzia_id)?.nome || 'N/A'}
+                    </TableCell>
+                    {/* Creato da */}
+                    <TableCell>
+                      <div className="flex items-center space-x-1">
+                        <User className="w-3 h-3 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {cliente.created_by ? getUserDisplayName(cliente.created_by) : 'N/A'}
+                        </span>
+                      </div>
+                    </TableCell>
+                    {/* Data Creazione */}
+                    <TableCell>
+                      {new Date(cliente.created_at).toLocaleDateString('it-IT')}
+                    </TableCell>
+                    {/* Nome Completo */}
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <FileUser className="w-4 h-4 text-green-600" />
                         <span>{cliente.nome} {cliente.cognome}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{cliente.email || 'N/A'}</TableCell>
-                    <TableCell>{cliente.telefono}</TableCell>
-                    <TableCell>
-                      {commesse.find(c => c.id === cliente.commessa_id)?.nome || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {subAgenzie.find(sa => sa.id === cliente.sub_agenzia_id)?.nome || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getClienteStatusVariant(cliente.status)}>
-                        {formatClienteStatus(cliente.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <User className="w-3 h-3 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {/* TODO: Mostrare nome utente creatore */}
-                          {cliente.created_by ? getUserDisplayName(cliente.created_by) : 'N/A'}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(cliente.created_at).toLocaleDateString('it-IT')}
-                    </TableCell>
+                    {/* Azioni */}
                     <TableCell>
                       <div className="flex space-x-1">
                         <Button 
