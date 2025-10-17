@@ -9123,6 +9123,9 @@ async def get_clienti(
         accessible_commesse = await get_user_accessible_commesse(current_user)
         if accessible_commesse:
             query["commessa_id"] = {"$in": accessible_commesse}
+            # Filter by authorized services
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
         else:
             print("⚠️ No accessible commesse found for responsabile_commessa")
             return []
@@ -9132,11 +9135,17 @@ async def get_clienti(
         print(f"🏢 BACKOFFICE_COMMESSA ACCESS: User {current_user.username}")
         if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
             query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            # Filter by authorized services
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
         else:
             # Fallback: usa get_user_accessible_commesse
             accessible_commesse = await get_user_accessible_commesse(current_user)
             if accessible_commesse:
                 query["commessa_id"] = {"$in": accessible_commesse}
+                # Filter by authorized services
+                if current_user.servizi_autorizzati:
+                    query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
             else:
                 print("⚠️ No accessible commesse found for backoffice_commessa")
                 return []
@@ -9146,6 +9155,9 @@ async def get_clienti(
         print(f"🏪 RESPONSABILE_SUB_AGENZIA ACCESS: User {current_user.username}")
         if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
             query["sub_agenzia_id"] = current_user.sub_agenzia_id
+            # Filter by authorized services
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
         else:
             print("⚠️ No sub_agenzia_id found for responsabile_sub_agenzia")
             return []
@@ -9155,6 +9167,9 @@ async def get_clienti(
         print(f"🏬 BACKOFFICE_SUB_AGENZIA ACCESS: User {current_user.username}")
         if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
             query["sub_agenzia_id"] = current_user.sub_agenzia_id
+            # Filter by authorized services
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
         else:
             print("⚠️ No sub_agenzia_id found for backoffice_sub_agenzia")
             return []
