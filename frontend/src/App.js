@@ -13495,6 +13495,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       
       setClienti([response.data, ...clienti]);
       setAllClienti([response.data, ...allClienti]); // Update all clients too
+      
+      // Refresh filter options to include new data
+      fetchFilterOptions();
+      
       toast({
         title: "Successo",
         description: "Cliente creato con successo",
