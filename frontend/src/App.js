@@ -6783,6 +6783,32 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
     startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd')
   });
+  
+  // NEW: Pivot Analytics States
+  const [pivotFilters, setPivotFilters] = useState({
+    sub_agenzia_ids: [],
+    status_values: [],
+    tipologia_contratto_values: [],
+    segmento_values: [],
+    offerta_ids: [],
+    created_by_ids: [],
+    convergenza: null,
+    data_da: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
+    data_a: format(new Date(), 'yyyy-MM-dd')
+  });
+  const [pivotData, setPivotData] = useState(null);
+  const [pivotLoading, setPivotLoading] = useState(false);
+  
+  // NEW: Sub Agenzie Analytics States
+  const [subAgenzieData, setSubAgenzieData] = useState([]);
+  const [subAgenzieLoading, setSubAgenzieLoading] = useState(false);
+  
+  // NEW: Filter Options
+  const [filterOptions, setFilterOptions] = useState({
+    offerte: [],
+    users: []
+  });
+  
   const { user } = useAuth();
   const { toast } = useToast();
 
