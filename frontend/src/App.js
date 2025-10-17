@@ -8194,6 +8194,18 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
             </Card>
           )}
         </TabsContent>
+
+        
+        {/* Pivot Analytics Tab */}
+        <TabsContent value="pivot" className="space-y-6">
+          {renderPivot()}
+        </TabsContent>
+
+        {/* Sub Agenzie Analytics Tab */}
+        <TabsContent value="sub-agenzie" className="space-y-6">
+          {renderSubAgenzie()}
+        </TabsContent>
+
       </Tabs>
     </div>
   );
