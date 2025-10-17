@@ -13630,6 +13630,9 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       setClienti(clienti.filter(c => c.id !== clienteId));
       setAllClienti(allClienti.filter(c => c.id !== clienteId));
       
+      // Refresh filter options after deletion
+      fetchFilterOptions();
+      
       toast({
         title: "Successo",
         description: "Cliente eliminato con successo",
