@@ -8233,16 +8233,19 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
         <div className="md:hidden mb-6">
           <div className="bg-white rounded-xl p-1 shadow-lg border-2 border-slate-200">
             <div className="grid grid-cols-1 gap-2">
-              <button
-                onClick={() => setActiveTab("dashboard")}
-                className={`py-4 px-4 rounded-lg font-semibold text-base transition-all ${
-                  activeTab === "dashboard" 
-                    ? "bg-blue-600 text-white shadow-md" 
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                📊 Dashboard Overview
-              </button>
+              {/* Dashboard Overview - Only for Admin and Referente */}
+              {(user.role === "admin" || user.role === "referente") && (
+                <button
+                  onClick={() => setActiveTab("dashboard")}
+                  className={`py-4 px-4 rounded-lg font-semibold text-base transition-all ${
+                    activeTab === "dashboard" 
+                      ? "bg-blue-600 text-white shadow-md" 
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  📊 Dashboard Overview
+                </button>
+              )}
               
               {user.role === "admin" && (
                 <>
@@ -8313,11 +8316,20 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
               🏢 Sub Agenzie
             </TabsTrigger>
           </TabsList>
-        ) : (
+        ) : user.role === "referente" ? (
           <TabsList className="hidden md:grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="dashboard" className="text-base font-semibold">
               📊 Dashboard Overview
             </TabsTrigger>
+            <TabsTrigger value="pivot" className="text-base font-semibold">
+              🔍 Pivot Analytics
+            </TabsTrigger>
+            <TabsTrigger value="sub-agenzie" className="text-base font-semibold">
+              🏢 Sub Agenzie
+            </TabsTrigger>
+          </TabsList>
+        ) : (
+          <TabsList className="hidden md:grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="pivot" className="text-base font-semibold">
               🔍 Pivot Analytics
             </TabsTrigger>
