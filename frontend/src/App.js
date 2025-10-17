@@ -17467,7 +17467,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
           {/* SEZIONE DATI MOBILE */}
           {(() => {
-            const showMobileSection = isMobile();
+            const showMobileSection = isMobile() && !isTelepass();
             console.log("🔍 RENDER CHECK - Mobile section:", showMobileSection);
             return showMobileSection;
           })() && (
