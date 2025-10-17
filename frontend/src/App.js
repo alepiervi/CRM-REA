@@ -1273,6 +1273,7 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
 
 // Main Dashboard Component
 const Dashboard = () => {
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedUnit, setSelectedUnit] = useState("all");
   const [selectedCommessa, setSelectedCommessa] = useState("all");
   const [selectedServizio, setSelectedServizio] = useState("all");
