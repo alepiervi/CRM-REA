@@ -19142,7 +19142,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           </Card>
 
           {/* SEZIONE TELEFONIA FASTWEB */}
-          {isEditTelefoniaFastweb() && (
+          {isEditTelefoniaFastweb() && !isEditMobile() && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">📞 Telefonia Fastweb</CardTitle>
