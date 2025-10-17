@@ -9197,6 +9197,9 @@ async def get_clienti(
             user_ids_in_sub_agenzie.append(current_user.id)  # Include anche i propri clienti
             
             query["created_by"] = {"$in": user_ids_in_sub_agenzie}
+            # Filter by authorized services
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
             print(f"🔍 AREA_MANAGER: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(current_user.sub_agenzie_autorizzate)} sub agenzie")
         else:
             # Se non ha sub agenzie assegnate, vede solo i propri clienti
