@@ -18197,20 +18197,20 @@ const AppWithAuth = () => (
 const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) => {
   if (!cliente) return null;
   
-  const getCommessaName = (id) => commesse.find(c => c.id === id)?.nome || id;
-  const getSubAgenziaName = (id) => subAgenzie.find(s => s.id === id)?.nome || id;
-  const getServizioName = (id) => servizi.find(s => s.id === id)?.nome || id;
+  const getCommessaName = (id) => commesse.find(c => c.id === id)?.nome || 'Non specificato';
+  const getSubAgenziaName = (id) => subAgenzie.find(s => s.id === id)?.nome || 'Non specificato';
+  const getServizioName = (id) => servizi.find(s => s.id === id)?.nome || 'Non specificato';
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <UserCheck className="w-5 h-5 text-blue-600" />
-            <span>Anagrafica Cliente: {cliente.nome} {cliente.cognome}</span>
+            <span>Anagrafica Completa Cliente: {cliente.nome} {cliente.cognome}</span>
           </DialogTitle>
           <DialogDescription>
-            Visualizzazione completa dei dati anagrafici del cliente
+            Visualizzazione completa di tutti i dati anagrafici del cliente
           </DialogDescription>
         </DialogHeader>
         
@@ -18225,8 +18225,12 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <Label className="text-sm font-medium text-slate-600">Nome Completo</Label>
-                <p className="text-sm">{cliente.nome} {cliente.cognome}</p>
+                <Label className="text-sm font-medium text-slate-600">Nome</Label>
+                <p className="text-sm">{cliente.nome || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Cognome</Label>
+                <p className="text-sm">{cliente.cognome || 'Non specificato'}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-slate-600">Email</Label>
@@ -18244,35 +18248,10 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                 <Label className="text-sm font-medium text-slate-600">Luogo di Nascita</Label>
                 <p className="text-sm">{cliente.luogo_nascita || 'Non specificato'}</p>
               </div>
-              {/* Nuovi campi */}
-              {cliente.servizio_id && (
-                <div>
-                  <Label className="text-sm font-medium text-slate-600">Servizio</Label>
-                  <p className="text-sm">{getServizioName(cliente.servizio_id)}</p>
-                </div>
-              )}
-              {cliente.tipologia_contratto && (
-                <div>
-                  <Label className="text-sm font-medium text-slate-600">Tipologia Contratto</Label>
-                  <p className="text-sm">
-                    {cliente.tipologia_contratto === 'energia_fastweb' ? 'Energia Fastweb' :
-                     cliente.tipologia_contratto === 'telefonia_fastweb' ? 'Telefonia Fastweb' :
-                     cliente.tipologia_contratto === 'ho_mobile' ? 'Ho Mobile' :
-                     cliente.tipologia_contratto === 'telepass' ? 'Telepass' :
-                     cliente.tipologia_contratto}
-                  </p>
-                </div>
-              )}
-              {cliente.segmento && (
-                <div>
-                  <Label className="text-sm font-medium text-slate-600">Segmento</Label>
-                  <p className="text-sm">
-                    {cliente.segmento === 'privato' ? 'Privato' : 
-                     cliente.segmento === 'business' ? 'Business' : 
-                     cliente.segmento}
-                  </p>
-                </div>
-              )}
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Genere</Label>
+                <p className="text-sm capitalize">{cliente.genere || 'Non specificato'}</p>
+              </div>
             </CardContent>
           </Card>
 
@@ -18281,7 +18260,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
                 <FileText className="w-4 h-4 mr-2" />
-                Dati Fiscali
+                Dati Fiscali e Identificativi
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -18294,8 +18273,52 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                 <p className="text-sm font-mono">{cliente.partita_iva || 'Non specificato'}</p>
               </div>
               <div>
+                <Label className="text-sm font-medium text-slate-600">Ragione Sociale</Label>
+                <p className="text-sm">{cliente.ragione_sociale || 'Non specificato'}</p>
+              </div>
+              <div>
                 <Label className="text-sm font-medium text-slate-600">Cliente ID</Label>
-                <p className="text-sm font-mono">{cliente.cliente_id}</p>
+                <p className="text-sm font-mono">{cliente.cliente_id || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Numero Ordine</Label>
+                <p className="text-sm font-mono">{cliente.numero_ordine || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Account</Label>
+                <p className="text-sm">{cliente.account || 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Documento */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                Documento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Tipo Documento</Label>
+                <p className="text-sm capitalize">{cliente.tipo_documento || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Numero Documento</Label>
+                <p className="text-sm font-mono">{cliente.numero_documento || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Data Rilascio</Label>
+                <p className="text-sm">{cliente.data_rilascio || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Scadenza Documento</Label>
+                <p className="text-sm">{cliente.scadenza_documento || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Luogo Rilascio</Label>
+                <p className="text-sm">{cliente.luogo_rilascio || 'Non specificato'}</p>
               </div>
             </CardContent>
           </Card>
@@ -18346,6 +18369,26 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                 <p className="text-sm">{getSubAgenziaName(cliente.sub_agenzia_id)}</p>
               </div>
               <div>
+                <Label className="text-sm font-medium text-slate-600">Servizio</Label>
+                <p className="text-sm">{getServizioName(cliente.servizio_id)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Tipologia Contratto</Label>
+                <p className="text-sm capitalize">
+                  {cliente.tipologia_contratto?.replace(/_/g, ' ') || 'Non specificato'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Segmento</Label>
+                <p className="text-sm capitalize">
+                  {cliente.segmento || 'Non specificato'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Offerta ID</Label>
+                <p className="text-sm">{cliente.offerta_id || 'Non specificato'}</p>
+              </div>
+              <div>
                 <Label className="text-sm font-medium text-slate-600">Status</Label>
                 <Badge variant={getClienteStatusVariant(cliente.status)}>
                   {formatClienteStatus(cliente.status)}
@@ -18357,22 +18400,187 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
               </div>
             </CardContent>
           </Card>
+
+          {/* Telefonia Fastweb */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Phone className="w-4 h-4 mr-2" />
+                Telefonia Fastweb
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Tecnologia</Label>
+                <p className="text-sm uppercase">{cliente.tecnologia || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Codice Migrazione</Label>
+                <p className="text-sm">{cliente.codice_migrazione || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Gestore</Label>
+                <p className="text-sm">{cliente.gestore || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Convergenza</Label>
+                <p className="text-sm">{cliente.convergenza ? 'Sì' : 'No'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Energia Fastweb */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Zap className="w-4 h-4 mr-2" />
+                Energia Fastweb
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Codice POD</Label>
+                <p className="text-sm font-mono">{cliente.codice_pod || 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Modalità Pagamento */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <CreditCard className="w-4 h-4 mr-2" />
+                Modalità Pagamento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Modalità</Label>
+                <p className="text-sm uppercase">{cliente.modalita_pagamento || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">IBAN</Label>
+                <p className="text-sm font-mono">{cliente.iban || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Intestatario IBAN</Label>
+                <p className="text-sm">{cliente.intestatario_iban || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Numero Carta</Label>
+                <p className="text-sm font-mono">{cliente.numero_carta || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Intestatario Carta</Label>
+                <p className="text-sm">{cliente.intestatario_carta || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">CVV Carta</Label>
+                <p className="text-sm">{cliente.cvv_carta || 'Non specificato'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-600">Scadenza Carta</Label>
+                <p className="text-sm">{cliente.mese_carta && cliente.anno_carta ? `${cliente.mese_carta}/${cliente.anno_carta}` : 'Non specificato'}</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Note */}
-        {cliente.note && (
+        {/* Convergenza Items */}
+        {cliente.convergenza_items && cliente.convergenza_items.length > 0 && (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
-                Note
+                <Phone className="w-4 h-4 mr-2" />
+                SIM Convergenza
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{cliente.note}</p>
+              <div className="space-y-3">
+                {cliente.convergenza_items.map((sim, index) => (
+                  <div key={index} className="p-3 border rounded bg-gray-50">
+                    <h4 className="font-semibold mb-2">SIM #{index + 1}</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <strong>Numero:</strong> {sim.numero_cellulare || 'Non specificato'}
+                      </div>
+                      <div>
+                        <strong>ICCID:</strong> {sim.iccid || 'Non specificato'}
+                      </div>
+                      <div>
+                        <strong>Operatore:</strong> {sim.operatore || 'Non specificato'}
+                      </div>
+                      <div>
+                        <strong>Offerta SIM:</strong> {sim.offerta_sim || 'Non specificato'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
+
+        {/* Mobile Items */}
+        {cliente.mobile_items && cliente.mobile_items.length > 0 && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Smartphone className="w-4 h-4 mr-2" />
+                Dati Mobile
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {cliente.mobile_items.map((mobile, index) => (
+                  <div key={index} className="p-3 border rounded bg-gray-50">
+                    <h4 className="font-semibold mb-2">SIM Mobile #{index + 1}</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <strong>Telefono da Portare:</strong> {mobile.telefono_da_portare || 'Non specificato'}
+                      </div>
+                      <div>
+                        <strong>ICCID:</strong> {mobile.iccid || 'Non specificato'}
+                      </div>
+                      <div>
+                        <strong>Operatore:</strong> {mobile.operatore || 'Non specificato'}
+                      </div>
+                      <div>
+                        <strong>Titolare se Diverso:</strong> {mobile.titolare_diverso || 'Non specificato'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Note */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <FileText className="w-4 h-4 mr-2" />
+              Note
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm whitespace-pre-wrap">{cliente.note || 'Nessuna nota presente'}</p>
+          </CardContent>
+        </Card>
+
+        {/* Note Back Office */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <FileText className="w-4 h-4 mr-2" />
+              Note Back Office
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm whitespace-pre-wrap">{cliente.note_back_office || 'Nessuna nota back office presente'}</p>
+          </CardContent>
+        </Card>
 
         <DialogFooter className="mt-6">
           <Button onClick={onClose}>Chiudi</Button>
