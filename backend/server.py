@@ -10952,10 +10952,15 @@ async def get_responsabile_commessa_dashboard(
     clienti_oggi = await db.clienti.count_documents(clienti_oggi_query)
     
     # Get sub agenzie per le commesse autorizzate
-    sub_agenzie = await db.sub_agenzie.find({
+    sub_agenzie_query = {
         "commesse_autorizzate": {"$in": accessible_commesse},
         "is_active": True
-    }).to_list(length=None)
+    }
+    # Filter by authorized services
+    if current_user.servizi_autorizzati:
+        sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
+    
+    sub_agenzie = await db.sub_agenzie.find(sub_agenzie_query).to_list(length=None)
     
     # Count clienti per stato (punti di lavorazione)
     pipeline = [
