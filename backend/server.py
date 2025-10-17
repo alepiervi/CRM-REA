@@ -9216,28 +9216,42 @@ async def get_clienti(
     return [Cliente(**c) for c in clienti]
 
 async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
-    """Create Excel file with clienti data"""
+    """Create Excel file with clienti data - ALL fields included, one row per SIM"""
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Clienti Report"
     
-    # Headers - Include all new client form fields
+    # Headers - ALL FIELDS from cliente model
     headers = [
-        "ID Cliente", "Nome", "Cognome", "Telefono", "Cellulare", "Email", "Codice Fiscale",
-        "Data Nascita", "Provincia", "Comune", "Indirizzo", "Cap", 
-        # Business fields
-        "Ragione Sociale", "Partita IVA",
-        # Document fields
+        # Dati Identificativi
+        "ID Cliente", "Numero Ordine", "Account", "Cliente ID",
+        # Dati Anagrafici
+        "Nome", "Cognome", "Ragione Sociale", "Data Nascita", "Luogo Nascita",
+        "Comune Residenza", "Provincia Residenza", "Genere",
+        # Contatti
+        "Email", "Telefono", "Cellulare",
+        # Indirizzo
+        "Indirizzo", "Numero Civico", "Comune", "Provincia", "CAP",
+        # Dati Fiscali
+        "Codice Fiscale", "Partita IVA",
+        # Documento
         "Tipo Documento", "Numero Documento", "Data Rilascio", "Luogo Rilascio", "Scadenza Documento",
-        # Telefonia Fastweb conditional fields
-        "Tecnologia", "Codice Migrazione", "Gestore", "Convergenza",
-        # Energia Fastweb conditional fields
-        "Codice Pod",
-        # Payment fields
-        "Modalità Pagamento", "IBAN", "Numero Carta",
-        # System fields
+        # Dati Organizzativi
         "Sub Agenzia", "Commessa", "Servizio", "Tipologia Contratto", "Segmento", "Offerta",
-        "Status", "Utente Creatore", "Data Creazione", "Note"
+        # Telefonia Fastweb
+        "Tecnologia", "Codice Migrazione", "Gestore", "Convergenza",
+        # Energia Fastweb
+        "Codice POD",
+        # Telepass
+        "OBU",
+        # Modalità Pagamento
+        "Modalità Pagamento", "IBAN", "Intestatario Diverso (IBAN)",
+        "Numero Carta", "Intestatario Carta", "CVV", "Mese Scadenza", "Anno Scadenza",
+        # SIM Info (Convergenza or Mobile)
+        "Tipo SIM", "Numero SIM", "Numero Cellulare SIM", "ICCID SIM", "Operatore SIM",
+        "Telefono da Portare", "Titolare Diverso", "Offerta SIM",
+        # System Fields
+        "Status", "Utente Creatore", "Data Creazione", "Note", "Note Back Office"
     ]
     
     # Header styling
@@ -9251,99 +9265,142 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
         cell.fill = header_fill
         cell.alignment = header_alignment
     
-    # Data rows - Include all new client form fields
-    for row, cliente in enumerate(clienti_data, 2):
+    # Data rows - ALL FIELDS
+    for row_idx, cliente in enumerate(clienti_data, 2):
         col = 1
-        # Basic info
-        ws.cell(row=row, column=col, value=cliente.get("id", "")[:8]); col += 1  # Short ID
-        ws.cell(row=row, column=col, value=cliente.get("nome", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("cognome", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("telefono", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("cellulare", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("email", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("codice_fiscale", "")); col += 1
+        
+        # Dati Identificativi
+        ws.cell(row=row_idx, column=col, value=cliente.get("id", "")[:8]); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("numero_ordine", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("account", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("cliente_id", "")); col += 1
+        
+        # Dati Anagrafici
+        ws.cell(row=row_idx, column=col, value=cliente.get("nome", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("cognome", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("ragione_sociale", "")); col += 1
         
         # Format date of birth
         data_nascita = cliente.get("data_nascita")
         if data_nascita:
             if isinstance(data_nascita, str):
-                ws.cell(row=row, column=col, value=data_nascita)
+                ws.cell(row=row_idx, column=col, value=data_nascita)
             else:
-                ws.cell(row=row, column=col, value=data_nascita.strftime("%d/%m/%Y") if data_nascita else "")
+                ws.cell(row=row_idx, column=col, value=data_nascita.strftime("%d/%m/%Y") if data_nascita else "")
+        else:
+            ws.cell(row=row_idx, column=col, value="")
         col += 1
         
-        # Address info
-        ws.cell(row=row, column=col, value=cliente.get("provincia", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("comune", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("indirizzo", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("cap", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("luogo_nascita", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("comune_residenza", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("provincia_residenza", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("genere", "")); col += 1
         
-        # Business fields
-        ws.cell(row=row, column=col, value=cliente.get("ragione_sociale", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("partita_iva", "")); col += 1
+        # Contatti
+        ws.cell(row=row_idx, column=col, value=cliente.get("email", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("telefono", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("cellulare", "") or cliente.get("telefono2", "")); col += 1
         
-        # Document fields
-        ws.cell(row=row, column=col, value=cliente.get("tipo_documento", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("numero_documento", "")); col += 1
+        # Indirizzo
+        ws.cell(row=row_idx, column=col, value=cliente.get("indirizzo", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("numero_civico", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("comune", "") or cliente.get("citta", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("provincia", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("cap", "")); col += 1
+        
+        # Dati Fiscali
+        ws.cell(row=row_idx, column=col, value=cliente.get("codice_fiscale", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("partita_iva", "")); col += 1
+        
+        # Documento
+        ws.cell(row=row_idx, column=col, value=cliente.get("tipo_documento", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("numero_documento", "")); col += 1
         
         # Format document date
         data_rilascio = cliente.get("data_rilascio")
         if data_rilascio:
             if isinstance(data_rilascio, str):
-                ws.cell(row=row, column=col, value=data_rilascio)
+                ws.cell(row=row_idx, column=col, value=data_rilascio)
             else:
-                ws.cell(row=row, column=col, value=data_rilascio.strftime("%d/%m/%Y") if data_rilascio else "")
+                ws.cell(row=row_idx, column=col, value=data_rilascio.strftime("%d/%m/%Y") if data_rilascio else "")
+        else:
+            ws.cell(row=row_idx, column=col, value="")
         col += 1
         
-        ws.cell(row=row, column=col, value=cliente.get("luogo_rilascio", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("luogo_rilascio", "")); col += 1
         
         # Format document expiry date
         scadenza_documento = cliente.get("scadenza_documento")
         if scadenza_documento:
             if isinstance(scadenza_documento, str):
-                ws.cell(row=row, column=col, value=scadenza_documento)
+                ws.cell(row=row_idx, column=col, value=scadenza_documento)
             else:
-                ws.cell(row=row, column=col, value=scadenza_documento.strftime("%d/%m/%Y") if scadenza_documento else "")
+                ws.cell(row=row_idx, column=col, value=scadenza_documento.strftime("%d/%m/%Y") if scadenza_documento else "")
+        else:
+            ws.cell(row=row_idx, column=col, value="")
         col += 1
         
-        # Telefonia Fastweb conditional fields
-        ws.cell(row=row, column=col, value=cliente.get("tecnologia", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("codice_migrazione", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("gestore", "")); col += 1
-        ws.cell(row=row, column=col, value="Sì" if cliente.get("convergenza") else "No"); col += 1
+        # Dati Organizzativi
+        ws.cell(row=row_idx, column=col, value=cliente.get("sub_agenzia_name", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("commessa_name", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("servizio_name", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("tipologia_contratto_display", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("segmento_display", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("offerta_name", "")); col += 1
         
-        # Energia Fastweb conditional fields
-        ws.cell(row=row, column=col, value=cliente.get("codice_pod", "")); col += 1
+        # Telefonia Fastweb
+        ws.cell(row=row_idx, column=col, value=cliente.get("tecnologia", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("codice_migrazione", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("gestore", "")); col += 1
+        ws.cell(row=row_idx, column=col, value="Sì" if cliente.get("convergenza") else "No"); col += 1
         
-        # Payment fields
+        # Energia Fastweb
+        ws.cell(row=row_idx, column=col, value=cliente.get("codice_pod", "")); col += 1
+        
+        # Telepass
+        ws.cell(row=row_idx, column=col, value=cliente.get("obu", "")); col += 1
+        
+        # Modalità Pagamento
         modalita_pagamento_display = {
             'iban': 'IBAN',
             'carta_credito': 'Carta di Credito'
         }.get(cliente.get("modalita_pagamento", ""), cliente.get("modalita_pagamento", ""))
-        ws.cell(row=row, column=col, value=modalita_pagamento_display); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("iban", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("numero_carta", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=modalita_pagamento_display); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("iban", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("intestatario_diverso", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("numero_carta", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("intestatario_carta", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("cvv_carta", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("mese_carta", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("anno_carta", "")); col += 1
         
-        # System fields
-        ws.cell(row=row, column=col, value=cliente.get("sub_agenzia_name", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("commessa_name", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("servizio_name", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("tipologia_contratto_display", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("segmento_display", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("offerta_name", "")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("status", "attivo")); col += 1
-        ws.cell(row=row, column=col, value=cliente.get("created_by_name", "")); col += 1
+        # SIM Info
+        ws.cell(row=row_idx, column=col, value=cliente.get("sim_type", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("sim_index", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("sim_numero_cellulare", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("sim_iccid", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("sim_operatore", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("sim_telefono_da_portare", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("sim_titolare_diverso", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("sim_offerta_name", "")); col += 1
+        
+        # System Fields
+        ws.cell(row=row_idx, column=col, value=cliente.get("status", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("created_by_name", "")); col += 1
         
         # Format creation date
         created_at = cliente.get("created_at")
         if created_at:
             if isinstance(created_at, str):
-                ws.cell(row=row, column=col, value=created_at)
+                ws.cell(row=row_idx, column=col, value=created_at)
             else:
-                ws.cell(row=row, column=col, value=created_at.strftime("%d/%m/%Y %H:%M") if created_at else "")
+                ws.cell(row=row_idx, column=col, value=created_at.strftime("%d/%m/%Y %H:%M") if created_at else "")
+        else:
+            ws.cell(row=row_idx, column=col, value="")
         col += 1
         
-        ws.cell(row=row, column=col, value=cliente.get("note", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("note", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("note_backoffice", "") or cliente.get("note_back_office", "")); col += 1
     
     # Auto-adjust column widths
     for column in ws.columns:
