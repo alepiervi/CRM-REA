@@ -8083,6 +8083,12 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
           <TabsTrigger value="referenti" className="text-base font-semibold">
             🎯 Analytics Referenti
           </TabsTrigger>
+          <TabsTrigger value="pivot" className="text-base font-semibold">
+            🔍 Pivot Analytics
+          </TabsTrigger>
+          <TabsTrigger value="sub-agenzie" className="text-base font-semibold">
+            🏢 Sub Agenzie
+          </TabsTrigger>
         </TabsList>
 
         {/* Dashboard Tab */}
