@@ -8013,9 +8013,11 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
 
           {/* Desktop Performance Chart */}
           {dashboardData.agentPerformance.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Agenti (Top 10)</CardTitle>
+            <Card className="shadow-lg">
+              <CardHeader className="bg-gray-50">
+                <CardTitle className="flex items-center gap-2">
+                  🏆 Performance Agenti (Top 10)
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
