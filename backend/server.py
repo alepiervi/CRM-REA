@@ -8776,12 +8776,20 @@ async def get_sub_agenzie(
         
         query["id"] = {"$in": sub_agenzia_ids}
         
+        # Filter by authorized services
+        if current_user.servizi_autorizzati:
+            query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
+        
         if commessa_id:
             query["commesse_autorizzate"] = {"$in": [commessa_id]}
     else:
-        # Altri ruoli vedono le sub agenzie delle loro commesse
+        # Altri ruoli vedono le sub agenzie delle loro commesse E servizi
         accessible_commesse = await get_user_accessible_commesse(current_user)
         query["commesse_autorizzate"] = {"$in": accessible_commesse}
+        
+        # Filter by authorized services
+        if current_user.servizi_autorizzati:
+            query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
         
         if commessa_id:
             if commessa_id not in accessible_commesse:
