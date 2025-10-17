@@ -18980,6 +18980,34 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   };
 
+  const isEditTelepass = () => {
+    try {
+      // Prima priorità: controlla se il cliente ha già obu popolato
+      if (cliente?.obu && cliente.obu.trim() !== '') {
+        console.log("🔍 isEditTelepass: TRUE - obu present:", cliente.obu);
+        return true;
+      }
+      
+      // Seconda priorità: controlla dal nome della tipologia se disponibile
+      if (Array.isArray(editTipologieContratto) && editTipologieContratto.length > 0) {
+        const tipologia = editTipologieContratto.find(t => t && t.value === cliente?.tipologia_contratto);
+        const tipologiaName = (tipologia?.label || '').toLowerCase();
+        const isTelepass = tipologiaName.includes('telepass');
+        console.log("🚗 isEditTelepass: Tipologia check:", {tipologiaName, isTelepass});
+        if (isTelepass) return true;
+      }
+      
+      // Terza priorità: controlla direttamente il valore della tipologia contratto
+      const tipologiaValue = (cliente?.tipologia_contratto || '').toLowerCase();
+      const isTelepassByValue = tipologiaValue.includes('telepass');
+      console.log("🚗 isEditTelepass: Direct value check:", {tipologiaValue, isTelepassByValue});
+      return isTelepassByValue;
+    } catch (error) {
+      console.error("❌ Error in isEditTelepass:", error);
+      return false;
+    }
+  };
+
   const isEditTelefoniaFastweb = () => {
     try {
       // Prima priorità: controlla se il cliente ha già campi Telefonia popolati
