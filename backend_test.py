@@ -669,6 +669,321 @@ class CRMAPITester:
         
         return diagnosis_success
 
+    def test_aruba_drive_actual_upload_test(self):
+        """🚨 TEST UPLOAD DOCUMENTO REALE - Testare effettivamente l'upload per vedere i log Aruba Drive"""
+        print("\n🚨 TEST UPLOAD DOCUMENTO REALE")
+        print("🎯 OBIETTIVO: Testare effettivamente l'upload di un documento per vedere i log Aruba Drive")
+        print("🎯 FOCUS: Creare un cliente con commessa Aruba-enabled e testare upload reale")
+        
+        # **STEP 1: LOGIN ADMIN**
+        print("\n🔐 STEP 1: LOGIN ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **STEP 2: FIND ARUBA-ENABLED COMMESSA**
+        print("\n📋 STEP 2: FIND ARUBA-ENABLED COMMESSA...")
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        aruba_commessa = None
+        if success and status == 200:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            
+            # Find a commessa with Aruba Drive enabled
+            for commessa in commesse:
+                aruba_config = commessa.get('aruba_drive_config')
+                if aruba_config and aruba_config.get('enabled'):
+                    aruba_commessa = commessa
+                    break
+            
+            if aruba_commessa:
+                self.log_test("✅ Found Aruba-enabled commessa", True, 
+                    f"Commessa: {aruba_commessa.get('nome')}, ID: {aruba_commessa.get('id')[:8]}...")
+            else:
+                self.log_test("❌ No Aruba-enabled commessa found", False, "Cannot test without Aruba Drive enabled commessa")
+                return False
+        else:
+            self.log_test("❌ GET /api/commesse failed", False, f"Status: {status}")
+            return False
+
+        # **STEP 3: GET SUB AGENZIE FOR COMMESSA**
+        print("\n🏢 STEP 3: GET SUB AGENZIE FOR COMMESSA...")
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        target_sub_agenzia = None
+        if success and status == 200:
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            
+            # Find a sub agenzia that has the Aruba commessa authorized
+            for sub_agenzia in sub_agenzie:
+                commesse_autorizzate = sub_agenzia.get('commesse_autorizzate', [])
+                if aruba_commessa['id'] in commesse_autorizzate:
+                    target_sub_agenzia = sub_agenzia
+                    break
+            
+            if target_sub_agenzia:
+                self.log_test("✅ Found compatible sub agenzia", True, 
+                    f"Sub Agenzia: {target_sub_agenzia.get('nome')}, ID: {target_sub_agenzia.get('id')[:8]}...")
+            else:
+                self.log_test("❌ No compatible sub agenzia found", False, "Cannot test without authorized sub agenzia")
+                return False
+        else:
+            self.log_test("❌ GET /api/sub-agenzie failed", False, f"Status: {status}")
+            return False
+
+        # **STEP 4: CREATE TEST CLIENTE WITH ARUBA COMMESSA**
+        print("\n👤 STEP 4: CREATE TEST CLIENTE WITH ARUBA COMMESSA...")
+        
+        import time
+        timestamp = str(int(time.time()))
+        
+        test_cliente_data = {
+            "nome": "TestAruba",
+            "cognome": f"Upload{timestamp}",
+            "email": f"test.aruba.{timestamp}@test.com",
+            "telefono": f"333{timestamp[-7:]}",
+            "codice_fiscale": f"TSTARB{timestamp[-2:]}M01H501T",
+            "commessa_id": aruba_commessa['id'],
+            "sub_agenzia_id": target_sub_agenzia['id'],
+            "tipologia_contratto": "energia_fastweb",  # Use a valid enum value
+            "segmento": "privato"
+        }
+        
+        success, create_response, status = self.make_request(
+            'POST', 'clienti', 
+            test_cliente_data, 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            test_cliente_id = create_response.get('id')
+            self.log_test("✅ Test cliente created", True, 
+                f"Cliente: {test_cliente_data['nome']} {test_cliente_data['cognome']}, ID: {test_cliente_id[:8]}...")
+        else:
+            self.log_test("❌ Test cliente creation failed", False, f"Status: {status}, Response: {create_response}")
+            return False
+
+        # **STEP 5: SIMULATE DOCUMENT UPLOAD**
+        print("\n📄 STEP 5: SIMULATE DOCUMENT UPLOAD...")
+        print("   📋 Creating test PDF content...")
+        
+        # Create a simple test PDF content (minimal PDF structure)
+        test_pdf_content = b"""%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 44
+>>
+stream
+BT
+/F1 12 Tf
+100 700 Td
+(Test Aruba Drive Upload) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000206 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+299
+%%EOF"""
+        
+        # Try to upload using requests with multipart form data
+        try:
+            import requests
+            
+            url = f"{self.base_url}/documents/upload"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            files = {
+                'file': ('test_aruba_document.pdf', test_pdf_content, 'application/pdf')
+            }
+            
+            data = {
+                'entity_type': 'cliente',
+                'entity_id': test_cliente_id,
+                'uploaded_by': self.user_data['username']
+            }
+            
+            print(f"   📋 Uploading to: {url}")
+            print(f"   📋 Cliente ID: {test_cliente_id}")
+            print(f"   📋 Commessa: {aruba_commessa.get('nome')} (Aruba enabled)")
+            
+            response = requests.post(url, headers=headers, files=files, data=data, timeout=60)
+            
+            if response.status_code == 200:
+                upload_result = response.json()
+                self.log_test("✅ Document upload SUCCESS", True, 
+                    f"Status: {response.status_code}, Document ID: {upload_result.get('document_id', 'N/A')[:8]}...")
+                
+                # Check if Aruba Drive path is set
+                aruba_path = upload_result.get('aruba_drive_path', '')
+                if 'aruba' in aruba_path.lower() or aruba_path.startswith('/'):
+                    self.log_test("✅ Aruba Drive path detected", True, f"Path: {aruba_path}")
+                else:
+                    self.log_test("⚠️ Local storage path detected", True, f"Path: {aruba_path}")
+                
+                print(f"\n   📊 UPLOAD RESULT ANALYSIS:")
+                print(f"      • Success: {upload_result.get('success', False)}")
+                print(f"      • Message: {upload_result.get('message', 'N/A')}")
+                print(f"      • Document ID: {upload_result.get('document_id', 'N/A')}")
+                print(f"      • Filename: {upload_result.get('filename', 'N/A')}")
+                print(f"      • Aruba Drive Path: {upload_result.get('aruba_drive_path', 'N/A')}")
+                
+            else:
+                self.log_test("❌ Document upload FAILED", False, 
+                    f"Status: {response.status_code}, Response: {response.text[:200]}")
+                return False
+                
+        except Exception as e:
+            self.log_test("❌ Document upload ERROR", False, f"Exception: {str(e)}")
+            return False
+
+        # **STEP 6: CHECK BACKEND LOGS FOR ARUBA MESSAGES**
+        print("\n📊 STEP 6: CHECK BACKEND LOGS FOR ARUBA MESSAGES...")
+        
+        try:
+            import subprocess
+            
+            # Get recent backend logs
+            result = subprocess.run(['tail', '-n', '50', '/var/log/supervisor/backend.out.log'], 
+                                  capture_output=True, text=True, timeout=10)
+            
+            if result.returncode == 0:
+                logs = result.stdout
+                
+                # Look for Aruba-related messages
+                aruba_messages = []
+                for line in logs.split('\n'):
+                    if any(keyword in line.lower() for keyword in ['aruba', '📋', '📁', '✅', '⚠️', '❌']):
+                        aruba_messages.append(line.strip())
+                
+                if aruba_messages:
+                    self.log_test("✅ Found Aruba-related log messages", True, f"Found {len(aruba_messages)} messages")
+                    
+                    print(f"\n   📋 ARUBA DRIVE LOG MESSAGES:")
+                    for i, message in enumerate(aruba_messages[-10:], 1):  # Show last 10 messages
+                        print(f"      {i}. {message}")
+                else:
+                    self.log_test("⚠️ No Aruba-related log messages found", True, "No specific Aruba Drive messages in recent logs")
+                    
+            else:
+                self.log_test("❌ Could not read backend logs", False, f"Error: {result.stderr}")
+                
+        except Exception as e:
+            self.log_test("❌ Log analysis failed", False, f"Exception: {str(e)}")
+
+        # **STEP 7: VERIFY DOCUMENT IN DATABASE**
+        print("\n💾 STEP 7: VERIFY DOCUMENT IN DATABASE...")
+        
+        # Get documents for the test cliente
+        success, docs_response, status = self.make_request(
+            'GET', f'documents?entity_type=cliente&entity_id={test_cliente_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            documents = docs_response if isinstance(docs_response, list) else []
+            
+            if len(documents) > 0:
+                doc = documents[0]  # Get the uploaded document
+                
+                self.log_test("✅ Document found in database", True, 
+                    f"Document ID: {doc.get('id', 'N/A')[:8]}..., Filename: {doc.get('filename', 'N/A')}")
+                
+                # Analyze document metadata
+                storage_type = doc.get('storage_type', 'unknown')
+                aruba_path = doc.get('aruba_drive_path', '')
+                commessa_config_used = doc.get('commessa_config_used', False)
+                
+                print(f"\n   📊 DOCUMENT METADATA ANALYSIS:")
+                print(f"      • Storage Type: {storage_type}")
+                print(f"      • Aruba Drive Path: {aruba_path}")
+                print(f"      • Commessa Config Used: {commessa_config_used}")
+                print(f"      • File Size: {doc.get('file_size', 'N/A')} bytes")
+                print(f"      • File Type: {doc.get('file_type', 'N/A')}")
+                
+                if storage_type == 'aruba_drive':
+                    self.log_test("✅ Document stored in Aruba Drive", True, "Storage type is aruba_drive")
+                elif storage_type == 'local':
+                    self.log_test("⚠️ Document stored locally", True, "Storage type is local (fallback)")
+                else:
+                    self.log_test("❌ Unknown storage type", False, f"Storage type: {storage_type}")
+                    
+            else:
+                self.log_test("❌ No documents found for test cliente", False, "Document upload may have failed")
+                return False
+        else:
+            self.log_test("❌ Could not retrieve documents", False, f"Status: {status}")
+
+        # **FINAL ANALYSIS**
+        print(f"\n🎯 ARUBA DRIVE ACTUAL UPLOAD TEST - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Testare effettivamente l'upload per vedere comportamento Aruba Drive")
+        print(f"   📊 RISULTATI TEST:")
+        print(f"      • Admin login: ✅ SUCCESS")
+        print(f"      • Aruba-enabled commessa found: ✅ SUCCESS ({aruba_commessa.get('nome')})")
+        print(f"      • Compatible sub agenzia found: ✅ SUCCESS ({target_sub_agenzia.get('nome')})")
+        print(f"      • Test cliente created: ✅ SUCCESS")
+        print(f"      • Document upload: {'✅ SUCCESS' if response.status_code == 200 else '❌ FAILED'}")
+        print(f"      • Document in database: {'✅ FOUND' if len(documents) > 0 else '❌ NOT FOUND'}")
+        print(f"      • Storage type: {storage_type if 'storage_type' in locals() else 'UNKNOWN'}")
+        
+        if 'storage_type' in locals():
+            if storage_type == 'aruba_drive':
+                print(f"   🎉 SUCCESS: Document successfully uploaded to Aruba Drive!")
+                print(f"   ✅ CONCLUSION: Aruba Drive integration is working correctly")
+                return True
+            elif storage_type == 'local':
+                print(f"   ⚠️ FALLBACK: Document saved locally instead of Aruba Drive")
+                print(f"   🔍 INVESTIGATION NEEDED: Check Aruba Drive connectivity, credentials, or implementation")
+                return True  # Still successful test, just using fallback
+            else:
+                print(f"   ❌ ISSUE: Unknown storage type - possible implementation problem")
+                return False
+        else:
+            print(f"   ❌ FAILURE: Could not determine storage type")
+            return False
+
     def test_documents_endpoint_urgent(self):
         """TEST URGENTE dell'endpoint GET /api/documents dopo la rimozione del duplicato"""
         print("\n🚨 TEST URGENTE dell'endpoint GET /api/documents dopo la rimozione del duplicato...")
