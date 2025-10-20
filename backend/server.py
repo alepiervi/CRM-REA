@@ -1441,7 +1441,19 @@ async def can_user_delete_cliente(user: User, cliente: Cliente) -> bool:
                      UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
         return cliente.created_by == user.id
     
-    # For roles with authorizations - check can_delete_clients permission
+    # For BACKOFFICE_COMMESSA: can delete all clients in their authorized commesse
+    if user.role == UserRole.BACKOFFICE_COMMESSA:
+        if hasattr(user, 'commesse_autorizzate') and user.commesse_autorizzate:
+            return cliente.commessa_id in user.commesse_autorizzate
+        # Fallback to authorization check
+        authorization = await db.user_commessa_authorizations.find_one({
+            "user_id": user.id,
+            "commessa_id": cliente.commessa_id,
+            "is_active": True
+        })
+        return authorization is not None
+    
+    # For other roles with authorizations - check can_delete_clients permission
     authorization = await db.user_commessa_authorizations.find_one({
         "user_id": user.id,
         "commessa_id": cliente.commessa_id,
