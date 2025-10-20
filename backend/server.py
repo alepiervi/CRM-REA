@@ -10645,10 +10645,6 @@ async def delete_cliente(
 ):
     """Delete cliente completely from system"""
     
-    # Only admin and responsabile_commessa can delete clienti
-    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
-        raise HTTPException(status_code=403, detail="Insufficient permissions to delete clienti")
-    
     # Check if cliente exists
     cliente_doc = await db.clienti.find_one({"id": cliente_id})
     if not cliente_doc:
@@ -10656,8 +10652,9 @@ async def delete_cliente(
     
     cliente = Cliente(**cliente_doc)
     
-    # Verify user can modify this cliente (same permission check as update)
-    if not await can_user_modify_cliente(current_user, cliente):
+    # Verify user can delete this cliente (checks status lock and permissions)
+    if not await can_user_delete_cliente(current_user, cliente):
+        raise HTTPException(status_code=403, detail="No permission to delete this cliente")
         raise HTTPException(status_code=403, detail="No permission to delete this cliente")
     
     try:
