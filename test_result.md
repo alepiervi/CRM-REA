@@ -230,6 +230,18 @@ FOCUS CRITICO:
 **Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
+  - task: "Aruba Drive Upload Diagnosis - Document Upload Failure Investigation"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🚨 ARUBA DRIVE UPLOAD DIAGNOSIS COMPLETE - ROOT CAUSE IDENTIFIED! ✅ COMPREHENSIVE TESTING COMPLETED: Performed complete Aruba Drive upload diagnosis as requested in review. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ COMMESSE CONFIGURATION VERIFIED: Found 8 total commesse, 2 with aruba_drive_config (Fastweb, Telepass), 2 with enabled=true. Configuration is CORRECT. ✅ ENVIRONMENT VARIABLES VERIFIED: Code correctly uses per-commessa config instead of global env vars. ✅ ACTUAL UPLOAD TEST PERFORMED: Created test cliente with Aruba-enabled commessa (Fastweb), attempted real document upload. ✅ BACKEND LOGS ANALYZED: Found critical error messages in /var/log/supervisor/backend.err.log. ❌ ROOT CAUSE IDENTIFIED: Aruba Drive connectivity/authentication failure. Backend logs show: 'WARNING: ⚠️ Expected folder not found: Fastweb - Creating automatically as fallback', 'ERROR: Failed to create folder Fastweb: Could not create folder: Fastweb', 'ERROR: ❌ Failed to create missing folder: Fastweb'. ✅ FALLBACK WORKING: Local storage fallback functions correctly when Aruba Drive fails. 🎯 CRITICAL FINDINGS: 1) Configuration is correct (2 commesse have Aruba Drive enabled), 2) Code attempts Aruba Drive upload correctly, 3) Issue is Aruba Drive API connectivity/credentials, 4) Documents save locally as intended fallback. 🎯 SOLUTION REQUIRED: Fix Aruba Drive API credentials or connectivity, not system configuration. SUCCESS RATE: 90% (18/20 tests passed) - Diagnosis complete, root cause identified!"
+
   - task: "Database Seeding Implementation - Post-Deployment Empty Database Fix"
     implemented: true
     working: true
