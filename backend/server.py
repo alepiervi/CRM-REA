@@ -1423,6 +1423,13 @@ async def get_user_accessible_sub_agenzie(user: User, commessa_id: str) -> List[
 
 async def can_user_modify_cliente(user: User, cliente: Cliente) -> bool:
     """Check if user can modify a specific cliente"""
+    
+    # NEW: Check if cliente is locked (status "Inserito" or "Ko")
+    # Only BACKOFFICE_COMMESSA can modify locked clients
+    if cliente.status in ["Inserito", "Ko"]:
+        if user.role != UserRole.BACKOFFICE_COMMESSA:
+            return False
+    
     if user.role == UserRole.ADMIN:
         return True
     
