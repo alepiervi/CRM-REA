@@ -197,6 +197,7 @@ class User(BaseModel):
     can_view_analytics: bool = False      # Se può vedere analytics (responsabili sì, backoffice no)
     entity_management: EntityType = EntityType.CLIENTI  # NEW: what entities this user can manage
     password_change_required: bool = True  # NEW: Force password change on first login
+    password_last_changed: Optional[datetime] = None  # NEW: Track last password change for 90-day expiry
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login: Optional[datetime] = None
 
