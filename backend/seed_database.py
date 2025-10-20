@@ -27,11 +27,13 @@ db_name = os.environ['DB_NAME']
 
 
 async def seed_database():
-    """Popola il database con dati iniziali."""
+    """Crea SOLO l'utente admin iniziale. Tutto il resto deve essere creato dall'admin tramite interfaccia."""
     
     print("🌱 Avvio seeding del database...")
     print(f"📊 Database: {db_name}")
     print(f"🔗 MongoDB URL: {mongo_url[:30]}...")
+    print("\n⚠️  NOTA: Questo script crea SOLO l'utente admin.")
+    print("   Commesse, servizi, tipologie, etc. devono essere creati dall'admin tramite interfaccia.\n")
     
     # Connetti al database
     client = AsyncIOMotorClient(mongo_url)
@@ -43,7 +45,7 @@ async def seed_database():
         print("✅ Connessione al database riuscita!")
         
         # ============================================
-        # 1. CREAZIONE UTENTE ADMIN
+        # CREAZIONE UTENTE ADMIN
         # ============================================
         print("\n📝 Creazione utente admin...")
         
