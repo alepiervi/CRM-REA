@@ -37088,30 +37088,73 @@ def main():
 if __name__ == "__main__":
     tester = CRMAPITester()
     
-    print("🚀 Starting CRM API Testing - PASSWORD VALIDATION USER CREATION...")
-    print(f"🌐 Base URL: {tester.base_url}")
-    print("🎯 FOCUS: Creazione utente test per validazione password identica")
-    print("=" * 80)
-    
-    # Run password validation user creation test as requested
-    try:
-        result = tester.run_all_tests()
+    # Check if specific test is requested
+    if len(sys.argv) > 1:
+        test_name = sys.argv[1]
         
-        # Print summary
-        print(f"\n📊 Test Summary:")
-        print(f"   Tests run: {tester.tests_run}")
-        print(f"   Tests passed: {tester.tests_passed}")
-        print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+        print(f"🚀 Starting CRM API Testing - {test_name.upper()}...")
+        print(f"🌐 Base URL: {tester.base_url}")
+        print("=" * 80)
         
-        if result:
-            print("🎉 ALE7 POST-RESTART VERIFICATION SUCCESSFUL!")
-        else:
-            print("❌ ALE7 POST-RESTART VERIFICATION FAILED!")
+        try:
+            if test_name == "aruba_drive":
+                result = tester.test_aruba_drive_diagnosis_urgent()
+            elif test_name == "auth_me":
+                result = tester.test_auth_me_endpoint_urgent()
+            elif test_name == "password_fix":
+                result = tester.test_password_fix_multiple_users_login()
+            elif test_name == "documents":
+                result = tester.test_documents_endpoint_urgent()
+            elif test_name == "excel_export":
+                result = tester.test_excel_export_post_riavvio_headers_verification()
+            elif test_name == "store_assistant":
+                result = tester.test_store_assistant_user_creation_fix()
+            elif test_name == "ale7_restart":
+                result = tester.test_ale7_post_restart_verification_immediate()
+            else:
+                print(f"Unknown test: {test_name}")
+                print("Available tests: aruba_drive, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart")
+                result = False
+                
+            # Print summary
+            print(f"\n📊 Test Summary:")
+            print(f"   Tests run: {tester.tests_run}")
+            print(f"   Tests passed: {tester.tests_passed}")
+            print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
             
-    except Exception as e:
-        print(f"❌ Test failed with exception: {e}")
-        import traceback
-        traceback.print_exc()
-        result = False
+            if result:
+                print(f"🎉 {test_name.upper()} TEST SUCCESSFUL!")
+            else:
+                print(f"❌ {test_name.upper()} TEST FAILED!")
+                
+        except Exception as e:
+            print(f"❌ Test failed with exception: {e}")
+            import traceback
+            traceback.print_exc()
+            result = False
+    else:
+        print("🚀 Starting CRM API Testing - ALL TESTS...")
+        print(f"🌐 Base URL: {tester.base_url}")
+        print("=" * 80)
+        
+        try:
+            result = tester.run_all_tests()
+            
+            # Print summary
+            print(f"\n📊 Test Summary:")
+            print(f"   Tests run: {tester.tests_run}")
+            print(f"   Tests passed: {tester.tests_passed}")
+            print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+            
+            if result:
+                print("🎉 ALL TESTS SUCCESSFUL!")
+            else:
+                print("❌ SOME TESTS FAILED!")
+                
+        except Exception as e:
+            print(f"❌ Test failed with exception: {e}")
+            import traceback
+            traceback.print_exc()
+            result = False
     
     exit(0 if result else 1)
