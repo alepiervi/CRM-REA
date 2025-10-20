@@ -34480,18 +34480,24 @@ Duplicate,Test,+393471234567"""
             expected_status=200
         )
         
-        if success and isinstance(response, dict) and 'id' in response:
-            created_ids['tipologia_id'] = response['id']
-            self.log_test("✅ Creazione tipologia contratto dinamica", True, 
-                f"Tipologia creata con ID: {created_ids['tipologia_id']}")
-            
-            # Verify tipologia is linked to servizio
-            if response.get('servizio_id') == created_ids['servizio_id']:
-                self.log_test("✅ Tipologia collegata a servizio", True, 
-                    f"Servizio ID: {response.get('servizio_id')}")
+        if success and isinstance(response, dict):
+            # Handle different response structures
+            tipologia_data = response.get('tipologia', response)
+            if 'id' in tipologia_data:
+                created_ids['tipologia_id'] = tipologia_data['id']
+                self.log_test("✅ Creazione tipologia contratto dinamica", True, 
+                    f"Tipologia creata con ID: {created_ids['tipologia_id']}")
+                
+                # Verify tipologia is linked to servizio
+                if tipologia_data.get('servizio_id') == created_ids['servizio_id']:
+                    self.log_test("✅ Tipologia collegata a servizio", True, 
+                        f"Servizio ID: {tipologia_data.get('servizio_id')}")
+                else:
+                    self.log_test("❌ Tipologia non collegata correttamente", False, 
+                        f"Expected: {created_ids['servizio_id']}, Got: {tipologia_data.get('servizio_id')}")
             else:
-                self.log_test("❌ Tipologia non collegata correttamente", False, 
-                    f"Expected: {created_ids['servizio_id']}, Got: {response.get('servizio_id')}")
+                self.log_test("❌ Creazione tipologia fallita - no ID", False, f"Response: {response}")
+                return False
         else:
             self.log_test("❌ Creazione tipologia fallita", False, f"Status: {status}, Response: {response}")
             return False
