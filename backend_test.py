@@ -34502,49 +34502,38 @@ Duplicate,Test,+393471234567"""
             self.log_test("❌ Creazione tipologia fallita", False, f"Status: {status}, Response: {response}")
             return False
 
-        # **TEST 5: CREAZIONE SEGMENTI PER TIPOLOGIA**
-        print("\n🎯 TEST 5: CREAZIONE SEGMENTI PER TIPOLOGIA...")
+        # **TEST 5: VERIFICA SEGMENTI AUTO-CREATI PER TIPOLOGIA**
+        print("\n🎯 TEST 5: VERIFICA SEGMENTI AUTO-CREATI PER TIPOLOGIA...")
+        print("   ℹ️ I segmenti vengono creati automaticamente quando si crea una tipologia contratto")
         
-        # Create Privato segment
-        segmento_privato_data = {
-            "tipo": "privato",
-            "tipologia_contratto_id": created_ids['tipologia_id'],
-            "is_active": True
-        }
-        
+        # Get segmenti for the created tipologia
         success, response, status = self.make_request(
-            'POST', 'segmenti', 
-            segmento_privato_data, 
+            'GET', f'cascade/segmenti-by-tipologia/{created_ids["tipologia_id"]}', 
             expected_status=200
         )
         
-        if success and isinstance(response, dict) and 'id' in response:
-            created_ids['segmento_privato_id'] = response['id']
-            self.log_test("✅ Creazione segmento Privato", True, 
-                f"Segmento Privato creato con ID: {created_ids['segmento_privato_id']}")
+        if success and isinstance(response, list) and len(response) >= 2:
+            # Find privato and business segments
+            segmento_privato = next((s for s in response if s.get('tipo') == 'privato'), None)
+            segmento_business = next((s for s in response if s.get('tipo') == 'business'), None)
+            
+            if segmento_privato:
+                created_ids['segmento_privato_id'] = segmento_privato['id']
+                self.log_test("✅ Segmento Privato auto-creato", True, 
+                    f"Segmento Privato trovato con ID: {created_ids['segmento_privato_id']}")
+            else:
+                self.log_test("❌ Segmento Privato non trovato", False, "Segmento privato non auto-creato")
+                return False
+                
+            if segmento_business:
+                created_ids['segmento_business_id'] = segmento_business['id']
+                self.log_test("✅ Segmento Business auto-creato", True, 
+                    f"Segmento Business trovato con ID: {created_ids['segmento_business_id']}")
+            else:
+                self.log_test("❌ Segmento Business non trovato", False, "Segmento business non auto-creato")
+                return False
         else:
-            self.log_test("❌ Creazione segmento Privato fallita", False, f"Status: {status}, Response: {response}")
-            return False
-        
-        # Create Business segment
-        segmento_business_data = {
-            "tipo": "business",
-            "tipologia_contratto_id": created_ids['tipologia_id'],
-            "is_active": True
-        }
-        
-        success, response, status = self.make_request(
-            'POST', 'segmenti', 
-            segmento_business_data, 
-            expected_status=200
-        )
-        
-        if success and isinstance(response, dict) and 'id' in response:
-            created_ids['segmento_business_id'] = response['id']
-            self.log_test("✅ Creazione segmento Business", True, 
-                f"Segmento Business creato con ID: {created_ids['segmento_business_id']}")
-        else:
-            self.log_test("❌ Creazione segmento Business fallita", False, f"Status: {status}, Response: {response}")
+            self.log_test("❌ Segmenti auto-creazione fallita", False, f"Status: {status}, Response: {response}")
             return False
 
         # **TEST 6: CREAZIONE OFFERTA PER COMMESSA**
