@@ -34797,6 +34797,11 @@ Duplicate,Test,+393471234567"""
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
+        if dynamic_creation_success:
+            print("🎉 DYNAMIC DATA CREATION VERIFICATION: ✅ SUCCESS - SISTEMA COMPLETAMENTE DINAMICO!")
+        else:
+            print("🚨 DYNAMIC DATA CREATION VERIFICATION: ❌ FAILED - SISTEMA NON COMPLETAMENTE DINAMICO!")
+            
         if backend_success:
             print("🎉 CLIENT CREATION 422 ERROR INVESTIGATION: ✅ SUCCESS - NO 422 ERRORS FOUND!")
         else:
