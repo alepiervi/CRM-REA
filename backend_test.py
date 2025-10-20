@@ -34502,11 +34502,24 @@ Duplicate,Test,+393471234567"""
             self.log_test("❌ Creazione tipologia fallita", False, f"Status: {status}, Response: {response}")
             return False
 
-        # **TEST 5: VERIFICA SEGMENTI AUTO-CREATI PER TIPOLOGIA**
-        print("\n🎯 TEST 5: VERIFICA SEGMENTI AUTO-CREATI PER TIPOLOGIA...")
-        print("   ℹ️ I segmenti vengono creati automaticamente quando si crea una tipologia contratto")
+        # **TEST 5: CREAZIONE SEGMENTI TRAMITE MIGRAZIONE**
+        print("\n🎯 TEST 5: CREAZIONE SEGMENTI TRAMITE MIGRAZIONE...")
+        print("   ℹ️ Utilizzo endpoint di migrazione per creare segmenti per tipologie esistenti")
         
-        # Get segmenti for the created tipologia
+        # Call migration endpoint to create segmenti for existing tipologie
+        success, response, status = self.make_request(
+            'POST', 'admin/migrate-segmenti', 
+            {}, 
+            expected_status=200
+        )
+        
+        if success:
+            self.log_test("✅ Migrazione segmenti eseguita", True, 
+                f"Status: {status}, Response: {response}")
+        else:
+            self.log_test("❌ Migrazione segmenti fallita", False, f"Status: {status}, Response: {response}")
+        
+        # Now get segmenti for the created tipologia
         success, response, status = self.make_request(
             'GET', f'cascade/segmenti-by-tipologia/{created_ids["tipologia_id"]}', 
             expected_status=200
@@ -34519,21 +34532,21 @@ Duplicate,Test,+393471234567"""
             
             if segmento_privato:
                 created_ids['segmento_privato_id'] = segmento_privato['id']
-                self.log_test("✅ Segmento Privato auto-creato", True, 
+                self.log_test("✅ Segmento Privato creato", True, 
                     f"Segmento Privato trovato con ID: {created_ids['segmento_privato_id']}")
             else:
-                self.log_test("❌ Segmento Privato non trovato", False, "Segmento privato non auto-creato")
+                self.log_test("❌ Segmento Privato non trovato", False, "Segmento privato non creato")
                 return False
                 
             if segmento_business:
                 created_ids['segmento_business_id'] = segmento_business['id']
-                self.log_test("✅ Segmento Business auto-creato", True, 
+                self.log_test("✅ Segmento Business creato", True, 
                     f"Segmento Business trovato con ID: {created_ids['segmento_business_id']}")
             else:
-                self.log_test("❌ Segmento Business non trovato", False, "Segmento business non auto-creato")
+                self.log_test("❌ Segmento Business non trovato", False, "Segmento business non creato")
                 return False
         else:
-            self.log_test("❌ Segmenti auto-creazione fallita", False, f"Status: {status}, Response: {response}")
+            self.log_test("❌ Segmenti non trovati dopo migrazione", False, f"Status: {status}, Response: {response}")
             return False
 
         # **TEST 6: CREAZIONE OFFERTA PER COMMESSA**
