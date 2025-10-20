@@ -898,6 +898,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Dynamic Data Creation Verification - Complete System Test"
     - "Convergenza Items Multiple SIM Debug - Verifica Persistenza Multipli Item"
   stuck_tasks: []
   test_all: false
