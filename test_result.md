@@ -924,8 +924,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Dynamic Data Creation Verification - Complete System Test"
-    - "Convergenza Items Multiple SIM Debug - Verifica Persistenza Multipli Item"
+    - "Aruba Drive Upload Diagnosis - Document Upload Failure Investigation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
