@@ -15122,7 +15122,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                   </Button>
                   
                   {/* Modifica button - hidden for locked status unless backoffice_commessa */}
-                  {(user.role === "backoffice_commessa" || (cliente.status !== "Inserito" && cliente.status !== "Ko")) && (
+                  {(user.role === "backoffice_commessa" || (cliente.status !== "inserito" && cliente.status !== "ko")) && (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -15135,14 +15135,14 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                   )}
                   
                   {/* Placeholder if Edit button is hidden to maintain layout */}
-                  {(user.role !== "backoffice_commessa" && (cliente.status === "Inserito" || cliente.status === "Ko")) && (
+                  {(user.role !== "backoffice_commessa" && (cliente.status === "inserito" || cliente.status === "ko")) && (
                     <div className="w-full flex items-center justify-center text-xs text-gray-400 border border-gray-300 rounded px-2 py-2">
                       🔒 Bloccato
                     </div>
                   )}
                   
                   {/* Elimina button - hidden for locked status unless backoffice_commessa */}
-                  {(user.role === "backoffice_commessa" || (cliente.status !== "Inserito" && cliente.status !== "Ko")) && (
+                  {(user.role === "backoffice_commessa" || (cliente.status !== "inserito" && cliente.status !== "ko")) && (
                     <Button 
                       variant="destructive" 
                       size="sm"
