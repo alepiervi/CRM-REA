@@ -1421,6 +1421,50 @@ async def get_user_accessible_sub_agenzie(user: User, commessa_id: str) -> List[
     
     return []
 
+async def can_user_delete_cliente(user: User, cliente: Cliente) -> bool:
+    """Check if user can delete a specific cliente"""
+    
+    # NEW: Check if cliente is locked (status "inserito" or "ko")
+    # Only BACKOFFICE_COMMESSA can delete locked clients
+    if cliente.status and cliente.status.lower() in ["inserito", "ko"]:
+        if user.role != UserRole.BACKOFFICE_COMMESSA:
+            return False
+    
+    # Admin can always delete
+    if user.role == UserRole.ADMIN:
+        return True
+    
+    # For roles that don't use authorizations (like store_assist, agente, etc.)
+    # They can delete their own clients (unless locked)
+    if user.role in [UserRole.STORE_ASSIST, UserRole.AGENTE, UserRole.OPERATORE, 
+                     UserRole.AGENTE_SPECIALIZZATO, UserRole.RESPONSABILE_STORE, 
+                     UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
+        return cliente.created_by == user.id
+    
+    # For roles with authorizations - check can_delete_clients permission
+    authorization = await db.user_commessa_authorizations.find_one({
+        "user_id": user.id,
+        "commessa_id": cliente.commessa_id,
+        "is_active": True
+    })
+    
+    if not authorization:
+        return False
+    
+    auth_obj = UserCommessaAuthorization(**authorization)
+    
+    # Must have delete permission
+    if not auth_obj.can_delete_clients:
+        return False
+    
+    # If can view all agencies, can delete all clients
+    if auth_obj.can_view_all_agencies:
+        return True
+    
+    # Otherwise only clients from their sub agenzia
+    return auth_obj.sub_agenzia_id == cliente.sub_agenzia_id
+
+
 async def can_user_modify_cliente(user: User, cliente: Cliente) -> bool:
     """Check if user can modify a specific cliente"""
     
