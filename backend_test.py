@@ -37414,6 +37414,8 @@ if __name__ == "__main__":
         try:
             if test_name == "aruba_drive":
                 result = tester.test_aruba_drive_diagnosis_urgent()
+            elif test_name == "aruba_upload":
+                result = tester.test_aruba_drive_actual_upload_test()
             elif test_name == "auth_me":
                 result = tester.test_auth_me_endpoint_urgent()
             elif test_name == "password_fix":
