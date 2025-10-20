@@ -3630,12 +3630,13 @@ async def change_password(password_data: PasswordChange, current_user: User = De
     # Hash new password
     hashed_password = get_password_hash(password_data.new_password)
     
-    # Update password and clear password change requirement
+    # Update password, clear password change requirement, and set password_last_changed
     await db.users.update_one(
         {"id": current_user.id},
         {"$set": {
             "password_hash": hashed_password,
-            "password_change_required": False  # Clear the requirement
+            "password_change_required": False,  # Clear the requirement
+            "password_last_changed": datetime.now(timezone.utc)  # NEW: Track password change date
         }}
     )
     
