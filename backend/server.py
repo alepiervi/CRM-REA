@@ -3551,6 +3551,37 @@ async def login_for_access_token(form_data: UserLogin):
             detail="User account is disabled"
         )
     
+    # NEW: Check password expiry (90 days) for all users except Admin
+    password_change_required = user.get("password_change_required", False)
+    
+    if user.get("role") != "admin":
+        password_last_changed = user.get("password_last_changed")
+        if password_last_changed:
+            # Convert to datetime if it's a string
+            if isinstance(password_last_changed, str):
+                password_last_changed = datetime.fromisoformat(password_last_changed.replace('Z', '+00:00'))
+            
+            # Calculate days since last password change
+            days_since_change = (datetime.now(timezone.utc) - password_last_changed).days
+            
+            # If more than 90 days, force password change
+            if days_since_change >= 90:
+                password_change_required = True
+                await db.users.update_one(
+                    {"id": user["id"]},
+                    {"$set": {"password_change_required": True}}
+                )
+        elif not password_last_changed:
+            # If password_last_changed is None (old users), set it to now and require change
+            password_change_required = True
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$set": {
+                    "password_change_required": True,
+                    "password_last_changed": datetime.now(timezone.utc)
+                }}
+            )
+    
     # Update last login
     await db.users.update_one(
         {"id": user["id"]},
@@ -3562,6 +3593,8 @@ async def login_for_access_token(form_data: UserLogin):
         data={"sub": user["username"]}, expires_delta=access_token_expires
     )
     
+    # Update user object with password_change_required status
+    user["password_change_required"] = password_change_required
     user_obj = User(**user)
     return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
 
