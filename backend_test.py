@@ -840,7 +840,7 @@ startxref
             }
             
             data = {
-                'entity_type': 'cliente',
+                'entity_type': 'clienti',  # Use 'clienti' instead of 'cliente'
                 'entity_id': test_cliente_id,
                 'uploaded_by': self.user_data['username']
             }
