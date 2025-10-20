@@ -1424,15 +1424,23 @@ async def get_user_accessible_sub_agenzie(user: User, commessa_id: str) -> List[
 async def can_user_modify_cliente(user: User, cliente: Cliente) -> bool:
     """Check if user can modify a specific cliente"""
     
-    # NEW: Check if cliente is locked (status "Inserito" or "Ko")
+    # NEW: Check if cliente is locked (status "inserito" or "ko") - lowercase with underscore
     # Only BACKOFFICE_COMMESSA can modify locked clients
-    if cliente.status in ["Inserito", "Ko"]:
+    if cliente.status and cliente.status.lower() in ["inserito", "ko"]:
         if user.role != UserRole.BACKOFFICE_COMMESSA:
             return False
     
     if user.role == UserRole.ADMIN:
         return True
     
+    # For roles that don't use authorizations (like store_assist, agente, etc.)
+    # They can only modify their own clients
+    if user.role in [UserRole.STORE_ASSIST, UserRole.AGENTE, UserRole.OPERATORE, 
+                     UserRole.AGENTE_SPECIALIZZATO, UserRole.RESPONSABILE_STORE, 
+                     UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
+        return cliente.created_by == user.id
+    
+    # For roles with authorizations
     authorization = await db.user_commessa_authorizations.find_one({
         "user_id": user.id,
         "commessa_id": cliente.commessa_id,
