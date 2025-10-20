@@ -20693,9 +20693,13 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </CardHeader>
             <CardContent>
               <div>
-                <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
-                  <SelectTrigger>
+                <Label>Status {user.role !== "backoffice_commessa" && <span className="text-xs text-gray-500">(Solo Backoffice Commessa può modificare)</span>}</Label>
+                <Select 
+                  value={formData.status} 
+                  onValueChange={(value) => handleChange('status', value)}
+                  disabled={user.role !== "backoffice_commessa"}
+                >
+                  <SelectTrigger className={user.role !== "backoffice_commessa" ? "opacity-60 cursor-not-allowed" : ""}>
                     <SelectValue placeholder="Seleziona status" />
                   </SelectTrigger>
                   <SelectContent>
