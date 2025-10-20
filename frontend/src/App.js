@@ -19515,6 +19515,8 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
 
 // Edit Cliente Modal Component  
 const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
+  const { user } = useAuth();
+  
   // Array delle tecnologie - stesso del form di creazione
   const TECNOLOGIE = [
     { value: 'fibra', label: 'FIBRA' },
