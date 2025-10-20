@@ -15120,30 +15120,43 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     <History className="w-4 h-4 mr-1" />
                     Log
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEditCliente(cliente)}
-                    className="w-full"
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Modifica
-                  </Button>
                   
-                  {/* Terza riga: Elimina (full width) */}
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => {
-                      if (confirm(`Eliminare definitivamente il cliente "${cliente.nome} ${cliente.cognome}"?`)) {
-                        deleteCliente(cliente.id);
-                      }
-                    }}
-                    className="w-full col-span-2"
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Elimina
-                  </Button>
+                  {/* Modifica button - hidden for locked status unless backoffice_commessa */}
+                  {(user.role === "backoffice_commessa" || (cliente.status !== "Inserito" && cliente.status !== "Ko")) && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditCliente(cliente)}
+                      className="w-full"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Modifica
+                    </Button>
+                  )}
+                  
+                  {/* Placeholder if Edit button is hidden to maintain layout */}
+                  {(user.role !== "backoffice_commessa" && (cliente.status === "Inserito" || cliente.status === "Ko")) && (
+                    <div className="w-full flex items-center justify-center text-xs text-gray-400 border border-gray-300 rounded px-2 py-2">
+                      🔒 Bloccato
+                    </div>
+                  )}
+                  
+                  {/* Elimina button - hidden for locked status unless backoffice_commessa */}
+                  {(user.role === "backoffice_commessa" || (cliente.status !== "Inserito" && cliente.status !== "Ko")) && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => {
+                        if (confirm(`Eliminare definitivamente il cliente "${cliente.nome} ${cliente.cognome}"?`)) {
+                          deleteCliente(cliente.id);
+                        }
+                      }}
+                      className="w-full col-span-2"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Elimina
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
