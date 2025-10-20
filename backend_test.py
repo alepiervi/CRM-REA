@@ -37430,7 +37430,7 @@ if __name__ == "__main__":
                 result = tester.test_ale7_post_restart_verification_immediate()
             else:
                 print(f"Unknown test: {test_name}")
-                print("Available tests: aruba_drive, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart")
+                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart")
                 result = False
                 
             # Print summary
