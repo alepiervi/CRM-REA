@@ -1,73 +1,80 @@
 <analysis>
-The AI engineer's work focused on expanding and refining the Nureal CRM. Initial tasks involved debugging client creation (422 errors due to empty strings for enum fields) and correctly handling Offerte display/filtering in , including adding Offerta SIM to Convergenza items. Subsequent efforts addressed a  data misalignment in the .
+The AI engineer's work on the Nureal CRM was highly iterative, driven by continuous user feedback across several complex features. Initial efforts focused on fixing critical frontend issues, specifically an  in  by correctly refactoring  placements. This paved the way for a major UI/UX enhancement of the entire Analytics section, standardizing its look and feel.
 
-Key feature additions included: implementing conditional Dati Mobile fields when Mobile is in  (requiring backend model updates and complex frontend conditional rendering), adding Telepass functionality with an OBU field, and overhauling the client list preview and advanced filters for dynamic updates and comprehensive status display. A major  rewrite was performed to show all client details, with several iterations to re-add conditional logic and display offer names.
+Subsequently, the engineer implemented robust, multi-layered role-based access controls for Analytics, Clienti, and Sub Agenzie sections. This involved extensive modifications to both frontend UI rendering (sidebar and tab visibility) and backend API filtering logic, ensuring data authorization based on user roles, , and . Granular permissions were also introduced for client status management, modification, and deletion, including an Inserito/Ko status lock and a default status for new clients. Document upload was made universally permissible.
 
-The Excel export functionality was completely rebuilt to handle multiple SIMs (convergenza and mobile) per client as separate rows, including all fields and offer names. Most recently, a comprehensive Analytics section was introduced with Pivot Analytics and Sub Agenzie tabs. The engineer is currently debugging an  error, specifically related to  being called within fetch functions in the  component. The process has been highly iterative, with frequent user feedback driving continuous refinement and bug fixes.
+A cyclical 90-day password expiration policy was integrated for non-admin users. The most recent challenge involved debugging deployment failures, which revealed an empty production database after deployment, causing critical data (commesse, filiera) to be missing. The engineer is now tasked with addressing this data gap, likely through a seeding mechanism.
 </analysis>
 
 <product_requirements>
-The Nureal CRM requires robust client and project management, featuring a multi-step cascading selection for client creation, conditional field visibility, and role-based access. User management includes mandatory password changes. The client creation form has extensive fields like Ragione Sociale for Business, Codice Pod for Energia Fastweb, and nested Convergenza items.
+The Nureal CRM aims for comprehensive client and project management. Key functionalities include a multi-step cascading client creation form with conditional fields (e.g., Dati Mobile for Mobile contracts, Telepass with an OBU field), and robust role-based access. Client data must be exportable to Excel, with each SIM (convergenza or mobile) as a separate row, including all client fields and offer names. Client modification should mirror creation, displaying all fields, making organizational data read-only, showing activated offers, including Note Back Office, full credit card numbers, and updated statuses. Offerte must be dynamic and link to the filiera.
 
-All client data must be exportable to Excel, with each associated SIM (convergenza or mobile) generating a separate row, including all client fields (even empty ones) and the SIM's offer name. The client modification form mirrors creation logic, displays all fields, makes organizational fields read-only, shows activated offers, includes Note Back Office, displays full credit card numbers, and uses updated client statuses. Offerte must be user-creatable, dynamically linked to the full cascading filiera, and visible/editable in client forms.
-
-New requirements added during development include:
-- Displaying all Convergenza SIM data in .
-- Adding Dati Mobile fields (Telefono da portare, ICCID, Operatore, Titolare se diverso) when Mobile is in , mutually exclusive with Telefonia Fastweb.
-- Adding a Telepass section with an OBU field, mutually exclusive with other conditional sections.
-- Redefining client list columns in the Clienti preview.
-- Ensuring all advanced filters (Status, Commessa, Servizi, Tipologie Contratto) are dynamic and update automatically.
-- Implementing an Analytics section with Pivot tables (multi-select, date range filter, export to Excel) and a Sub Agenzie comparative analysis, with improved UI.
+Recent additions include:
+- Enhanced Convergenza SIM data display in .
+- Dati Mobile and Telepass sections, mutually exclusive with Telefonia Fastweb.
+- Redefined client list columns and dynamic advanced filters.
+- A new Analytics section with Pivot Analytics and Sub Agenzie comparative analysis, with improved UI.
+- Access to Analytics (Pivot and Sub Agenzie) for Responsabile Commessa, Backoffice Commessa, Responsabile Sub Agenzia, Backoffice Sub Agenzia, and Area Manager, with filtered data.
+- Filters in Clienti, Analytics, and Dashboard must only show Sub Agenzie/Clients with *both* authorized commessa *and* authorized services.
+- Default client creation status Passata al BO. Only Backoffice Commessa can modify client statuses. Modification/deletion is blocked if status is Inserito or Ko (except for Backoffice Commessa).
+- All users can upload documents regardless of client status.
+- Non-admin users must change passwords every 90 days.
 </product_requirements>
 
 <key_technical_concepts>
-- **Full Stack**: React.js (frontend) for UI, FastAPI (Python) for backend API.
-- **Database**: MongoDB with Motor, utilizing UUIDs for primary keys and relationships.
-- **Architecture**: Monolithic, with core logic in  and .
-- **Data Modeling**: Pydantic for API request/response validation, Pydantic Enums, Optional fields.
-- **API Communication**: Axios for frontend API calls to FastAPI.
-- **UI Components**: React Select, custom UI components (Card, Dialog, Tabs), Tailwind CSS for styling.
-- **Conditional Rendering**: Extensive use of conditional logic for field and section visibility.
-- **Error Handling**: Explicit handling for  related to enum values and nulls.
+-   **Full Stack**: React.js (frontend) and FastAPI (Python) (backend).
+-   **Database**: MongoDB with Motor, using UUIDs for IDs.
+-   **Architecture**: Monolithic, core logic in  and .
+-   **Data Modeling**: Pydantic for API validation and enums.
+-   **API Communication**: Axios for frontend calls.
+-   **UI Components**: React Select, Shadcn UI components (Card, Dialog, Tabs), Tailwind CSS.
+-   **Conditional Rendering**: Extensive use for field/section visibility.
+-   **Authentication/Authorization**: JWTs, role-based access control with granular permissions.
 </key_technical_concepts>
 
 <code_architecture>
 
 
 -   ****
-    -   **Importance**: Centralizes the React application, managing UI, state, API interactions, and rendering forms with complex conditional and cascading logic. Contains , , , , and  components.
+    -   **Importance**: Centralizes the React application, managing UI, state, API interactions, and rendering forms with complex conditional and cascading logic. Contains , , , , , and  components.
     -   **Summary of Changes**:
-        1.  ****: Synchronized  state with  before submit, added  state,  functions,  helper, and UI for Dati Mobile. Implemented  helper and UI for Telepass field. Ensured mutual exclusivity of Telefonia Fastweb, Energia Fastweb, Dati Mobile, and Telepass sections. Fixed enum fields sending  instead of empty strings.
-        2.  ****: Corrected  display logic. Added  and  helpers,  to , and UI for Dati Mobile and Telepass sections. Ensured mutual exclusivity of conditional sections. Fixed enum fields sending  instead of empty strings on update. Added debug logs for .
-        3.  ****: Completely restructured to display all client fields (even empty), organized into 9 cards with dynamic sections for multiple SIMs and notes. Re-added conditional logic and fetched offer names by ID. Added  helper and Telepass section.
-        4.  ****: Modified client table columns to match new preview requirements. Updated filter logic to use a frontend  constant and dynamically refresh other filters () after client CRUD operations.
-        5.  ****: Added states (, , ), , ,  functions. Integrated Pivot Analytics and Sub Agenzie as new tabs with improved UI (checkboxes for multi-select). Debugged and removed duplicated JSX and  issues related to  within fetch functions.
-        6.  **Global**: Added  constant, and imported , ,  icons.
+        1.  ****: Fixed  by moving  out of fetch functions. Applied consistent UI styling (banners, card gradients, organized filters) across Dashboard, Pivot Analytics, Sub Agenzie, Agenti, Referenti tabs. Implemented conditional rendering of tabs and sidebar visibility based on user roles (, , , , , ). Modified  default based on user role.
+        2.  ****: Integrated  to check user roles. Disabled the status  element if the user is not .
+        3.  ****: Modified rendering of Edit/Delete buttons to be conditional based on client status (inserito, ko) and user role, allowing only  to modify/delete clients with these statuses.
+        4.  ****: Uses  from the parent, which now incorporates service filtering.
+        5.  **Global**: Enhanced sidebar logic to show Analytics button for the newly authorized roles.
 
 -   ****
     -   **Importance**: Defines all FastAPI endpoints, handles data models, implements business logic, and interacts with MongoDB.
     -   **Summary of Changes**:
-        1.  **Models (, , )**: Added ,  to client models. Added  and .
-        2.  ** Model**: Added .
-        3.  ** Model**: Created new Pydantic model () with , , ,  fields.
-        4.  ** Enum**: Added  to resolve 422 validation errors.
-        5.  **Offer Endpoints**:  and  (with improved filtering by filiera).
-        6.  **Excel Export ()**: Completely re-written  and  functions to expand clients with multiple SIMs into multiple rows, include all client fields (even if empty), and display SIM offer names.
-        7.  **Analytics Endpoints**: Added new endpoints  and  for fetching data for pivot tables and sub-agency specific analytics.
+        1.  **Models (, )**: Added  for password expiration.
+        2.  **Model ()**: Default  changed from  to . Fixed status enum value to  (lowercase with underscore).
+        3.  **Endpoints (, , , , , , )**: Modified to filter  and  by  and , ensuring roles only see data they are authorized for.
+        4.  **Endpoint ()**:
+            -   : Sets default status to .
+            -   : Uses  to enforce status modification permissions (only  can change status).
+            -   : Uses  to enforce deletion permissions.
+        5.  **Permission Helpers**:
+            -   : Updated logic to block modification for inserito or ko statuses for all roles except . Also,  can modify clients within their authorized commesse.
+            -   : New function created to handle specific deletion logic, allowing authorized users to delete clients unless status is inserito or ko (only  can delete those).
+            -   : New function created to bypass status-based modification blocks for document uploads, allowing all users to upload documents.
+        6.  **Endpoint ()**: Modified to use  for permission checks.
+        7.  **Endpoint ()**: Added logic to check  and set  if 90 days have passed (for non-admin users).
+        8.  **Endpoint ()**: Updates  upon successful password change.
+        9.  **Endpoint ()**:  sets  for new users.
+        10. **Database**: Admin user was recreated due to an empty database on deployment.
 </code_architecture>
 
 <pending_tasks>
-- Fix the  error occurring in  by correctly managing  or replacing it with  for fetch functions.
-- Ensure dynamic data loading for Pivot Analytics and Sub Agenzie tabs upon selection.
-- Refine the graphical presentation of the Analytics section.
+-   Populate the production database with necessary base data (commesse, servizi, filiere, etc.) through a seeding script, as the current deployment environment has an empty database.
+-   Address potential issues with the  and  roles regarding data visibility if  is false.
+-   Investigate and implement authorization checks for the  endpoint, as it currently lacks them.
 </pending_tasks>
 
 <current_work>
-The AI engineer is currently addressing an  error in the  component. This error, , appears in the console, specifically pointing to calls within  (App.js:7021:1) and related fetch functions (, ).
-
-The problem has been identified as  (or similar hook logic) being invoked inside these asynchronous data fetching functions, which are not direct function components. The immediate task is to remove or refactor these  calls to comply with React's Rules of Hooks. This likely involves replacing them with  for debugging purposes or passing the  function as a parameter if it needs to be called from these helpers.
+The AI engineer is currently addressing a critical issue identified during application deployment: the production MongoDB instance is empty. This means essential data, such as  and  necessary for client creation and data filtering, is missing. This directly impacts the application's ability to function correctly in a deployed environment, preventing clients from being created and filters from working as expected. The immediate task is to develop and execute a seeding mechanism to populate the database with this foundational data. This task has been initiated with the proposal to create a seed script.
 </current_work>
 
 <optional_next_step>
-Remove the  calls from the , , and  functions in .
+Create a seed script to populate the production MongoDB with initial , , and  data.
 </optional_next_step>

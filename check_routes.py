@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://mobil-analytics-1.preview.emergentagent.com"
+    base_url = "https://nureal-crm-rbac.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:
