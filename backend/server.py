@@ -9058,9 +9058,9 @@ async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depen
     # CRITICAL FIX: Add detailed validation error logging
     try:
         cliente_dict = cliente_data.dict()
-        # Set default status to "Passata al BO" if not provided
+        # Set default status to "passata_al_bo" if not provided (using correct enum format)
         if not cliente_dict.get('status') or cliente_dict.get('status') == '':
-            cliente_dict['status'] = "Passata al BO"
+            cliente_dict['status'] = "passata_al_bo"
         
         cliente = Cliente(
             **cliente_dict,
