@@ -1421,6 +1421,52 @@ async def get_user_accessible_sub_agenzie(user: User, commessa_id: str) -> List[
     
     return []
 
+async def can_user_access_cliente(user: User, cliente: Cliente) -> bool:
+    """Check if user can access (view/upload docs) a specific cliente - NO STATUS CHECK"""
+    
+    # Admin can always access
+    if user.role == UserRole.ADMIN:
+        return True
+    
+    # For roles that don't use authorizations (like store_assist, agente, etc.)
+    # They can access their own clients
+    if user.role in [UserRole.STORE_ASSIST, UserRole.AGENTE, UserRole.OPERATORE, 
+                     UserRole.AGENTE_SPECIALIZZATO, UserRole.RESPONSABILE_STORE, 
+                     UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
+        return cliente.created_by == user.id
+    
+    # For BACKOFFICE_COMMESSA: can access all clients in their authorized commesse
+    if user.role == UserRole.BACKOFFICE_COMMESSA:
+        if hasattr(user, 'commesse_autorizzate') and user.commesse_autorizzate:
+            return cliente.commessa_id in user.commesse_autorizzate
+        # Fallback to authorization check
+        authorization = await db.user_commessa_authorizations.find_one({
+            "user_id": user.id,
+            "commessa_id": cliente.commessa_id,
+            "is_active": True
+        })
+        return authorization is not None
+    
+    # For other roles with authorizations - just check if they have access to the commessa
+    authorization = await db.user_commessa_authorizations.find_one({
+        "user_id": user.id,
+        "commessa_id": cliente.commessa_id,
+        "is_active": True
+    })
+    
+    if not authorization:
+        return False
+    
+    auth_obj = UserCommessaAuthorization(**authorization)
+    
+    # If can view all agencies, can access all clients
+    if auth_obj.can_view_all_agencies:
+        return True
+    
+    # Otherwise only clients from their sub agenzia
+    return auth_obj.sub_agenzia_id == cliente.sub_agenzia_id
+
+
 async def can_user_delete_cliente(user: User, cliente: Cliente) -> bool:
     """Check if user can delete a specific cliente"""
     
