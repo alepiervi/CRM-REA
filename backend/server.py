@@ -4251,9 +4251,10 @@ async def upload_document(
         if not entity:
             raise HTTPException(status_code=404, detail="Cliente not found")
         
-        # Check cliente access using new authorization logic
+        # Check cliente access - NEW: Use can_user_access_cliente (no status check)
+        # This allows ALL users to upload documents even if status is "inserito"/"ko"
         cliente_obj = Cliente(**entity)
-        if not await can_user_modify_cliente(current_user, cliente_obj):
+        if not await can_user_access_cliente(current_user, cliente_obj):
             raise HTTPException(status_code=403, detail="Access denied to this cliente")
     
     try:
