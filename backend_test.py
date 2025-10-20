@@ -34355,6 +34355,13 @@ Duplicate,Test,+393471234567"""
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
+        # Run the DYNAMIC DATA CREATION VERIFICATION AS REQUESTED
+        print("\n" + "="*80)
+        print("🎯 RUNNING DYNAMIC DATA CREATION VERIFICATION - AS REQUESTED")
+        print("="*80)
+        
+        dynamic_creation_success = self.test_dynamic_data_creation_verification()
+
         # Run the CONVERGENZA ITEMS MULTIPLE SIM DEBUG AS REQUESTED
         print("\n" + "="*80)
         print("🎯 RUNNING CONVERGENZA ITEMS MULTIPLE SIM DEBUG - AS REQUESTED")
