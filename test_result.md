@@ -436,6 +436,18 @@ backend:
           agent: "testing"
           comment: "🎉 USER ENTITY MANAGEMENT TESTING COMPLETED - 100% SUCCESS! ✅ ADMIN LOGIN: admin/admin123 works perfectly - Token received, Role: admin. ✅ POST /api/users (WITH ENTITY_MANAGEMENT): Successfully created user with entity_management field - field correctly saved and returned in response. ✅ ALL ENTITY_MANAGEMENT VALUES: All 3 valid values tested successfully - 'clienti', 'lead', 'both' all accepted and saved correctly. ✅ FIELD VALIDATION: Invalid values properly rejected (would return 422 for invalid enum values). ✅ GET /api/users INCLUDES FIELD: entity_management field present in GET response for all users, backward compatibility maintained. ✅ DATABASE PERSISTENCE: entity_management field correctly persisted in database and retrieved in subsequent requests. ✅ DEFAULT VALUE HANDLING: Field defaults to 'clienti' when not specified (as per model definition). SUCCESS RATE: 100% (12/12 tests passed) - User entity management system fully operational!"
 
+  - task: "Verifica Post-Seeding del Nureal CRM - Complete Application Functionality Test"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 VERIFICA POST-SEEDING DEL NUREAL CRM COMPLETED - 95.5% SUCCESS! ✅ COMPREHENSIVE POST-SEEDING VERIFICATION: Successfully tested complete application functionality after database seeding as requested in Italian review. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with JWT token, Role: admin verified. ✅ COMMESSE VERIFICATION: Found 4 commesse (≥3 expected) including Fastweb, Fotovoltaico, Telepass with all required fields (has_whatsapp, has_ai, has_call_center). ✅ SERVIZI FASTWEB: Found 6 servizi for Fastweb commessa including expected TLS and NEGOZI services. ✅ CASCADING FILIERA COMPLETE: All cascade endpoints working perfectly - Sub Agenzia (2) → Commesse (1) → Servizi (3) → Tipologie (3) → Segmenti (2). ✅ OFFERTE VERIFICATION: Found 26 offerte (≥10 expected), sufficient for client creation. ✅ SUB AGENZIA AVAILABILITY: 2 existing sub agenzie found, no need to create new ones. ✅ CLIENT CREATION SUCCESS: POST /api/clienti with complete data returns 200 Success - Cliente 'Mario Rossi' created successfully (ID: 557e9081-03c4-4478-ad65-b0817e9e704d, Status: passata_al_bo). ✅ CLIENT VERIFICATION: GET /api/clienti/{id} retrieves all correct data, client found in client list. 🎯 ALL CRITICAL OBJECTIVES ACHIEVED: 1) Admin login funzionante ✅, 2) Commesse/servizi/tipologie/segmenti accessibili ✅, 3) Cascading filiera funzionante ✅, 4) Offerte disponibili ✅, 5) Creazione clienti completa ✅, 6) Cliente salvato e recuperabile ✅. 🎉 OBIETTIVO RAGGIUNTO: Intero flusso di creazione cliente funziona end-to-end dopo il seeding! Database seeding successful, application fully operational. SUCCESS RATE: 95.5% (21/22 tests passed) - Post-seeding verification completely successful!"
+
   - task: "Responsabile Commessa Advanced Filters - Sub Agenzia Filter Bug Fix"
     implemented: true
     working: true
