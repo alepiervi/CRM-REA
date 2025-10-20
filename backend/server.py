@@ -240,6 +240,7 @@ class UserUpdate(BaseModel):
     sub_agenzie_autorizzate: Optional[List[str]] = None
     can_view_analytics: Optional[bool] = None
     password_change_required: Optional[bool] = None
+    password_last_changed: Optional[datetime] = None  # NEW: For tracking password expiry
 
 class Token(BaseModel):
     access_token: str
