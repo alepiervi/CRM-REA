@@ -10400,6 +10400,13 @@ async def update_cliente(
         if not await can_user_modify_cliente(current_user, cliente):
             raise HTTPException(status_code=403, detail="No permission to modify this cliente")
         
+        # NEW: Only BACKOFFICE_COMMESSA can modify status field
+        if cliente_update.status is not None:
+            if current_user.role != UserRole.BACKOFFICE_COMMESSA:
+                # If user is not backoffice_commessa, restore original status
+                cliente_update.status = cliente.status
+                logging.warning(f"User {current_user.username} (role: {current_user.role}) attempted to modify status - permission denied")
+        
         # Prepare update data with special handling for empty fields
         update_dict = cliente_update.dict()
         
