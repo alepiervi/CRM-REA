@@ -84,6 +84,63 @@ security = HTTPBearer()
 # Create the main app without a prefix
 app = FastAPI(title="CRM Lead Management System", version="1.0.0")
 
+# Startup event to ensure Playwright browsers are installed
+@app.on_event("startup")
+async def startup_event():
+    """
+    Installa automaticamente i browser Playwright all'avvio dell'applicazione.
+    Questo è necessario per il funzionamento di Aruba Drive upload in produzione.
+    """
+    import subprocess
+    import sys
+    
+    try:
+        logging.info("🎭 Checking Playwright browser installation...")
+        
+        # Test se Playwright è funzionante
+        try:
+            from playwright.async_api import async_playwright
+            pw = await async_playwright().start()
+            browser = await pw.chromium.launch(headless=True)
+            await browser.close()
+            await pw.stop()
+            logging.info("✅ Playwright browsers already installed and working")
+            return
+        except Exception as test_error:
+            logging.warning(f"⚠️  Playwright browser test failed: {test_error}")
+            logging.info("📥 Installing Playwright browsers...")
+            
+            # Installa Chromium
+            result = subprocess.run(
+                [sys.executable, "-m", "playwright", "install", "chromium"],
+                capture_output=True,
+                text=True,
+                timeout=120  # 2 minuti timeout
+            )
+            
+            if result.returncode == 0:
+                logging.info("✅ Playwright Chromium installed successfully")
+                
+                # Prova installare le dipendenze (potrebbe fallire senza sudo, ma non critico)
+                try:
+                    subprocess.run(
+                        [sys.executable, "-m", "playwright", "install-deps", "chromium"],
+                        capture_output=True,
+                        text=True,
+                        timeout=180  # 3 minuti timeout
+                    )
+                    logging.info("✅ Playwright system dependencies installed")
+                except Exception as deps_error:
+                    logging.warning(f"⚠️  Could not install system dependencies (may require sudo): {deps_error}")
+                    logging.info("   Aruba Drive upload may still work without system deps")
+            else:
+                logging.error(f"❌ Failed to install Playwright browsers: {result.stderr}")
+                logging.warning("⚠️  Aruba Drive upload will use local storage fallback")
+                
+    except Exception as e:
+        logging.error(f"❌ Error during Playwright setup: {e}")
+        logging.warning("⚠️  Aruba Drive upload will use local storage fallback")
+
 # FastAPI Validation Exception Handler for debugging client creation errors
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
