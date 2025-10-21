@@ -11904,8 +11904,8 @@ class ArubaWebAutomation:
             logging.error(f"Failed to create client folder: {e}")
             return None
 
-    async def create_folder(self, folder_name):
-        """Create a new folder in current Aruba Drive location"""
+    async def create_folder(self, folder_name, retry_count=0, max_retries=3):
+        """Create a new folder in current Aruba Drive location with retry logic"""
         try:
             # If in simulation mode (test environment), simulate folder creation
             if self.simulation_mode:
@@ -11913,6 +11913,7 @@ class ArubaWebAutomation:
                 await asyncio.sleep(0.5)  # Simulate delay
                 return True
             
+            # PRODUCTION FIX: Increased timeouts for slower environments
             # Look for "New Folder" or "+" button
             new_folder_selectors = [
                 'button:has-text("New Folder")', 'button:has-text("Nuova Cartella")',
@@ -11924,8 +11925,10 @@ class ArubaWebAutomation:
             folder_created = False
             for selector in new_folder_selectors:
                 try:
-                    await self.page.click(selector, timeout=3000)
-                    await self.page.wait_for_timeout(1000)
+                    # PRODUCTION FIX: Increased timeout from 3s to 15s
+                    await self.page.click(selector, timeout=15000)
+                    # PRODUCTION FIX: Increased wait from 1s to 3s
+                    await self.page.wait_for_timeout(3000)
                     
                     # Fill folder name in input field
                     name_input_selectors = [
@@ -11937,9 +11940,11 @@ class ArubaWebAutomation:
                     
                     for input_selector in name_input_selectors:
                         try:
-                            await self.page.fill(input_selector, folder_name, timeout=3000)
+                            # PRODUCTION FIX: Increased timeout from 3s to 10s
+                            await self.page.fill(input_selector, folder_name, timeout=10000)
                             await self.page.keyboard.press('Enter')
-                            await self.page.wait_for_timeout(2000)
+                            # PRODUCTION FIX: Increased wait from 2s to 5s
+                            await self.page.wait_for_timeout(5000)
                             folder_created = True
                             break
                         except:
@@ -11952,13 +11957,20 @@ class ArubaWebAutomation:
                     continue
             
             if not folder_created:
-                raise Exception(f"Could not create folder: {folder_name}")
+                # PRODUCTION FIX: Retry logic with exponential backoff
+                if retry_count < max_retries:
+                    wait_time = 2 ** retry_count  # Exponential backoff: 1s, 2s, 4s
+                    logging.warning(f"⚠️  Folder creation attempt {retry_count + 1}/{max_retries} failed. Retrying in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                    return await self.create_folder(folder_name, retry_count + 1, max_retries)
+                else:
+                    raise Exception(f"Could not create folder after {max_retries} retries: {folder_name}")
                 
             logging.info(f"✅ Folder created: {folder_name}")
             return True
             
         except Exception as e:
-            logging.error(f"Failed to create folder {folder_name}: {e}")
+            logging.error(f"❌ Failed to create folder {folder_name}: {e}")
             return False
 
     async def upload_files_to_aruba(self, file_paths, commessa_name, servizio_name, client_name, client_surname):
