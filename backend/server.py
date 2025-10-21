@@ -11846,36 +11846,45 @@ class ArubaWebAutomation:
     async def navigate_to_commessa_folder(self, commessa_name, servizio_name):
         """Navigate to specific commessa/servizio folder on Aruba Drive"""
         try:
+            # PRODUCTION FIX: Increased timeouts for slower network conditions
             # Navigate to the commessa folder (e.g., FASTWEB)
             commessa_folder_selector = f'a:has-text("{commessa_name}"), [title*="{commessa_name}"]'
             
             try:
-                await self.page.click(commessa_folder_selector, timeout=5000)
-                await self.page.wait_for_timeout(2000)
+                # PRODUCTION FIX: Increased timeout from 5s to 15s
+                await self.page.click(commessa_folder_selector, timeout=15000)
+                # PRODUCTION FIX: Increased wait from 2s to 4s
+                await self.page.wait_for_timeout(4000)
                 logging.info(f"✅ Navigated to commessa folder: {commessa_name}")
             except:
                 # If folder doesn't exist, create it
-                await self.create_folder(commessa_name)
-                await self.page.click(commessa_folder_selector, timeout=5000)
-                await self.page.wait_for_timeout(2000)
+                logging.info(f"📁 Commessa folder not found, creating: {commessa_name}")
+                if not await self.create_folder(commessa_name):
+                    raise Exception(f"Failed to create commessa folder: {commessa_name}")
+                # PRODUCTION FIX: Increased timeout from 5s to 15s
+                await self.page.click(commessa_folder_selector, timeout=15000)
+                await self.page.wait_for_timeout(4000)
             
             # Navigate to the servizio folder (e.g., TLS)
             servizio_folder_selector = f'a:has-text("{servizio_name}"), [title*="{servizio_name}"]'
             
             try:
-                await self.page.click(servizio_folder_selector, timeout=5000)
-                await self.page.wait_for_timeout(2000)
+                # PRODUCTION FIX: Increased timeout from 5s to 15s
+                await self.page.click(servizio_folder_selector, timeout=15000)
+                await self.page.wait_for_timeout(4000)
                 logging.info(f"✅ Navigated to servizio folder: {servizio_name}")
             except:
                 # If folder doesn't exist, create it
-                await self.create_folder(servizio_name)
-                await self.page.click(servizio_folder_selector, timeout=5000)
-                await self.page.wait_for_timeout(2000)
+                logging.info(f"📁 Servizio folder not found, creating: {servizio_name}")
+                if not await self.create_folder(servizio_name):
+                    raise Exception(f"Failed to create servizio folder: {servizio_name}")
+                await self.page.click(servizio_folder_selector, timeout=15000)
+                await self.page.wait_for_timeout(4000)
             
             return True
             
         except Exception as e:
-            logging.error(f"Failed to navigate to commessa/servizio folder: {e}")
+            logging.error(f"❌ Failed to navigate to commessa/servizio folder: {e}")
             return False
     
     async def create_client_folder(self, client_name, client_surname):
