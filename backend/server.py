@@ -11707,15 +11707,43 @@ class ArubaWebAutomation:
         self.simulation_mode = False  # Enable simulation for non-reachable Aruba Drive URLs
         
     async def initialize(self):
-        """Initialize playwright browser"""
+        """
+        Initialize playwright browser with lazy loading support.
+        
+        Playwright will automatically download Chromium on first use if not present.
+        This is called "lazy loading" and happens transparently.
+        
+        First upload: ~30-90s (downloads browser ~100MB)
+        Subsequent uploads: ~5s (browser already installed)
+        """
         try:
+            logging.info("🎭 Initializing Playwright browser...")
             self.playwright = await async_playwright().start()
-            self.browser = await self.playwright.chromium.launch(headless=True)
+            
+            # LAZY LOADING: If browser not installed, Playwright downloads it automatically
+            # This may take 30-90 seconds on first run
+            logging.info("🌐 Launching Chromium browser (may download on first use)...")
+            self.browser = await self.playwright.chromium.launch(
+                headless=True,
+                # Increased timeout for first-time browser download
+                timeout=120000  # 2 minutes for browser download
+            )
+            
             self.context = await self.browser.new_context()
             self.page = await self.context.new_page()
+            logging.info("✅ Playwright browser initialized successfully")
             return True
+            
         except Exception as e:
-            logging.error(f"Failed to initialize Aruba automation: {e}")
+            error_msg = str(e)
+            
+            # Check if it's a browser download issue
+            if "Executable doesn't exist" in error_msg or "Failed to launch" in error_msg:
+                logging.error(f"❌ Playwright browser not installed and auto-download failed: {e}")
+                logging.info("💡 TIP: Run 'python -m playwright install chromium' manually if needed")
+            else:
+                logging.error(f"❌ Failed to initialize Aruba automation: {e}")
+            
             return False
             
     async def login_to_aruba(self, config):
