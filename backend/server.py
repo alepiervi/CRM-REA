@@ -12310,18 +12310,19 @@ class ArubaWebAutomation:
                 self.simulation_mode = True
                 return True  # Skip network calls for test URLs
             
-            # Navigate to login URL with optimized timeout
+            # PRODUCTION FIX: Navigate to login URL with increased timeout
             try:
-                # Use aggressive timeout for production URLs to fail fast
-                await self.page.goto(url, timeout=3000, wait_until='domcontentloaded')  # Reduced from networkidle
+                # PRODUCTION FIX: Increased timeout from 3s to 30s for production environments
+                await self.page.goto(url, timeout=30000, wait_until='domcontentloaded')
                 logging.info(f"🌐 Navigated to Aruba Drive: {url}")
                 
                 # Perform login (reuse existing login logic)
                 return await self.login_to_aruba(aruba_config)
                 
             except Exception as nav_error:
-                # If URL is not reachable, enable simulation mode immediately
-                logging.warning(f"⚠️ Aruba Drive URL not reachable ({url}), enabling simulation mode")
+                # If URL is not reachable after timeout, enable simulation mode
+                logging.warning(f"⚠️ Aruba Drive URL not reachable after 30s ({url}): {nav_error}")
+                logging.warning("⚠️ Enabling simulation mode as fallback")
                 self.simulation_mode = True
                 return True  # Proceed with simulation
             
