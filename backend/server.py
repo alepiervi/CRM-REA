@@ -11118,10 +11118,32 @@ async def download_import_template(
             headers={"Content-Disposition": "attachment; filename=template_clienti.xlsx"}
         )
 
+# CORS Configuration - Support for production domain
+cors_origins_env = os.environ.get('CORS_ORIGINS', '*')
+if cors_origins_env == '*':
+    # Development: allow all
+    cors_origins = ["*"]
+else:
+    # Production: parse from env and add common production domains
+    cors_origins = [origin.strip() for origin in cors_origins_env.split(',')]
+    
+    # Always include these production domains if not already present
+    production_domains = [
+        "https://nureal.it",
+        "https://www.nureal.it",
+        "https://mobil-analytics-1.emergent.host",
+    ]
+    
+    for domain in production_domains:
+        if domain not in cors_origins and '*' not in cors_origins:
+            cors_origins.append(domain)
+
+logging.info(f"🌐 CORS Origins configured: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
