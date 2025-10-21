@@ -114,8 +114,41 @@ import {
   Smartphone
 } from "lucide-react";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// Smart Backend URL Detection - works in all environments
+const getBackendURL = () => {
+  // 1. If environment variable is explicitly set, use it
+  if (process.env.REACT_APP_BACKEND_URL && 
+      process.env.REACT_APP_BACKEND_URL !== 'undefined' &&
+      process.env.REACT_APP_BACKEND_URL !== '') {
+    console.log('🔧 Using REACT_APP_BACKEND_URL from environment:', process.env.REACT_APP_BACKEND_URL);
+    return process.env.REACT_APP_BACKEND_URL;
+  }
+  
+  // 2. Auto-detect based on current domain
+  const hostname = window.location.hostname;
+  console.log('🌐 Detecting environment from hostname:', hostname);
+  
+  if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
+    // Production
+    console.log('✅ Production environment detected');
+    return 'https://mobil-analytics-1.emergent.host';
+  } else if (hostname.includes('preview.emergentagent.com')) {
+    // Preview
+    console.log('✅ Preview environment detected');
+    return 'https://nureal-crm-rbac.preview.emergentagent.com';
+  } else {
+    // Localhost or other
+    console.log('✅ Development environment detected');
+    return 'http://localhost:8001';
+  }
+};
+
+const BACKEND_URL = getBackendURL();
 const API = `${BACKEND_URL}/api`;
+
+// Log configuration for debugging
+console.log('📡 Backend URL configured:', BACKEND_URL);
+console.log('📡 API endpoint:', API);
 
 // Helper functions
 const formatDate = (dateString) => {
