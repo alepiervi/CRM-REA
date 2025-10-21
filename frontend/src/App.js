@@ -129,9 +129,9 @@ const getBackendURL = () => {
   console.log('🌐 Detecting environment from hostname:', hostname);
   
   if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
-    // Production
+    // Production - Emergent backend URL
     console.log('✅ Production environment detected');
-    return 'https://mobil-analytics-1.emergent.host';
+    return 'https://3922bccd-85dc-49cd-9288-ae7fe95e9ba4.preview.emergentagent.com';
   } else if (hostname.includes('preview.emergentagent.com')) {
     // Preview
     console.log('✅ Preview environment detected');
