@@ -4391,6 +4391,8 @@ async def upload_document(
         
         # Try Aruba Drive upload if configured
         if aruba_config:
+            add_debug_log(f"✅ Aruba Drive config found: enabled={aruba_config.get('enabled')}")
+            last_upload_debug["aruba_attempted"] = True
             try:
                 # Build hierarchical folder path: Commessa/Servizio/TipologiaContratto/Segmento/ClientName
                 folder_path_parts = []
