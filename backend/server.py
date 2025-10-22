@@ -4535,40 +4535,38 @@ async def upload_document(
                         
                         # Use WebDAV client with async context manager
                         async with ArubaWebDAVClient(username, password, base_url) as client:
-                        add_debug_log(f"✅ WebDAV client initialized")
-                        
-                        # Create folder hierarchy
-                        add_debug_log(f"📁 Creating folder hierarchy: {folder_path}")
-                        hierarchy_success = await client.create_folder_hierarchy(folder_path)
-                        
-                        if not hierarchy_success:
-                            raise Exception(f"Failed to create folder hierarchy: {folder_path}")
-                        
-                        add_debug_log(f"✅ Folder hierarchy created")
-                        
-                        # Upload file
-                        remote_path = f"{folder_path}/{unique_filename}"
-                        add_debug_log(f"📤 Uploading file to: {remote_path}")
-                        
-                        upload_success = await client.upload_file(
-                            str(temp_file_path),
-                            remote_path
-                        )
-                        
-                        if upload_success:
-                            aruba_drive_path = f"{folder_path}/{unique_filename}"
-                            storage_type = "aruba_drive"
-                            add_debug_log(f"✅ WebDAV upload successful: {aruba_drive_path}")
-                            last_upload_debug["aruba_success"] = True
-                        else:
-                            raise Exception("WebDAV upload returned False")
+                            add_debug_log(f"✅ WebDAV fallback client initialized")
                             
-                except Exception as webdav_error:
-                    add_debug_log(f"❌ WebDAV upload failed: {type(webdav_error).__name__}: {str(webdav_error)}")
-                    import traceback
-                    add_debug_log(f"🔍 Full traceback: {traceback.format_exc()}")
-                    last_upload_debug["error"] = f"WebDAV error: {str(webdav_error)}"
-                    upload_success = False
+                            # Create folder hierarchy
+                            add_debug_log(f"📁 Creating folder hierarchy: {folder_path}")
+                            hierarchy_success = await client.create_folder_hierarchy(folder_path)
+                            
+                            if not hierarchy_success:
+                                raise Exception(f"Failed to create folder hierarchy: {folder_path}")
+                            
+                            add_debug_log(f"✅ Folder hierarchy created via WebDAV")
+                            
+                            # Upload file
+                            remote_path = f"{folder_path}/{unique_filename}"
+                            add_debug_log(f"📤 Uploading file via WebDAV to: {remote_path}")
+                            
+                            upload_success = await client.upload_file(
+                                str(temp_file_path),
+                                remote_path
+                            )
+                            
+                            if upload_success:
+                                aruba_drive_path = f"{folder_path}/{unique_filename}"
+                                storage_type = "aruba_drive"
+                                add_debug_log(f"✅ WebDAV fallback upload successful: {aruba_drive_path}")
+                                last_upload_debug["aruba_success"] = True
+                            else:
+                                raise Exception("WebDAV upload returned False")
+                    
+                    except Exception as webdav_error:
+                        add_debug_log(f"❌ WebDAV fallback also failed: {type(webdav_error).__name__}: {str(webdav_error)}")
+                        last_upload_debug["error"] = f"Both Playwright and WebDAV failed. Last error: {str(webdav_error)}"
+                        upload_success = False
                 
                 finally:
                     # Cleanup temp file
