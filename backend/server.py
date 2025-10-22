@@ -4254,6 +4254,21 @@ async def delete_custom_field(field_id: str, current_user: User = Depends(get_cu
     return {"message": "Custom field deleted successfully"}
 
 # Document management endpoints
+# Global variable to store last upload attempt details for debugging
+last_upload_debug = {
+    "timestamp": None,
+    "success": False,
+    "aruba_attempted": False,
+    "aruba_success": False,
+    "error": None,
+    "logs": []
+}
+
+@api_router.get("/documents/upload-debug")
+async def get_upload_debug(current_user: User = Depends(get_current_user)):
+    """Get debug information about last upload attempt"""
+    return last_upload_debug
+
 @api_router.post("/documents/upload")
 async def upload_document(
     entity_type: str = Form(...),  # Cambiato da document_type per compatibilità frontend
@@ -4263,6 +4278,22 @@ async def upload_document(
     current_user: User = Depends(get_current_user)
 ):
     """Upload a PDF document for a specific lead or cliente"""
+    
+    global last_upload_debug
+    last_upload_debug = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "success": False,
+        "aruba_attempted": False,
+        "aruba_success": False,
+        "error": None,
+        "logs": []
+    }
+    
+    def add_debug_log(message):
+        last_upload_debug["logs"].append(f"{datetime.now(timezone.utc).isoformat()}: {message}")
+        logging.info(message)
+    
+    add_debug_log(f"📥 Upload started - entity_type: {entity_type}, entity_id: {entity_id}, file: {file.filename}")
     
     # Validate document type
     try:
