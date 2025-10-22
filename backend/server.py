@@ -4475,11 +4475,19 @@ async def upload_document(
                     f.write(content)
                 
                 # Upload to Aruba Drive with hierarchical structure
-                upload_result = await aruba.upload_documents_with_config(
-                    [str(temp_file_path)],
-                    folder_path,
-                    aruba_config
-                )
+                add_debug_log(f"🚀 Starting Aruba Drive upload to path: {folder_path}")
+                try:
+                    upload_result = await aruba.upload_documents_with_config(
+                        [str(temp_file_path)],
+                        folder_path,
+                        aruba_config
+                    )
+                    add_debug_log(f"📊 Upload result: {upload_result}")
+                except Exception as upload_exc:
+                    add_debug_log(f"❌ Aruba upload_documents_with_config exception: {type(upload_exc).__name__}: {str(upload_exc)}")
+                    import traceback
+                    add_debug_log(f"🔍 Traceback: {traceback.format_exc()}")
+                    raise
                 
                 # Cleanup temp file
                 if temp_file_path.exists():
@@ -4488,12 +4496,18 @@ async def upload_document(
                 if upload_result and upload_result.get("successful_uploads", 0) > 0:
                     aruba_drive_path = f"{folder_path}/{file.filename}"
                     storage_type = "aruba_drive"
-                    logging.info(f"✅ Successfully uploaded to Aruba Drive: {aruba_drive_path}")
+                    add_debug_log(f"✅ Successfully uploaded to Aruba Drive: {aruba_drive_path}")
+                    last_upload_debug["aruba_success"] = True
                 else:
-                    logging.warning("⚠️ Aruba Drive upload failed, using local storage fallback")
+                    error_msg = upload_result.get("error") if upload_result else "Unknown error"
+                    add_debug_log(f"⚠️ Aruba Drive upload failed: {error_msg}, using local storage fallback")
+                    last_upload_debug["error"] = f"Upload failed: {error_msg}"
                     
             except Exception as aruba_error:
-                logging.error(f"❌ Aruba Drive upload error: {aruba_error}")
+                add_debug_log(f"❌ Aruba Drive upload exception: {type(aruba_error).__name__}: {str(aruba_error)}")
+                import traceback
+                add_debug_log(f"🔍 Full traceback: {traceback.format_exc()}")
+                last_upload_debug["error"] = f"{type(aruba_error).__name__}: {str(aruba_error)}"
                 # Continue with local storage fallback
         
         # Local storage fallback (always create local copy)
