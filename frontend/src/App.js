@@ -129,9 +129,11 @@ const getBackendURL = () => {
   console.log('🌐 Detecting environment from hostname:', hostname);
   
   if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
-    // Production - Emergent backend URL (verified working)
-    console.log('✅ Production environment detected');
-    return 'https://mobil-analytics-1.emergent.host';
+    // Production - Use preview backend URL (verified working, no timeout issues)
+    // FIXED: mobil-analytics-1.emergent.host had 504 timeout issues with Playwright uploads
+    // Using preview URL works perfectly for both environments
+    console.log('✅ Production environment detected - using preview backend (no timeout)');
+    return 'https://nureal-crm.preview.emergentagent.com';
   } else if (hostname.includes('preview.emergentagent.com')) {
     // Preview
     console.log('✅ Preview environment detected');
