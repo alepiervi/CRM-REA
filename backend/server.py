@@ -4536,6 +4536,9 @@ async def upload_document(
         
         await db.documents.insert_one(document_data)
         
+        add_debug_log(f"💾 Document saved to database: storage_type={storage_type}, aruba_path={aruba_drive_path}")
+        last_upload_debug["success"] = True
+        
         # 📝 LOG: Registra l'upload del documento (solo per clienti)
         if doc_type == DocumentType.CLIENTE:
             await log_client_action(
