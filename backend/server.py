@@ -12072,60 +12072,96 @@ class ArubaWebAutomation:
         """
         Ensure Chromium browser is installed. Install automatically if missing.
         
-        This runs SYNCHRONOUSLY to avoid timeout issues during health checks.
+        IMPROVED VERSION: More robust verification che controlla l'esistenza effettiva del browser
+        e non solo il path. Risolve il problema dove chromium-headless-shell era presente ma 
+        chromium completo era mancante.
         """
         import subprocess
         import sys
         from pathlib import Path
         
-        # Check if browser is already installed
-        try:
-            # Try to get browser path
-            result = subprocess.run(
-                [sys.executable, "-m", "playwright", "install", "--dry-run", "chromium"],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
+        logging.info("🔍 Verificando installazione Chromium browser...")
+        
+        # STEP 1: Verifica diretta dell'esistenza del browser nella directory Playwright
+        # Controlla sia chromium completo che headless shell
+        pw_browsers_dir = Path("/pw-browsers")
+        
+        if pw_browsers_dir.exists():
+            # Cerca directory chromium-* (escludendo headless shell)
+            chromium_dirs = [d for d in pw_browsers_dir.glob("chromium-*") 
+                           if d.is_dir() and "headless_shell" not in d.name]
             
-            # If dry-run succeeds without errors, browser might be installed
-            # Do a definitive check
-            from playwright.sync_api import sync_playwright
-            try:
-                pw = sync_playwright().start()
-                browser_path = pw.chromium.executable_path
-                pw.stop()
+            if chromium_dirs:
+                chromium_dir = chromium_dirs[0]
+                # Verifica che contenga l'eseguibile chrome
+                chrome_executable = chromium_dir / "chrome-linux" / "chrome"
                 
-                if Path(browser_path).exists():
-                    logging.info(f"✅ Chromium already installed at: {browser_path}")
+                if chrome_executable.exists():
+                    logging.info(f"✅ Chromium già installato: {chromium_dir.name}")
+                    logging.info(f"   Percorso eseguibile: {chrome_executable}")
                     return True
-            except:
-                pass  # Not installed, proceed with installation
-                
-        except Exception as check_error:
-            logging.info(f"🔍 Browser check: {check_error}")
+                else:
+                    logging.warning(f"⚠️  Directory Chromium trovata ma eseguibile mancante: {chromium_dir}")
+            else:
+                logging.info("📋 Chromium completo non trovato (solo headless shell presente)")
+        else:
+            logging.info("📋 Directory /pw-browsers non trovata")
         
-        # Browser not installed - install it now
-        logging.warning("⚠️  Chromium not found - installing automatically...")
-        logging.info("⏱️  This will take 2-3 minutes on first run...")
+        # STEP 2: Verifica usando Playwright API (fallback più preciso)
+        try:
+            from playwright.sync_api import sync_playwright
+            
+            logging.info("🔍 Verifica tramite Playwright API...")
+            pw = sync_playwright().start()
+            
+            try:
+                browser_path = pw.chromium.executable_path
+                
+                if Path(browser_path).exists() and "chrome" in browser_path.lower():
+                    logging.info(f"✅ Chromium verificato tramite API: {browser_path}")
+                    pw.stop()
+                    return True
+                else:
+                    logging.warning(f"⚠️  Path API non valido: {browser_path}")
+            except Exception as api_error:
+                logging.info(f"🔍 Playwright API check fallito: {api_error}")
+            finally:
+                try:
+                    pw.stop()
+                except:
+                    pass
+                
+        except Exception as pw_error:
+            logging.info(f"🔍 Impossibile usare Playwright API: {pw_error}")
+        
+        # STEP 3: Browser non installato - procedere con installazione automatica
+        logging.warning("⚠️  Chromium non trovato - avvio installazione automatica...")
+        logging.info("⏱️  Prima installazione: 2-3 minuti (download ~175MB)")
+        logging.info("⏱️  Upload successivi saranno veloci (~5-10 secondi)")
         
         try:
-            # Install browser
-            logging.info("📥 Downloading Chromium browser (~100MB)...")
+            # Installa browser
+            logging.info("📥 Download Chromium in corso...")
             result = subprocess.run(
                 [sys.executable, "-m", "playwright", "install", "chromium"],
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minutes for download
+                timeout=300  # 5 minuti per download
             )
             
             if result.returncode == 0:
-                logging.info("✅ Chromium installed successfully!")
-                logging.info(f"📋 Output: {result.stdout[:200]}")
+                logging.info("✅ Chromium installato con successo!")
                 
-                # Try to install system dependencies (may fail without sudo, that's ok)
+                # Log dettagli installazione
+                if result.stdout:
+                    lines = result.stdout.strip().split('\n')
+                    for line in lines[-5:]:  # Ultime 5 righe
+                        if line.strip():
+                            logging.info(f"   {line.strip()}")
+                
+                # Tenta installazione dipendenze di sistema (opzionale, può fallire senza sudo)
                 try:
-                    logging.info("📥 Installing system dependencies...")
+                    logging.info("📥 Installazione dipendenze sistema...")
                     dep_result = subprocess.run(
                         [sys.executable, "-m", "playwright", "install-deps", "chromium"],
                         capture_output=True,
@@ -12133,24 +12169,37 @@ class ArubaWebAutomation:
                         timeout=120
                     )
                     if dep_result.returncode == 0:
-                        logging.info("✅ System dependencies installed")
+                        logging.info("✅ Dipendenze sistema installate")
                     else:
-                        logging.warning("⚠️  System dependencies installation had issues (may need sudo)")
-                        logging.info("   Chromium may still work without them")
+                        logging.warning("⚠️  Installazione dipendenze con problemi (serve sudo)")
+                        logging.info("   Chromium dovrebbe funzionare comunque")
                 except Exception as dep_error:
-                    logging.warning(f"⚠️  Could not install system dependencies: {dep_error}")
-                    logging.info("   Chromium will attempt to work without them")
+                    logging.warning(f"⚠️  Impossibile installare dipendenze: {dep_error}")
+                    logging.info("   Chromium tenterà di funzionare senza dipendenze")
                 
-                return True
+                # Verifica finale dell'installazione
+                chromium_dirs = [d for d in pw_browsers_dir.glob("chromium-*") 
+                               if d.is_dir() and "headless_shell" not in d.name]
+                
+                if chromium_dirs:
+                    logging.info(f"✅ Verifica post-installazione OK: {chromium_dirs[0].name}")
+                    return True
+                else:
+                    logging.error("❌ Verifica post-installazione fallita: directory non trovata")
+                    return False
+                
             else:
-                logging.error(f"❌ Browser installation failed: {result.stderr}")
+                logging.error(f"❌ Installazione browser fallita (returncode {result.returncode})")
+                if result.stderr:
+                    logging.error(f"   Errore: {result.stderr[:300]}")
                 return False
                 
         except subprocess.TimeoutExpired:
-            logging.error("❌ Browser installation timed out after 5 minutes")
+            logging.error("❌ Timeout installazione browser dopo 5 minuti")
+            logging.error("   Possibile problema di rete o spazio disco insufficiente")
             return False
         except Exception as install_error:
-            logging.error(f"❌ Browser installation error: {install_error}")
+            logging.error(f"❌ Errore installazione browser: {type(install_error).__name__}: {install_error}")
             return False
             
     async def login_to_aruba(self, config):
