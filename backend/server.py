@@ -4463,8 +4463,11 @@ async def upload_document(
                 folder_path = "/".join(folder_path_parts)
                 logging.info(f"📁 Target Aruba Drive folder: {folder_path}")
                 
-                # Initialize Aruba automation with commessa-specific config
-                aruba = ArubaWebAutomation()
+                # ============================================
+                # WEBDAV UPLOAD (Production-ready solution)
+                # ============================================
+                
+                add_debug_log(f"🚀 Starting WebDAV upload to Aruba Drive: {folder_path}")
                 
                 # Save file temporarily for upload
                 temp_dir = Path("/tmp/aruba_uploads")
@@ -4474,34 +4477,64 @@ async def upload_document(
                 with open(temp_file_path, "wb") as f:
                     f.write(content)
                 
-                # Upload to Aruba Drive with hierarchical structure
-                add_debug_log(f"🚀 Starting Aruba Drive upload to path: {folder_path}")
+                upload_success = False
+                
                 try:
-                    upload_result = await aruba.upload_documents_with_config(
-                        [str(temp_file_path)],
-                        folder_path,
-                        aruba_config
-                    )
-                    add_debug_log(f"📊 Upload result: {upload_result}")
-                except Exception as upload_exc:
-                    add_debug_log(f"❌ Aruba upload_documents_with_config exception: {type(upload_exc).__name__}: {str(upload_exc)}")
+                    # Initialize WebDAV client with credentials from config
+                    username = aruba_config.get("username")
+                    password = aruba_config.get("password")
+                    base_url = aruba_config.get("url", "https://drive.aruba.it/remote.php/dav/files")
+                    
+                    add_debug_log(f"📋 WebDAV config: username={username}, base_url={base_url}")
+                    
+                    if not username or not password:
+                        raise Exception("Missing Aruba Drive credentials in config")
+                    
+                    # Use WebDAV client with async context manager
+                    async with ArubaWebDAVClient(username, password, base_url) as client:
+                        add_debug_log(f"✅ WebDAV client initialized")
+                        
+                        # Create folder hierarchy
+                        add_debug_log(f"📁 Creating folder hierarchy: {folder_path}")
+                        hierarchy_success = await client.create_folder_hierarchy(folder_path)
+                        
+                        if not hierarchy_success:
+                            raise Exception(f"Failed to create folder hierarchy: {folder_path}")
+                        
+                        add_debug_log(f"✅ Folder hierarchy created")
+                        
+                        # Upload file
+                        remote_path = f"{folder_path}/{unique_filename}"
+                        add_debug_log(f"📤 Uploading file to: {remote_path}")
+                        
+                        upload_success = await client.upload_file(
+                            str(temp_file_path),
+                            remote_path
+                        )
+                        
+                        if upload_success:
+                            aruba_drive_path = f"{folder_path}/{unique_filename}"
+                            storage_type = "aruba_drive"
+                            add_debug_log(f"✅ WebDAV upload successful: {aruba_drive_path}")
+                            last_upload_debug["aruba_success"] = True
+                        else:
+                            raise Exception("WebDAV upload returned False")
+                            
+                except Exception as webdav_error:
+                    add_debug_log(f"❌ WebDAV upload failed: {type(webdav_error).__name__}: {str(webdav_error)}")
                     import traceback
-                    add_debug_log(f"🔍 Traceback: {traceback.format_exc()}")
-                    raise
+                    add_debug_log(f"🔍 Full traceback: {traceback.format_exc()}")
+                    last_upload_debug["error"] = f"WebDAV error: {str(webdav_error)}"
+                    upload_success = False
                 
-                # Cleanup temp file
-                if temp_file_path.exists():
-                    temp_file_path.unlink()
+                finally:
+                    # Cleanup temp file
+                    if temp_file_path.exists():
+                        temp_file_path.unlink()
+                        add_debug_log(f"🗑️  Temp file cleaned up")
                 
-                if upload_result and upload_result.get("successful_uploads", 0) > 0:
-                    aruba_drive_path = f"{folder_path}/{file.filename}"
-                    storage_type = "aruba_drive"
-                    add_debug_log(f"✅ Successfully uploaded to Aruba Drive: {aruba_drive_path}")
-                    last_upload_debug["aruba_success"] = True
-                else:
-                    error_msg = upload_result.get("error") if upload_result else "Unknown error"
-                    add_debug_log(f"⚠️ Aruba Drive upload failed: {error_msg}, using local storage fallback")
-                    last_upload_debug["error"] = f"Upload failed: {error_msg}"
+                if not upload_success:
+                    add_debug_log(f"⚠️ Aruba Drive upload failed, using local storage fallback")
                     
             except Exception as aruba_error:
                 add_debug_log(f"❌ Aruba Drive upload exception: {type(aruba_error).__name__}: {str(aruba_error)}")
