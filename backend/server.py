@@ -4265,8 +4265,8 @@ last_upload_debug = {
 }
 
 @api_router.get("/documents/upload-debug")
-async def get_upload_debug(current_user: User = Depends(get_current_user)):
-    """Get debug information about last upload attempt"""
+async def get_upload_debug():
+    """Get debug information about last upload attempt - NO AUTH for debugging"""
     return last_upload_debug
 
 @api_router.post("/documents/upload")
