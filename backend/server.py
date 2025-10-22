@@ -11970,7 +11970,8 @@ class ArubaWebDAVClient:
     async def file_exists(self, remote_path: str) -> bool:
         """Check if file exists on Aruba Drive"""
         try:
-            response = await self._make_request("HEAD", remote_path)
+            sanitized_path = self._sanitize_path(remote_path)
+            response = await self._make_request("HEAD", sanitized_path)
             return response.status == 200
         except:
             return False
