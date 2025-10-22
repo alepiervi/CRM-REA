@@ -11739,9 +11739,15 @@ async def get_documents(
         raise HTTPException(status_code=500, detail=f"Error fetching documents: {str(e)}")
 
 # ============================================
-# ARUBA DRIVE WEB AUTOMATION INTEGRATION
+# ARUBA DRIVE INTEGRATION
 # ============================================
 
+# WebDAV Client (Production-ready solution)
+import aiohttp
+import asyncio
+from typing import Optional, Dict, List
+
+# Playwright import (legacy, kept for backwards compatibility)
 from playwright.async_api import async_playwright
 import asyncio
 from pathlib import Path
