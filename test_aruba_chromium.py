@@ -276,7 +276,7 @@ startxref
             }
             
             data = {
-                'entity_type': 'cliente',
+                'entity_type': 'clienti',  # Use 'clienti' instead of 'cliente'
                 'entity_id': cliente_id,
                 'uploaded_by': 'admin'
             }
