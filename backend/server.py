@@ -11944,14 +11944,16 @@ class ArubaWebDAVClient:
             True if upload successful
         """
         try:
-            logging.info(f"📤 Uploading file to: {remote_path}")
+            # Sanitize path for special characters
+            sanitized_path = self._sanitize_path(remote_path)
+            logging.info(f"📤 Uploading file to: {sanitized_path}")
             
             # Read file content
             with open(local_file_path, "rb") as f:
                 file_data = f.read()
             
             # Upload via PUT
-            response = await self._make_request("PUT", remote_path, data=file_data)
+            response = await self._make_request("PUT", sanitized_path, data=file_data)
             
             # 201 = created, 204 = updated
             if response.status in [201, 204]:
