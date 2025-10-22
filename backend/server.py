@@ -11803,8 +11803,39 @@ class ArubaWebDAVClient:
     def __init__(self, username: str, password: str, base_url: str = "https://drive.aruba.it/remote.php/dav/files"):
         self.username = username
         self.password = password
-        self.base_url = base_url
+        # Auto-fix URL: convert web interface URLs to WebDAV endpoint
+        self.base_url = self._normalize_webdav_url(base_url)
         self.session = None
+        logging.info(f"🔧 Normalized WebDAV URL: {self.base_url}")
+    
+    def _normalize_webdav_url(self, url: str) -> str:
+        """
+        Normalize any Aruba Drive URL to correct WebDAV endpoint.
+        
+        Handles multiple URL formats:
+        - Web interface: https://vkbu5u.arubadrive.com/apps/files/personal/250?dir=/FASTWEB
+        - Already correct: https://vkbu5u.arubadrive.com/remote.php/dav/files
+        - Generic: https://drive.aruba.it
+        
+        Returns: https://{domain}/remote.php/dav/files
+        """
+        import re
+        from urllib.parse import urlparse
+        
+        # Parse URL
+        parsed = urlparse(url)
+        domain = f"{parsed.scheme}://{parsed.netloc}"
+        
+        # Check if already correct WebDAV URL
+        if "/remote.php/dav/files" in url:
+            logging.info(f"✅ URL already in WebDAV format: {url}")
+            return url
+        
+        # Auto-correct to WebDAV endpoint
+        webdav_url = f"{domain}/remote.php/dav/files"
+        logging.info(f"🔄 Auto-corrected URL: {url} → {webdav_url}")
+        
+        return webdav_url
         
     async def __aenter__(self):
         """Async context manager entry"""
