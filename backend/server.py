@@ -4464,10 +4464,10 @@ async def upload_document(
                 logging.info(f"📁 Target Aruba Drive folder: {folder_path}")
                 
                 # ============================================
-                # WEBDAV UPLOAD (Production-ready solution)
+                # ARUBA DRIVE UPLOAD (Playwright - production compatible)
                 # ============================================
                 
-                add_debug_log(f"🚀 Starting WebDAV upload to Aruba Drive: {folder_path}")
+                add_debug_log(f"🚀 Starting Aruba Drive upload (Playwright): {folder_path}")
                 
                 # Save file temporarily for upload
                 temp_dir = Path("/tmp/aruba_uploads")
@@ -4480,10 +4480,53 @@ async def upload_document(
                 upload_success = False
                 
                 try:
-                    # Initialize WebDAV client with credentials from config
-                    username = aruba_config.get("username")
-                    password = aruba_config.get("password")
-                    base_url = aruba_config.get("url", "https://drive.aruba.it/remote.php/dav/files")
+                    # Use Playwright for Nextcloud/Aruba Drive upload
+                    # This works in production when browser is pre-installed
+                    add_debug_log(f"🎭 Initializing Playwright for Aruba Drive upload")
+                    
+                    aruba = ArubaWebAutomation()
+                    
+                    # Initialize Playwright (browser should be pre-installed in production)
+                    init_success = await aruba.initialize()
+                    
+                    if not init_success:
+                        raise Exception("Failed to initialize Playwright browser")
+                    
+                    add_debug_log(f"✅ Playwright initialized successfully")
+                    
+                    # Upload using Playwright automation
+                    upload_result = await aruba.upload_documents_with_config(
+                        [str(temp_file_path)],
+                        folder_path,
+                        aruba_config
+                    )
+                    
+                    add_debug_log(f"📊 Upload result: {upload_result}")
+                    
+                    if upload_result and upload_result.get("successful_uploads", 0) > 0:
+                        aruba_drive_path = f"{folder_path}/{unique_filename}"
+                        storage_type = "aruba_drive"
+                        upload_success = True
+                        add_debug_log(f"✅ Playwright upload successful: {aruba_drive_path}")
+                        last_upload_debug["aruba_success"] = True
+                    else:
+                        error_msg = upload_result.get("error") if upload_result else "Unknown error"
+                        raise Exception(f"Playwright upload failed: {error_msg}")
+                    
+                except Exception as playwright_error:
+                    add_debug_log(f"❌ Playwright upload failed: {type(playwright_error).__name__}: {str(playwright_error)}")
+                    import traceback
+                    add_debug_log(f"🔍 Full traceback: {traceback.format_exc()}")
+                    last_upload_debug["error"] = f"Playwright error: {str(playwright_error)}"
+                    upload_success = False
+                    
+                    # Fallback: Try WebDAV if Playwright fails
+                    add_debug_log(f"🔄 Attempting WebDAV fallback...")
+                    
+                    try:
+                        username = aruba_config.get("username")
+                        password = aruba_config.get("password")
+                        base_url = aruba_config.get("url", "https://drive.aruba.it/remote.php/dav/files")
                     
                     add_debug_log(f"📋 WebDAV config: username={username}, base_url={base_url}")
                     
