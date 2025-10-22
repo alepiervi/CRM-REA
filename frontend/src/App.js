@@ -135,7 +135,7 @@ const getBackendURL = () => {
   } else if (hostname.includes('preview.emergentagent.com')) {
     // Preview
     console.log('✅ Preview environment detected');
-    return 'https://nureal-crm-rbac.preview.emergentagent.com';
+    return 'https://nureal-crm.preview.emergentagent.com';
   } else {
     // Localhost or other
     console.log('✅ Development environment detected');

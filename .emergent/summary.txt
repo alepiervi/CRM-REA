@@ -1,80 +1,85 @@
 <analysis>
-The AI engineer's work on the Nureal CRM was highly iterative, driven by continuous user feedback across several complex features. Initial efforts focused on fixing critical frontend issues, specifically an  in  by correctly refactoring  placements. This paved the way for a major UI/UX enhancement of the entire Analytics section, standardizing its look and feel.
+The previous AI engineer’s work has been a series of iterative fixes and feature implementations, primarily driven by user feedback. Initial efforts focused on frontend bug resolution and UI/UX improvements, followed by a major overhaul of role-based access control affecting both frontend rendering and backend data filtering. Granular permissions for client management and a 90-day password expiration policy were also introduced.
 
-Subsequently, the engineer implemented robust, multi-layered role-based access controls for Analytics, Clienti, and Sub Agenzie sections. This involved extensive modifications to both frontend UI rendering (sidebar and tab visibility) and backend API filtering logic, ensuring data authorization based on user roles, , and . Granular permissions were also introduced for client status management, modification, and deletion, including an Inserito/Ko status lock and a default status for new clients. Document upload was made universally permissible.
-
-A cyclical 90-day password expiration policy was integrated for non-admin users. The most recent challenge involved debugging deployment failures, which revealed an empty production database after deployment, causing critical data (commesse, filiera) to be missing. The engineer is now tasked with addressing this data gap, likely through a seeding mechanism.
+The most recent and extensive work has revolved around two critical production issues: an empty database post-deployment (resolved by a targeted admin-only seeding script) and the highly problematic Aruba Drive document upload. The Aruba Drive issue has been a persistent challenge, necessitating multiple diagnostic and solution attempts. This involved debugging Playwright installation failures in production, addressing CORS errors, optimizing timeouts, and finally pivoting to a WebDAV-based solution, which also faced URL and path sanitization issues. The latest attempt involved re-implementing Playwright with an automatic lazy installation approach to resolve persistent upload failures.
 </analysis>
 
 <product_requirements>
-The Nureal CRM aims for comprehensive client and project management. Key functionalities include a multi-step cascading client creation form with conditional fields (e.g., Dati Mobile for Mobile contracts, Telepass with an OBU field), and robust role-based access. Client data must be exportable to Excel, with each SIM (convergenza or mobile) as a separate row, including all client fields and offer names. Client modification should mirror creation, displaying all fields, making organizational data read-only, showing activated offers, including Note Back Office, full credit card numbers, and updated statuses. Offerte must be dynamic and link to the filiera.
+The Nureal CRM is designed for comprehensive client and project management, featuring a multi-step client creation form with conditional fields and robust role-based access controls. Users need to export client data to Excel, detailing SIM information. Client modification must reflect creation with read-only organizational data and display activated offers, Note Back Office, full credit card numbers, and updated statuses, with dynamic Offerte linked to filiera.
 
-Recent additions include:
-- Enhanced Convergenza SIM data display in .
-- Dati Mobile and Telepass sections, mutually exclusive with Telefonia Fastweb.
-- Redefined client list columns and dynamic advanced filters.
-- A new Analytics section with Pivot Analytics and Sub Agenzie comparative analysis, with improved UI.
-- Access to Analytics (Pivot and Sub Agenzie) for Responsabile Commessa, Backoffice Commessa, Responsabile Sub Agenzia, Backoffice Sub Agenzia, and Area Manager, with filtered data.
-- Filters in Clienti, Analytics, and Dashboard must only show Sub Agenzie/Clients with *both* authorized commessa *and* authorized services.
-- Default client creation status Passata al BO. Only Backoffice Commessa can modify client statuses. Modification/deletion is blocked if status is Inserito or Ko (except for Backoffice Commessa).
-- All users can upload documents regardless of client status.
-- Non-admin users must change passwords every 90 days.
+Recently, the application was enhanced to:
+- Display Convergenza SIM data and include Dati Mobile and Telepass sections, exclusive of Telefonia Fastweb.
+- Redefine client list columns and introduce dynamic advanced filters.
+- Implement a new Analytics section with Pivot Analytics and Sub Agenzie comparative analysis, with a streamlined UI.
+- Grant access to Analytics and client/sub-agenzia data to specific roles (Responsabile Commessa, Backoffice Commessa, etc.), with data filtered by authorized  and .
+- Set the default client creation status to Passata al BO. Only Backoffice Commessa can modify client statuses, and modification/deletion is blocked for Inserito or Ko statuses, except for Backoffice Commessa.
+- Allow all users to upload documents irrespective of client status.
+- Enforce a 90-day password expiration for non-admin users.
 </product_requirements>
 
 <key_technical_concepts>
--   **Full Stack**: React.js (frontend) and FastAPI (Python) (backend).
--   **Database**: MongoDB with Motor, using UUIDs for IDs.
--   **Architecture**: Monolithic, core logic in  and .
--   **Data Modeling**: Pydantic for API validation and enums.
--   **API Communication**: Axios for frontend calls.
--   **UI Components**: React Select, Shadcn UI components (Card, Dialog, Tabs), Tailwind CSS.
--   **Conditional Rendering**: Extensive use for field/section visibility.
--   **Authentication/Authorization**: JWTs, role-based access control with granular permissions.
+- **Full Stack**: React.js (frontend) and FastAPI (Python) (backend).
+- **Database**: MongoDB with Motor, using UUIDs for IDs.
+- **Architecture**: Monolithic, core logic in  and .
+- **UI/UX**: React Select, Shadcn UI components, Tailwind CSS.
+- **API Communication**: Axios for frontend calls.
+- **Authentication/Authorization**: JWTs, granular role-based access control.
+- **File Upload**: Playwright (for browser automation), WebDAV (for API-based file transfer),  for HTTP requests.
+- **Deployment**: Kubernetes container environment, Emergent deployments with specific URL and environment variable handling.
 </key_technical_concepts>
 
 <code_architecture>
 
 
 -   ****
-    -   **Importance**: Centralizes the React application, managing UI, state, API interactions, and rendering forms with complex conditional and cascading logic. Contains , , , , , and  components.
+    -   **Importance**: The main React application, handling UI, state, and API interactions.
     -   **Summary of Changes**:
-        1.  ****: Fixed  by moving  out of fetch functions. Applied consistent UI styling (banners, card gradients, organized filters) across Dashboard, Pivot Analytics, Sub Agenzie, Agenti, Referenti tabs. Implemented conditional rendering of tabs and sidebar visibility based on user roles (, , , , , ). Modified  default based on user role.
-        2.  ****: Integrated  to check user roles. Disabled the status  element if the user is not .
-        3.  ****: Modified rendering of Edit/Delete buttons to be conditional based on client status (inserito, ko) and user role, allowing only  to modify/delete clients with these statuses.
-        4.  ****: Uses  from the parent, which now incorporates service filtering.
-        5.  **Global**: Enhanced sidebar logic to show Analytics button for the newly authorized roles.
+        1.  ****: Refactored  for  fix.
+        2.  **UI/UX**: Standardized styling, conditional rendering of tabs and sidebar based on user roles.
+        3.  ****: Implemented role-based disabling of status  for non- users.
+        4.  ****: Conditional rendering of Edit/Delete buttons based on client status and user roles.
+        5.  **API URL Handling**: Modified to dynamically detect and use the correct backend URL (preview vs. production) using  to address  and CORS issues.
 
 -   ****
-    -   **Importance**: Defines all FastAPI endpoints, handles data models, implements business logic, and interacts with MongoDB.
+    -   **Importance**: Defines FastAPI endpoints, data models, business logic, and MongoDB interactions.
     -   **Summary of Changes**:
-        1.  **Models (, )**: Added  for password expiration.
-        2.  **Model ()**: Default  changed from  to . Fixed status enum value to  (lowercase with underscore).
-        3.  **Endpoints (, , , , , , )**: Modified to filter  and  by  and , ensuring roles only see data they are authorized for.
-        4.  **Endpoint ()**:
-            -   : Sets default status to .
-            -   : Uses  to enforce status modification permissions (only  can change status).
-            -   : Uses  to enforce deletion permissions.
-        5.  **Permission Helpers**:
-            -   : Updated logic to block modification for inserito or ko statuses for all roles except . Also,  can modify clients within their authorized commesse.
-            -   : New function created to handle specific deletion logic, allowing authorized users to delete clients unless status is inserito or ko (only  can delete those).
-            -   : New function created to bypass status-based modification blocks for document uploads, allowing all users to upload documents.
-        6.  **Endpoint ()**: Modified to use  for permission checks.
-        7.  **Endpoint ()**: Added logic to check  and set  if 90 days have passed (for non-admin users).
-        8.  **Endpoint ()**: Updates  upon successful password change.
-        9.  **Endpoint ()**:  sets  for new users.
-        10. **Database**: Admin user was recreated due to an empty database on deployment.
+        1.  **Models (, )**: Added  for expiration, default  changed to .
+        2.  **Access Control**: Implemented filtering of  and  by  and .
+        3.  **Permissions**: Functions , ,  for granular control.
+        4.  **Auth Endpoints**:  checks password expiration,  updates .
+        5.  **Database Seeding**: Initial  created, then modified to *only* create an admin user to allow dynamic creation of , , etc.
+        6.  **CORS**: Middleware configured to dynamically include  from the environment for . The explicit  in  was removed to enable this dynamic behavior.
+        7.  **Aruba Drive Upload**:
+            -   Initially used  (Playwright-based).
+            -   Increased various Playwright-related timeouts and added retry logic to address production environment slowness.
+            -   Replaced Playwright with  using  for WebDAV API calls due to Playwright's persistent issues in production.
+            -   Implemented automatic URL correction ( to ) within .
+            -   Added path sanitization () for folder names to prevent issues with special characters in WebDAV paths.
+            -   Added a  endpoint and extensive logging within the Aruba Drive upload logic for diagnosis without direct access to production logs.
+            -   Latest change: Reverted to Playwright with a Lazy Installation Automatica approach to download browsers on first use, aiming for preview environment parity in production.
+        8.  **Startup Events**: Added and then removed a Playwright installation startup event to fix deployment timeout issues.
+
+-   ****:
+    -   **Importance**: Script to initially populate the MongoDB database.
+    -   **Summary of Changes**: Initially created to seed full data, then modified to only create an admin user, adhering to the requirement for dynamic data creation by the admin.
+
+-   ****:
+    -   **Importance**: A shell script meant for manually installing Playwright browsers post-deployment.
+    -   **Summary of Changes**: Created to address Playwright browser availability in production environments.
+
+-   ****:
+    -   **Importance**: Yarn configuration file.
+    -   **Summary of Changes**: Created to add retry and timeout settings for Yarn package downloads, resolving deployment issues related to registry access ( for ).
 </code_architecture>
 
 <pending_tasks>
--   Populate the production database with necessary base data (commesse, servizi, filiere, etc.) through a seeding script, as the current deployment environment has an empty database.
--   Address potential issues with the  and  roles regarding data visibility if  is false.
--   Investigate and implement authorization checks for the  endpoint, as it currently lacks them.
+-   Verify if the lazy installation of Playwright successfully installs the necessary browser components in the production environment upon the first document upload attempt.
 </pending_tasks>
 
 <current_work>
-The AI engineer is currently addressing a critical issue identified during application deployment: the production MongoDB instance is empty. This means essential data, such as  and  necessary for client creation and data filtering, is missing. This directly impacts the application's ability to function correctly in a deployed environment, preventing clients from being created and filters from working as expected. The immediate task is to develop and execute a seeding mechanism to populate the database with this foundational data. This task has been initiated with the proposal to create a seed script.
+The AI engineer is currently addressing the persistent issue of Aruba Drive document uploads failing in the production environment, despite working in preview. The latest attempt involved re-implementing the document upload functionality to leverage Playwright's native lazy installation capability. This approach aims to automatically download the necessary browser components (e.g., Chromium) during the first upload attempt in production, without requiring manual SSH access or problematic startup scripts that caused deployment timeouts. The code changes for this Lazy Installation Automatica within  have just been completed, and the backend has been restarted to apply these modifications. The user's last feedback indicates the upload is still fast and falls back to local storage, suggesting the lazy installation might not yet be successful or the problem persists.
 </current_work>
 
 <optional_next_step>
-Create a seed script to populate the production MongoDB with initial , , and  data.
+Test the Aruba Drive document upload functionality in the preview environment to confirm if the Playwright lazy installation now works as intended.
 </optional_next_step>
