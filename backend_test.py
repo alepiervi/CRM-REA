@@ -36238,22 +36238,17 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if dynamic_creation_success:
-            print("🎉 DYNAMIC DATA CREATION VERIFICATION: ✅ SUCCESS - SISTEMA COMPLETAMENTE DINAMICO!")
+        if finale_success:
+            print("🎉 TEST FINALE ARUBA DRIVE CHROMIUM: ✅ SUCCESS - UPLOAD FUNZIONA CORRETTAMENTE!")
         else:
-            print("🚨 DYNAMIC DATA CREATION VERIFICATION: ❌ FAILED - SISTEMA NON COMPLETAMENTE DINAMICO!")
-            
-        if backend_success:
-            print("🎉 CLIENT CREATION 422 ERROR INVESTIGATION: ✅ SUCCESS - NO 422 ERRORS FOUND!")
-        else:
-            print("🚨 CLIENT CREATION 422 ERROR INVESTIGATION: ❌ FAILED - 422 ERRORS DETECTED!")
+            print("🚨 TEST FINALE ARUBA DRIVE CHROMIUM: ❌ FAILED - UPLOAD PRESENTA PROBLEMI!")
         
-        if backend_success:
-            print("\n🎉 OVERALL RESULT: ✅ CLIENT CREATION WORKING CORRECTLY!")
+        if finale_success:
+            print("\n🎉 OVERALL RESULT: ✅ ARUBA DRIVE UPLOAD WITH CHROMIUM WORKING CORRECTLY!")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ CLIENT CREATION 422 ERROR NEEDS ATTENTION!")
+            print("\n🚨 OVERALL RESULT: ❌ ARUBA DRIVE UPLOAD NEEDS ATTENTION!")
         
-        return backend_success
+        return finale_success
 
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
