@@ -4527,14 +4527,14 @@ async def upload_document(
                         username = aruba_config.get("username")
                         password = aruba_config.get("password")
                         base_url = aruba_config.get("url", "https://drive.aruba.it/remote.php/dav/files")
-                    
-                    add_debug_log(f"📋 WebDAV config: username={username}, base_url={base_url}")
-                    
-                    if not username or not password:
-                        raise Exception("Missing Aruba Drive credentials in config")
-                    
-                    # Use WebDAV client with async context manager
-                    async with ArubaWebDAVClient(username, password, base_url) as client:
+                        
+                        add_debug_log(f"📋 WebDAV fallback config: username={username}, base_url={base_url}")
+                        
+                        if not username or not password:
+                            raise Exception("Missing credentials")
+                        
+                        # Use WebDAV client with async context manager
+                        async with ArubaWebDAVClient(username, password, base_url) as client:
                         add_debug_log(f"✅ WebDAV client initialized")
                         
                         # Create folder hierarchy
