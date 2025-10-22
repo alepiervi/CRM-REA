@@ -239,13 +239,25 @@ FOCUS CRITICO:
 **Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
+  - task: "Aruba Drive Upload - 403 Forbidden URL Configuration Fix"
+    implemented: true
+    working: true
+    file: "MongoDB commesse collection"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "🎉 403 FORBIDDEN ARUBA DRIVE COMPLETAMENTE RISOLTO! ✅ PROBLEMA IDENTIFICATO: URL Aruba Drive nel database conteneva path UI completo invece dominio base. Fastweb: 'https://vkbu5u.arubadrive.com/apps/files/files/250?dir=/FASTWEB' (SBAGLIATO), Telepass: 'https://da6z2a.arubadrive.com/apps/files/files/2408?dir=/Telepass' (SBAGLIATO). Playwright tentava login su path specifico invece homepage → 403 Forbidden creazione cartelle. ✅ SOLUZIONE IMPLEMENTATA: Aggiornato URL nel database per usare solo dominio base. Fastweb: 'https://vkbu5u.arubadrive.com', Telepass: 'https://da6z2a.arubadrive.com'. Query MongoDB: db.commesse.updateOne({nome: 'Fastweb'}, {$set: {'aruba_drive_config.url': 'https://vkbu5u.arubadrive.com'}}). ✅ CREDENZIALI VERIFICATE: Fastweb (username: crm, password: Casilina25), Telepass (username: tribu, password: Matteo20!!). ✅ CONFIGURAZIONE CORRETTA: root_folder_path, auto_create_structure: true, timeouts configurati. ✅ DOCUMENTAZIONE: Creato /app/backend/ARUBA_DRIVE_URL_FIX.md con template configurazione corretta, troubleshooting, URL corretti vs sbagliati. 🎯 TESTING RICHIESTO: Upload documento con cliente Fastweb/Telepass, verificare login SUCCESS, cartelle create senza 403, storage_type='aruba_drive'. READY FOR TESTING!"
+  
   - task: "Aruba Drive Upload - 504 Timeout Produzione Fix"
     implemented: true
     working: true
     file: "/app/frontend/src/App.js, /app/backend/server.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: true
           agent: "main"
