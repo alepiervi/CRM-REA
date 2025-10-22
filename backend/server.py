@@ -11199,6 +11199,7 @@ else:
         "https://nureal.it",
         "https://www.nureal.it",
         "https://mobil-analytics-1.emergent.host",
+        "https://nureal-crm.preview.emergentagent.com",
     ]
     
     for domain in production_domains:
