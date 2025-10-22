@@ -893,7 +893,7 @@ startxref
             }
             
             data = {
-                'entity_type': 'cliente',
+                'entity_type': 'clienti',
                 'entity_id': cliente_id,
                 'uploaded_by': 'admin'
             }
@@ -35987,7 +35987,7 @@ startxref
             }
             
             data = {
-                'entity_type': 'cliente',
+                'entity_type': 'clienti',
                 'entity_id': cliente_id,
                 'uploaded_by': 'admin'
             }
