@@ -11860,6 +11860,26 @@ class ArubaWebDAVClient:
             logging.error(f"❌ WebDAV request failed: {method} {url} - {e}")
             raise
     
+    def _sanitize_path(self, path: str) -> str:
+        """
+        Sanitize path for WebDAV compatibility.
+        Replaces problematic characters but keeps structure readable.
+        """
+        import urllib.parse
+        
+        # Split path into parts
+        parts = path.split("/")
+        
+        # URL encode each part to handle special characters
+        sanitized_parts = [urllib.parse.quote(part, safe='') for part in parts]
+        
+        sanitized_path = "/".join(sanitized_parts)
+        
+        if sanitized_path != path:
+            logging.info(f"🧹 Path sanitized: {path} → {sanitized_path}")
+        
+        return sanitized_path
+    
     async def create_folder(self, path: str) -> bool:
         """
         Create folder on Aruba Drive using MKCOL method.
@@ -11871,8 +11891,10 @@ class ArubaWebDAVClient:
             True if created or already exists, False otherwise
         """
         try:
-            logging.info(f"📁 Creating folder: {path}")
-            response = await self._make_request("MKCOL", path)
+            # Sanitize path for special characters
+            sanitized_path = self._sanitize_path(path)
+            logging.info(f"📁 Creating folder: {sanitized_path}")
+            response = await self._make_request("MKCOL", sanitized_path)
             
             # 201 = created, 405 = already exists
             if response.status in [201, 405]:
