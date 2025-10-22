@@ -12030,25 +12030,31 @@ class ArubaWebAutomation:
         
     async def initialize(self):
         """
-        Initialize playwright browser with lazy loading support.
+        Initialize playwright browser with AUTOMATIC installation support.
         
-        Playwright will automatically download Chromium on first use if not present.
-        This is called "lazy loading" and happens transparently.
+        PRODUCTION-READY: This method will automatically install Chromium if missing.
+        No manual intervention needed - fully autonomous.
         
-        First upload: ~30-90s (downloads browser ~100MB)
-        Subsequent uploads: ~5s (browser already installed)
+        First upload: ~2-3 minutes (auto-installs browser)
+        Subsequent uploads: ~5-10s (browser already installed)
         """
         try:
             logging.info("🎭 Initializing Playwright browser...")
-            self.playwright = await async_playwright().start()
             
-            # LAZY LOADING: If browser not installed, Playwright downloads it automatically
-            # This may take 30-90 seconds on first run
-            logging.info("🌐 Launching Chromium browser (may download on first use)...")
+            # Check if browser is installed, install if missing
+            browser_installed = await self._ensure_browser_installed()
+            
+            if not browser_installed:
+                raise Exception("Failed to install Playwright browser automatically")
+            
+            self.playwright = await async_playwright().start()
+            logging.info("✅ Playwright started")
+            
+            # Launch browser with generous timeout
+            logging.info("🌐 Launching Chromium browser...")
             self.browser = await self.playwright.chromium.launch(
                 headless=True,
-                # Increased timeout for first-time browser download
-                timeout=120000  # 2 minutes for browser download
+                timeout=180000  # 3 minutes timeout
             )
             
             self.context = await self.browser.new_context()
@@ -12057,15 +12063,94 @@ class ArubaWebAutomation:
             return True
             
         except Exception as e:
-            error_msg = str(e)
+            logging.error(f"❌ Failed to initialize Playwright: {e}")
+            import traceback
+            logging.error(f"🔍 Traceback: {traceback.format_exc()}")
+            return False
+    
+    async def _ensure_browser_installed(self) -> bool:
+        """
+        Ensure Chromium browser is installed. Install automatically if missing.
+        
+        This runs SYNCHRONOUSLY to avoid timeout issues during health checks.
+        """
+        import subprocess
+        import sys
+        from pathlib import Path
+        
+        # Check if browser is already installed
+        try:
+            # Try to get browser path
+            result = subprocess.run(
+                [sys.executable, "-m", "playwright", "install", "--dry-run", "chromium"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
             
-            # Check if it's a browser download issue
-            if "Executable doesn't exist" in error_msg or "Failed to launch" in error_msg:
-                logging.error(f"❌ Playwright browser not installed and auto-download failed: {e}")
-                logging.info("💡 TIP: Run 'python -m playwright install chromium' manually if needed")
+            # If dry-run succeeds without errors, browser might be installed
+            # Do a definitive check
+            from playwright.sync_api import sync_playwright
+            try:
+                pw = sync_playwright().start()
+                browser_path = pw.chromium.executable_path
+                pw.stop()
+                
+                if Path(browser_path).exists():
+                    logging.info(f"✅ Chromium already installed at: {browser_path}")
+                    return True
+            except:
+                pass  # Not installed, proceed with installation
+                
+        except Exception as check_error:
+            logging.info(f"🔍 Browser check: {check_error}")
+        
+        # Browser not installed - install it now
+        logging.warning("⚠️  Chromium not found - installing automatically...")
+        logging.info("⏱️  This will take 2-3 minutes on first run...")
+        
+        try:
+            # Install browser
+            logging.info("📥 Downloading Chromium browser (~100MB)...")
+            result = subprocess.run(
+                [sys.executable, "-m", "playwright", "install", "chromium"],
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minutes for download
+            )
+            
+            if result.returncode == 0:
+                logging.info("✅ Chromium installed successfully!")
+                logging.info(f"📋 Output: {result.stdout[:200]}")
+                
+                # Try to install system dependencies (may fail without sudo, that's ok)
+                try:
+                    logging.info("📥 Installing system dependencies...")
+                    dep_result = subprocess.run(
+                        [sys.executable, "-m", "playwright", "install-deps", "chromium"],
+                        capture_output=True,
+                        text=True,
+                        timeout=120
+                    )
+                    if dep_result.returncode == 0:
+                        logging.info("✅ System dependencies installed")
+                    else:
+                        logging.warning("⚠️  System dependencies installation had issues (may need sudo)")
+                        logging.info("   Chromium may still work without them")
+                except Exception as dep_error:
+                    logging.warning(f"⚠️  Could not install system dependencies: {dep_error}")
+                    logging.info("   Chromium will attempt to work without them")
+                
+                return True
             else:
-                logging.error(f"❌ Failed to initialize Aruba automation: {e}")
-            
+                logging.error(f"❌ Browser installation failed: {result.stderr}")
+                return False
+                
+        except subprocess.TimeoutExpired:
+            logging.error("❌ Browser installation timed out after 5 minutes")
+            return False
+        except Exception as install_error:
+            logging.error(f"❌ Browser installation error: {install_error}")
             return False
             
     async def login_to_aruba(self, config):
