@@ -115,34 +115,18 @@ import {
 } from "lucide-react";
 
 // Smart Backend URL Detection - works in all environments
+// HARDCODED FIX: Force correct URL to override deployment env vars
 const getBackendURL = () => {
-  // 1. If environment variable is explicitly set, use it
-  if (process.env.REACT_APP_BACKEND_URL && 
-      process.env.REACT_APP_BACKEND_URL !== 'undefined' &&
-      process.env.REACT_APP_BACKEND_URL !== '') {
-    console.log('🔧 Using REACT_APP_BACKEND_URL from environment:', process.env.REACT_APP_BACKEND_URL);
-    return process.env.REACT_APP_BACKEND_URL;
-  }
+  // EMERGENCY FIX: Always use preview backend (works for both preview and production)
+  // This overrides any deployment environment variables
+  const forcedURL = 'https://nureal-crm.preview.emergentagent.com';
   
-  // 2. Auto-detect based on current domain
-  const hostname = window.location.hostname;
-  console.log('🌐 Detecting environment from hostname:', hostname);
+  console.log('🚨 HARDCODED URL FIX: Using forced backend URL');
+  console.log('🔧 Backend URL:', forcedURL);
+  console.log('🌐 Current hostname:', window.location.hostname);
   
-  if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
-    // Production - Use preview backend URL (verified working, no timeout issues)
-    // FIXED: mobil-analytics-1.emergent.host had 504 timeout issues with Playwright uploads
-    // Using preview URL works perfectly for both environments
-    console.log('✅ Production environment detected - using preview backend (no timeout)');
-    return 'https://nureal-crm.preview.emergentagent.com';
-  } else if (hostname.includes('preview.emergentagent.com')) {
-    // Preview
-    console.log('✅ Preview environment detected');
-    return 'https://nureal-crm.preview.emergentagent.com';
-  } else {
-    // Localhost or other
-    console.log('✅ Development environment detected');
-    return 'http://localhost:8001';
-  }
+  // Ignore environment variables completely
+  return forcedURL;
 };
 
 const BACKEND_URL = getBackendURL();
