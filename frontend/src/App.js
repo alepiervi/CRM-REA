@@ -115,18 +115,27 @@ import {
 } from "lucide-react";
 
 // Smart Backend URL Detection - works in all environments
-// HARDCODED FIX: Force correct URL to override deployment env vars
+// PRODUCTION BACKEND: Always use dedicated production backend (always on)
 const getBackendURL = () => {
-  // EMERGENCY FIX: Always use preview backend (works for both preview and production)
-  // This overrides any deployment environment variables
-  const forcedURL = 'https://nureal-crm.preview.emergentagent.com';
+  const hostname = window.location.hostname;
   
-  console.log('🚨 HARDCODED URL FIX: Using forced backend URL');
-  console.log('🔧 Backend URL:', forcedURL);
-  console.log('🌐 Current hostname:', window.location.hostname);
+  // Use production backend for nureal.it (always on, no standby)
+  if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
+    console.log('🏭 Production: Using dedicated production backend (always on)');
+    console.log('🔧 Backend URL: https://mobil-analytics-1.emergent.host');
+    return 'https://mobil-analytics-1.emergent.host';
+  }
   
-  // Ignore environment variables completely
-  return forcedURL;
+  // Preview environment uses preview backend (can standby, only for testing)
+  if (hostname.includes('preview.emergentagent.com')) {
+    console.log('🧪 Preview: Using preview backend (for testing only)');
+    console.log('🔧 Backend URL: https://nureal-crm.preview.emergentagent.com');
+    return 'https://nureal-crm.preview.emergentagent.com';
+  }
+  
+  // Localhost development
+  console.log('💻 Development: Using localhost backend');
+  return 'http://localhost:8001';
 };
 
 const BACKEND_URL = getBackendURL();
