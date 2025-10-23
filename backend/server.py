@@ -15163,6 +15163,20 @@ async def get_offerte_by_filiera(
         logging.error(f"Error fetching offerte by filiera: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nel caricamento offerte: {str(e)}")
 
+# Health check endpoint for monitoring and keep-alive
+@app.get("/api/health")
+async def health_check():
+    """
+    Health check endpoint for monitoring services like UptimeRobot.
+    Returns 200 OK if backend is alive.
+    Used to prevent backend from going into standby/sleep mode.
+    """
+    return {
+        "status": "ok",
+        "service": "nureal-crm-backend",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
 # Include the router in the main app (MUST be after all endpoints are defined)
 app.include_router(api_router)
 
