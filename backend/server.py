@@ -4394,74 +4394,21 @@ async def upload_document(
             add_debug_log(f"✅ Aruba Drive config found: enabled={aruba_config.get('enabled')}")
             last_upload_debug["aruba_attempted"] = True
             try:
-                # Build hierarchical folder path: Commessa/Servizio/TipologiaContratto/Segmento/ClientName
-                folder_path_parts = []
+                # SIMPLIFIED APPROACH: Use only root folder, put all info in filename
+                # This is faster, more reliable, and works like preview
                 
-                # Add root folder
+                # Use only root folder path (e.g., "/Fastweb" or "/FASTWEB")
                 if aruba_config.get("root_folder_path"):
-                    folder_path_parts.append(aruba_config["root_folder_path"])
+                    folder_path = aruba_config["root_folder_path"]
                 else:
-                    folder_path_parts.append(commessa.get("nome", "Documenti"))
+                    folder_path = f"/{commessa.get('nome', 'Documenti')}"
                 
-                # Add hierarchical structure if auto_create_structure is enabled
-                if aruba_config.get("auto_create_structure", True):
-                    # Helper function to convert enum values to display names
-                    def enum_to_display_name(enum_value, enum_type):
-                        """Convert backend enum values to proper display names for Aruba Drive folders"""
-                        if enum_type == "tipologia":
-                            mappings = {
-                                'energia_fastweb': 'Energia Fastweb',
-                                'telefonia_fastweb': 'Telefonia Fastweb', 
-                                'ho_mobile': 'Ho Mobile',
-                                'telepass': 'Telepass'
-                            }
-                        elif enum_type == "segmento":
-                            mappings = {
-                                'privato': 'Privato',
-                                'business': 'Business'
-                            }
-                        else:
-                            return enum_value
-                        return mappings.get(enum_value, enum_value)
-                    
-                    # Get service name
-                    servizio_id = entity.get("servizio_id")
-                    if servizio_id:
-                        servizio = await db.servizi.find_one({"id": servizio_id})
-                        if servizio:
-                            folder_path_parts.append(servizio.get("nome", servizio_id))
-                    
-                    # Add tipologia contratto (convert enum to display name)
-                    tipologia = entity.get("tipologia_contratto")
-                    if tipologia:
-                        tipologia_display = enum_to_display_name(str(tipologia), "tipologia")
-                        folder_path_parts.append(tipologia_display)
-                    
-                    # Add segmento (convert enum to display name)
-                    segmento = entity.get("segmento")
-                    if segmento:
-                        segmento_display = enum_to_display_name(str(segmento), "segmento")
-                        folder_path_parts.append(segmento_display)
-                    
-                    # Add client name folder with ID in brackets
-                    nome = entity.get('nome', '').strip()
-                    cognome = entity.get('cognome', '').strip()
-                    client_id = entity.get('id', '').strip()
-                    
-                    if nome or cognome:
-                        client_name = f"{nome} {cognome}".strip()
-                        if client_id:
-                            client_folder = f"{client_name} ({client_id})"  # FIXED: Use () instead of []
-                        else:
-                            client_folder = client_name
-                        folder_path_parts.append(client_folder)
-                        
-                    # Add final Documents folder
-                    folder_path_parts.append("Documenti")
+                # Ensure folder_path starts with /
+                if not folder_path.startswith('/'):
+                    folder_path = f"/{folder_path}"
                 
-                # Create folder path
-                folder_path = "/".join(folder_path_parts)
-                logging.info(f"📁 Target Aruba Drive folder: {folder_path}")
+                logging.info(f"📁 Target Aruba Drive folder (simplified): {folder_path}")
+                add_debug_log(f"📁 Using simplified upload: folder={folder_path}, file={unique_filename}")
                 
                 # ============================================
                 # ARUBA DRIVE UPLOAD (Playwright - production compatible)
