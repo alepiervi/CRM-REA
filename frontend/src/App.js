@@ -119,11 +119,13 @@ import {
 const getBackendURL = () => {
   const hostname = window.location.hostname;
   
-  // Use production backend for nureal.it (always on, no standby)
+  // TEMPORARY: Use preview backend for nureal.it while fixing mobil-analytics-1 standby
+  // TODO: Revert to mobil-analytics-1.emergent.host once always-on is configured
   if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
-    console.log('🏭 Production: Using dedicated production backend (always on)');
-    console.log('🔧 Backend URL: https://mobil-analytics-1.emergent.host');
-    return 'https://mobil-analytics-1.emergent.host';
+    console.log('⚠️ TEMPORARY: Using preview backend (waiting for production always-on fix)');
+    console.log('🔧 Backend URL: https://nureal-crm.preview.emergentagent.com');
+    console.log('📝 TODO: Contact Emergent support to enable always-on for mobil-analytics-1');
+    return 'https://nureal-crm.preview.emergentagent.com';
   }
   
   // Preview environment uses preview backend (can standby, only for testing)
