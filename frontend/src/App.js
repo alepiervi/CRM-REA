@@ -2574,8 +2574,13 @@ const Dashboard = () => {
           </div>
         </header>
 
-        {/* 🎯 RESPONSIVE: Page Content */}
-        <main className="flex-1 h-screen overflow-y-auto mobile-container p-3 md:p-6">
+        {/* 🎯 RESPONSIVE: Page Content - Mobile scrollable */}
+        <main className="flex-1 overflow-y-auto mobile-container p-3 md:p-6" style={{
+          height: 'calc(100vh - 70px)',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          minHeight: '0'
+        }}>
           {renderTabContent()}
         </main>
       </div>
