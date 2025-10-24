@@ -2300,20 +2300,25 @@ const Dashboard = () => {
               )}
             </div>
 
-            {/* Mobile Navigation */}
-            <nav className="flex-1 overflow-y-auto px-1 py-2 min-h-0" style={{maxHeight: 'calc(100vh - 240px)'}}>
+            {/* Mobile Navigation - Scrollable with proper height */}
+            <nav className="flex-1 overflow-y-auto px-1 py-2 min-h-0" style={{
+              maxHeight: 'calc(100vh - 180px)', 
+              overflowY: 'scroll',
+              WebkitOverflowScrolling: 'touch',
+              paddingBottom: '20px'
+            }}>
               {getNavItems().map((item) => (
                 <button
                   key={item.id}
                   onClick={() => handleTabChange(item.id)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors mobile-nav-item ${
+                  className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors mobile-nav-item ${
                     activeTab === item.id
                       ? "bg-blue-50 text-blue-700 border border-blue-200"
                       : "text-slate-700 hover:bg-slate-50"
                   }`}
                 >
-                  <item.icon className="w-4 h-4" />
-                  <span>{item.label}</span>
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-left">{item.label}</span>
                 </button>
               ))}
             </nav>
