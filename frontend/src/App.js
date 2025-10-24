@@ -1335,12 +1335,16 @@ const Dashboard = () => {
   const { user, logout, setUser, showSessionWarning, timeLeft, extendSession, stopCountdown } = useAuth();
   const { toast } = useToast();
 
-  // 🎯 MOBILE-FRIENDLY: Detect screen size
+  // 🎯 MOBILE-FRIENDLY: Detect screen size (< 1024px = mobile/tablet)
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setIsMobileMenuOpen(false); // Close mobile menu on desktop
+      // Use lg breakpoint (1024px) to match Tailwind lg: classes
+      const isMobileSize = window.innerWidth < 1024;
+      setIsMobile(isMobileSize);
+      
+      // Close mobile menu when switching to desktop (>= 1024px)
+      if (window.innerWidth >= 1024) {
+        setIsMobileMenuOpen(false);
       }
     };
     
