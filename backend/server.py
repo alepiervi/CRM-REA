@@ -13356,7 +13356,7 @@ async def list_nextcloud_folders(config: dict):
 
 
 @api_router.post("/aruba-drive/test")
-async def test_aruba_drive_config(config: dict):
+async def test_aruba_drive_connection(config: dict):
     """Test Aruba Drive configuration (legacy endpoint)"""
     try:
         logging.info(f"Testing Aruba Drive config: {config.get('url')}")
