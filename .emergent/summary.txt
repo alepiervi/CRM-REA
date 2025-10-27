@@ -1,79 +1,64 @@
 <analysis>
-The trajectory details the AI engineer's iterative efforts to resolve critical production issues and implement feature enhancements. Initially, the focus was on stabilizing Aruba Drive document uploads, which involved attempts with Playwright's lazy installation, followed by extensive debugging of CORS errors, URL misconfigurations, and 504 Gateway Timeouts. This led to a major pivot from Playwright to Nextcloud WebDAV API for uploads, addressing performance and reliability. Concurrently, significant effort was invested in improving the mobile UI, specifically fixing sidebar visibility, section scrolling, and overall responsiveness. The latter part of the trajectory focused on refining the Nextcloud integration, particularly ensuring dynamic  folder auto-detection and resolving persistent 403 Forbidden errors due to incorrect WebDAV paths and missing headers, leaving the core upload logic under investigation.
+The AI engineer's work trajectory involved a multi-faceted approach to stabilize and enhance the Nureal CRM application. Initially, the focus was on critical production issues: transitioning document uploads from a problematic Playwright-based Aruba Drive integration to a more robust Nextcloud WebDAV API. This included extensive debugging of CORS errors, URL misconfigurations, and 504 Gateway Timeouts. A significant bug was identified and fixed where  was incorrectly saved as unknown in the database despite successful Nextcloud uploads. The engineer also discovered and corrected a critical configuration oversight where Nextcloud was globally disabled for , causing uploads to default to local storage. Finally, the work pivoted to resolving deployment failures, addressing hardcoded frontend URLs, removing unused Playwright dependencies, making MongoDB environment variable access more resilient, enhancing the health check, and correctly configuring CORS for the deployment environment. The iterative debugging and problem-solving demonstrate a systematic approach to resolving complex issues across the full stack.
 </analysis>
 
 <product_requirements>
-The Nureal CRM is for client and project management, featuring a multi-step client form, role-based access, Excel export, and detailed client modification views. Recent enhancements include:
-- Display of Convergenza SIM data, Dati Mobile, and Telepass sections (excluding Telefonia Fastweb).
-- Redefined client list columns and dynamic advanced filters.
-- A new Analytics section with Pivot Analytics and Sub Agenzie comparative analysis, with role-based access filtered by  and .
-- Default client creation status Passata al BO; only Backoffice Commessa can modify statuses. Modification/deletion blocked for Inserito or Ko statuses, except for Backoffice Commessa.
-- All users can upload documents irrespective of client status.
-- 90-day password expiration for non-admin users.
-
-Recent requests also include:
-- Fixing Aruba Drive document uploads in production, ensuring necessary components (Playwright) install automatically (later pivoted to Nextcloud WebDAV).
-- Resolving persistent CORS errors, incorrect backend URLs, and 504 Gateway Timeouts affecting production uploads.
-- Ensuring the backend dynamically adapts to  created from the frontend, with commessa-specific cloud folders.
-- Simplifying document upload by storing files directly in a root folder with an augmented filename (Order, Phone, Client Name).
-- Ensuring the production backend () is always active and doesn't go into standby.
-- Fixing WebSocket URL errors (port NaN).
-- Resolving mobile UI issues: sidebar not visible/toggle not working, content not scrolling within sections.
-- Implementing auto-detection and selection of Nextcloud cloud folders for  configuration, instead of manual input.
-- Ensuring documents are uploaded to the correct Nextcloud cloud folders, not local storage.
+The Nureal CRM manages clients and projects, featuring a multi-step client form, role-based access, Excel export, and detailed modification views. Key functionalities include displaying Convergenza SIM, Dati Mobile, and Telepass data, alongside dynamic client list filters and an Analytics section with Pivot Analytics and Sub Agenzie analysis, all restricted by  and . Client creation defaults to Passata al BO, with status modification/deletion restricted to Backoffice Commessa for Inserito or Ko statuses. Document uploads are universally permitted regardless of client status. Non-admin users have 90-day password expiration. Recent enhancements addressed include fixing Aruba Drive uploads (pivoted to Nextcloud WebDAV), resolving production CORS, URL, and 504 Gateway Timeout errors, dynamic backend adaptation to  with specific cloud folders, simplified augmented filename uploads, ensuring production backend stability, fixing WebSocket URL errors, and resolving mobile UI issues (sidebar, scrolling). The system needs to auto-detect and select Nextcloud folders for  configuration and upload documents to the correct cloud folders, not local storage.
 </product_requirements>
 
 <key_technical_concepts>
 - **Full Stack**: React.js (frontend), FastAPI (Python) (backend).
 - **Database**: MongoDB with Motor, UUIDs for IDs.
-- **Architecture**: Monolithic, core logic in  and .
-- **UI/UX**: React Select, Shadcn UI components, Tailwind CSS.
-- **File Upload**: Initially Playwright (browser automation), then Nextcloud WebDAV API ().
-- **Deployment**: Kubernetes, environment variables, hot reload, UptimeRobot (temporary workaround for standby).
-- **Authentication/Authorization**: JWTs, granular role-based access control, 90-day password expiration.
+- **File Upload**: Nextcloud WebDAV API ().
+- **Deployment**: Kubernetes, environment variables.
+- **Authentication/Authorization**: JWTs, role-based access control.
+- **Middleware**: CORS.
 </key_technical_concepts>
 
 <code_architecture>
 
 
 -   ****
-    -   **Importance**: Main React application, UI, state, API interactions.
-    -   **Changes**: Refactored for  fixes, standardized UI styling, conditional rendering based on roles. Implemented dynamic backend URL detection logic (then later hardcoded to address deployment issues). Fixed mobile sidebar visibility and content scrolling issues. Updated UI labels from Aruba Drive to Cloud for documents. Modified  to include Carica Cartelle button and a Select dropdown for  after fetching available folders from the backend.
+    -   **Importance**: Handles the main React application, UI rendering, state management, and all interactions with the backend API.
+    -   **Changes**: Refactored  to ensure it dynamically uses  instead of hardcoded values, which was causing deployment issues. This ensures correct backend communication in production environments.
 -   ****
-    -   **Importance**: FastAPI endpoints, data models, business logic, MongoDB interactions.
-    -   **Changes**:  for Playwright was made more robust. CORS middleware dynamically includes  and . Playwright-based upload was entirely replaced with  using WebDAV (). Simplified upload logic to use a single root folder and augment filenames. Added  endpoint for liveness checks. Implemented  endpoint to fetch available folders from Nextcloud WebDAV. Fixed WebDAV paths and added  header for  operations to resolve 403 errors.
+    -   **Importance**: Contains the FastAPI application, defining all API endpoints, business logic, and interactions with MongoDB and external services like Nextcloud WebDAV.
+    -   **Changes**:
+        -   Refined  logic: Ensured  is correctly set to nextcloud or local before saving to MongoDB, preventing unknown values. Removed initial  to force dynamic assignment.
+        -   Removed  related imports and unused code, as the application now exclusively uses Nextcloud WebDAV.
+        -   Modified environment variable access for  and  to use  with default values, preventing  during startup in environments where variables might not be immediately available.
+        -   Enhanced the  endpoint to include a check for MongoDB connection, providing more robust health status.
+        -   Added  to  to allow communication from the deployed frontend.
 -   ****
-    -   **Importance**: Python dependencies for the backend.
-    -   **Changes**:  and  (Playwright dependency) were removed when transitioning to WebDAV.
+    -   **Importance**: Manages Python dependencies for the backend server.
+    -   **Changes**:  and  were previously removed during the transition to WebDAV, which was verified.
 -   ****
-    -   **Importance**: Frontend environment variables.
-    -   **Changes**:  was modified multiple times, eventually hardcoded in  temporarily, then reverted to  in code, but the  value remained .  corrected from a concatenated string.
+    -   **Importance**: Stores environment variables for the frontend, crucially .
+    -   **Changes**: 's usage was corrected in  to ensure dynamic resolution.
 -   ****
-    -   **Importance**: Backend environment variables.
-    -   **Changes**:  was explicitly set to include .
--   **Markdown files (e.g., , , , )**
-    -   **Importance**: Document solutions and user instructions.
-    -   **Changes**: New files were created to document various fixes, workarounds, and deployment instructions for the user regarding Playwright installation, CORS/504 errors, backend standby, Nextcloud integration, and environment variable configuration.
+    -   **Importance**: Stores environment variables for the backend, like , , and .
+    -   **Changes**:  was updated to include the production frontend URL ().
+-   ****
+    -   **Importance**: Used for communication with testing agents and tracking test outcomes.
+    -   **Changes**: Continuously updated with task statuses, agent communications, and test results, documenting the journey of fixing upload and deployment issues.
 </code_architecture>
 
 <pending_tasks>
-- Ensure documents are uploaded to the correct Nextcloud cloud folders associated with the client's , and not to local storage.
+- Investigate and resolve any remaining deployment failures. Specifically, ensure the application successfully deploys to the production-like Kubernetes environment without 520 errors, verifying that all environment variables are correctly accessed and services start as expected.
 </pending_tasks>
 
 <current_work>
-The AI engineer is currently debugging an issue where, despite the  configuration being correctly set for Nextcloud WebDAV (e.g.,  with  and ), document uploads are still being saved to local storage instead of the configured cloud folder. The previous steps involved a major shift from Playwright-based Aruba Drive uploads to a more stable Nextcloud WebDAV API integration, including:
-1.  **Backend ()**:
-    *   Replacing Playwright logic with a  for WebDAV operations (upload, list folders).
-    *   Implementing a  endpoint to fetch available folders.
-    *   Correcting the WebDAV path to  and adding a  header for all requests to resolve 403 Forbidden errors when listing folders.
-    *   Adjusting the upload logic to simplify folder creation and augment filenames with client details.
-    *   Removing Playwright dependencies from .
-2.  **Frontend ()**:
-    *   Updating the UI to reflect Cloud storage instead of Aruba Drive.
-    *   Modifying the  in the  section to include dynamic folder selection: users can now click a Carica Cartelle button to fetch and select an available Nextcloud folder via a dropdown, rather than manually typing the path.
-The current state is that the backend's folder listing works, but the file upload is still falling back to local storage, suggesting a problem in how the  configuration is used within the upload endpoint to direct files to Nextcloud. The engineer is inspecting the  endpoint in  to identify where  and  might be incorrectly handled.
+The AI engineer was most recently focused on diagnosing and resolving critical deployment failures, specifically a 520 status code and backend startup issues, when attempting to deploy the application to a production Kubernetes environment. The troubleshooting process involved:
+
+1.  **Addressing Frontend Hardcoded URLs**: Identified and removed hardcoded backend URLs in , ensuring  is used for dynamic resolution ().
+2.  **Cleaning Up Playwright**: Confirmed that  and its dependencies were no longer needed (due to the pivot to WebDAV) and removed lingering imports from  (). It was also verified that  was already clean of these dependencies ().
+3.  **Robust MongoDB Connection**: Modified  to use  with default values for  and  to prevent  at startup in production environments ().
+4.  **Enhanced Health Check**: Updated the  endpoint in  to include a check for the MongoDB connection, providing a more comprehensive liveness check for the deployed application ().
+5.  **CORS Configuration**: Added  to the  list in  to allow the frontend to communicate with the backend from its deployed domain ().
+
+After these code modifications, the backend was restarted (), and it started successfully, indicating that the immediate startup issues might be resolved. The engineer was preparing to summarize the fixes ().
 </current_work>
 
 <optional_next_step>
-Analyze the  endpoint in  to ensure the  configuration is correctly applied to route uploads to Nextcloud WebDAV.
+The next step is to initiate a new deployment to verify the fixes for the production deployment errors.
 </optional_next_step>

@@ -140,7 +140,7 @@ const getBackendURL = () => {
   // Preview environment uses preview backend (can standby, only for testing)
   if (hostname.includes('preview.emergentagent.com')) {
     console.log('🧪 Preview: Using preview backend (for testing only)');
-    const previewURL = 'https://cloudfile-fix.preview.emergentagent.com';
+    const previewURL = 'https://mobil-analytics-2.preview.emergentagent.com';
     console.log('🔧 Backend URL:', previewURL);
     return previewURL;
   }

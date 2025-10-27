@@ -12,7 +12,7 @@ import uuid
 import time
 
 class StorePresidiTester:
-    def __init__(self, base_url="https://cloudfile-fix.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://mobil-analytics-2.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
