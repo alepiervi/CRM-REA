@@ -953,8 +953,12 @@ startxref
                     f"Status: {status}, File: {filename}")
                 download_tests_passed += 1
                 
-                # Check response headers (if available in response)
-                if isinstance(download_response, dict):
+                # Check response content and headers
+                if isinstance(download_response, bytes):
+                    # Binary content received
+                    self.log_test(f"✅ {doc_type} download binary content received", True, 
+                        f"Content size: {len(download_response)} bytes")
+                elif isinstance(download_response, dict):
                     content_disposition = download_response.get('Content-Disposition', '')
                     content_type = download_response.get('Content-Type', '')
                     
