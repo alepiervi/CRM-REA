@@ -1142,6 +1142,330 @@ startxref
         print("   3. Upload un documento")
         print("   4. Verificare che storage_type='nextcloud' (non 'local')")
         print("🎯 FOCUS: Confermare che il fix funziona ora che la commessa è configurata correttamente")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. TROVA CLIENTE CON COMMESSA FASTWEB**
+        print("\n📋 2. TROVA CLIENTE CON COMMESSA FASTWEB...")
+        
+        # First get all commesse to find Fastweb
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        fastweb_commessa = None
+        if success and status == 200:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            
+            # Find Fastweb commessa
+            for commessa in commesse:
+                if 'fastweb' in commessa.get('nome', '').lower():
+                    fastweb_commessa = commessa
+                    break
+            
+            if fastweb_commessa:
+                aruba_config = fastweb_commessa.get('aruba_drive_config', {})
+                enabled = aruba_config.get('enabled', False)
+                
+                self.log_test("✅ Found Fastweb commessa", True, 
+                    f"Commessa: {fastweb_commessa.get('nome')}, ID: {fastweb_commessa.get('id')[:8]}...")
+                
+                if enabled:
+                    self.log_test("✅ Fastweb commessa has Nextcloud ENABLED", True, 
+                        f"aruba_drive_config.enabled = {enabled}")
+                else:
+                    self.log_test("❌ Fastweb commessa has Nextcloud DISABLED", False, 
+                        f"aruba_drive_config.enabled = {enabled} - This explains why uploads go to local!")
+                    return False
+            else:
+                self.log_test("❌ Fastweb commessa not found", False, "Cannot test without Fastweb commessa")
+                return False
+        else:
+            self.log_test("❌ GET /api/commesse failed", False, f"Status: {status}")
+            return False
+
+        # Get clienti to find one with Fastweb commessa
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        fastweb_cliente = None
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            
+            # Find cliente with Fastweb commessa
+            for cliente in clienti:
+                if cliente.get('commessa_id') == fastweb_commessa.get('id'):
+                    fastweb_cliente = cliente
+                    break
+            
+            if fastweb_cliente:
+                self.log_test("✅ Found cliente with Fastweb commessa", True, 
+                    f"Cliente: {fastweb_cliente.get('nome')} {fastweb_cliente.get('cognome')}, ID: {fastweb_cliente.get('id')[:8]}...")
+            else:
+                self.log_test("❌ No cliente found with Fastweb commessa", False, "Need to create cliente with Fastweb commessa")
+                
+                # Create new cliente with Fastweb commessa for testing
+                success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+                
+                if success and status == 200:
+                    sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+                    
+                    # Find compatible sub agenzia
+                    target_sub_agenzia = None
+                    for sub_agenzia in sub_agenzie:
+                        commesse_autorizzate = sub_agenzia.get('commesse_autorizzate', [])
+                        if fastweb_commessa['id'] in commesse_autorizzate:
+                            target_sub_agenzia = sub_agenzia
+                            break
+                    
+                    if target_sub_agenzia:
+                        timestamp = str(int(time.time()))
+                        
+                        new_cliente_data = {
+                            "nome": "TestNextcloud",
+                            "cognome": f"Fastweb{timestamp}",
+                            "email": f"test.nextcloud.fastweb.{timestamp}@test.com",
+                            "telefono": f"333{timestamp[-7:]}",
+                            "codice_fiscale": f"TSTNXT{timestamp[-2:]}M01H501T",
+                            "commessa_id": fastweb_commessa['id'],
+                            "sub_agenzia_id": target_sub_agenzia['id'],
+                            "tipologia_contratto": "energia_fastweb",
+                            "segmento": "privato"
+                        }
+                        
+                        success, create_response, status = self.make_request(
+                            'POST', 'clienti', 
+                            new_cliente_data, 
+                            expected_status=200
+                        )
+                        
+                        if success and status == 200:
+                            fastweb_cliente = create_response
+                            self.log_test("✅ Created new cliente with Fastweb commessa", True, 
+                                f"Cliente: {new_cliente_data['nome']} {new_cliente_data['cognome']}, ID: {create_response.get('id')[:8]}...")
+                        else:
+                            self.log_test("❌ Failed to create new cliente", False, f"Status: {status}")
+                            return False
+                    else:
+                        self.log_test("❌ No compatible sub agenzia found", False, "Cannot create cliente without authorized sub agenzia")
+                        return False
+                else:
+                    self.log_test("❌ Failed to get sub agenzie", False, f"Status: {status}")
+                    return False
+        else:
+            self.log_test("❌ GET /api/clienti failed", False, f"Status: {status}")
+            return False
+
+        # **3. UPLOAD UN DOCUMENTO**
+        print("\n📄 3. UPLOAD UN DOCUMENTO...")
+        
+        cliente_id = fastweb_cliente.get('id')
+        
+        # Create test PDF content
+        test_pdf_content = b"""%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 55
+>>
+stream
+BT
+/F1 12 Tf
+100 700 Td
+(Test Nextcloud Upload Verification) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000206 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+310
+%%EOF"""
+        
+        # Record upload start time
+        upload_start_time = time.time()
+        
+        try:
+            import requests
+            
+            url = f"{self.base_url}/documents/upload"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
+            files = {
+                'file': ('test_nextcloud_verification.pdf', test_pdf_content, 'application/pdf')
+            }
+            
+            data = {
+                'entity_type': 'clienti',
+                'entity_id': cliente_id,
+                'uploaded_by': 'admin'
+            }
+            
+            print(f"   📋 Uploading to: {url}")
+            print(f"   📋 Cliente ID: {cliente_id}")
+            print(f"   📋 Commessa: Fastweb (Nextcloud enabled)")
+            
+            response = requests.post(url, headers=headers, files=files, data=data, timeout=120)
+            
+            # Record upload end time
+            upload_end_time = time.time()
+            upload_duration = upload_end_time - upload_start_time
+            
+            print(f"   ⏱️ Upload duration: {upload_duration:.2f} seconds")
+            
+            if response.status_code == 200:
+                upload_result = response.json()
+                self.log_test("✅ Document upload SUCCESS", True, 
+                    f"Status: {response.status_code}, Duration: {upload_duration:.2f}s")
+                
+                # **4. VERIFICARE CHE STORAGE_TYPE='NEXTCLOUD' (NON 'LOCAL')**
+                print("\n🔍 4. VERIFICARE CHE STORAGE_TYPE='NEXTCLOUD' (NON 'LOCAL')...")
+                
+                success_flag = upload_result.get('success', False)
+                storage_type = upload_result.get('storage_type', 'unknown')
+                document_id = upload_result.get('document_id', 'N/A')
+                aruba_drive_path = upload_result.get('aruba_drive_path', 'N/A')
+                
+                print(f"\n   📊 UPLOAD RESULT ANALYSIS:")
+                print(f"      • Success: {success_flag}")
+                print(f"      • Storage Type: {storage_type}")
+                print(f"      • Document ID: {document_id}")
+                print(f"      • Aruba Drive Path: {aruba_drive_path}")
+                
+                if success_flag:
+                    self.log_test("✅ Upload success flag", True, "success=true in response")
+                else:
+                    self.log_test("❌ Upload success flag", False, f"success={success_flag}")
+                
+                # **CRITICAL CHECK: storage_type must be 'nextcloud' NOT 'local'**
+                if storage_type == 'nextcloud':
+                    self.log_test("✅ Storage type is 'nextcloud'", True, "✅ SUCCESS - Document uploaded to Nextcloud!")
+                elif storage_type == 'aruba_drive':
+                    self.log_test("✅ Storage type is 'aruba_drive'", True, "✅ SUCCESS - Document uploaded to Aruba Drive (Nextcloud)!")
+                elif storage_type == 'local':
+                    self.log_test("❌ Storage type is 'local'", False, "❌ FAILURE - Document saved locally, Nextcloud upload failed!")
+                    return False
+                else:
+                    self.log_test("❌ Unknown storage type", False, f"storage_type: {storage_type}")
+                    return False
+                
+                # Verify document in database has correct storage_type
+                if document_id != 'N/A':
+                    success, docs_response, status = self.make_request(
+                        'GET', f'clienti/{cliente_id}/documenti', 
+                        expected_status=200
+                    )
+                    
+                    if success and status == 200:
+                        documents = docs_response if isinstance(docs_response, list) else []
+                        
+                        # Find the uploaded document
+                        uploaded_doc = None
+                        for doc in documents:
+                            if doc.get('id') == document_id or 'nextcloud' in doc.get('filename', '').lower():
+                                uploaded_doc = doc
+                                break
+                        
+                        if uploaded_doc:
+                            db_storage_type = uploaded_doc.get('storage_type', 'unknown')
+                            cloud_path = uploaded_doc.get('cloud_path', '')
+                            
+                            self.log_test("✅ Document found in database", True, 
+                                f"Document ID: {uploaded_doc.get('id', 'N/A')[:8]}..., Filename: {uploaded_doc.get('filename', 'N/A')}")
+                            
+                            if db_storage_type in ['nextcloud', 'aruba_drive']:
+                                self.log_test("✅ Database storage_type correct", True, f"storage_type: {db_storage_type}")
+                            else:
+                                self.log_test("❌ Database storage_type incorrect", False, f"storage_type: {db_storage_type}")
+                                return False
+                            
+                            if cloud_path and not cloud_path.startswith('/local/'):
+                                self.log_test("✅ Cloud path correct", True, f"Path: {cloud_path}")
+                            else:
+                                self.log_test("❌ Cloud path incorrect", False, f"Path: {cloud_path}")
+                        else:
+                            self.log_test("❌ Document not found in database", False, "Document may not have been saved")
+                    else:
+                        self.log_test("❌ Could not retrieve cliente documents", False, f"Status: {status}")
+                
+            else:
+                self.log_test("❌ Document upload FAILED", False, 
+                    f"Status: {response.status_code}, Response: {response.text[:200]}")
+                return False
+                
+        except Exception as e:
+            self.log_test("❌ Document upload ERROR", False, f"Exception: {str(e)}")
+            return False
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 TEST VELOCE UPLOAD NEXTCLOUD - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che l'upload Nextcloud funzioni dopo abilitazione Fastweb")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Fastweb commessa found: ✅ SUCCESS")
+        print(f"      • Fastweb commessa Nextcloud enabled: ✅ SUCCESS")
+        print(f"      • Cliente with Fastweb commessa: ✅ SUCCESS")
+        print(f"      • Document upload: ✅ SUCCESS")
+        print(f"      • Upload duration: {upload_duration:.2f}s")
+        print(f"      • Response storage_type: {storage_type} ({'✅ NEXTCLOUD/ARUBA_DRIVE' if storage_type in ['nextcloud', 'aruba_drive'] else '❌ NOT NEXTCLOUD'})")
+        print(f"      • Database storage_type: {'✅ CORRECT' if 'db_storage_type' in locals() and db_storage_type in ['nextcloud', 'aruba_drive'] else '❌ INCORRECT'}")
+        
+        if storage_type in ['nextcloud', 'aruba_drive']:
+            print(f"\n   🎉 SUCCESS: Upload Nextcloud funziona correttamente!")
+            print(f"   🎉 CONFERMATO: Il fix enabled=True sulla commessa Fastweb ha risolto il problema!")
+            print(f"   ✅ I documenti ora vengono caricati su Nextcloud/Aruba Drive invece che salvati in locale")
+            return True
+        else:
+            print(f"\n   🚨 FAILURE: Upload Nextcloud presenta ancora problemi")
+            print(f"   🚨 PROBLEMA: I documenti vengono ancora salvati in locale invece che su Nextcloud")
+            print(f"   🔧 RACCOMANDAZIONE: Verificare configurazione Nextcloud/Aruba Drive nella commessa Fastweb")
+            return False
 
     def test_aruba_drive_actual_upload_test(self):
         """🚨 TEST UPLOAD DOCUMENTO REALE - Testare effettivamente l'upload per vedere i log Aruba Drive"""
