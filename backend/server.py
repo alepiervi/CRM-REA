@@ -4410,73 +4410,48 @@ async def upload_document(
                 add_debug_log(f"🌐 Using Nextcloud WebDAV: folder=/{folder_name}/")
                 
                 # ============================================
-                # ARUBA DRIVE UPLOAD (Playwright - production compatible)
+                # NEXTCLOUD WEBDAV UPLOAD (Fast, lightweight, no browser)
                 # ============================================
                 
-                add_debug_log(f"🚀 Starting Aruba Drive upload (Playwright): {folder_path}")
-                
-                # Save file temporarily for upload
-                temp_dir = Path("/tmp/aruba_uploads")
-                temp_dir.mkdir(exist_ok=True)
-                temp_file_path = temp_dir / unique_filename
-                
-                with open(temp_file_path, "wb") as f:
-                    f.write(content)
+                add_debug_log(f"🚀 Starting Nextcloud WebDAV upload")
                 
                 upload_success = False
                 
                 try:
-                    # Use Playwright for Nextcloud/Aruba Drive upload
-                    # This works in production when browser is pre-installed
-                    add_debug_log(f"🎭 Initializing Playwright for Aruba Drive upload")
-                    
-                    aruba = ArubaWebAutomation()
-                    
-                    # Initialize Playwright (browser should be pre-installed in production)
-                    init_success = await aruba.initialize()
-                    
-                    if not init_success:
-                        raise Exception("Failed to initialize Playwright browser")
-                    
-                    add_debug_log(f"✅ Playwright initialized successfully")
-                    
-                    # Upload using Playwright automation
-                    upload_result = await aruba.upload_documents_with_config(
-                        [str(temp_file_path)],
-                        folder_path,
-                        aruba_config
+                    # Initialize Nextcloud client
+                    nextcloud = NextcloudClient(
+                        base_url=base_url,
+                        username=username,
+                        password=password,
+                        folder_path=folder_name
                     )
                     
-                    add_debug_log(f"📊 Upload result: {upload_result}")
+                    # Build structured filename with client info
+                    structured_filename = nextcloud.build_filename(entity, unique_filename)
                     
-                    if upload_result and upload_result.get("successful_uploads", 0) > 0:
-                        aruba_drive_path = f"{folder_path}/{unique_filename}"
-                        storage_type = "aruba_drive"
+                    add_debug_log(f"📝 Structured filename: {structured_filename}")
+                    
+                    # Upload file via WebDAV
+                    success, cloud_path = await nextcloud.upload_file(content, structured_filename)
+                    
+                    if success:
+                        aruba_drive_path = cloud_path
+                        storage_type = "nextcloud"
                         upload_success = True
-                        add_debug_log(f"✅ Playwright upload successful: {aruba_drive_path}")
+                        add_debug_log(f"✅ Nextcloud upload successful: {cloud_path}")
                         last_upload_debug["aruba_success"] = True
                     else:
-                        error_msg = upload_result.get("error") if upload_result else "Unknown error"
-                        raise Exception(f"Playwright upload failed: {error_msg}")
+                        raise Exception("WebDAV upload failed")
                     
-                except Exception as playwright_error:
-                    add_debug_log(f"❌ Playwright upload failed: {type(playwright_error).__name__}: {str(playwright_error)}")
+                except Exception as nextcloud_error:
+                    add_debug_log(f"❌ Nextcloud upload failed: {type(nextcloud_error).__name__}: {str(nextcloud_error)}")
                     import traceback
                     add_debug_log(f"🔍 Full traceback: {traceback.format_exc()}")
-                    last_upload_debug["error"] = f"Playwright error: {str(playwright_error)}"
+                    last_upload_debug["error"] = f"Nextcloud error: {str(nextcloud_error)}"
                     upload_success = False
                     
-                    # Fallback: Try WebDAV if Playwright fails
-                    add_debug_log(f"🔄 Attempting WebDAV fallback...")
-                    
-                    try:
-                        username = aruba_config.get("username")
-                        password = aruba_config.get("password")
-                        base_url = aruba_config.get("url", "https://drive.aruba.it/remote.php/dav/files")
-                        
-                        add_debug_log(f"📋 WebDAV fallback config: username={username}, base_url={base_url}")
-                        
-                        if not username or not password:
+                    # NO fallback - if Nextcloud fails, use local storage
+                    if not upload_success:
                             raise Exception("Missing credentials")
                         
                         # Use WebDAV client with async context manager
