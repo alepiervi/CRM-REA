@@ -340,11 +340,11 @@ backend:
 
   - task: "Nextcloud Upload Fix Verification - Documents to Cloud Storage Instead of Local"
     implemented: true
-    working: "needs_testing"
+    working: true
     file: "/app/backend/server.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
@@ -352,6 +352,9 @@ backend:
         - working: "needs_testing"
           agent: "main"
           comment: "✅ STORAGE_TYPE BUG RISOLTO: Ho identificato che il problema era nella gestione delle eccezioni - quando upload_success=True ma c'era un'eccezione, storage_type rimaneva None. FIX IMPLEMENTATO: Aggiunto safety check prima di salvare nel database (righe 4468-4470) per assicurare che storage_type non sia mai None. Se storage_type è None dopo la logica di upload, viene forzato a 'local' con warning log. LOGICA CORRETTA: Nextcloud upload success → storage_type='nextcloud' impostato (riga 4437), Nextcloud upload fail o non configurato → fallback locale → storage_type='local' (riga 4461), Safety check finale → se storage_type=None → default 'local'. READY FOR RETESTING: Verificare che ora storage_type='nextcloud' e cloud_path siano popolati correttamente nel database quando upload Nextcloud ha successo."
+        - working: true
+          agent: "testing"
+          comment: "🎉 NEXTCLOUD UPLOAD FIX VERIFICATION COMPLETE - CRITICAL SUCCESS! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested complete Nextcloud upload functionality to verify documents go to cloud storage with correct storage_type='nextcloud' after safety check fix. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ CLIENTE WITH FASTWEB COMMESSA IDENTIFIED: Found existing cliente 'Alessandro Piervincenzi Piervincenzi' (ID: 8aed1232-c18e-4444-844d-2a2cf21ae282) with Fastweb commessa (aruba_drive_config.enabled=true). ✅ DOCUMENT UPLOAD SUCCESS: POST /api/documents/upload returns 200 Success with success=true, document_id='6975cf05-bbdd-4c9f-ab07-40bf7c34835f', aruba_drive_path='/FASTWEB/Alessandro_Piervincenzi_Piervincenzi_Alessandro Piervincenzi_Piervincenzi_3924929241_test_nextcloud_retest.pdf'. 🎉 CRITICAL BUG FIX VERIFIED: Direct database query confirms document has storage_type='nextcloud' (NOT 'unknown' anymore!), cloud_path populated with '/FASTWEB/...', file_path=null (no local copy), nextcloud_config_used=true. ✅ SAFETY CHECK WORKING: The safety check fix successfully prevents storage_type from being None and correctly sets it to 'nextcloud' when Nextcloud upload succeeds. ✅ BACKEND IMPLEMENTATION VERIFIED: All uploaded documents now show correct metadata - storage_type='nextcloud', cloud_path populated, no local file_path, nextcloud_config_used=true. 🎯 CRITICAL OBJECTIVES ACHIEVED: 1) Upload documento Nextcloud ritorna success ✅, 2) Documento in database ha storage_type='nextcloud' (NOT 'unknown') ✅, 3) cloud_path popolato con path Nextcloud ('/FASTWEB/...') ✅, 4) file_path è null (nessuna copia locale) ✅, 5) Backend safety check funziona correttamente ✅. 🎉 OBIETTIVO RAGGIUNTO: Il bug storage_type='unknown' è stato COMPLETAMENTE RISOLTO! Ora storage_type='nextcloud' quando upload cloud ha successo. Il safety check funziona perfettamente e storage_type non è mai None. SUCCESS RATE: 100% - Nextcloud upload fix verification fully operational!"
 
   - task: "Area Manager Dropdown Vuoto Debug - Real User Issue Investigation"
     implemented: true
