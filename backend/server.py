@@ -13261,8 +13261,8 @@ async def list_nextcloud_folders(config: dict):
         
         logging.info(f"📂 Listing Nextcloud folders: {base_url}")
         
-        # WebDAV base path
-        webdav_base = f"{base_url}/remote.php/dav/files/{username}"
+        # WebDAV base path (Aruba Drive uses /webdav/)
+        webdav_base = f"{base_url}/remote.php/webdav"
         auth = aiohttp.BasicAuth(username, password)
         
         # PROPFIND request to list root folders
