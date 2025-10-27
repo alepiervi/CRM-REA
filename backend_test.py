@@ -36616,8 +36616,8 @@ startxref
             success_criteria = [
                 fastweb_commessa and fastweb_commessa.get('aruba_drive_config', {}).get('enabled'),
                 success_flag if 'success_flag' in locals() else False,
-                document_id if 'document_id' in locals() else False,
-                aruba_drive_path if 'aruba_drive_path' in locals() else False,
+                bool(document_id) if 'document_id' in locals() else False,
+                bool(aruba_drive_path) if 'aruba_drive_path' in locals() else False,
                 storage_correct,
                 cloud_path_correct,
                 no_local_copy
