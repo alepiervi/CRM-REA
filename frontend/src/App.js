@@ -118,35 +118,25 @@ import {
 // Smart Backend URL Detection - works in all environments
 // PRODUCTION BACKEND: Always use dedicated production backend (always on)
 const getBackendURL = () => {
-  // Use REACT_APP_BACKEND_URL from environment if available
-  const envBackendURL = process.env.REACT_APP_BACKEND_URL;
+  // CRITICAL: Always use environment variable when available
+  // This is automatically set during Emergent deployments
+  const envBackendURL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
   
   if (envBackendURL) {
-    console.log('🔧 Using backend URL from environment:', envBackendURL);
+    console.log('✅ Using environment variable REACT_APP_BACKEND_URL:', envBackendURL);
     return envBackendURL;
   }
   
-  // Fallback to hostname detection for local development
+  // Fallback only for local development when env var is not set
   const hostname = window.location.hostname;
   
-  // Production backend for nureal.it (always on production)
-  if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
-    console.log('🏭 Production: Using production backend (always on)');
-    const productionURL = 'https://mobil-analytics-1.emergent.host';
-    console.log('🔧 Backend URL:', productionURL);
-    return productionURL;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    console.log('💻 Development: Using localhost backend');
+    return 'http://localhost:8001';
   }
   
-  // Preview environment uses preview backend (can standby, only for testing)
-  if (hostname.includes('preview.emergentagent.com')) {
-    console.log('🧪 Preview: Using preview backend (for testing only)');
-    const previewURL = 'https://mobil-analytics-2.preview.emergentagent.com';
-    console.log('🔧 Backend URL:', previewURL);
-    return previewURL;
-  }
-  
-  // Localhost development
-  console.log('💻 Development: Using localhost backend');
+  // Should never reach here in production
+  console.error('❌ No backend URL configured! Set REACT_APP_BACKEND_URL environment variable');
   return 'http://localhost:8001';
 };
 
