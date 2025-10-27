@@ -11946,7 +11946,7 @@ class NextcloudClient:
         
         try:
             # Check if exists (PROPFIND)
-            async with session.request('PROPFIND', folder_url, auth=self.auth) as resp:
+            async with session.request('PROPFIND', folder_url, auth=self.auth, headers=self.headers) as resp:
                 if resp.status == 207:  # Multi-Status = exists
                     logging.info(f"✅ Folder exists: /{self.folder_path}/")
                     return True
