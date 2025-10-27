@@ -40264,9 +40264,11 @@ if __name__ == "__main__":
                 result = tester.test_ale7_post_restart_verification_immediate()
             elif test_name == "nextcloud":
                 result = tester.run_nextcloud_verification_test()
+            elif test_name == "nextcloud_download":
+                result = tester.test_nextcloud_document_download_endpoint()
             else:
                 print(f"Unknown test: {test_name}")
-                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart, nextcloud")
+                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart, nextcloud, nextcloud_download")
                 result = False
                 
             # Print summary
