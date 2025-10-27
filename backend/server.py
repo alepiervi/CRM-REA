@@ -4328,7 +4328,7 @@ async def upload_document(
     try:
         # NEW: Smart Aruba Drive Integration with per-commessa configuration
         aruba_drive_path = None
-        storage_type = "local"  # Default fallback
+        storage_type = None  # Will be set based on actual upload result
         
         # Get commessa-specific Aruba Drive config for clients
         aruba_config = None
