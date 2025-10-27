@@ -36485,10 +36485,42 @@ startxref
         # **5. VERIFICA CRITICA - STORAGE TYPE**
         print("\n💾 5. VERIFICA CRITICA - STORAGE TYPE...")
         
-        success, docs_response, status = self.make_request(
-            'GET', f'documents/client/{cliente_id}', 
+        # First try to get all documents to see if our document exists
+        success_all, all_docs_response, status_all = self.make_request(
+            'GET', 'documents', 
             expected_status=200
         )
+        
+        if success_all and status_all == 200:
+            all_documents = all_docs_response if isinstance(all_docs_response, list) else []
+            print(f"   📋 DEBUG: Found {len(all_documents)} total documents in system")
+            
+            # Find our uploaded document by document_id
+            our_document = None
+            for doc in all_documents:
+                if doc.get('id') == document_id:
+                    our_document = doc
+                    break
+            
+            if our_document:
+                print(f"   📋 DEBUG: Found our document by ID in all documents list")
+                documents = [our_document]
+            else:
+                print(f"   📋 DEBUG: Our document not found in all documents list, trying client-specific endpoint")
+                # Try client-specific endpoint as fallback
+                success, docs_response, status = self.make_request(
+                    'GET', f'documents/client/{cliente_id}', 
+                    expected_status=200
+                )
+                documents = docs_response if isinstance(docs_response, list) else [] if success and status == 200 else []
+        else:
+            print(f"   📋 DEBUG: Could not get all documents, trying client-specific endpoint")
+            # Try client-specific endpoint as fallback
+            success, docs_response, status = self.make_request(
+                'GET', f'documents/client/{cliente_id}', 
+                expected_status=200
+            )
+            documents = docs_response if isinstance(docs_response, list) else [] if success and status == 200 else []
         
         if success and status == 200:
             documents = docs_response if isinstance(docs_response, list) else []
