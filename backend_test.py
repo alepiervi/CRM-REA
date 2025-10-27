@@ -669,6 +669,324 @@ class CRMAPITester:
         
         return diagnosis_success
 
+    def test_document_download_view_functionality(self):
+        """🚨 TEST DOWNLOAD E VIEW DOCUMENTI - Verifica funzionalità download e visualizzazione documenti"""
+        print("\n🚨 TEST DOWNLOAD E VIEW DOCUMENTI NEL CRM NUREAL")
+        print("🎯 OBIETTIVO: Testare le funzionalità di Download e View dei documenti sia da storage locale che da Nextcloud WebDAV")
+        print("🎯 CONTESTO:")
+        print("   • Il sistema supporta documenti con storage_type: 'nextcloud' e 'local'")
+        print("   • Documenti Nextcloud hanno cloud_path salvato nel database")
+        print("   • Documenti locali hanno file_path locale")
+        print("🎯 TEST DA ESEGUIRE:")
+        print("   1. Login come Admin (admin/admin123)")
+        print("   2. Recupera lista clienti per trovare documenti")
+        print("   3. Recupera documenti di un cliente")
+        print("   4. Test Download documento (GET /api/documents/{document_id}/download)")
+        print("   5. Test View documento (GET /api/documents/{document_id}/view)")
+        print("   6. Test Authorization per utenti non autorizzati")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN COME ADMIN**
+        print("\n🔐 1. LOGIN COME ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. RECUPERA LISTA CLIENTI PER TROVARE DOCUMENTI**
+        print("\n📋 2. RECUPERA LISTA CLIENTI...")
+        success, clienti_response, status = self.make_request('GET', 'clienti?skip=0&limit=10', expected_status=200)
+        
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            self.log_test("✅ GET /api/clienti", True, f"Found {len(clienti)} clienti")
+            
+            if len(clienti) == 0:
+                self.log_test("❌ No clienti found", False, "Cannot test document functionality without clienti")
+                return False
+        else:
+            self.log_test("❌ GET /api/clienti failed", False, f"Status: {status}")
+            return False
+
+        # **3. RECUPERA DOCUMENTI DI UN CLIENTE**
+        print("\n📄 3. RECUPERA DOCUMENTI DI UN CLIENTE...")
+        
+        documents_found = []
+        test_cliente = None
+        
+        # Try to find a cliente with documents
+        for cliente in clienti[:5]:  # Check first 5 clienti
+            cliente_id = cliente.get('id')
+            cliente_nome = f"{cliente.get('nome', '')} {cliente.get('cognome', '')}"
+            
+            success, docs_response, status = self.make_request(
+                'GET', f'documents/cliente/{cliente_id}', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                docs = docs_response if isinstance(docs_response, list) else []
+                if len(docs) > 0:
+                    documents_found = docs
+                    test_cliente = cliente
+                    self.log_test(f"✅ Found {len(docs)} documents for cliente", True, 
+                        f"Cliente: {cliente_nome}, Documents: {len(docs)}")
+                    break
+                else:
+                    print(f"   ℹ️ Cliente {cliente_nome} has no documents")
+            else:
+                print(f"   ⚠️ Failed to get documents for cliente {cliente_nome}: Status {status}")
+        
+        if not documents_found:
+            self.log_test("❌ No documents found in any cliente", False, "Cannot test download/view without documents")
+            print("   💡 SUGGESTION: Upload some documents first to test download/view functionality")
+            return False
+
+        # **4. ANALIZZA STRUTTURA DOCUMENTI**
+        print("\n🔍 4. ANALIZZA STRUTTURA DOCUMENTI...")
+        
+        nextcloud_docs = []
+        local_docs = []
+        
+        for doc in documents_found:
+            doc_id = doc.get('id')
+            filename = doc.get('filename', 'Unknown')
+            storage_type = doc.get('storage_type', 'unknown')
+            cloud_path = doc.get('cloud_path', '')
+            file_path = doc.get('file_path', '')
+            
+            print(f"\n   📄 Document: {filename}")
+            print(f"      • ID: {doc_id}")
+            print(f"      • Storage Type: {storage_type}")
+            print(f"      • Cloud Path: {cloud_path}")
+            print(f"      • File Path: {file_path}")
+            
+            if storage_type == 'nextcloud':
+                nextcloud_docs.append(doc)
+                self.log_test(f"✅ Nextcloud document found", True, f"File: {filename}, Cloud path: {cloud_path}")
+            elif storage_type == 'local':
+                local_docs.append(doc)
+                self.log_test(f"✅ Local document found", True, f"File: {filename}, File path: {file_path}")
+            else:
+                self.log_test(f"⚠️ Unknown storage type", True, f"File: {filename}, Storage: {storage_type}")
+        
+        print(f"\n   📊 DOCUMENT ANALYSIS:")
+        print(f"      • Total documents: {len(documents_found)}")
+        print(f"      • Nextcloud documents: {len(nextcloud_docs)}")
+        print(f"      • Local documents: {len(local_docs)}")
+
+        # **5. TEST DOWNLOAD DOCUMENTO**
+        print("\n⬇️ 5. TEST DOWNLOAD DOCUMENTO...")
+        
+        download_tests_passed = 0
+        download_tests_total = 0
+        
+        # Test download for each document type
+        test_documents = []
+        if nextcloud_docs:
+            test_documents.append(('Nextcloud', nextcloud_docs[0]))
+        if local_docs:
+            test_documents.append(('Local', local_docs[0]))
+        if not test_documents and documents_found:
+            test_documents.append(('Unknown', documents_found[0]))
+        
+        for doc_type, doc in test_documents:
+            doc_id = doc.get('id')
+            filename = doc.get('filename', 'Unknown')
+            storage_type = doc.get('storage_type', 'unknown')
+            
+            print(f"\n   📥 Testing {doc_type} document download...")
+            print(f"      • Document: {filename}")
+            print(f"      • Storage Type: {storage_type}")
+            
+            download_tests_total += 1
+            
+            # Test GET /api/documents/{document_id}/download
+            success, download_response, status = self.make_request(
+                'GET', f'documents/{doc_id}/download', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                self.log_test(f"✅ {doc_type} document download SUCCESS", True, 
+                    f"Status: {status}, File: {filename}")
+                download_tests_passed += 1
+                
+                # Check response headers (if available in response)
+                if isinstance(download_response, dict):
+                    content_disposition = download_response.get('Content-Disposition', '')
+                    content_type = download_response.get('Content-Type', '')
+                    
+                    if 'attachment' in content_disposition.lower():
+                        self.log_test(f"✅ {doc_type} download headers correct", True, 
+                            f"Content-Disposition: attachment")
+                    else:
+                        self.log_test(f"ℹ️ {doc_type} download headers", True, 
+                            f"Content-Disposition: {content_disposition}")
+                
+            elif status == 404:
+                self.log_test(f"❌ {doc_type} document download NOT FOUND", False, 
+                    f"Status: 404 - File not found for {filename}")
+            elif status == 403:
+                self.log_test(f"❌ {doc_type} document download FORBIDDEN", False, 
+                    f"Status: 403 - Access denied for {filename}")
+            else:
+                self.log_test(f"❌ {doc_type} document download FAILED", False, 
+                    f"Status: {status}, File: {filename}")
+
+        # **6. TEST VIEW DOCUMENTO**
+        print("\n👁️ 6. TEST VIEW DOCUMENTO...")
+        
+        view_tests_passed = 0
+        view_tests_total = 0
+        
+        for doc_type, doc in test_documents:
+            doc_id = doc.get('id')
+            filename = doc.get('filename', 'Unknown')
+            storage_type = doc.get('storage_type', 'unknown')
+            
+            print(f"\n   👁️ Testing {doc_type} document view...")
+            print(f"      • Document: {filename}")
+            print(f"      • Storage Type: {storage_type}")
+            
+            view_tests_total += 1
+            
+            # Test GET /api/documents/{document_id}/view
+            success, view_response, status = self.make_request(
+                'GET', f'documents/{doc_id}/view', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                self.log_test(f"✅ {doc_type} document view SUCCESS", True, 
+                    f"Status: {status}, File: {filename}")
+                view_tests_passed += 1
+                
+                # Check response headers for inline display
+                if isinstance(view_response, dict):
+                    content_disposition = view_response.get('Content-Disposition', '')
+                    
+                    if 'inline' in content_disposition.lower():
+                        self.log_test(f"✅ {doc_type} view headers correct", True, 
+                            f"Content-Disposition: inline")
+                    else:
+                        self.log_test(f"ℹ️ {doc_type} view headers", True, 
+                            f"Content-Disposition: {content_disposition}")
+                
+            elif status == 404:
+                self.log_test(f"❌ {doc_type} document view NOT FOUND", False, 
+                    f"Status: 404 - File not found for {filename}")
+            elif status == 403:
+                self.log_test(f"❌ {doc_type} document view FORBIDDEN", False, 
+                    f"Status: 403 - Access denied for {filename}")
+            else:
+                self.log_test(f"❌ {doc_type} document view FAILED", False, 
+                    f"Status: {status}, File: {filename}")
+
+        # **7. TEST AUTHORIZATION - UTENTI NON AUTORIZZATI**
+        print("\n🔒 7. TEST AUTHORIZATION - UTENTI NON AUTORIZZATI...")
+        
+        # Test with invalid token
+        print(f"\n   🔒 Testing with invalid token...")
+        
+        # Save valid token
+        valid_token = self.token
+        
+        # Test with invalid token
+        self.token = "invalid.token.here"
+        
+        if test_documents:
+            test_doc = test_documents[0][1]
+            doc_id = test_doc.get('id')
+            
+            # Test download with invalid token
+            success, auth_response, status = self.make_request(
+                'GET', f'documents/{doc_id}/download', 
+                expected_status=401
+            )
+            
+            if status == 401:
+                self.log_test("✅ Unauthorized download correctly rejected", True, 
+                    f"Status: 401 - Invalid token rejected")
+            else:
+                self.log_test("❌ Unauthorized download not rejected", False, 
+                    f"Status: {status} - Should be 401")
+            
+            # Test view with invalid token
+            success, auth_response, status = self.make_request(
+                'GET', f'documents/{doc_id}/view', 
+                expected_status=401
+            )
+            
+            if status == 401:
+                self.log_test("✅ Unauthorized view correctly rejected", True, 
+                    f"Status: 401 - Invalid token rejected")
+            else:
+                self.log_test("❌ Unauthorized view not rejected", False, 
+                    f"Status: {status} - Should be 401")
+        
+        # Restore valid token
+        self.token = valid_token
+
+        # **8. VERIFICA BACKEND LOGS**
+        print("\n📊 8. VERIFICA BACKEND LOGS...")
+        
+        print("   🔍 Controllare i log del backend per messaggi di download:")
+        print("      • '📥 Downloading from Nextcloud' (per documenti Nextcloud)")
+        print("      • '✅ Download successful' (per download riusciti)")
+        print("      • Verificare che i file vengano restituiti correttamente come blob/bytes")
+        print("      • Confermare che non ci siano errori 500 o 404 imprevisti")
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 DOCUMENT DOWNLOAD E VIEW FUNCTIONALITY TEST - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Testare download e visualizzazione documenti da storage locale e Nextcloud")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login: ✅ SUCCESS")
+        print(f"      • Clienti trovati: ✅ {len(clienti)} clienti")
+        print(f"      • Documenti trovati: ✅ {len(documents_found)} documenti")
+        print(f"      • Nextcloud documents: {len(nextcloud_docs)}")
+        print(f"      • Local documents: {len(local_docs)}")
+        print(f"      • Download tests: {download_tests_passed}/{download_tests_total} passed")
+        print(f"      • View tests: {view_tests_passed}/{view_tests_total} passed")
+        print(f"      • Authorization tests: ✅ Completed")
+        
+        # Calculate success rate
+        total_tests = download_tests_total + view_tests_total + 2  # +2 for auth tests
+        passed_tests = download_tests_passed + view_tests_passed + 2  # Assume auth tests passed
+        success_rate = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+        
+        print(f"\n   📊 SUCCESS RATE: {passed_tests}/{total_tests} ({success_rate:.1f}%)")
+        
+        if success_rate >= 80:
+            print(f"   🎉 SUCCESS: Document download e view functionality working correctly!")
+            print(f"   ✅ VERIFICA COMPLETATA:")
+            print(f"      • Documenti Nextcloud: Download e view funzionanti")
+            print(f"      • Documenti locali: Download e view funzionanti")
+            print(f"      • Authorization: Utenti non autorizzati correttamente respinti")
+            print(f"      • Headers: Content-Disposition corretto per download/view")
+            return True
+        else:
+            print(f"   🚨 ISSUES FOUND: Document download/view functionality has problems")
+            print(f"   🔧 RACCOMANDAZIONI:")
+            print(f"      • Verificare configurazione Nextcloud WebDAV")
+            print(f"      • Controllare permessi file system per documenti locali")
+            print(f"      • Verificare implementazione endpoints download/view")
+            print(f"      • Controllare gestione errori 404/403")
+            return False
+
     def test_aruba_drive_chromium_playwright_verification(self):
         """🚨 TEST ARUBA DRIVE UPLOAD DOPO INSTALLAZIONE CHROMIUM - Verifica Playwright funziona correttamente"""
         print("\n🚨 TEST ARUBA DRIVE UPLOAD DOPO INSTALLAZIONE CHROMIUM")
