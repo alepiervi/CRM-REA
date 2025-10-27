@@ -4389,26 +4389,25 @@ async def upload_document(
         # Read file content
         content = await file.read()
         
-        # Try Aruba Drive upload if configured
-        if aruba_config:
-            add_debug_log(f"✅ Aruba Drive config found: enabled={aruba_config.get('enabled')}")
+        # Try Nextcloud upload if configured
+        if aruba_config and aruba_config.get('enabled'):
+            add_debug_log(f"✅ Nextcloud config found: enabled={aruba_config.get('enabled')}")
             last_upload_debug["aruba_attempted"] = True
             try:
-                # SIMPLIFIED APPROACH: Use only root folder, put all info in filename
-                # This is faster, more reliable, and works like preview
+                # Get Nextcloud configuration
+                base_url = aruba_config.get("url", "https://vkbu5u.arubadrive.com")
+                username = aruba_config.get("username", "crm")
+                password = aruba_config.get("password", "Casilina25")
                 
-                # Use only root folder path (e.g., "/Fastweb" or "/FASTWEB")
+                # Folder name (e.g., "Fastweb", "Telepass")
                 if aruba_config.get("root_folder_path"):
-                    folder_path = aruba_config["root_folder_path"]
+                    folder_name = aruba_config["root_folder_path"].strip('/')
                 else:
-                    folder_path = f"/{commessa.get('nome', 'Documenti')}"
+                    folder_name = commessa.get('nome', 'Documenti')
                 
-                # Ensure folder_path starts with /
-                if not folder_path.startswith('/'):
-                    folder_path = f"/{folder_path}"
-                
-                logging.info(f"📁 Target Aruba Drive folder (simplified): {folder_path}")
-                add_debug_log(f"📁 Using simplified upload: folder={folder_path}, file={unique_filename}")
+                logging.info(f"🌐 Nextcloud WebDAV upload")
+                logging.info(f"📁 Target folder: /{folder_name}/")
+                add_debug_log(f"🌐 Using Nextcloud WebDAV: folder=/{folder_name}/")
                 
                 # ============================================
                 # ARUBA DRIVE UPLOAD (Playwright - production compatible)
