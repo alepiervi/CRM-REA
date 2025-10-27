@@ -4449,8 +4449,8 @@ async def upload_document(
                 add_debug_log(f"⚠️ Nextcloud upload failed, using local storage fallback")
                 # Continue with local storage fallback
         
-        # Local storage fallback (ONLY if cloud upload failed)
-        if storage_type == "local":
+        # Local storage fallback (ONLY if cloud upload failed or not configured)
+        if not upload_success:
             documents_dir = Path("/app/documents")
             documents_dir.mkdir(exist_ok=True)
             file_path = documents_dir / unique_filename
@@ -4458,6 +4458,7 @@ async def upload_document(
             with open(file_path, "wb") as f:
                 f.write(content)
                 
+            storage_type = "local"
             add_debug_log(f"💾 Saved to local storage: {file_path}")
         else:
             # Cloud upload successful - no local copy needed
