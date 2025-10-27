@@ -143,7 +143,7 @@ CONCLUSIONI:
 4. ✅ No local storage fallback - Upload takes time indicating Playwright automation
 5. ✅ System processes confirm Playwright + Chromium integration working
 
-STATO: RISOLTO - L'installazione manuale di Chromium ha risolto il problema Playwright. Il sistema ora può utilizzare Playwright per l'upload su Aruba Drive invece del fallback locale."
+STATO: PARZIALMENTE RISOLTO - L'upload su Nextcloud funziona ma c'è un bug nel salvataggio dei metadati del documento nel database."
 
 previous_problem_statement: "CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM
 
