@@ -36999,6 +36999,11 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
+        if nextcloud_success:
+            print("🎉 NEXTCLOUD UPLOAD FIX VERIFICATION: ✅ SUCCESS - STORAGE_TYPE='NEXTCLOUD' CORRETTO!")
+        else:
+            print("🚨 NEXTCLOUD UPLOAD FIX VERIFICATION: ❌ FAILED - STORAGE_TYPE BUG NOT FIXED!")
+            
         if finale_success:
             print("🎉 TEST FINALE ARUBA DRIVE CHROMIUM: ✅ SUCCESS - UPLOAD FUNZIONA CORRETTAMENTE!")
         else:
