@@ -12119,7 +12119,7 @@ class NextcloudClient:
             async with aiohttp.ClientSession() as session:
                 file_url = f"{self.webdav_base}/{self.folder_path}/{filename}"
                 
-                async with session.delete(file_url, auth=self.auth) as resp:
+                async with session.delete(file_url, auth=self.auth, headers=self.headers) as resp:
                     if resp.status in [204, 404]:  # No Content or Not Found
                         logging.info(f"✅ File deleted: {filename}")
                         return True
