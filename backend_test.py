@@ -38742,9 +38742,11 @@ if __name__ == "__main__":
                 result = tester.test_store_assistant_user_creation_fix()
             elif test_name == "ale7_restart":
                 result = tester.test_ale7_post_restart_verification_immediate()
+            elif test_name == "nextcloud":
+                result = tester.run_nextcloud_verification_only()
             else:
                 print(f"Unknown test: {test_name}")
-                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart")
+                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart, nextcloud")
                 result = False
                 
             # Print summary
