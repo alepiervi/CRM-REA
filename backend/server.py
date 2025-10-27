@@ -11931,6 +11931,12 @@ class NextcloudClient:
         # Auth
         self.auth = aiohttp.BasicAuth(self.username, self.password)
         
+        # Headers for Aruba Drive/Nextcloud compatibility
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Nextcloud)',
+            'OCS-APIRequest': 'true'
+        }
+        
         logging.info(f"🌐 Nextcloud client initialized: {self.base_url}")
         logging.info(f"📁 Target folder: /{self.folder_path}/")
     
