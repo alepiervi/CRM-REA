@@ -36525,49 +36525,47 @@ startxref
         print(f"   📋 DEBUG: Final documents list has {len(documents)} documents")
         
         if len(documents) > 0:
-                # Find the uploaded document (most recent)
-                uploaded_doc = None
-                for doc in documents:
-                    if 'nextcloud' in doc.get('filename', '').lower():
-                        uploaded_doc = doc
-                        break
-                
-                if not uploaded_doc:
-                    uploaded_doc = documents[0]  # Use most recent if specific not found
-                
-                self.log_test("✅ Document found in database", True, 
-                    f"Document ID: {uploaded_doc.get('id', 'N/A')[:8]}..., Filename: {uploaded_doc.get('filename', 'N/A')}")
-                
-                # **CRITICAL CHECK**: Verificare che il documento abbia storage_type: "nextcloud" (NOT "local"!)
-                storage_type = uploaded_doc.get('storage_type', 'unknown')
-                cloud_path = uploaded_doc.get('cloud_path', '')
-                file_path = uploaded_doc.get('file_path', '')
-                
-                if storage_type == 'nextcloud':
-                    self.log_test("✅ CRITICAL: Storage type is nextcloud", True, "NOT local storage!")
-                else:
-                    self.log_test("❌ CRITICAL: Storage type is NOT nextcloud", False, f"storage_type: {storage_type}")
-                
-                if cloud_path and not cloud_path.startswith('/local/'):
-                    self.log_test("✅ Cloud path present", True, f"cloud_path: {cloud_path}")
-                else:
-                    self.log_test("❌ Cloud path invalid", False, f"cloud_path: {cloud_path}")
-                
-                if not file_path or file_path == 'null':
-                    self.log_test("✅ File path is null", True, "No local copy saved")
-                else:
-                    self.log_test("❌ File path present", False, f"Local copy saved: {file_path}")
-                
-                print(f"\n   📊 DOCUMENT DATABASE ANALYSIS:")
-                print(f"      • Storage Type: {storage_type} ({'✅ NEXTCLOUD' if storage_type == 'nextcloud' else '❌ NOT NEXTCLOUD'})")
-                print(f"      • Cloud Path: {cloud_path}")
-                print(f"      • File Path: {file_path} ({'✅ NULL' if not file_path or file_path == 'null' else '❌ LOCAL COPY'})")
-                
+            # Find the uploaded document (most recent)
+            uploaded_doc = None
+            for doc in documents:
+                if 'nextcloud' in doc.get('filename', '').lower():
+                    uploaded_doc = doc
+                    break
+            
+            if not uploaded_doc:
+                uploaded_doc = documents[0]  # Use most recent if specific not found
+            
+            self.log_test("✅ Document found in database", True, 
+                f"Document ID: {uploaded_doc.get('id', 'N/A')[:8]}..., Filename: {uploaded_doc.get('filename', 'N/A')}")
+            
+            # **CRITICAL CHECK**: Verificare che il documento abbia storage_type: "nextcloud" (NOT "local"!)
+            storage_type = uploaded_doc.get('storage_type', 'unknown')
+            cloud_path = uploaded_doc.get('cloud_path', '')
+            file_path = uploaded_doc.get('file_path', '')
+            
+            if storage_type == 'nextcloud':
+                self.log_test("✅ CRITICAL: Storage type is nextcloud", True, "NOT local storage!")
             else:
-                self.log_test("❌ No documents found for cliente", False, "Document may not have been saved")
-                return False
+                self.log_test("❌ CRITICAL: Storage type is NOT nextcloud", False, f"storage_type: {storage_type}")
+            
+            if cloud_path and not cloud_path.startswith('/local/'):
+                self.log_test("✅ Cloud path present", True, f"cloud_path: {cloud_path}")
+            else:
+                self.log_test("❌ Cloud path invalid", False, f"cloud_path: {cloud_path}")
+            
+            if not file_path or file_path == 'null':
+                self.log_test("✅ File path is null", True, "No local copy saved")
+            else:
+                self.log_test("❌ File path present", False, f"Local copy saved: {file_path}")
+            
+            print(f"\n   📊 DOCUMENT DATABASE ANALYSIS:")
+            print(f"      • Storage Type: {storage_type} ({'✅ NEXTCLOUD' if storage_type == 'nextcloud' else '❌ NOT NEXTCLOUD'})")
+            print(f"      • Cloud Path: {cloud_path}")
+            print(f"      • File Path: {file_path} ({'✅ NULL' if not file_path or file_path == 'null' else '❌ LOCAL COPY'})")
+            
         else:
-            self.log_test("❌ Could not retrieve cliente documents", False, f"Status: {status}")
+            self.log_test("❌ No documents found for cliente", False, "Document may not have been saved")
+            return False
 
         # **6. VERIFICA BACKEND LOGS**
         print("\n📊 6. VERIFICA BACKEND LOGS...")
