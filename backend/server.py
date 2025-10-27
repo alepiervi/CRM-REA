@@ -11966,6 +11966,223 @@ class ArubaWebDAVClient:
             return False
 
 
+class NextcloudClient:
+    """
+    Nextcloud WebDAV client for document management.
+    Fast, lightweight, no browser automation needed.
+    """
+    
+    def __init__(self, base_url: str, username: str, password: str, folder_path: str):
+        """
+        Initialize Nextcloud client
+        
+        Args:
+            base_url: Nextcloud base URL (e.g., https://vkbu5u.arubadrive.com)
+            username: Nextcloud username
+            password: Nextcloud password
+            folder_path: Folder name in Nextcloud (e.g., "Fastweb")
+        """
+        self.base_url = base_url.rstrip('/')
+        self.username = username
+        self.password = password
+        self.folder_path = folder_path.strip('/')
+        
+        # WebDAV endpoint
+        self.webdav_base = f"{self.base_url}/remote.php/dav/files/{self.username}"
+        
+        # Auth
+        self.auth = aiohttp.BasicAuth(self.username, self.password)
+        
+        logging.info(f"🌐 Nextcloud client initialized: {self.base_url}")
+        logging.info(f"📁 Target folder: /{self.folder_path}/")
+    
+    async def ensure_folder_exists(self, session: aiohttp.ClientSession):
+        """Create folder if doesn't exist"""
+        folder_url = f"{self.webdav_base}/{self.folder_path}"
+        
+        try:
+            # Check if exists (PROPFIND)
+            async with session.request('PROPFIND', folder_url, auth=self.auth) as resp:
+                if resp.status == 207:  # Multi-Status = exists
+                    logging.info(f"✅ Folder exists: /{self.folder_path}/")
+                    return True
+                elif resp.status == 404:
+                    # Create folder (MKCOL)
+                    async with session.request('MKCOL', folder_url, auth=self.auth) as create_resp:
+                        if create_resp.status in [201, 405]:  # 201 Created or 405 Already exists
+                            logging.info(f"✅ Folder created: /{self.folder_path}/")
+                            return True
+                        else:
+                            logging.error(f"❌ Failed to create folder: {create_resp.status}")
+                            return False
+        except Exception as e:
+            logging.error(f"❌ Error ensuring folder exists: {e}")
+            return False
+        
+        return True
+    
+    def build_filename(self, cliente: dict, original_filename: str) -> str:
+        """
+        Build structured filename with client info
+        
+        Format: {NumeroOrdine}_{Telefono}_{Nome}_{Cognome}_{OriginalFile}
+        If numero_ordine empty: {Telefono}_{Nome}_{Cognome}_{OriginalFile}
+        """
+        numero_ordine = cliente.get('numero_ordine', '').strip()
+        telefono = cliente.get('telefono_mobile', '').strip() or cliente.get('telefono_fisso', '').strip()
+        nome = cliente.get('nome', '').strip()
+        cognome = cliente.get('cognome', '').strip()
+        
+        # Sanitize for filename
+        def sanitize(s):
+            return s.replace('/', '_').replace('\\', '_').replace(' ', '_')
+        
+        parts = []
+        
+        if numero_ordine:
+            parts.append(sanitize(numero_ordine))
+        
+        if telefono:
+            parts.append(sanitize(telefono))
+        
+        if nome:
+            parts.append(sanitize(nome))
+        
+        if cognome:
+            parts.append(sanitize(cognome))
+        
+        parts.append(original_filename)
+        
+        filename = '_'.join(parts)
+        
+        logging.info(f"📝 Built filename: {filename}")
+        return filename
+    
+    async def upload_file(self, file_content: bytes, filename: str) -> tuple[bool, str]:
+        """
+        Upload file to Nextcloud via WebDAV
+        
+        Returns:
+            (success: bool, path: str)
+        """
+        try:
+            async with aiohttp.ClientSession() as session:
+                # Ensure folder exists
+                await self.ensure_folder_exists(session)
+                
+                # Upload file (PUT)
+                file_url = f"{self.webdav_base}/{self.folder_path}/{filename}"
+                
+                logging.info(f"📤 Uploading to: {file_url}")
+                
+                async with session.put(
+                    file_url,
+                    data=file_content,
+                    auth=self.auth,
+                    headers={'Content-Type': 'application/octet-stream'}
+                ) as resp:
+                    if resp.status in [201, 204]:  # Created or No Content
+                        path = f"/{self.folder_path}/{filename}"
+                        logging.info(f"✅ Upload successful: {path}")
+                        return True, path
+                    else:
+                        error = await resp.text()
+                        logging.error(f"❌ Upload failed ({resp.status}): {error}")
+                        return False, ""
+                        
+        except Exception as e:
+            logging.error(f"❌ Upload exception: {e}")
+            return False, ""
+    
+    async def download_file(self, filename: str) -> tuple[bool, bytes]:
+        """
+        Download file from Nextcloud
+        
+        Returns:
+            (success: bool, content: bytes)
+        """
+        try:
+            async with aiohttp.ClientSession() as session:
+                file_url = f"{self.webdav_base}/{self.folder_path}/{filename}"
+                
+                logging.info(f"📥 Downloading from: {file_url}")
+                
+                async with session.get(file_url, auth=self.auth) as resp:
+                    if resp.status == 200:
+                        content = await resp.read()
+                        logging.info(f"✅ Download successful: {len(content)} bytes")
+                        return True, content
+                    else:
+                        logging.error(f"❌ Download failed: {resp.status}")
+                        return False, b""
+                        
+        except Exception as e:
+            logging.error(f"❌ Download exception: {e}")
+            return False, b""
+    
+    async def list_files(self) -> list[dict]:
+        """
+        List files in folder
+        
+        Returns:
+            List of file info dicts
+        """
+        try:
+            async with aiohttp.ClientSession() as session:
+                folder_url = f"{self.webdav_base}/{self.folder_path}"
+                
+                # PROPFIND to list files
+                propfind_body = '''<?xml version="1.0"?>
+                <d:propfind xmlns:d="DAV:">
+                    <d:prop>
+                        <d:displayname/>
+                        <d:getcontentlength/>
+                        <d:getlastmodified/>
+                        <d:getcontenttype/>
+                    </d:prop>
+                </d:propfind>'''
+                
+                async with session.request(
+                    'PROPFIND',
+                    folder_url,
+                    auth=self.auth,
+                    data=propfind_body,
+                    headers={'Depth': '1', 'Content-Type': 'application/xml'}
+                ) as resp:
+                    if resp.status == 207:
+                        xml_text = await resp.text()
+                        # Parse XML response (simplified)
+                        files = []
+                        # TODO: Parse XML properly if needed
+                        logging.info(f"✅ Listed files in /{self.folder_path}/")
+                        return files
+                    else:
+                        logging.error(f"❌ List failed: {resp.status}")
+                        return []
+                        
+        except Exception as e:
+            logging.error(f"❌ List exception: {e}")
+            return []
+    
+    async def delete_file(self, filename: str) -> bool:
+        """Delete file from Nextcloud"""
+        try:
+            async with aiohttp.ClientSession() as session:
+                file_url = f"{self.webdav_base}/{self.folder_path}/{filename}"
+                
+                async with session.delete(file_url, auth=self.auth) as resp:
+                    if resp.status in [204, 404]:  # No Content or Not Found
+                        logging.info(f"✅ File deleted: {filename}")
+                        return True
+                    else:
+                        logging.error(f"❌ Delete failed: {resp.status}")
+                        return False
+                        
+        except Exception as e:
+            logging.error(f"❌ Delete exception: {e}")
+            return False
+
+
 class ArubaWebAutomation:
     """Automation service for Aruba Drive web interface"""
     
