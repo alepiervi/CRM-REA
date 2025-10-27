@@ -4390,6 +4390,7 @@ async def upload_document(
         content = await file.read()
         
         # Try Nextcloud upload if configured
+        upload_success = False
         if aruba_config and aruba_config.get('enabled'):
             add_debug_log(f"✅ Nextcloud config found: enabled={aruba_config.get('enabled')}")
             last_upload_debug["aruba_attempted"] = True
@@ -4415,50 +4416,37 @@ async def upload_document(
                 
                 add_debug_log(f"🚀 Starting Nextcloud WebDAV upload")
                 
-                upload_success = False
+                # Initialize Nextcloud client
+                nextcloud = NextcloudClient(
+                    base_url=base_url,
+                    username=username,
+                    password=password,
+                    folder_path=folder_name
+                )
                 
-                try:
-                    # Initialize Nextcloud client
-                    nextcloud = NextcloudClient(
-                        base_url=base_url,
-                        username=username,
-                        password=password,
-                        folder_path=folder_name
-                    )
-                    
-                    # Build structured filename with client info
-                    structured_filename = nextcloud.build_filename(entity, unique_filename)
-                    
-                    add_debug_log(f"📝 Structured filename: {structured_filename}")
-                    
-                    # Upload file via WebDAV
-                    success, cloud_path = await nextcloud.upload_file(content, structured_filename)
-                    
-                    if success:
-                        aruba_drive_path = cloud_path
-                        storage_type = "nextcloud"
-                        upload_success = True
-                        add_debug_log(f"✅ Nextcloud upload successful: {cloud_path}")
-                        last_upload_debug["aruba_success"] = True
-                    else:
-                        raise Exception("WebDAV upload failed")
-                    
-                except Exception as nextcloud_error:
-                    add_debug_log(f"❌ Nextcloud upload failed: {type(nextcloud_error).__name__}: {str(nextcloud_error)}")
-                    import traceback
-                    add_debug_log(f"🔍 Full traceback: {traceback.format_exc()}")
-                    last_upload_debug["error"] = f"Nextcloud error: {str(nextcloud_error)}"
-                    upload_success = False
-                    
-                    # If upload failed, will use local storage below
-                    if not upload_success:
-                        add_debug_log(f"⚠️ Nextcloud upload failed, using local storage fallback")
+                # Build structured filename with client info
+                structured_filename = nextcloud.build_filename(entity, unique_filename)
+                
+                add_debug_log(f"📝 Structured filename: {structured_filename}")
+                
+                # Upload file via WebDAV
+                success, cloud_path = await nextcloud.upload_file(content, structured_filename)
+                
+                if success:
+                    aruba_drive_path = cloud_path
+                    storage_type = "nextcloud"
+                    upload_success = True
+                    add_debug_log(f"✅ Nextcloud upload successful: {cloud_path}")
+                    last_upload_debug["aruba_success"] = True
+                else:
+                    add_debug_log(f"❌ WebDAV upload returned False, using local storage fallback")
                     
             except Exception as nextcloud_exception:
                 add_debug_log(f"❌ Nextcloud exception: {type(nextcloud_exception).__name__}: {str(nextcloud_exception)}")
                 import traceback
                 add_debug_log(f"🔍 Full traceback: {traceback.format_exc()}")
                 last_upload_debug["error"] = f"{type(nextcloud_exception).__name__}: {str(nextcloud_exception)}"
+                add_debug_log(f"⚠️ Nextcloud upload failed, using local storage fallback")
                 # Continue with local storage fallback
         
         # Local storage fallback (ONLY if cloud upload failed)
