@@ -36854,7 +36854,7 @@ startxref
         
         # Get documents for the cliente to find the uploaded document
         success, docs_response, status = self.make_request(
-            'GET', f'clienti/{cliente_id}/documenti', 
+            'GET', f'documents/client/{cliente_id}', 
             expected_status=200
         )
         
