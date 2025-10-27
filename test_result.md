@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "ARUBA DRIVE UPLOAD DOPO INSTALLAZIONE CHROMIUM - VERIFICA PLAYWRIGHT
+user_problem_statement: "NEXTCLOUD UPLOAD FIX VERIFICATION - DOCUMENTI SU CLOUD INVECE DI LOCAL STORAGE
 
 OBIETTIVO: 
 Testare l'upload dei documenti su Aruba Drive dopo l'installazione manuale di Chromium per verificare che Playwright funzioni correttamente.
