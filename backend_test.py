@@ -40273,7 +40273,10 @@ if __name__ == "__main__":
             print(f"\n📊 Test Summary:")
             print(f"   Tests run: {tester.tests_run}")
             print(f"   Tests passed: {tester.tests_passed}")
-            print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+            if tester.tests_run > 0:
+                print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+            else:
+                print(f"   Success rate: N/A (no tests run)")
             
             if result:
                 print(f"🎉 {test_name.upper()} TEST SUCCESSFUL!")
