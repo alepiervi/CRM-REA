@@ -13280,7 +13280,12 @@ async def list_nextcloud_folders(config: dict):
                 webdav_base,
                 auth=auth,
                 data=propfind_body,
-                headers={'Depth': '1', 'Content-Type': 'application/xml'},
+                headers={
+                    'Depth': '1',
+                    'Content-Type': 'application/xml',
+                    'User-Agent': 'Mozilla/5.0 (Nextcloud)',
+                    'OCS-APIRequest': 'true'
+                },
                 timeout=aiohttp.ClientTimeout(total=10)
             ) as resp:
                 if resp.status == 207:  # Multi-Status
