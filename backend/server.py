@@ -4482,14 +4482,15 @@ async def upload_document(
             "entity_type": entity_type,
             "entity_id": entity_id,
             "filename": file.filename,
-            "file_path": str(file_path),
-            "aruba_drive_path": aruba_drive_path or f"/local/{entity_type}/{entity_id}/{unique_filename}",
+            "file_path": str(file_path) if file_path else None,
+            "cloud_path": aruba_drive_path if storage_type == "nextcloud" else None,
+            "aruba_drive_path": aruba_drive_path or f"/local/{entity_type}/{entity_id}/{unique_filename}",  # Legacy field
             "file_size": len(content),
             "file_type": file.content_type,
             "created_by": uploaded_by,
             "created_at": datetime.now(timezone.utc),
             "storage_type": storage_type,
-            "commessa_config_used": bool(aruba_config)  # Track if commessa config was used
+            "nextcloud_config_used": bool(aruba_config)  # Track if Nextcloud was used
         }
         
         await db.documents.insert_one(document_data)
