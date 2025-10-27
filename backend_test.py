@@ -36522,10 +36522,9 @@ startxref
             )
             documents = docs_response if isinstance(docs_response, list) else [] if success and status == 200 else []
         
-        if success and status == 200:
-            documents = docs_response if isinstance(docs_response, list) else []
-            
-            if len(documents) > 0:
+        print(f"   📋 DEBUG: Final documents list has {len(documents)} documents")
+        
+        if len(documents) > 0:
                 # Find the uploaded document (most recent)
                 uploaded_doc = None
                 for doc in documents:
