@@ -4450,59 +4450,15 @@ async def upload_document(
                     last_upload_debug["error"] = f"Nextcloud error: {str(nextcloud_error)}"
                     upload_success = False
                     
-                    # NO fallback - if Nextcloud fails, use local storage
+                    # If upload failed, will use local storage below
                     if not upload_success:
-                            raise Exception("Missing credentials")
-                        
-                        # Use WebDAV client with async context manager
-                        async with ArubaWebDAVClient(username, password, base_url) as client:
-                            add_debug_log(f"✅ WebDAV fallback client initialized")
-                            
-                            # Create folder hierarchy
-                            add_debug_log(f"📁 Creating folder hierarchy: {folder_path}")
-                            hierarchy_success = await client.create_folder_hierarchy(folder_path)
-                            
-                            if not hierarchy_success:
-                                raise Exception(f"Failed to create folder hierarchy: {folder_path}")
-                            
-                            add_debug_log(f"✅ Folder hierarchy created via WebDAV")
-                            
-                            # Upload file
-                            remote_path = f"{folder_path}/{unique_filename}"
-                            add_debug_log(f"📤 Uploading file via WebDAV to: {remote_path}")
-                            
-                            upload_success = await client.upload_file(
-                                str(temp_file_path),
-                                remote_path
-                            )
-                            
-                            if upload_success:
-                                aruba_drive_path = f"{folder_path}/{unique_filename}"
-                                storage_type = "aruba_drive"
-                                add_debug_log(f"✅ WebDAV fallback upload successful: {aruba_drive_path}")
-                                last_upload_debug["aruba_success"] = True
-                            else:
-                                raise Exception("WebDAV upload returned False")
+                        add_debug_log(f"⚠️ Nextcloud upload failed, using local storage fallback")
                     
-                    except Exception as webdav_error:
-                        add_debug_log(f"❌ WebDAV fallback also failed: {type(webdav_error).__name__}: {str(webdav_error)}")
-                        last_upload_debug["error"] = f"Both Playwright and WebDAV failed. Last error: {str(webdav_error)}"
-                        upload_success = False
-                
-                finally:
-                    # Cleanup temp file
-                    if temp_file_path.exists():
-                        temp_file_path.unlink()
-                        add_debug_log(f"🗑️  Temp file cleaned up")
-                
-                if not upload_success:
-                    add_debug_log(f"⚠️ Aruba Drive upload failed, using local storage fallback")
-                    
-            except Exception as aruba_error:
-                add_debug_log(f"❌ Aruba Drive upload exception: {type(aruba_error).__name__}: {str(aruba_error)}")
+            except Exception as nextcloud_exception:
+                add_debug_log(f"❌ Nextcloud exception: {type(nextcloud_exception).__name__}: {str(nextcloud_exception)}")
                 import traceback
                 add_debug_log(f"🔍 Full traceback: {traceback.format_exc()}")
-                last_upload_debug["error"] = f"{type(aruba_error).__name__}: {str(aruba_error)}"
+                last_upload_debug["error"] = f"{type(nextcloud_exception).__name__}: {str(nextcloud_exception)}"
                 # Continue with local storage fallback
         
         # Local storage fallback (always create local copy)
