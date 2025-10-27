@@ -11925,8 +11925,8 @@ class NextcloudClient:
         self.password = password
         self.folder_path = folder_path.strip('/')
         
-        # WebDAV endpoint
-        self.webdav_base = f"{self.base_url}/remote.php/dav/files/{self.username}"
+        # WebDAV endpoint (Aruba Drive uses /webdav/ not /dav/files/)
+        self.webdav_base = f"{self.base_url}/remote.php/webdav"
         
         # Auth
         self.auth = aiohttp.BasicAuth(self.username, self.password)
