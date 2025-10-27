@@ -12089,12 +12089,14 @@ class NextcloudClient:
                     </d:prop>
                 </d:propfind>'''
                 
+                propfind_headers = {**self.headers, 'Depth': '1', 'Content-Type': 'application/xml'}
+                
                 async with session.request(
                     'PROPFIND',
                     folder_url,
                     auth=self.auth,
                     data=propfind_body,
-                    headers={'Depth': '1', 'Content-Type': 'application/xml'}
+                    headers=propfind_headers
                 ) as resp:
                     if resp.status == 207:
                         xml_text = await resp.text()
