@@ -12019,11 +12019,14 @@ class NextcloudClient:
                 
                 logging.info(f"📤 Uploading to: {file_url}")
                 
+                # Merge headers
+                upload_headers = {**self.headers, 'Content-Type': 'application/octet-stream'}
+                
                 async with session.put(
                     file_url,
                     data=file_content,
                     auth=self.auth,
-                    headers={'Content-Type': 'application/octet-stream'}
+                    headers=upload_headers
                 ) as resp:
                     if resp.status in [201, 204]:  # Created or No Content
                         path = f"/{self.folder_path}/{filename}"
