@@ -36,7 +36,7 @@ class CRMAPITester:
         if details and success:
             print(f"   ℹ️  {details}")
 
-    def make_request(self, method, endpoint, data=None, expected_status=200, auth_required=True):
+    def make_request(self, method, endpoint, data=None, expected_status=200, auth_required=True, timeout=30, return_binary=False):
         """Make HTTP request with proper headers"""
         url = f"{self.base_url}/{endpoint}"
         headers = {'Content-Type': 'application/json'}
@@ -46,21 +46,35 @@ class CRMAPITester:
 
         try:
             if method == 'GET':
-                response = requests.get(url, headers=headers, timeout=30)
+                response = requests.get(url, headers=headers, timeout=timeout)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=headers, timeout=30)
+                response = requests.post(url, json=data, headers=headers, timeout=timeout)
             elif method == 'PUT':
-                response = requests.put(url, json=data, headers=headers, timeout=30)
+                response = requests.put(url, json=data, headers=headers, timeout=timeout)
             elif method == 'DELETE':
-                response = requests.delete(url, headers=headers, timeout=30)
+                response = requests.delete(url, headers=headers, timeout=timeout)
 
             success = response.status_code == expected_status
-            return success, response.json() if response.content else {}, response.status_code
+            
+            # Handle binary responses (like file downloads)
+            if return_binary:
+                return success, response.content, response.status_code
+            
+            # Try to parse JSON, but handle binary responses gracefully
+            try:
+                return success, response.json() if response.content else {}, response.status_code
+            except json.JSONDecodeError:
+                # If it's not JSON, return the response headers and indicate success
+                if success:
+                    return success, {"Content-Type": response.headers.get('Content-Type', ''), 
+                                   "Content-Disposition": response.headers.get('Content-Disposition', ''),
+                                   "Content-Length": response.headers.get('Content-Length', ''),
+                                   "binary_content": True}, response.status_code
+                else:
+                    return success, {"error": "Non-JSON response", "content": response.text[:200]}, response.status_code
 
         except requests.exceptions.RequestException as e:
             return False, {"error": str(e)}, 0
-        except json.JSONDecodeError:
-            return False, {"error": "Invalid JSON response"}, response.status_code
 
     def test_authentication(self):
         """Test authentication endpoints"""
