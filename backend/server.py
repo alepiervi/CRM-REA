@@ -4465,6 +4465,11 @@ async def upload_document(
             file_path = None
             add_debug_log(f"☁️ Cloud upload successful - no local copy")
         
+        # Ensure storage_type is always set (safety check)
+        if storage_type is None:
+            storage_type = "local"
+            add_debug_log(f"⚠️ storage_type was None, defaulting to 'local'")
+        
         # Save document metadata
         document_data = {
             "id": str(uuid.uuid4()),
