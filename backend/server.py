@@ -40,10 +40,27 @@ from typing import Union
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# MongoDB connection with robust error handling for production
+try:
+    mongo_url = os.environ.get('MONGO_URL')
+    db_name = os.environ.get('DB_NAME', 'nureal_crm')
+    
+    if not mongo_url:
+        # Fallback for local development
+        mongo_url = "mongodb://localhost:27017"
+        logging.warning("⚠️ MONGO_URL not set, using localhost fallback")
+    
+    logging.info(f"🔗 Connecting to MongoDB: {mongo_url[:50]}...")
+    logging.info(f"📊 Database: {db_name}")
+    
+    client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=10000)
+    db = client[db_name]
+    
+    logging.info("✅ MongoDB client initialized successfully")
+except Exception as e:
+    logging.error(f"❌ Failed to initialize MongoDB client: {e}")
+    raise RuntimeError(f"MongoDB initialization failed: {e}")
+
 
 # JWT and Password hashing
 SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-here-change-in-production")
