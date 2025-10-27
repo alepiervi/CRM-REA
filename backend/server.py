@@ -11465,83 +11465,101 @@ async def export_responsabile_commessa_analytics(
 # Add Emergent LLM key to env
 @app.on_event("startup")
 async def startup_event():
-    # Create default admin user if not exists
-    admin_user = await db.users.find_one({"username": "admin"})
-    if not admin_user:
-        admin_data = {
-            "id": str(uuid.uuid4()),
-            "username": "admin",
-            "email": "admin@example.com",
-            "password_hash": get_password_hash("admin123"),
-            "role": "admin",
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc)
-        }
-        await db.users.insert_one(admin_data)
-        logger.info("Default admin user created: admin/admin123")
-    
-    # Create default commesse if not exist
-    fastweb_commessa = await db.commesse.find_one({"nome": "Fastweb"})
-    if not fastweb_commessa:
-        commesse_data = [
-            {
+    """
+    Startup event handler - creates default data if not exists.
+    Wrapped in try-except to prevent startup failure if DB is not immediately available.
+    """
+    try:
+        logging.info("🚀 Running startup event...")
+        
+        # Create default admin user if not exists
+        admin_user = await db.users.find_one({"username": "admin"})
+        if not admin_user:
+            admin_data = {
                 "id": str(uuid.uuid4()),
-                "nome": "Fastweb",
-                "descrizione": "Commessa per servizi Fastweb",
-                "is_active": True,
-                "created_at": datetime.now(timezone.utc)
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "nome": "Fotovoltaico",
-                "descrizione": "Commessa per servizi Fotovoltaico",
+                "username": "admin",
+                "email": "admin@example.com",
+                "password_hash": get_password_hash("admin123"),
+                "role": "admin",
                 "is_active": True,
                 "created_at": datetime.now(timezone.utc)
             }
-        ]
+            await db.users.insert_one(admin_data)
+            logging.info("✅ Default admin user created: admin/admin123")
+        else:
+            logging.info("ℹ️ Admin user already exists")
         
-        await db.commesse.insert_many(commesse_data)
-        logger.info("Default commesse created: Fastweb, Fotovoltaico")
+        # Create default commesse if not exist
+        fastweb_commessa = await db.commesse.find_one({"nome": "Fastweb"})
+        if not fastweb_commessa:
+            commesse_data = [
+                {
+                    "id": str(uuid.uuid4()),
+                    "nome": "Fastweb",
+                    "descrizione": "Commessa per servizi Fastweb",
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc)
+                },
+                {
+                    "id": str(uuid.uuid4()),
+                    "nome": "Fotovoltaico",
+                    "descrizione": "Commessa per servizi Fotovoltaico",
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc)
+                }
+            ]
+            
+            await db.commesse.insert_many(commesse_data)
+            logging.info("✅ Default commesse created: Fastweb, Fotovoltaico")
+            
+            # Create default servizi for Fastweb
+            fastweb_id = commesse_data[0]["id"]
+            servizi_fastweb = [
+                {
+                    "id": str(uuid.uuid4()),
+                    "commessa_id": fastweb_id,
+                    "nome": "TLS",
+                    "descrizione": "Servizio TLS",
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc)
+                },
+                {
+                    "id": str(uuid.uuid4()),
+                    "commessa_id": fastweb_id,
+                    "nome": "Agent",
+                    "descrizione": "Servizio Agent",
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc)
+                },
+                {
+                    "id": str(uuid.uuid4()),
+                    "commessa_id": fastweb_id,
+                    "nome": "Negozi",
+                    "descrizione": "Servizio Negozi",
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc)
+                },
+                {
+                    "id": str(uuid.uuid4()),
+                    "commessa_id": fastweb_id,
+                    "nome": "Presidi",
+                    "descrizione": "Servizio Presidi",
+                    "is_active": True,
+                    "created_at": datetime.now(timezone.utc)
+                }
+            ]
+            
+            await db.servizi.insert_many(servizi_fastweb)
+            logging.info("✅ Default servizi created for Fastweb")
+        else:
+            logging.info("ℹ️ Default commesse already exist")
         
-        # Create default servizi for Fastweb
-        fastweb_id = commesse_data[0]["id"]
-        servizi_fastweb = [
-            {
-                "id": str(uuid.uuid4()),
-                "commessa_id": fastweb_id,
-                "nome": "TLS",
-                "descrizione": "Servizio TLS",
-                "is_active": True,
-                "created_at": datetime.now(timezone.utc)
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "commessa_id": fastweb_id,
-                "nome": "Agent",
-                "descrizione": "Servizio Agent",
-                "is_active": True,
-                "created_at": datetime.now(timezone.utc)
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "commessa_id": fastweb_id,
-                "nome": "Negozi",
-                "descrizione": "Servizio Negozi",
-                "is_active": True,
-                "created_at": datetime.now(timezone.utc)
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "commessa_id": fastweb_id,
-                "nome": "Presidi",
-                "descrizione": "Servizio Presidi",
-                "is_active": True,
-                "created_at": datetime.now(timezone.utc)
-            }
-        ]
+        logging.info("✅ Startup event completed successfully")
         
-        await db.servizi.insert_many(servizi_fastweb)
-        logger.info("Default servizi created for Fastweb")
+    except Exception as e:
+        # Log error but don't fail startup - allows service to start even if DB seeding fails
+        logging.error(f"⚠️ Startup event failed: {e}")
+        logging.warning("⚠️ Service will continue without default data seeding")
 
 # ===== DOCUMENTS MANAGEMENT ENDPOINTS =====
 
