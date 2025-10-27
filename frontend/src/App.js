@@ -21548,17 +21548,18 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
                                 {doc.file_size ? `${(doc.file_size / 1024 / 1024).toFixed(1)} MB` : 'N/A'}
                               </td>
                               <td className="py-4 px-4">
-                                {doc.aruba_drive_path ? (
+                                {doc.cloud_path || doc.aruba_drive_path ? (
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                    <span className="text-xs text-slate-600 max-w-xs truncate">
-                                      {doc.aruba_drive_path}
+                                    <span className="text-xs text-slate-600 max-w-xs truncate" title={doc.cloud_path || doc.aruba_drive_path}>
+                                      {doc.storage_type === 'nextcloud' && '☁️ '}
+                                      {doc.cloud_path || doc.aruba_drive_path}
                                     </span>
                                   </div>
                                 ) : (
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                                    <span className="text-xs text-slate-600">Solo locale</span>
+                                    <span className="text-xs text-slate-600">📁 Solo locale</span>
                                   </div>
                                 )}
                               </td>
