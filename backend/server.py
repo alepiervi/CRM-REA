@@ -13707,6 +13707,7 @@ async def view_document(
         
         # Check authorization (reuse same logic as download)
         can_view = False
+        entity = None
         
         if current_user.role == UserRole.ADMIN:
             can_view = True
@@ -13753,30 +13754,99 @@ async def view_document(
         if not can_view:
             raise HTTPException(status_code=403, detail="Non autorizzato a visualizzare questo documento")
         
-        # Try local path first
-        local_path = document.get("local_path")
-        if local_path and Path(local_path).exists():
-            # Return file for inline viewing (browser will decide based on content-type)
-            return FileResponse(
-                path=local_path,
-                media_type=document.get("file_type", "application/pdf"),
-                headers={"Content-Disposition": "inline; filename=" + document.get("filename", "documento.pdf")}
-            )
+        # Check storage type
+        storage_type = document.get("storage_type", "local")
         
-        # If not local, try alternative paths
-        file_path = document.get("file_path")
-        if file_path and Path(file_path).exists():
-            return FileResponse(
-                path=file_path,
-                media_type=document.get("file_type", "application/pdf"),
-                headers={"Content-Disposition": "inline; filename=" + document.get("filename", "documento.pdf")}
+        if storage_type == "nextcloud":
+            # Download from Nextcloud for viewing
+            logging.info(f"👁️ Viewing from Nextcloud: {document.get('cloud_path')}")
+            
+            # Get entity if not already loaded
+            if not entity:
+                if document["entity_type"] == "clienti":
+                    entity = await db.clienti.find_one({"id": document["entity_id"]})
+                else:
+                    entity = await db.leads.find_one({"id": document["entity_id"]})
+            
+            if not entity:
+                raise HTTPException(status_code=404, detail="Entità associata non trovata")
+            
+            # Get commessa config
+            commessa_id = entity.get("commessa_id")
+            if not commessa_id:
+                raise HTTPException(status_code=500, detail="Commessa non trovata per questo documento")
+            
+            commessa = await db.commesse.find_one({"id": commessa_id})
+            if not commessa or not commessa.get("aruba_drive_config", {}).get("enabled"):
+                raise HTTPException(status_code=500, detail="Configurazione Nextcloud non disponibile")
+            
+            aruba_config = commessa["aruba_drive_config"]
+            
+            # Initialize Nextcloud client
+            base_url = aruba_config.get("url", "https://vkbu5u.arubadrive.com")
+            username = aruba_config.get("username", "crm")
+            password = aruba_config.get("password", "Casilina25")
+            
+            # Get folder name
+            if aruba_config.get("root_folder_path"):
+                folder_name = aruba_config["root_folder_path"].strip('/')
+            else:
+                folder_name = commessa.get('nome', 'Documenti')
+            
+            nextcloud = NextcloudClient(
+                base_url=base_url,
+                username=username,
+                password=password,
+                folder_path=folder_name
             )
-        
-        # If no local file found
-        raise HTTPException(
-            status_code=404, 
-            detail=f"File fisico non trovato per il documento {document.get('filename')}. Potrebbe essere solo su Aruba Drive."
-        )
+            
+            # Extract filename from cloud_path (format: /folder/filename)
+            cloud_path = document.get("cloud_path", "")
+            if cloud_path:
+                filename_from_cloud = cloud_path.split('/')[-1]
+            else:
+                filename_from_cloud = document.get("filename", "documento")
+            
+            # Download file from Nextcloud
+            success, content = await nextcloud.download_file(filename_from_cloud)
+            
+            if not success or not content:
+                raise HTTPException(status_code=404, detail="File non trovato su Nextcloud")
+            
+            # Return file for inline viewing
+            return Response(
+                content=content,
+                media_type=document.get("file_type", "application/pdf"),
+                headers={
+                    "Content-Disposition": f'inline; filename="{document.get("filename", "documento.pdf")}"'
+                }
+            )
+        else:
+            # Local storage
+            # Try local path first
+            local_path = document.get("local_path")
+            if local_path and Path(local_path).exists():
+                # Return file for inline viewing (browser will decide based on content-type)
+                return FileResponse(
+                    path=local_path,
+                    media_type=document.get("file_type", "application/pdf"),
+                    headers={"Content-Disposition": "inline; filename=" + document.get("filename", "documento.pdf")}
+                )
+            
+            # If not local, try alternative paths
+            file_path = document.get("file_path")
+            if file_path and Path(file_path).exists():
+                return FileResponse(
+                    path=file_path,
+                    media_type=document.get("file_type", "application/pdf"),
+                    headers={"Content-Disposition": "inline; filename=" + document.get("filename", "documento.pdf")}
+                )
+            
+            # If no local file found
+            raise HTTPException(
+                status_code=404, 
+                detail=f"File fisico non trovato per il documento {document.get('filename')}."
+            )
         
     except HTTPException:
         raise
