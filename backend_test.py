@@ -945,7 +945,7 @@ startxref
             # Test GET /api/documents/{document_id}/download
             success, download_response, status = self.make_request(
                 'GET', f'documents/{doc_id}/download', 
-                expected_status=200
+                expected_status=200, timeout=120, return_binary=True
             )
             
             if success and status == 200:
