@@ -1043,7 +1043,7 @@ startxref
             # Test download with invalid token
             success, auth_response, status = self.make_request(
                 'GET', f'documents/{doc_id}/download', 
-                expected_status=401
+                expected_status=401, timeout=60
             )
             
             if status == 401:
