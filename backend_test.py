@@ -37303,6 +37303,27 @@ startxref
             print(f"   🚨 PROBLEMA: storage_type ancora non corretto nel database")
             return False
 
+    def run_nextcloud_verification_test(self):
+        """Run specific Nextcloud upload verification test"""
+        print("🚀 Starting Nextcloud Upload Verification Test...")
+        print(f"🌐 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Run the specific test requested
+        success = self.test_nextcloud_upload_verification_fastweb()
+        
+        # Print final results
+        print("\n" + "=" * 80)
+        print(f"🎯 NEXTCLOUD VERIFICATION TEST COMPLETE")
+        print(f"📊 Results: {self.tests_passed}/{self.tests_run} tests passed ({(self.tests_passed/self.tests_run)*100:.1f}%)")
+        
+        if success:
+            print("🎉 NEXTCLOUD UPLOAD VERIFICATION PASSED!")
+        else:
+            print("❌ NEXTCLOUD UPLOAD VERIFICATION FAILED!")
+        
+        return success
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
