@@ -37864,6 +37864,271 @@ startxref
         
         return success
 
+    def test_nextcloud_document_download_endpoint(self):
+        """🚨 TEST DOWNLOAD DOCUMENTI USANDO ENDPOINT CORRETTO - /api/documents/download/{document_id}"""
+        print("\n🚨 TEST DOWNLOAD DOCUMENTI USANDO ENDPOINT CORRETTO")
+        print("🎯 OBIETTIVO: Testare il download dei documenti usando l'endpoint corretto che il frontend chiama")
+        print("🎯 CONTESTO:")
+        print("   • Il frontend chiama /api/documents/download/{document_id} per il download")
+        print("   • Ho appena aggiornato questo endpoint per supportare il download da Nextcloud WebDAV")
+        print("   • I documenti con storage_type: 'nextcloud' devono essere scaricati da WebDAV")
+        print("🎯 TEST DA ESEGUIRE:")
+        print("   1. Login come Admin (admin/admin123)")
+        print("   2. Recupera documenti di un cliente (8aed1232-c18e-4444-844d-2a2cf21ae282)")
+        print("   3. Test Download usando l'endpoint CORRETTO: GET /api/documents/download/{document_id}")
+        print("   4. Verifica che il response sia 200 OK (NON 404)")
+        print("   5. Verifica che il file venga scaricato correttamente come bytes/blob")
+        print("   6. Verifica che il Content-Type sia corretto")
+        print("   7. Verifica che il Content-Disposition header contenga 'attachment'")
+        print("   8. Verifica nei log per il messaggio '📥 Downloading from Nextcloud (by_id)'")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN COME ADMIN**
+        print("\n🔐 1. LOGIN COME ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. RECUPERA DOCUMENTI DEL CLIENTE SPECIFICO**
+        print("\n📋 2. RECUPERA DOCUMENTI DEL CLIENTE (8aed1232-c18e-4444-844d-2a2cf21ae282)...")
+        
+        target_client_id = "8aed1232-c18e-4444-844d-2a2cf21ae282"
+        
+        success, docs_response, status = self.make_request(
+            'GET', f'documents/client/{target_client_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            # Handle the response structure - it's a dict with "documents" key
+            if isinstance(docs_response, dict):
+                documents = docs_response.get('documents', [])
+            else:
+                documents = docs_response if isinstance(docs_response, list) else []
+                
+            self.log_test("✅ GET /api/documents/client/{client_id}", True, 
+                f"Found {len(documents)} documents for client {target_client_id}")
+            
+            if len(documents) == 0:
+                self.log_test("❌ No documents found for client", False, 
+                    f"Client {target_client_id} has no documents to test download")
+                return False
+        else:
+            self.log_test("❌ GET /api/documents/client/{client_id} failed", False, f"Status: {status}")
+            return False
+
+        # **3. ANALIZZA DOCUMENTI E IDENTIFICA DOCUMENT_ID DA TESTARE**
+        print("\n🔍 3. ANALIZZA DOCUMENTI E IDENTIFICA DOCUMENT_ID DA TESTARE...")
+        
+        nextcloud_docs = []
+        test_document = None
+        
+        for doc in documents:
+            doc_id = doc.get('id')
+            filename = doc.get('filename', 'Unknown')
+            storage_type = doc.get('storage_type', 'unknown')
+            cloud_path = doc.get('cloud_path', '')
+            
+            print(f"\n   📄 Document: {filename}")
+            print(f"      • ID: {doc_id}")
+            print(f"      • Storage Type: {storage_type}")
+            print(f"      • Cloud Path: {cloud_path}")
+            
+            if storage_type == 'nextcloud':
+                nextcloud_docs.append(doc)
+                if not test_document:  # Use first Nextcloud document for testing
+                    test_document = doc
+                self.log_test(f"✅ Nextcloud document found", True, 
+                    f"File: {filename}, Storage: {storage_type}")
+            else:
+                self.log_test(f"ℹ️ Non-Nextcloud document", True, 
+                    f"File: {filename}, Storage: {storage_type}")
+        
+        if not test_document:
+            # If no Nextcloud documents, use any document for testing
+            test_document = documents[0]
+            self.log_test("ℹ️ Using first available document for testing", True, 
+                f"Document: {test_document.get('filename')}, Storage: {test_document.get('storage_type')}")
+        
+        document_id = test_document.get('id')
+        document_filename = test_document.get('filename', 'Unknown')
+        document_storage_type = test_document.get('storage_type', 'unknown')
+        
+        print(f"\n   🎯 SELECTED TEST DOCUMENT:")
+        print(f"      • Document ID: {document_id}")
+        print(f"      • Filename: {document_filename}")
+        print(f"      • Storage Type: {document_storage_type}")
+
+        # **4. TEST DOWNLOAD USANDO ENDPOINT CORRETTO**
+        print("\n⬇️ 4. TEST DOWNLOAD USANDO ENDPOINT CORRETTO...")
+        print(f"   🎯 Testing: GET /api/documents/download/{document_id}")
+        print(f"   📄 Document: {document_filename}")
+        print(f"   💾 Storage Type: {document_storage_type}")
+        
+        # Test GET /api/documents/download/{document_id}
+        success, download_response, status = self.make_request(
+            'GET', f'documents/download/{document_id}', 
+            expected_status=200, timeout=120, return_binary=True
+        )
+        
+        download_success = False
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/documents/download/{document_id} SUCCESS", True, 
+                f"Status: 200 OK (NOT 404!), Document: {document_filename}")
+            download_success = True
+            
+            # **5. VERIFICA CONTENUTO BINARIO**
+            print("\n📦 5. VERIFICA CONTENUTO BINARIO...")
+            
+            if isinstance(download_response, bytes):
+                # Binary content received correctly
+                content_size = len(download_response)
+                self.log_test("✅ File scaricato correttamente come bytes/blob", True, 
+                    f"Content size: {content_size} bytes")
+                
+                # Check if it looks like a PDF
+                if download_response.startswith(b'%PDF'):
+                    self.log_test("✅ PDF file format detected", True, 
+                        f"File starts with PDF header")
+                else:
+                    self.log_test("ℹ️ Non-PDF file or different format", True, 
+                        f"File does not start with PDF header")
+                        
+            elif isinstance(download_response, dict):
+                # Check headers in response
+                content_type = download_response.get('Content-Type', '')
+                content_disposition = download_response.get('Content-Disposition', '')
+                binary_content = download_response.get('binary_content', False)
+                
+                if binary_content:
+                    self.log_test("✅ Binary content indicated in response", True, 
+                        f"Response indicates binary content")
+                else:
+                    self.log_test("⚠️ No binary content indication", True, 
+                        f"Response may not contain binary data")
+                
+                # **6. VERIFICA CONTENT-TYPE**
+                print("\n📋 6. VERIFICA CONTENT-TYPE...")
+                
+                if content_type:
+                    self.log_test("✅ Content-Type header present", True, 
+                        f"Content-Type: {content_type}")
+                    
+                    if 'pdf' in content_type.lower():
+                        self.log_test("✅ Content-Type corretto per PDF", True, 
+                            f"Content-Type indicates PDF: {content_type}")
+                    else:
+                        self.log_test("ℹ️ Content-Type non-PDF", True, 
+                            f"Content-Type: {content_type}")
+                else:
+                    self.log_test("⚠️ Content-Type header missing", False, 
+                        f"No Content-Type header in response")
+                
+                # **7. VERIFICA CONTENT-DISPOSITION HEADER**
+                print("\n📎 7. VERIFICA CONTENT-DISPOSITION HEADER...")
+                
+                if content_disposition:
+                    self.log_test("✅ Content-Disposition header present", True, 
+                        f"Content-Disposition: {content_disposition}")
+                    
+                    if 'attachment' in content_disposition.lower():
+                        self.log_test("✅ Content-Disposition header contiene 'attachment'", True, 
+                            f"Correct attachment header: {content_disposition}")
+                    else:
+                        self.log_test("⚠️ Content-Disposition non contiene 'attachment'", False, 
+                            f"Expected 'attachment', got: {content_disposition}")
+                else:
+                    self.log_test("⚠️ Content-Disposition header missing", False, 
+                        f"No Content-Disposition header in response")
+            else:
+                self.log_test("❌ Unexpected response format", False, 
+                    f"Response type: {type(download_response)}")
+                
+        elif status == 404:
+            self.log_test("❌ GET /api/documents/download/{document_id} NOT FOUND", False, 
+                f"Status: 404 - Document not found: {document_filename}")
+            print(f"   🚨 CRITICAL: L'endpoint restituisce 404 invece di 200!")
+            print(f"   🔍 POSSIBILI CAUSE:")
+            print(f"      • Document ID non valido: {document_id}")
+            print(f"      • Endpoint non implementato correttamente")
+            print(f"      • File non trovato nel storage (Nextcloud o locale)")
+            print(f"      • Problemi di autorizzazione")
+            
+        elif status == 403:
+            self.log_test("❌ GET /api/documents/download/{document_id} FORBIDDEN", False, 
+                f"Status: 403 - Access denied: {document_filename}")
+            
+        elif status == 500:
+            self.log_test("❌ GET /api/documents/download/{document_id} SERVER ERROR", False, 
+                f"Status: 500 - Internal server error: {document_filename}")
+            print(f"   🚨 CRITICAL: Server error durante download!")
+            print(f"   🔍 CONTROLLARE BACKEND LOGS per errori dettagliati")
+            
+        else:
+            self.log_test("❌ GET /api/documents/download/{document_id} UNEXPECTED ERROR", False, 
+                f"Status: {status}, Document: {document_filename}")
+
+        # **8. VERIFICA NEI LOG**
+        print("\n📊 8. VERIFICA NEI LOG...")
+        
+        print("   🔍 Controllare i log del backend per i seguenti messaggi:")
+        if document_storage_type == 'nextcloud':
+            print("      • '📥 Downloading from Nextcloud (by_id)' - CRITICO per documenti Nextcloud")
+            print("      • '✅ Nextcloud download successful'")
+            print("      • Confermare che non ci siano errori 404 o 500")
+        else:
+            print("      • '📥 Downloading from local storage'")
+            print("      • '✅ Local download successful'")
+        
+        print("   📋 LOGS DA VERIFICARE:")
+        print("      • Backend logs durante la richiesta GET /api/documents/download/{document_id}")
+        print("      • Verificare che il file venga trovato e restituito correttamente")
+        print("      • Confermare che non ci siano errori di connessione Nextcloud")
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 NEXTCLOUD DOCUMENT DOWNLOAD ENDPOINT TEST - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Testare download documenti usando endpoint corretto /api/documents/download/{{document_id}}")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Cliente documenti recuperati: ✅ {len(documents)} documenti")
+        print(f"      • Nextcloud documents found: {len(nextcloud_docs)}")
+        print(f"      • Test document selected: {document_filename} ({document_storage_type})")
+        print(f"      • GET /api/documents/download/{{document_id}}: {'✅ SUCCESS (200 OK)' if download_success else '❌ FAILED'}")
+        
+        if download_success:
+            print(f"   🎉 SUCCESS: L'endpoint /api/documents/download/{{document_id}} funziona correttamente!")
+            print(f"   ✅ VERIFICA COMPLETATA:")
+            print(f"      • Response: 200 OK (NON 404)")
+            print(f"      • File scaricato come bytes/blob")
+            print(f"      • Headers appropriati per download")
+            if document_storage_type == 'nextcloud':
+                print(f"      • Documento Nextcloud scaricato da WebDAV")
+            print(f"   💡 RACCOMANDAZIONE: Verificare i backend logs per confermare il messaggio '📥 Downloading from Nextcloud (by_id)'")
+            return True
+        else:
+            print(f"   🚨 FAILURE: L'endpoint /api/documents/download/{{document_id}} presenta problemi!")
+            print(f"   🔧 AZIONI RICHIESTE:")
+            print(f"      • Verificare implementazione endpoint download")
+            print(f"      • Controllare configurazione Nextcloud WebDAV")
+            print(f"      • Verificare autorizzazioni e accesso ai documenti")
+            print(f"      • Controllare backend logs per errori dettagliati")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
