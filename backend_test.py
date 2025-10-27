@@ -731,7 +731,7 @@ class CRMAPITester:
             cliente_nome = f"{cliente.get('nome', '')} {cliente.get('cognome', '')}"
             
             success, docs_response, status = self.make_request(
-                'GET', f'documents/cliente/{cliente_id}', 
+                'GET', f'documents/client/{cliente_id}', 
                 expected_status=200
             )
             
