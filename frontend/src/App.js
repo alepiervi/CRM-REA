@@ -118,20 +118,31 @@ import {
 // Smart Backend URL Detection - works in all environments
 // PRODUCTION BACKEND: Always use dedicated production backend (always on)
 const getBackendURL = () => {
+  // Use REACT_APP_BACKEND_URL from environment if available
+  const envBackendURL = process.env.REACT_APP_BACKEND_URL;
+  
+  if (envBackendURL) {
+    console.log('🔧 Using backend URL from environment:', envBackendURL);
+    return envBackendURL;
+  }
+  
+  // Fallback to hostname detection for local development
   const hostname = window.location.hostname;
   
   // Production backend for nureal.it (always on production)
   if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
     console.log('🏭 Production: Using production backend (always on)');
-    console.log('🔧 Backend URL: https://mobil-analytics-1.emergent.host');
-    return 'https://mobil-analytics-1.emergent.host';
+    const productionURL = 'https://mobil-analytics-1.emergent.host';
+    console.log('🔧 Backend URL:', productionURL);
+    return productionURL;
   }
   
   // Preview environment uses preview backend (can standby, only for testing)
   if (hostname.includes('preview.emergentagent.com')) {
     console.log('🧪 Preview: Using preview backend (for testing only)');
-    console.log('🔧 Backend URL: https://cloudfile-fix.preview.emergentagent.com');
-    return 'https://cloudfile-fix.preview.emergentagent.com';
+    const previewURL = 'https://cloudfile-fix.preview.emergentagent.com';
+    console.log('🔧 Backend URL:', previewURL);
+    return previewURL;
   }
   
   // Localhost development
