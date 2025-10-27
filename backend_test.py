@@ -1400,7 +1400,7 @@ startxref
                 
                 if document_id != 'N/A':
                     success, docs_response, status = self.make_request(
-                        'GET', f'clienti/{cliente_id}/documenti', 
+                        'GET', f'documents/client/{cliente_id}', 
                         expected_status=200
                     )
                     
