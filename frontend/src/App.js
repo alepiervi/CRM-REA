@@ -13260,6 +13260,8 @@ const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
   });
   const [loading, setLoading] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
+  const [loadingFolders, setLoadingFolders] = useState(false);
+  const [availableFolders, setAvailableFolders] = useState([]);
   const { toast } = useToast();
 
   // Carica configurazione esistente quando si apre il modal
