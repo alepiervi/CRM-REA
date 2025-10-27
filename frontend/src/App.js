@@ -13271,6 +13271,43 @@ const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
     }
   }, [isOpen, commessa]);
 
+  const loadAvailableFolders = async () => {
+    if (!config.url || !config.username || !config.password) {
+      toast({
+        title: "⚠️ Campi mancanti",
+        description: "Inserisci URL, username e password prima di caricare le cartelle",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setLoadingFolders(true);
+    try {
+      const response = await axios.post(`${API}/nextcloud/list-folders`, {
+        url: config.url,
+        username: config.username,
+        password: config.password
+      });
+      
+      if (response.data.success) {
+        setAvailableFolders(response.data.folders || []);
+        toast({
+          title: "✅ Cartelle caricate",
+          description: `Trovate ${response.data.folders?.length || 0} cartelle disponibili`
+        });
+      }
+    } catch (error) {
+      console.error("Error loading folders:", error);
+      toast({
+        title: "❌ Errore",
+        description: error.response?.data?.detail || "Impossibile caricare le cartelle dal cloud",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingFolders(false);
+    }
+  };
+
   const loadCommessaArubaConfig = async () => {
     if (!commessa) return;
     
