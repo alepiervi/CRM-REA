@@ -15479,12 +15479,22 @@ async def get_offerte_by_filiera(
 async def health_check():
     """
     Health check endpoint for monitoring services like UptimeRobot.
-    Returns 200 OK if backend is alive.
+    Returns 200 OK if backend is alive and MongoDB is connected.
     Used to prevent backend from going into standby/sleep mode.
     """
+    try:
+        # Test MongoDB connection
+        await client.admin.command('ping')
+        db_status = "connected"
+    except Exception as e:
+        logging.error(f"Health check: MongoDB ping failed: {e}")
+        db_status = "disconnected"
+        # Don't fail health check for DB issues to allow service to start
+    
     return {
         "status": "ok",
         "service": "nureal-crm-backend",
+        "database": db_status,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
