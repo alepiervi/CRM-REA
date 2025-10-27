@@ -1132,6 +1132,17 @@ startxref
             print(f"   🚨 POSSIBILI CAUSE: Chromium non configurato correttamente, Playwright non funziona, o problemi Aruba Drive")
             return False
 
+    def test_nextcloud_upload_verification_fastweb(self):
+        """🚨 TEST VELOCE UPLOAD NEXTCLOUD DOPO ABILITAZIONE - Verifica rapida che l'upload Nextcloud funzioni"""
+        print("\n🚨 TEST VELOCE UPLOAD NEXTCLOUD DOPO ABILITAZIONE")
+        print("🎯 OBIETTIVO: Verificare rapidamente che l'upload Nextcloud funzioni ora che ho abilitato enabled=True sulla commessa Fastweb")
+        print("🎯 TEST:")
+        print("   1. Login admin (admin/admin123)")
+        print("   2. Trova cliente con commessa Fastweb")
+        print("   3. Upload un documento")
+        print("   4. Verificare che storage_type='nextcloud' (non 'local')")
+        print("🎯 FOCUS: Confermare che il fix funziona ora che la commessa è configurata correttamente")
+
     def test_aruba_drive_actual_upload_test(self):
         """🚨 TEST UPLOAD DOCUMENTO REALE - Testare effettivamente l'upload per vedere i log Aruba Drive"""
         print("\n🚨 TEST UPLOAD DOCUMENTO REALE")
