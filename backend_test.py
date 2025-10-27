@@ -37732,19 +37732,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the NEXTCLOUD UPLOAD FIX VERIFICATION TEST AS REQUESTED
+        # Run the DOCUMENT DOWNLOAD AND VIEW TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING NEXTCLOUD UPLOAD FIX VERIFICATION - AS REQUESTED")
+        print("🎯 RUNNING DOCUMENT DOWNLOAD AND VIEW FUNCTIONALITY TEST - AS REQUESTED")
         print("="*80)
         
-        nextcloud_success = self.test_nextcloud_upload_fix_verification()
-
-        # Run the TEST FINALE: Aruba Drive Chromium Verification AS REQUESTED
-        print("\n" + "="*80)
-        print("🎯 RUNNING TEST FINALE: ARUBA DRIVE CHROMIUM VERIFICATION - AS REQUESTED")
-        print("="*80)
-        
-        finale_success = self.test_aruba_drive_finale_chromium_verification()
+        document_success = self.test_document_download_view_functionality()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -37757,22 +37750,17 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if nextcloud_success:
-            print("🎉 NEXTCLOUD UPLOAD FIX VERIFICATION: ✅ SUCCESS - STORAGE_TYPE='NEXTCLOUD' CORRETTO!")
+        if document_success:
+            print("🎉 DOCUMENT DOWNLOAD AND VIEW TEST: ✅ SUCCESS - DOWNLOAD/VIEW FUNCTIONALITY WORKING!")
         else:
-            print("🚨 NEXTCLOUD UPLOAD FIX VERIFICATION: ❌ FAILED - STORAGE_TYPE BUG NOT FIXED!")
-            
-        if finale_success:
-            print("🎉 TEST FINALE ARUBA DRIVE CHROMIUM: ✅ SUCCESS - UPLOAD FUNZIONA CORRETTAMENTE!")
-        else:
-            print("🚨 TEST FINALE ARUBA DRIVE CHROMIUM: ❌ FAILED - UPLOAD PRESENTA PROBLEMI!")
+            print("🚨 DOCUMENT DOWNLOAD AND VIEW TEST: ❌ FAILED - DOWNLOAD/VIEW FUNCTIONALITY HAS ISSUES!")
         
-        if finale_success:
-            print("\n🎉 OVERALL RESULT: ✅ ARUBA DRIVE UPLOAD WITH CHROMIUM WORKING CORRECTLY!")
+        if document_success:
+            print("\n🎉 OVERALL RESULT: ✅ DOCUMENT DOWNLOAD AND VIEW FUNCTIONALITY WORKING CORRECTLY!")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ ARUBA DRIVE UPLOAD NEEDS ATTENTION!")
+            print("\n🚨 OVERALL RESULT: ❌ DOCUMENT DOWNLOAD AND VIEW FUNCTIONALITY NEEDS ATTENTION!")
         
-        return finale_success
+        return document_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
