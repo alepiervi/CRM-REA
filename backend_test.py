@@ -845,7 +845,11 @@ startxref
                         )
                         
                         if success and status == 200:
-                            documents_found = docs_response if isinstance(docs_response, list) else []
+                            # Handle the response structure - it's a dict with "documents" key
+                            if isinstance(docs_response, dict):
+                                documents_found = docs_response.get('documents', [])
+                            else:
+                                documents_found = docs_response if isinstance(docs_response, list) else []
                             test_cliente = clienti[0]
                             self.log_test(f"✅ Retrieved uploaded document", True, 
                                 f"Found {len(documents_found)} documents after upload")
