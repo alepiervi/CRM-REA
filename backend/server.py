@@ -11700,13 +11700,12 @@ async def get_documents(
 import aiohttp
 import asyncio
 from typing import Optional, Dict, List
-
-# Playwright import (legacy, kept for backwards compatibility)
-from playwright.async_api import async_playwright
-import asyncio
 from pathlib import Path
 import logging
 import time
+
+# Playwright removed - now using Nextcloud WebDAV for all uploads
+# No browser dependencies needed in production
 
 
 class ArubaWebDAVClient:
