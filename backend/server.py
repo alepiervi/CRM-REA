@@ -13242,6 +13242,136 @@ async def upload_to_aruba_drive(
         logging.error(f"Error in Aruba Drive upload: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nel caricamento: {str(e)}")
 
+@api_router.post("/nextcloud/list-folders")
+async def list_nextcloud_folders(config: dict):
+    """
+    List available folders in Nextcloud root directory
+    Used during commessa configuration to let user select target folder
+    """
+    try:
+        base_url = config.get("url", "").rstrip('/')
+        username = config.get("username", "")
+        password = config.get("password", "")
+        
+        if not base_url or not username or not password:
+            raise HTTPException(
+                status_code=400, 
+                detail="URL, username e password sono obbligatori"
+            )
+        
+        logging.info(f"📂 Listing Nextcloud folders: {base_url}")
+        
+        # WebDAV base path
+        webdav_base = f"{base_url}/remote.php/dav/files/{username}"
+        auth = aiohttp.BasicAuth(username, password)
+        
+        # PROPFIND request to list root folders
+        propfind_body = '''<?xml version="1.0"?>
+        <d:propfind xmlns:d="DAV:">
+            <d:prop>
+                <d:displayname/>
+                <d:resourcetype/>
+            </d:prop>
+        </d:propfind>'''
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.request(
+                'PROPFIND',
+                webdav_base,
+                auth=auth,
+                data=propfind_body,
+                headers={'Depth': '1', 'Content-Type': 'application/xml'},
+                timeout=aiohttp.ClientTimeout(total=10)
+            ) as resp:
+                if resp.status == 207:  # Multi-Status
+                    xml_text = await resp.text()
+                    
+                    # Parse XML to extract folder names
+                    import xml.etree.ElementTree as ET
+                    
+                    folders = []
+                    root = ET.fromstring(xml_text)
+                    
+                    # Namespace handling for DAV
+                    namespaces = {'d': 'DAV:'}
+                    
+                    for response in root.findall('.//d:response', namespaces):
+                        # Get href (path)
+                        href = response.find('d:href', namespaces)
+                        if href is not None:
+                            path = href.text
+                            
+                            # Check if it's a collection (folder)
+                            resourcetype = response.find('.//d:resourcetype', namespaces)
+                            is_collection = resourcetype.find('d:collection', namespaces) is not None
+                            
+                            if is_collection:
+                                # Extract folder name from path
+                                folder_name = path.rstrip('/').split('/')[-1]
+                                
+                                # Skip root and hidden folders
+                                if folder_name and not folder_name.startswith('.') and folder_name != username:
+                                    # Get display name if available
+                                    displayname = response.find('.//d:displayname', namespaces)
+                                    display = displayname.text if displayname is not None and displayname.text else folder_name
+                                    
+                                    folders.append({
+                                        "name": folder_name,
+                                        "display_name": display,
+                                        "path": f"/{folder_name}"
+                                    })
+                    
+                    logging.info(f"✅ Found {len(folders)} folders")
+                    
+                    return {
+                        "success": True,
+                        "folders": folders
+                    }
+                    
+                elif resp.status == 401:
+                    raise HTTPException(
+                        status_code=401,
+                        detail="Credenziali non valide. Verifica username e password."
+                    )
+                else:
+                    error_text = await resp.text()
+                    logging.error(f"❌ PROPFIND failed: {resp.status} - {error_text}")
+                    raise HTTPException(
+                        status_code=resp.status,
+                        detail=f"Impossibile connettersi a Nextcloud: {resp.status}"
+                    )
+                    
+    except aiohttp.ClientError as e:
+        logging.error(f"❌ Connection error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Errore di connessione: {str(e)}"
+        )
+    except Exception as e:
+        logging.error(f"❌ Error listing folders: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Errore: {str(e)}"
+        )
+
+
+@api_router.post("/aruba-drive/test")
+async def test_aruba_drive_config(config: dict):
+    """Test Aruba Drive configuration (legacy endpoint)"""
+    try:
+        logging.info(f"Testing Aruba Drive config: {config.get('url')}")
+        
+        # Simple validation
+        if not config.get("url") or not config.get("username") or not config.get("password"):
+            raise HTTPException(status_code=400, detail="URL, username e password sono obbligatori")
+        
+        # Use new list-folders endpoint for actual test
+        return await list_nextcloud_folders(config)
+        
+    except Exception as e:
+        logging.error(f"Error testing Aruba Drive config: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
 @api_router.get("/documents/client/{client_id}")
 async def get_client_documents(
     client_id: str,
