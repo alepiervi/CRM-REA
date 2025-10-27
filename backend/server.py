@@ -11952,7 +11952,7 @@ class NextcloudClient:
                     return True
                 elif resp.status == 404:
                     # Create folder (MKCOL)
-                    async with session.request('MKCOL', folder_url, auth=self.auth) as create_resp:
+                    async with session.request('MKCOL', folder_url, auth=self.auth, headers=self.headers) as create_resp:
                         if create_resp.status in [201, 405]:  # 201 Created or 405 Already exists
                             logging.info(f"✅ Folder created: /{self.folder_path}/")
                             return True
