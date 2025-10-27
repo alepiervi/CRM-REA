@@ -12054,7 +12054,7 @@ class NextcloudClient:
                 
                 logging.info(f"📥 Downloading from: {file_url}")
                 
-                async with session.get(file_url, auth=self.auth) as resp:
+                async with session.get(file_url, auth=self.auth, headers=self.headers) as resp:
                     if resp.status == 200:
                         content = await resp.read()
                         logging.info(f"✅ Download successful: {len(content)} bytes")
