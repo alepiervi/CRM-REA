@@ -13443,26 +13443,20 @@ const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
               {config.enabled && (
                 <>
                   {/* Connection Settings */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
-                      <Label htmlFor="url">URL Aruba Drive *</Label>
+                      <Label htmlFor="url">URL Nextcloud *</Label>
                       <Input
                         id="url"
                         type="url"
                         value={config.url}
                         onChange={(e) => setConfig({ ...config, url: e.target.value })}
-                        placeholder="https://webspace.aruba.it"
+                        placeholder="https://vkbu5u.arubadrive.com"
                         required
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="root_folder">Cartella Root</Label>
-                      <Input
-                        id="root_folder"
-                        value={config.root_folder_path}
-                        onChange={(e) => setConfig({ ...config, root_folder_path: e.target.value })}
-                        placeholder={commessa?.nome}
-                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Solo URL base (es: https://vkbu5u.arubadrive.com)
+                      </p>
                     </div>
                   </div>
 
