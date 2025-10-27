@@ -36648,6 +36648,33 @@ startxref
         
         return finale_success
 
+    def run_nextcloud_verification_only(self):
+        """Run only the Nextcloud upload verification test"""
+        print("🚀 Starting Nextcloud Upload Verification Test...")
+        print(f"🌐 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        # Run the specific Nextcloud verification test
+        success = self.test_nextcloud_upload_verification()
+        
+        # Print final results
+        print("\n" + "=" * 80)
+        print("🎯 NEXTCLOUD VERIFICATION RESULTS")
+        print("=" * 80)
+        print(f"📊 Tests run: {self.tests_run}")
+        print(f"✅ Tests passed: {self.tests_passed}")
+        print(f"❌ Tests failed: {self.tests_run - self.tests_passed}")
+        print(f"📈 Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        
+        if success:
+            print("\n🎉 NEXTCLOUD UPLOAD VERIFICATION: ✅ PASSED!")
+            print("🎉 CONFERMATO: I documenti ora vanno su Nextcloud cloud folders quando configurato!")
+        else:
+            print("\n🚨 NEXTCLOUD UPLOAD VERIFICATION: ❌ FAILED!")
+            print("🚨 I documenti potrebbero ancora andare in local storage invece di Nextcloud!")
+        
+        return success
+
     def test_document_endpoints_with_authorization(self):
         """Test completo degli endpoint documenti con autorizzazioni per ruoli"""
         print("\n📄 TESTING DOCUMENT ENDPOINTS WITH ROLE-BASED AUTHORIZATION...")
