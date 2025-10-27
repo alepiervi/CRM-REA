@@ -111,7 +111,8 @@ import {
   History,
   Zap,
   CreditCard,
-  Smartphone
+  Smartphone,
+  FolderOpen
 } from "lucide-react";
 
 // Smart Backend URL Detection - works in all environments
