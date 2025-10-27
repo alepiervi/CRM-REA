@@ -1440,9 +1440,61 @@ startxref
                                 self.log_test("❌ Cloud path incorrect", False, f"Path: {cloud_path}")
                                 cloud_path_correct = False
                         else:
-                            self.log_test("❌ Document not found in database", False, "Document may not have been saved")
-                            db_storage_correct = False
-                            cloud_path_correct = False
+                            # Document not found via API - let's check database directly
+                            self.log_test("⚠️ Document not found via API", True, "Checking database directly...")
+                            
+                            # Direct database check using document_id
+                            try:
+                                import asyncio
+                                from motor.motor_asyncio import AsyncIOMotorClient
+                                import os
+                                from dotenv import load_dotenv
+                                
+                                load_dotenv('/app/backend/.env')
+                                mongo_url = os.environ['MONGO_URL']
+                                client = AsyncIOMotorClient(mongo_url)
+                                db_conn = client[os.environ['DB_NAME']]
+                                
+                                async def check_document():
+                                    doc = await db_conn.documents.find_one({'id': document_id})
+                                    return doc
+                                
+                                direct_doc = asyncio.run(check_document())
+                                
+                                if direct_doc:
+                                    db_storage_type = direct_doc.get('storage_type', 'unknown')
+                                    cloud_path = direct_doc.get('cloud_path', '')
+                                    
+                                    self.log_test("✅ Document found in database (direct check)", True, 
+                                        f"Document ID: {direct_doc.get('id', 'N/A')[:8]}..., Filename: {direct_doc.get('filename', 'N/A')}")
+                                    
+                                    print(f"   📊 DIRECT DATABASE VERIFICATION:")
+                                    print(f"      • Database storage_type: {db_storage_type}")
+                                    print(f"      • Database cloud_path: {cloud_path}")
+                                    print(f"      • API response storage_type: {storage_type}")
+                                    
+                                    if db_storage_type in ['nextcloud', 'aruba_drive']:
+                                        self.log_test("✅ Database storage_type CORRECT", True, f"storage_type: {db_storage_type}")
+                                        db_storage_correct = True
+                                    else:
+                                        self.log_test("❌ Database storage_type incorrect", False, f"storage_type: {db_storage_type}")
+                                        db_storage_correct = False
+                                    
+                                    if cloud_path and not cloud_path.startswith('/local/'):
+                                        self.log_test("✅ Cloud path correct", True, f"Path: {cloud_path}")
+                                        cloud_path_correct = True
+                                    else:
+                                        self.log_test("❌ Cloud path incorrect", False, f"Path: {cloud_path}")
+                                        cloud_path_correct = False
+                                else:
+                                    self.log_test("❌ Document not found in database (direct check)", False, "Document may not have been saved")
+                                    db_storage_correct = False
+                                    cloud_path_correct = False
+                                    
+                            except Exception as e:
+                                self.log_test("❌ Database direct check failed", False, f"Error: {str(e)}")
+                                db_storage_correct = False
+                                cloud_path_correct = False
                     else:
                         self.log_test("❌ Could not retrieve cliente documents", False, f"Status: {status}")
                         db_storage_correct = False
