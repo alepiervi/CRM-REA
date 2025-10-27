@@ -340,15 +340,18 @@ backend:
 
   - task: "Nextcloud Upload Fix Verification - Documents to Cloud Storage Instead of Local"
     implemented: true
-    working: false
+    working: "needs_testing"
     file: "/app/backend/server.py"
     stuck_count: 1
     priority: "critical"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
           agent: "testing"
           comment: "🚨 NEXTCLOUD UPLOAD FIX VERIFICATION COMPLETE - CRITICAL BUG IDENTIFIED! ✅ COMPREHENSIVE TESTING COMPLETED: Tested complete Nextcloud upload functionality to verify documents go to cloud folders when commessa has Nextcloud configured (enabled=true, root_folder_path set). ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ FASTWEB COMMESSA NEXTCLOUD CONFIG VERIFIED: Found Fastweb commessa with aruba_drive_config.enabled=true, root_folder_path='FASTWEB', url='https://vkbu5u.arubadrive.com', credentials configured. ✅ CLIENTE WITH FASTWEB COMMESSA: Found existing cliente 'Alessandro Piervincenzi Piervincenzi' (ID: 8aed1232-c18e-4444-844d-2a2cf21ae282) with Fastweb commessa. ✅ DOCUMENT UPLOAD SUCCESS: POST /api/documents/upload returns 200 Success with success=true, document_id='cd157e2d-1492-4fd2-8853-15f084c2dfe0', aruba_drive_path='/FASTWEB/Alessandro_Piervincenzi_Piervincenzi_Alessandro Piervincenzi_Piervincenzi_3924929241_test_nextcloud.pdf'. ❌ CRITICAL BUG IDENTIFIED: Document found in database but has storage_type='unknown' instead of 'nextcloud', cloud_path is empty, file_path is null. ✅ UPLOAD PROCESS WORKING: The upload to Nextcloud/Aruba Drive is successful and returns correct aruba_drive_path. ❌ DATABASE METADATA BUG: The document metadata is not being saved correctly - storage_type should be 'nextcloud' but is 'unknown'. 🎯 ROOT CAUSE: There's a bug in the upload logic where the Nextcloud upload succeeds but the document metadata is not properly updated in the database with the correct storage_type and cloud_path. 🔧 REQUIRED FIX: Update the document upload endpoint to properly set storage_type='nextcloud' and cloud_path when Nextcloud upload is successful. SUCCESS RATE: 87.5% (14/16 tests passed) - Upload works but database metadata is incorrect!"
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ STORAGE_TYPE BUG RISOLTO: Ho identificato che il problema era nella gestione delle eccezioni - quando upload_success=True ma c'era un'eccezione, storage_type rimaneva None. FIX IMPLEMENTATO: Aggiunto safety check prima di salvare nel database (righe 4468-4470) per assicurare che storage_type non sia mai None. Se storage_type è None dopo la logica di upload, viene forzato a 'local' con warning log. LOGICA CORRETTA: Nextcloud upload success → storage_type='nextcloud' impostato (riga 4437), Nextcloud upload fail o non configurato → fallback locale → storage_type='local' (riga 4461), Safety check finale → se storage_type=None → default 'local'. READY FOR RETESTING: Verificare che ora storage_type='nextcloud' e cloud_path siano popolati correttamente nel database quando upload Nextcloud ha successo."
 
   - task: "Area Manager Dropdown Vuoto Debug - Real User Issue Investigation"
     implemented: true
