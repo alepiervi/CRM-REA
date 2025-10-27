@@ -66,7 +66,7 @@ Se hai bisogno di usare l'applicazione **SUBITO** senza aspettare il deploy:
 
 **Usa Preview Environment**:
 ```
-URL: https://mobil-analytics-2.preview.emergentagent.com
+URL: https://k8s-error-resolved.preview.emergentagent.com
 Login: admin / admin123
 
 ✅ Questo funziona SUBITO
@@ -119,8 +119,8 @@ Apri Developer Tools (F12) e controlla:
 
 ```javascript
 // Dovrebbe mostrare:
-✅ Backend URL configured: https://mobil-analytics-2.preview.emergentagent.com
-✅ API endpoint: https://mobil-analytics-2.preview.emergentagent.com/api
+✅ Backend URL configured: https://k8s-error-resolved.preview.emergentagent.com
+✅ API endpoint: https://k8s-error-resolved.preview.emergentagent.com/api
 
 // NON deve mostrare:
 ❌ mobil-analytics-1.emergent.host
@@ -153,7 +153,7 @@ Password: admin123
 **F12 → Network tab** durante login/upload:
 
 ```
-Request URL: https://mobil-analytics-2.preview.emergentagent.com/api/...
+Request URL: https://k8s-error-resolved.preview.emergentagent.com/api/...
 Status: 200 OK
 Response: {"success": true, ...}
 
@@ -303,7 +303,7 @@ Dopo deploy:
 **SUBITO**:
 ```
 1. Usa Preview per lavorare:
-   https://mobil-analytics-2.preview.emergentagent.com
+   https://k8s-error-resolved.preview.emergentagent.com
    
 2. Funziona perfettamente:
    ✅ Login veloce
@@ -322,7 +322,7 @@ Dopo deploy:
 ## 🎯 STATO ATTUALE
 
 **Preview Environment** ✅:
-- URL: https://mobil-analytics-2.preview.emergentagent.com
+- URL: https://k8s-error-resolved.preview.emergentagent.com
 - Codice: AGGIORNATO
 - Backend: nureal-crm.preview.emergentagent.com
 - Upload: FUNZIONA (10-15s)

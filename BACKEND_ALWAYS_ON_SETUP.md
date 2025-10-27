@@ -11,7 +11,7 @@ nureal-crm.preview...         https://nureal.it
         └──────────┬───────────────────┘
                    ↓
         Backend Condiviso ALWAYS ON
-    https://mobil-analytics-2.preview.emergentagent.com
+    https://k8s-error-resolved.preview.emergentagent.com
                    ↓
               MongoDB Database
 ```
@@ -32,7 +32,7 @@ nureal-crm.preview...         https://nureal.it
 ```javascript
 // HARDCODED FIX: Force correct URL
 const getBackendURL = () => {
-  const forcedURL = 'https://mobil-analytics-2.preview.emergentagent.com';
+  const forcedURL = 'https://k8s-error-resolved.preview.emergentagent.com';
   return forcedURL; // ✅ Sempre questo, per tutti
 };
 ```
@@ -47,7 +47,7 @@ const getBackendURL = () => {
 **File**: `/app/backend/.env`
 
 ```bash
-CORS_ORIGINS="https://nureal.it,https://www.nureal.it,https://mobil-analytics-2.preview.emergentagent.com"
+CORS_ORIGINS="https://nureal.it,https://www.nureal.it,https://k8s-error-resolved.preview.emergentagent.com"
 ```
 
 **Risultato**:
@@ -86,7 +86,7 @@ Cerca una di queste opzioni:
 **Nel backend deployment, verifica/aggiungi**:
 
 ```bash
-CORS_ORIGINS=https://nureal.it,https://www.nureal.it,https://mobil-analytics-2.preview.emergentagent.com
+CORS_ORIGINS=https://nureal.it,https://www.nureal.it,https://k8s-error-resolved.preview.emergentagent.com
 
 # Altri (se non ci sono già):
 DB_NAME=crm_database
@@ -169,7 +169,7 @@ REDIS_URL=redis://localhost:6379
 **C. Ping Periodico (Workaround)**:
 ```
 Crea un cron job che pinga backend ogni 5 minuti:
-curl https://mobil-analytics-2.preview.emergentagent.com/api/health
+curl https://k8s-error-resolved.preview.emergentagent.com/api/health
 
 Questo mantiene backend sveglio
 ```
@@ -217,7 +217,7 @@ addEventListener('scheduled', event => {
 });
 
 async function keepAlive() {
-  await fetch('https://mobil-analytics-2.preview.emergentagent.com/api/health');
+  await fetch('https://k8s-error-resolved.preview.emergentagent.com/api/health');
 }
 ```
 
@@ -228,7 +228,7 @@ async function keepAlive() {
 **Setup monitoring gratuito**:
 1. Vai su: https://uptimerobot.com
 2. Add Monitor:
-   - URL: https://mobil-analytics-2.preview.emergentagent.com/api/health
+   - URL: https://k8s-error-resolved.preview.emergentagent.com/api/health
    - Interval: 5 minutes
 3. UptimeRobot farà ping automatico
 4. Backend rimane sveglio
@@ -248,7 +248,7 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - run: curl https://mobil-analytics-2.preview.emergentagent.com/api/health
+      - run: curl https://k8s-error-resolved.preview.emergentagent.com/api/health
 ```
 
 **Costo**: Free (GitHub Actions free tier)
@@ -359,7 +359,7 @@ Produzione:
 **Cosa Chiedere**:
 ```
 Ciao, ho un backend deployment su:
-https://mobil-analytics-2.preview.emergentagent.com
+https://k8s-error-resolved.preview.emergentagent.com
 
 Vorrei abilitare "always on" per evitare standby.
 Come posso farlo? Quale piano serve?

@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 def test_role_based_document_access():
-    base_url = "https://mobil-analytics-2.preview.emergentagent.com/api"
+    base_url = "https://k8s-error-resolved.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     

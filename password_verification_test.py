@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_ui_user_passwords():
-    base_url = "https://mobil-analytics-2.preview.emergentagent.com/api"
+    base_url = "https://k8s-error-resolved.preview.emergentagent.com/api"
     
     print("🔐 PASSWORD VERIFICATION TEST FOR UI-CREATED USERS")
     print("=" * 60)

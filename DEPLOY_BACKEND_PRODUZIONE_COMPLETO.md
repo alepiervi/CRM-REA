@@ -37,7 +37,7 @@ const getBackendURL = () => {
   
   // Preview → Backend preview (può andare in standby)
   if (hostname.includes('preview.emergentagent.com')) {
-    return 'https://mobil-analytics-2.preview.emergentagent.com';
+    return 'https://k8s-error-resolved.preview.emergentagent.com';
   }
   
   // Development
@@ -342,7 +342,7 @@ post-deploy: python3 -m playwright install chromium
 
 **Console mostra**:
 ```
-🔧 Backend URL: https://mobil-analytics-2.preview.emergentagent.com
+🔧 Backend URL: https://k8s-error-resolved.preview.emergentagent.com
 ```
 
 **Causa**: Frontend non deployato con nuovo codice
