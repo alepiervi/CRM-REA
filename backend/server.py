@@ -13516,39 +13516,106 @@ async def download_document_by_id(
     document_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Download document by ID from local storage or Aruba Drive."""
+    """Download document by ID from local storage or Nextcloud."""
     try:
         # Get document metadata
         document = await db.documents.find_one({"id": document_id})
         
         if not document:
             raise HTTPException(status_code=404, detail="Documento non trovato")
+        
+        # Check storage type
+        storage_type = document.get("storage_type", "local")
+        entity = None
+        
+        if storage_type == "nextcloud":
+            # Download from Nextcloud
+            logging.info(f"📥 Downloading from Nextcloud (by_id): {document.get('cloud_path')}")
             
-        # TODO: Check user authorization for this document
-        
-        # Try local path first
-        local_path = document.get("local_path")
-        if local_path and Path(local_path).exists():
-            return FileResponse(
-                path=local_path,
-                filename=document.get("original_filename", document.get("filename")),
-                media_type=document.get("file_type", "application/octet-stream")
+            # Get entity
+            if document["entity_type"] == "clienti":
+                entity = await db.clienti.find_one({"id": document["entity_id"]})
+            else:
+                entity = await db.leads.find_one({"id": document["entity_id"]})
+            
+            if not entity:
+                raise HTTPException(status_code=404, detail="Entità associata non trovata")
+            
+            # Get commessa config
+            commessa_id = entity.get("commessa_id")
+            if not commessa_id:
+                raise HTTPException(status_code=500, detail="Commessa non trovata per questo documento")
+            
+            commessa = await db.commesse.find_one({"id": commessa_id})
+            if not commessa or not commessa.get("aruba_drive_config", {}).get("enabled"):
+                raise HTTPException(status_code=500, detail="Configurazione Nextcloud non disponibile")
+            
+            aruba_config = commessa["aruba_drive_config"]
+            
+            # Initialize Nextcloud client
+            base_url = aruba_config.get("url", "https://vkbu5u.arubadrive.com")
+            username = aruba_config.get("username", "crm")
+            password = aruba_config.get("password", "Casilina25")
+            
+            # Get folder name
+            if aruba_config.get("root_folder_path"):
+                folder_name = aruba_config["root_folder_path"].strip('/')
+            else:
+                folder_name = commessa.get('nome', 'Documenti')
+            
+            nextcloud = NextcloudClient(
+                base_url=base_url,
+                username=username,
+                password=password,
+                folder_path=folder_name
             )
-        
-        # If not local, try alternative paths
-        file_path = document.get("file_path")
-        if file_path and Path(file_path).exists():
-            return FileResponse(
-                path=file_path,
-                filename=document.get("original_filename", document.get("filename")),
-                media_type=document.get("file_type", "application/octet-stream")
+            
+            # Extract filename from cloud_path (format: /folder/filename)
+            cloud_path = document.get("cloud_path", "")
+            if cloud_path:
+                filename_from_cloud = cloud_path.split('/')[-1]
+            else:
+                filename_from_cloud = document.get("filename", "documento")
+            
+            # Download file from Nextcloud
+            success, content = await nextcloud.download_file(filename_from_cloud)
+            
+            if not success or not content:
+                raise HTTPException(status_code=404, detail="File non trovato su Nextcloud")
+            
+            # Return file as streaming response
+            return Response(
+                content=content,
+                media_type=document.get("file_type", "application/octet-stream"),
+                headers={
+                    "Content-Disposition": f'attachment; filename="{document.get("filename", "documento")}"'
+                }
             )
-        
-        # If no local file found
-        raise HTTPException(
-            status_code=404, 
-            detail=f"File fisico non trovato per il documento {document.get('filename')}. Potrebbe essere solo su Aruba Drive."
-        )
+        else:
+            # Local storage
+            # Try local path first
+            local_path = document.get("local_path")
+            if local_path and Path(local_path).exists():
+                return FileResponse(
+                    path=local_path,
+                    filename=document.get("original_filename", document.get("filename")),
+                    media_type=document.get("file_type", "application/octet-stream")
+                )
+            
+            # If not local, try alternative paths
+            file_path = document.get("file_path")
+            if file_path and Path(file_path).exists():
+                return FileResponse(
+                    path=file_path,
+                    filename=document.get("original_filename", document.get("filename")),
+                    media_type=document.get("file_type", "application/octet-stream")
+                )
+            
+            # If no local file found
+            raise HTTPException(
+                status_code=404, 
+                detail=f"File fisico non trovato per il documento {document.get('filename')}."
+            )
         
     except HTTPException:
         raise
