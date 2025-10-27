@@ -736,7 +736,12 @@ class CRMAPITester:
             )
             
             if success and status == 200:
-                docs = docs_response if isinstance(docs_response, list) else []
+                # Handle the response structure - it's a dict with "documents" key
+                if isinstance(docs_response, dict):
+                    docs = docs_response.get('documents', [])
+                else:
+                    docs = docs_response if isinstance(docs_response, list) else []
+                    
                 if len(docs) > 0:
                     documents_found = docs
                     test_cliente = cliente
