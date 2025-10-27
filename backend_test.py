@@ -749,9 +749,116 @@ class CRMAPITester:
                 print(f"   ⚠️ Failed to get documents for cliente {cliente_nome}: Status {status}")
         
         if not documents_found:
-            self.log_test("❌ No documents found in any cliente", False, "Cannot test download/view without documents")
-            print("   💡 SUGGESTION: Upload some documents first to test download/view functionality")
-            return False
+            self.log_test("ℹ️ No existing documents found", True, "Will upload test document first")
+            
+            # Upload a test document to the first cliente
+            if len(clienti) > 0:
+                test_cliente = clienti[0]
+                cliente_id = test_cliente.get('id')
+                cliente_nome = f"{test_cliente.get('nome', '')} {test_cliente.get('cognome', '')}"
+                
+                print(f"\n   📤 Uploading test document to cliente: {cliente_nome}")
+                
+                # Create test PDF content
+                test_pdf_content = b"""%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 44
+>>
+stream
+BT
+/F1 12 Tf
+100 700 Td
+(Test Document Download View) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000206 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+299
+%%EOF"""
+                
+                try:
+                    import requests
+                    
+                    url = f"{self.base_url}/documents/upload"
+                    headers = {'Authorization': f'Bearer {self.token}'}
+                    
+                    files = {
+                        'file': ('test_download_view.pdf', test_pdf_content, 'application/pdf')
+                    }
+                    
+                    data = {
+                        'entity_type': 'clienti',
+                        'entity_id': cliente_id,
+                        'uploaded_by': 'admin'
+                    }
+                    
+                    response = requests.post(url, headers=headers, files=files, data=data, timeout=60)
+                    
+                    if response.status_code == 200:
+                        upload_result = response.json()
+                        self.log_test("✅ Test document uploaded successfully", True, 
+                            f"Document ID: {upload_result.get('document_id', 'N/A')}")
+                        
+                        # Now get the documents again
+                        success, docs_response, status = self.make_request(
+                            'GET', f'documents/client/{cliente_id}', 
+                            expected_status=200
+                        )
+                        
+                        if success and status == 200:
+                            documents_found = docs_response if isinstance(docs_response, list) else []
+                            test_cliente = clienti[0]
+                            self.log_test(f"✅ Retrieved uploaded document", True, 
+                                f"Found {len(documents_found)} documents after upload")
+                        else:
+                            self.log_test("❌ Failed to retrieve uploaded document", False, f"Status: {status}")
+                            return False
+                            
+                    else:
+                        self.log_test("❌ Failed to upload test document", False, 
+                            f"Status: {response.status_code}, Response: {response.text[:200]}")
+                        return False
+                        
+                except Exception as e:
+                    self.log_test("❌ Document upload error", False, f"Exception: {str(e)}")
+                    return False
+            else:
+                self.log_test("❌ No clienti available for document upload", False, "Cannot proceed without clienti")
+                return False
 
         # **4. ANALIZZA STRUTTURA DOCUMENTI**
         print("\n🔍 4. ANALIZZA STRUTTURA DOCUMENTI...")
