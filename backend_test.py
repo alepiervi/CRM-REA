@@ -1007,8 +1007,12 @@ startxref
                     f"Status: {status}, File: {filename}")
                 view_tests_passed += 1
                 
-                # Check response headers for inline display
-                if isinstance(view_response, dict):
+                # Check response content and headers for inline display
+                if isinstance(view_response, bytes):
+                    # Binary content received
+                    self.log_test(f"✅ {doc_type} view binary content received", True, 
+                        f"Content size: {len(view_response)} bytes")
+                elif isinstance(view_response, dict):
                     content_disposition = view_response.get('Content-Disposition', '')
                     
                     if 'inline' in content_disposition.lower():
