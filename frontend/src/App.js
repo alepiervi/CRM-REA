@@ -13461,6 +13461,7 @@ const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
                     </div>
                   </div>
 
+                  {/* Credentials */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="username">Username *</Label>
@@ -13468,7 +13469,7 @@ const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
                         id="username"
                         value={config.username}
                         onChange={(e) => setConfig({ ...config, username: e.target.value })}
-                        placeholder="username@aruba.it"
+                        placeholder="crm"
                         required
                       />
                     </div>
@@ -13479,10 +13480,68 @@ const ArubaConfigModal = ({ isOpen, onClose, onSave, commessa }) => {
                         type="password"
                         value={config.password}
                         onChange={(e) => setConfig({ ...config, password: e.target.value })}
-                        placeholder="Password Aruba Drive"
+                        placeholder="••••••••"
                         required
                       />
                     </div>
+                  </div>
+                  
+                  {/* Load Folders and Select */}
+                  <div className="space-y-3 p-4 bg-slate-50 rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Cartella Cloud *</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={loadAvailableFolders}
+                        disabled={loadingFolders || !config.url || !config.username || !config.password}
+                      >
+                        {loadingFolders ? (
+                          <>
+                            <Clock className="w-4 h-4 mr-2 animate-spin" />
+                            Caricamento...
+                          </>
+                        ) : (
+                          <>
+                            <FolderOpen className="w-4 h-4 mr-2" />
+                            Carica Cartelle
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    {availableFolders.length > 0 ? (
+                      <Select
+                        value={config.root_folder_path}
+                        onValueChange={(value) => setConfig({ ...config, root_folder_path: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleziona cartella dal cloud..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableFolders.map((folder) => (
+                            <SelectItem key={folder.name} value={folder.name}>
+                              📁 {folder.display_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={config.root_folder_path}
+                        onChange={(e) => setConfig({ ...config, root_folder_path: e.target.value })}
+                        placeholder={commessa?.nome || "Nome cartella"}
+                        className="bg-white"
+                      />
+                    )}
+                    
+                    <p className="text-xs text-slate-500">
+                      {availableFolders.length > 0 
+                        ? `${availableFolders.length} cartelle disponibili nel cloud`
+                        : "Clicca 'Carica Cartelle' per vedere le cartelle disponibili nel cloud"
+                      }
+                    </p>
                   </div>
 
                   {/* Structure Settings */}
