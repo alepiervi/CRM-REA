@@ -1384,14 +1384,16 @@ startxref
                 # **CRITICAL CHECK: storage_type must be 'nextcloud' NOT 'local'**
                 if storage_type == 'nextcloud':
                     self.log_test("✅ Storage type is 'nextcloud'", True, "✅ SUCCESS - Document uploaded to Nextcloud!")
+                    api_response_correct = True
                 elif storage_type == 'aruba_drive':
                     self.log_test("✅ Storage type is 'aruba_drive'", True, "✅ SUCCESS - Document uploaded to Aruba Drive (Nextcloud)!")
+                    api_response_correct = True
                 elif storage_type == 'local':
                     self.log_test("❌ Storage type is 'local'", False, "❌ FAILURE - Document saved locally, Nextcloud upload failed!")
-                    return False
+                    api_response_correct = False
                 else:
-                    self.log_test("❌ Unknown storage type", False, f"storage_type: {storage_type}")
-                    return False
+                    self.log_test("❌ Unknown storage type", False, f"storage_type: {storage_type} - Need to check database")
+                    api_response_correct = False
                 
                 # **CRITICAL: Verify document in database has correct storage_type**
                 print("\n   🔍 VERIFYING DATABASE STORAGE_TYPE...")
