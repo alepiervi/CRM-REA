@@ -1,85 +1,79 @@
 <analysis>
-The previous AI engineer’s work has been a series of iterative fixes and feature implementations, primarily driven by user feedback. Initial efforts focused on frontend bug resolution and UI/UX improvements, followed by a major overhaul of role-based access control affecting both frontend rendering and backend data filtering. Granular permissions for client management and a 90-day password expiration policy were also introduced.
-
-The most recent and extensive work has revolved around two critical production issues: an empty database post-deployment (resolved by a targeted admin-only seeding script) and the highly problematic Aruba Drive document upload. The Aruba Drive issue has been a persistent challenge, necessitating multiple diagnostic and solution attempts. This involved debugging Playwright installation failures in production, addressing CORS errors, optimizing timeouts, and finally pivoting to a WebDAV-based solution, which also faced URL and path sanitization issues. The latest attempt involved re-implementing Playwright with an automatic lazy installation approach to resolve persistent upload failures.
+The trajectory details the AI engineer's iterative efforts to resolve critical production issues and implement feature enhancements. Initially, the focus was on stabilizing Aruba Drive document uploads, which involved attempts with Playwright's lazy installation, followed by extensive debugging of CORS errors, URL misconfigurations, and 504 Gateway Timeouts. This led to a major pivot from Playwright to Nextcloud WebDAV API for uploads, addressing performance and reliability. Concurrently, significant effort was invested in improving the mobile UI, specifically fixing sidebar visibility, section scrolling, and overall responsiveness. The latter part of the trajectory focused on refining the Nextcloud integration, particularly ensuring dynamic  folder auto-detection and resolving persistent 403 Forbidden errors due to incorrect WebDAV paths and missing headers, leaving the core upload logic under investigation.
 </analysis>
 
 <product_requirements>
-The Nureal CRM is designed for comprehensive client and project management, featuring a multi-step client creation form with conditional fields and robust role-based access controls. Users need to export client data to Excel, detailing SIM information. Client modification must reflect creation with read-only organizational data and display activated offers, Note Back Office, full credit card numbers, and updated statuses, with dynamic Offerte linked to filiera.
+The Nureal CRM is for client and project management, featuring a multi-step client form, role-based access, Excel export, and detailed client modification views. Recent enhancements include:
+- Display of Convergenza SIM data, Dati Mobile, and Telepass sections (excluding Telefonia Fastweb).
+- Redefined client list columns and dynamic advanced filters.
+- A new Analytics section with Pivot Analytics and Sub Agenzie comparative analysis, with role-based access filtered by  and .
+- Default client creation status Passata al BO; only Backoffice Commessa can modify statuses. Modification/deletion blocked for Inserito or Ko statuses, except for Backoffice Commessa.
+- All users can upload documents irrespective of client status.
+- 90-day password expiration for non-admin users.
 
-Recently, the application was enhanced to:
-- Display Convergenza SIM data and include Dati Mobile and Telepass sections, exclusive of Telefonia Fastweb.
-- Redefine client list columns and introduce dynamic advanced filters.
-- Implement a new Analytics section with Pivot Analytics and Sub Agenzie comparative analysis, with a streamlined UI.
-- Grant access to Analytics and client/sub-agenzia data to specific roles (Responsabile Commessa, Backoffice Commessa, etc.), with data filtered by authorized  and .
-- Set the default client creation status to Passata al BO. Only Backoffice Commessa can modify client statuses, and modification/deletion is blocked for Inserito or Ko statuses, except for Backoffice Commessa.
-- Allow all users to upload documents irrespective of client status.
-- Enforce a 90-day password expiration for non-admin users.
+Recent requests also include:
+- Fixing Aruba Drive document uploads in production, ensuring necessary components (Playwright) install automatically (later pivoted to Nextcloud WebDAV).
+- Resolving persistent CORS errors, incorrect backend URLs, and 504 Gateway Timeouts affecting production uploads.
+- Ensuring the backend dynamically adapts to  created from the frontend, with commessa-specific cloud folders.
+- Simplifying document upload by storing files directly in a root folder with an augmented filename (Order, Phone, Client Name).
+- Ensuring the production backend () is always active and doesn't go into standby.
+- Fixing WebSocket URL errors (port NaN).
+- Resolving mobile UI issues: sidebar not visible/toggle not working, content not scrolling within sections.
+- Implementing auto-detection and selection of Nextcloud cloud folders for  configuration, instead of manual input.
+- Ensuring documents are uploaded to the correct Nextcloud cloud folders, not local storage.
 </product_requirements>
 
 <key_technical_concepts>
-- **Full Stack**: React.js (frontend) and FastAPI (Python) (backend).
-- **Database**: MongoDB with Motor, using UUIDs for IDs.
+- **Full Stack**: React.js (frontend), FastAPI (Python) (backend).
+- **Database**: MongoDB with Motor, UUIDs for IDs.
 - **Architecture**: Monolithic, core logic in  and .
 - **UI/UX**: React Select, Shadcn UI components, Tailwind CSS.
-- **API Communication**: Axios for frontend calls.
-- **Authentication/Authorization**: JWTs, granular role-based access control.
-- **File Upload**: Playwright (for browser automation), WebDAV (for API-based file transfer),  for HTTP requests.
-- **Deployment**: Kubernetes container environment, Emergent deployments with specific URL and environment variable handling.
+- **File Upload**: Initially Playwright (browser automation), then Nextcloud WebDAV API ().
+- **Deployment**: Kubernetes, environment variables, hot reload, UptimeRobot (temporary workaround for standby).
+- **Authentication/Authorization**: JWTs, granular role-based access control, 90-day password expiration.
 </key_technical_concepts>
 
 <code_architecture>
 
 
 -   ****
-    -   **Importance**: The main React application, handling UI, state, and API interactions.
-    -   **Summary of Changes**:
-        1.  ****: Refactored  for  fix.
-        2.  **UI/UX**: Standardized styling, conditional rendering of tabs and sidebar based on user roles.
-        3.  ****: Implemented role-based disabling of status  for non- users.
-        4.  ****: Conditional rendering of Edit/Delete buttons based on client status and user roles.
-        5.  **API URL Handling**: Modified to dynamically detect and use the correct backend URL (preview vs. production) using  to address  and CORS issues.
-
+    -   **Importance**: Main React application, UI, state, API interactions.
+    -   **Changes**: Refactored for  fixes, standardized UI styling, conditional rendering based on roles. Implemented dynamic backend URL detection logic (then later hardcoded to address deployment issues). Fixed mobile sidebar visibility and content scrolling issues. Updated UI labels from Aruba Drive to Cloud for documents. Modified  to include Carica Cartelle button and a Select dropdown for  after fetching available folders from the backend.
 -   ****
-    -   **Importance**: Defines FastAPI endpoints, data models, business logic, and MongoDB interactions.
-    -   **Summary of Changes**:
-        1.  **Models (, )**: Added  for expiration, default  changed to .
-        2.  **Access Control**: Implemented filtering of  and  by  and .
-        3.  **Permissions**: Functions , ,  for granular control.
-        4.  **Auth Endpoints**:  checks password expiration,  updates .
-        5.  **Database Seeding**: Initial  created, then modified to *only* create an admin user to allow dynamic creation of , , etc.
-        6.  **CORS**: Middleware configured to dynamically include  from the environment for . The explicit  in  was removed to enable this dynamic behavior.
-        7.  **Aruba Drive Upload**:
-            -   Initially used  (Playwright-based).
-            -   Increased various Playwright-related timeouts and added retry logic to address production environment slowness.
-            -   Replaced Playwright with  using  for WebDAV API calls due to Playwright's persistent issues in production.
-            -   Implemented automatic URL correction ( to ) within .
-            -   Added path sanitization () for folder names to prevent issues with special characters in WebDAV paths.
-            -   Added a  endpoint and extensive logging within the Aruba Drive upload logic for diagnosis without direct access to production logs.
-            -   Latest change: Reverted to Playwright with a Lazy Installation Automatica approach to download browsers on first use, aiming for preview environment parity in production.
-        8.  **Startup Events**: Added and then removed a Playwright installation startup event to fix deployment timeout issues.
-
--   ****:
-    -   **Importance**: Script to initially populate the MongoDB database.
-    -   **Summary of Changes**: Initially created to seed full data, then modified to only create an admin user, adhering to the requirement for dynamic data creation by the admin.
-
--   ****:
-    -   **Importance**: A shell script meant for manually installing Playwright browsers post-deployment.
-    -   **Summary of Changes**: Created to address Playwright browser availability in production environments.
-
--   ****:
-    -   **Importance**: Yarn configuration file.
-    -   **Summary of Changes**: Created to add retry and timeout settings for Yarn package downloads, resolving deployment issues related to registry access ( for ).
+    -   **Importance**: FastAPI endpoints, data models, business logic, MongoDB interactions.
+    -   **Changes**:  for Playwright was made more robust. CORS middleware dynamically includes  and . Playwright-based upload was entirely replaced with  using WebDAV (). Simplified upload logic to use a single root folder and augment filenames. Added  endpoint for liveness checks. Implemented  endpoint to fetch available folders from Nextcloud WebDAV. Fixed WebDAV paths and added  header for  operations to resolve 403 errors.
+-   ****
+    -   **Importance**: Python dependencies for the backend.
+    -   **Changes**:  and  (Playwright dependency) were removed when transitioning to WebDAV.
+-   ****
+    -   **Importance**: Frontend environment variables.
+    -   **Changes**:  was modified multiple times, eventually hardcoded in  temporarily, then reverted to  in code, but the  value remained .  corrected from a concatenated string.
+-   ****
+    -   **Importance**: Backend environment variables.
+    -   **Changes**:  was explicitly set to include .
+-   **Markdown files (e.g., , , , )**
+    -   **Importance**: Document solutions and user instructions.
+    -   **Changes**: New files were created to document various fixes, workarounds, and deployment instructions for the user regarding Playwright installation, CORS/504 errors, backend standby, Nextcloud integration, and environment variable configuration.
 </code_architecture>
 
 <pending_tasks>
--   Verify if the lazy installation of Playwright successfully installs the necessary browser components in the production environment upon the first document upload attempt.
+- Ensure documents are uploaded to the correct Nextcloud cloud folders associated with the client's , and not to local storage.
 </pending_tasks>
 
 <current_work>
-The AI engineer is currently addressing the persistent issue of Aruba Drive document uploads failing in the production environment, despite working in preview. The latest attempt involved re-implementing the document upload functionality to leverage Playwright's native lazy installation capability. This approach aims to automatically download the necessary browser components (e.g., Chromium) during the first upload attempt in production, without requiring manual SSH access or problematic startup scripts that caused deployment timeouts. The code changes for this Lazy Installation Automatica within  have just been completed, and the backend has been restarted to apply these modifications. The user's last feedback indicates the upload is still fast and falls back to local storage, suggesting the lazy installation might not yet be successful or the problem persists.
+The AI engineer is currently debugging an issue where, despite the  configuration being correctly set for Nextcloud WebDAV (e.g.,  with  and ), document uploads are still being saved to local storage instead of the configured cloud folder. The previous steps involved a major shift from Playwright-based Aruba Drive uploads to a more stable Nextcloud WebDAV API integration, including:
+1.  **Backend ()**:
+    *   Replacing Playwright logic with a  for WebDAV operations (upload, list folders).
+    *   Implementing a  endpoint to fetch available folders.
+    *   Correcting the WebDAV path to  and adding a  header for all requests to resolve 403 Forbidden errors when listing folders.
+    *   Adjusting the upload logic to simplify folder creation and augment filenames with client details.
+    *   Removing Playwright dependencies from .
+2.  **Frontend ()**:
+    *   Updating the UI to reflect Cloud storage instead of Aruba Drive.
+    *   Modifying the  in the  section to include dynamic folder selection: users can now click a Carica Cartelle button to fetch and select an available Nextcloud folder via a dropdown, rather than manually typing the path.
+The current state is that the backend's folder listing works, but the file upload is still falling back to local storage, suggesting a problem in how the  configuration is used within the upload endpoint to direct files to Nextcloud. The engineer is inspecting the  endpoint in  to identify where  and  might be incorrectly handled.
 </current_work>
 
 <optional_next_step>
-Test the Aruba Drive document upload functionality in the preview environment to confirm if the Playwright lazy installation now works as intended.
+Analyze the  endpoint in  to ensure the  configuration is correctly applied to route uploads to Nextcloud WebDAV.
 </optional_next_step>

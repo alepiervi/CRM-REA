@@ -11,7 +11,7 @@ import uuid
 import io
 
 class UploadTester:
-    def __init__(self, base_url="https://nureal-crm.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://cloudfile-fix.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None

@@ -130,8 +130,8 @@ const getBackendURL = () => {
   // Preview environment uses preview backend (can standby, only for testing)
   if (hostname.includes('preview.emergentagent.com')) {
     console.log('🧪 Preview: Using preview backend (for testing only)');
-    console.log('🔧 Backend URL: https://nureal-crm.preview.emergentagent.com');
-    return 'https://nureal-crm.preview.emergentagent.com';
+    console.log('🔧 Backend URL: https://cloudfile-fix.preview.emergentagent.com');
+    return 'https://cloudfile-fix.preview.emergentagent.com';
   }
   
   // Localhost development
