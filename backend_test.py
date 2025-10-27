@@ -1393,7 +1393,9 @@ startxref
                     self.log_test("❌ Unknown storage type", False, f"storage_type: {storage_type}")
                     return False
                 
-                # Verify document in database has correct storage_type
+                # **CRITICAL: Verify document in database has correct storage_type**
+                print("\n   🔍 VERIFYING DATABASE STORAGE_TYPE...")
+                
                 if document_id != 'N/A':
                     success, docs_response, status = self.make_request(
                         'GET', f'clienti/{cliente_id}/documenti', 
@@ -1417,20 +1419,36 @@ startxref
                             self.log_test("✅ Document found in database", True, 
                                 f"Document ID: {uploaded_doc.get('id', 'N/A')[:8]}..., Filename: {uploaded_doc.get('filename', 'N/A')}")
                             
+                            print(f"   📊 DATABASE VERIFICATION:")
+                            print(f"      • Database storage_type: {db_storage_type}")
+                            print(f"      • Database cloud_path: {cloud_path}")
+                            print(f"      • API response storage_type: {storage_type}")
+                            
                             if db_storage_type in ['nextcloud', 'aruba_drive']:
-                                self.log_test("✅ Database storage_type correct", True, f"storage_type: {db_storage_type}")
+                                self.log_test("✅ Database storage_type CORRECT", True, f"storage_type: {db_storage_type}")
+                                db_storage_correct = True
                             else:
                                 self.log_test("❌ Database storage_type incorrect", False, f"storage_type: {db_storage_type}")
-                                return False
+                                db_storage_correct = False
                             
                             if cloud_path and not cloud_path.startswith('/local/'):
                                 self.log_test("✅ Cloud path correct", True, f"Path: {cloud_path}")
+                                cloud_path_correct = True
                             else:
                                 self.log_test("❌ Cloud path incorrect", False, f"Path: {cloud_path}")
+                                cloud_path_correct = False
                         else:
                             self.log_test("❌ Document not found in database", False, "Document may not have been saved")
+                            db_storage_correct = False
+                            cloud_path_correct = False
                     else:
                         self.log_test("❌ Could not retrieve cliente documents", False, f"Status: {status}")
+                        db_storage_correct = False
+                        cloud_path_correct = False
+                else:
+                    self.log_test("❌ No document ID to verify", False, "Cannot verify database without document ID")
+                    db_storage_correct = False
+                    cloud_path_correct = False
                 
             else:
                 self.log_test("❌ Document upload FAILED", False, 
