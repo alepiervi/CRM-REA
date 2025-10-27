@@ -11095,6 +11095,7 @@ else:
         "https://nureal.it",
         "https://www.nureal.it",
         "https://mobil-analytics-1.emergent.host",
+        "https://mobil-analytics-2.emergent.host",  # New deployment domain
         "https://mobil-analytics-2.preview.emergentagent.com",
         "https://cloudfile-fix.emergent.host",  # Emergent native deployment domain
     ]
