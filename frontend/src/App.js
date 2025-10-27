@@ -21523,7 +21523,7 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
                             <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">File</th>
                             <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Tipo</th>
                             <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Dimensione</th>
-                            <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Aruba Drive</th>
+                            <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Cloud Storage</th>
                             <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Data</th>
                             <th className="text-center py-3 px-4 font-semibold text-slate-700 text-sm">Azioni</th>
                           </tr>
