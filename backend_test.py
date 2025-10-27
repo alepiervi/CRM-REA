@@ -36781,7 +36781,7 @@ startxref
         try:
             import requests
             
-            url = f"{self.base_url}/upload-document"
+            url = f"{self.base_url}/documents/upload"
             headers = {'Authorization': f'Bearer {self.token}'}
             
             files = {
