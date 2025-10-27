@@ -13571,6 +13571,7 @@ async def download_document(
         
         # Check authorization
         can_download = False
+        entity = None
         
         if current_user.role == UserRole.ADMIN:
             can_download = True
@@ -13606,16 +13607,84 @@ async def download_document(
         if not can_download:
             raise HTTPException(status_code=403, detail="Non autorizzato a scaricare questo documento")
         
-        # Check if file exists
-        file_path = Path(document["file_path"])
-        if not file_path.exists():
-            raise HTTPException(status_code=404, detail="File non trovato sul server")
+        # Check storage type
+        storage_type = document.get("storage_type", "local")
         
-        return FileResponse(
-            path=file_path,
-            filename=document["filename"],
-            media_type=document.get("file_type", "application/octet-stream")
-        )
+        if storage_type == "nextcloud":
+            # Download from Nextcloud
+            logging.info(f"📥 Downloading from Nextcloud: {document.get('cloud_path')}")
+            
+            # Get entity if not already loaded
+            if not entity:
+                if document["entity_type"] == "clienti":
+                    entity = await db.clienti.find_one({"id": document["entity_id"]})
+                else:
+                    entity = await db.leads.find_one({"id": document["entity_id"]})
+            
+            if not entity:
+                raise HTTPException(status_code=404, detail="Entità associata non trovata")
+            
+            # Get commessa config
+            commessa_id = entity.get("commessa_id")
+            if not commessa_id:
+                raise HTTPException(status_code=500, detail="Commessa non trovata per questo documento")
+            
+            commessa = await db.commesse.find_one({"id": commessa_id})
+            if not commessa or not commessa.get("aruba_drive_config", {}).get("enabled"):
+                raise HTTPException(status_code=500, detail="Configurazione Nextcloud non disponibile")
+            
+            aruba_config = commessa["aruba_drive_config"]
+            
+            # Initialize Nextcloud client
+            base_url = aruba_config.get("url", "https://vkbu5u.arubadrive.com")
+            username = aruba_config.get("username", "crm")
+            password = aruba_config.get("password", "Casilina25")
+            
+            # Get folder name
+            if aruba_config.get("root_folder_path"):
+                folder_name = aruba_config["root_folder_path"].strip('/')
+            else:
+                folder_name = commessa.get('nome', 'Documenti')
+            
+            nextcloud = NextcloudClient(
+                base_url=base_url,
+                username=username,
+                password=password,
+                folder_path=folder_name
+            )
+            
+            # Extract filename from cloud_path (format: /folder/filename)
+            cloud_path = document.get("cloud_path", "")
+            if cloud_path:
+                filename_from_cloud = cloud_path.split('/')[-1]
+            else:
+                filename_from_cloud = document.get("filename", "documento")
+            
+            # Download file from Nextcloud
+            success, content = await nextcloud.download_file(filename_from_cloud)
+            
+            if not success or not content:
+                raise HTTPException(status_code=404, detail="File non trovato su Nextcloud")
+            
+            # Return file as streaming response
+            return Response(
+                content=content,
+                media_type=document.get("file_type", "application/octet-stream"),
+                headers={
+                    "Content-Disposition": f'attachment; filename="{document.get("filename", "documento")}"'
+                }
+            )
+        else:
+            # Local storage
+            file_path = document.get("file_path")
+            if not file_path or not Path(file_path).exists():
+                raise HTTPException(status_code=404, detail="File non trovato sul server")
+            
+            return FileResponse(
+                path=file_path,
+                filename=document.get("filename", "documento"),
+                media_type=document.get("file_type", "application/octet-stream")
+            )
         
     except HTTPException:
         raise
