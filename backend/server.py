@@ -9281,8 +9281,8 @@ async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depen
             "commessa_id": cliente.commessa_id,
             "sub_agenzia_id": cliente.sub_agenzia_id,
             "servizio_id": cliente.servizio_id,
-            "tipologia_contratto": cliente.tipologia_contratto.value if cliente.tipologia_contratto else None,
-            "segmento": cliente.segmento.value if cliente.segmento else None,
+            "tipologia_contratto": cliente.tipologia_contratto,  # Now a string, no .value needed
+            "segmento": cliente.segmento,  # Now a string, no .value needed
             "creation_method": "cascading_flow" if hasattr(cliente_data, 'created_via') else "standard_form"
         }
     )
