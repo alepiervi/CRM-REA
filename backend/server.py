@@ -15798,14 +15798,21 @@ async def get_offerte_by_filiera(
     segmento_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get offerte based on entire selection chain (commessa, servizio, tipologia, segmento)"""
+    """Get offerte based on entire selection chain (commessa, servizio, tipologia, segmento)
+    NOTE: Excludes sub-offerte from results"""
     try:
         # Query offerte: match segmento_id directly (can be UUID or string "privato"/"business")
         # Show generic offerte (no filiera) OR specific matching offerte
+        # EXCLUDE sub-offerte
         offerte_docs = await db.offerte.find({
             "$and": [
                 {"segmento_id": segmento_id},  # Match directly - can be UUID or string
                 {"is_active": True},
+                # CRITICAL: Exclude sub-offerte
+                {"$or": [
+                    {"parent_offerta_id": None},
+                    {"parent_offerta_id": {"$exists": False}}
+                ]},
                 {"$or": [
                     # Generic offerte (no filiera specified) - always shown
                     {"commessa_id": {"$in": [None, ""]}},
