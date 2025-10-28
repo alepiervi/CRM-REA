@@ -8854,6 +8854,47 @@ async def get_offerta(
         logger.error(f"Error fetching offerta: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nel recupero offerta: {str(e)}")
 
+@api_router.get("/offerte/{offerta_id}/sub-offerte")
+async def get_sub_offerte(
+    offerta_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get sub-offerte for a specific parent offerta"""
+    try:
+        logging.info(f"🔍 Fetching sub-offerte for offerta: {offerta_id}")
+        
+        # Check if parent offerta exists and has sub-offerte enabled
+        parent_offerta = await db.offerte.find_one({"id": offerta_id})
+        if not parent_offerta:
+            raise HTTPException(status_code=404, detail="Offerta non trovata")
+        
+        if not parent_offerta.get("has_sub_offerte", False):
+            logging.info(f"📭 Offerta {offerta_id} does not have sub-offerte enabled")
+            return []
+        
+        # Find all sub-offerte for this parent
+        sub_offerte_docs = await db.offerte.find({
+            "parent_offerta_id": offerta_id,
+            "is_active": True
+        }).to_list(length=None)
+        
+        logging.info(f"✅ Found {len(sub_offerte_docs)} sub-offerte for offerta {offerta_id}")
+        
+        # Convert to JSON serializable format
+        sub_offerte = []
+        for doc in sub_offerte_docs:
+            if '_id' in doc:
+                del doc['_id']
+            sub_offerte.append(doc)
+        
+        return sub_offerte
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching sub-offerte: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero sub-offerte: {str(e)}")
+
 @api_router.put("/offerte/{offerta_id}")
 async def update_offerta(
     offerta_id: str,
