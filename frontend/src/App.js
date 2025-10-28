@@ -1627,6 +1627,9 @@ const Dashboard = () => {
         title: "Successo",
         description: "Offerta creata con successo",
       });
+      
+      // Return the created offerta data (including ID)
+      return response.data;
     } catch (error) {
       console.error("Error creating offerta:", error);
       toast({
@@ -1634,6 +1637,7 @@ const Dashboard = () => {
         description: "Errore nella creazione dell'offerta",
         variant: "destructive",
       });
+      throw error;
     }
   };
 
