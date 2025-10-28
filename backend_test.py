@@ -39387,7 +39387,7 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if f2f_success:
+        if soft_delete_success:
             print("🎉 F2F SUB AGENZIA SERVICES VERIFICATION TEST: ✅ SUCCESS - BACKEND WORKING CORRECTLY!")
         else:
             print("🚨 F2F SUB AGENZIA SERVICES VERIFICATION TEST: ❌ FAILED - BACKEND CONFIGURATION OR FILTERING ISSUES!")
