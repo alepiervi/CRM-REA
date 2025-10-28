@@ -8190,28 +8190,32 @@ async def delete_tipologia_contratto(
     tipologia_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Delete tipologia contratto permanently"""
+    """Soft delete tipologia contratto (set is_active = False)"""
     
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Solo gli admin possono eliminare tipologie")
     
     try:
-        # Check if tipologia is used by any clienti
-        clienti_count = await db.clienti.count_documents({"tipologia_contratto_id": tipologia_id})
-        
-        if clienti_count > 0:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Impossibile eliminare: tipologia utilizzata da {clienti_count} clienti"
-            )
-        
-        # Delete tipologia
-        result = await db.tipologie_contratto.delete_one({"id": tipologia_id})
-        
-        if result.deleted_count == 0:
+        # Check if tipologia exists
+        tipologia_doc = await db.tipologie_contratto.find_one({"id": tipologia_id})
+        if not tipologia_doc:
             raise HTTPException(status_code=404, detail="Tipologia non trovata")
         
-        return {"success": True, "message": "Tipologia eliminata con successo"}
+        # SOFT DELETE: Mark as inactive instead of deleting
+        result = await db.tipologie_contratto.update_one(
+            {"id": tipologia_id},
+            {
+                "$set": {
+                    "is_active": False,
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Tipologia non trovata")
+        
+        return {"success": True, "message": "Tipologia disattivata con successo (soft delete)"}
         
     except HTTPException:
         raise
