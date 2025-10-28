@@ -1070,6 +1070,7 @@ class ClienteCreate(BaseModel):
     tipologia_contratto_id: Optional[str] = None  # ADDED: UUID for filtering offerte
     segmento: Optional[str] = None  # Dynamic field - accepts any user-created segmento
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
+    sub_offerta_id: Optional[str] = None  # NEW: Sotto-offerta ID (per offerte con sotto-offerte)
     dati_aggiuntivi: Dict[str, Any] = {}
 
 class ClienteUpdate(BaseModel):
