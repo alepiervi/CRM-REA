@@ -18134,15 +18134,50 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             
             {/* SELECTED OFFERTA SUMMARY */}
             <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-6">
-              <h4 className="font-semibold text-green-800 mb-2">✅ Offerta Selezionata</h4>
-              <div className="text-sm text-green-700">
-                <div><strong>Offerta:</strong> {cascadeOfferte?.find(o => o.id === selectedData.offerta_id)?.nome}</div>
-                {selectedData.sub_offerta_id && (
-                  <div className="mt-1 pl-4 border-l-2 border-green-400">
-                    <strong>Sotto-Offerta:</strong> {cascadeSubOfferte?.find(so => so.id === selectedData.sub_offerta_id)?.nome}
+              <h4 className="font-semibold text-green-800 mb-3">✅ Filiera Cascading Selezionata</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                {selectedData.sub_agenzia_id && (
+                  <div className="bg-white p-2 rounded border border-green-200">
+                    <span className="font-semibold text-gray-600">Sub Agenzia:</span>
+                    <div className="text-green-700 font-medium">{subAgenzie?.find(sa => sa.id === selectedData.sub_agenzia_id)?.nome}</div>
                   </div>
                 )}
-                <div><strong>Segmento:</strong> {cascadeSegmenti?.find(s => s.id === selectedData.segmento)?.nome}</div>
+                {selectedData.commessa_id && (
+                  <div className="bg-white p-2 rounded border border-green-200">
+                    <span className="font-semibold text-gray-600">Commessa:</span>
+                    <div className="text-green-700 font-medium">{cascadeCommesse?.find(c => c.id === selectedData.commessa_id)?.nome}</div>
+                  </div>
+                )}
+                {selectedData.servizio_id && (
+                  <div className="bg-white p-2 rounded border border-green-200">
+                    <span className="font-semibold text-gray-600">Servizio:</span>
+                    <div className="text-green-700 font-medium">{cascadeServizi?.find(s => s.id === selectedData.servizio_id)?.nome}</div>
+                  </div>
+                )}
+                {selectedData.tipologia_contratto && (
+                  <div className="bg-white p-2 rounded border border-green-200">
+                    <span className="font-semibold text-gray-600">Tipologia:</span>
+                    <div className="text-green-700 font-medium">{cascadeTipologie?.find(t => t.id === selectedData.tipologia_contratto)?.nome}</div>
+                  </div>
+                )}
+                {selectedData.segmento && (
+                  <div className="bg-white p-2 rounded border border-green-200">
+                    <span className="font-semibold text-gray-600">Segmento:</span>
+                    <div className="text-green-700 font-medium">{cascadeSegmenti?.find(s => s.id === selectedData.segmento)?.nome}</div>
+                  </div>
+                )}
+                {selectedData.offerta_id && (
+                  <div className="bg-white p-2 rounded border border-green-200">
+                    <span className="font-semibold text-gray-600">Offerta:</span>
+                    <div className="text-green-700 font-medium">{cascadeOfferte?.find(o => o.id === selectedData.offerta_id)?.nome}</div>
+                  </div>
+                )}
+                {selectedData.sub_offerta_id && (
+                  <div className="bg-blue-100 p-3 rounded border-2 border-blue-400 md:col-span-2">
+                    <span className="font-semibold text-blue-900">📦 Sotto-Offerta:</span>
+                    <div className="text-blue-800 font-bold text-base">{cascadeSubOfferte?.find(so => so.id === selectedData.sub_offerta_id)?.nome}</div>
+                  </div>
+                )}
               </div>
             </div>
 
