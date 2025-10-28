@@ -15594,11 +15594,12 @@ async def get_servizi_autorizzati_by_commessa(
 @api_router.get("/cascade/servizi-by-sub-agenzia/{sub_agenzia_id}")
 async def get_servizi_by_sub_agenzia(
     sub_agenzia_id: str,
+    commessa_id: Optional[str] = None,  # NEW: Optional commessa filter
     current_user: User = Depends(get_current_user)
 ):
-    """Get servizi autorizzati for a specific sub agenzia"""
+    """Get servizi autorizzati for a specific sub agenzia, optionally filtered by commessa"""
     try:
-        logging.info(f"🔍 CASCADE: Searching servizi for sub_agenzia ID: {sub_agenzia_id}")
+        logging.info(f"🔍 CASCADE: Searching servizi for sub_agenzia ID: {sub_agenzia_id}, commessa_id: {commessa_id}")
         
         # Get sub agenzia
         sub_agenzia = await db.sub_agenzie.find_one({"id": sub_agenzia_id})
@@ -15616,13 +15617,21 @@ async def get_servizi_by_sub_agenzia(
             logging.info("📭 CASCADE: No servizi autorizzati for sub agenzia, returning empty")
             return []
         
-        # Find servizi that are in the authorized list and active
-        servizi_docs = await db.servizi.find({
+        # Build query filter
+        query_filter = {
             "id": {"$in": servizi_autorizzati},
             "is_active": True
-        }).to_list(length=None)
+        }
         
-        logging.info(f"📊 CASCADE: Found {len(servizi_docs)} authorized servizi for sub agenzia")
+        # Add commessa filter if provided
+        if commessa_id:
+            logging.info(f"🎯 CASCADE: Filtering servizi also by commessa_id: {commessa_id}")
+            query_filter["commessa_id"] = commessa_id
+        
+        # Find servizi that match all filters
+        servizi_docs = await db.servizi.find(query_filter).to_list(length=None)
+        
+        logging.info(f"📊 CASCADE: Found {len(servizi_docs)} authorized servizi (sub agenzia + commessa filter)")
         
         # Convert to JSON serializable format
         servizi = []
