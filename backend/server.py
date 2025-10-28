@@ -11168,6 +11168,7 @@ else:
     production_domains = [
         "https://nureal.it",
         "https://www.nureal.it",
+        "https://k8s-error-resolved.emergent.host",  # NEW: Production backend domain
         "https://mobil-analytics-1.emergent.host",
         "https://mobil-analytics-2.emergent.host",  # New deployment domain
         "https://k8s-error-resolved.preview.emergentagent.com",
