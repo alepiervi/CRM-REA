@@ -39902,17 +39902,30 @@ startxref
         )
         
         if success and status == 200:
-            young_id = young_response.get('id')
-            young_nome = young_response.get('nome')
-            young_parent = young_response.get('parent_offerta_id')
-            
-            self.log_test("✅ Vodafone Young creata", True, 
-                f"Nome: {young_nome}, ID: {young_id}, Parent: {young_parent}")
-            
-            if young_parent == offerta_principale_id:
-                self.log_test("✅ Parent ID corretto per Young", True, "parent_offerta_id collegato correttamente")
+            if young_response.get('success'):
+                young_id = young_response.get('offerta_id')
+                young_nome = vodafone_young_payload['nome']  # Use name from payload
+                
+                self.log_test("✅ Vodafone Young creata", True, 
+                    f"Nome: {young_nome}, ID: {young_id}")
+                
+                # Verify the parent_offerta_id by fetching the created offerta
+                success_get, get_response, get_status = self.make_request(
+                    'GET', f'offerte/{young_id}', 
+                    expected_status=200
+                )
+                
+                if success_get and get_status == 200:
+                    young_parent = get_response.get('parent_offerta_id')
+                    if young_parent == offerta_principale_id:
+                        self.log_test("✅ Parent ID corretto per Young", True, "parent_offerta_id collegato correttamente")
+                    else:
+                        self.log_test("❌ Parent ID errato per Young", False, f"Expected: {offerta_principale_id}, Got: {young_parent}")
+                else:
+                    self.log_test("❌ Verifica Young creata failed", False, f"Status: {get_status}")
             else:
-                self.log_test("❌ Parent ID errato per Young", False, f"Expected: {offerta_principale_id}, Got: {young_parent}")
+                self.log_test("❌ Young creation response invalid", False, f"Response: {young_response}")
+                return False
         else:
             self.log_test("❌ Creazione Vodafone Young failed", False, f"Status: {status}")
             return False
