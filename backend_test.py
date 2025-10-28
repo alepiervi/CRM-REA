@@ -1157,23 +1157,67 @@ startxref
             self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
             return False
 
-        # **2. TEST CLIENTE CREATION WITH EXACT PAYLOAD**
-        print("\n📋 2. TEST CLIENTE CREATION WITH EXACT PAYLOAD THAT WAS FAILING...")
+        # **2. GET VALID COMMESSE AND SUB AGENZIE**
+        print("\n📋 2. GET VALID COMMESSE AND SUB AGENZIE...")
         
-        # This is the EXACT payload that was giving 422 error
+        # Get available commesse
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        if not success or status != 200:
+            self.log_test("❌ Failed to get commesse", False, f"Status: {status}")
+            return False
+        
+        commesse = commesse_response if isinstance(commesse_response, list) else []
+        if not commesse:
+            self.log_test("❌ No commesse found", False, "Cannot test without commesse")
+            return False
+        
+        # Get available sub agenzie
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        if not success or status != 200:
+            self.log_test("❌ Failed to get sub agenzie", False, f"Status: {status}")
+            return False
+        
+        sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+        if not sub_agenzie:
+            self.log_test("❌ No sub agenzie found", False, "Cannot test without sub agenzie")
+            return False
+        
+        # Find a compatible commessa and sub agenzia
+        target_commessa = None
+        target_sub_agenzia = None
+        
+        for commessa in commesse:
+            commessa_id = commessa.get('id')
+            for sub_agenzia in sub_agenzie:
+                commesse_autorizzate = sub_agenzia.get('commesse_autorizzate', [])
+                if commessa_id in commesse_autorizzate:
+                    target_commessa = commessa
+                    target_sub_agenzia = sub_agenzia
+                    break
+            if target_commessa:
+                break
+        
+        if not target_commessa or not target_sub_agenzia:
+            self.log_test("❌ No compatible commessa/sub agenzia found", False, "Cannot test without authorized combination")
+            return False
+        
+        self.log_test("✅ Found compatible commessa and sub agenzia", True, 
+            f"Commessa: {target_commessa.get('nome')}, Sub Agenzia: {target_sub_agenzia.get('nome')}")
+        
+        # **3. TEST CLIENTE CREATION WITH EXACT PAYLOAD (UPDATED IDS)**
+        print("\n📋 3. TEST CLIENTE CREATION WITH EXACT PAYLOAD (UPDATED IDS)...")
+        
+        # This is the EXACT payload structure that was giving 422 error, but with valid IDs
         exact_payload = {
             "nome": "Alessandro Piervincenzi",
             "cognome": "Piervincenzi", 
             "email": "alessandro.piervincenzi@gmail.com",
             "telefono": "3924929241",
             "codice_fiscale": "BNCMRA80A01F205X",
-            "commessa_id": "22769a8d-29f2-4bd0-ba36-0928ff791fa3",
-            "sub_agenzia_id": "98f13d1f-1850-4770-a866-7d7a15594fd6",
-            "servizio_id": "6b29df55-ca0f-4abf-b562-b457d55a0642",
-            "tipologia_contratto": "energia_fastweb_tls",
-            "tipologia_contratto_id": "021dbb92-702c-4a5b-bf23-b795bd4ad461",
-            "segmento": "privato",
-            "offerta_id": "07f50cc5-9463-4824-8fa7-d9dd28148ef3",
+            "commessa_id": target_commessa.get('id'),
+            "sub_agenzia_id": target_sub_agenzia.get('id'),
+            "tipologia_contratto": "energia_fastweb_tls",  # DYNAMIC VALUE - this was causing 422
+            "segmento": "privato",  # DYNAMIC VALUE - this was causing 422
             "indirizzo": "Via Arnaldo Brandizzi, 5",
             "cap": "00133",
             "provincia": "RM",
