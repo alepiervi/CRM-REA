@@ -39138,7 +39138,7 @@ startxref
         }
         
         success, create_servizio_response, status = self.make_request(
-            'POST', f'commesse/{commessa_id}/servizi', 
+            'POST', 'servizi', 
             test_servizio_data, 
             expected_status=200
         )
