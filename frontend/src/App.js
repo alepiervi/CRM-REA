@@ -18080,6 +18080,30 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   </select>
                 </div>
               )}
+              
+              {/* NEW: SUB-OFFERTA SELECTION */}
+              {selectedData.offerta_id && cascadeSubOfferte.length > 0 && (
+                <div className="space-y-2 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <Label className="text-base font-semibold text-blue-900">📦 Sotto-Offerta</Label>
+                  <p className="text-xs text-blue-700 mb-2">Seleziona una variante per l'offerta scelta</p>
+                  <select 
+                    value={selectedData.sub_offerta_id || ''} 
+                    onChange={(e) => {
+                      setSelectedData(prev => ({ ...prev, sub_offerta_id: e.target.value }));
+                      setShowClientForm(true);
+                      setCurrentStep('cliente');
+                    }}
+                    className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Seleziona Sotto-Offerta...</option>
+                    {cascadeSubOfferte.map(subOff => (
+                      <option key={subOff.id} value={subOff.id}>
+                        {subOff.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
             </div>
 
@@ -18094,6 +18118,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   {selectedData.tipologia_contratto && <div><strong>Tipologia:</strong> {cascadeTipologie?.find(t => t.id === selectedData.tipologia_contratto)?.nome}</div>}
                   {selectedData.segmento && <div><strong>Segmento:</strong> {cascadeSegmenti?.find(s => s.id === selectedData.segmento)?.nome}</div>}
                   {selectedData.offerta_id && <div><strong>Offerta:</strong> {cascadeOfferte?.find(o => o.id === selectedData.offerta_id)?.nome}</div>}
+                  {selectedData.sub_offerta_id && <div><strong>Sotto-Offerta:</strong> {cascadeSubOfferte?.find(so => so.id === selectedData.sub_offerta_id)?.nome}</div>}
                 </div>
               </div>
             )}
