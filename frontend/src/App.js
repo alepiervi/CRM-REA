@@ -16128,21 +16128,72 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
   const [formData, setFormData] = useState({
     nome: '',
     descrizione: '',
-    is_active: true
+    is_active: true,
+    has_sub_offerte: false
   });
+  const [subOfferte, setSubOfferte] = useState([]);
+  const [newSubOfferta, setNewSubOfferta] = useState({ nome: '', descrizione: '' });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit({ 
+    
+    // Submit main offerta
+    const mainOfferta = { 
       ...formData, 
       segmento_id: segmentoId 
-    });
-    setFormData({ nome: '', descrizione: '', is_active: true });
+    };
+    
+    try {
+      const result = await onSubmit(mainOfferta);
+      
+      // If has sub-offerte, create them
+      if (formData.has_sub_offerte && subOfferte.length > 0 && result && result.id) {
+        const API = import.meta.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL;
+        const token = localStorage.getItem('token');
+        
+        for (const subOff of subOfferte) {
+          await fetch(`${API}/api/offerte`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              nome: subOff.nome,
+              descrizione: subOff.descrizione,
+              segmento_id: segmentoId,
+              parent_offerta_id: result.id,
+              is_active: true
+            })
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error creating offerta/sub-offerte:", error);
+    }
+    
+    // Reset form
+    setFormData({ nome: '', descrizione: '', is_active: true, has_sub_offerte: false });
+    setSubOfferte([]);
+    setNewSubOfferta({ nome: '', descrizione: '' });
     onClose();
   };
 
+  const handleAddSubOfferta = () => {
+    if (newSubOfferta.nome.trim()) {
+      setSubOfferte([...subOfferte, { ...newSubOfferta }]);
+      setNewSubOfferta({ nome: '', descrizione: '' });
+    }
+  };
+
+  const handleRemoveSubOfferta = (index) => {
+    setSubOfferte(subOfferte.filter((_, i) => i !== index));
+  };
+
   const handleClose = () => {
-    setFormData({ nome: '', descrizione: '', is_active: true });
+    setFormData({ nome: '', descrizione: '', is_active: true, has_sub_offerte: false });
+    setSubOfferte([]);
+    setNewSubOfferta({ nome: '', descrizione: '' });
     onClose();
   };
 
@@ -16150,7 +16201,7 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nuova Offerta</DialogTitle>
           <p className="text-sm text-gray-600">
@@ -16188,6 +16239,78 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
             />
             <Label htmlFor="is_active">Offerta attiva</Label>
           </div>
+          
+          {/* NEW: Checkbox for sub-offerte */}
+          <div className="flex items-center space-x-2 bg-blue-50 p-3 rounded">
+            <input
+              type="checkbox"
+              id="has_sub_offerte"
+              checked={formData.has_sub_offerte}
+              onChange={(e) => setFormData({...formData, has_sub_offerte: e.target.checked})}
+              className="rounded"
+            />
+            <Label htmlFor="has_sub_offerte" className="font-semibold text-blue-900">
+              Questa offerta ha sotto-offerte (es. Vodafone con varianti)
+            </Label>
+          </div>
+          
+          {/* NEW: Sub-offerte form */}
+          {formData.has_sub_offerte && (
+            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50 space-y-3">
+              <h4 className="font-semibold text-blue-900">Sotto-Offerte</h4>
+              
+              {/* List existing sub-offerte */}
+              {subOfferte.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {subOfferte.map((subOff, index) => (
+                    <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                      <div className="flex-1">
+                        <p className="font-medium">{subOff.nome}</p>
+                        {subOff.descrizione && (
+                          <p className="text-sm text-gray-600">{subOff.descrizione}</p>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveSubOfferta(index)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Add new sub-offerta */}
+              <div className="space-y-2">
+                <Label>Aggiungi Sotto-Offerta</Label>
+                <Input
+                  placeholder="Nome sotto-offerta (es. Vodafone Young, Vodafone Senior...)"
+                  value={newSubOfferta.nome}
+                  onChange={(e) => setNewSubOfferta({...newSubOfferta, nome: e.target.value})}
+                />
+                <Input
+                  placeholder="Descrizione opzionale"
+                  value={newSubOfferta.descrizione}
+                  onChange={(e) => setNewSubOfferta({...newSubOfferta, descrizione: e.target.value})}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddSubOfferta}
+                  disabled={!newSubOfferta.nome.trim()}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Aggiungi Sotto-Offerta
+                </Button>
+              </div>
+            </div>
+          )}
+          
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>
               Annulla
