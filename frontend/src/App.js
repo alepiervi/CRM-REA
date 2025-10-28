@@ -17372,8 +17372,13 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
         return;
       }
       
-      // Load tipologie autorizzate for this servizio
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/tipologie-by-servizio/${servizioId}`, {
+      // Load tipologie autorizzate for this servizio, optionally filtered by sub_agenzia
+      const subAgenziaId = selectedData.sub_agenzia_id;
+      const url = subAgenziaId 
+        ? `${process.env.REACT_APP_BACKEND_URL}/api/cascade/tipologie-by-servizio/${servizioId}?sub_agenzia_id=${subAgenziaId}`
+        : `${process.env.REACT_APP_BACKEND_URL}/api/cascade/tipologie-by-servizio/${servizioId}`;
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
