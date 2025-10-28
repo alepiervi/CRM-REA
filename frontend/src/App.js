@@ -17326,15 +17326,18 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
         return;
       }
       
-      // Load servizi autorizzati for the selected sub agenzia (not for commessa)
-      // Use sub_agenzia_id to get only authorized servizi
+      // Load servizi filtered by BOTH sub_agenzia AND commessa
       const subAgenziaId = selectedData.sub_agenzia_id;
       if (!subAgenziaId) {
         console.error("❌ No sub_agenzia_id found - cannot load servizi");
         return;
       }
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/servizi-by-sub-agenzia/${subAgenziaId}`, {
+      // Add commessa_id as query parameter to filter servizi by both sub_agenzia and commessa
+      const url = `${process.env.REACT_APP_BACKEND_URL}/api/cascade/servizi-by-sub-agenzia/${subAgenziaId}?commessa_id=${commessaId}`;
+      console.log("🔍 CASCADE: Loading servizi filtered by sub_agenzia AND commessa");
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -17348,7 +17351,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       }
       
       const servizi = await response.json();
-      console.log("✅ CASCADE: Servizi loaded successfully for sub agenzia:", servizi);
+      console.log("✅ CASCADE: Servizi loaded successfully (filtered by sub_agenzia + commessa):", servizi);
       setCascadeServizi(Array.isArray(servizi) ? servizi : []);
       
       // Reset downstream selections
