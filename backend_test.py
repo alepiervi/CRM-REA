@@ -1272,8 +1272,8 @@ startxref
                         self.log_test("❌ segmento not preserved", False, 
                             f"Expected: 'privato', Got: '{created_segmento}'")
                     
-                    # **3. VERIFY CLIENTE IS SAVED IN DATABASE**
-                    print(f"\n   🔍 3. VERIFY CLIENTE IS SAVED IN DATABASE...")
+                    # **4. VERIFY CLIENTE IS SAVED IN DATABASE**
+                    print(f"\n   🔍 4. VERIFY CLIENTE IS SAVED IN DATABASE...")
                     
                     success, get_response, get_status = self.make_request(
                         'GET', f'clienti/{cliente_id}', 
