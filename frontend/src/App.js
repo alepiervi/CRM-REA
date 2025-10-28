@@ -20032,6 +20032,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const [segmenti, setSegmenti] = useState([]);
   const [offertaInfo, setOffertaInfo] = useState(null);
   const [subOfferte, setSubOfferte] = useState([]);  // NEW: Sub-offerte list
+  const [servizioInfo, setServizioInfo] = useState(null);  // NEW: Servizio info
   const [isLoadingTipologie, setIsLoadingTipologie] = useState(true);
   const [isLoadingOfferta, setIsLoadingOfferta] = useState(false);
   const [availableOfferte, setAvailableOfferte] = useState([]);
