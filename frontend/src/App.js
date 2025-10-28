@@ -19381,6 +19381,7 @@ const AppWithAuth = () => (
 // View Cliente Modal Component
 const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) => {
   const [offertaInfo, setOffertaInfo] = useState(null);
+  const [subOffertaInfo, setSubOffertaInfo] = useState(null);  // NEW: Sub-offerta info
   
   if (!cliente) return null;
   
@@ -19402,6 +19403,21 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
     };
     fetchOfferta();
   }, [cliente.offerta_id]);
+  
+  // NEW: Fetch sub-offerta info when component mounts
+  useEffect(() => {
+    const fetchSubOfferta = async () => {
+      if (cliente.sub_offerta_id) {
+        try {
+          const response = await axios.get(`${API}/offerte/${cliente.sub_offerta_id}`);
+          setSubOffertaInfo(response.data);
+        } catch (error) {
+          console.error("Error fetching sub-offerta:", error);
+        }
+      }
+    };
+    fetchSubOfferta();
+  }, [cliente.sub_offerta_id]);
 
   // Helper per verificare se mostrare sezioni condizionali
   const isTelefoniaFastweb = () => {
