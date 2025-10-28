@@ -19969,6 +19969,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     tipologia_contratto: cliente?.tipologia_contratto || '',
     segmento: cliente?.segmento || '',
     offerta_id: cliente?.offerta_id || '',
+    sub_offerta_id: cliente?.sub_offerta_id || '',  // NEW: Sub-offerta
     
     // Note e Status
     status: cliente?.status || 'da_inserire',
@@ -19980,6 +19981,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const [editTipologieContratto, setEditTipologieContratto] = useState([]);
   const [segmenti, setSegmenti] = useState([]);
   const [offertaInfo, setOffertaInfo] = useState(null);
+  const [subOfferte, setSubOfferte] = useState([]);  // NEW: Sub-offerte list
   const [isLoadingTipologie, setIsLoadingTipologie] = useState(true);
   const [isLoadingOfferta, setIsLoadingOfferta] = useState(false);
   const [availableOfferte, setAvailableOfferte] = useState([]);
