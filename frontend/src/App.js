@@ -19651,6 +19651,18 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                 <Label className="text-sm font-medium text-slate-600">Offerta</Label>
                 <p className="text-sm">{offertaInfo?.nome || cliente.offerta_id || 'Non specificato'}</p>
               </div>
+              {/* NEW: Sub-Offerta */}
+              {cliente.sub_offerta_id && (
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <Label className="text-sm font-semibold text-blue-900">📦 Sotto-Offerta</Label>
+                  <p className="text-sm font-medium text-blue-800">
+                    {subOffertaInfo?.nome || cliente.sub_offerta_id}
+                  </p>
+                  {subOffertaInfo?.descrizione && (
+                    <p className="text-xs text-blue-700 mt-1">{subOffertaInfo.descrizione}</p>
+                  )}
+                </div>
+              )}
               <div>
                 <Label className="text-sm font-medium text-slate-600">Status</Label>
                 <Badge variant={getClienteStatusVariant(cliente.status)}>
