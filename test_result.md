@@ -148,6 +148,32 @@ CONCLUSIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Backend configuration issue: F2F ha troppi servizi autorizzati invece di solo TLS"
 
+current_problem_statement: "VERIFICA CORREZIONE SERVIZI F2F - Dovrebbe vedere solo TLS
+
+CONTESTO:
+Ho appena aggiornato la sub agenzia F2F per avere solo il servizio TLS autorizzato (ID: cc0648c1-0df1-4530-8281-f4c940934916).
+
+TEST RICHIESTI:
+1. Login as admin (username: admin, password: admin123)
+2. Verifica F2F aggiornata: GET /api/sub-agenzie - Trova F2F - Verifica che servizi_autorizzati contenga SOLO 1 ID (quello di TLS)
+3. Test endpoint filtrato: GET /api/cascade/servizi-by-sub-agenzia/{f2f_id} - Verifica che restituisca SOLO 1 servizio - Il servizio deve essere TLS - NON devono essere presenti NEGOZI o PRESIDI
+4. Confronto con commessa: GET /api/cascade/servizi-by-commessa/{fastweb_commessa_id} - Dovrebbe restituire 3+ servizi - Confermare che il filtro per F2F funziona (1 servizio vs 3+ servizi totali)
+
+RISULTATI TEST ATTUALI:
+❌ F2F CORREZIONE NON ANCORA APPLICATA
+✅ Admin login (admin/admin123) - SUCCESS
+✅ F2F sub agenzia trovata: Nome 'F2F', ID: 7c70d4b5-4be0-4707-8bca-dfe84a0b9dee
+❌ F2F servizi_autorizzati: ANCORA 6 servizi (PROBLEMA: dovrebbe essere solo 1 - TLS)
+❌ Endpoint servizi-by-sub-agenzia: restituisce ANCORA 3 servizi (PROBLEMA: dovrebbe essere solo 1)
+❌ F2F vede ancora TUTTI i servizi Fastweb invece di solo TLS
+
+SERVIZI ATTUALI F2F (ANCORA NON CORRETTI):
+1. NEGOZI (ID: cca3bdb9-a43b-467c-81bd-f36b83b25452) - ANCORA PRESENTE (dovrebbe essere rimosso)
+2. PRESIDI (ID: 861b02f4-fd76-4f6f-90c4-835b48a1d234) - ANCORA PRESENTE (dovrebbe essere rimosso)
+3. TLS (ID: cc0648c1-0df1-4530-8281-f4c940934916) - ✅ Corretto (deve rimanere)
+
+STATO ATTUALE: ❌ LA CORREZIONE NON È ANCORA STATA APPLICATA - F2F ha ancora 6 servizi autorizzati invece di solo TLS"
+
 previous_problem_statement: "CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM
 
 OBIETTIVO: Verificare che quando si creano clienti con MULTIPLE convergenza_items (es. 2-3 SIM), TUTTI gli item vengano salvati nel database e recuperati correttamente.
