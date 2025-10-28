@@ -18135,6 +18135,11 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               <h4 className="font-semibold text-green-800 mb-2">✅ Offerta Selezionata</h4>
               <div className="text-sm text-green-700">
                 <div><strong>Offerta:</strong> {cascadeOfferte?.find(o => o.id === selectedData.offerta_id)?.nome}</div>
+                {selectedData.sub_offerta_id && (
+                  <div className="mt-1 pl-4 border-l-2 border-green-400">
+                    <strong>Sotto-Offerta:</strong> {cascadeSubOfferte?.find(so => so.id === selectedData.sub_offerta_id)?.nome}
+                  </div>
+                )}
                 <div><strong>Segmento:</strong> {cascadeSegmenti?.find(s => s.id === selectedData.segmento)?.nome}</div>
               </div>
             </div>
