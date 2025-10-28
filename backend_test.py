@@ -39774,12 +39774,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the SOFT DELETE AND CASCADE FILTERS TEST AS REQUESTED
+        # Run the FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING SOFT DELETE AND CASCADE FILTERS TEST - AS REQUESTED")
+        print("🎯 RUNNING FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI TEST - AS REQUESTED")
         print("="*80)
         
-        soft_delete_success = self.test_soft_delete_and_cascade_filters()
+        cascading_success = self.test_flusso_cascading_completo_con_filtri_multipli()
 
         # Print final summary
         print("\n" + "=" * 80)
