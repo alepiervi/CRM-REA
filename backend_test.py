@@ -39948,17 +39948,30 @@ startxref
         )
         
         if success and status == 200:
-            senior_id = senior_response.get('id')
-            senior_nome = senior_response.get('nome')
-            senior_parent = senior_response.get('parent_offerta_id')
-            
-            self.log_test("✅ Vodafone Senior creata", True, 
-                f"Nome: {senior_nome}, ID: {senior_id}, Parent: {senior_parent}")
-            
-            if senior_parent == offerta_principale_id:
-                self.log_test("✅ Parent ID corretto per Senior", True, "parent_offerta_id collegato correttamente")
+            if senior_response.get('success'):
+                senior_id = senior_response.get('offerta_id')
+                senior_nome = vodafone_senior_payload['nome']  # Use name from payload
+                
+                self.log_test("✅ Vodafone Senior creata", True, 
+                    f"Nome: {senior_nome}, ID: {senior_id}")
+                
+                # Verify the parent_offerta_id by fetching the created offerta
+                success_get, get_response, get_status = self.make_request(
+                    'GET', f'offerte/{senior_id}', 
+                    expected_status=200
+                )
+                
+                if success_get and get_status == 200:
+                    senior_parent = get_response.get('parent_offerta_id')
+                    if senior_parent == offerta_principale_id:
+                        self.log_test("✅ Parent ID corretto per Senior", True, "parent_offerta_id collegato correttamente")
+                    else:
+                        self.log_test("❌ Parent ID errato per Senior", False, f"Expected: {offerta_principale_id}, Got: {senior_parent}")
+                else:
+                    self.log_test("❌ Verifica Senior creata failed", False, f"Status: {get_status}")
             else:
-                self.log_test("❌ Parent ID errato per Senior", False, f"Expected: {offerta_principale_id}, Got: {senior_parent}")
+                self.log_test("❌ Senior creation response invalid", False, f"Response: {senior_response}")
+                return False
         else:
             self.log_test("❌ Creazione Vodafone Senior failed", False, f"Status: {status}")
             return False
