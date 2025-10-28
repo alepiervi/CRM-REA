@@ -1290,6 +1290,8 @@ class OffertaModel(BaseModel):
     servizio_id: Optional[str] = None  # ADDED: Link to servizio
     tipologia_contratto_id: Optional[str] = None  # ADDED: Link to tipologia contratto
     segmento_id: str
+    has_sub_offerte: bool = False  # NEW: Indica se questa offerta ha sotto-offerte
+    parent_offerta_id: Optional[str] = None  # NEW: ID dell'offerta principale (se è una sotto-offerta)
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
@@ -1302,6 +1304,8 @@ class OffertaCreate(BaseModel):
     servizio_id: Optional[str] = None  # ADDED: Link to servizio
     tipologia_contratto_id: Optional[str] = None  # ADDED: Link to tipologia contratto
     segmento_id: str
+    has_sub_offerte: bool = False  # NEW: Indica se questa offerta avrà sotto-offerte
+    parent_offerta_id: Optional[str] = None  # NEW: ID offerta principale (per sotto-offerte)
     is_active: bool = True
 
 class OffertaUpdate(BaseModel):
@@ -1310,6 +1314,7 @@ class OffertaUpdate(BaseModel):
     commessa_id: Optional[str] = None  # ADDED: Link to commessa
     servizio_id: Optional[str] = None  # ADDED: Link to servizio
     tipologia_contratto_id: Optional[str] = None  # ADDED: Link to tipologia contratto
+    has_sub_offerte: Optional[bool] = None  # NEW: Aggiorna se ha sotto-offerte
     is_active: Optional[bool] = None
 
 # Helper functions
