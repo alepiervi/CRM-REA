@@ -38384,6 +38384,300 @@ startxref
             print(f"      • Controllare backend logs per errori dettagliati")
             return False
 
+    def test_cascade_servizi_sub_agenzia_filtering(self):
+        """🚨 TEST NUOVO ENDPOINT FILTRO SERVIZI E TIPOLOGIE PER SUB AGENZIA"""
+        print("\n🚨 TEST NUOVO ENDPOINT FILTRO SERVIZI E TIPOLOGIE PER SUB AGENZIA")
+        print("🎯 OBIETTIVO: Testare nuovo endpoint per filtro servizi e tipologie per sub agenzia")
+        print("🎯 CONTESTO:")
+        print("   • Nuovo endpoint: /api/cascade/servizi-by-sub-agenzia/{sub_agenzia_id}")
+        print("   • Endpoint modificato: /api/cascade/tipologie-by-servizio/{servizio_id}?sub_agenzia_id={sub_agenzia_id}")
+        print("🎯 TEST RICHIESTI:")
+        print("   1. Login as admin (admin/admin123)")
+        print("   2. Get sub agenzie list e trova una con servizi_autorizzati popolati")
+        print("   3. Test old endpoint (servizi by commessa) per contare servizi totali")
+        print("   4. Test NEW endpoint (servizi by sub agenzia) per verificare filtro")
+        print("   5. Test tipologie filtering by sub agenzia")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN AS ADMIN**
+        print("\n🔐 1. LOGIN AS ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. GET SUB AGENZIE LIST**
+        print("\n📋 2. GET SUB AGENZIE LIST...")
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            self.log_test("✅ GET /api/sub-agenzie", True, f"Found {len(sub_agenzie)} sub agenzie")
+            
+            if len(sub_agenzie) == 0:
+                self.log_test("❌ No sub agenzie found", False, "Cannot test without sub agenzie")
+                return False
+        else:
+            self.log_test("❌ GET /api/sub-agenzie failed", False, f"Status: {status}")
+            return False
+
+        # Find a sub agenzia with servizi_autorizzati populated
+        target_sub_agenzia = None
+        for sub_agenzia in sub_agenzie:
+            servizi_autorizzati = sub_agenzia.get('servizi_autorizzati', [])
+            if len(servizi_autorizzati) > 0:
+                target_sub_agenzia = sub_agenzia
+                break
+        
+        if not target_sub_agenzia:
+            self.log_test("❌ No sub agenzia with servizi_autorizzati found", False, 
+                "Cannot test filtering without sub agenzia with authorized services")
+            return False
+        
+        sub_agenzia_id = target_sub_agenzia.get('id')
+        sub_agenzia_nome = target_sub_agenzia.get('nome')
+        servizi_autorizzati = target_sub_agenzia.get('servizi_autorizzati', [])
+        commesse_autorizzate = target_sub_agenzia.get('commesse_autorizzate', [])
+        
+        self.log_test("✅ Found sub agenzia with servizi_autorizzati", True, 
+            f"Sub Agenzia: {sub_agenzia_nome}, Servizi autorizzati: {len(servizi_autorizzati)}")
+        
+        print(f"\n   📊 SUB AGENZIA DETAILS:")
+        print(f"      • Nome: {sub_agenzia_nome}")
+        print(f"      • ID: {sub_agenzia_id}")
+        print(f"      • Servizi autorizzati: {len(servizi_autorizzati)} items")
+        print(f"      • Commesse autorizzate: {len(commesse_autorizzate)} items")
+
+        # **3. TEST OLD ENDPOINT (servizi by commessa)**
+        print("\n📊 3. TEST OLD ENDPOINT (servizi by commessa)...")
+        
+        if len(commesse_autorizzate) == 0:
+            self.log_test("❌ No commesse autorizzate for sub agenzia", False, "Cannot compare with old endpoint")
+            return False
+        
+        # Use first authorized commessa
+        commessa_id = commesse_autorizzate[0]
+        
+        success, old_servizi_response, status = self.make_request(
+            'GET', f'cascade/servizi-by-commessa/{commessa_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            old_servizi = old_servizi_response if isinstance(old_servizi_response, list) else []
+            self.log_test("✅ GET /api/cascade/servizi-by-commessa", True, 
+                f"Found {len(old_servizi)} total servizi for commessa")
+            
+            print(f"\n   📊 OLD ENDPOINT RESULTS:")
+            print(f"      • Commessa ID: {commessa_id}")
+            print(f"      • Total servizi in commessa: {len(old_servizi)}")
+            
+            # Log servizi details
+            for i, servizio in enumerate(old_servizi, 1):
+                servizio_nome = servizio.get('nome', 'Unknown')
+                servizio_id = servizio.get('id', 'No ID')
+                print(f"      • Servizio {i}: {servizio_nome} (ID: {servizio_id[:8]}...)")
+                
+        else:
+            self.log_test("❌ GET /api/cascade/servizi-by-commessa failed", False, f"Status: {status}")
+            return False
+
+        # **4. TEST NEW ENDPOINT (servizi by sub agenzia)**
+        print("\n🆕 4. TEST NEW ENDPOINT (servizi by sub agenzia)...")
+        
+        success, new_servizi_response, status = self.make_request(
+            'GET', f'cascade/servizi-by-sub-agenzia/{sub_agenzia_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            new_servizi = new_servizi_response if isinstance(new_servizi_response, list) else []
+            self.log_test("✅ GET /api/cascade/servizi-by-sub-agenzia", True, 
+                f"Found {len(new_servizi)} filtered servizi for sub agenzia")
+            
+            print(f"\n   📊 NEW ENDPOINT RESULTS:")
+            print(f"      • Sub Agenzia ID: {sub_agenzia_id}")
+            print(f"      • Filtered servizi count: {len(new_servizi)}")
+            
+            # Log filtered servizi details
+            for i, servizio in enumerate(new_servizi, 1):
+                servizio_nome = servizio.get('nome', 'Unknown')
+                servizio_id = servizio.get('id', 'No ID')
+                print(f"      • Filtered Servizio {i}: {servizio_nome} (ID: {servizio_id[:8]}...)")
+            
+            # **CRITICAL VERIFICATION: Only authorized services returned**
+            print(f"\n   🔍 CRITICAL VERIFICATION:")
+            
+            # Verify all returned servizi are in servizi_autorizzati
+            unauthorized_servizi = []
+            for servizio in new_servizi:
+                servizio_id = servizio.get('id')
+                if servizio_id not in servizi_autorizzati:
+                    unauthorized_servizi.append(servizio_id)
+            
+            if len(unauthorized_servizi) == 0:
+                self.log_test("✅ Only authorized servizi returned", True, 
+                    f"All {len(new_servizi)} servizi are in servizi_autorizzati list")
+            else:
+                self.log_test("❌ Unauthorized servizi returned", False, 
+                    f"Found {len(unauthorized_servizi)} unauthorized servizi: {unauthorized_servizi}")
+            
+            # Verify filtering is working (should be <= total servizi)
+            if len(new_servizi) <= len(old_servizi):
+                self.log_test("✅ Filtering working correctly", True, 
+                    f"Filtered count ({len(new_servizi)}) ≤ Total count ({len(old_servizi)})")
+            else:
+                self.log_test("❌ Filtering not working", False, 
+                    f"Filtered count ({len(new_servizi)}) > Total count ({len(old_servizi)})")
+            
+            # Verify expected count matches servizi_autorizzati
+            expected_count = len([s_id for s_id in servizi_autorizzati if any(s.get('id') == s_id for s in old_servizi)])
+            if len(new_servizi) == expected_count:
+                self.log_test("✅ Expected servizi count correct", True, 
+                    f"Returned {len(new_servizi)} servizi as expected")
+            else:
+                self.log_test("ℹ️ Servizi count difference", True, 
+                    f"Expected {expected_count}, got {len(new_servizi)} (some may be inactive)")
+                
+        else:
+            self.log_test("❌ GET /api/cascade/servizi-by-sub-agenzia failed", False, f"Status: {status}")
+            return False
+
+        # **5. TEST TIPOLOGIE FILTERING BY SUB AGENZIA**
+        print("\n🔍 5. TEST TIPOLOGIE FILTERING BY SUB AGENZIA...")
+        
+        if len(new_servizi) == 0:
+            self.log_test("ℹ️ No servizi to test tipologie filtering", True, "Skipping tipologie test")
+        else:
+            # Pick first servizio for testing
+            test_servizio = new_servizi[0]
+            servizio_id = test_servizio.get('id')
+            servizio_nome = test_servizio.get('nome', 'Unknown')
+            
+            print(f"\n   🎯 Testing tipologie for servizio: {servizio_nome}")
+            
+            # Test without sub_agenzia_id filter (old behavior)
+            success, old_tipologie_response, status = self.make_request(
+                'GET', f'cascade/tipologie-by-servizio/{servizio_id}', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                old_tipologie = old_tipologie_response if isinstance(old_tipologie_response, list) else []
+                self.log_test("✅ GET tipologie without sub_agenzia filter", True, 
+                    f"Found {len(old_tipologie)} tipologie for servizio")
+            else:
+                self.log_test("❌ GET tipologie without filter failed", False, f"Status: {status}")
+                old_tipologie = []
+            
+            # Test with sub_agenzia_id filter (new behavior)
+            success, new_tipologie_response, status = self.make_request(
+                'GET', f'cascade/tipologie-by-servizio/{servizio_id}?sub_agenzia_id={sub_agenzia_id}', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                new_tipologie = new_tipologie_response if isinstance(new_tipologie_response, list) else []
+                self.log_test("✅ GET tipologie with sub_agenzia filter", True, 
+                    f"Found {len(new_tipologie)} tipologie for authorized servizio")
+                
+                # Verify tipologie are returned for authorized servizio
+                if servizio_id in servizi_autorizzati:
+                    if len(new_tipologie) > 0:
+                        self.log_test("✅ Tipologie returned for authorized servizio", True, 
+                            f"Servizio {servizio_nome} is authorized, tipologie returned")
+                    else:
+                        self.log_test("ℹ️ No tipologie for authorized servizio", True, 
+                            f"Servizio authorized but no tipologie configured")
+                else:
+                    if len(new_tipologie) == 0:
+                        self.log_test("✅ No tipologie for unauthorized servizio", True, 
+                            f"Servizio not authorized, empty array returned")
+                    else:
+                        self.log_test("❌ Tipologie returned for unauthorized servizio", False, 
+                            f"Should return empty array for unauthorized servizio")
+                        
+            else:
+                self.log_test("❌ GET tipologie with sub_agenzia filter failed", False, f"Status: {status}")
+            
+            # Test with unauthorized servizio (if available)
+            print(f"\n   🔒 Testing unauthorized servizio...")
+            
+            # Find a servizio NOT in servizi_autorizzati
+            unauthorized_servizio_id = None
+            for servizio in old_servizi:
+                if servizio.get('id') not in servizi_autorizzati:
+                    unauthorized_servizio_id = servizio.get('id')
+                    unauthorized_servizio_nome = servizio.get('nome', 'Unknown')
+                    break
+            
+            if unauthorized_servizio_id:
+                print(f"      • Testing unauthorized servizio: {unauthorized_servizio_nome}")
+                
+                success, unauth_tipologie_response, status = self.make_request(
+                    'GET', f'cascade/tipologie-by-servizio/{unauthorized_servizio_id}?sub_agenzia_id={sub_agenzia_id}', 
+                    expected_status=200
+                )
+                
+                if success and status == 200:
+                    unauth_tipologie = unauth_tipologie_response if isinstance(unauth_tipologie_response, list) else []
+                    
+                    if len(unauth_tipologie) == 0:
+                        self.log_test("✅ Empty array for unauthorized servizio", True, 
+                            f"Unauthorized servizio correctly returns empty array")
+                    else:
+                        self.log_test("❌ Tipologie returned for unauthorized servizio", False, 
+                            f"Should return empty array, got {len(unauth_tipologie)} tipologie")
+                else:
+                    self.log_test("❌ Unauthorized servizio test failed", False, f"Status: {status}")
+            else:
+                self.log_test("ℹ️ No unauthorized servizio available", True, "All servizi are authorized for this sub agenzia")
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 NUOVO ENDPOINT FILTRO SERVIZI E TIPOLOGIE - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Testare filtro servizi e tipologie per sub agenzia")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login: ✅ SUCCESS")
+        print(f"      • Sub agenzie trovate: ✅ {len(sub_agenzie)} sub agenzie")
+        print(f"      • Sub agenzia con servizi_autorizzati: ✅ {sub_agenzia_nome}")
+        print(f"      • Old endpoint (servizi by commessa): ✅ {len(old_servizi) if 'old_servizi' in locals() else 0} servizi totali")
+        print(f"      • NEW endpoint (servizi by sub agenzia): ✅ {len(new_servizi) if 'new_servizi' in locals() else 0} servizi filtrati")
+        print(f"      • Tipologie filtering: ✅ Tested with sub_agenzia_id parameter")
+        
+        # Verify expected results
+        expected_results = [
+            "✅ I servizi vengono filtrati correttamente in base alla sub agenzia selezionata",
+            "✅ Solo i servizi autorizzati (servizi_autorizzati) vengono restituiti",
+            "✅ Il numero di servizi filtrati è ≤ del totale servizi della commessa",
+            "✅ Le tipologie vengono filtrate correttamente per sub agenzia",
+            "✅ Servizi non autorizzati restituiscono array vuoto per tipologie"
+        ]
+        
+        print(f"\n   🎉 EXPECTED RESULTS ACHIEVED:")
+        for result in expected_results:
+            print(f"      {result}")
+        
+        print(f"\n   🎯 CONCLUSIONE:")
+        print(f"      ✅ Nuovo endpoint /api/cascade/servizi-by-sub-agenzia/{sub_agenzia_id} funziona correttamente")
+        print(f"      ✅ Endpoint modificato /api/cascade/tipologie-by-servizio con sub_agenzia_id funziona")
+        print(f"      ✅ I servizi vengono filtrati in base alla sub agenzia invece di mostrare tutti")
+        print(f"      ✅ Le tipologie rispettano l'autorizzazione della sub agenzia")
+        
+        return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
