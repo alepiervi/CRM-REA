@@ -148,50 +148,48 @@ CONCLUSIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Backend configuration issue: F2F ha troppi servizi autorizzati invece di solo TLS"
 
-current_problem_statement: "TEST FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI - F2F Sub Agenzia
+current_problem_statement: "DEBUG OFFERTA UTENTE CON SOTTO-OFFERTE - VERIFICA DATABASE
 
 CONTESTO:
-Test del flusso cascading completo con filtri multipli per verificare che F2F veda solo TLS quando seleziona Fastweb e che l'intera catena di filtri funzioni correttamente.
-
-FLUSSO TESTATO:
-1. Sub Agenzia F2F → Commesse Associate
-2. Commessa → Servizi (filtrati per sub_agenzia + commessa)  
-3. Servizio → Tipologie (filtrate per servizio)
-4. Segmento → Offerte associate
+L'utente ha creato un'offerta tramite UI con 2 sotto-offerte, ma il dropdown non appare. Verifica cosa è stato effettivamente salvato nel database.
 
 TEST RICHIESTI:
 1. Login as admin (username: admin, password: admin123)
-2. GET /api/sub-agenzie - Trova F2F (ID: 7c70d4b5-4be0-4707-8bca-dfe84a0b9dee)
-3. Verifica servizi_autorizzati di F2F (dovrebbe contenere solo TLS)
-4. GET /api/cascade/servizi-by-sub-agenzia/{f2f_id}?commessa_id={fastweb_id}
-5. GET /api/cascade/tipologie-by-servizio/{tls_id}
-6. GET /api/cascade/segmenti-by-tipologia/{tipologia_id}
-7. GET /api/cascade/offerte-by-segmento/{segmento_id}
+2. Recupera TUTTE le offerte recenti (GET /api/offerte?skip=0&limit=20)
+3. Cerca offerte create dall'utente (non 'Test Vodafone Offerta')
+4. Per ogni offerta dell'utente: verifica has_sub_offerte e sotto-offerte
+5. Diagnosi del problema
 
 RISULTATI TEST COMPLETATI:
 ✅ Admin login (admin/admin123) - SUCCESS
-✅ F2F sub agenzia trovata: Nome 'F2F', ID: 7c70d4b5-4be0-4707-8bca-dfe84a0b9dee
-⚠️ F2F servizi_autorizzati: 3 servizi (ATTENZIONE: dovrebbe essere solo 1 - TLS)
-✅ Fastweb commessa trovata: Nome 'Fastweb', ID: 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1
-✅ F2F ha Fastweb autorizzata: Fastweb ID presente in F2F commesse_autorizzate
-✅ CRITICAL SUCCESS: Endpoint servizi filtrati funziona correttamente
-✅ GET /api/cascade/servizi-by-sub-agenzia con filtro commessa: restituisce SOLO 1 servizio (TLS)
-✅ TLS servizio trovato: Nome 'TLS', ID: cc0648c1-0df1-4530-8281-f4c940934916
-✅ TLS appartiene a Fastweb commessa: commessa_id corretto
-✅ TLS è autorizzato per F2F: servizio_id presente in servizi_autorizzati
-✅ Tipologie per TLS: 6 tipologie trovate, tutte attive e associate a TLS
-✅ Segmenti per tipologia: 2 segmenti trovati (Privato, Business), entrambi attivi
-❌ Offerte per segmento: Endpoint /api/cascade/offerte-by-segmento restituisce 404
+✅ GET /api/offerte - Found 39 offerte totali
+✅ Classificazione offerte: 36 offerte utente (non test), 3 offerte test
+✅ Offerte utente identificate: 36 offerte create dall'utente
 
-ANALISI RISULTATI:
-✅ SUCCESSO CRITICO: F2F vede solo TLS quando seleziona Fastweb (1 servizio invece di tutti)
-✅ Filtro multiplo sub_agenzia + commessa funziona correttamente
-✅ Tipologie filtrate correttamente per servizio (6 tipologie per TLS)
-✅ Segmenti filtrati correttamente per tipologia (2 segmenti)
-❌ PROBLEMA: Endpoint offerte-by-segmento non funziona (404 Not Found)
-⚠️ NOTA: F2F ha 3 servizi_autorizzati invece di 1, ma il filtro endpoint funziona comunque
+ANALISI DETTAGLIATA OFFERTE UTENTE:
+🚨 PROBLEMA CRITICO IDENTIFICATO:
+1. ❌ Offerta 'Salame' (più recente):
+   • has_sub_offerte: TRUE
+   • Sotto-offerte trovate: 0
+   • DIAGNOSI: has_sub_offerte = true ma nessuna sotto-offerta → parent_offerta_id non impostato correttamente
 
-STATO ATTUALE: ✅ FLUSSO CASCADING FUNZIONA CORRETTAMENTE (93.5% success rate) - Solo endpoint offerte mancante"
+2. ❌ Tutte le altre 35 offerte:
+   • has_sub_offerte: FALSE
+   • Sotto-offerte trovate: 0
+   • DIAGNOSI: Il checkbox non è stato spuntato o non funziona
+
+PROBLEMI IDENTIFICATI:
+❌ 35 offerte con has_sub_offerte = false:
+   → Verificare che il checkbox 'Ha sotto-offerte' sia stato spuntato nell'UI
+   → Controllare che il frontend invii has_sub_offerte = true nel payload
+
+❌ 1 offerta con has_sub_offerte = true ma senza sotto-offerte:
+   → Verificare che le sotto-offerte abbiano parent_offerta_id corretto
+   → Controllare che il salvataggio delle sotto-offerte funzioni
+
+SUCCESS RATE: 0/36 offerte working correctly (0.0%)
+
+STATO ATTUALE: 🚨 CRITICAL ISSUES - Nessuna offerta funziona correttamente con sotto-offerte"
 
 previous_problem_statement: "CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM
 
