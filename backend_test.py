@@ -39792,14 +39792,14 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if soft_delete_success:
-            print("🎉 F2F SUB AGENZIA SERVICES VERIFICATION TEST: ✅ SUCCESS - BACKEND WORKING CORRECTLY!")
+        if cascading_success:
+            print("🎉 FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI TEST: ✅ SUCCESS - BACKEND WORKING CORRECTLY!")
         else:
-            print("🚨 F2F SUB AGENZIA SERVICES VERIFICATION TEST: ❌ FAILED - BACKEND CONFIGURATION OR FILTERING ISSUES!")
+            print("🚨 FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI TEST: ❌ FAILED - BACKEND CONFIGURATION OR FILTERING ISSUES!")
         
-        if soft_delete_success:
-            print("\n🎉 OVERALL RESULT: ✅ SOFT DELETE AND CASCADE FILTERS WORKING CORRECTLY!")
-            print("💡 CONCLUSION: Soft delete and cascade filtering implementation is functional")
+        if cascading_success:
+            print("\n🎉 OVERALL RESULT: ✅ FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI WORKING CORRECTLY!")
+            print("💡 CONCLUSION: Cascading flow with multiple filters implementation is functional")
         else:
             print("\n🚨 OVERALL RESULT: ❌ SOFT DELETE AND CASCADE FILTERS NEED BACKEND FIXES!")
         
