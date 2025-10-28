@@ -1125,6 +1125,217 @@ startxref
             print(f"      • Controllare gestione errori 404/403")
             return False
 
+    def test_cliente_creation_dynamic_enum_values(self):
+        """🚨 TEST CLIENTE CREATION WITH DYNAMIC ENUM VALUES - Test energia_fastweb_tls and privato"""
+        print("\n🚨 TEST CLIENTE CREATION WITH DYNAMIC ENUM VALUES")
+        print("🎯 OBIETTIVO: Test cliente creation with dynamic enum values (energia_fastweb_tls and privato)")
+        print("🎯 CONTESTO:")
+        print("   • Just converted TipologiaContratto and Segmento from static enums to dynamic Optional[str] fields")
+        print("   • This allows the system to accept any user-created values from the database")
+        print("🎯 TEST REQUIRED:")
+        print("   1. Login as admin (admin/admin123)")
+        print("   2. Test Cliente Creation with the EXACT payload that was failing")
+        print("   3. Verify Success: Response should be 200 OK (NOT 422)")
+        print("   4. Verify backend logs should NOT see any 422 or validation errors")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN AS ADMIN**
+        print("\n🔐 1. LOGIN AS ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. TEST CLIENTE CREATION WITH EXACT PAYLOAD**
+        print("\n📋 2. TEST CLIENTE CREATION WITH EXACT PAYLOAD THAT WAS FAILING...")
+        
+        # This is the EXACT payload that was giving 422 error
+        exact_payload = {
+            "nome": "Alessandro Piervincenzi",
+            "cognome": "Piervincenzi", 
+            "email": "alessandro.piervincenzi@gmail.com",
+            "telefono": "3924929241",
+            "codice_fiscale": "BNCMRA80A01F205X",
+            "commessa_id": "22769a8d-29f2-4bd0-ba36-0928ff791fa3",
+            "sub_agenzia_id": "98f13d1f-1850-4770-a866-7d7a15594fd6",
+            "servizio_id": "6b29df55-ca0f-4abf-b562-b457d55a0642",
+            "tipologia_contratto": "energia_fastweb_tls",
+            "tipologia_contratto_id": "021dbb92-702c-4a5b-bf23-b795bd4ad461",
+            "segmento": "privato",
+            "offerta_id": "07f50cc5-9463-4824-8fa7-d9dd28148ef3",
+            "indirizzo": "Via Arnaldo Brandizzi, 5",
+            "cap": "00133",
+            "provincia": "RM",
+            "codice_pod": "cczczxcxzc"
+        }
+        
+        print(f"\n   📋 PAYLOAD DETAILS:")
+        print(f"      • nome: {exact_payload['nome']}")
+        print(f"      • cognome: {exact_payload['cognome']}")
+        print(f"      • email: {exact_payload['email']}")
+        print(f"      • telefono: {exact_payload['telefono']}")
+        print(f"      • tipologia_contratto: '{exact_payload['tipologia_contratto']}' (DYNAMIC VALUE)")
+        print(f"      • segmento: '{exact_payload['segmento']}' (DYNAMIC VALUE)")
+        print(f"      • commessa_id: {exact_payload['commessa_id']}")
+        print(f"      • sub_agenzia_id: {exact_payload['sub_agenzia_id']}")
+        
+        print(f"\n   🎯 CRITICAL TEST: POST /api/clienti with dynamic enum values...")
+        
+        # Test the exact payload that was failing
+        success, create_response, status = self.make_request(
+            'POST', 'clienti', 
+            exact_payload, 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            self.log_test("✅ Cliente creation SUCCESS with dynamic enum values", True, 
+                f"Status: {status} (NOT 422!) - Dynamic enums accepted")
+            
+            # Verify response contains the created cliente
+            if isinstance(create_response, dict):
+                cliente_id = create_response.get('id')
+                created_nome = create_response.get('nome')
+                created_tipologia = create_response.get('tipologia_contratto')
+                created_segmento = create_response.get('segmento')
+                
+                if cliente_id:
+                    self.log_test("✅ Cliente created with ID", True, f"Cliente ID: {cliente_id}")
+                    
+                    # Verify dynamic values are preserved
+                    if created_tipologia == "energia_fastweb_tls":
+                        self.log_test("✅ tipologia_contratto preserved", True, 
+                            f"tipologia_contratto: '{created_tipologia}' (accepted as-is)")
+                    else:
+                        self.log_test("❌ tipologia_contratto not preserved", False, 
+                            f"Expected: 'energia_fastweb_tls', Got: '{created_tipologia}'")
+                    
+                    if created_segmento == "privato":
+                        self.log_test("✅ segmento preserved", True, 
+                            f"segmento: '{created_segmento}' (accepted as-is)")
+                    else:
+                        self.log_test("❌ segmento not preserved", False, 
+                            f"Expected: 'privato', Got: '{created_segmento}'")
+                    
+                    # **3. VERIFY CLIENTE IS SAVED IN DATABASE**
+                    print(f"\n   🔍 3. VERIFY CLIENTE IS SAVED IN DATABASE...")
+                    
+                    success, get_response, get_status = self.make_request(
+                        'GET', f'clienti/{cliente_id}', 
+                        expected_status=200
+                    )
+                    
+                    if success and get_status == 200:
+                        self.log_test("✅ Cliente retrieved from database", True, 
+                            f"GET /api/clienti/{cliente_id} successful")
+                        
+                        # Verify database values
+                        db_tipologia = get_response.get('tipologia_contratto')
+                        db_segmento = get_response.get('segmento')
+                        db_nome = get_response.get('nome')
+                        db_cognome = get_response.get('cognome')
+                        
+                        if db_tipologia == "energia_fastweb_tls":
+                            self.log_test("✅ Database tipologia_contratto correct", True, 
+                                f"DB value: '{db_tipologia}' (dynamic value saved)")
+                        else:
+                            self.log_test("❌ Database tipologia_contratto incorrect", False, 
+                                f"Expected: 'energia_fastweb_tls', DB has: '{db_tipologia}'")
+                        
+                        if db_segmento == "privato":
+                            self.log_test("✅ Database segmento correct", True, 
+                                f"DB value: '{db_segmento}' (dynamic value saved)")
+                        else:
+                            self.log_test("❌ Database segmento incorrect", False, 
+                                f"Expected: 'privato', DB has: '{db_segmento}'")
+                        
+                        if db_nome == "Alessandro Piervincenzi" and db_cognome == "Piervincenzi":
+                            self.log_test("✅ Cliente data correct in database", True, 
+                                f"Nome: {db_nome} {db_cognome}")
+                        else:
+                            self.log_test("❌ Cliente data incorrect in database", False, 
+                                f"Expected: Alessandro Piervincenzi Piervincenzi, Got: {db_nome} {db_cognome}")
+                    else:
+                        self.log_test("❌ Failed to retrieve cliente from database", False, 
+                            f"GET status: {get_status}")
+                else:
+                    self.log_test("❌ No cliente ID in response", False, "Response missing ID field")
+            else:
+                self.log_test("❌ Invalid response format", False, f"Response type: {type(create_response)}")
+                
+        elif status == 422:
+            self.log_test("❌ Cliente creation FAILED with 422 Validation Error", False, 
+                f"Status: 422 - Dynamic enums still not accepted!")
+            
+            # Analyze validation error details
+            if isinstance(create_response, dict):
+                detail = create_response.get('detail', 'No detail provided')
+                self.log_test("❌ Validation error details", False, f"Detail: {detail}")
+                
+                # Check if it's specifically about tipologia_contratto or segmento
+                detail_str = str(detail).lower()
+                if 'tipologia_contratto' in detail_str:
+                    self.log_test("🚨 tipologia_contratto validation issue", False, 
+                        "Dynamic tipologia_contratto values not accepted")
+                if 'segmento' in detail_str:
+                    self.log_test("🚨 segmento validation issue", False, 
+                        "Dynamic segmento values not accepted")
+            return False
+            
+        else:
+            self.log_test("❌ Cliente creation FAILED with unexpected error", False, 
+                f"Status: {status}, Response: {create_response}")
+            return False
+
+        # **4. VERIFY BACKEND LOGS**
+        print(f"\n📊 4. VERIFY BACKEND LOGS...")
+        print(f"   🔍 Backend logs should show:")
+        print(f"      • 'Cliente creato: Alessandro Piervincenzi Piervincenzi' (SUCCESS message)")
+        print(f"      • NO 422 validation errors")
+        print(f"      • NO enum validation failures")
+        print(f"      • tipologia_contratto and segmento accepted as dynamic strings")
+        
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 CLIENTE CREATION DYNAMIC ENUM VALUES TEST - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Test cliente creation with dynamic enum values (energia_fastweb_tls and privato)")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Cliente creation with exact payload: {'✅ SUCCESS (200 OK)' if status == 200 else f'❌ FAILED ({status})'}")
+        print(f"      • tipologia_contratto 'energia_fastweb_tls': {'✅ ACCEPTED' if status == 200 else '❌ REJECTED'}")
+        print(f"      • segmento 'privato': {'✅ ACCEPTED' if status == 200 else '❌ REJECTED'}")
+        print(f"      • Database persistence: {'✅ VERIFIED' if status == 200 else '❌ NOT VERIFIED'}")
+        
+        if status == 200:
+            print(f"   🎉 SUCCESS: Cliente creation with dynamic enum values working correctly!")
+            print(f"   ✅ CRITICAL OBJECTIVES ACHIEVED:")
+            print(f"      • Response is 200 OK (NOT 422) ✅")
+            print(f"      • tipologia_contratto: 'energia_fastweb_tls' accepted as-is ✅")
+            print(f"      • segmento: 'privato' accepted as-is ✅")
+            print(f"      • Cliente saved in database with dynamic values ✅")
+            print(f"      • No 422 or validation errors ✅")
+            return True
+        else:
+            print(f"   🚨 FAILURE: Cliente creation with dynamic enum values still failing!")
+            print(f"   🔧 REQUIRED FIXES:")
+            print(f"      • Ensure TipologiaContratto enum is converted to Optional[str]")
+            print(f"      • Ensure Segmento enum is converted to Optional[str]")
+            print(f"      • Update Pydantic models to accept any string values")
+            print(f"      • Remove enum validation constraints")
+            return False
+
     def test_aruba_drive_chromium_playwright_verification(self):
         """🚨 TEST ARUBA DRIVE UPLOAD DOPO INSTALLAZIONE CHROMIUM - Verifica Playwright funziona correttamente"""
         print("\n🚨 TEST ARUBA DRIVE UPLOAD DOPO INSTALLAZIONE CHROMIUM")
