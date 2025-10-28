@@ -38678,6 +38678,341 @@ startxref
         
         return True
 
+    def test_f2f_sub_agenzia_services_verification(self):
+        """🚨 VERIFICA SERVIZI AUTORIZZATI PER SUB AGENZIA F2F - Test specifico per il problema segnalato"""
+        print("\n🚨 VERIFICA SERVIZI AUTORIZZATI PER SUB AGENZIA F2F")
+        print("🎯 PROBLEMA SEGNALATO: La sub agenzia F2F dovrebbe avere solo il servizio 'TLS' autorizzato,")
+        print("   ma nel frontend vede tutti i servizi della commessa Fastweb.")
+        print("🎯 OBIETTIVO: Identificare se il problema è nel backend (servizi_autorizzati errato) o nel frontend")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN AS ADMIN**
+        print("\n🔐 1. LOGIN AS ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. TROVA SUB AGENZIA F2F**
+        print("\n🔍 2. TROVA SUB AGENZIA F2F...")
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            self.log_test("✅ GET /api/sub-agenzie", True, f"Found {len(sub_agenzie)} sub agenzie")
+            
+            # Find F2F sub agenzia
+            f2f_sub_agenzia = None
+            for sub_agenzia in sub_agenzie:
+                nome = sub_agenzia.get('nome', '').upper()
+                if 'F2F' in nome:
+                    f2f_sub_agenzia = sub_agenzia
+                    break
+            
+            if f2f_sub_agenzia:
+                f2f_id = f2f_sub_agenzia.get('id')
+                f2f_nome = f2f_sub_agenzia.get('nome')
+                f2f_servizi_autorizzati = f2f_sub_agenzia.get('servizi_autorizzati', [])
+                
+                self.log_test("✅ Found F2F sub agenzia", True, 
+                    f"Nome: {f2f_nome}, ID: {f2f_id[:8]}..., Servizi autorizzati: {len(f2f_servizi_autorizzati)}")
+                
+                print(f"\n   📋 F2F SUB AGENZIA DETAILS:")
+                print(f"      • Nome: {f2f_nome}")
+                print(f"      • ID: {f2f_id}")
+                print(f"      • Servizi autorizzati: {f2f_servizi_autorizzati}")
+                print(f"      • Numero servizi autorizzati: {len(f2f_servizi_autorizzati)}")
+                
+                if len(f2f_servizi_autorizzati) == 1:
+                    self.log_test("✅ F2F has exactly 1 authorized service", True, 
+                        f"Expected: 1 service (TLS only), Found: {len(f2f_servizi_autorizzati)}")
+                elif len(f2f_servizi_autorizzati) == 0:
+                    self.log_test("❌ F2F has NO authorized services", False, 
+                        f"Expected: 1 service (TLS), Found: 0 services")
+                else:
+                    self.log_test("❌ F2F has TOO MANY authorized services", False, 
+                        f"Expected: 1 service (TLS only), Found: {len(f2f_servizi_autorizzati)} services")
+                
+            else:
+                self.log_test("❌ F2F sub agenzia not found", False, 
+                    f"Could not find sub agenzia with 'F2F' in name among {len(sub_agenzie)} sub agenzie")
+                print(f"   Available sub agenzie: {[sa.get('nome') for sa in sub_agenzie]}")
+                return False
+        else:
+            self.log_test("❌ GET /api/sub-agenzie failed", False, f"Status: {status}")
+            return False
+
+        # **3. TROVA SERVIZIO TLS**
+        print("\n🔍 3. TROVA SERVIZIO TLS...")
+        
+        # First get commesse to find Fastweb
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if success and status == 200:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            
+            # Find Fastweb commessa
+            fastweb_commessa = None
+            for commessa in commesse:
+                nome = commessa.get('nome', '').upper()
+                if 'FASTWEB' in nome:
+                    fastweb_commessa = commessa
+                    break
+            
+            if fastweb_commessa:
+                fastweb_id = fastweb_commessa.get('id')
+                fastweb_nome = fastweb_commessa.get('nome')
+                
+                self.log_test("✅ Found Fastweb commessa", True, 
+                    f"Nome: {fastweb_nome}, ID: {fastweb_id[:8]}...")
+                
+                # Get servizi for Fastweb commessa
+                success, servizi_response, status = self.make_request('GET', 'servizi', expected_status=200)
+                
+                if success and status == 200:
+                    all_servizi = servizi_response if isinstance(servizi_response, list) else []
+                    
+                    # Filter servizi for Fastweb commessa
+                    fastweb_servizi = [s for s in all_servizi if s.get('commessa_id') == fastweb_id]
+                    
+                    self.log_test("✅ GET /api/servizi", True, 
+                        f"Total servizi: {len(all_servizi)}, Fastweb servizi: {len(fastweb_servizi)}")
+                    
+                    # Find TLS service
+                    tls_servizio = None
+                    for servizio in fastweb_servizi:
+                        nome = servizio.get('nome', '').upper()
+                        if 'TLS' in nome:
+                            tls_servizio = servizio
+                            break
+                    
+                    if tls_servizio:
+                        tls_id = tls_servizio.get('id')
+                        tls_nome = tls_servizio.get('nome')
+                        
+                        self.log_test("✅ Found TLS service", True, 
+                            f"Nome: {tls_nome}, ID: {tls_id[:8]}...")
+                        
+                        print(f"\n   📋 TLS SERVICE DETAILS:")
+                        print(f"      • Nome: {tls_nome}")
+                        print(f"      • ID: {tls_id}")
+                        print(f"      • Commessa: {fastweb_nome}")
+                        
+                        # **4. VERIFICA CHE TLS SIA IN F2F SERVIZI_AUTORIZZATI**
+                        print(f"\n🔍 4. VERIFICA CHE TLS SIA IN F2F SERVIZI_AUTORIZZATI...")
+                        
+                        if tls_id in f2f_servizi_autorizzati:
+                            self.log_test("✅ TLS service is in F2F authorized services", True, 
+                                f"TLS ID {tls_id[:8]}... found in F2F servizi_autorizzati")
+                        else:
+                            self.log_test("❌ TLS service NOT in F2F authorized services", False, 
+                                f"TLS ID {tls_id[:8]}... NOT found in F2F servizi_autorizzati: {f2f_servizi_autorizzati}")
+                        
+                    else:
+                        self.log_test("❌ TLS service not found", False, 
+                            f"Could not find service with 'TLS' in name among {len(fastweb_servizi)} Fastweb services")
+                        print(f"   Available Fastweb servizi: {[s.get('nome') for s in fastweb_servizi]}")
+                        return False
+                else:
+                    self.log_test("❌ GET /api/servizi failed", False, f"Status: {status}")
+                    return False
+            else:
+                self.log_test("❌ Fastweb commessa not found", False, 
+                    f"Could not find commessa with 'FASTWEB' in name among {len(commesse)} commesse")
+                print(f"   Available commesse: {[c.get('nome') for c in commesse]}")
+                return False
+        else:
+            self.log_test("❌ GET /api/commesse failed", False, f"Status: {status}")
+            return False
+
+        # **5. TEST ENDPOINT SERVIZI BY SUB AGENZIA**
+        print(f"\n🔍 5. TEST ENDPOINT SERVIZI BY SUB AGENZIA...")
+        
+        success, servizi_by_sub_response, status = self.make_request(
+            'GET', f'cascade/servizi-by-sub-agenzia/{f2f_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            servizi_filtrati = servizi_by_sub_response if isinstance(servizi_by_sub_response, list) else []
+            
+            self.log_test("✅ GET /api/cascade/servizi-by-sub-agenzia", True, 
+                f"Endpoint working, returned {len(servizi_filtrati)} servizi")
+            
+            print(f"\n   📋 SERVIZI FILTRATI PER F2F:")
+            print(f"      • Numero servizi restituiti: {len(servizi_filtrati)}")
+            
+            if len(servizi_filtrati) == 1:
+                self.log_test("✅ F2F endpoint returns exactly 1 service", True, 
+                    f"Expected: 1 service (TLS only), Got: {len(servizi_filtrati)}")
+                
+                # Verify it's the TLS service
+                returned_servizio = servizi_filtrati[0]
+                returned_id = returned_servizio.get('id')
+                returned_nome = returned_servizio.get('nome', '')
+                
+                print(f"      • Servizio restituito: {returned_nome} (ID: {returned_id[:8]}...)")
+                
+                if returned_id == tls_id:
+                    self.log_test("✅ Returned service is TLS", True, 
+                        f"Service ID matches TLS: {returned_id[:8]}...")
+                else:
+                    self.log_test("❌ Returned service is NOT TLS", False, 
+                        f"Expected TLS ID: {tls_id[:8]}..., Got: {returned_id[:8]}...")
+                
+                if 'TLS' in returned_nome.upper():
+                    self.log_test("✅ Returned service name contains TLS", True, 
+                        f"Service name: {returned_nome}")
+                else:
+                    self.log_test("❌ Returned service name does NOT contain TLS", False, 
+                        f"Service name: {returned_nome}")
+                
+            elif len(servizi_filtrati) == 0:
+                self.log_test("❌ F2F endpoint returns NO services", False, 
+                    f"Expected: 1 service (TLS), Got: 0 services - CRITICAL ISSUE!")
+            else:
+                self.log_test("❌ F2F endpoint returns TOO MANY services", False, 
+                    f"Expected: 1 service (TLS only), Got: {len(servizi_filtrati)} services - PROBLEM CONFIRMED!")
+                
+                print(f"      • PROBLEMA IDENTIFICATO: F2F vede troppi servizi!")
+                for i, servizio in enumerate(servizi_filtrati, 1):
+                    nome = servizio.get('nome', 'Unknown')
+                    servizio_id = servizio.get('id', 'No ID')
+                    print(f"         {i}. {nome} (ID: {servizio_id[:8]}...)")
+        else:
+            self.log_test("❌ GET /api/cascade/servizi-by-sub-agenzia failed", False, f"Status: {status}")
+            return False
+
+        # **6. CONFRONTA CON SERVIZI TOTALI COMMESSA**
+        print(f"\n🔍 6. CONFRONTA CON SERVIZI TOTALI COMMESSA...")
+        
+        success, servizi_by_commessa_response, status = self.make_request(
+            'GET', f'cascade/servizi-by-commessa/{fastweb_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            servizi_totali = servizi_by_commessa_response if isinstance(servizi_by_commessa_response, list) else []
+            
+            self.log_test("✅ GET /api/cascade/servizi-by-commessa", True, 
+                f"Total Fastweb services: {len(servizi_totali)}")
+            
+            print(f"\n   📊 CONFRONTO SERVIZI:")
+            print(f"      • Servizi totali Fastweb: {len(servizi_totali)}")
+            print(f"      • Servizi filtrati F2F: {len(servizi_filtrati)}")
+            print(f"      • Differenza: {len(servizi_totali) - len(servizi_filtrati)}")
+            
+            if len(servizi_totali) > len(servizi_filtrati):
+                self.log_test("✅ Filtering is working", True, 
+                    f"F2F sees fewer services ({len(servizi_filtrati)}) than total ({len(servizi_totali)})")
+            elif len(servizi_totali) == len(servizi_filtrati):
+                self.log_test("❌ NO FILTERING - F2F sees ALL services", False, 
+                    f"F2F sees same number of services as total: {len(servizi_filtrati)} = {len(servizi_totali)}")
+            else:
+                self.log_test("⚠️ Unexpected result", True, 
+                    f"F2F sees more services than total? F2F: {len(servizi_filtrati)}, Total: {len(servizi_totali)}")
+            
+            # List all services for comparison
+            print(f"\n   📋 SERVIZI TOTALI FASTWEB:")
+            for i, servizio in enumerate(servizi_totali, 1):
+                nome = servizio.get('nome', 'Unknown')
+                servizio_id = servizio.get('id', 'No ID')
+                is_authorized = servizio_id in f2f_servizi_autorizzati
+                print(f"      {i}. {nome} (ID: {servizio_id[:8]}...) {'✅ AUTHORIZED' if is_authorized else '❌ NOT AUTHORIZED'}")
+        else:
+            self.log_test("❌ GET /api/cascade/servizi-by-commessa failed", False, f"Status: {status}")
+
+        # **7. DIAGNOSI FINALE**
+        print(f"\n🎯 7. DIAGNOSI FINALE...")
+        
+        total_time = time.time() - start_time
+        
+        # Determine the root cause
+        if len(f2f_servizi_autorizzati) == 1 and len(servizi_filtrati) == 1:
+            if 'tls_id' in locals() and f2f_servizi_autorizzati[0] == tls_id and servizi_filtrati[0].get('id') == tls_id:
+                diagnosis = "✅ BACKEND WORKING CORRECTLY"
+                issue_location = "FRONTEND"
+                explanation = "Backend correctly filters services - F2F has only TLS authorized and endpoint returns only TLS"
+            else:
+                diagnosis = "⚠️ PARTIAL BACKEND ISSUE"
+                issue_location = "BACKEND CONFIGURATION"
+                explanation = "F2F has 1 service authorized but it's not TLS or endpoint returns wrong service"
+        elif len(f2f_servizi_autorizzati) == 1 and len(servizi_filtrati) > 1:
+            diagnosis = "❌ BACKEND FILTERING ISSUE"
+            issue_location = "BACKEND ENDPOINT"
+            explanation = "F2F has only 1 service authorized but endpoint returns multiple services"
+        elif len(f2f_servizi_autorizzati) > 1:
+            diagnosis = "❌ BACKEND CONFIGURATION ISSUE"
+            issue_location = "BACKEND DATA"
+            explanation = "F2F has multiple services authorized instead of only TLS"
+        elif len(f2f_servizi_autorizzati) == 0:
+            diagnosis = "❌ BACKEND CONFIGURATION ISSUE"
+            issue_location = "BACKEND DATA"
+            explanation = "F2F has no services authorized - should have TLS"
+        else:
+            diagnosis = "❌ UNKNOWN ISSUE"
+            issue_location = "UNKNOWN"
+            explanation = "Unexpected configuration state"
+        
+        print(f"\n🎯 VERIFICA SERVIZI AUTORIZZATI F2F - DIAGNOSI FINALE:")
+        print(f"   🎯 PROBLEMA: F2F dovrebbe vedere solo TLS ma vede tutti i servizi Fastweb")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login: ✅ SUCCESS")
+        print(f"      • F2F sub agenzia trovata: ✅ {f2f_nome}")
+        print(f"      • F2F servizi_autorizzati: {len(f2f_servizi_autorizzati)} servizi")
+        print(f"      • TLS servizio trovato: ✅ {tls_nome if 'tls_nome' in locals() else 'N/A'}")
+        print(f"      • TLS in F2F autorizzati: {'✅ YES' if 'tls_id' in locals() and tls_id in f2f_servizi_autorizzati else '❌ NO'}")
+        print(f"      • Endpoint servizi-by-sub-agenzia: {len(servizi_filtrati)} servizi restituiti")
+        print(f"      • Servizi totali Fastweb: {len(servizi_totali) if 'servizi_totali' in locals() else 'N/A'}")
+        
+        print(f"\n   🎯 DIAGNOSI: {diagnosis}")
+        print(f"   🎯 PROBLEMA LOCALIZZATO IN: {issue_location}")
+        print(f"   🎯 SPIEGAZIONE: {explanation}")
+        
+        if issue_location == "FRONTEND":
+            print(f"\n   💡 RACCOMANDAZIONI:")
+            print(f"      • Il backend funziona correttamente")
+            print(f"      • Verificare la logica frontend che chiama /api/cascade/servizi-by-sub-agenzia")
+            print(f"      • Controllare se il frontend usa l'endpoint corretto")
+            print(f"      • Verificare se ci sono chiamate multiple o cache che mostrano servizi extra")
+        elif issue_location == "BACKEND ENDPOINT":
+            print(f"\n   🔧 RACCOMANDAZIONI:")
+            print(f"      • Verificare implementazione /api/cascade/servizi-by-sub-agenzia")
+            print(f"      • Controllare filtro per servizi_autorizzati")
+            print(f"      • Verificare query MongoDB per il filtro")
+        elif issue_location == "BACKEND DATA":
+            print(f"\n   🔧 RACCOMANDAZIONI:")
+            print(f"      • Aggiornare F2F.servizi_autorizzati per includere solo TLS ID")
+            print(f"      • Verificare configurazione sub agenzia nel database")
+            print(f"      • Controllare processo di assegnazione servizi autorizzati")
+        
+        # Calculate success rate
+        expected_behavior = (len(f2f_servizi_autorizzati) == 1 and 
+                           len(servizi_filtrati) == 1 and 
+                           'tls_id' in locals() and 
+                           f2f_servizi_autorizzati[0] == tls_id and 
+                           servizi_filtrati[0].get('id') == tls_id)
+        
+        if expected_behavior:
+            print(f"\n   🎉 SUCCESS: Backend configuration and filtering working correctly!")
+            print(f"   💡 CONCLUSION: The issue is likely in the frontend - check how it calls the API")
+            return True
+        else:
+            print(f"\n   🚨 ISSUE CONFIRMED: Backend has configuration or filtering problems")
+            print(f"   🔧 ACTION REQUIRED: Fix backend configuration or endpoint implementation")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
