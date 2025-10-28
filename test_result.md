@@ -1143,7 +1143,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "F2F Service Authorization Fix - Update to Only TLS Service"
+    - "Sistema Sotto-Offerte Completo - Creazione e Visualizzazione"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
