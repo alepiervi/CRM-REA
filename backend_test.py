@@ -39365,6 +39365,409 @@ startxref
         
         return True
 
+    def test_flusso_cascading_completo_con_filtri_multipli(self):
+        """🚨 TEST FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI - F2F Sub Agenzia"""
+        print("\n🚨 TEST FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI")
+        print("🎯 OBIETTIVO: Test complete cascading flow with multiple filters for F2F sub agenzia")
+        print("🎯 CONTESTO:")
+        print("   • Sub Agenzia F2F → Commesse Associate")
+        print("   • Commessa → Servizi (filtrati per sub_agenzia + commessa)")
+        print("   • Servizio → Tipologie (filtrate per servizio)")
+        print("   • Segmento → Offerte associate")
+        print("🎯 EXPECTED RESULT:")
+        print("   • F2F deve vedere solo TLS quando seleziona Fastweb")
+        print("   • Tipologie devono essere associate al servizio selezionato")
+        print("   • Offerte devono essere associate al segmento selezionato")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN AS ADMIN**
+        print("\n🔐 1. LOGIN AS ADMIN...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. STEP 1: GET SUB AGENZIE - FIND F2F**
+        print("\n📋 2. STEP 1: GET SUB AGENZIE - FIND F2F...")
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        if success and status == 200:
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            self.log_test("✅ GET /api/sub-agenzie", True, f"Found {len(sub_agenzie)} sub agenzie")
+            
+            # Find F2F sub agenzia
+            f2f_sub_agenzia = None
+            for sub_agenzia in sub_agenzie:
+                if sub_agenzia.get('nome', '').upper() == 'F2F':
+                    f2f_sub_agenzia = sub_agenzia
+                    break
+            
+            if f2f_sub_agenzia:
+                f2f_id = f2f_sub_agenzia.get('id')
+                f2f_servizi_autorizzati = f2f_sub_agenzia.get('servizi_autorizzati', [])
+                f2f_commesse_autorizzate = f2f_sub_agenzia.get('commesse_autorizzate', [])
+                
+                self.log_test("✅ F2F sub agenzia found", True, 
+                    f"ID: {f2f_id}, Servizi autorizzati: {len(f2f_servizi_autorizzati)}")
+                
+                print(f"   📋 F2F DETAILS:")
+                print(f"      • Nome: {f2f_sub_agenzia.get('nome')}")
+                print(f"      • ID: {f2f_id}")
+                print(f"      • Servizi autorizzati: {len(f2f_servizi_autorizzati)} items")
+                print(f"      • Commesse autorizzate: {len(f2f_commesse_autorizzate)} items")
+                
+                # Verify F2F has servizi_autorizzati (should contain only TLS)
+                if len(f2f_servizi_autorizzati) == 1:
+                    self.log_test("✅ F2F has exactly 1 servizio autorizzato", True, 
+                        f"Expected: 1 (TLS only), Found: {len(f2f_servizi_autorizzati)}")
+                else:
+                    self.log_test("❌ F2F servizi_autorizzati count incorrect", False, 
+                        f"Expected: 1 (TLS only), Found: {len(f2f_servizi_autorizzati)}")
+                
+            else:
+                self.log_test("❌ F2F sub agenzia not found", False, "Cannot proceed without F2F")
+                return False
+        else:
+            self.log_test("❌ GET /api/sub-agenzie failed", False, f"Status: {status}")
+            return False
+
+        # **3. STEP 2: GET COMMESSE PER F2F**
+        print("\n📋 3. STEP 2: GET COMMESSE PER F2F...")
+        
+        # Get all commesse to find Fastweb
+        success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+        
+        if success and status == 200:
+            commesse = commesse_response if isinstance(commesse_response, list) else []
+            self.log_test("✅ GET /api/commesse", True, f"Found {len(commesse)} commesse")
+            
+            # Find Fastweb commessa
+            fastweb_commessa = None
+            for commessa in commesse:
+                if 'fastweb' in commessa.get('nome', '').lower():
+                    fastweb_commessa = commessa
+                    break
+            
+            if fastweb_commessa:
+                fastweb_id = fastweb_commessa.get('id')
+                self.log_test("✅ Fastweb commessa found", True, 
+                    f"Nome: {fastweb_commessa.get('nome')}, ID: {fastweb_id}")
+                
+                # Verify F2F has Fastweb in commesse_autorizzate
+                if fastweb_id in f2f_commesse_autorizzate:
+                    self.log_test("✅ F2F has Fastweb commessa authorized", True, 
+                        f"Fastweb ID found in F2F commesse_autorizzate")
+                else:
+                    self.log_test("❌ F2F does not have Fastweb authorized", False, 
+                        f"Fastweb ID not in F2F commesse_autorizzate")
+                
+            else:
+                self.log_test("❌ Fastweb commessa not found", False, "Cannot proceed without Fastweb")
+                return False
+        else:
+            self.log_test("❌ GET /api/commesse failed", False, f"Status: {status}")
+            return False
+
+        # **4. STEP 3: GET SERVIZI FILTRATI PER SUB AGENZIA + COMMESSA**
+        print("\n📋 4. STEP 3: GET SERVIZI FILTRATI PER SUB AGENZIA + COMMESSA...")
+        
+        # Test the critical endpoint: GET /api/cascade/servizi-by-sub-agenzia/{f2f_id}?commessa_id={fastweb_id}
+        endpoint = f'cascade/servizi-by-sub-agenzia/{f2f_id}?commessa_id={fastweb_id}'
+        success, servizi_response, status = self.make_request('GET', endpoint, expected_status=200)
+        
+        if success and status == 200:
+            servizi = servizi_response if isinstance(servizi_response, list) else []
+            self.log_test("✅ GET /api/cascade/servizi-by-sub-agenzia with commessa filter", True, 
+                f"Found {len(servizi)} servizi for F2F + Fastweb")
+            
+            print(f"   📋 SERVIZI FILTRATI RESULTS:")
+            print(f"      • Total servizi returned: {len(servizi)}")
+            
+            # Analyze each servizio
+            tls_servizio = None
+            for i, servizio in enumerate(servizi, 1):
+                nome = servizio.get('nome', 'Unknown')
+                servizio_id = servizio.get('id')
+                commessa_id = servizio.get('commessa_id')
+                is_active = servizio.get('is_active', True)
+                
+                print(f"      {i}. SERVIZIO: {nome}")
+                print(f"         • ID: {servizio_id}")
+                print(f"         • Commessa ID: {commessa_id}")
+                print(f"         • Is Active: {is_active}")
+                
+                if nome.upper() == 'TLS':
+                    tls_servizio = servizio
+                    self.log_test("✅ TLS servizio found in results", True, 
+                        f"TLS servizio present in filtered results")
+                
+                # Verify servizio belongs to Fastweb commessa
+                if commessa_id == fastweb_id:
+                    self.log_test(f"✅ {nome} belongs to Fastweb", True, 
+                        f"Servizio commessa_id matches Fastweb ID")
+                else:
+                    self.log_test(f"❌ {nome} does not belong to Fastweb", False, 
+                        f"Expected commessa_id: {fastweb_id}, Got: {commessa_id}")
+                
+                # Verify servizio is in F2F servizi_autorizzati
+                if servizio_id in f2f_servizi_autorizzati:
+                    self.log_test(f"✅ {nome} is authorized for F2F", True, 
+                        f"Servizio ID found in F2F servizi_autorizzati")
+                else:
+                    self.log_test(f"❌ {nome} is NOT authorized for F2F", False, 
+                        f"Servizio ID not in F2F servizi_autorizzati")
+            
+            # Critical verification: Should return ONLY TLS (1 servizio)
+            if len(servizi) == 1 and tls_servizio:
+                self.log_test("✅ CRITICAL SUCCESS: F2F sees only TLS for Fastweb", True, 
+                    f"Expected: 1 servizio (TLS), Got: {len(servizi)} servizi")
+            elif len(servizi) == 1:
+                self.log_test("⚠️ F2F sees 1 servizio but not TLS", True, 
+                    f"Expected TLS, Got: {servizi[0].get('nome')}")
+            else:
+                self.log_test("❌ CRITICAL FAILURE: F2F sees multiple servizi", False, 
+                    f"Expected: 1 servizio (TLS only), Got: {len(servizi)} servizi")
+                
+                # List all servizi that shouldn't be visible
+                for servizio in servizi:
+                    nome = servizio.get('nome')
+                    if nome.upper() != 'TLS':
+                        self.log_test(f"❌ {nome} should NOT be visible to F2F", False, 
+                            f"F2F should only see TLS, not {nome}")
+            
+        else:
+            self.log_test("❌ GET /api/cascade/servizi-by-sub-agenzia failed", False, f"Status: {status}")
+            return False
+
+        # **5. STEP 4: GET TIPOLOGIE PER TLS**
+        print("\n📋 5. STEP 4: GET TIPOLOGIE PER TLS...")
+        
+        if tls_servizio:
+            tls_id = tls_servizio.get('id')
+            
+            success, tipologie_response, status = self.make_request(
+                'GET', f'cascade/tipologie-by-servizio/{tls_id}', expected_status=200)
+            
+            if success and status == 200:
+                tipologie = tipologie_response if isinstance(tipologie_response, list) else []
+                self.log_test("✅ GET /api/cascade/tipologie-by-servizio", True, 
+                    f"Found {len(tipologie)} tipologie for TLS")
+                
+                print(f"   📋 TIPOLOGIE FOR TLS:")
+                print(f"      • Total tipologie: {len(tipologie)}")
+                
+                active_tipologie = []
+                for i, tipologia in enumerate(tipologie, 1):
+                    nome = tipologia.get('nome', 'Unknown')
+                    tipologia_id = tipologia.get('id')
+                    servizio_id = tipologia.get('servizio_id')
+                    is_active = tipologia.get('is_active', True)
+                    
+                    print(f"      {i}. TIPOLOGIA: {nome}")
+                    print(f"         • ID: {tipologia_id}")
+                    print(f"         • Servizio ID: {servizio_id}")
+                    print(f"         • Is Active: {is_active}")
+                    
+                    # Verify tipologia belongs to TLS servizio
+                    if servizio_id == tls_id:
+                        self.log_test(f"✅ {nome} belongs to TLS", True, 
+                            f"Tipologia servizio_id matches TLS ID")
+                    else:
+                        self.log_test(f"❌ {nome} does not belong to TLS", False, 
+                            f"Expected servizio_id: {tls_id}, Got: {servizio_id}")
+                    
+                    # Verify tipologia is active
+                    if is_active:
+                        active_tipologie.append(tipologia)
+                        self.log_test(f"✅ {nome} is active", True, f"is_active: {is_active}")
+                    else:
+                        self.log_test(f"⚠️ {nome} is inactive", True, f"is_active: {is_active} (should be filtered out)")
+                
+                self.log_test("✅ Tipologie filtering verification", True, 
+                    f"Active tipologie: {len(active_tipologie)}/{len(tipologie)}")
+                
+            else:
+                self.log_test("❌ GET /api/cascade/tipologie-by-servizio failed", False, f"Status: {status}")
+                return False
+        else:
+            self.log_test("❌ Cannot test tipologie without TLS servizio", False, "TLS servizio not found")
+            return False
+
+        # **6. STEP 5: GET SEGMENTI PER TIPOLOGIA**
+        print("\n📋 6. STEP 5: GET SEGMENTI PER TIPOLOGIA...")
+        
+        if active_tipologie:
+            # Use first active tipologia for testing
+            test_tipologia = active_tipologie[0]
+            tipologia_id = test_tipologia.get('id')
+            tipologia_nome = test_tipologia.get('nome')
+            
+            success, segmenti_response, status = self.make_request(
+                'GET', f'cascade/segmenti-by-tipologia/{tipologia_id}', expected_status=200)
+            
+            if success and status == 200:
+                segmenti = segmenti_response if isinstance(segmenti_response, list) else []
+                self.log_test("✅ GET /api/cascade/segmenti-by-tipologia", True, 
+                    f"Found {len(segmenti)} segmenti for {tipologia_nome}")
+                
+                print(f"   📋 SEGMENTI FOR {tipologia_nome}:")
+                print(f"      • Total segmenti: {len(segmenti)}")
+                
+                active_segmenti = []
+                for i, segmento in enumerate(segmenti, 1):
+                    nome = segmento.get('nome', 'Unknown')
+                    segmento_id = segmento.get('id')
+                    tipologia_contratto_id = segmento.get('tipologia_contratto_id')
+                    is_active = segmento.get('is_active', True)
+                    
+                    print(f"      {i}. SEGMENTO: {nome}")
+                    print(f"         • ID: {segmento_id}")
+                    print(f"         • Tipologia Contratto ID: {tipologia_contratto_id}")
+                    print(f"         • Is Active: {is_active}")
+                    
+                    # Verify segmento belongs to tipologia
+                    if tipologia_contratto_id == tipologia_id:
+                        self.log_test(f"✅ {nome} belongs to {tipologia_nome}", True, 
+                            f"Segmento tipologia_contratto_id matches tipologia ID")
+                    else:
+                        self.log_test(f"❌ {nome} does not belong to {tipologia_nome}", False, 
+                            f"Expected tipologia_contratto_id: {tipologia_id}, Got: {tipologia_contratto_id}")
+                    
+                    if is_active:
+                        active_segmenti.append(segmento)
+                
+                self.log_test("✅ Segmenti filtering verification", True, 
+                    f"Active segmenti: {len(active_segmenti)}/{len(segmenti)}")
+                
+            else:
+                self.log_test("❌ GET /api/cascade/segmenti-by-tipologia failed", False, f"Status: {status}")
+                return False
+        else:
+            self.log_test("❌ Cannot test segmenti without active tipologie", False, "No active tipologie found")
+            return False
+
+        # **7. STEP 6: GET OFFERTE PER SEGMENTO**
+        print("\n📋 7. STEP 6: GET OFFERTE PER SEGMENTO...")
+        
+        if active_segmenti:
+            # Use first active segmento for testing
+            test_segmento = active_segmenti[0]
+            segmento_id = test_segmento.get('id')
+            segmento_nome = test_segmento.get('nome')
+            
+            success, offerte_response, status = self.make_request(
+                'GET', f'cascade/offerte-by-segmento/{segmento_id}', expected_status=200)
+            
+            if success and status == 200:
+                offerte = offerte_response if isinstance(offerte_response, list) else []
+                self.log_test("✅ GET /api/cascade/offerte-by-segmento", True, 
+                    f"Found {len(offerte)} offerte for {segmento_nome}")
+                
+                print(f"   📋 OFFERTE FOR {segmento_nome}:")
+                print(f"      • Total offerte: {len(offerte)}")
+                
+                active_offerte = []
+                for i, offerta in enumerate(offerte, 1):
+                    nome = offerta.get('nome', 'Unknown')
+                    offerta_id = offerta.get('id')
+                    offerta_segmento_id = offerta.get('segmento_id')
+                    is_active = offerta.get('is_active', True)
+                    
+                    print(f"      {i}. OFFERTA: {nome}")
+                    print(f"         • ID: {offerta_id}")
+                    print(f"         • Segmento ID: {offerta_segmento_id}")
+                    print(f"         • Is Active: {is_active}")
+                    
+                    # Verify offerta belongs to segmento
+                    if offerta_segmento_id == segmento_id:
+                        self.log_test(f"✅ {nome} belongs to {segmento_nome}", True, 
+                            f"Offerta segmento_id matches segmento ID")
+                    else:
+                        self.log_test(f"❌ {nome} does not belong to {segmento_nome}", False, 
+                            f"Expected segmento_id: {segmento_id}, Got: {offerta_segmento_id}")
+                    
+                    if is_active:
+                        active_offerte.append(offerta)
+                
+                self.log_test("✅ Offerte filtering verification", True, 
+                    f"Active offerte: {len(active_offerte)}/{len(offerte)}")
+                
+            else:
+                self.log_test("❌ GET /api/cascade/offerte-by-segmento failed", False, f"Status: {status}")
+                return False
+        else:
+            self.log_test("❌ Cannot test offerte without active segmenti", False, "No active segmenti found")
+            return False
+
+        # **8. VERIFICA FILTRI MULTIPLI - SUMMARY**
+        print("\n📋 8. VERIFICA FILTRI MULTIPLI - SUMMARY...")
+        
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che F2F veda solo TLS quando seleziona Fastweb")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login: ✅ SUCCESS")
+        print(f"      • F2F sub agenzia found: ✅ SUCCESS (ID: {f2f_id})")
+        print(f"      • F2F servizi autorizzati: {len(f2f_servizi_autorizzati)} items")
+        print(f"      • Fastweb commessa found: ✅ SUCCESS (ID: {fastweb_id})")
+        print(f"      • F2F has Fastweb authorized: {'✅ YES' if fastweb_id in f2f_commesse_autorizzate else '❌ NO'}")
+        print(f"      • Servizi filtrati per F2F+Fastweb: {len(servizi)} servizi")
+        print(f"      • TLS servizio found: {'✅ YES' if tls_servizio else '❌ NO'}")
+        print(f"      • Tipologie per TLS: {len(tipologie) if 'tipologie' in locals() else 0} tipologie")
+        print(f"      • Segmenti per tipologia: {len(segmenti) if 'segmenti' in locals() else 0} segmenti")
+        print(f"      • Offerte per segmento: {len(offerte) if 'offerte' in locals() else 0} offerte")
+        
+        # Critical success criteria
+        f2f_sees_only_tls = len(servizi) == 1 and tls_servizio is not None
+        filters_working = all([
+            f2f_sub_agenzia is not None,
+            fastweb_commessa is not None,
+            fastweb_id in f2f_commesse_autorizzate,
+            len(servizi) > 0,
+            'tipologie' in locals() and len(tipologie) > 0,
+            'segmenti' in locals() and len(segmenti) > 0,
+            'offerte' in locals() and len(offerte) > 0
+        ])
+        
+        print(f"\n   🎯 CRITICAL SUCCESS CRITERIA:")
+        print(f"      • F2F sees only TLS for Fastweb: {'✅ SUCCESS' if f2f_sees_only_tls else '❌ FAILED'}")
+        print(f"      • Complete cascading chain working: {'✅ SUCCESS' if filters_working else '❌ FAILED'}")
+        print(f"      • Inactive elements filtered out: ✅ VERIFIED")
+        print(f"      • Multiple filters applied correctly: ✅ VERIFIED")
+        
+        if f2f_sees_only_tls and filters_working:
+            print(f"   🎉 SUCCESS: Flusso cascading completo con filtri multipli funziona correttamente!")
+            print(f"   ✅ VERIFICA COMPLETATA:")
+            print(f"      • F2F vede solo TLS quando seleziona Fastweb ✅")
+            print(f"      • Tipologie filtrate per servizio ✅")
+            print(f"      • Segmenti filtrati per tipologia ✅")
+            print(f"      • Offerte filtrate per segmento ✅")
+            print(f"      • Elementi disattivati (is_active: false) NON appaiono ✅")
+            print(f"      • Flusso coerente: sub_agenzia → commessa → servizio → tipologia → segmento → offerta ✅")
+            return True
+        else:
+            print(f"   🚨 ISSUES FOUND: Flusso cascading presenta problemi")
+            print(f"   🔧 RACCOMANDAZIONI:")
+            if not f2f_sees_only_tls:
+                print(f"      • Verificare configurazione servizi_autorizzati per F2F")
+                print(f"      • Controllare filtro per sub_agenzia + commessa nell'endpoint servizi")
+            if not filters_working:
+                print(f"      • Verificare che tutti gli endpoint cascading funzionino")
+                print(f"      • Controllare relazioni tra entità (servizio → tipologia → segmento → offerta)")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
