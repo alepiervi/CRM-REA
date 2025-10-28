@@ -7511,7 +7511,7 @@ async def delete_servizio(
     servizio_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Delete servizio completely"""
+    """Soft delete servizio (set is_active = False)"""
     
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -7524,29 +7524,35 @@ async def delete_servizio(
         
         servizio = Servizio(**servizio_doc)
         
-        # Check if there are associated tipologie contratto
-        tipologie_count = await db.tipologie_contratto.count_documents({"servizio_id": servizio_id})
-        if tipologie_count > 0:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Impossibile eliminare: servizio ha {tipologie_count} tipologie contratto associate"
-            )
+        # SOFT DELETE: Mark as inactive instead of deleting
+        result = await db.servizi.update_one(
+            {"id": servizio_id},
+            {
+                "$set": {
+                    "is_active": False,
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
         
-        # Check if there are associated clienti
-        clienti_count = await db.clienti.count_documents({"servizio_id": servizio_id})
-        if clienti_count > 0:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Impossibile eliminare: servizio ha {clienti_count} clienti associati"
-            )
-        
-        # Delete servizio
-        result = await db.servizi.delete_one({"id": servizio_id})
-        
-        if result.deleted_count == 0:
+        if result.modified_count == 0:
             raise HTTPException(status_code=404, detail="Servizio not found")
         
-        return {"success": True, "message": f"Servizio '{servizio.nome}' eliminato con successo"}
+        # Also mark associated tipologie as inactive
+        await db.tipologie_contratto.update_many(
+            {"servizio_id": servizio_id},
+            {
+                "$set": {
+                    "is_active": False,
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        return {
+            "success": True, 
+            "message": f"Servizio '{servizio.nome}' disattivato con successo (soft delete)"
+        }
         
     except HTTPException:
         raise
