@@ -39392,13 +39392,13 @@ startxref
         else:
             print("🚨 F2F SUB AGENZIA SERVICES VERIFICATION TEST: ❌ FAILED - BACKEND CONFIGURATION OR FILTERING ISSUES!")
         
-        if f2f_success:
-            print("\n🎉 OVERALL RESULT: ✅ F2F SUB AGENZIA SERVICES FILTERING WORKING CORRECTLY!")
-            print("💡 CONCLUSION: If frontend still shows all services, the issue is in frontend logic")
+        if soft_delete_success:
+            print("\n🎉 OVERALL RESULT: ✅ SOFT DELETE AND CASCADE FILTERS WORKING CORRECTLY!")
+            print("💡 CONCLUSION: Soft delete and cascade filtering implementation is functional")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ F2F SUB AGENZIA SERVICES FILTERING NEEDS BACKEND FIXES!")
+            print("\n🚨 OVERALL RESULT: ❌ SOFT DELETE AND CASCADE FILTERS NEED BACKEND FIXES!")
         
-        return f2f_success
+        return soft_delete_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
