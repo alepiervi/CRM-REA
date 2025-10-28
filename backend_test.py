@@ -39801,9 +39801,9 @@ startxref
             print("\n🎉 OVERALL RESULT: ✅ FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI WORKING CORRECTLY!")
             print("💡 CONCLUSION: Cascading flow with multiple filters implementation is functional")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ SOFT DELETE AND CASCADE FILTERS NEED BACKEND FIXES!")
+            print("\n🚨 OVERALL RESULT: ❌ FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI NEED BACKEND FIXES!")
         
-        return soft_delete_success
+        return cascading_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
