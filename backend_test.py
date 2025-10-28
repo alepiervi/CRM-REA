@@ -1342,8 +1342,8 @@ startxref
                 f"Status: {status}, Response: {create_response}")
             return False
 
-        # **4. VERIFY BACKEND LOGS**
-        print(f"\n📊 4. VERIFY BACKEND LOGS...")
+        # **5. VERIFY BACKEND LOGS**
+        print(f"\n📊 5. VERIFY BACKEND LOGS...")
         print(f"   🔍 Backend logs should show:")
         print(f"      • 'Cliente creato: Alessandro Piervincenzi Piervincenzi' (SUCCESS message)")
         print(f"      • NO 422 validation errors")
