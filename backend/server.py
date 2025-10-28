@@ -4350,11 +4350,9 @@ async def upload_document(
         if not entity:
             raise HTTPException(status_code=404, detail="Cliente not found")
         
-        # Check cliente access - NEW: Use can_user_access_cliente (no status check)
-        # This allows ALL users to upload documents even if status is "inserito"/"ko"
+        # Document uploads are universally permitted - ALL authenticated users can upload
+        # No access check needed for document upload
         cliente_obj = Cliente(**entity)
-        if not await can_user_access_cliente(current_user, cliente_obj):
-            raise HTTPException(status_code=403, detail="Access denied to this cliente")
     
     try:
         # NEW: Smart Aruba Drive Integration with per-commessa configuration
