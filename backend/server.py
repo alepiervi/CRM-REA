@@ -1125,9 +1125,9 @@ class ClienteUpdate(BaseModel):
     
     # Campi sistema esistenti
     servizio_id: Optional[str] = None
-    tipologia_contratto: Optional[TipologiaContratto] = None
+    tipologia_contratto: Optional[str] = None  # Dynamic field - accepts any user-created tipologia
     tipologia_contratto_id: Optional[str] = None  # ADDED: UUID for filtering offerte
-    segmento: Optional[Segmento] = None
+    segmento: Optional[str] = None  # Dynamic field - accepts any user-created segmento
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     status: Optional[ClienteStatus] = None
     note: Optional[str] = None
