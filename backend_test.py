@@ -39160,7 +39160,7 @@ startxref
         }
         
         success, create_tipologia_response, status = self.make_request(
-            'POST', f'servizi/{test_servizio_id}/tipologie-contratto', 
+            'POST', 'tipologie-contratto', 
             test_tipologia_data, 
             expected_status=200
         )
