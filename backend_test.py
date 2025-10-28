@@ -39369,12 +39369,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the F2F SUB AGENZIA SERVICES VERIFICATION TEST AS REQUESTED
+        # Run the SOFT DELETE AND CASCADE FILTERS TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING F2F SUB AGENZIA SERVICES VERIFICATION TEST - AS REQUESTED")
+        print("🎯 RUNNING SOFT DELETE AND CASCADE FILTERS TEST - AS REQUESTED")
         print("="*80)
         
-        f2f_success = self.test_f2f_sub_agenzia_services_verification()
+        soft_delete_success = self.test_soft_delete_and_cascade_filters()
 
         # Print final summary
         print("\n" + "=" * 80)
