@@ -20332,6 +20332,21 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       fetchSubOfferte(cliente.offerta_id);
     }
   }, [cliente?.offerta_id]);
+  
+  // NEW: Load servizio info when component mounts
+  useEffect(() => {
+    const fetchServizio = async () => {
+      if (cliente?.servizio_id) {
+        try {
+          const response = await axios.get(`${API}/servizi/${cliente.servizio_id}`);
+          setServizioInfo(response.data);
+        } catch (error) {
+          console.error("Error fetching servizio:", error);
+        }
+      }
+    };
+    fetchServizio();
+  }, [cliente?.servizio_id]);
 
   // Funzioni duplicate rimosse - ora definite prima del useEffect
 
