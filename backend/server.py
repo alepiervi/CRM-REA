@@ -7570,6 +7570,29 @@ async def delete_servizio(
         logger.error(f"Error deleting servizio: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione del servizio: {str(e)}")
 
+@api_router.get("/servizi/{servizio_id}")
+async def get_servizio_by_id(
+    servizio_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get a single servizio by ID"""
+    try:
+        servizio_doc = await db.servizi.find_one({"id": servizio_id})
+        if not servizio_doc:
+            raise HTTPException(status_code=404, detail="Servizio non trovato")
+        
+        # Remove MongoDB ObjectId
+        if '_id' in servizio_doc:
+            del servizio_doc['_id']
+        
+        return servizio_doc
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching servizio {servizio_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero del servizio: {str(e)}")
+
 @api_router.get("/commesse/{commessa_id}/servizi/{servizio_id}/units-sub-agenzie")
 async def get_units_sub_agenzie_by_commessa_servizio(
     commessa_id: str, 
