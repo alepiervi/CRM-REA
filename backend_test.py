@@ -39799,22 +39799,32 @@ startxref
             self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
             return False
 
-        # **2. TROVA UN SEGMENTO (GET /api/segmenti, prendi il primo)**
+        # **2. TROVA UN SEGMENTO (GET /api/offerte, prendi il segmento_id dal primo)**
         print("\n📋 2. TROVA UN SEGMENTO...")
-        success, segmenti_response, status = self.make_request('GET', 'segmenti', expected_status=200)
+        success, offerte_response, status = self.make_request('GET', 'offerte', expected_status=200)
         
         if success and status == 200:
-            segmenti = segmenti_response if isinstance(segmenti_response, list) else []
-            if len(segmenti) > 0:
-                target_segmento = segmenti[0]
-                segmento_id = target_segmento.get('id')
-                segmento_nome = target_segmento.get('nome', 'Unknown')
-                self.log_test("✅ Segmento trovato", True, f"Segmento: {segmento_nome}, ID: {segmento_id}")
+            offerte = offerte_response if isinstance(offerte_response, list) else []
+            if len(offerte) > 0:
+                # Find an offerta with a segmento_id
+                target_offerta = None
+                for offerta in offerte:
+                    if offerta.get('segmento_id'):
+                        target_offerta = offerta
+                        break
+                
+                if target_offerta:
+                    segmento_id = target_offerta.get('segmento_id')
+                    offerta_nome = target_offerta.get('nome', 'Unknown')
+                    self.log_test("✅ Segmento trovato da offerta esistente", True, f"Offerta: {offerta_nome}, Segmento ID: {segmento_id}")
+                else:
+                    self.log_test("❌ Nessun segmento_id trovato nelle offerte", False, "Cannot test without segmento_id")
+                    return False
             else:
-                self.log_test("❌ Nessun segmento trovato", False, "Cannot test without segmenti")
+                self.log_test("❌ Nessuna offerta trovata", False, "Cannot test without offerte")
                 return False
         else:
-            self.log_test("❌ GET /api/segmenti failed", False, f"Status: {status}")
+            self.log_test("❌ GET /api/offerte failed", False, f"Status: {status}")
             return False
 
         # **3. CREA UN'OFFERTA TEST CON SOTTO-OFFERTE**
