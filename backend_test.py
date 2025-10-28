@@ -39280,7 +39280,8 @@ startxref
         )
         
         if success and status == 200:
-            new_tipologia_id = new_tipologia_response.get('id')
+            new_tipologia_data = new_tipologia_response.get('tipologia', {})
+            new_tipologia_id = new_tipologia_data.get('id')
             self.log_test("✅ New test tipologia created", True, 
                 f"Nome: 'Test Tipologia Delete', ID: {new_tipologia_id}")
         else:
