@@ -3588,6 +3588,10 @@ async def login_for_access_token(form_data: UserLogin):
             if isinstance(password_last_changed, str):
                 password_last_changed = datetime.fromisoformat(password_last_changed.replace('Z', '+00:00'))
             
+            # Ensure password_last_changed is timezone-aware
+            if password_last_changed.tzinfo is None:
+                password_last_changed = password_last_changed.replace(tzinfo=timezone.utc)
+            
             # Calculate days since last password change
             days_since_change = (datetime.now(timezone.utc) - password_last_changed).days
             
