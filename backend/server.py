@@ -882,16 +882,18 @@ class ClienteStatus(str, Enum):
     PROVENIENTE_DA_ALTRO_CANALE = "proveniente_da_altro_canale"
     SCONTRINARE = "scontrinare"
 
-class TipologiaContratto(str, Enum):
-    ENERGIA_FASTWEB = "energia_fastweb"
-    TELEFONIA_FASTWEB = "telefonia_fastweb"
-    MOBILE_FASTWEB = "mobile_fastweb"
-    HO_MOBILE = "ho_mobile"
-    TELEPASS = "telepass"
+# REMOVED: Static enums replaced with dynamic string fields to support user-created values
+# TipologiaContratto and Segmento are now managed dynamically via database collections
+# class TipologiaContratto(str, Enum):
+#     ENERGIA_FASTWEB = "energia_fastweb"
+#     TELEFONIA_FASTWEB = "telefonia_fastweb"
+#     MOBILE_FASTWEB = "mobile_fastweb"
+#     HO_MOBILE = "ho_mobile"
+#     TELEPASS = "telepass"
 
-class Segmento(str, Enum):
-    PRIVATO = "privato"
-    BUSINESS = "business"
+# class Segmento(str, Enum):
+#     PRIVATO = "privato"
+#     BUSINESS = "business"
 
 class TipoDocumento(str, Enum):
     CARTA_IDENTITA = "carta_identita"
