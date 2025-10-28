@@ -15633,13 +15633,26 @@ async def get_servizi_by_sub_agenzia(
 @api_router.get("/cascade/tipologie-by-servizio/{servizio_id}")
 async def get_tipologie_autorizzate_by_servizio(
     servizio_id: str,
+    sub_agenzia_id: Optional[str] = None,  # NEW: Optional sub_agenzia filter
     current_user: User = Depends(get_current_user)
 ):
-    """Get tipologie contratto autorizzate for a specific servizio"""
+    """Get tipologie contratto autorizzate for a specific servizio, optionally filtered by sub_agenzia"""
     try:
         servizio = await db.servizi.find_one({"id": servizio_id})
         if not servizio:
             raise HTTPException(status_code=404, detail="Servizio non trovato")
+        
+        # If sub_agenzia_id is provided, verify that the servizio is authorized for this sub_agenzia
+        if sub_agenzia_id:
+            logging.info(f"🔍 CASCADE: Filtering tipologie for sub_agenzia: {sub_agenzia_id}")
+            sub_agenzia = await db.sub_agenzie.find_one({"id": sub_agenzia_id})
+            if not sub_agenzia:
+                raise HTTPException(status_code=404, detail="Sub agenzia non trovata")
+            
+            servizi_autorizzati = sub_agenzia.get("servizi_autorizzati", [])
+            if servizio_id not in servizi_autorizzati:
+                logging.warning(f"⚠️ CASCADE: Servizio {servizio_id} not authorized for sub_agenzia {sub_agenzia_id}")
+                return []
         
         # AUTO-DISCOVERY: Always find all tipologie for this servizio (no manual configuration needed)
         logging.info("🔄 CASCADE: Using auto-discovery to find all active tipologie for this servizio")
