@@ -1188,7 +1188,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Convergenza Items Offerta SIM Field - Backend Model Update"
+    - "Cascade Servizi Sub Agenzia Filtering - New Endpoint Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
