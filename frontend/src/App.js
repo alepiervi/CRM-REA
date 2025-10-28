@@ -19382,12 +19382,19 @@ const AppWithAuth = () => (
 const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) => {
   const [offertaInfo, setOffertaInfo] = useState(null);
   const [subOffertaInfo, setSubOffertaInfo] = useState(null);  // NEW: Sub-offerta info
+  const [servizioInfo, setServizioInfo] = useState(null);  // NEW: Servizio info
   
   if (!cliente) return null;
   
   const getCommessaName = (id) => commesse.find(c => c.id === id)?.nome || 'Non specificato';
   const getSubAgenziaName = (id) => subAgenzie.find(s => s.id === id)?.nome || 'Non specificato';
-  const getServizioName = (id) => servizi.find(s => s.id === id)?.nome || 'Non specificato';
+  const getServizioName = (id) => {
+    // Try to get from fetched info first, then from array, then fallback
+    if (servizioInfo && servizioInfo.id === id) {
+      return servizioInfo.nome;
+    }
+    return servizi.find(s => s.id === id)?.nome || 'Non specificato';
+  };
 
   // Fetch offerta info when component mounts
   useEffect(() => {
