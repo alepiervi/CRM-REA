@@ -16148,15 +16148,54 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
     };
     
     try {
+      console.log("🎁 Creating main offerta with has_sub_offerte:", formData.has_sub_offerte);
       const result = await onSubmit(mainOfferta);
+      console.log("✅ Main offerta created:", result);
       
       // If has sub-offerte, create them
       if (formData.has_sub_offerte && subOfferte.length > 0 && result && result.id) {
-        const API = import.meta.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL;
+        console.log(`📦 Creating ${subOfferte.length} sub-offerte for offerta ID:`, result.id);
+        
+        const API = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
         const token = localStorage.getItem('token');
         
         for (const subOff of subOfferte) {
-          await fetch(`${API}/api/offerte`, {
+          console.log("📦 Creating sub-offerta:", subOff.nome);
+          const response = await fetch(`${API}/api/offerte`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              nome: subOff.nome,
+              descrizione: subOff.descrizione,
+              segmento_id: segmentoId,
+              parent_offerta_id: result.id,
+              is_active: true,
+              has_sub_offerte: false
+            })
+          });
+          
+          if (response.ok) {
+            console.log("✅ Sub-offerta created:", subOff.nome);
+          } else {
+            console.error("❌ Failed to create sub-offerta:", subOff.nome, await response.text());
+          }
+        }
+      } else if (formData.has_sub_offerte && subOfferte.length === 0) {
+        console.warn("⚠️ has_sub_offerte is true but no sub-offerte added");
+      }
+    } catch (error) {
+      console.error("❌ Error creating offerta/sub-offerte:", error);
+    }
+    
+    // Reset form
+    setFormData({ nome: '', descrizione: '', is_active: true, has_sub_offerte: false });
+    setSubOfferte([]);
+    setNewSubOfferta({ nome: '', descrizione: '' });
+    onClose();
+  };
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
