@@ -1088,7 +1088,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Aruba Drive Upload Diagnosis - Document Upload Failure Investigation"
+    - "F2F Service Authorization Fix - Update to Only TLS Service"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
