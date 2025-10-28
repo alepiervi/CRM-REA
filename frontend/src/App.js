@@ -20075,11 +20075,30 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   };
 
+  const fetchSubOfferte = async (offertaId) => {
+    try {
+      console.log("📦 Loading sub-offerte for offerta:", offertaId);
+      const response = await axios.get(`${API}/offerte/${offertaId}/sub-offerte`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setSubOfferte(response.data);
+      console.log("✅ Sub-offerte loaded:", response.data.length);
+    } catch (error) {
+      console.error("❌ Error fetching sub-offerte:", error);
+      setSubOfferte([]);
+    }
+  };
+
   const handleChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // NEW: If offerta_id changes, load sub-offerte
+    if (field === 'offerta_id' && value) {
+      fetchSubOfferte(value);
+    }
   };
 
   // Funzioni per rilevare i campi condizionali basati sui dati del cliente esistente - CON CONTROLLI DEFENSIVI
