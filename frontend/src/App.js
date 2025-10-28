@@ -16196,31 +16196,6 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
     setNewSubOfferta({ nome: '', descrizione: '' });
     onClose();
   };
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              nome: subOff.nome,
-              descrizione: subOff.descrizione,
-              segmento_id: segmentoId,
-              parent_offerta_id: result.id,
-              is_active: true
-            })
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error creating offerta/sub-offerte:", error);
-    }
-    
-    // Reset form
-    setFormData({ nome: '', descrizione: '', is_active: true, has_sub_offerte: false });
-    setSubOfferte([]);
-    setNewSubOfferta({ nome: '', descrizione: '' });
-    onClose();
-  };
 
   const handleAddSubOfferta = () => {
     if (newSubOfferta.nome.trim()) {
