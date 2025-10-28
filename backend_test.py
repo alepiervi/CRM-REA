@@ -41153,9 +41153,11 @@ if __name__ == "__main__":
                 result = tester.test_nextcloud_document_download_endpoint()
             elif test_name == "dynamic_enum":
                 result = tester.test_cliente_creation_dynamic_enum_values()
+            elif test_name == "f2f_services":
+                result = tester.test_f2f_sub_agenzia_services_verification()
             else:
                 print(f"Unknown test: {test_name}")
-                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart, nextcloud, nextcloud_download, dynamic_enum")
+                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart, nextcloud, nextcloud_download, dynamic_enum, f2f_services")
                 result = False
                 
             # Print summary
