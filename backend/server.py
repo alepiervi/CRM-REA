@@ -8682,7 +8682,7 @@ async def get_offerte_by_segmento(
     segmento_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get offerte for a specific segmento"""
+    """Get offerte for a specific segmento (excludes sub-offerte)"""
     
     try:
         # Check if segmento exists
@@ -8690,9 +8690,13 @@ async def get_offerte_by_segmento(
         if not segmento:
             raise HTTPException(status_code=404, detail="Segmento non trovato")
         
-        # Get offerte for this segmento
+        # Get offerte for this segmento (exclude sub-offerte)
         offerte = await db.offerte.find({
-            "segmento_id": segmento_id
+            "segmento_id": segmento_id,
+            "$or": [
+                {"parent_offerta_id": None},
+                {"parent_offerta_id": {"$exists": False}}
+            ]
         }).sort("created_at", -1).to_list(length=None)
         
         # Clean up for JSON serialization
