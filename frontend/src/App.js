@@ -17622,11 +17622,39 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     }
   };
 
-  const handleOffertaSelect = (offertaId) => {
-    const newSelectedData = { ...selectedData, offerta_id: offertaId };
-    setSelectedData(newSelectedData);
+  const handleOffertaSelect = async (offertaId) => {
+    console.log("🎁 Offerta selected:", offertaId);
+    setSelectedData(prev => ({ ...prev, offerta_id: offertaId, sub_offerta_id: '' }));
     
-    // Show client form after offerta selection
+    // Load sub-offerte if available
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/offerte/${offertaId}/sub-offerte`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const subOfferte = await response.json();
+        console.log("📦 Sub-offerte loaded:", subOfferte.length);
+        setCascadeSubOfferte(subOfferte);
+        
+        // If has sub-offerte, don't show client form yet
+        if (subOfferte.length > 0) {
+          setShowClientForm(false);
+          setCurrentStep('sub_offerta');
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Error loading sub-offerte:", error);
+    }
+    
+    // Show client form if no sub-offerte
+    setCascadeSubOfferte([]);
     setShowClientForm(true);
     setCurrentStep('cliente');
   };
