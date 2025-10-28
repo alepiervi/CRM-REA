@@ -39851,17 +39851,31 @@ startxref
         )
         
         if success and status == 200:
-            offerta_principale_id = create_response.get('id')
-            offerta_nome = create_response.get('nome')
-            has_sub_offerte = create_response.get('has_sub_offerte')
-            
-            self.log_test("✅ Offerta principale creata", True, 
-                f"Nome: {offerta_nome}, ID: {offerta_principale_id}, has_sub_offerte: {has_sub_offerte}")
-            
-            if has_sub_offerte:
-                self.log_test("✅ has_sub_offerte = true", True, "Offerta configurata per sotto-offerte")
+            # Handle the actual response structure from the API
+            if create_response.get('success'):
+                offerta_principale_id = create_response.get('offerta_id')
+                offerta_nome = offerta_principale_payload['nome']  # Use the name from payload
+                
+                self.log_test("✅ Offerta principale creata", True, 
+                    f"Nome: {offerta_nome}, ID: {offerta_principale_id}")
+                
+                # Verify the offerta was created with has_sub_offerte = true by fetching it
+                success_get, get_response, get_status = self.make_request(
+                    'GET', f'offerte/{offerta_principale_id}', 
+                    expected_status=200
+                )
+                
+                if success_get and get_status == 200:
+                    has_sub_offerte = get_response.get('has_sub_offerte')
+                    if has_sub_offerte:
+                        self.log_test("✅ has_sub_offerte = true", True, "Offerta configurata per sotto-offerte")
+                    else:
+                        self.log_test("❌ has_sub_offerte = false", False, "Offerta non configurata per sotto-offerte")
+                else:
+                    self.log_test("❌ Verifica offerta creata failed", False, f"Status: {get_status}")
             else:
-                self.log_test("❌ has_sub_offerte = false", False, "Offerta non configurata per sotto-offerte")
+                self.log_test("❌ Offerta creation response invalid", False, f"Response: {create_response}")
+                return False
                 
         else:
             self.log_test("❌ Creazione offerta principale failed", False, f"Status: {status}, Response: {create_response}")
