@@ -3963,40 +3963,16 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     
     try {
       console.log('🔄 Fetching servizi for sub agenzia:', subAgenziaId);
-      // Find the selected sub agenzia
-      const selectedSubAgenzia = subAgenzie.find(sa => sa.id === subAgenziaId);
-      if (!selectedSubAgenzia) {
-        console.log('⚠️ Sub agenzia not found');
-        setServiziDisponibili([]);
-        return;
-      }
       
-      console.log('✅ Sub agenzia found:', selectedSubAgenzia.nome);
-      console.log('📋 Sub agenzia commesse_autorizzate:', selectedSubAgenzia.commesse_autorizzate);
-      console.log('📋 Sub agenzia servizi_autorizzati:', selectedSubAgenzia.servizi_autorizzati);
-      
-      // Fetch servizi based on the commesse authorized for this sub agenzia
-      const allServizi = [];
-      if (selectedSubAgenzia.commesse_autorizzate && selectedSubAgenzia.commesse_autorizzate.length > 0) {
-        for (const commessaId of selectedSubAgenzia.commesse_autorizzate) {
-          try {
-            const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
-            allServizi.push(...response.data);
-          } catch (error) {
-            console.error(`Error fetching servizi for commessa ${commessaId}:`, error);
-          }
+      // Use new endpoint that directly returns servizi filtered by sub_agenzia
+      const response = await axios.get(`${API}/cascade/servizi-by-sub-agenzia/${subAgenziaId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      }
+      });
       
-      // If servizi_autorizzati exists, filter to show only those
-      let finalServizi = allServizi;
-      if (selectedSubAgenzia.servizi_autorizzati && selectedSubAgenzia.servizi_autorizzati.length > 0) {
-        finalServizi = allServizi.filter(s => selectedSubAgenzia.servizi_autorizzati.includes(s.id));
-        console.log(`✅ Filtered servizi from ${allServizi.length} to ${finalServizi.length} based on servizi_autorizzati`);
-      }
-      
-      console.log('✅ Servizi loaded for sub agenzia:', finalServizi.length);
-      setServiziDisponibili(finalServizi);
+      console.log('✅ Servizi loaded for sub agenzia:', response.data.length);
+      setServiziDisponibili(response.data);
     } catch (error) {
       console.error("Error fetching servizi for sub agenzia:", error);
       setServiziDisponibili([]);
