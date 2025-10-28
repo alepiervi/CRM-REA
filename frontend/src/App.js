@@ -20275,6 +20275,13 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   }, [isLoadingTipologie, editTipologieContratto]);
 
+  // NEW: Load sub-offerte when component mounts if cliente has offerta_id
+  useEffect(() => {
+    if (cliente?.offerta_id) {
+      fetchSubOfferte(cliente.offerta_id);
+    }
+  }, [cliente?.offerta_id]);
+
   // Funzioni duplicate rimosse - ora definite prima del useEffect
 
   // Funzioni per gestire i campi modificabili (i dati organizzativi non sono più modificabili)
