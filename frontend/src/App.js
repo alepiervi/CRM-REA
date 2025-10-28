@@ -20670,6 +20670,29 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     <p className="text-xs text-amber-600 mt-1">⚠️ Offerta selezionata ma dettagli non disponibili</p>
                   )}
                 </div>
+                
+                {/* NEW: Sub-Offerta Dropdown (show if offerta has sub-offerte) */}
+                {subOfferte.length > 0 && (
+                  <div className="md:col-span-2">
+                    <Label htmlFor="sub_offerta_id" className="text-blue-900 font-semibold">📦 Sotto-Offerta</Label>
+                    <select
+                      id="sub_offerta_id"
+                      value={formData.sub_offerta_id || ""}
+                      onChange={(e) => handleChange('sub_offerta_id', e.target.value)}
+                      className="w-full p-3 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-blue-50"
+                    >
+                      <option value="">Nessuna sotto-offerta</option>
+                      {subOfferte.map((subOff) => (
+                        <option key={subOff.id} value={subOff.id}>
+                          {subOff.nome}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Seleziona una variante specifica per questa offerta
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
