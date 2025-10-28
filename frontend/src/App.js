@@ -17805,6 +17805,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       tipologia_contratto_id: selectedData.tipologia_contratto,  // ADDED: Save UUID for filtering
       segmento: mapSegmento(selectedData.segmento),
       offerta_id: selectedData.offerta_id,
+      sub_offerta_id: selectedData.sub_offerta_id || null,  // NEW: Sub-offerta ID
       
       // Additional metadata for tracking
       selection_flow: user?.role === 'sub_agenzia' ? 'sub_agenzia_flow' : 'responsabile_flow',
@@ -17825,7 +17826,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
         servizio_id: cleanFormData.servizio_id,
         tipologia_contratto: cleanFormData.tipologia_contratto,
         segmento: cleanFormData.segmento,
-        offerta_id: cleanFormData.offerta_id
+        offerta_id: cleanFormData.offerta_id,
+        sub_offerta_id: cleanFormData.sub_offerta_id  // NEW: Log sub-offerta
       },
       selectedData_offerta: selectedData.offerta_id,
       full_data: cleanFormData
