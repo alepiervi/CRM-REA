@@ -15581,6 +15581,55 @@ async def get_servizi_autorizzati_by_commessa(
         logging.error(f"❌ CASCADE SERVIZI TRACEBACK: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Errore nel caricamento servizi: {str(e)}")
 
+@api_router.get("/cascade/servizi-by-sub-agenzia/{sub_agenzia_id}")
+async def get_servizi_by_sub_agenzia(
+    sub_agenzia_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get servizi autorizzati for a specific sub agenzia"""
+    try:
+        logging.info(f"🔍 CASCADE: Searching servizi for sub_agenzia ID: {sub_agenzia_id}")
+        
+        # Get sub agenzia
+        sub_agenzia = await db.sub_agenzie.find_one({"id": sub_agenzia_id})
+        if not sub_agenzia:
+            logging.error(f"❌ CASCADE: Sub agenzia not found for ID: {sub_agenzia_id}")
+            raise HTTPException(status_code=404, detail="Sub agenzia non trovata")
+        
+        logging.info(f"✅ CASCADE: Sub agenzia found: {sub_agenzia.get('nome')}")
+        
+        # Get servizi_autorizzati from sub_agenzia
+        servizi_autorizzati = sub_agenzia.get("servizi_autorizzati", [])
+        logging.info(f"🔒 CASCADE: Sub agenzia servizi_autorizzati: {servizi_autorizzati}")
+        
+        if not servizi_autorizzati:
+            logging.info("📭 CASCADE: No servizi autorizzati for sub agenzia, returning empty")
+            return []
+        
+        # Find servizi that are in the authorized list and active
+        servizi_docs = await db.servizi.find({
+            "id": {"$in": servizi_autorizzati},
+            "is_active": True
+        }).to_list(length=None)
+        
+        logging.info(f"📊 CASCADE: Found {len(servizi_docs)} authorized servizi for sub agenzia")
+        
+        # Convert to JSON serializable format
+        servizi = []
+        for doc in servizi_docs:
+            if '_id' in doc:
+                del doc['_id']
+            servizi.append(doc)
+        
+        logging.info(f"✅ CASCADE: Returning {len(servizi)} servizi successfully")
+        return servizi
+        
+    except Exception as e:
+        logging.error(f"❌ CASCADE SERVIZI BY SUB AGENZIA ERROR: {type(e).__name__}: {str(e)}")
+        import traceback
+        logging.error(f"❌ CASCADE SERVIZI TRACEBACK: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Errore nel caricamento servizi: {str(e)}")
+
 @api_router.get("/cascade/tipologie-by-servizio/{servizio_id}")
 async def get_tipologie_autorizzate_by_servizio(
     servizio_id: str,
