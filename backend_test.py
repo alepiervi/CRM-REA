@@ -39273,7 +39273,7 @@ startxref
         }
         
         success, new_tipologia_response, status = self.make_request(
-            'POST', f'servizi/{tls_servizio_id}/tipologie-contratto', 
+            'POST', 'tipologie-contratto', 
             new_tipologia_data, 
             expected_status=200
         )
