@@ -43,7 +43,7 @@ load_dotenv(ROOT_DIR / '.env')
 # MongoDB connection with robust error handling for production
 try:
     mongo_url = os.environ.get('MONGO_URL')
-    db_name = os.environ.get('DB_NAME', 'nureal_crm')
+    db_name = os.environ.get('DB_NAME', 'crm_database')  # FIXED: Use correct default database name
     
     if not mongo_url:
         # Fallback for local development
