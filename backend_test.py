@@ -38684,12 +38684,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the DOCUMENT DOWNLOAD AND VIEW TEST AS REQUESTED
+        # Run the CASCADE SERVIZI SUB AGENZIA FILTERING TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING DOCUMENT DOWNLOAD AND VIEW FUNCTIONALITY TEST - AS REQUESTED")
+        print("🎯 RUNNING CASCADE SERVIZI SUB AGENZIA FILTERING TEST - AS REQUESTED")
         print("="*80)
         
-        document_success = self.test_document_download_view_functionality()
+        cascade_success = self.test_cascade_servizi_sub_agenzia_filtering()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -38702,17 +38702,17 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if document_success:
-            print("🎉 DOCUMENT DOWNLOAD AND VIEW TEST: ✅ SUCCESS - DOWNLOAD/VIEW FUNCTIONALITY WORKING!")
+        if cascade_success:
+            print("🎉 CASCADE SERVIZI SUB AGENZIA FILTERING TEST: ✅ SUCCESS - NEW ENDPOINTS WORKING!")
         else:
-            print("🚨 DOCUMENT DOWNLOAD AND VIEW TEST: ❌ FAILED - DOWNLOAD/VIEW FUNCTIONALITY HAS ISSUES!")
+            print("🚨 CASCADE SERVIZI SUB AGENZIA FILTERING TEST: ❌ FAILED - NEW ENDPOINTS HAVE ISSUES!")
         
-        if document_success:
-            print("\n🎉 OVERALL RESULT: ✅ DOCUMENT DOWNLOAD AND VIEW FUNCTIONALITY WORKING CORRECTLY!")
+        if cascade_success:
+            print("\n🎉 OVERALL RESULT: ✅ NUOVO ENDPOINT FILTRO SERVIZI E TIPOLOGIE WORKING CORRECTLY!")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ DOCUMENT DOWNLOAD AND VIEW FUNCTIONALITY NEEDS ATTENTION!")
+            print("\n🚨 OVERALL RESULT: ❌ NUOVO ENDPOINT FILTRO SERVIZI E TIPOLOGIE NEEDS ATTENTION!")
         
-        return document_success
+        return cascade_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
