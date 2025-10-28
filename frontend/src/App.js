@@ -16152,9 +16152,12 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
       const result = await onSubmit(mainOfferta);
       console.log("✅ Main offerta created:", result);
       
+      // Extract offerta_id from result (could be result.id or result.offerta_id)
+      const offertaId = result.id || result.offerta_id;
+      
       // If has sub-offerte, create them
-      if (formData.has_sub_offerte && subOfferte.length > 0 && result && result.id) {
-        console.log(`📦 Creating ${subOfferte.length} sub-offerte for offerta ID:`, result.id);
+      if (formData.has_sub_offerte && subOfferte.length > 0 && offertaId) {
+        console.log(`📦 Creating ${subOfferte.length} sub-offerte for offerta ID:`, offertaId);
         
         const API = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
         const token = localStorage.getItem('token');
@@ -16171,7 +16174,7 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
               nome: subOff.nome,
               descrizione: subOff.descrizione,
               segmento_id: segmentoId,
-              parent_offerta_id: result.id,
+              parent_offerta_id: offertaId,
               is_active: true,
               has_sub_offerte: false
             })
@@ -16185,6 +16188,8 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
         }
       } else if (formData.has_sub_offerte && subOfferte.length === 0) {
         console.warn("⚠️ has_sub_offerte is true but no sub-offerte added");
+      } else if (formData.has_sub_offerte && !offertaId) {
+        console.error("❌ has_sub_offerte is true but offerta_id not found in result:", result);
       }
     } catch (error) {
       console.error("❌ Error creating offerta/sub-offerte:", error);
