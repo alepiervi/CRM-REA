@@ -39166,7 +39166,8 @@ startxref
         )
         
         if success and status == 200:
-            test_tipologia_id = create_tipologia_response.get('id')
+            tipologia_data = create_tipologia_response.get('tipologia', {})
+            test_tipologia_id = tipologia_data.get('id')
             self.log_test("✅ Test tipologia created", True, 
                 f"Nome: 'Test Tipologia', ID: {test_tipologia_id}")
         else:
