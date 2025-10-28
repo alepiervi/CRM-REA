@@ -8759,9 +8759,18 @@ async def get_all_offerte(
     is_active: Optional[bool] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get all offerte with optional filters for entire filiera (commessa, servizio, tipologia, segmento)"""
+    """Get all offerte with optional filters for entire filiera (commessa, servizio, tipologia, segmento)
+    NOTE: This endpoint excludes sub-offerte (offerte with parent_offerta_id set)"""
     try:
         query_conditions = []
+        
+        # CRITICAL: Exclude sub-offerte from main list
+        query_conditions.append({
+            "$or": [
+                {"parent_offerta_id": None},
+                {"parent_offerta_id": {"$exists": False}}
+            ]
+        })
         
         # Handle segmento - support both UUID and string ("privato"/"business")
         if segmento:
