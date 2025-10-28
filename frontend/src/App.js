@@ -19425,6 +19425,21 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
     };
     fetchSubOfferta();
   }, [cliente.sub_offerta_id]);
+  
+  // NEW: Fetch servizio info when component mounts
+  useEffect(() => {
+    const fetchServizio = async () => {
+      if (cliente.servizio_id) {
+        try {
+          const response = await axios.get(`${API}/servizi/${cliente.servizio_id}`);
+          setServizioInfo(response.data);
+        } catch (error) {
+          console.error("Error fetching servizio:", error);
+        }
+      }
+    };
+    fetchServizio();
+  }, [cliente.servizio_id]);
 
   // Helper per verificare se mostrare sezioni condizionali
   const isTelefoniaFastweb = () => {
