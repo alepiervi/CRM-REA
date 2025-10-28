@@ -39019,12 +39019,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the CASCADE SERVIZI SUB AGENZIA FILTERING TEST AS REQUESTED
+        # Run the F2F SUB AGENZIA SERVICES VERIFICATION TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING CASCADE SERVIZI SUB AGENZIA FILTERING TEST - AS REQUESTED")
+        print("🎯 RUNNING F2F SUB AGENZIA SERVICES VERIFICATION TEST - AS REQUESTED")
         print("="*80)
         
-        cascade_success = self.test_cascade_servizi_sub_agenzia_filtering()
+        f2f_success = self.test_f2f_sub_agenzia_services_verification()
 
         # Print final summary
         print("\n" + "=" * 80)
