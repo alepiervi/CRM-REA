@@ -20217,10 +20217,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     try {
       console.log("🔄 Assigning client to user:", newUserId);
       const response = await axios.patch(
-        `${API}/clienti/${cliente.id}/assign`,
-        null,
+        `${API}/clienti/${cliente.id}/assign?user_id=${newUserId}`,
+        {},
         {
-          params: { user_id: newUserId },
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         }
       );
@@ -20230,7 +20229,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       console.log("✅ Client assigned successfully");
       
       // Show success message
-      alert(`Cliente assegnato con successo a ${response.data.assigned_to}`);
+      alert(`Cliente assegnato con successo!`);
     } catch (error) {
       console.error("❌ Error assigning client:", error);
       alert(`Errore nell'assegnazione del client: ${error.response?.data?.detail || error.message}`);
