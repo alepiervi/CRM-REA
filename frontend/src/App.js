@@ -20216,8 +20216,8 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
     try {
       console.log("🔄 Assigning client to user:", newUserId);
-      const response = await axios.patch(
-        `${API}/clienti/${cliente.id}/assign?user_id=${newUserId}`,
+      const response = await axios.put(
+        `${API}/clienti/${cliente.id}/assign?assigned_to=${newUserId}`,
         {},
         {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
