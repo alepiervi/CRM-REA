@@ -20049,6 +20049,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     convergenza: cliente?.convergenza || false,
     convergenza_items: cliente?.convergenza_items || [],
     
+    // Campi Dati Mobile
+    mobile_items: cliente?.mobile_items || [],
+    
     // Campi Energia Fastweb
     codice_pod: cliente?.codice_pod || '',
     
