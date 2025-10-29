@@ -10807,6 +10807,42 @@ async def assign_cliente(
             if not await can_user_modify_cliente(current_user, cliente):
                 raise HTTPException(status_code=403, detail="No permission to modify this cliente")
         
+        # Verify that target user has access to this cliente's commessa and servizio
+        target_user_doc = await db.users.find_one({"id": assigned_to, "is_active": True})
+        if not target_user_doc:
+            raise HTTPException(status_code=404, detail="Utente target non trovato o non attivo")
+        
+        target_user = User(**target_user_doc)
+        
+        # Admin can be assigned to anyone
+        if target_user.role != UserRole.ADMIN:
+            # Check if target user has access to cliente's commessa
+            if not hasattr(target_user, 'commesse_autorizzate') or not target_user.commesse_autorizzate:
+                raise HTTPException(
+                    status_code=403, 
+                    detail="L'utente target non ha commesse autorizzate"
+                )
+            
+            if cliente.commessa_id not in target_user.commesse_autorizzate:
+                raise HTTPException(
+                    status_code=403, 
+                    detail="L'utente target non ha accesso alla commessa di questo cliente"
+                )
+            
+            # Check if target user has access to cliente's servizio
+            if cliente.servizio_id:
+                if not hasattr(target_user, 'servizi_autorizzati') or not target_user.servizi_autorizzati:
+                    raise HTTPException(
+                        status_code=403, 
+                        detail="L'utente target non ha servizi autorizzati"
+                    )
+                
+                if cliente.servizio_id not in target_user.servizi_autorizzati:
+                    raise HTTPException(
+                        status_code=403, 
+                        detail="L'utente target non ha accesso al servizio di questo cliente"
+                    )
+        
         # Update assignment
         result = await db.clienti.update_one(
             {"id": cliente_id},
