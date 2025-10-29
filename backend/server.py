@@ -10786,17 +10786,26 @@ async def assign_cliente(
     assigned_to: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Assign cliente to a user - simplified endpoint for assignment"""
+    """Assign cliente to a user - only Admin, Responsabile Commessa, and Backoffice Commessa can assign"""
     try:
+        # Check if user has permission to assign (only specific roles)
+        allowed_roles = [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=403, 
+                detail="Solo Admin, Responsabile Commessa e Backoffice Commessa possono assegnare clienti"
+            )
+        
         cliente_doc = await db.clienti.find_one({"id": cliente_id})
         if not cliente_doc:
             raise HTTPException(status_code=404, detail="Cliente not found")
         
         cliente = Cliente(**cliente_doc)
         
-        # Verifica permessi di modifica
-        if not await can_user_modify_cliente(current_user, cliente):
-            raise HTTPException(status_code=403, detail="No permission to modify this cliente")
+        # Verifica permessi di modifica (only for non-admin)
+        if current_user.role != UserRole.ADMIN:
+            if not await can_user_modify_cliente(current_user, cliente):
+                raise HTTPException(status_code=403, detail="No permission to modify this cliente")
         
         # Update assignment
         result = await db.clienti.update_one(
