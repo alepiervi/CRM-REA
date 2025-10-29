@@ -19737,13 +19737,13 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           </Card>
         </div>
 
-        {/* Sezione Telefonia Fastweb - Condizionale */}
+        {/* Sezione Telefonia Fissa - Condizionale */}
         {isTelefoniaFastweb() && (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
                 <Phone className="w-4 h-4 mr-2" />
-                Telefonia Fastweb
+                Telefonia Fissa
               </CardTitle>
             </CardHeader>
             <CardContent>
