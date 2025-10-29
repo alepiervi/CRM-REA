@@ -19972,6 +19972,12 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     return allowedRoles.includes(user.role);
   };
   
+  // Helper function to check if user can edit restricted fields (convergenza, mobile items, payment)
+  const canEditRestrictedFields = () => {
+    if (!user) return false;
+    return user.role === 'backoffice_commessa' || user.role === 'admin';
+  };
+  
   // Array delle tecnologie - stesso del form di creazione
   const TECNOLOGIE = [
     { value: 'fibra', label: 'FIBRA' },
