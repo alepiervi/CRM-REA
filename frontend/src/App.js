@@ -20308,6 +20308,15 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       setAssignedUserInfo(null);
     }
   };
+  
+  // NEW: Function to get user display name from cache
+  const getUserDisplayName = (userId) => {
+    if (!userId) return "N/A";
+    if (simUsersInfo[userId]) {
+      return simUsersInfo[userId];
+    }
+    return "Caricamento...";
+  };
 
   const handleAssignUser = async (newUserId) => {
     if (!newUserId || newUserId === selectedAssignedUser) {
