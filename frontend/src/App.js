@@ -20194,8 +20194,39 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       const response = await axios.get(`${API}/users`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      setAvailableUsers(response.data);
-      console.log("✅ Available users loaded:", response.data.length);
+      
+      // Filter users based on cliente's commessa and servizio
+      const filteredUsers = response.data.filter(user => {
+        // Admin can always be assigned
+        if (user.role === 'admin') {
+          return true;
+        }
+        
+        // Check if user has access to cliente's commessa
+        if (!user.commesse_autorizzate || !Array.isArray(user.commesse_autorizzate)) {
+          return false;
+        }
+        
+        if (!user.commesse_autorizzate.includes(cliente.commessa_id)) {
+          return false;
+        }
+        
+        // Check if user has access to cliente's servizio (if cliente has one)
+        if (cliente.servizio_id) {
+          if (!user.servizi_autorizzati || !Array.isArray(user.servizi_autorizzati)) {
+            return false;
+          }
+          
+          if (!user.servizi_autorizzati.includes(cliente.servizio_id)) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      setAvailableUsers(filteredUsers);
+      console.log("✅ Available users loaded and filtered:", filteredUsers.length, "of", response.data.length);
     } catch (error) {
       console.error("❌ Error fetching available users:", error);
       setAvailableUsers([]);
