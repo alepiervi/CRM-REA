@@ -21199,6 +21199,37 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                                       placeholder="Nome offerta SIM"
                                     />
                                   </div>
+                                  {/* NEW: Utente Assegnato per questa SIM */}
+                                  <div className="md:col-span-2">
+                                    <Label className="text-purple-800 font-semibold">👤 Utente Assegnato a questa SIM</Label>
+                                    <select
+                                      value={item.assigned_user_id || ''}
+                                      onChange={(e) => {
+                                        const newItems = [...formData.convergenza_items];
+                                        newItems[index].assigned_user_id = e.target.value;
+                                        handleChange('convergenza_items', newItems);
+                                      }}
+                                      className="w-full p-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-purple-50"
+                                    >
+                                      <option value="">Nessun utente assegnato</option>
+                                      {availableUsers && availableUsers.length > 0 ? (
+                                        availableUsers.map((user) => (
+                                          <option key={user.id} value={user.id}>
+                                            {user.nome && user.cognome 
+                                              ? `${user.nome} ${user.cognome} (${user.username})` 
+                                              : user.username}
+                                          </option>
+                                        ))
+                                      ) : (
+                                        <option disabled>Nessun utente disponibile</option>
+                                      )}
+                                    </select>
+                                    {item.assigned_user_id && (
+                                      <p className="text-xs text-purple-700 mt-1">
+                                        ℹ️ Questo utente è responsabile di questa specifica SIM
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             ))
@@ -21213,7 +21244,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                             onClick={() => {
                               const newItems = [
                                 ...(formData.convergenza_items || []),
-                                { numero_cellulare: '', iccid: '', operatore: '', offerta_sim: '' }
+                                { numero_cellulare: '', iccid: '', operatore: '', offerta_sim: '', assigned_user_id: '' }
                               ];
                               handleChange('convergenza_items', newItems);
                             }}
