@@ -21024,11 +21024,11 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </CardContent>
           </Card>
 
-          {/* SEZIONE TELEFONIA FASTWEB */}
+          {/* SEZIONE TELEFONIA FISSA */}
           {isEditTelefoniaFastweb() && !isEditMobile() && !isEditTelepass() && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">📞 Telefonia Fastweb</CardTitle>
+                <CardTitle className="text-lg">📞 Telefonia Fissa</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
