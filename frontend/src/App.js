@@ -21570,6 +21570,18 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   </>
                 )}
                 
+                {/* Carta di Credito READ-ONLY for other roles */}
+                {formData.modalita_pagamento === 'carta_credito' && !canEditRestrictedFields() && (
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded text-sm space-y-2">
+                    <div>
+                      <strong>Numero Carta:</strong> {formData.numero_carta ? `**** **** **** ${formData.numero_carta.slice(-4)}` : 'Non specificato'}
+                    </div>
+                    <div>
+                      <strong>Scadenza:</strong> {formData.mese_carta && formData.anno_carta ? `${formData.mese_carta}/${formData.anno_carta}` : 'Non specificata'}
+                    </div>
+                  </div>
+                )}
+                
                 {/* Messaggio se nessuna modalità selezionata */}
                 {!formData.modalita_pagamento && (
                   <div className="text-center p-4 text-gray-600 bg-gray-50 rounded">
