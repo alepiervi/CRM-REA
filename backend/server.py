@@ -10118,7 +10118,7 @@ async def export_clienti_excel(
                     
                     # Get assigned user for this SIM
                     if sim.get("assigned_user_id"):
-                        assigned_user = await db[DB_NAME]["users"].find_one({"id": sim["assigned_user_id"]})
+                        assigned_user = await db[db_name]["users"].find_one({"id": sim["assigned_user_id"]})
                         row["sim_assigned_user"] = assigned_user.get("username") if assigned_user else ""
                     else:
                         row["sim_assigned_user"] = ""
@@ -10127,7 +10127,7 @@ async def export_clienti_excel(
                     if sim.get("offerta_sim"):
                         # offerta_sim could be an ID or a name, check if it's an ID (UUID format)
                         if len(sim["offerta_sim"]) > 30:  # Likely an ID
-                            offerta_sim = await db[DB_NAME]["offerte"].find_one({"id": sim["offerta_sim"]})
+                            offerta_sim = await db[db_name]["offerte"].find_one({"id": sim["offerta_sim"]})
                             row["sim_offerta_name"] = offerta_sim.get("nome") if offerta_sim else sim["offerta_sim"]
                         else:
                             row["sim_offerta_name"] = sim["offerta_sim"]
