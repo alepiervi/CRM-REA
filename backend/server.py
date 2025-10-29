@@ -10057,21 +10057,21 @@ async def export_clienti_excel(
             
             # Get sub agenzia name
             if cliente.get("sub_agenzia_id"):
-                sub_agenzia = await db.sub_agenzie.find_one({"id": cliente["sub_agenzia_id"]})
+                sub_agenzia = await db[DB_NAME]["sub_agenzie"].find_one({"id": cliente["sub_agenzia_id"]})
                 base_cliente["sub_agenzia_name"] = sub_agenzia.get("nome") if sub_agenzia else ""
             else:
                 base_cliente["sub_agenzia_name"] = ""
             
             # Get commessa name
             if cliente.get("commessa_id"):
-                commessa = await db.commesse.find_one({"id": cliente["commessa_id"]})
+                commessa = await db[DB_NAME]["commesse"].find_one({"id": cliente["commessa_id"]})
                 base_cliente["commessa_name"] = commessa.get("nome") if commessa else ""
             else:
                 base_cliente["commessa_name"] = ""
             
             # Get servizio name
             if cliente.get("servizio_id"):
-                servizio = await db.servizi.find_one({"id": cliente["servizio_id"]})
+                servizio = await db[DB_NAME]["servizi"].find_one({"id": cliente["servizio_id"]})
                 base_cliente["servizio_name"] = servizio.get("nome") if servizio else ""
             else:
                 base_cliente["servizio_name"] = ""
@@ -10086,7 +10086,7 @@ async def export_clienti_excel(
             
             # Get offerta name (principale del cliente)
             if cliente.get("offerta_id"):
-                offerta = await db.offerte.find_one({"id": cliente["offerta_id"]})
+                offerta = await db[DB_NAME]["offerte"].find_one({"id": cliente["offerta_id"]})
                 base_cliente["offerta_name"] = offerta.get("nome") if offerta else ""
             else:
                 base_cliente["offerta_name"] = ""
@@ -10094,7 +10094,7 @@ async def export_clienti_excel(
             # Get creator name - Use assigned_to if present, otherwise created_by
             user_id_to_display = cliente.get("assigned_to") or cliente.get("created_by")
             if user_id_to_display:
-                user_doc = await db.users.find_one({"id": user_id_to_display})
+                user_doc = await db[DB_NAME]["users"].find_one({"id": user_id_to_display})
                 base_cliente["created_by_name"] = user_doc.get("username") if user_doc else ""
             else:
                 base_cliente["created_by_name"] = ""
