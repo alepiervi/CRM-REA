@@ -19473,6 +19473,36 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
     fetchAssignedUser();
   }, [cliente.assigned_to]);
 
+  // NEW: Fetch users info for SIM convergenza
+  useEffect(() => {
+    const fetchSimUsers = async () => {
+      if (cliente.convergenza_items && cliente.convergenza_items.length > 0) {
+        const userIds = cliente.convergenza_items
+          .map(sim => sim.assigned_user_id)
+          .filter(id => id && !simUsersInfo[id]); // Only fetch if not already cached
+        
+        if (userIds.length === 0) return;
+        
+        const newUsersInfo = { ...simUsersInfo };
+        
+        for (const userId of userIds) {
+          try {
+            const response = await axios.get(`${API}/users/display-name/${userId}`, {
+              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            });
+            newUsersInfo[userId] = response.data.display_name;
+          } catch (error) {
+            console.error(`Error fetching user ${userId}:`, error);
+            newUsersInfo[userId] = 'Utente non trovato';
+          }
+        }
+        
+        setSimUsersInfo(newUsersInfo);
+      }
+    };
+    fetchSimUsers();
+  }, [cliente.convergenza_items]);
+
   // Helper per verificare se mostrare sezioni condizionali
   const isTelefoniaFastweb = () => {
     const tipologia = cliente.tipologia_contratto?.toLowerCase() || '';
