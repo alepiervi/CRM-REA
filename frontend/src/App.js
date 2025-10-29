@@ -15055,12 +15055,16 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     <TableCell>
                       {subAgenzie.find(sa => sa.id === cliente.sub_agenzia_id)?.nome || 'N/A'}
                     </TableCell>
-                    {/* Creato da */}
+                    {/* Creato da / Assegnato a */}
                     <TableCell>
                       <div className="flex items-center space-x-1">
                         <User className="w-3 h-3 text-gray-500" />
                         <span className="text-sm text-gray-600">
-                          {cliente.created_by ? getUserDisplayName(cliente.created_by) : 'N/A'}
+                          {cliente.assigned_to 
+                            ? getUserDisplayName(cliente.assigned_to)
+                            : cliente.created_by 
+                              ? getUserDisplayName(cliente.created_by) 
+                              : 'N/A'}
                         </span>
                       </div>
                     </TableCell>
