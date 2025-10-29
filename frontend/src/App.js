@@ -21295,30 +21295,127 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
               <CardContent>
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold text-blue-800 mb-2">SIM Associate</h4>
-                  {cliente?.mobile_items && cliente.mobile_items.length > 0 ? (
-                    <div className="space-y-2">
-                      {cliente.mobile_items.map((mobile, index) => (
-                        <div key={index} className="bg-white p-3 rounded border text-sm">
-                          <h5 className="font-semibold text-gray-700 mb-2">SIM #{index + 1}</h5>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <strong>Telefono da Portare:</strong> {mobile.telefono_da_portare || 'Non specificato'}
+                  
+                  {canEditRestrictedFields() ? (
+                    /* EDITABLE MODE - Only for Backoffice Commessa */
+                    <div className="space-y-3">
+                      {formData.mobile_items && formData.mobile_items.length > 0 ? (
+                        formData.mobile_items.map((mobile, index) => (
+                          <div key={index} className="bg-white p-3 rounded border">
+                            <div className="flex justify-between items-center mb-2">
+                              <h5 className="font-semibold text-gray-700">SIM #{index + 1}</h5>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  const newItems = formData.mobile_items.filter((_, i) => i !== index);
+                                  handleChange('mobile_items', newItems);
+                                }}
+                              >
+                                Rimuovi
+                              </Button>
                             </div>
-                            <div>
-                              <strong>ICCID:</strong> {mobile.iccid || 'Non specificato'}
-                            </div>
-                            <div>
-                              <strong>Operatore:</strong> {mobile.operatore || 'Non specificato'}
-                            </div>
-                            <div>
-                              <strong>Titolare se Diverso:</strong> {mobile.titolare_diverso || 'Non specificato'}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <Label>Telefono da Portare</Label>
+                                <Input
+                                  value={mobile.telefono_da_portare || ''}
+                                  onChange={(e) => {
+                                    const newItems = [...formData.mobile_items];
+                                    newItems[index].telefono_da_portare = e.target.value;
+                                    handleChange('mobile_items', newItems);
+                                  }}
+                                  placeholder="Numero da portare"
+                                />
+                              </div>
+                              <div>
+                                <Label>ICCID</Label>
+                                <Input
+                                  value={mobile.iccid || ''}
+                                  onChange={(e) => {
+                                    const newItems = [...formData.mobile_items];
+                                    newItems[index].iccid = e.target.value;
+                                    handleChange('mobile_items', newItems);
+                                  }}
+                                  placeholder="ICCID"
+                                />
+                              </div>
+                              <div>
+                                <Label>Operatore</Label>
+                                <Input
+                                  value={mobile.operatore || ''}
+                                  onChange={(e) => {
+                                    const newItems = [...formData.mobile_items];
+                                    newItems[index].operatore = e.target.value;
+                                    handleChange('mobile_items', newItems);
+                                  }}
+                                  placeholder="Operatore attuale"
+                                />
+                              </div>
+                              <div>
+                                <Label>Titolare se Diverso</Label>
+                                <Input
+                                  value={mobile.titolare_diverso || ''}
+                                  onChange={(e) => {
+                                    const newItems = [...formData.mobile_items];
+                                    newItems[index].titolare_diverso = e.target.value;
+                                    handleChange('mobile_items', newItems);
+                                  }}
+                                  placeholder="Nome titolare"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      ) : (
+                        <p className="text-sm text-blue-600">Nessuna SIM associata</p>
+                      )}
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newItems = [
+                            ...(formData.mobile_items || []),
+                            { telefono_da_portare: '', iccid: '', operatore: '', titolare_diverso: '' }
+                          ];
+                          handleChange('mobile_items', newItems);
+                        }}
+                      >
+                        + Aggiungi SIM
+                      </Button>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-600">Nessuna SIM mobile associata</p>
+                    /* READ-ONLY MODE - For other roles */
+                    <>
+                      {cliente?.mobile_items && cliente.mobile_items.length > 0 ? (
+                        <div className="space-y-2">
+                          {cliente.mobile_items.map((mobile, index) => (
+                            <div key={index} className="bg-white p-3 rounded border text-sm">
+                              <h5 className="font-semibold text-gray-700 mb-2">SIM #{index + 1}</h5>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <strong>Telefono da Portare:</strong> {mobile.telefono_da_portare || 'Non specificato'}
+                                </div>
+                                <div>
+                                  <strong>ICCID:</strong> {mobile.iccid || 'Non specificato'}
+                                </div>
+                                <div>
+                                  <strong>Operatore:</strong> {mobile.operatore || 'Non specificato'}
+                                </div>
+                                <div>
+                                  <strong>Titolare se Diverso:</strong> {mobile.titolare_diverso || 'Non specificato'}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-blue-600">Nessuna SIM associata trovata</p>
+                      )}
+                    </>
                   )}
                 </div>
               </CardContent>
