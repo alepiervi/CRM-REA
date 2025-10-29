@@ -16923,7 +16923,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     const cleanDisplayValue = (displayValue || '').toString().trim();
     
     const mappings = {
-      'Telefonia Fastweb': 'telefonia_fastweb',
+      'Telefonia Fissa': 'telefonia_fastweb',
       'Energia Fastweb': 'energia_fastweb', 
       'Ho Mobile': 'ho_mobile',
       'Telepass': 'telepass',
