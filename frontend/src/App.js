@@ -20036,6 +20036,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const [isLoadingTipologie, setIsLoadingTipologie] = useState(true);
   const [isLoadingOfferta, setIsLoadingOfferta] = useState(false);
   const [availableOfferte, setAvailableOfferte] = useState([]);
+  const [availableUsers, setAvailableUsers] = useState([]);  // NEW: Users list for assignment
+  const [assignedUserInfo, setAssignedUserInfo] = useState(null);  // NEW: Assigned user info
+  const [selectedAssignedUser, setSelectedAssignedUser] = useState(cliente?.assigned_to || '');  // NEW: Selected user for assignment
 
   // Definizione di tutte le funzioni PRIMA del useEffect
   const fetchServizi = async (commessaId) => {
