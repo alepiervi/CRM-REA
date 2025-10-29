@@ -10779,6 +10779,56 @@ async def update_cliente(
         logging.error(f"❌ CLIENT UPDATE ERROR: {e}")
         raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
 
+@api_router.put("/clienti/{cliente_id}/assign")
+async def assign_cliente(
+    cliente_id: str,
+    assigned_to: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Assign cliente to a user - simplified endpoint for assignment"""
+    try:
+        cliente_doc = await db.clienti.find_one({"id": cliente_id})
+        if not cliente_doc:
+            raise HTTPException(status_code=404, detail="Cliente not found")
+        
+        cliente = Cliente(**cliente_doc)
+        
+        # Verifica permessi di modifica
+        if not await can_user_modify_cliente(current_user, cliente):
+            raise HTTPException(status_code=403, detail="No permission to modify this cliente")
+        
+        # Update assignment
+        result = await db.clienti.update_one(
+            {"id": cliente_id},
+            {"$set": {
+                "assigned_to": assigned_to,
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Cliente not found")
+        
+        # Log assignment action
+        await log_client_action(
+            cliente_id=cliente_id,
+            action=ClienteLogAction.ASSIGNED,
+            description=f"Cliente assegnato a utente {assigned_to}",
+            user=current_user,
+            old_value=cliente.assigned_to,
+            new_value=assigned_to
+        )
+        
+        # Return updated cliente
+        cliente_doc = await db.clienti.find_one({"id": cliente_id})
+        return Cliente(**cliente_doc)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"❌ CLIENT ASSIGNMENT ERROR: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
+
 @api_router.get("/users/display-name/{user_id}")
 async def get_user_display_name(
     user_id: str,
