@@ -9725,6 +9725,7 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
         ws.cell(row=row_idx, column=col, value=cliente.get("sim_telefono_da_portare", "")); col += 1
         ws.cell(row=row_idx, column=col, value=cliente.get("sim_titolare_diverso", "")); col += 1
         ws.cell(row=row_idx, column=col, value=cliente.get("sim_offerta_name", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("sim_assigned_user", "")); col += 1  # NEW: Assigned user
         
         # System Fields
         ws.cell(row=row_idx, column=col, value=cliente.get("status", "")); col += 1
