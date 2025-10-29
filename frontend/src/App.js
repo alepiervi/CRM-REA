@@ -19965,6 +19965,13 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
 const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
   const { user } = useAuth();
   
+  // Helper function to check if user can assign clients
+  const canAssignClients = () => {
+    if (!user) return false;
+    const allowedRoles = ['admin', 'responsabile_commessa', 'backoffice_commessa'];
+    return allowedRoles.includes(user.role);
+  };
+  
   // Array delle tecnologie - stesso del form di creazione
   const TECNOLOGIE = [
     { value: 'fibra', label: 'FIBRA' },
