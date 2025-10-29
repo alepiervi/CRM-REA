@@ -37,7 +37,7 @@ const getBackendURL = () => {
   
   // Preview → Backend preview (può andare in standby)
   if (hostname.includes('preview.emergentagent.com')) {
-    return 'https://k8s-error-resolved.preview.emergentagent.com';
+    return 'https://agent-portal-43.preview.emergentagent.com';
   }
   
   // Development
@@ -342,7 +342,7 @@ post-deploy: python3 -m playwright install chromium
 
 **Console mostra**:
 ```
-🔧 Backend URL: https://k8s-error-resolved.preview.emergentagent.com
+🔧 Backend URL: https://agent-portal-43.preview.emergentagent.com
 ```
 
 **Causa**: Frontend non deployato con nuovo codice

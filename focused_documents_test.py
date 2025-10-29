@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_documents_with_real_data():
-    base_url = "https://k8s-error-resolved.preview.emergentagent.com/api"
+    base_url = "https://agent-portal-43.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     

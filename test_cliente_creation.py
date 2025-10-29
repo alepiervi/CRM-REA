@@ -2,7 +2,7 @@
 import requests
 import json
 
-BACKEND_URL = "https://k8s-error-resolved.preview.emergentagent.com"
+BACKEND_URL = "https://agent-portal-43.preview.emergentagent.com"
 
 # Login as admin
 login_response = requests.post(
