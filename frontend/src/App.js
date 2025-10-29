@@ -20879,42 +20879,44 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   </div>
                 )}
                 
-                {/* NEW: Client Assignment - Assegna Cliente a Utente */}
-                <div className="md:col-span-2">
-                  <Label htmlFor="assigned_to" className="text-purple-900 font-semibold">👤 Assegnato a Utente</Label>
-                  <select
-                    id="assigned_to"
-                    value={selectedAssignedUser || ""}
-                    onChange={(e) => handleAssignUser(e.target.value)}
-                    className="w-full p-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-purple-50"
-                  >
-                    <option value="">Nessun utente assegnato</option>
-                    {availableUsers && availableUsers.length > 0 ? (
-                      availableUsers.map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.nome && user.cognome 
-                            ? `${user.nome} ${user.cognome} (${user.username})` 
-                            : user.username}
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled>Caricamento utenti...</option>
+                {/* NEW: Client Assignment - Assegna Cliente a Utente (only for authorized roles) */}
+                {canAssignClients() && (
+                  <div className="md:col-span-2">
+                    <Label htmlFor="assigned_to" className="text-purple-900 font-semibold">👤 Assegnato a Utente</Label>
+                    <select
+                      id="assigned_to"
+                      value={selectedAssignedUser || ""}
+                      onChange={(e) => handleAssignUser(e.target.value)}
+                      className="w-full p-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-purple-50"
+                    >
+                      <option value="">Nessun utente assegnato</option>
+                      {availableUsers && availableUsers.length > 0 ? (
+                        availableUsers.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.nome && user.cognome 
+                              ? `${user.nome} ${user.cognome} (${user.username})` 
+                              : user.username}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>Caricamento utenti...</option>
+                      )}
+                    </select>
+                    
+                    {/* Mostra info utente attualmente assegnato */}
+                    {assignedUserInfo && (
+                      <div className="text-xs bg-purple-50 border border-purple-200 rounded mt-2 p-2">
+                        <p><strong>Attualmente assegnato a:</strong> {assignedUserInfo.display_name}</p>
+                        <p><strong>Username:</strong> {assignedUserInfo.username}</p>
+                        <p><strong>Ruolo:</strong> {assignedUserInfo.role}</p>
+                      </div>
                     )}
-                  </select>
-                  
-                  {/* Mostra info utente attualmente assegnato */}
-                  {assignedUserInfo && (
-                    <div className="text-xs bg-purple-50 border border-purple-200 rounded mt-2 p-2">
-                      <p><strong>Attualmente assegnato a:</strong> {assignedUserInfo.display_name}</p>
-                      <p><strong>Username:</strong> {assignedUserInfo.username}</p>
-                      <p><strong>Ruolo:</strong> {assignedUserInfo.role}</p>
-                    </div>
-                  )}
-                  
-                  <p className="text-xs text-purple-700 mt-1">
-                    Assegna questo cliente a un utente specifico per la gestione
-                  </p>
-                </div>
+                    
+                    <p className="text-xs text-purple-700 mt-1">
+                      Assegna questo cliente a un utente specifico per la gestione
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
