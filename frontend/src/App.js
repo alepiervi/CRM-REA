@@ -21442,7 +21442,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </Card>
           )}
 
-          {/* SEZIONE MODALITÀ PAGAMENTO - SOLO QUELLA SELEZIONATA */}
+          {/* SEZIONE MODALITÀ PAGAMENTO */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">💳 Modalità Pagamento</CardTitle>
@@ -21450,18 +21450,32 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <Label>Modalità Pagamento Selezionata</Label>
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-                    <strong>
-                      {formData.modalita_pagamento === 'iban' ? '💰 IBAN (Bonifico Bancario)' : 
-                       formData.modalita_pagamento === 'carta_credito' ? '💳 Carta di Credito' : 
-                       '❌ Nessuna modalità selezionata'}
-                    </strong>
-                  </div>
+                  <Label>Modalità Pagamento</Label>
+                  {canEditRestrictedFields() ? (
+                    /* EDITABLE - Only for Backoffice Commessa */
+                    <select
+                      value={formData.modalita_pagamento || ''}
+                      onChange={(e) => handleChange('modalita_pagamento', e.target.value)}
+                      className="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="">Seleziona modalità pagamento</option>
+                      <option value="iban">💰 IBAN (Bonifico Bancario)</option>
+                      <option value="carta_credito">💳 Carta di Credito</option>
+                    </select>
+                  ) : (
+                    /* READ-ONLY - For other roles */
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+                      <strong>
+                        {formData.modalita_pagamento === 'iban' ? '💰 IBAN (Bonifico Bancario)' : 
+                         formData.modalita_pagamento === 'carta_credito' ? '💳 Carta di Credito' : 
+                         '❌ Nessuna modalità selezionata'}
+                      </strong>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Campi IBAN - Solo se modalità selezionata */}
-                {formData.modalita_pagamento === 'iban' && (
+                {formData.modalita_pagamento === 'iban' && canEditRestrictedFields() && (
                   <>
                     <div>
                       <Label htmlFor="iban">IBAN</Label>
@@ -21485,8 +21499,22 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   </>
                 )}
                 
+                {/* IBAN READ-ONLY for other roles */}
+                {formData.modalita_pagamento === 'iban' && !canEditRestrictedFields() && (
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded text-sm space-y-2">
+                    <div>
+                      <strong>IBAN:</strong> {formData.iban || 'Non specificato'}
+                    </div>
+                    {formData.intestatario_diverso && (
+                      <div>
+                        <strong>Intestatario:</strong> {formData.intestatario_diverso}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 {/* Campi Carta di Credito - Solo se modalità selezionata */}
-                {formData.modalita_pagamento === 'carta_credito' && (
+                {formData.modalita_pagamento === 'carta_credito' && canEditRestrictedFields() && (
                   <>
                     <div>
                       <Label htmlFor="numero_carta">Numero Carta di Credito</Label>
