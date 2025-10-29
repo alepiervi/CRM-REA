@@ -21277,6 +21277,14 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                                     <div>
                                       <strong>Offerta SIM:</strong> {sim.offerta_sim || 'Non specificato'}
                                     </div>
+                                    {sim.assigned_user_id && (
+                                      <div className="col-span-2 bg-purple-50 p-2 rounded border-l-4 border-purple-400">
+                                        <strong className="text-purple-800">👤 Utente Assegnato:</strong>{' '}
+                                        <span className="text-purple-900">
+                                          {getUserDisplayName(sim.assigned_user_id)}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               ))}
