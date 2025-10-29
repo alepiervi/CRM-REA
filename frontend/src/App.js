@@ -21126,37 +21126,131 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   {formData.convergenza && (
                     <div className="ml-6 p-3 bg-blue-50 border border-blue-200 rounded">
                       <h4 className="text-sm font-semibold text-blue-800 mb-2">📱 SIM Associate alla Convergenza</h4>
-                      {(() => {
-                        console.log("🔍 DEBUG CONVERGENZA ITEMS:", {
-                          has_convergenza_items: Boolean(cliente?.convergenza_items),
-                          items_count: cliente?.convergenza_items?.length || 0,
-                          items_data: cliente?.convergenza_items
-                        });
-                        return null;
-                      })()}
-                      {cliente?.convergenza_items && cliente.convergenza_items.length > 0 ? (
-                        <div className="space-y-2">
-                          {cliente.convergenza_items.map((sim, index) => (
-                            <div key={index} className="bg-white p-2 rounded border text-sm">
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <strong>Numero:</strong> {sim.numero_cellulare || 'Non specificato'}
+                      
+                      {canEditRestrictedFields() ? (
+                        /* EDITABLE MODE - Only for Backoffice Commessa */
+                        <div className="space-y-3">
+                          {formData.convergenza_items && formData.convergenza_items.length > 0 ? (
+                            formData.convergenza_items.map((item, index) => (
+                              <div key={index} className="bg-white p-3 rounded border">
+                                <div className="flex justify-between items-center mb-2">
+                                  <h5 className="font-semibold text-gray-700">SIM #{index + 1}</h5>
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => {
+                                      const newItems = formData.convergenza_items.filter((_, i) => i !== index);
+                                      handleChange('convergenza_items', newItems);
+                                    }}
+                                  >
+                                    Rimuovi
+                                  </Button>
                                 </div>
-                                <div>
-                                  <strong>ICCID:</strong> {sim.iccid || 'Non specificato'}
-                                </div>
-                                <div>
-                                  <strong>Operatore:</strong> {sim.operatore || 'Non specificato'}
-                                </div>
-                                <div>
-                                  <strong>Offerta SIM:</strong> {sim.offerta_sim || 'Non specificato'}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div>
+                                    <Label>Numero Cellulare</Label>
+                                    <Input
+                                      value={item.numero_cellulare || ''}
+                                      onChange={(e) => {
+                                        const newItems = [...formData.convergenza_items];
+                                        newItems[index].numero_cellulare = e.target.value;
+                                        handleChange('convergenza_items', newItems);
+                                      }}
+                                      placeholder="Numero cellulare"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>ICCID</Label>
+                                    <Input
+                                      value={item.iccid || ''}
+                                      onChange={(e) => {
+                                        const newItems = [...formData.convergenza_items];
+                                        newItems[index].iccid = e.target.value;
+                                        handleChange('convergenza_items', newItems);
+                                      }}
+                                      placeholder="ICCID"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Operatore</Label>
+                                    <Input
+                                      value={item.operatore || ''}
+                                      onChange={(e) => {
+                                        const newItems = [...formData.convergenza_items];
+                                        newItems[index].operatore = e.target.value;
+                                        handleChange('convergenza_items', newItems);
+                                      }}
+                                      placeholder="Operatore"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Offerta SIM</Label>
+                                    <Input
+                                      value={item.offerta_sim || ''}
+                                      onChange={(e) => {
+                                        const newItems = [...formData.convergenza_items];
+                                        newItems[index].offerta_sim = e.target.value;
+                                        handleChange('convergenza_items', newItems);
+                                      }}
+                                      placeholder="Nome offerta SIM"
+                                    />
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))
+                          ) : (
+                            <p className="text-sm text-blue-600">Nessuna SIM associata</p>
+                          )}
+                          
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newItems = [
+                                ...(formData.convergenza_items || []),
+                                { numero_cellulare: '', iccid: '', operatore: '', offerta_sim: '' }
+                              ];
+                              handleChange('convergenza_items', newItems);
+                            }}
+                          >
+                            + Aggiungi SIM
+                          </Button>
                         </div>
                       ) : (
-                        <p className="text-sm text-blue-600">Nessuna SIM associata trovata</p>
+                        /* READ-ONLY MODE - For other roles */
+                        <>
+                          {console.log("🔍 DEBUG CONVERGENZA ITEMS:", {
+                            has_convergenza_items: Boolean(cliente?.convergenza_items),
+                            items_count: cliente?.convergenza_items?.length || 0,
+                            items_data: cliente?.convergenza_items
+                          })}
+                          {cliente?.convergenza_items && cliente.convergenza_items.length > 0 ? (
+                            <div className="space-y-2">
+                              {cliente.convergenza_items.map((sim, index) => (
+                                <div key={index} className="bg-white p-2 rounded border text-sm">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <strong>Numero:</strong> {sim.numero_cellulare || 'Non specificato'}
+                                    </div>
+                                    <div>
+                                      <strong>ICCID:</strong> {sim.iccid || 'Non specificato'}
+                                    </div>
+                                    <div>
+                                      <strong>Operatore:</strong> {sim.operatore || 'Non specificato'}
+                                    </div>
+                                    <div>
+                                      <strong>Offerta SIM:</strong> {sim.offerta_sim || 'Non specificato'}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-blue-600">Nessuna SIM associata trovata</p>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
