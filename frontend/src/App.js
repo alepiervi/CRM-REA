@@ -20141,6 +20141,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const [availableUsers, setAvailableUsers] = useState([]);  // NEW: Users list for assignment
   const [assignedUserInfo, setAssignedUserInfo] = useState(null);  // NEW: Assigned user info
   const [selectedAssignedUser, setSelectedAssignedUser] = useState(cliente?.assigned_to || '');  // NEW: Selected user for assignment
+  const [simUsersInfo, setSimUsersInfo] = useState({});  // NEW: Cache for SIM assigned users display names
 
   // Definizione di tutte le funzioni PRIMA del useEffect
   const fetchServizi = async (commessaId) => {
