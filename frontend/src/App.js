@@ -17794,7 +17794,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       luogo_rilascio: formData.luogo_rilascio || '',
       scadenza_documento: formatDateForBackend(formData.scadenza_documento),
       
-      // Telefonia Fastweb conditional fields
+      // Telefonia Fissa conditional fields
       tecnologia: formData.tecnologia || null, // FIX: Send null instead of empty string for enum fields
       codice_migrazione: formData.codice_migrazione || '',
       gestore: formData.gestore || '',
