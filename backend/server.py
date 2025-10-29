@@ -932,6 +932,7 @@ class ConvergenzaItem(BaseModel):
     iccid: Optional[str] = None
     operatore: Optional[str] = None
     offerta_sim: Optional[str] = None
+    assigned_user_id: Optional[str] = None  # NEW: User assigned to this specific SIM
 
 class MobileItem(BaseModel):
     telefono_da_portare: Optional[str] = None
