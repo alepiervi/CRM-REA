@@ -19442,6 +19442,23 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
     fetchServizio();
   }, [cliente.servizio_id]);
 
+  // NEW: Fetch assigned user info when component mounts
+  useEffect(() => {
+    const fetchAssignedUser = async () => {
+      if (cliente.assigned_to) {
+        try {
+          const response = await axios.get(`${API}/users/display-name/${cliente.assigned_to}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          setAssignedUserInfo(response.data);
+        } catch (error) {
+          console.error("Error fetching assigned user:", error);
+        }
+      }
+    };
+    fetchAssignedUser();
+  }, [cliente.assigned_to]);
+
   // Helper per verificare se mostrare sezioni condizionali
   const isTelefoniaFastweb = () => {
     const tipologia = cliente.tipologia_contratto?.toLowerCase() || '';
