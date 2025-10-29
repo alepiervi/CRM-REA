@@ -10090,10 +10090,11 @@ async def export_clienti_excel(
             else:
                 base_cliente["offerta_name"] = ""
             
-            # Get creator name
-            if cliente.get("created_by"):
-                creator = await db.users.find_one({"id": cliente["created_by"]})
-                base_cliente["created_by_name"] = creator.get("username") if creator else ""
+            # Get creator name - Use assigned_to if present, otherwise created_by
+            user_id_to_display = cliente.get("assigned_to") or cliente.get("created_by")
+            if user_id_to_display:
+                user_doc = await db.users.find_one({"id": user_id_to_display})
+                base_cliente["created_by_name"] = user_doc.get("username") if user_doc else ""
             else:
                 base_cliente["created_by_name"] = ""
             
