@@ -19388,8 +19388,18 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
   const [subOffertaInfo, setSubOffertaInfo] = useState(null);  // NEW: Sub-offerta info
   const [servizioInfo, setServizioInfo] = useState(null);  // NEW: Servizio info
   const [assignedUserInfo, setAssignedUserInfo] = useState(null);  // NEW: Assigned user info
+  const [simUsersInfo, setSimUsersInfo] = useState({});  // NEW: Cache for SIM assigned users
   
   if (!cliente) return null;
+  
+  // NEW: Function to get user display name from cache or fetch
+  const getUserDisplayName = (userId) => {
+    if (!userId) return "N/A";
+    if (simUsersInfo[userId]) {
+      return simUsersInfo[userId];
+    }
+    return "Caricamento...";
+  };
   
   const getCommessaName = (id) => commesse.find(c => c.id === id)?.nome || 'Non specificato';
   const getSubAgenziaName = (id) => subAgenzie.find(s => s.id === id)?.nome || 'Non specificato';
