@@ -10115,6 +10115,13 @@ async def export_clienti_excel(
                     row["sim_telefono_da_portare"] = ""
                     row["sim_titolare_diverso"] = ""
                     
+                    # Get assigned user for this SIM
+                    if sim.get("assigned_user_id"):
+                        assigned_user = await db.users.find_one({"id": sim["assigned_user_id"]})
+                        row["sim_assigned_user"] = assigned_user.get("username") if assigned_user else ""
+                    else:
+                        row["sim_assigned_user"] = ""
+                    
                     # Get offerta SIM name
                     if sim.get("offerta_sim"):
                         # offerta_sim could be an ID or a name, check if it's an ID (UUID format)
@@ -10139,6 +10146,7 @@ async def export_clienti_excel(
                     row["sim_telefono_da_portare"] = mobile.get("telefono_da_portare", "")
                     row["sim_titolare_diverso"] = mobile.get("titolare_diverso", "")
                     row["sim_offerta_name"] = ""  # Mobile items don't have offerta
+                    row["sim_assigned_user"] = ""  # Mobile items don't have assigned user (for now)
                     
                     expanded_rows.append(row)
             else:
@@ -10152,6 +10160,7 @@ async def export_clienti_excel(
                 row["sim_telefono_da_portare"] = ""
                 row["sim_titolare_diverso"] = ""
                 row["sim_offerta_name"] = ""
+                row["sim_assigned_user"] = ""
                 expanded_rows.append(row)
         
         # Create Excel file
