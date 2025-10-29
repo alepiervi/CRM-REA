@@ -20029,7 +20029,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     luogo_rilascio: cliente?.luogo_rilascio || '',
     scadenza_documento: formatDateForInput(cliente?.scadenza_documento),
     
-    // Campi Telefonia Fastweb
+    // Campi Telefonia Fissa
     tecnologia: cliente?.tecnologia || '',
     codice_migrazione: cliente?.codice_migrazione || '',
     gestore: cliente?.gestore || '',
