@@ -20143,6 +20143,66 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   };
 
+  const fetchAvailableUsers = async () => {
+    try {
+      console.log("👥 Loading available users for assignment...");
+      const response = await axios.get(`${API}/users`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setAvailableUsers(response.data);
+      console.log("✅ Available users loaded:", response.data.length);
+    } catch (error) {
+      console.error("❌ Error fetching available users:", error);
+      setAvailableUsers([]);
+    }
+  };
+
+  const fetchAssignedUserInfo = async (userId) => {
+    if (!userId) {
+      setAssignedUserInfo(null);
+      return;
+    }
+    try {
+      console.log("👤 Loading assigned user info for ID:", userId);
+      const response = await axios.get(`${API}/users/display-name/${userId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setAssignedUserInfo(response.data);
+      console.log("✅ Assigned user info loaded:", response.data);
+    } catch (error) {
+      console.error("❌ Error fetching assigned user info:", error);
+      setAssignedUserInfo(null);
+    }
+  };
+
+  const handleAssignUser = async (newUserId) => {
+    if (!newUserId || newUserId === selectedAssignedUser) {
+      return;  // No change
+    }
+
+    try {
+      console.log("🔄 Assigning client to user:", newUserId);
+      const response = await axios.patch(
+        `${API}/clienti/${cliente.id}/assign`,
+        null,
+        {
+          params: { user_id: newUserId },
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        }
+      );
+      
+      setSelectedAssignedUser(newUserId);
+      await fetchAssignedUserInfo(newUserId);
+      console.log("✅ Client assigned successfully");
+      
+      // Show success message
+      alert(`Cliente assegnato con successo a ${response.data.assigned_to}`);
+    } catch (error) {
+      console.error("❌ Error assigning client:", error);
+      alert(`Errore nell'assegnazione del client: ${error.response?.data?.detail || error.message}`);
+    }
+  };
+
   const handleChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
