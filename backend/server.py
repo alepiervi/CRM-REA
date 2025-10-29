@@ -9591,7 +9591,7 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
         "Numero Carta", "Intestatario Carta", "CVV", "Mese Scadenza", "Anno Scadenza",
         # SIM Info (Convergenza or Mobile)
         "Tipo SIM", "Numero SIM", "Numero Cellulare SIM", "ICCID SIM", "Operatore SIM",
-        "Telefono da Portare", "Titolare Diverso", "Offerta SIM",
+        "Telefono da Portare", "Titolare Diverso", "Offerta SIM", "Utente Assegnato SIM",
         # System Fields
         "Status", "Utente Creatore", "Data Creazione", "Note", "Note Back Office"
     ]
