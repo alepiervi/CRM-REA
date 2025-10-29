@@ -17021,7 +17021,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     luogo_rilascio: '',
     scadenza_documento: '',
     
-    // Campi specifici Telefonia Fastweb
+    // Campi specifici Telefonia Fissa
     tecnologia: '',
     codice_migrazione: '',
     gestore: '',
