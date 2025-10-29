@@ -19383,6 +19383,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
   const [offertaInfo, setOffertaInfo] = useState(null);
   const [subOffertaInfo, setSubOffertaInfo] = useState(null);  // NEW: Sub-offerta info
   const [servizioInfo, setServizioInfo] = useState(null);  // NEW: Servizio info
+  const [assignedUserInfo, setAssignedUserInfo] = useState(null);  // NEW: Assigned user info
   
   if (!cliente) return null;
   
