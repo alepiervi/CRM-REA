@@ -20411,6 +20411,18 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     fetchServizio();
   }, [cliente?.servizio_id]);
 
+  // NEW: Load available users for assignment when component mounts
+  useEffect(() => {
+    fetchAvailableUsers();
+  }, []);
+
+  // NEW: Load assigned user info when component mounts or assigned_to changes
+  useEffect(() => {
+    if (cliente?.assigned_to) {
+      fetchAssignedUserInfo(cliente.assigned_to);
+    }
+  }, [cliente?.assigned_to]);
+
   // Funzioni duplicate rimosse - ora definite prima del useEffect
 
   // Funzioni per gestire i campi modificabili (i dati organizzativi non sono più modificabili)
