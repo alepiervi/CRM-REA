@@ -10100,16 +10100,33 @@ async def export_clienti_excel(
             else:
                 base_cliente["created_by_name"] = ""
             
-            # Check if cliente has SIM items (convergenza or mobile)
+            # Check if cliente has SIM items (convergenza or mobile) or convergenza fissa
             convergenza_items = cliente.get("convergenza_items", [])
             mobile_items = cliente.get("mobile_items", [])
+            has_convergenza = cliente.get("convergenza", False)
             
-            # If cliente has SIM items, create one row per SIM
-            if convergenza_items or mobile_items:
-                # Process convergenza items
+            # If cliente has convergenza or SIM items, create multiple rows
+            if has_convergenza or convergenza_items or mobile_items:
+                
+                # FIRST: If convergenza is enabled, create row for LINEA FISSA
+                if has_convergenza:
+                    row = base_cliente.copy()
+                    row["sim_type"] = "Linea Fissa"
+                    row["sim_index"] = ""
+                    row["sim_numero_cellulare"] = ""
+                    row["sim_iccid"] = ""
+                    row["sim_operatore"] = ""
+                    row["sim_telefono_da_portare"] = ""
+                    row["sim_titolare_diverso"] = ""
+                    row["sim_offerta_name"] = ""
+                    row["sim_assigned_user"] = ""
+                    # Linea fissa mantiene i dati di tecnologia, codice migrazione, gestore
+                    expanded_rows.append(row)
+                
+                # SECOND: Process convergenza SIM items
                 for idx, sim in enumerate(convergenza_items):
                     row = base_cliente.copy()
-                    row["sim_type"] = "Convergenza"
+                    row["sim_type"] = "SIM Convergenza"
                     row["sim_index"] = idx + 1
                     row["sim_numero_cellulare"] = sim.get("numero_cellulare", "")
                     row["sim_iccid"] = sim.get("iccid", "")
