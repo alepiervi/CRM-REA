@@ -18462,10 +18462,10 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             </div>
           </div>
 
-          {/* SEZIONE TELEFONIA FASTWEB */}
+          {/* SEZIONE TELEFONIA FISSA */}
           {(() => {
             const showTelefoniaSection = isTelefoniaFastweb() && !isMobile() && !isTelepass();
-            console.log("🔍 RENDER CHECK - Telefonia Fastweb section:", showTelefoniaSection, {
+            console.log("🔍 RENDER CHECK - Telefonia Fissa section:", showTelefoniaSection, {
               isTelefonia: isTelefoniaFastweb(),
               isMobile: isMobile(),
               isTelepass: isTelepass(),
@@ -18474,7 +18474,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             return showTelefoniaSection;
           })() && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">📞 Telefonia Fastweb</h3>
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">📞 Telefonia Fissa</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
