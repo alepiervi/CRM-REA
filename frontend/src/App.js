@@ -19709,6 +19709,22 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                   {formatClienteStatus(cliente.status)}
                 </Badge>
               </div>
+              
+              {/* NEW: Assigned User */}
+              {cliente.assigned_to && (
+                <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                  <Label className="text-sm font-semibold text-purple-900">👤 Assegnato a</Label>
+                  <p className="text-sm font-medium text-purple-800">
+                    {assignedUserInfo?.display_name || cliente.assigned_to}
+                  </p>
+                  {assignedUserInfo?.username && (
+                    <p className="text-xs text-purple-700 mt-1">
+                      Username: {assignedUserInfo.username} | Ruolo: {assignedUserInfo.role}
+                    </p>
+                  )}
+                </div>
+              )}
+              
               <div>
                 <Label className="text-sm font-medium text-slate-600">Data Creazione</Label>
                 <p className="text-sm">{new Date(cliente.created_at).toLocaleDateString('it-IT')}</p>
