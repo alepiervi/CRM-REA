@@ -10840,20 +10840,18 @@ async def assign_cliente(
     assigned_to: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Assign cliente to a user - Admin, Responsabile/Backoffice Commessa/Sub Agenzia can assign"""
+    """Assign cliente to a user - only Admin, Responsabile Commessa, and Backoffice Commessa can assign"""
     try:
         # Check if user has permission to assign (only specific roles)
         allowed_roles = [
             UserRole.ADMIN, 
             UserRole.RESPONSABILE_COMMESSA, 
-            UserRole.BACKOFFICE_COMMESSA,
-            UserRole.RESPONSABILE_SUB_AGENZIA,
-            UserRole.BACKOFFICE_SUB_AGENZIA
+            UserRole.BACKOFFICE_COMMESSA
         ]
         if current_user.role not in allowed_roles:
             raise HTTPException(
                 status_code=403, 
-                detail="Solo Admin, Responsabile Commessa, Backoffice Commessa, Responsabile Sub Agenzia e Backoffice Sub Agenzia possono assegnare clienti"
+                detail="Solo Admin, Responsabile Commessa e Backoffice Commessa possono assegnare clienti"
             )
         
         cliente_doc = await db.clienti.find_one({"id": cliente_id})
