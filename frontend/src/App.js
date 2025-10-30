@@ -20958,6 +20958,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   <p className="text-sm p-2 bg-gray-50 border rounded">
                     {cliente?.tipologia_contratto === 'energia_fastweb' ? 'Energia Fastweb' :
                      cliente?.tipologia_contratto === 'telefonia_fastweb' ? 'Telefonia Fissa' :
+                     cliente?.tipologia_contratto === 'mobile_fastweb' ? 'Mobile Fastweb' :
                      cliente?.tipologia_contratto === 'ho_mobile' ? 'Ho Mobile' :
                      cliente?.tipologia_contratto === 'telepass' ? 'Telepass' :
                      cliente?.tipologia_contratto || 'Non disponibile'}
