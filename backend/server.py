@@ -3819,6 +3819,8 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
     
     users = await db.users.find(query).to_list(length=None)
     
+    print(f"✅ Found {len(users)} users from database")
+    
     # Robust user processing with error handling
     valid_users = []
     for user in users:
@@ -3830,10 +3832,12 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
             
             valid_user = User(**user)
             valid_users.append(valid_user)
+            print(f"👤 User: {valid_user.username}, Role: {valid_user.role}, Commesse: {getattr(valid_user, 'commesse_autorizzate', [])}, Sub-Agenzie: {getattr(valid_user, 'sub_agenzie_autorizzate', [])}")
         except Exception as e:
             print(f"Error processing user {user.get('username', 'unknown')}: {e}")
             continue
     
+    print(f"✅ Returning {len(valid_users)} valid users")
     return valid_users
 
 @api_router.get("/users/referenti/{unit_id}")
