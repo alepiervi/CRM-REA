@@ -3748,7 +3748,7 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
 
 @api_router.get("/users", response_model=List[User])
 async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
-    query = {}
+    query = {"is_active": True}  # Only active users
     
     if current_user.role == UserRole.ADMIN:
         # Admin can see all users, optionally filtered by unit
@@ -3757,6 +3757,7 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
     elif current_user.role == UserRole.REFERENTE:
         # Referente can see their agents in their unit
         query = {
+            "is_active": True,
             "$or": [
                 {"id": current_user.id},
                 {"referente_id": current_user.id}
@@ -3764,8 +3765,22 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
         }
         if unit_id:
             query["unit_id"] = unit_id
+    elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+        # Responsabile Commessa and Backoffice Commessa can see all users with overlapping permissions
+        # They need to see users to assign clients
+        query = {
+            "is_active": True,
+            "$or": [
+                {"role": "admin"},  # Include admins
+                {
+                    "commesse_autorizzate": {
+                        "$in": current_user.commesse_autorizzate if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate else []
+                    }
+                }
+            ]
+        }
     else:
-        # Agents can only see themselves
+        # Other roles can only see themselves
         query["id"] = current_user.id
     
     users = await db.users.find(query).to_list(length=None)
