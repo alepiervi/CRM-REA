@@ -3770,6 +3770,10 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
         # These roles can see all users with overlapping permissions (commesse or sub_agenzie)
         or_conditions = [{"role": "admin"}]  # Include admins
         
+        print(f"🔍 GET /users - User {current_user.username} role: {current_user.role}")
+        print(f"📋 User commesse_autorizzate: {getattr(current_user, 'commesse_autorizzate', [])}")
+        print(f"📋 User sub_agenzie_autorizzate: {getattr(current_user, 'sub_agenzie_autorizzate', [])}")
+        
         # Add condition for users with same commesse
         if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
             or_conditions.append({
@@ -3780,12 +3784,15 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
             
             # IMPORTANT: Also include users with sub_agenzie that belong to current user's commesse
             # Find all sub_agenzie under these commesse
+            print(f"🔎 Searching sub_agenzie for commesse: {current_user.commesse_autorizzate}")
             sub_agenzie_in_commesse = await db.sub_agenzie.find({
                 "commessa_id": {"$in": current_user.commesse_autorizzate}
             }).to_list(length=None)
             
+            print(f"📦 Found {len(sub_agenzie_in_commesse)} sub_agenzie")
             if sub_agenzie_in_commesse:
                 sub_agenzia_ids = [sa["id"] for sa in sub_agenzie_in_commesse]
+                print(f"📝 Sub agenzia IDs: {sub_agenzia_ids}")
                 or_conditions.append({
                     "sub_agenzie_autorizzate": {
                         "$in": sub_agenzia_ids
@@ -3799,6 +3806,8 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
                     "$in": current_user.sub_agenzie_autorizzate
                 }
             })
+        
+        print(f"🔍 Query OR conditions count: {len(or_conditions)}")
         
         query = {
             "is_active": True,
