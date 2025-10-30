@@ -40420,6 +40420,335 @@ startxref
                 print(f"      • Controllare che le commesse siano correttamente autorizzate")
             return False
 
+    def test_tipologia_contratto_mobile_fastweb_preservation_fix(self):
+        """🚨 TEST FIX TIPOLOGIA CONTRATTO MOBILE - VERIFICA PRESERVAZIONE VALORE"""
+        print("\n🚨 TEST FIX TIPOLOGIA CONTRATTO MOBILE - VERIFICA PRESERVAZIONE VALORE")
+        print("🎯 OBIETTIVO: Verificare che quando si modifica un cliente con tipologia 'mobile_fastweb', il valore non venga più cambiato in 'telefonia_fastweb'")
+        print("🎯 CONTESTO:")
+        print("   • Bug identificato: il backend aveva un fallback che cambiava 'mobile_fastweb' in 'telefonia_fastweb'")
+        print("   • Fix implementato: rimossa logica di fallback, ora mantiene il valore originale")
+        print("   • Devo testare che il fix funzioni correttamente")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. TROVA CLIENTE CON TIPOLOGIA MOBILE_FASTWEB**
+        print("\n🔍 2. TROVA CLIENTE CON TIPOLOGIA MOBILE_FASTWEB...")
+        
+        # First try to find the specific client mentioned in the request
+        target_cliente_id = "80d78eb5-2708-453c-9022-b53f6cd3ff9b"
+        target_cliente_name = "Alessandro Piervincenzi Piervincenzi"
+        
+        print(f"   🎯 Cercando cliente specifico: {target_cliente_name} (ID: {target_cliente_id})")
+        
+        # Try to get the specific client first
+        success, cliente_response, status = self.make_request(
+            'GET', f'clienti/{target_cliente_id}', 
+            expected_status=200
+        )
+        
+        test_cliente = None
+        if success and status == 200:
+            cliente = cliente_response
+            tipologia = cliente.get('tipologia_contratto', '')
+            nome_completo = f"{cliente.get('nome', '')} {cliente.get('cognome', '')}"
+            
+            if tipologia == 'mobile_fastweb':
+                test_cliente = cliente
+                self.log_test("✅ Cliente target trovato con mobile_fastweb", True, 
+                    f"Cliente: {nome_completo}, Tipologia: {tipologia}")
+            else:
+                self.log_test("⚠️ Cliente target trovato ma tipologia diversa", True, 
+                    f"Cliente: {nome_completo}, Tipologia attuale: {tipologia}")
+        else:
+            self.log_test("ℹ️ Cliente target non trovato", True, f"ID {target_cliente_id} non esiste")
+        
+        # If specific client not found or doesn't have mobile_fastweb, search for any client with mobile_fastweb
+        if not test_cliente:
+            print(f"\n   🔍 Cercando qualsiasi cliente con tipologia_contratto = 'mobile_fastweb'...")
+            
+            success, clienti_response, status = self.make_request('GET', 'clienti?limit=100', expected_status=200)
+            
+            if success and status == 200:
+                clienti = clienti_response if isinstance(clienti_response, list) else []
+                
+                for cliente in clienti:
+                    tipologia = cliente.get('tipologia_contratto', '')
+                    if tipologia == 'mobile_fastweb':
+                        test_cliente = cliente
+                        nome_completo = f"{cliente.get('nome', '')} {cliente.get('cognome', '')}"
+                        self.log_test("✅ Cliente con mobile_fastweb trovato", True, 
+                            f"Cliente: {nome_completo}, ID: {cliente.get('id')}")
+                        break
+                
+                if not test_cliente:
+                    # Create a test client with mobile_fastweb if none found
+                    print(f"\n   📝 Nessun cliente con mobile_fastweb trovato, creando cliente di test...")
+                    
+                    # Get valid commessa and sub agenzia
+                    success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+                    if not success:
+                        self.log_test("❌ Failed to get commesse", False, f"Status: {status}")
+                        return False
+                    
+                    commesse = commesse_response if isinstance(commesse_response, list) else []
+                    success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+                    if not success:
+                        self.log_test("❌ Failed to get sub agenzie", False, f"Status: {status}")
+                        return False
+                    
+                    sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+                    
+                    # Find compatible commessa/sub agenzia
+                    target_commessa = None
+                    target_sub_agenzia = None
+                    
+                    for commessa in commesse:
+                        commessa_id = commessa.get('id')
+                        for sub_agenzia in sub_agenzie:
+                            if commessa_id in sub_agenzia.get('commesse_autorizzate', []):
+                                target_commessa = commessa
+                                target_sub_agenzia = sub_agenzia
+                                break
+                        if target_commessa:
+                            break
+                    
+                    if target_commessa and target_sub_agenzia:
+                        # Create test client with mobile_fastweb
+                        test_payload = {
+                            "nome": "Mario",
+                            "cognome": "Mobile Fastweb Test",
+                            "email": "mario.mobilefastweb@test.com",
+                            "telefono": "3331234567",
+                            "codice_fiscale": "MBLFSW85M01H501T",
+                            "commessa_id": target_commessa.get('id'),
+                            "sub_agenzia_id": target_sub_agenzia.get('id'),
+                            "tipologia_contratto": "mobile_fastweb",
+                            "segmento": "privato"
+                        }
+                        
+                        success, create_response, status = self.make_request(
+                            'POST', 'clienti', 
+                            test_payload, 
+                            expected_status=200
+                        )
+                        
+                        if success and status == 200:
+                            test_cliente = create_response
+                            self.log_test("✅ Cliente test creato con mobile_fastweb", True, 
+                                f"Cliente: Mario Mobile Fastweb Test, ID: {test_cliente.get('id')}")
+                        else:
+                            self.log_test("❌ Failed to create test client", False, f"Status: {status}")
+                            return False
+                    else:
+                        self.log_test("❌ No compatible commessa/sub agenzia found", False, "Cannot create test client")
+                        return False
+            else:
+                self.log_test("❌ Failed to get clienti list", False, f"Status: {status}")
+                return False
+        
+        if not test_cliente:
+            self.log_test("❌ No cliente with mobile_fastweb found or created", False, "Cannot proceed with test")
+            return False
+        
+        # **3. VERIFICA TIPOLOGIA INIZIALE**
+        print("\n✅ 3. VERIFICA TIPOLOGIA INIZIALE...")
+        
+        cliente_id = test_cliente.get('id')
+        nome_completo = f"{test_cliente.get('nome', '')} {test_cliente.get('cognome', '')}"
+        tipologia_iniziale = test_cliente.get('tipologia_contratto')
+        
+        if tipologia_iniziale == 'mobile_fastweb':
+            self.log_test("✅ Tipologia contratto verificata", True, 
+                f"Cliente {nome_completo} ha tipologia_contratto = 'mobile_fastweb'")
+        else:
+            self.log_test("❌ Tipologia contratto non corretta", False, 
+                f"Expected: 'mobile_fastweb', Found: '{tipologia_iniziale}'")
+            return False
+        
+        # **4. MODIFICA CLIENTE SENZA CAMBIARE TIPOLOGIA**
+        print("\n📝 4. MODIFICA CLIENTE SENZA CAMBIARE TIPOLOGIA...")
+        print("   🎯 CRITICO: Modificare solo un campo semplice (note) senza toccare tipologia_contratto")
+        
+        # Prepare update payload - only change notes, don't include tipologia_contratto
+        update_payload = {
+            "note": "Test fix tipologia - Verifica che mobile_fastweb non diventi telefonia_fastweb"
+        }
+        
+        print(f"   📋 UPDATE PAYLOAD:")
+        print(f"      • note: '{update_payload['note']}'")
+        print(f"      • tipologia_contratto: NON INCLUSO (deve rimanere mobile_fastweb)")
+        
+        success, update_response, status = self.make_request(
+            'PUT', f'clienti/{cliente_id}', 
+            update_payload, 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            self.log_test("✅ Cliente modificato con successo", True, 
+                f"PUT /api/clienti/{cliente_id} - Status: {status}")
+            
+            # Check if response contains tipologia_contratto
+            response_tipologia = update_response.get('tipologia_contratto')
+            if response_tipologia:
+                if response_tipologia == 'mobile_fastweb':
+                    self.log_test("✅ Response tipologia corretta", True, 
+                        f"Response tipologia_contratto: '{response_tipologia}' (preserved)")
+                else:
+                    self.log_test("❌ Response tipologia cambiata", False, 
+                        f"Expected: 'mobile_fastweb', Response: '{response_tipologia}'")
+        else:
+            self.log_test("❌ Cliente modification failed", False, f"Status: {status}, Response: {update_response}")
+            return False
+        
+        # **5. VERIFICA CHE TIPOLOGIA RIMANE MOBILE_FASTWEB**
+        print("\n🔍 5. VERIFICA CHE TIPOLOGIA RIMANE MOBILE_FASTWEB...")
+        print("   🎯 CRITICO: GET del cliente per verificare che tipologia_contratto sia ancora 'mobile_fastweb'")
+        
+        success, verify_response, status = self.make_request(
+            'GET', f'clienti/{cliente_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            tipologia_finale = verify_response.get('tipologia_contratto')
+            note_finale = verify_response.get('note', '')
+            
+            self.log_test("✅ Cliente recuperato per verifica", True, 
+                f"GET /api/clienti/{cliente_id} - Status: {status}")
+            
+            # CRITICAL VERIFICATION: tipologia_contratto should still be mobile_fastweb
+            if tipologia_finale == 'mobile_fastweb':
+                self.log_test("🎉 TIPOLOGIA CONTRATTO PRESERVATA", True, 
+                    f"tipologia_contratto = '{tipologia_finale}' (RIMASTA mobile_fastweb)")
+                tipologia_preserved = True
+            elif tipologia_finale == 'telefonia_fastweb':
+                self.log_test("🚨 BUG ANCORA PRESENTE", False, 
+                    f"tipologia_contratto = '{tipologia_finale}' (CAMBIATA da mobile_fastweb a telefonia_fastweb)")
+                tipologia_preserved = False
+            else:
+                self.log_test("❌ Tipologia contratto inaspettata", False, 
+                    f"Expected: 'mobile_fastweb', Found: '{tipologia_finale}'")
+                tipologia_preserved = False
+            
+            # Verify notes were updated
+            if "Test fix tipologia" in note_finale:
+                self.log_test("✅ Note aggiornate correttamente", True, 
+                    f"Note contengono: 'Test fix tipologia'")
+            else:
+                self.log_test("⚠️ Note non aggiornate", True, 
+                    f"Note: '{note_finale}'")
+        else:
+            self.log_test("❌ Failed to retrieve cliente for verification", False, f"Status: {status}")
+            return False
+        
+        # **6. TEST CON ALTRA TIPOLOGIA (OPZIONALE)**
+        print("\n🔍 6. TEST CON ALTRA TIPOLOGIA (energia_fastweb)...")
+        
+        # Find or create a client with energia_fastweb
+        success, clienti_response, status = self.make_request('GET', 'clienti?limit=50', expected_status=200)
+        
+        energia_cliente = None
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            
+            for cliente in clienti:
+                if cliente.get('tipologia_contratto') == 'energia_fastweb':
+                    energia_cliente = cliente
+                    break
+        
+        if energia_cliente:
+            energia_id = energia_cliente.get('id')
+            energia_nome = f"{energia_cliente.get('nome', '')} {energia_cliente.get('cognome', '')}"
+            
+            self.log_test("✅ Cliente con energia_fastweb trovato", True, 
+                f"Cliente: {energia_nome}")
+            
+            # Modify energia_fastweb client
+            energia_update = {
+                "note": "Test fix tipologia - Verifica che energia_fastweb rimanga energia_fastweb"
+            }
+            
+            success, energia_update_response, status = self.make_request(
+                'PUT', f'clienti/{energia_id}', 
+                energia_update, 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                # Verify energia_fastweb is preserved
+                success, energia_verify_response, status = self.make_request(
+                    'GET', f'clienti/{energia_id}', 
+                    expected_status=200
+                )
+                
+                if success and status == 200:
+                    energia_tipologia_finale = energia_verify_response.get('tipologia_contratto')
+                    
+                    if energia_tipologia_finale == 'energia_fastweb':
+                        self.log_test("✅ energia_fastweb preservata", True, 
+                            f"tipologia_contratto rimasta 'energia_fastweb'")
+                    else:
+                        self.log_test("❌ energia_fastweb cambiata", False, 
+                            f"Expected: 'energia_fastweb', Found: '{energia_tipologia_finale}'")
+        else:
+            self.log_test("ℹ️ Nessun cliente con energia_fastweb trovato", True, "Test opzionale saltato")
+        
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 TEST FIX TIPOLOGIA CONTRATTO MOBILE - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che mobile_fastweb non venga più cambiato in telefonia_fastweb")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Cliente con mobile_fastweb trovato: ✅ SUCCESS")
+        print(f"      • Tipologia contratto iniziale verificata: ✅ mobile_fastweb")
+        print(f"      • Modifica cliente eseguita: ✅ SUCCESS (200)")
+        print(f"      • Tipologia contratto finale: {'✅ mobile_fastweb (PRESERVED)' if tipologia_preserved else '❌ CHANGED (BUG STILL PRESENT)'}")
+        
+        print(f"\n   🎯 CRITERI DI SUCCESSO:")
+        print(f"      ✅ Cliente con mobile_fastweb trovato")
+        print(f"      ✅ Modifica cliente eseguita con successo (200)")
+        print(f"      {'✅' if tipologia_preserved else '❌'} Tipologia contratto rimane 'mobile_fastweb' dopo modifica")
+        print(f"      {'✅' if tipologia_preserved else '❌'} Il bug è risolto - nessuna conversione automatica a telefonia_fastweb")
+        
+        if tipologia_preserved:
+            print(f"\n   🎉 SUCCESS: Il fix funziona correttamente!")
+            print(f"   ✅ VERIFICA COMPLETATA:")
+            print(f"      • mobile_fastweb rimane mobile_fastweb dopo modifica")
+            print(f"      • Nessuna conversione automatica a telefonia_fastweb")
+            print(f"      • Il fallback logic è stato rimosso con successo")
+            print(f"      • Il valore originale viene preservato")
+            return True
+        else:
+            print(f"\n   🚨 FAILURE: Il bug è ancora presente!")
+            print(f"   🔧 PROBLEMI IDENTIFICATI:")
+            print(f"      • mobile_fastweb viene ancora cambiato in telefonia_fastweb")
+            print(f"      • Il fallback logic non è stato completamente rimosso")
+            print(f"      • Il fix non funziona come previsto")
+            print(f"   💡 RACCOMANDAZIONI:")
+            print(f"      • Verificare il codice di modifica cliente nel backend")
+            print(f"      • Controllare se esiste ancora logica di fallback per tipologia_contratto")
+            print(f"      • Assicurarsi che il campo tipologia_contratto non venga sovrascritto")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
