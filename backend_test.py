@@ -42526,6 +42526,291 @@ def main():
         print("🚨 RUNNING IMMEDIATE ALE7 POST-RESTART VERIFICATION...")
         return self.test_ale7_post_restart_verification_immediate()
 
+    def test_ale3_ale4_servizi_autorizzati_verification(self):
+        """🚨 VERIFICA RAPIDA - ale3 e ale4 NEL DROPDOWN ASSEGNAZIONE"""
+        print("\n🚨 VERIFICA RAPIDA - ale3 e ale4 NEL DROPDOWN ASSEGNAZIONE")
+        print("🎯 OBIETTIVO: Verificare velocemente che ale3 e ale4 ora passino il filtro frontend per apparire nel dropdown di assegnazione clienti")
+        print("🎯 CONTESTO:")
+        print("   • Cliente '33 prova' ha: sub_agenzia_id = Presidio-Maximo, servizio_id = 62f75c5b-6030-442e-9f0a-03bfdaaaab16")
+        print("   • ale3 e ale4 devono avere questo servizio in servizi_autorizzati per apparire nel dropdown")
+        print("🎯 TEST DA ESEGUIRE:")
+        print("   1. Login Admin (admin/admin123)")
+        print("   2. Verifica ale3 autorizzazioni aggiornate")
+        print("   3. Verifica ale4 autorizzazioni aggiornate")
+        print("   4. Simula filtro frontend per cliente '33 prova'")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. TROVA CLIENTE "33 prova" E VERIFICA DATI**
+        print("\n🔍 2. TROVA CLIENTE '33 prova' E VERIFICA DATI...")
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        target_cliente = None
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            
+            # Find cliente "33 prova"
+            for cliente in clienti:
+                if cliente.get('nome') == '33' and cliente.get('cognome') == 'prova':
+                    target_cliente = cliente
+                    break
+            
+            if target_cliente:
+                cliente_sub_agenzia_id = target_cliente.get('sub_agenzia_id')
+                cliente_servizio_id = target_cliente.get('servizio_id')
+                
+                self.log_test("✅ Cliente '33 prova' trovato", True, 
+                    f"ID: {target_cliente.get('id')}, Sub Agenzia: {cliente_sub_agenzia_id}, Servizio: {cliente_servizio_id}")
+                
+                # Verify expected values
+                expected_servizio_id = "62f75c5b-6030-442e-9f0a-03bfdaaaab16"
+                if cliente_servizio_id == expected_servizio_id:
+                    self.log_test("✅ Cliente servizio_id corretto", True, f"Servizio ID: {expected_servizio_id}")
+                else:
+                    self.log_test("❌ Cliente servizio_id non corretto", False, 
+                        f"Expected: {expected_servizio_id}, Got: {cliente_servizio_id}")
+                    
+            else:
+                self.log_test("❌ Cliente '33 prova' non trovato", False, "Cannot proceed without target cliente")
+                return False
+        else:
+            self.log_test("❌ GET /api/clienti failed", False, f"Status: {status}")
+            return False
+
+        # **3. VERIFICA SUB AGENZIA "Presidio - Maximo"**
+        print("\n🏢 3. VERIFICA SUB AGENZIA 'Presidio - Maximo'...")
+        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+        
+        presidio_maximo_sub_agenzia = None
+        if success and status == 200:
+            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+            
+            for sub_agenzia in sub_agenzie:
+                if 'Presidio' in sub_agenzia.get('nome', '') and 'Maximo' in sub_agenzia.get('nome', ''):
+                    presidio_maximo_sub_agenzia = sub_agenzia
+                    break
+            
+            if presidio_maximo_sub_agenzia:
+                presidio_id = presidio_maximo_sub_agenzia.get('id')
+                presidio_nome = presidio_maximo_sub_agenzia.get('nome')
+                
+                self.log_test("✅ Sub Agenzia 'Presidio - Maximo' trovata", True, 
+                    f"Nome: {presidio_nome}, ID: {presidio_id}")
+                
+                # Verify cliente belongs to this sub agenzia
+                if target_cliente.get('sub_agenzia_id') == presidio_id:
+                    self.log_test("✅ Cliente appartiene a Presidio - Maximo", True, "Sub agenzia match confirmed")
+                else:
+                    self.log_test("❌ Cliente non appartiene a Presidio - Maximo", False, 
+                        f"Cliente sub_agenzia_id: {target_cliente.get('sub_agenzia_id')}, Presidio ID: {presidio_id}")
+            else:
+                self.log_test("❌ Sub Agenzia 'Presidio - Maximo' non trovata", False, "Cannot proceed without sub agenzia")
+                return False
+        else:
+            self.log_test("❌ GET /api/sub-agenzie failed", False, f"Status: {status}")
+            return False
+
+        # **4. VERIFICA ale3 AUTORIZZAZIONI AGGIORNATE**
+        print("\n👤 4. VERIFICA ale3 AUTORIZZAZIONI AGGIORNATE...")
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        ale3_user = None
+        ale4_user = None
+        
+        if success and status == 200:
+            users = users_response if isinstance(users_response, list) else []
+            
+            # Find ale3 and ale4 users
+            for user in users:
+                if user.get('username') == 'ale3':
+                    ale3_user = user
+                elif user.get('username') == 'ale4':
+                    ale4_user = user
+            
+            # Test ale3
+            if ale3_user:
+                ale3_servizi_autorizzati = ale3_user.get('servizi_autorizzati', [])
+                ale3_sub_agenzie_autorizzate = ale3_user.get('sub_agenzie_autorizzate', [])
+                
+                self.log_test("✅ ale3 user trovato", True, 
+                    f"Role: {ale3_user.get('role')}, Servizi: {len(ale3_servizi_autorizzati)}, Sub Agenzie: {len(ale3_sub_agenzie_autorizzate)}")
+                
+                # Check if ale3 has the required service
+                required_servizio_id = "62f75c5b-6030-442e-9f0a-03bfdaaaab16"
+                if required_servizio_id in ale3_servizi_autorizzati:
+                    self.log_test("✅ ale3 ha il servizio 62f75c5b-6030-442e-9f0a-03bfdaaaab16", True, 
+                        "Servizio autorizzato presente in servizi_autorizzati")
+                else:
+                    self.log_test("❌ ale3 NON ha il servizio 62f75c5b-6030-442e-9f0a-03bfdaaaab16", False, 
+                        f"Servizi autorizzati: {ale3_servizi_autorizzati}")
+                
+                # Check if ale3 has Presidio - Maximo sub agenzia
+                presidio_id = presidio_maximo_sub_agenzia.get('id')
+                if presidio_id in ale3_sub_agenzie_autorizzate:
+                    self.log_test("✅ ale3 ha sub agenzia Presidio - Maximo", True, 
+                        "Sub agenzia autorizzata presente")
+                else:
+                    self.log_test("❌ ale3 NON ha sub agenzia Presidio - Maximo", False, 
+                        f"Sub agenzie autorizzate: {ale3_sub_agenzie_autorizzate}")
+                        
+            else:
+                self.log_test("❌ ale3 user non trovato", False, "Cannot verify ale3 authorizations")
+
+            # **5. VERIFICA ale4 AUTORIZZAZIONI AGGIORNATE**
+            print("\n👤 5. VERIFICA ale4 AUTORIZZAZIONI AGGIORNATE...")
+            
+            if ale4_user:
+                ale4_servizi_autorizzati = ale4_user.get('servizi_autorizzati', [])
+                ale4_sub_agenzie_autorizzate = ale4_user.get('sub_agenzie_autorizzate', [])
+                
+                self.log_test("✅ ale4 user trovato", True, 
+                    f"Role: {ale4_user.get('role')}, Servizi: {len(ale4_servizi_autorizzati)}, Sub Agenzie: {len(ale4_sub_agenzie_autorizzate)}")
+                
+                # Check if ale4 has the required service
+                required_servizio_id = "62f75c5b-6030-442e-9f0a-03bfdaaaab16"
+                if required_servizio_id in ale4_servizi_autorizzati:
+                    self.log_test("✅ ale4 ha il servizio 62f75c5b-6030-442e-9f0a-03bfdaaaab16", True, 
+                        "Servizio autorizzato presente in servizi_autorizzati")
+                else:
+                    self.log_test("❌ ale4 NON ha il servizio 62f75c5b-6030-442e-9f0a-03bfdaaaab16", False, 
+                        f"Servizi autorizzati: {ale4_servizi_autorizzati}")
+                
+                # Check if ale4 has Presidio - Maximo sub agenzia
+                presidio_id = presidio_maximo_sub_agenzia.get('id')
+                if presidio_id in ale4_sub_agenzie_autorizzate:
+                    self.log_test("✅ ale4 ha sub agenzia Presidio - Maximo", True, 
+                        "Sub agenzia autorizzata presente")
+                else:
+                    self.log_test("❌ ale4 NON ha sub agenzia Presidio - Maximo", False, 
+                        f"Sub agenzie autorizzate: {ale4_sub_agenzie_autorizzate}")
+                        
+            else:
+                self.log_test("❌ ale4 user non trovato", False, "Cannot verify ale4 authorizations")
+        else:
+            self.log_test("❌ GET /api/users failed", False, f"Status: {status}")
+            return False
+
+        # **6. SIMULA FILTRO FRONTEND PER CLIENTE "33 prova"**
+        print("\n🔍 6. SIMULA FILTRO FRONTEND PER CLIENTE '33 prova'...")
+        
+        if target_cliente and ale3_user and ale4_user:
+            cliente_sub_agenzia_id = target_cliente.get('sub_agenzia_id')
+            cliente_servizio_id = target_cliente.get('servizio_id')
+            
+            print(f"\n   📋 FILTRO FRONTEND LOGIC:")
+            print(f"      • Cliente sub_agenzia_id: {cliente_sub_agenzia_id}")
+            print(f"      • Cliente servizio_id: {cliente_servizio_id}")
+            print(f"      • Filtro: user.sub_agenzie_autorizzate includes cliente.sub_agenzia_id")
+            print(f"      • Filtro: user.servizi_autorizzati includes cliente.servizio_id")
+            
+            # Test ale3 filter
+            ale3_sub_agenzie = ale3_user.get('sub_agenzie_autorizzate', [])
+            ale3_servizi = ale3_user.get('servizi_autorizzati', [])
+            
+            ale3_sub_agenzia_match = cliente_sub_agenzia_id in ale3_sub_agenzie
+            ale3_servizio_match = cliente_servizio_id in ale3_servizi
+            ale3_passes_filter = ale3_sub_agenzia_match and ale3_servizio_match
+            
+            print(f"\n   👤 ale3 FILTRO FRONTEND:")
+            print(f"      • Sub agenzia match: {ale3_sub_agenzia_match}")
+            print(f"      • Servizio match: {ale3_servizio_match}")
+            print(f"      • Passa il filtro: {ale3_passes_filter}")
+            
+            if ale3_passes_filter:
+                self.log_test("✅ ale3 passa il filtro frontend", True, 
+                    "ale3 apparirebbe nel dropdown assegnazione clienti")
+            else:
+                self.log_test("❌ ale3 NON passa il filtro frontend", False, 
+                    "ale3 NON apparirebbe nel dropdown assegnazione clienti")
+            
+            # Test ale4 filter
+            ale4_sub_agenzie = ale4_user.get('sub_agenzie_autorizzate', [])
+            ale4_servizi = ale4_user.get('servizi_autorizzati', [])
+            
+            ale4_sub_agenzia_match = cliente_sub_agenzia_id in ale4_sub_agenzie
+            ale4_servizio_match = cliente_servizio_id in ale4_servizi
+            ale4_passes_filter = ale4_sub_agenzia_match and ale4_servizio_match
+            
+            print(f"\n   👤 ale4 FILTRO FRONTEND:")
+            print(f"      • Sub agenzia match: {ale4_sub_agenzia_match}")
+            print(f"      • Servizio match: {ale4_servizio_match}")
+            print(f"      • Passa il filtro: {ale4_passes_filter}")
+            
+            if ale4_passes_filter:
+                self.log_test("✅ ale4 passa il filtro frontend", True, 
+                    "ale4 apparirebbe nel dropdown assegnazione clienti")
+            else:
+                self.log_test("❌ ale4 NON passa il filtro frontend", False, 
+                    "ale4 NON apparirebbe nel dropdown assegnazione clienti")
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 VERIFICA RAPIDA ale3 e ale4 DROPDOWN ASSEGNAZIONE - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che ale3 e ale4 ora passino il filtro frontend")
+        print(f"   📊 RISULTATI VERIFICA (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Cliente '33 prova' trovato: {'✅ SUCCESS' if target_cliente else '❌ FAILED'}")
+        print(f"      • Sub agenzia 'Presidio - Maximo' trovata: {'✅ SUCCESS' if presidio_maximo_sub_agenzia else '❌ FAILED'}")
+        print(f"      • ale3 user trovato: {'✅ SUCCESS' if ale3_user else '❌ FAILED'}")
+        print(f"      • ale4 user trovato: {'✅ SUCCESS' if ale4_user else '❌ FAILED'}")
+        
+        if ale3_user and ale4_user and target_cliente:
+            required_servizio_id = "62f75c5b-6030-442e-9f0a-03bfdaaaab16"
+            
+            ale3_has_service = required_servizio_id in ale3_user.get('servizi_autorizzati', [])
+            ale4_has_service = required_servizio_id in ale4_user.get('servizi_autorizzati', [])
+            
+            ale3_passes = ale3_has_service and target_cliente.get('sub_agenzia_id') in ale3_user.get('sub_agenzie_autorizzate', [])
+            ale4_passes = ale4_has_service and target_cliente.get('sub_agenzia_id') in ale4_user.get('sub_agenzie_autorizzate', [])
+            
+            print(f"\n   📊 CRITERI DI SUCCESSO:")
+            print(f"      • ale3 ha il servizio 62f75c5b-6030-442e-9f0a-03bfdaaaab16: {'✅' if ale3_has_service else '❌'}")
+            print(f"      • ale4 ha il servizio 62f75c5b-6030-442e-9f0a-03bfdaaaab16: {'✅' if ale4_has_service else '❌'}")
+            print(f"      • ale3 passa il filtro frontend: {'✅' if ale3_passes else '❌'}")
+            print(f"      • ale4 passa il filtro frontend: {'✅' if ale4_passes else '❌'}")
+            
+            success_count = sum([ale3_has_service, ale4_has_service, ale3_passes, ale4_passes])
+            success_rate = (success_count / 4) * 100
+            
+            print(f"\n   📊 SUCCESS RATE: {success_count}/4 ({success_rate:.1f}%)")
+            
+            if success_rate == 100:
+                print(f"   🎉 SUCCESS: ale3 e ale4 ora compaiono nel dropdown assegnazione clienti!")
+                print(f"   ✅ VERIFICA COMPLETATA:")
+                print(f"      • Entrambi gli utenti hanno il servizio autorizzato")
+                print(f"      • Entrambi gli utenti passano il filtro frontend")
+                print(f"      • Il fix è stato applicato correttamente")
+                return True
+            else:
+                print(f"   🚨 ISSUES FOUND: ale3 e/o ale4 ancora non compaiono nel dropdown")
+                print(f"   🔧 RACCOMANDAZIONI:")
+                if not ale3_has_service:
+                    print(f"      • Aggiungere servizio 62f75c5b-6030-442e-9f0a-03bfdaaaab16 a ale3.servizi_autorizzati")
+                if not ale4_has_service:
+                    print(f"      • Aggiungere servizio 62f75c5b-6030-442e-9f0a-03bfdaaaab16 a ale4.servizi_autorizzati")
+                return False
+        else:
+            print(f"   🚨 CRITICAL ERROR: Missing required data for verification")
+            return False
+
 if __name__ == "__main__":
     tester = CRMAPITester()
     
