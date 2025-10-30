@@ -10789,20 +10789,13 @@ async def update_cliente(
                 if tipologia_doc:
                     # Map the tipologia name to enum value
                     tipologia_name = tipologia_doc.get("nome", "").lower().replace(" ", "_")
-                    if tipologia_name == "telefonia_fastweb":
-                        update_dict['tipologia_contratto'] = "telefonia_fastweb"
-                    elif tipologia_name == "energia_fastweb":
-                        update_dict['tipologia_contratto'] = "energia_fastweb"
-                    elif tipologia_name == "ho_mobile":
-                        update_dict['tipologia_contratto'] = "ho_mobile"
-                    elif tipologia_name == "telepass":
-                        update_dict['tipologia_contratto'] = "telepass"
-                    else:
-                        # Fallback to default if no match
-                        update_dict['tipologia_contratto'] = "telefonia_fastweb"
+                    # Use the tipologia_name directly if it's one of the known types
+                    # Otherwise keep the original value to avoid data loss
+                    update_dict['tipologia_contratto'] = tipologia_name
                 else:
-                    # If UUID not found, fallback to default
-                    update_dict['tipologia_contratto'] = "telefonia_fastweb"
+                    # If UUID not found, keep original value to avoid data loss
+                    logging.warning(f"Tipologia UUID {tipologia_value} not found in database, keeping original value")
+            # If it's already a string enum value, keep it as is (no conversion needed)
         
         update_data = {k: v for k, v in update_dict.items() if v is not None}
         update_data["updated_at"] = datetime.now(timezone.utc)
