@@ -40751,18 +40751,307 @@ startxref
             print(f"      • Assicurarsi che il campo tipologia_contratto non venga sovrascritto")
             return False
 
+    def test_dynamic_contract_types_preservation(self):
+        """🚨 TEST GESTIONE TIPOLOGIE DINAMICHE - VERIFICA PRESERVAZIONE NUOVE TIPOLOGIE"""
+        print("\n🚨 TEST GESTIONE TIPOLOGIE DINAMICHE - VERIFICA PRESERVAZIONE NUOVE TIPOLOGIE")
+        print("🎯 OBIETTIVO: Verificare che il sistema gestisca correttamente QUALSIASI tipologia contratto, incluse quelle nuove create dall'utente, senza mai modificarle o convertirle")
+        print("🎯 CONTESTO:")
+        print("   • Il sistema deve essere completamente dinamico per le tipologie")
+        print("   • Quando viene creata una nuova tipologia nel database, deve essere usata così com'è")
+        print("   • Non ci devono essere conversioni automatiche o fallback")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. GET EXISTING CLIENTI WITH DIFFERENT TIPOLOGIE**
+        print("\n📋 2. TROVA CLIENTI CON DIVERSE TIPOLOGIE...")
+        success, clienti_response, status = self.make_request('GET', 'clienti?skip=0&limit=100', expected_status=200)
+        
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            self.log_test("✅ GET /api/clienti", True, f"Found {len(clienti)} clienti")
+        else:
+            self.log_test("❌ GET /api/clienti failed", False, f"Status: {status}")
+            return False
+
+        # **3. ANALYZE EXISTING TIPOLOGIE**
+        print("\n🔍 3. ANALIZZA TIPOLOGIE ESISTENTI...")
+        
+        tipologie_found = {}
+        target_tipologie = ['mobile_fastweb', 'energia_fastweb', 'telefonia_fastweb', 'energia_fastweb_tls']
+        custom_tipologie = []
+        
+        for cliente in clienti:
+            tipologia = cliente.get('tipologia_contratto')
+            if tipologia:
+                if tipologia not in tipologie_found:
+                    tipologie_found[tipologia] = []
+                tipologie_found[tipologia].append(cliente)
+                
+                # Check for custom tipologie (not in standard list)
+                if tipologia not in target_tipologie and tipologia not in ['telefonia_vodafone_negozi', 'prova']:
+                    if tipologia not in custom_tipologie:
+                        custom_tipologie.append(tipologia)
+        
+        print(f"\n   📊 TIPOLOGIE TROVATE NEL DATABASE:")
+        for tipologia, clienti_list in tipologie_found.items():
+            print(f"      • {tipologia}: {len(clienti_list)} clienti")
+            
+        self.log_test("✅ Tipologie analysis complete", True, 
+            f"Found {len(tipologie_found)} different tipologie in database")
+
+        # **4. TEST CON TIPOLOGIE ESISTENTI DIVERSE**
+        print("\n🧪 4. TEST CON TIPOLOGIE ESISTENTI DIVERSE...")
+        
+        test_results = []
+        
+        for target_tipologia in target_tipologie:
+            if target_tipologia in tipologie_found:
+                clienti_with_tipologia = tipologie_found[target_tipologia]
+                if clienti_with_tipologia:
+                    # Use first cliente with this tipologia
+                    test_cliente = clienti_with_tipologia[0]
+                    cliente_id = test_cliente.get('id')
+                    cliente_nome = f"{test_cliente.get('nome', '')} {test_cliente.get('cognome', '')}"
+                    original_tipologia = test_cliente.get('tipologia_contratto')
+                    
+                    print(f"\n   🧪 Testing {target_tipologia}...")
+                    print(f"      • Cliente: {cliente_nome}")
+                    print(f"      • ID: {cliente_id}")
+                    print(f"      • Tipologia originale: {original_tipologia}")
+                    
+                    # Modify cliente (change notes only, NOT tipologia_contratto)
+                    update_payload = {
+                        "nome": test_cliente.get('nome'),
+                        "cognome": test_cliente.get('cognome'),
+                        "email": test_cliente.get('email'),
+                        "telefono": test_cliente.get('telefono'),
+                        "codice_fiscale": test_cliente.get('codice_fiscale'),
+                        "note": f"Test preservazione tipologia {target_tipologia} - {int(time.time())}"
+                        # CRITICAL: tipologia_contratto NOT included in payload
+                    }
+                    
+                    # PUT request to modify cliente
+                    success, update_response, status = self.make_request(
+                        'PUT', f'clienti/{cliente_id}', 
+                        update_payload, 
+                        expected_status=200
+                    )
+                    
+                    if success and status == 200:
+                        self.log_test(f"✅ {target_tipologia} - Cliente modification SUCCESS", True, 
+                            f"PUT /api/clienti/{cliente_id} - Status: {status}")
+                        
+                        # GET cliente to verify tipologia is preserved
+                        success, get_response, get_status = self.make_request(
+                            'GET', f'clienti/{cliente_id}', 
+                            expected_status=200
+                        )
+                        
+                        if success and get_status == 200:
+                            final_tipologia = get_response.get('tipologia_contratto')
+                            
+                            if final_tipologia == original_tipologia:
+                                self.log_test(f"✅ {target_tipologia} PRESERVED", True, 
+                                    f"Tipologia rimane '{final_tipologia}' (NO conversione automatica)")
+                                test_results.append({
+                                    'tipologia': target_tipologia,
+                                    'preserved': True,
+                                    'original': original_tipologia,
+                                    'final': final_tipologia
+                                })
+                            else:
+                                self.log_test(f"❌ {target_tipologia} NOT PRESERVED", False, 
+                                    f"Originale: '{original_tipologia}' → Finale: '{final_tipologia}' (CONVERSIONE AUTOMATICA!)")
+                                test_results.append({
+                                    'tipologia': target_tipologia,
+                                    'preserved': False,
+                                    'original': original_tipologia,
+                                    'final': final_tipologia
+                                })
+                        else:
+                            self.log_test(f"❌ {target_tipologia} - GET after update failed", False, 
+                                f"Status: {get_status}")
+                    else:
+                        self.log_test(f"❌ {target_tipologia} - Cliente modification failed", False, 
+                            f"Status: {status}")
+            else:
+                print(f"   ⚠️ No clienti found with tipologia '{target_tipologia}'")
+
+        # **5. TEST CON TIPOLOGIE CUSTOM (se esistono)**
+        print("\n🎨 5. TEST CON TIPOLOGIE CUSTOM...")
+        
+        custom_test_tipologie = ['prova', 'telefonia_vodafone_negozi'] + custom_tipologie[:3]  # Test max 5 custom
+        
+        for custom_tipologia in custom_test_tipologie:
+            if custom_tipologia in tipologie_found:
+                clienti_with_tipologia = tipologie_found[custom_tipologia]
+                if clienti_with_tipologia:
+                    test_cliente = clienti_with_tipologia[0]
+                    cliente_id = test_cliente.get('id')
+                    cliente_nome = f"{test_cliente.get('nome', '')} {test_cliente.get('cognome', '')}"
+                    original_tipologia = test_cliente.get('tipologia_contratto')
+                    
+                    print(f"\n   🎨 Testing custom tipologia '{custom_tipologia}'...")
+                    print(f"      • Cliente: {cliente_nome}")
+                    print(f"      • Tipologia originale: {original_tipologia}")
+                    
+                    # Modify cliente (change notes only)
+                    update_payload = {
+                        "nome": test_cliente.get('nome'),
+                        "cognome": test_cliente.get('cognome'),
+                        "email": test_cliente.get('email'),
+                        "telefono": test_cliente.get('telefono'),
+                        "codice_fiscale": test_cliente.get('codice_fiscale'),
+                        "note": f"Test custom tipologia {custom_tipologia} - {int(time.time())}"
+                    }
+                    
+                    # PUT request
+                    success, update_response, status = self.make_request(
+                        'PUT', f'clienti/{cliente_id}', 
+                        update_payload, 
+                        expected_status=200
+                    )
+                    
+                    if success and status == 200:
+                        # Verify tipologia is preserved
+                        success, get_response, get_status = self.make_request(
+                            'GET', f'clienti/{cliente_id}', 
+                            expected_status=200
+                        )
+                        
+                        if success and get_status == 200:
+                            final_tipologia = get_response.get('tipologia_contratto')
+                            
+                            if final_tipologia == original_tipologia:
+                                self.log_test(f"✅ Custom '{custom_tipologia}' PRESERVED", True, 
+                                    f"Tipologia custom rimane '{final_tipologia}' (sistema dinamico)")
+                                test_results.append({
+                                    'tipologia': custom_tipologia,
+                                    'preserved': True,
+                                    'original': original_tipologia,
+                                    'final': final_tipologia,
+                                    'custom': True
+                                })
+                            else:
+                                self.log_test(f"❌ Custom '{custom_tipologia}' NOT PRESERVED", False, 
+                                    f"Originale: '{original_tipologia}' → Finale: '{final_tipologia}' (CONVERSIONE!)")
+                                test_results.append({
+                                    'tipologia': custom_tipologia,
+                                    'preserved': False,
+                                    'original': original_tipologia,
+                                    'final': final_tipologia,
+                                    'custom': True
+                                })
+
+        # **6. VERIFICA COMPORTAMENTO CON UUID (opzionale)**
+        print("\n🆔 6. VERIFICA COMPORTAMENTO CON UUID...")
+        print("   ℹ️ Test UUID handling would require specific UUID tipologia_contratto_id values")
+        print("   ℹ️ Current test focuses on string tipologia_contratto preservation")
+        
+        # **FINAL RESULTS ANALYSIS**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 TEST GESTIONE TIPOLOGIE DINAMICHE - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare preservazione tipologie senza conversioni automatiche")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login: ✅ SUCCESS")
+        print(f"      • Clienti analizzati: {len(clienti)}")
+        print(f"      • Tipologie diverse trovate: {len(tipologie_found)}")
+        print(f"      • Test eseguiti: {len(test_results)}")
+        
+        # Analyze results
+        preserved_count = sum(1 for result in test_results if result['preserved'])
+        failed_count = len(test_results) - preserved_count
+        
+        print(f"\n   📊 CRITERI DI SUCCESSO:")
+        
+        success_criteria = {
+            'mobile_fastweb': False,
+            'energia_fastweb': False,
+            'telefonia_fastweb': False,
+            'energia_fastweb_tls': False,
+            'custom_types': True  # Assume true unless proven false
+        }
+        
+        for result in test_results:
+            tipologia = result['tipologia']
+            preserved = result['preserved']
+            
+            if tipologia == 'mobile_fastweb':
+                success_criteria['mobile_fastweb'] = preserved
+                print(f"      • mobile_fastweb rimane mobile_fastweb: {'✅' if preserved else '❌'}")
+            elif tipologia == 'energia_fastweb':
+                success_criteria['energia_fastweb'] = preserved
+                print(f"      • energia_fastweb rimane energia_fastweb: {'✅' if preserved else '❌'}")
+            elif tipologia == 'telefonia_fastweb':
+                success_criteria['telefonia_fastweb'] = preserved
+                print(f"      • telefonia_fastweb rimane telefonia_fastweb: {'✅' if preserved else '❌'}")
+            elif tipologia == 'energia_fastweb_tls':
+                success_criteria['energia_fastweb_tls'] = preserved
+                print(f"      • energia_fastweb_tls rimane energia_fastweb_tls: {'✅' if preserved else '❌'}")
+            elif result.get('custom'):
+                if not preserved:
+                    success_criteria['custom_types'] = False
+                print(f"      • '{tipologia}' rimane '{tipologia}': {'✅' if preserved else '❌'}")
+        
+        print(f"      • Nessuna conversione automatica: {'✅' if failed_count == 0 else '❌'}")
+        print(f"      • Sistema completamente dinamico: {'✅' if success_criteria['custom_types'] else '❌'}")
+        
+        # Calculate overall success
+        success_rate = (preserved_count / len(test_results)) * 100 if test_results else 0
+        all_criteria_met = all(success_criteria.values()) and failed_count == 0
+        
+        print(f"\n   📊 SUCCESS RATE: {preserved_count}/{len(test_results)} ({success_rate:.1f}%)")
+        
+        if all_criteria_met and success_rate == 100:
+            print(f"   🎉 SUCCESS: Sistema completamente dinamico e non hardcoded!")
+            print(f"   ✅ VERIFICA COMPLETATA:")
+            print(f"      • Tutte le tipologie preservate correttamente")
+            print(f"      • Nessuna conversione automatica rilevata")
+            print(f"      • Sistema accetta qualsiasi tipologia user-created")
+            print(f"      • Comportamento completamente dinamico confermato")
+            return True
+        else:
+            print(f"   🚨 ISSUES FOUND: Sistema presenta conversioni automatiche!")
+            print(f"   🔧 PROBLEMI IDENTIFICATI:")
+            for result in test_results:
+                if not result['preserved']:
+                    print(f"      • {result['tipologia']}: '{result['original']}' → '{result['final']}'")
+            print(f"   🔧 RACCOMANDAZIONI:")
+            print(f"      • Rimuovere logica di fallback nelle tipologie")
+            print(f"      • Verificare che il sistema non faccia assunzioni sui valori")
+            print(f"      • Assicurarsi che il database preservi i valori originali")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the ALE3 ALE4 PRESIDIO MAXIMO DROPDOWN VERIFICATION TEST AS REQUESTED
+        # Run the DYNAMIC CONTRACT TYPES PRESERVATION TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING ALE3 ALE4 PRESIDIO MAXIMO DROPDOWN VERIFICATION TEST - AS REQUESTED")
+        print("🎯 RUNNING DYNAMIC CONTRACT TYPES PRESERVATION TEST - AS REQUESTED")
         print("="*80)
         
-        ale3_ale4_success = self.test_ale3_ale4_presidio_maximo_dropdown_verification()
+        dynamic_types_success = self.test_dynamic_contract_types_preservation()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -40775,18 +41064,18 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if ale3_ale4_success:
-            print("🎉 ALE3 ALE4 PRESIDIO MAXIMO DROPDOWN VERIFICATION TEST: ✅ SUCCESS - USERS HAVE CORRECT AUTHORIZATIONS!")
+        if dynamic_types_success:
+            print("🎉 DYNAMIC CONTRACT TYPES PRESERVATION TEST: ✅ SUCCESS - SISTEMA COMPLETAMENTE DINAMICO!")
         else:
-            print("🚨 ALE3 ALE4 PRESIDIO MAXIMO DROPDOWN VERIFICATION TEST: ❌ FAILED - AUTHORIZATION ISSUES FOUND!")
+            print("🚨 DYNAMIC CONTRACT TYPES PRESERVATION TEST: ❌ FAILED - CONVERSIONI AUTOMATICHE RILEVATE!")
         
-        if ale3_ale4_success:
-            print("\n🎉 OVERALL RESULT: ✅ ALE3 ALE4 PRESIDIO MAXIMO DROPDOWN VERIFICATION WORKING CORRECTLY!")
-            print("💡 CONCLUSION: ale3 and ale4 users have correct authorizations for 'Presidio - Maximo' sub agenzia")
+        if dynamic_types_success:
+            print("\n🎉 OVERALL RESULT: ✅ GESTIONE TIPOLOGIE DINAMICHE WORKING CORRECTLY!")
+            print("💡 CONCLUSION: Il sistema preserva correttamente QUALSIASI tipologia contratto senza conversioni automatiche")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI NEED BACKEND FIXES!")
+            print("\n🚨 OVERALL RESULT: ❌ GESTIONE TIPOLOGIE DINAMICHE NEEDS BACKEND FIXES!")
         
-        return ale3_ale4_success
+        return dynamic_types_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
