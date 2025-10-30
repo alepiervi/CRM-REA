@@ -20016,7 +20016,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   // Helper function to check if user can assign clients
   const canAssignClients = () => {
     if (!user) return false;
-    const allowedRoles = ['admin', 'responsabile_commessa', 'backoffice_commessa', 'responsabile_sub_agenzia', 'backoffice_sub_agenzia'];
+    const allowedRoles = ['admin', 'responsabile_commessa', 'backoffice_commessa'];
     return allowedRoles.includes(user.role);
   };
   
