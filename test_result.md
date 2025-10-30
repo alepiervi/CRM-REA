@@ -284,6 +284,18 @@ FOCUS CRITICO:
 **Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
+  - task: "Tipologia Contratto Mobile Fastweb Preservation Fix - Backend Fallback Logic Removal"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 TIPOLOGIA CONTRATTO MOBILE FASTWEB PRESERVATION FIX COMPLETE - 100% SUCCESS! ✅ COMPREHENSIVE TESTING COMPLETED: Tested complete mobile_fastweb tipologia contratto preservation fix as requested in review. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ CLIENTE TARGET FOUND: Found existing cliente 'Alessandro Piervincenzi Piervincenzi' (ID: 80d78eb5-2708-453c-9022-b53f6cd3ff9b) with tipologia_contratto = 'mobile_fastweb'. ✅ INITIAL VERIFICATION: Cliente has tipologia_contratto = 'mobile_fastweb' as expected for testing. ✅ CLIENT MODIFICATION SUCCESS: PUT /api/clienti/{cliente_id} with only note field modification returns 200 Success - tipologia_contratto field NOT included in payload (critical test condition). ✅ CRITICAL VERIFICATION - TIPOLOGIA PRESERVED: GET /api/clienti/{cliente_id} after modification shows tipologia_contratto = 'mobile_fastweb' (PRESERVED) - NO automatic conversion to 'telefonia_fastweb'. ✅ FALLBACK LOGIC REMOVED: The backend no longer has fallback logic that changes 'mobile_fastweb' to 'telefonia_fastweb' during client updates. ✅ ADDITIONAL TESTING: Tested energia_fastweb preservation - also working correctly, no unwanted conversions. ✅ NOTES UPDATED CORRECTLY: Client notes field updated successfully while preserving tipologia_contratto value. 🎯 CRITICAL OBJECTIVES ACHIEVED: 1) Cliente con mobile_fastweb trovato ✅, 2) Modifica cliente eseguita con successo (200) ✅, 3) Tipologia contratto rimane 'mobile_fastweb' dopo modifica ✅, 4) Il bug è risolto - nessuna conversione automatica a telefonia_fastweb ✅. 🎉 OBIETTIVO RAGGIUNTO: Il fix funziona correttamente! mobile_fastweb rimane mobile_fastweb dopo modifica, nessuna conversione automatica a telefonia_fastweb. Il fallback logic è stato rimosso con successo e il valore originale viene preservato. SUCCESS RATE: 100% (9/9 tests passed) - Mobile fastweb tipologia contratto preservation fix fully operational!"
+
   - task: "Aruba Drive Upload - 403 Forbidden URL Configuration Fix"
     implemented: true
     working: true
