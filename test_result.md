@@ -148,55 +148,47 @@ CONCLUSIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Backend configuration issue: F2F ha troppi servizi autorizzati invece di solo TLS"
 
-current_problem_statement: "TEST DROPDOWN ASSEGNAZIONE CLIENTI - VERIFICA ale3 e ale4 VISIBILI
+current_problem_statement: "TEST FIX TIPOLOGIA CONTRATTO MOBILE - VERIFICA PRESERVAZIONE VALORE
 
 OBIETTIVO:
-Verificare che gli utenti ale3 e ale4 ora appaiano nel dropdown di assegnazione clienti per un cliente con sub agenzia 'Presidio - Maximo'.
+Verificare che quando si modifica un cliente con tipologia 'mobile_fastweb', il valore non venga più cambiato in 'telefonia_fastweb'.
 
 CONTESTO:
-- Ho appena aggiunto il servizio mancante (ID: 62f75c5b-6030-442e-9f0a-03bfdaaaab16) a ale3 e ale4
-- Il backend testing ha confermato che ora passano i filtri
-- Devo verificare nel frontend che appaiano effettivamente nel dropdown
+- Bug identificato: il backend aveva un fallback che cambiava 'mobile_fastweb' in 'telefonia_fastweb'
+- Fix implementato: rimossa logica di fallback, ora mantiene il valore originale
+- Devo testare che il fix funzioni correttamente
+
+TEST DA ESEGUIRE:
+1. Login Admin (admin/admin123)
+2. Trova cliente con tipologia mobile_fastweb
+3. Modifica il cliente SENZA cambiare tipologia
+4. Verifica che tipologia rimane mobile_fastweb
+5. Test con altra tipologia (opzionale)
 
 TEST COMPLETATI:
 1. ✅ Login Admin (admin/admin123) - SUCCESS
-2. ✅ Navigate to Clienti section - SUCCESS
-3. ✅ Find client '33 prova' with Presidio - Maximo sub agenzia - SUCCESS
-4. ✅ Open edit modal for client - SUCCESS
-5. ✅ Find assignment dropdown 'Assegnato a' - SUCCESS
-6. ✅ Open dropdown and retrieve options - SUCCESS
-
-DROPDOWN VERIFICATION RESULTS:
-✅ DROPDOWN OPTIONS FOUND: 6 total options
-  1. Nessun utente assegnato
-  2. admin
-  3. ale2
-  4. ale3 ✅ FOUND
-  5. ale4 ✅ FOUND
-  6. ale10
-
-CRITICAL SUCCESS VERIFICATION:
-✅ ale3 APPEARS in dropdown - VISIBLE and selectable
-✅ ale4 APPEARS in dropdown - VISIBLE and selectable
-✅ Assignment functionality working - Successfully assigned ale3 to client
-✅ Save functionality working - Changes saved successfully
-
-FRONTEND FILTER VERIFICATION:
-✅ ale3 passes frontend filter - NOW appears in dropdown assegnazione clienti
-✅ ale4 passes frontend filter - NOW appears in dropdown assegnazione clienti
+2. ✅ Cliente target trovato con mobile_fastweb - SUCCESS
+   - Cliente: Alessandro Piervincenzi Piervincenzi (ID: 80d78eb5-2708-453c-9022-b53f6cd3ff9b)
+   - Tipologia iniziale: mobile_fastweb
+3. ✅ Modifica cliente eseguita con successo - SUCCESS (200)
+   - Payload: solo note modificate, tipologia_contratto NON incluso
+   - PUT /api/clienti/{cliente_id} - Status: 200
+4. ✅ Tipologia contratto preservata - SUCCESS
+   - GET /api/clienti/{cliente_id} - tipologia_contratto = 'mobile_fastweb'
+   - NESSUNA conversione automatica a 'telefonia_fastweb'
+5. ✅ Test con energia_fastweb - SUCCESS
+   - Cliente con energia_fastweb trovato e testato
+   - Tipologia preservata correttamente
 
 CRITERI DI SUCCESSO:
-✅ Login admin funziona
-✅ Sezione Clienti accessibile
-✅ Modal di modifica cliente si apre
-✅ Dropdown 'Assegnato a' contiene ale3
-✅ Dropdown 'Assegnato a' contiene ale4
-✅ Screenshot mostra gli utenti nel dropdown
-✅ Test assegnazione ale3 completato con successo
+✅ Cliente con mobile_fastweb trovato
+✅ Modifica cliente eseguita con successo (200)
+✅ Tipologia contratto rimane 'mobile_fastweb' dopo modifica
+✅ Il bug è risolto - nessuna conversione automatica a telefonia_fastweb
 
-SUCCESS RATE: 100.0% (7/7 tests passed) - ALL OBJECTIVES ACHIEVED
+SUCCESS RATE: 100.0% (9/9 tests passed) - ALL OBJECTIVES ACHIEVED
 
-STATO ATTUALE: ✅ PROBLEMA RISOLTO - ale3 e ale4 ora appaiono correttamente nel dropdown di assegnazione clienti per clienti con sub agenzia 'Presidio - Maximo'. Il fix dei servizi autorizzati ha funzionato perfettamente."
+STATO ATTUALE: ✅ PROBLEMA RISOLTO - Il fix funziona correttamente! mobile_fastweb rimane mobile_fastweb dopo modifica, nessuna conversione automatica a telefonia_fastweb. Il fallback logic è stato rimosso con successo e il valore originale viene preservato."
 
 previous_problem_statement: "CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM
 
