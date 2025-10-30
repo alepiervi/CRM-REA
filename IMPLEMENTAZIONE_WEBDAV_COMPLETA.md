@@ -106,7 +106,7 @@ sudo supervisorctl status backend
 # Output: backend RUNNING
 
 # Test endpoint debug accessibile
-curl https://agent-portal-43.preview.emergentagent.com/api/documents/upload-debug
+curl https://client-manager-131.preview.emergentagent.com/api/documents/upload-debug
 # Output: {"timestamp": null, "success": false, ...}
 ```
 
@@ -117,7 +117,7 @@ curl https://agent-portal-43.preview.emergentagent.com/api/documents/upload-debu
 3. Carica documento PDF
 4. Controlla endpoint debug:
    ```
-   https://agent-portal-43.preview.emergentagent.com/api/documents/upload-debug
+   https://client-manager-131.preview.emergentagent.com/api/documents/upload-debug
    ```
 5. Cerca log:
    ```json
