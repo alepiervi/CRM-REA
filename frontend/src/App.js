@@ -20249,42 +20249,56 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const fetchAvailableUsers = async () => {
     try {
       console.log("👥 Loading available users for assignment...");
+      console.log("📋 Cliente info for filtering:", {
+        commessa_id: cliente.commessa_id,
+        servizio_id: cliente.servizio_id
+      });
+      
       const response = await axios.get(`${API}/users`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      
+      console.log("📊 Total users fetched:", response.data.length);
       
       // Filter users based on cliente's commessa and servizio
       const filteredUsers = response.data.filter(user => {
         // Admin can always be assigned
         if (user.role === 'admin') {
+          console.log(`✅ User ${user.username} (admin) - INCLUDED`);
           return true;
         }
         
         // Check if user has access to cliente's commessa
         if (!user.commesse_autorizzate || !Array.isArray(user.commesse_autorizzate)) {
+          console.log(`❌ User ${user.username} - NO commesse_autorizzate`);
           return false;
         }
         
         if (!user.commesse_autorizzate.includes(cliente.commessa_id)) {
+          console.log(`❌ User ${user.username} - commessa ${cliente.commessa_id} NOT in [${user.commesse_autorizzate.join(', ')}]`);
           return false;
         }
         
         // Check if user has access to cliente's servizio (if cliente has one)
         if (cliente.servizio_id) {
           if (!user.servizi_autorizzati || !Array.isArray(user.servizi_autorizzati)) {
+            console.log(`❌ User ${user.username} - NO servizi_autorizzati`);
             return false;
           }
           
           if (!user.servizi_autorizzati.includes(cliente.servizio_id)) {
+            console.log(`❌ User ${user.username} - servizio ${cliente.servizio_id} NOT in [${user.servizi_autorizzati.join(', ')}]`);
             return false;
           }
         }
         
+        console.log(`✅ User ${user.username} - INCLUDED (has access to commessa and servizio)`);
         return true;
       });
       
       setAvailableUsers(filteredUsers);
       console.log("✅ Available users loaded and filtered:", filteredUsers.length, "of", response.data.length);
+      console.log("👥 Filtered users:", filteredUsers.map(u => u.username).join(', '));
     } catch (error) {
       console.error("❌ Error fetching available users:", error);
       setAvailableUsers([]);
