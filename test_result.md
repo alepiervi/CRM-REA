@@ -148,47 +148,62 @@ CONCLUSIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Backend configuration issue: F2F ha troppi servizi autorizzati invece di solo TLS"
 
-current_problem_statement: "TEST FIX TIPOLOGIA CONTRATTO MOBILE - VERIFICA PRESERVAZIONE VALORE
+current_problem_statement: "TEST GESTIONE TIPOLOGIE DINAMICHE - VERIFICA PRESERVAZIONE NUOVE TIPOLOGIE
 
 OBIETTIVO:
-Verificare che quando si modifica un cliente con tipologia 'mobile_fastweb', il valore non venga più cambiato in 'telefonia_fastweb'.
+Verificare che il sistema gestisca correttamente QUALSIASI tipologia contratto, incluse quelle nuove create dall'utente, senza mai modificarle o convertirle.
 
 CONTESTO:
-- Bug identificato: il backend aveva un fallback che cambiava 'mobile_fastweb' in 'telefonia_fastweb'
-- Fix implementato: rimossa logica di fallback, ora mantiene il valore originale
-- Devo testare che il fix funzioni correttamente
+- Il sistema deve essere completamente dinamico per le tipologie
+- Quando viene creata una nuova tipologia nel database, deve essere usata così com'è
+- Non ci devono essere conversioni automatiche o fallback
 
 TEST DA ESEGUIRE:
 1. Login Admin (admin/admin123)
-2. Trova cliente con tipologia mobile_fastweb
-3. Modifica il cliente SENZA cambiare tipologia
-4. Verifica che tipologia rimane mobile_fastweb
-5. Test con altra tipologia (opzionale)
+2. Test con tipologie esistenti diverse:
+   * mobile_fastweb
+   * energia_fastweb  
+   * telefonia_fastweb
+   * energia_fastweb_tls (se esiste)
+   - Per ognuno, modifica un campo (es. note)
+   - Verifica che la tipologia rimanga invariata
+3. Test con tipologia "custom" (se esiste):
+   - Cerca clienti con tipologie non standard (es. "prova", "telefonia_vodafone_negozi")
+   - Modifica un campo
+   - Verifica che la tipologia non venga convertita
+4. Verifica comportamento con UUID (opzionale):
+   - Se il sistema riceve un UUID di tipologia in modifica
+   - Deve convertirlo nel valore string corrispondente dal database
+   - Non deve mai usare fallback o conversioni arbitrarie
 
 TEST COMPLETATI:
 1. ✅ Login Admin (admin/admin123) - SUCCESS
-2. ✅ Cliente target trovato con mobile_fastweb - SUCCESS
-   - Cliente: Alessandro Piervincenzi Piervincenzi (ID: 80d78eb5-2708-453c-9022-b53f6cd3ff9b)
-   - Tipologia iniziale: mobile_fastweb
-3. ✅ Modifica cliente eseguita con successo - SUCCESS (200)
-   - Payload: solo note modificate, tipologia_contratto NON incluso
-   - PUT /api/clienti/{cliente_id} - Status: 200
-4. ✅ Tipologia contratto preservata - SUCCESS
-   - GET /api/clienti/{cliente_id} - tipologia_contratto = 'mobile_fastweb'
-   - NESSUNA conversione automatica a 'telefonia_fastweb'
-5. ✅ Test con energia_fastweb - SUCCESS
-   - Cliente con energia_fastweb trovato e testato
-   - Tipologia preservata correttamente
+2. ✅ Analisi tipologie esistenti - SUCCESS
+   - Trovate 6 tipologie diverse nel database: mobile_fastweb (1), energia_fastweb (8), telefonia_vodafone_negozi (1), prova (1), energia_fastweb_tls (2), telefonia_fastweb (2)
+3. ✅ Test tipologie standard - SUCCESS
+   - mobile_fastweb: Cliente Alessandro Piervincenzi Piervincenzi → PRESERVED ✅
+   - energia_fastweb: Cliente 33 prova → PRESERVED ✅
+   - telefonia_fastweb: Cliente Mario Multi SIM Test → PRESERVED ✅
+   - energia_fastweb_tls: Cliente Alessandro Piervincenzi Prova → PRESERVED ✅
+4. ✅ Test tipologie custom - SUCCESS
+   - "prova": Cliente Alessandro Piervincenzi Bianchi Updated → PRESERVED ✅
+   - "telefonia_vodafone_negozi": Cliente Alessandro Piervincenzi Prova → PRESERVED ✅
+5. ✅ Verifica sistema dinamico - SUCCESS
+   - Nessuna conversione automatica rilevata
+   - Sistema accetta qualsiasi tipologia user-created
 
 CRITERI DI SUCCESSO:
-✅ Cliente con mobile_fastweb trovato
-✅ Modifica cliente eseguita con successo (200)
-✅ Tipologia contratto rimane 'mobile_fastweb' dopo modifica
-✅ Il bug è risolto - nessuna conversione automatica a telefonia_fastweb
+✅ mobile_fastweb rimane mobile_fastweb
+✅ energia_fastweb rimane energia_fastweb
+✅ energia_fastweb_tls rimane energia_fastweb_tls
+✅ telefonia_vodafone_negozi rimane telefonia_vodafone_negozi
+✅ "prova" rimane "prova"
+✅ Nessuna conversione automatica per alcuna tipologia
+✅ Sistema completamente dinamico e non hardcoded
 
-SUCCESS RATE: 100.0% (9/9 tests passed) - ALL OBJECTIVES ACHIEVED
+SUCCESS RATE: 100.0% (13/13 tests passed) - ALL OBJECTIVES ACHIEVED
 
-STATO ATTUALE: ✅ PROBLEMA RISOLTO - Il fix funziona correttamente! mobile_fastweb rimane mobile_fastweb dopo modifica, nessuna conversione automatica a telefonia_fastweb. Il fallback logic è stato rimosso con successo e il valore originale viene preservato."
+STATO ATTUALE: ✅ PROBLEMA COMPLETAMENTE RISOLTO - Il sistema gestisce correttamente QUALSIASI tipologia contratto! Tutte le tipologie (standard e custom) vengono preservate senza conversioni automatiche. Il sistema è completamente dinamico e non hardcoded, accettando qualsiasi valore user-created dal database."
 
 previous_problem_statement: "CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM
 
