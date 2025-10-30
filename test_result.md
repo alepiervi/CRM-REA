@@ -148,48 +148,50 @@ CONCLUSIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Backend configuration issue: F2F ha troppi servizi autorizzati invece di solo TLS"
 
-current_problem_statement: "DEBUG OFFERTA UTENTE CON SOTTO-OFFERTE - VERIFICA DATABASE
+current_problem_statement: "VERIFICA DATI UTENTI ale3 e ale4 - ASSEGNAZIONE CLIENTI DROPDOWN
+
+OBIETTIVO:
+Verificare che gli utenti ale3 e ale4 compaiano nel dropdown di assegnazione clienti quando si modifica un cliente con sub agenzia 'Presidio - Maximo'.
 
 CONTESTO:
-L'utente ha creato un'offerta tramite UI con 2 sotto-offerte, ma il dropdown non appare. Verifica cosa è stato effettivamente salvato nel database.
+L'utente ha recentemente corretto i dati di test aggiungendo il servizio mancante agli utenti ale3 e ale4. Devo verificare che ora abbiano tutte le autorizzazioni corrette.
 
-TEST RICHIESTI:
-1. Login as admin (username: admin, password: admin123)
-2. Recupera TUTTE le offerte recenti (GET /api/offerte?skip=0&limit=20)
-3. Cerca offerte create dall'utente (non 'Test Vodafone Offerta')
-4. Per ogni offerta dell'utente: verifica has_sub_offerte e sotto-offerte
-5. Diagnosi del problema
+TEST COMPLETATI:
+1. ✅ Login Admin (admin/admin123) - SUCCESS
+2. ✅ Sub agenzia 'Presidio - Maximo' trovata - ID: 9b0b8890-81f6-4cdf-859e-48a8ae6e9856
+3. ✅ Cliente con sub agenzia trovato - Cliente: '33 prova' (ID: 2b6b6a03-407f-4e37-a27b-bc93ea77ee38)
+4. ✅ ale3 user trovato - Role: responsabile_sub_agenzia
+5. ✅ ale4 user trovato - Role: backoffice_sub_agenzia
 
-RISULTATI TEST COMPLETATI:
-✅ Admin login (admin/admin123) - SUCCESS
-✅ GET /api/offerte - Found 39 offerte totali
-✅ Classificazione offerte: 36 offerte utente (non test), 3 offerte test
-✅ Offerte utente identificate: 36 offerte create dall'utente
+VERIFICA AUTORIZZAZIONI DETTAGLIATA:
 
-ANALISI DETTAGLIATA OFFERTE UTENTE:
-🚨 PROBLEMA CRITICO IDENTIFICATO:
-1. ❌ Offerta 'Salame' (più recente):
-   • has_sub_offerte: TRUE
-   • Sotto-offerte trovate: 0
-   • DIAGNOSI: has_sub_offerte = true ma nessuna sotto-offerta → parent_offerta_id non impostato correttamente
+ALE3 AUTORIZZAZIONI:
+✅ Sub Agenzie autorizzate: 1 items (include Presidio - Maximo)
+✅ Commesse autorizzate: 1 items (include commessa del cliente: 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1)
+❌ Servizi autorizzati: 3 items (NON include servizio del cliente: 62f75c5b-6030-442e-9f0a-03bfdaaaab16)
 
-2. ❌ Tutte le altre 35 offerte:
-   • has_sub_offerte: FALSE
-   • Sotto-offerte trovate: 0
-   • DIAGNOSI: Il checkbox non è stato spuntato o non funziona
+ALE4 AUTORIZZAZIONI:
+✅ Sub Agenzie autorizzate: 1 items (include Presidio - Maximo)
+✅ Commesse autorizzate: 1 items (include commessa del cliente: 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1)
+❌ Servizi autorizzati: 3 items (NON include servizio del cliente: 62f75c5b-6030-442e-9f0a-03bfdaaaab16)
 
-PROBLEMI IDENTIFICATI:
-❌ 35 offerte con has_sub_offerte = false:
-   → Verificare che il checkbox 'Ha sotto-offerte' sia stato spuntato nell'UI
-   → Controllare che il frontend invii has_sub_offerte = true nel payload
+SIMULAZIONE FILTRO FRONTEND:
+❌ ale3 fails frontend filter - NON apparirebbe nel dropdown assegnazione clienti
+❌ ale4 fails frontend filter - NON apparirebbe nel dropdown assegnazione clienti
 
-❌ 1 offerta con has_sub_offerte = true ma senza sotto-offerte:
-   → Verificare che le sotto-offerte abbiano parent_offerta_id corretto
-   → Controllare che il salvataggio delle sotto-offerte funzioni
+ROOT CAUSE IDENTIFICATO:
+🚨 PROBLEMA SERVIZI AUTORIZZATI - Entrambi gli utenti ale3 e ale4 mancano l'autorizzazione per il servizio specifico del cliente (ID: 62f75c5b-6030-442e-9f0a-03bfdaaaab16).
 
-SUCCESS RATE: 0/36 offerte working correctly (0.0%)
+CRITERI DI SUCCESSO:
+✅ ale3 ha sub agenzia 'Presidio - Maximo' autorizzata
+❌ ale3 ha il servizio del cliente autorizzato
+✅ ale4 ha sub agenzia 'Presidio - Maximo' autorizzata  
+❌ ale4 ha il servizio del cliente autorizzato
+❌ Entrambi passano il filtro frontend
 
-STATO ATTUALE: 🚨 CRITICAL ISSUES - Nessuna offerta funziona correttamente con sotto-offerte"
+SUCCESS RATE: 75.0% (12/16 tests passed) - AUTHORIZATION ISSUES FOUND
+
+STATO ATTUALE: 🚨 SERVIZI AUTORIZZATI MANCANTI - ale3 e ale4 necessitano autorizzazione per servizio ID: 62f75c5b-6030-442e-9f0a-03bfdaaaab16"
 
 previous_problem_statement: "CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM
 
