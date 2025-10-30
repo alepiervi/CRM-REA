@@ -20251,6 +20251,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       console.log("👥 Loading available users for assignment...");
       console.log("📋 Cliente info for filtering:", {
         commessa_id: cliente.commessa_id,
+        sub_agenzia_id: cliente.sub_agenzia_id,
         servizio_id: cliente.servizio_id
       });
       
@@ -20260,7 +20261,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       
       console.log("📊 Total users fetched:", response.data.length);
       
-      // Filter users based on cliente's commessa and servizio
+      // Filter users based on cliente's commessa/sub_agenzia and servizio
       const filteredUsers = response.data.filter(user => {
         // Admin can always be assigned
         if (user.role === 'admin') {
@@ -20268,14 +20269,29 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           return true;
         }
         
-        // Check if user has access to cliente's commessa
-        if (!user.commesse_autorizzate || !Array.isArray(user.commesse_autorizzate)) {
-          console.log(`❌ User ${user.username} - NO commesse_autorizzate`);
-          return false;
+        // Check if user has access to cliente's commessa OR sub_agenzia
+        let hasCommessaOrSubAgenziaAccess = false;
+        
+        // Check commesse_autorizzate
+        if (user.commesse_autorizzate && Array.isArray(user.commesse_autorizzate)) {
+          if (user.commesse_autorizzate.includes(cliente.commessa_id)) {
+            hasCommessaOrSubAgenziaAccess = true;
+            console.log(`✅ User ${user.username} - has commessa ${cliente.commessa_id}`);
+          }
         }
         
-        if (!user.commesse_autorizzate.includes(cliente.commessa_id)) {
-          console.log(`❌ User ${user.username} - commessa ${cliente.commessa_id} NOT in [${user.commesse_autorizzate.join(', ')}]`);
+        // Check sub_agenzie_autorizzate (if user doesn't have commessa access)
+        if (!hasCommessaOrSubAgenziaAccess && cliente.sub_agenzia_id) {
+          if (user.sub_agenzie_autorizzate && Array.isArray(user.sub_agenzie_autorizzate)) {
+            if (user.sub_agenzie_autorizzate.includes(cliente.sub_agenzia_id)) {
+              hasCommessaOrSubAgenziaAccess = true;
+              console.log(`✅ User ${user.username} - has sub_agenzia ${cliente.sub_agenzia_id}`);
+            }
+          }
+        }
+        
+        if (!hasCommessaOrSubAgenziaAccess) {
+          console.log(`❌ User ${user.username} - NO access to commessa or sub_agenzia`);
           return false;
         }
         
@@ -20292,7 +20308,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           }
         }
         
-        console.log(`✅ User ${user.username} - INCLUDED (has access to commessa and servizio)`);
+        console.log(`✅ User ${user.username} - INCLUDED (has access to commessa/sub_agenzia and servizio)`);
         return true;
       });
       
