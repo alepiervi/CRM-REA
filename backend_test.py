@@ -40455,7 +40455,7 @@ startxref
         else:
             print("\n🚨 OVERALL RESULT: ❌ FLUSSO CASCADING COMPLETO CON FILTRI MULTIPLI NEED BACKEND FIXES!")
         
-        return cascading_success
+        return ale3_ale4_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
