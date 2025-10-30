@@ -3765,19 +3765,30 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
         }
         if unit_id:
             query["unit_id"] = unit_id
-    elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
-        # Responsabile Commessa and Backoffice Commessa can see all users with overlapping permissions
-        # They need to see users to assign clients
+    elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA, 
+                                UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+        # These roles can see all users with overlapping permissions (commesse or sub_agenzie)
+        or_conditions = [{"role": "admin"}]  # Include admins
+        
+        # Add condition for users with same commesse
+        if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            or_conditions.append({
+                "commesse_autorizzate": {
+                    "$in": current_user.commesse_autorizzate
+                }
+            })
+        
+        # Add condition for users with same sub_agenzie
+        if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+            or_conditions.append({
+                "sub_agenzie_autorizzate": {
+                    "$in": current_user.sub_agenzie_autorizzate
+                }
+            })
+        
         query = {
             "is_active": True,
-            "$or": [
-                {"role": "admin"},  # Include admins
-                {
-                    "commesse_autorizzate": {
-                        "$in": current_user.commesse_autorizzate if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate else []
-                    }
-                }
-            ]
+            "$or": or_conditions
         }
     else:
         # Other roles can only see themselves
