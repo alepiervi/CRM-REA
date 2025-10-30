@@ -3777,6 +3777,20 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
                     "$in": current_user.commesse_autorizzate
                 }
             })
+            
+            # IMPORTANT: Also include users with sub_agenzie that belong to current user's commesse
+            # Find all sub_agenzie under these commesse
+            sub_agenzie_in_commesse = await db.sub_agenzie.find({
+                "commessa_id": {"$in": current_user.commesse_autorizzate}
+            }).to_list(length=None)
+            
+            if sub_agenzie_in_commesse:
+                sub_agenzia_ids = [sa["id"] for sa in sub_agenzie_in_commesse]
+                or_conditions.append({
+                    "sub_agenzie_autorizzate": {
+                        "$in": sub_agenzia_ids
+                    }
+                })
         
         # Add condition for users with same sub_agenzie
         if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
