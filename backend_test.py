@@ -42847,9 +42847,11 @@ if __name__ == "__main__":
                 result = tester.test_cliente_creation_dynamic_enum_values()
             elif test_name == "f2f_services":
                 result = tester.test_f2f_sub_agenzia_services_verification()
+            elif test_name == "ale3_ale4_verification":
+                result = tester.test_ale3_ale4_servizi_autorizzati_verification()
             else:
                 print(f"Unknown test: {test_name}")
-                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart, nextcloud, nextcloud_download, dynamic_enum, f2f_services")
+                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart, nextcloud, nextcloud_download, dynamic_enum, f2f_services, ale3_ale4_verification")
                 result = False
                 
             # Print summary
