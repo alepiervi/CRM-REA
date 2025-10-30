@@ -10840,14 +10840,20 @@ async def assign_cliente(
     assigned_to: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Assign cliente to a user - only Admin, Responsabile Commessa, and Backoffice Commessa can assign"""
+    """Assign cliente to a user - Admin, Responsabile/Backoffice Commessa/Sub Agenzia can assign"""
     try:
         # Check if user has permission to assign (only specific roles)
-        allowed_roles = [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]
+        allowed_roles = [
+            UserRole.ADMIN, 
+            UserRole.RESPONSABILE_COMMESSA, 
+            UserRole.BACKOFFICE_COMMESSA,
+            UserRole.RESPONSABILE_SUB_AGENZIA,
+            UserRole.BACKOFFICE_SUB_AGENZIA
+        ]
         if current_user.role not in allowed_roles:
             raise HTTPException(
                 status_code=403, 
-                detail="Solo Admin, Responsabile Commessa e Backoffice Commessa possono assegnare clienti"
+                detail="Solo Admin, Responsabile Commessa, Backoffice Commessa, Responsabile Sub Agenzia e Backoffice Sub Agenzia possono assegnare clienti"
             )
         
         cliente_doc = await db.clienti.find_one({"id": cliente_id})
@@ -10861,7 +10867,7 @@ async def assign_cliente(
             if not await can_user_modify_cliente(current_user, cliente):
                 raise HTTPException(status_code=403, detail="No permission to modify this cliente")
         
-        # Verify that target user has access to this cliente's commessa and servizio
+        # Verify that target user has access to this cliente's commessa/sub_agenzia and servizio
         target_user_doc = await db.users.find_one({"id": assigned_to, "is_active": True})
         if not target_user_doc:
             raise HTTPException(status_code=404, detail="Utente target non trovato o non attivo")
@@ -10870,17 +10876,24 @@ async def assign_cliente(
         
         # Admin can be assigned to anyone
         if target_user.role != UserRole.ADMIN:
-            # Check if target user has access to cliente's commessa
-            if not hasattr(target_user, 'commesse_autorizzate') or not target_user.commesse_autorizzate:
-                raise HTTPException(
-                    status_code=403, 
-                    detail="L'utente target non ha commesse autorizzate"
-                )
+            # Check if target user has access via commessa OR sub_agenzia
+            has_access = False
             
-            if cliente.commessa_id not in target_user.commesse_autorizzate:
+            # Check commesse_autorizzate
+            if hasattr(target_user, 'commesse_autorizzate') and target_user.commesse_autorizzate:
+                if cliente.commessa_id in target_user.commesse_autorizzate:
+                    has_access = True
+            
+            # Check sub_agenzie_autorizzate (if no commessa access and cliente has sub_agenzia)
+            if not has_access and cliente.sub_agenzia_id:
+                if hasattr(target_user, 'sub_agenzie_autorizzate') and target_user.sub_agenzie_autorizzate:
+                    if cliente.sub_agenzia_id in target_user.sub_agenzie_autorizzate:
+                        has_access = True
+            
+            if not has_access:
                 raise HTTPException(
                     status_code=403, 
-                    detail="L'utente target non ha accesso alla commessa di questo cliente"
+                    detail="L'utente target non ha accesso alla commessa o sub-agenzia di questo cliente"
                 )
             
             # Check if target user has access to cliente's servizio
