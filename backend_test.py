@@ -40587,7 +40587,9 @@ startxref
         print("   🎯 CRITICO: Modificare solo un campo semplice (note) senza toccare tipologia_contratto")
         
         # Prepare update payload - only change notes, don't include tipologia_contratto
+        # Include required email field from existing client data
         update_payload = {
+            "email": test_cliente.get('email', 'test@example.com'),  # Required field
             "note": "Test fix tipologia - Verifica che mobile_fastweb non diventi telefonia_fastweb"
         }
         
