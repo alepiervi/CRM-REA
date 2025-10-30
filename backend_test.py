@@ -42457,8 +42457,8 @@ startxref
 
 
 def main():
-    """Main test execution - CASCADING AUTHORIZATION FIX VERIFICATION"""
-    print("🚀 Starting CRM Backend API Tests - CASCADING AUTHORIZATION FIX VERIFICATION...")
+    """Main test execution - TIPOLOGIA CONTRATTO MOBILE FASTWEB FIX VERIFICATION"""
+    print("🚀 Starting CRM Backend API Tests - TIPOLOGIA CONTRATTO MOBILE FASTWEB FIX VERIFICATION...")
     print("=" * 80)
     
     tester = CRMAPITester()
@@ -42467,7 +42467,10 @@ def main():
     if len(sys.argv) > 1:
         test_name = sys.argv[1]
         
-        if test_name == "cascading_fix":
+        if test_name == "mobile_fastweb_fix":
+            success = tester.test_tipologia_contratto_mobile_fastweb_preservation_fix()
+            return 0 if success else 1
+        elif test_name == "cascading_fix":
             success = tester.test_ale7_cascading_authorization_fix_immediate()
             return 0 if success else 1
         elif test_name == "fastweb_delete":
@@ -42478,11 +42481,11 @@ def main():
             return 0 if success else 1
         else:
             print(f"Unknown test: {test_name}")
-            print("Available tests: cascading_fix, fastweb_delete, nextcloud_download")
+            print("Available tests: mobile_fastweb_fix, cascading_fix, fastweb_delete, nextcloud_download")
             return 1
     else:
-        # Run the cascading authorization fix test as default
-        success = tester.test_ale7_cascading_authorization_fix_immediate()
+        # Run the mobile fastweb fix test as default (as requested in review)
+        success = tester.test_tipologia_contratto_mobile_fastweb_preservation_fix()
         
         # Print summary
         print("\n" + "=" * 80)
