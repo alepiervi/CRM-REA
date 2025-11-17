@@ -14614,7 +14614,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       // Build query parameters for backend filtering
       const params = new URLSearchParams();
       
-      // Apply current filters to backend request
+      // Apply ALL current filters to backend request for accurate export
       if (clientiFilterSubAgenzia && clientiFilterSubAgenzia !== 'all') {
         params.append('sub_agenzia_id', clientiFilterSubAgenzia);
       }
@@ -14626,6 +14626,23 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       }
       if (clientiFilterCreatedBy && clientiFilterCreatedBy !== 'all') {
         params.append('created_by', clientiFilterCreatedBy);
+      }
+      
+      // NEW: Add missing filters for complete export filtering
+      if (clientiFilterServizi && clientiFilterServizi !== 'all') {
+        params.append('servizio_id', clientiFilterServizi);
+      }
+      if (clientiFilterSegmento && clientiFilterSegmento !== 'all') {
+        params.append('segmento', clientiFilterSegmento);
+      }
+      if (clientiFilterCommesse && clientiFilterCommesse !== 'all') {
+        params.append('commessa_id_filter', clientiFilterCommesse);
+      }
+      
+      // NEW: Add search query and search type for name/CF/etc filtering
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+        params.append('search_type', searchType);
       }
 
       // Call backend Excel export endpoint
