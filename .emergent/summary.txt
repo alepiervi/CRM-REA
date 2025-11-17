@@ -1,71 +1,90 @@
 <analysis>
-The AI engineer's trajectory involved a multi-faceted development and debugging effort focused on the Nureal CRM application. Initially, the core task was to implement a client assignment feature. This quickly evolved into a complex, iterative process of fixing API inconsistencies (e.g., PUT vs. PATCH, correct parameter passing), refining Excel export logic to correctly reflect assigned users and convergenza SIMs, and implementing granular role-based access for editing specific fields and for the assignment functionality itself. A significant portion of the work involved extensive debugging of user filtering logic in the assignment dropdown, spanning both backend queries and frontend display, to ensure only authorized users (considering  and ) were visible. The process was heavily driven by user feedback, leading to several rounds of corrections, including fixing MongoDB query constructions and addressing frontend  for display functions. The work concluded with the engineer actively debugging user visibility issues in the frontend assignment dropdown, identifying and correcting test data inconsistencies (user service authorizations), and preparing for a final test verification.
+The trajectory outlines an extensive development and debugging process for the Nureal CRM application. The AI engineer's work can be segmented into three major phases.
+
+Phase 1 involved bug fixing and enhancements to the existing client management system. This included resolving API inconsistencies for client assignment, refining Excel export logic to correctly show assigned users and handle Convergenza SIMs, and implementing role-based editing permissions. A significant effort was dedicated to fixing a bug where a client's contract type was incorrectly changed upon editing, which was traced to flawed backend mapping logic. Another key task was making the Excel export respect all UI filters (name, sub-agency, date range, etc.), requiring modifications to both frontend and backend.
+
+Phase 2 was a large feature implementation: a complete Lead Management system. This involved creating new backend models (Unit, LeadStatus), CRUD endpoints for them, a sophisticated webhook for lead ingestion from Zapier with automatic assignment logic (based on province and agent availability), and updating user roles (Agent, Referente) to provide scoped access to leads.
+
+Phase 3 focused on the frontend implementation for the new Lead system and subsequent debugging. This included creating new React components (, ), integrating them, and then debugging a cascade of issues, including duplicate component declarations, missing authentication tokens in Axios requests, and a persistent  error on Unit creation.
+
+The work concluded with the engineer actively debugging this final 422 error. The backend endpoint was confirmed to be working correctly, pointing to a frontend-side issue, likely related to caching or the exact data payload being sent. The user's primary language is Italian. **Next agent, please respond in Italian.**
 </analysis>
 
 <product_requirements>
-The Nureal CRM is designed to manage clients and projects, featuring multi-step client forms, role-based access, and data exports. Key functionalities include displaying Convergenza SIM, Dati Mobile, and Telepass data, dynamic client list filters, and an Analytics section, all restricted by  and . Client creation defaults to Passata al BO, with status modification/deletion restricted to Backoffice Commessa. Document uploads are universally permitted for all authenticated users. Non-admin users have 90-day password expiration.
+The Nureal CRM is a tool for managing clients, projects, and now, leads.
 
-Recent enhancements and fixes:
-1.  **Client Assignment**: Users can assign clients to other authorized users.
-2.  **Excel Export Enhancement**: Assigned user replaces creator in client view/Excel export. Excel reports for Convergenza must include separate rows for fixed lines and each SIM.
-3.  **UI Text Change**: Telefonia Fastweb label changed to Telefonia Fissa across all client forms (create, edit, view).
-4.  **Role-Based Access Control**:
-    *   Client assignment feature (dropdown) is visible and usable only by Admin, Responsabile Commessa, and Backoffice Commessa roles.
-    *   Fields like Convergenza and Dati Pagamento in  are editable exclusively by Backoffice Commessa role.
-    *   Users listed in the client assignment dropdown must be filtered to include only those authorized for the client's specific Commessa, Servizio, or Sub-Agenzia.
-5.  **SIM Assignment**: A dropdown to assign a specific user to each SIM in the Convergenza section (edit mode), filtered by the client's commessa/servizio, must be implemented and included in the Excel export.
+**Existing Functionality (Pre-Trajectory):**
+*   Client and project management with role-based access.
+*   Data export to Excel.
+*   Multi-step client forms.
+
+**Implemented Features & Fixes (During Trajectory):**
+1.  **Client/SIM Assignment**: Implemented functionality to assign clients and individual SIMs to specific users, with assignment capabilities restricted by role.
+2.  **Excel Export Overhaul**:
+    *   The export now reflects the *assigned user*, not the creator.
+    *   Convergenza clients generate separate rows for the fixed line and each associated SIM, with each row showing the correct, specific offer.
+    *   The export is now filtered, showing only the clients that match the active filters in the UI (including name, sub-agency, status, creator/assigned user, services, segment, commesse, and creation date range).
+3.  **Bug Fixes**:
+    *   Corrected a critical bug where editing a client with a Mobile Fastweb contract type would incorrectly change it to Telefonia Fastweb. The system now preserves any contract type.
+    *   Fixed a  in the backend that prevented filter options from loading.
+4.  **New Lead Management System**:
+    *   **Units**: Creation of Units, which are entities (like sub-agencies) that exclusively manage leads.
+    *   **Dynamic Lead Statuses**: Admins can create and manage custom lead statuses.
+    *   **Webhook & Automatic Assignment**: A Zapier-integrated webhook receives new leads and automatically assigns them to agents within a Unit based on their authorized provinces using a load-balancing logic.
+    *   **Role-Based Access**: Agents see only their assigned leads. Referente users can see all leads assigned to the agents under them.
 </product_requirements>
 
 <key_technical_concepts>
-- **Full Stack**: React.js (frontend), FastAPI (Python) (backend).
-- **Database**: MongoDB with Motor, UUIDs for IDs, dynamic schema for enums, correct  usage.
-- **File Upload**: Nextcloud WebDAV API ().
-- **Deployment**: Kubernetes, environment variables, CORS, Supervisor.
-- **Authentication/Authorization**: JWTs, role-based access control, conditional rendering based on user roles.
-- **Data Management**: Soft delete, cascading forms, Excel reporting logic.
-- **Frontend State Management**: ,  for data fetching and UI updates.
+- **Full Stack**: React.js (frontend) in a single  file, FastAPI (Python) for the backend.
+- **Database**: MongoDB, using  for async operations and  for data modeling and validation. UUIDs are used for IDs.
+- **Authentication**: JWT-based authentication. API requests are secured and require a bearer token.
+- **Authorization**: Granular role-based access control (RBAC) implemented in the backend to restrict access to endpoints and specific data fields.
+- **API Interaction**: Frontend uses  to communicate with the backend REST API.
 </key_technical_concepts>
 
 <code_architecture>
+The application follows a standard monolithic full-stack architecture with a React frontend and a FastAPI backend. Both reside in the  directory.
 
--   ****
-    -   **Importance**: The core FastAPI application handling API endpoints, business logic, and database interactions.
-    -   **Changes**:
-        -   : Endpoint for client assignment, updated to use  as query parameter and enforce role-based authorization (Admin, Responsabile Commessa, Backoffice Commessa, Responsabile Sub Agenzia, Backoffice Sub Agenzia can be *targets* and some can *assign*). Includes validation for target user's  and .
-        -   : Modified to allow specific roles (Admin, Referente, Backoffice Commessa, Responsabile Commessa, Responsabile Sub Agenzia, Backoffice Sub Agenzia) to fetch all users, not just the current one, with proper filtering by  and .
-        -   : Extensive modifications to include  for client and  for each , correctly fetching usernames from . Implemented logic to generate a separate row for fixed line and each SIM in Convergenza.
-        -    model: Added  to the model to persist the assigned user for each SIM.
-        -   MongoDB Query Fixes: Corrected numerous instances where  or  was used incorrectly, standardizing to  after  is already initialized as .
-        -   : Enhanced to restrict modifications of sensitive fields to Backoffice Commessa.
--   ****
-    -   **Importance**: The main React application component, responsible for UI rendering and interactions. Contains modal definitions for client creation, viewing, and editing.
-    -   **Changes**:
-        -   : Implemented client assignment dropdown with dynamic user fetching (), filtered based on client's  and , also considering . Conditional rendering of the assignment field based on user roles (). Made Convergenza SIM, Dati Mobile and Modalità Pagamento sections editable only by Backoffice Commessa role. Added  dropdown for each SIM in Convergenza.
-        -   : Updated to display the assigned client user and the assigned user for each SIM in Convergenza by fetching display names.
-        -   Label Changes: Telefonia Fastweb text replaced with Telefonia Fissa across various UI elements and comments.
-        -    /  / : Refactored to fetch user display names for assigned clients and SIMs, using local state and  to manage loading and caching of user information within modals.
-        -    for : Updated to include  for editability.
+
+
+- ****
+    - **Importance**: This is the single, massive file containing the entire FastAPI backend application. It defines all Pydantic models, API endpoints, business logic, and database interactions.
+    - **Summary of Changes**: This file underwent extensive modifications.
+        - **New Models**: Added , , , , , . The  and  models were significantly expanded to include fields like , , , , and .
+        - **New Endpoints**: Implemented full CRUD endpoints for  and . A new, complex  endpoint was created to handle lead ingestion and automatic assignment.
+        - **Endpoint Modifications**: Updated  and  to accept and process a wide range of new filters (, , , , etc.). The logic for generating the Excel report was heavily modified to handle Convergenza cases correctly.
+        - **Bug Fixes**: Corrected a  in  by adding checks for  values before sorting. Removed faulty data conversion logic in the  endpoint that was causing the contract type bug. Numerous duplicate endpoint/model definitions were found and removed. Added extensive logging to the  endpoint for debugging.
+
+- ****
+    - **Importance**: This single file contains the entire React frontend application, including all components, modals, state management, and API calls.
+    - **Summary of Changes**: This file was also heavily modified.
+        - **New Components**: Created , , , and  components for the new admin functionalities.
+        - **Component Modifications**: The  component's  function was updated to pass all active UI filters to the backend. The  component was refactored to use dynamic statuses fetched from the backend.
+        - **Bug Fixes**: A significant amount of time was spent debugging frontend issues caused by copy-paste and refactoring errors. This included removing duplicate component declarations (), fixing incomplete component definitions (), and adding the missing authentication token to numerous  calls for the new Unit management features.
+
+- ****
+    - **Importance**: A markdown file created to document the functionality of the new Lead Management system for the user.
 </code_architecture>
 
 <pending_tasks>
-- Debug and verify the visibility of users in the client assignment dropdown in the frontend.
-- Test the complete client assignment flow with users having correct , , and  authorizations, including assigning, viewing, and Excel export.
-- Verify that Convergenza and Dati Pagamento fields are correctly editable only by Backoffice Commessa in .
-- Verify the dropdown for SIM assignment works and is reflected in Excel export.
+- **Resolve Persistent 422 Error**: The user still experiences a  error when creating a Unit from the frontend, even though backend tests pass and the Unit is saved.
+- **Fix Unit List Display**: The user reports that the Unit list sometimes shows the Unit ID instead of its name, despite the code seeming correct. This is likely tied to the same 422 error or a frontend state/caching issue.
+- **Integrate Admin Menus**: The new Gestione Unit and Gestione Status Lead sections are not yet linked in the main admin navigation menu.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was deep in the process of debugging a persistent issue where specific users (, ), although authorized for a client's , were not appearing in the client assignment dropdown in the frontend.
+The AI engineer was in the final stages of debugging a persistent and frustrating  error. This error occurs when the user attempts to create a new Unit via the frontend UI.
 
-The debugging steps involved:
-1.  **Backend Log Analysis**: Checked backend logs for  endpoint to confirm if  and  were being returned by the API and what their authorizations were.
-2.  **Frontend Client Identification**: Attempted to open client 33 prova but it wasn't found. Listed all clients to find one with the Presidio - Maximo sub-agency (corresponding to /'s authorization).
-3.  **Test Data Discrepancy Discovery**: Identified that the client found had a  () that  and  were *not* authorized for, explaining why frontend filtering was correctly excluding them.
-4.  **Test Data Correction**: Based on user feedback (agli utenti indicati diamo la possibilità di selezionare anche i servizi e la commessa), the AI engineer granted the missing  to  and  in the database.
+**Investigation Summary:**
+1.  The user reported the error, noting that the Unit is still saved in the database despite the error message appearing in the UI.
+2.  The AI engineer confirmed through direct backend testing (using  with -like Python script) that the  endpoint works perfectly and returns a  status when provided with a valid payload. This isolated the problem to the frontend.
+3.  The engineer's hypothesis shifted to a client-side issue: either the browser is serving a cached, old version of the frontend code, or the  request is somehow malformed (e.g., wrong URL, incorrect headers, or bad payload structure).
+4.  Previous fixes included adding the missing JWT authentication token to the  call in the . This did not solve the user's issue.
+5.  The final action was to add MASSIVE logging directly into the  endpoint in . This logging prints the incoming request headers, body, and any Pydantic validation errors to the backend logs. The backend was then restarted.
 
-The last action recorded was an attempt to log in as the  user to proceed with testing the frontend after the test data modification, but a password not correct for ale2 error was encountered, indicating a login attempt with the wrong user. The core issue of user visibility in the dropdown due to service authorization was identified and addressed in the test data, and the next step is to verify this fix in the frontend.
+The immediate goal is to capture the exact, raw request being sent from the user's browser to definitively diagnose why the backend is rejecting it with a 422 error, despite appearing to process it correctly in isolated tests.
 </current_work>
 
 <optional_next_step>
-Log in with the  user and re-test the client assignment dropdown in the frontend, verifying  and  visibility.
+Check the backend logs immediately after the user triggers the Create Unit action from the frontend to analyze the detailed request payload and headers captured by the new logging.
 </optional_next_step>

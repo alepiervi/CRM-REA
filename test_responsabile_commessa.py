@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 class ResponsabileCommessaTester:
-    def __init__(self, base_url="https://client-manager-131.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://leadmanager-21.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None

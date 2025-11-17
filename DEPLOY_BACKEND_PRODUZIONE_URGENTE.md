@@ -45,7 +45,7 @@ production_domains = [
     "https://nureal.it",
     "https://www.nureal.it",
     "https://mobil-analytics-1.emergent.host",
-    "https://client-manager-131.preview.emergentagent.com",
+    "https://leadmanager-21.preview.emergentagent.com",
 ]
 
 for domain in production_domains:
