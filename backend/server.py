@@ -10045,16 +10045,16 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             ],
             "sub_agenzie": [
                 {"value": sub["id"], "label": sub["nome"]} 
-                for sub in sorted(sub_agenzie, key=lambda x: x.get("nome", ""))
+                for sub in sorted(sub_agenzie, key=lambda x: x.get("nome", "") or "")
             ],
             "users": [
                 {"value": user["id"], "label": f"{user.get('username', 'Unknown')} ({user.get('email', '')})"}
-                for user in sorted(users, key=lambda x: x.get("username", ""))
+                for user in sorted(users, key=lambda x: x.get("username", "") or "")
             ],
             # NEW: Additional filter options
             "servizi": [
                 {"value": servizio["id"], "label": servizio.get("nome", "Nome non disponibile")}
-                for servizio in sorted(servizi, key=lambda x: x.get("nome", ""))
+                for servizio in sorted(servizi, key=lambda x: x.get("nome", "") or "")
             ],
             "commesse": [
                 {"value": commessa["id"], "label": commessa.get("nome", "Nome non disponibile")}
