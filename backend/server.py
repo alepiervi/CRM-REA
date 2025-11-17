@@ -207,6 +207,7 @@ class User(BaseModel):
     sub_agenzia_id: Optional[str] = None  # Assegnazione diretta a sub agenzia
     referente_id: Optional[str] = None  # For agents only
     provinces: List[str] = []  # For agents - provinces they cover
+    unit_autorizzate: List[str] = []  # NEW: For agents - units they can receive leads from
     # Nuovi campi per gestione autorizzazioni specializzate
     commesse_autorizzate: List[str] = []  # IDs commesse per responsabile/backoffice commessa
     servizi_autorizzati: List[str] = []   # IDs servizi specifici per la commessa
