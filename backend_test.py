@@ -43145,12 +43145,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the EXCEL EXPORT PROBLEMATIC FILTERS TEST AS REQUESTED
+        # Run the EXCEL EXPORT CONVERGENZA LINEA FISSA TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING EXCEL EXPORT PROBLEMATIC FILTERS TEST - AS REQUESTED")
+        print("🎯 RUNNING EXCEL EXPORT CONVERGENZA LINEA FISSA TEST - AS REQUESTED")
         print("="*80)
         
-        excel_export_success = self.test_excel_export_problematic_filters()
+        excel_export_success = self.test_excel_export_convergenza_linea_fissa_offer()
 
         # Print final summary
         print("\n" + "=" * 80)
