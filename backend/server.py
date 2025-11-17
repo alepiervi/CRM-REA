@@ -367,6 +367,11 @@ class Unit(BaseModel):
     campagne_autorizzate: List[str] = []  # Campaign names this unit handles
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat() if v else None
+        }
 
 class UnitCreate(BaseModel):
     nome: str
