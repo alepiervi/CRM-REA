@@ -3271,7 +3271,15 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
     try {
       console.log("📤 Sending unit data:", formData);
       console.log("📤 API endpoint:", `${API}/units`);
-      const response = await axios.post(`${API}/units`, formData);
+      
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/units`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
       console.log("✅ Response:", response.data);
       toast({
         title: "Successo",
