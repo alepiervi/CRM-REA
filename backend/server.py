@@ -279,14 +279,14 @@ class Unit(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
 
-class UnitCreate(BaseModel):
+class AIUnitCreate(BaseModel):  # Renamed to avoid conflict with Lead Unit
     name: str
     description: Optional[str] = None
     assistant_id: Optional[str] = None
     commesse_autorizzate: List[str] = Field(default_factory=list)
     servizi_autorizzati: List[str] = Field(default_factory=list)   # NEW: Lista ID servizi autorizzati
 
-class UnitUpdate(BaseModel):
+class AIUnitUpdate(BaseModel):  # Renamed to avoid conflict with Lead Unit
     name: Optional[str] = None
     description: Optional[str] = None
     assistant_id: Optional[str] = None
