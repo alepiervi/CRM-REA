@@ -194,38 +194,33 @@ TEST DA ESEGUIRE:
 
 TEST COMPLETATI:
 1. ✅ Login Admin (admin/admin123) - SUCCESS
-2. ✅ Verifica date di creazione clienti - SUCCESS
-   - Total clienti: 15
-   - Date range: 2025-10-20 to 2025-10-30
-   - Unique creation dates: 5
-   - Test date_from: 2025-10-22, Test date_to: 2025-10-23
-3. ✅ Test filtro date_from (solo data inizio) - SUCCESS
-   - Expected clients from 2025-10-22: 10 clients
-   - Excel export con date_from filter: File generato (9401 bytes)
-   - ✅ CRITICAL: Filter applied correctly (10 < 15 total clients)
-4. ✅ Test filtro date_to (solo data fine) - SUCCESS
-   - Expected clients up to 2025-10-23: 8 clients
-   - Excel export con date_to filter: File generato (8870 bytes)
-   - ✅ CRITICAL: Filter applied correctly (8 < 15 total clients)
-5. ✅ Test filtro date range completo (date_from + date_to) - SUCCESS
-   - Expected clients in range 2025-10-22 to 2025-10-23: 3 clients
-   - Excel export con date range: File generato (7616 bytes)
-   - ✅ CRITICAL: Date range filter applied correctly (3 <= 15 total clients)
-6. ✅ Test combinazione con altri filtri - SUCCESS
-   - Combined filters (date + sub_agenzia F2F): 2 clients
-   - Excel export con combined filters: File generato (7436 bytes)
-   - ✅ CRITICAL: Combined filters applied correctly (2 <= 3 range clients)
-7. ✅ Riepilogo filtri completi - SUCCESS
-   - ✅ All 9 filter types supported and verified:
-     * sub_agenzia_id ✅ (tested in combination)
-     * tipologia_contratto ✅ (available in API)
-     * status ✅ (available in API)
-     * created_by ✅ (available in API)
-     * servizio_id ✅ (available in API)
-     * segmento ✅ (available in API)
-     * commessa_id_filter ✅ (available in API)
-     * search + search_type ✅ (available in API)
-     * date_from + date_to ✅ (TESTED TODAY)
+2. ✅ Test filtro Utente Creatore (created_by) - SUCCESS
+   - User ID testato: b9359f9e-6b32-4077-ad1a-4b7c64f0df8b
+   - Export Excel: Status 200, File generato (6425 bytes)
+   - ✅ CRITICAL: Nessun errore datetime, file Excel valido (.xlsx format)
+3. ✅ Test filtro Servizi (servizio_id) - SUCCESS
+   - Servizio testato: Negozi (8f50b9d7-770e-42f9-8215-25d86c5fb59f)
+   - Export Excel: Status 200, File generato (6475 bytes)
+   - ✅ CRITICAL: Nessun errore datetime, file Excel valido (.xlsx format)
+4. ✅ Test filtro Segmento (segmento) - SUCCESS
+   - Segmento testato: privato
+   - Export Excel: Status 200, File generato (10643 bytes)
+   - ✅ CRITICAL: Nessun errore datetime, file Excel valido (.xlsx format)
+5. ✅ Test filtro Commesse (commessa_id_filter) - SUCCESS
+   - Commessa testata: 53c03522-acb6-4f94-bb30-ba6b0c8c6b1c
+   - Export Excel: Status 200, File generato (6306 bytes)
+   - ✅ CRITICAL: Nessun errore datetime, file Excel valido (.xlsx format)
+6. ✅ Test combinazione filtri problematici - SUCCESS
+   - Tutti i 4 filtri combinati: created_by + servizio_id + segmento + commessa_id_filter
+   - Export Excel: Status 200, File generato (6051 bytes)
+   - ✅ CRITICAL: Nessun errore datetime, file Excel valido (.xlsx format)
+7. ✅ Test senza filtri date (regressione) - SUCCESS
+   - Export Excel senza filtri: Status 200, File generato (10643 bytes)
+   - ✅ CRITICAL: Nessuna regressione, file Excel valido (.xlsx format)
+8. ✅ Verifica backend logs - SUCCESS
+   - ✅ CRITICAL: Nessun errore "datetime" nei log recenti
+   - Tutti i test mostrano Status 200 OK nei log backend
+   - Errori datetime precedenti erano prima del fix
 
 CRITERI DI SUCCESSO:
 ✅ Export con date_from filtra clienti dalla data in poi
