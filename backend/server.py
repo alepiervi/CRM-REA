@@ -10226,7 +10226,7 @@ async def export_clienti_excel(
             # Get offerta name (principale del cliente)
             if cliente.get("offerta_id"):
                 offerta = await db["offerte"].find_one({"id": cliente["offerta_id"]})
-                base_cliente["offerta_name"] = offerta.get("nome") if offerta else ""
+                base_cliente["offerta_name"] = offerta.get("nome", "") if offerta else ""
             else:
                 base_cliente["offerta_name"] = ""
             
