@@ -148,15 +148,15 @@ CONCLUSIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Backend configuration issue: F2F ha troppi servizi autorizzati invece di solo TLS"
 
-current_problem_statement: "TEST EXPORT EXCEL CON FILTRO DATE - VERIFICA PERIODO CREAZIONE
+current_problem_statement: "TEST EXPORT EXCEL CON FILTRI PROBLEMATICI - VERIFICA ERRORI RISOLTI
 
 OBIETTIVO:
-Verificare che l'export Excel rispetti il filtro per periodo di creazione (date_from e date_to).
+Verificare che l'export Excel funzioni correttamente con i filtri che l'utente ha segnalato come problematici: utente creatore, servizi, segmento e commesse.
 
 CONTESTO:
-- Aggiunto nuovo filtro: date_from e date_to per filtrare clienti per periodo di creazione
-- L'export Excel deve contenere SOLO i clienti creati nel periodo specificato
-- Questo è l'ultimo filtro mancante per completare la funzionalità
+- L'utente ha segnalato errori quando usa questi filtri specifici
+- Ho corretto un bug nell'import datetime che causava errori
+- Devo verificare che ora tutti i filtri funzionino senza errori
 
 TEST DA ESEGUIRE:
 1. Login Admin (admin/admin123)
