@@ -2665,8 +2665,12 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   };
 
   const updateLead = async (leadId, esito, note, customFields, status) => { // NEW: Added status parameter
+  const updateLead = async (leadId, esito, note, customFields, status) => { // NEW: Added status parameter
     try {
-      await axios.put(`${API}/leads/${leadId}`, { esito, note, custom_fields: customFields });
+      const updateData = { esito, note, custom_fields: customFields };
+      if (status) updateData.status = status; // NEW: Include status if provided
+      
+      await axios.put(`${API}/leads/${leadId}`, updateData);
       toast({
         title: "Successo",
         description: "Lead aggiornato con successo",
