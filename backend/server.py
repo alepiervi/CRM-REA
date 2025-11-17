@@ -10065,6 +10065,11 @@ async def export_clienti_excel(
     tipologia_contratto: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     created_by: Optional[str] = Query(None),
+    servizio_id: Optional[str] = Query(None),  # NEW: Servizio filter
+    segmento: Optional[str] = Query(None),  # NEW: Segmento filter
+    commessa_id_filter: Optional[str] = Query(None),  # NEW: Commessa filter
+    search: Optional[str] = Query(None),  # NEW: Search query
+    search_type: Optional[str] = Query(None, regex="^(all|id|cognome|codice_fiscale|partita_iva|telefono|email)$"),  # NEW: Search type
     current_user: User = Depends(get_current_user)
 ):
     """Export clienti to Excel with enhanced filters and expanded SIM rows"""
@@ -10100,6 +10105,43 @@ async def export_clienti_excel(
             query["status"] = status
         if created_by:
             query["created_by"] = created_by
+        
+        # NEW: Add servizio, segmento, and commessa filters
+        if servizio_id:
+            query["servizio_id"] = servizio_id
+        if segmento:
+            query["segmento"] = segmento
+        if commessa_id_filter:
+            query["commessa_id"] = commessa_id_filter
+        
+        # NEW: Add search filter for nome, cognome, CF, etc.
+        if search and search.strip():
+            search_value = search.strip()
+            search_type_value = search_type or 'all'
+            
+            if search_type_value == 'all':
+                # Search in multiple fields (case-insensitive regex)
+                query["$or"] = [
+                    {"nome": {"$regex": search_value, "$options": "i"}},
+                    {"cognome": {"$regex": search_value, "$options": "i"}},
+                    {"codice_fiscale": {"$regex": search_value, "$options": "i"}},
+                    {"email": {"$regex": search_value, "$options": "i"}},
+                    {"telefono": {"$regex": search_value, "$options": "i"}},
+                    {"partita_iva": {"$regex": search_value, "$options": "i"}},
+                    {"id": {"$regex": search_value, "$options": "i"}}
+                ]
+            elif search_type_value == 'id':
+                query["id"] = {"$regex": search_value, "$options": "i"}
+            elif search_type_value == 'cognome':
+                query["cognome"] = {"$regex": search_value, "$options": "i"}
+            elif search_type_value == 'codice_fiscale':
+                query["codice_fiscale"] = {"$regex": search_value, "$options": "i"}
+            elif search_type_value == 'partita_iva':
+                query["partita_iva"] = {"$regex": search_value, "$options": "i"}
+            elif search_type_value == 'telefono':
+                query["telefono"] = {"$regex": search_value, "$options": "i"}
+            elif search_type_value == 'email':
+                query["email"] = {"$regex": search_value, "$options": "i"}
         
         # Get clienti with enriched data
         clienti = await db.clienti.find(query).sort("created_at", -1).to_list(length=None)
