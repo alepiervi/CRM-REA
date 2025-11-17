@@ -4341,14 +4341,28 @@ async def delete_lead(lead_id: str, current_user: User = Depends(get_current_use
 @api_router.post("/units", response_model=Unit)
 async def create_unit(unit: UnitCreate, current_user: User = Depends(get_current_user)):
     """Create a new lead unit - Admin only"""
+    # MASSIVE LOGGING FOR DEBUG
+    logging.info(f"========== CREATE UNIT REQUEST ==========")
+    logging.info(f"User: {current_user.username} (role: {current_user.role})")
+    logging.info(f"Unit data received: {unit.dict()}")
+    logging.info(f"Unit nome: {unit.nome}")
+    logging.info(f"Unit commessa_id: {unit.commessa_id}")
+    logging.info(f"Unit campagne: {unit.campagne_autorizzate}")
+    logging.info(f"==========================================")
+    
     if current_user.role != UserRole.ADMIN:
+        logging.error(f"Access denied: {current_user.username} is not admin")
         raise HTTPException(status_code=403, detail="Only admin can create units")
     
     try:
         # Check if commessa exists
+        logging.info(f"Checking if commessa {unit.commessa_id} exists...")
         commessa = await db["commesse"].find_one({"id": unit.commessa_id})
         if not commessa:
+            logging.error(f"Commessa {unit.commessa_id} NOT FOUND")
             raise HTTPException(status_code=404, detail="Commessa not found")
+        
+        logging.info(f"Commessa found: {commessa.get('nome', 'N/A')}")
         
         # Create unit
         unit_obj = Unit(
@@ -4357,16 +4371,21 @@ async def create_unit(unit: UnitCreate, current_user: User = Depends(get_current
             campagne_autorizzate=unit.campagne_autorizzate
         )
         
+        logging.info(f"Unit object created: {unit_obj.dict()}")
+        
         await db["units"].insert_one(unit_obj.dict())
-        logging.info(f"Unit created: {unit_obj.id} by {current_user.username}")
+        logging.info(f"✅ Unit SUCCESSFULLY created: {unit_obj.id} by {current_user.username}")
         
         return unit_obj
         
-    except HTTPException:
+    except HTTPException as he:
+        logging.error(f"HTTPException in create_unit: {he.status_code} - {he.detail}")
         raise
     except Exception as e:
-        logging.error(f"Error creating unit: {e}")
-        raise HTTPException(status_code=500, detail="Failed to create unit")
+        logging.error(f"❌ UNEXPECTED ERROR creating unit: {type(e).__name__}: {str(e)}")
+        import traceback
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Failed to create unit: {str(e)}")
 
 @api_router.get("/units", response_model=List[Unit])
 async def get_units(
