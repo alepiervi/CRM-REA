@@ -9748,7 +9748,15 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
         ws.cell(row=row_idx, column=col, value=cliente.get("servizio_name", "")); col += 1
         ws.cell(row=row_idx, column=col, value=cliente.get("tipologia_contratto_display", "")); col += 1
         ws.cell(row=row_idx, column=col, value=cliente.get("segmento_display", "")); col += 1
-        ws.cell(row=row_idx, column=col, value=cliente.get("offerta_name", "")); col += 1
+        
+        # Offerta: Use SIM offerta for SIM rows, cliente offerta for fixed line rows
+        sim_type = cliente.get("sim_type", "")
+        if sim_type in ["SIM Convergenza", "Mobile"]:
+            # For SIM rows, show the SIM-specific offerta
+            ws.cell(row=row_idx, column=col, value=cliente.get("sim_offerta_name", "")); col += 1
+        else:
+            # For fixed line rows (or no convergenza), show the cliente offerta
+            ws.cell(row=row_idx, column=col, value=cliente.get("offerta_name", "")); col += 1
         
         # Telefonia Fastweb
         ws.cell(row=row_idx, column=col, value=cliente.get("tecnologia", "")); col += 1
