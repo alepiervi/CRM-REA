@@ -3436,6 +3436,437 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
 };
 
 const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
+
+
+// ============================================================================
+// LEAD STATUS MANAGEMENT COMPONENT - For managing dynamic lead statuses
+// ============================================================================
+const LeadStatusManagement = () => {
+  const [statuses, setStatuses] = useState([]);
+  const [units, setUnits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(null);
+  const [filterUnit, setFilterUnit] = useState("");
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchStatuses();
+    fetchUnits();
+  }, [filterUnit]);
+
+  const fetchStatuses = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (filterUnit && filterUnit !== "all") {
+        params.append("unit_id", filterUnit);
+      }
+      const response = await axios.get(`${API}/lead-status?${params}`);
+      setStatuses(response.data);
+    } catch (error) {
+      console.error("Error fetching lead statuses:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento degli status",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUnits = async () => {
+    try {
+      const response = await axios.get(`${API}/units`);
+      setUnits(response.data);
+    } catch (error) {
+      console.error("Error fetching units:", error);
+    }
+  };
+
+  const deleteStatus = async (statusId, statusName) => {
+    if (!window.confirm(`Sei sicuro di voler eliminare lo status "${statusName}"?`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/lead-status/${statusId}`);
+      toast({
+        title: "Successo",
+        description: "Status eliminato con successo",
+      });
+      fetchStatuses();
+    } catch (error) {
+      console.error("Error deleting status:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione dello status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Caricamento...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-slate-800">Gestione Status Lead</h2>
+        <div className="flex gap-2">
+          <select
+            className="border rounded-md p-2"
+            value={filterUnit}
+            onChange={(e) => setFilterUnit(e.target.value)}
+          >
+            <option value="">Tutti gli status</option>
+            <option value="all">Solo globali</option>
+            {units.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.nome}
+              </option>
+            ))}
+          </select>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Nuovo Status
+          </Button>
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="p-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Unit</TableHead>
+                <TableHead>Ordine</TableHead>
+                <TableHead>Colore</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead className="text-right">Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {statuses.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-gray-500">
+                    Nessuno status trovato
+                  </TableCell>
+                </TableRow>
+              ) : (
+                statuses.map((status) => {
+                  const unit = units.find((u) => u.id === status.unit_id);
+                  return (
+                    <TableRow key={status.id}>
+                      <TableCell className="font-medium">{status.nome}</TableCell>
+                      <TableCell>
+                        {status.unit_id ? (
+                          <Badge variant="outline">{unit?.nome || "N/A"}</Badge>
+                        ) : (
+                          <Badge className="bg-blue-100 text-blue-800">Globale</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{status.ordine}</TableCell>
+                      <TableCell>
+                        {status.colore ? (
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-6 h-6 rounded border"
+                              style={{ backgroundColor: status.colore }}
+                            />
+                            <span className="text-sm">{status.colore}</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">Nessuno</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {status.is_active ? (
+                          <Badge className="bg-green-100 text-green-800">Attivo</Badge>
+                        ) : (
+                          <Badge variant="secondary">Inattivo</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedStatus(status);
+                            setShowEditModal(true);
+                          }}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteStatus(status.id, status.nome)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {showCreateModal && (
+        <CreateLeadStatusModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            fetchStatuses();
+          }}
+          units={units}
+        />
+      )}
+
+      {showEditModal && selectedStatus && (
+        <EditLeadStatusModal
+          status={selectedStatus}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedStatus(null);
+          }}
+          onSuccess={() => {
+            setShowEditModal(false);
+            setSelectedStatus(null);
+            fetchStatuses();
+          }}
+          units={units}
+        />
+      )}
+    </div>
+  );
+};
+
+// Create Lead Status Modal
+const CreateLeadStatusModal = ({ onClose, onSuccess, units }) => {
+  const [formData, setFormData] = useState({
+    nome: "",
+    unit_id: "",
+    ordine: 0,
+    colore: "#3b82f6",
+  });
+  const { toast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const submitData = {
+        ...formData,
+        unit_id: formData.unit_id || null,
+      };
+      await axios.post(`${API}/lead-status`, submitData);
+      toast({
+        title: "Successo",
+        description: "Status creato con successo",
+      });
+      onSuccess();
+    } catch (error) {
+      console.error("Error creating lead status:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nella creazione dello status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Nuovo Status Lead</CardTitle>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="nome">Nome Status *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="unit_id">Unit (lasciare vuoto per status globale)</Label>
+              <select
+                id="unit_id"
+                className="w-full border rounded-md p-2"
+                value={formData.unit_id}
+                onChange={(e) => setFormData({ ...formData, unit_id: e.target.value })}
+              >
+                <option value="">Globale (tutte le unit)</option>
+                {units.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label htmlFor="ordine">Ordine di visualizzazione</Label>
+              <Input
+                id="ordine"
+                type="number"
+                value={formData.ordine}
+                onChange={(e) => setFormData({ ...formData, ordine: parseInt(e.target.value) })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="colore">Colore</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="colore"
+                  type="color"
+                  value={formData.colore}
+                  onChange={(e) => setFormData({ ...formData, colore: e.target.value })}
+                  className="w-20"
+                />
+                <Input
+                  type="text"
+                  value={formData.colore}
+                  onChange={(e) => setFormData({ ...formData, colore: e.target.value })}
+                  placeholder="#3b82f6"
+                />
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">Crea Status</Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
+  );
+};
+
+// Edit Lead Status Modal
+const EditLeadStatusModal = ({ status, onClose, onSuccess, units }) => {
+  const [formData, setFormData] = useState({
+    nome: status.nome,
+    ordine: status.ordine,
+    colore: status.colore || "#3b82f6",
+    is_active: status.is_active,
+  });
+  const { toast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/lead-status/${status.id}`, formData);
+      toast({
+        title: "Successo",
+        description: "Status aggiornato con successo",
+      });
+      onSuccess();
+    } catch (error) {
+      console.error("Error updating lead status:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'aggiornamento dello status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const unit = units.find((u) => u.id === status.unit_id);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Modifica Status Lead</CardTitle>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Unit</Label>
+              <p className="text-sm text-gray-600">
+                {status.unit_id ? unit?.nome || "N/A" : "Globale (tutte le unit)"}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                L'unit non può essere modificata dopo la creazione
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="nome">Nome Status *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="ordine">Ordine di visualizzazione</Label>
+              <Input
+                id="ordine"
+                type="number"
+                value={formData.ordine}
+                onChange={(e) => setFormData({ ...formData, ordine: parseInt(e.target.value) })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="colore">Colore</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="colore"
+                  type="color"
+                  value={formData.colore}
+                  onChange={(e) => setFormData({ ...formData, colore: e.target.value })}
+                  className="w-20"
+                />
+                <Input
+                  type="text"
+                  value={formData.colore}
+                  onChange={(e) => setFormData({ ...formData, colore: e.target.value })}
+                  placeholder="#3b82f6"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={formData.is_active}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              />
+              <Label htmlFor="is_active">Status Attivo</Label>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">Salva Modifiche</Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
+  );
+};
+
   const [esito, setEsito] = useState(lead.esito || "");
   const [note, setNote] = useState(lead.note || "");
   const [customFieldValues, setCustomFieldValues] = useState(lead.custom_fields || {});
