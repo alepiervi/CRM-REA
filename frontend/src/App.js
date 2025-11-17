@@ -3000,12 +3000,59 @@ const LeadsManagement = ({ selectedUnit, units }) => {
 
       {/* Lead Detail Modal */}
       {selectedLead && (
-        <LeadDetailModal
-          lead={selectedLead}
-          onClose={() => setSelectedLead(null)}
-          onUpdate={updateLead}
-          customFields={customFields}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle>Dettaglio Lead: {selectedLead.nome} {selectedLead.cognome}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Nome</Label>
+                  <p className="text-sm">{selectedLead.nome}</p>
+                </div>
+                <div>
+                  <Label>Cognome</Label>
+                  <p className="text-sm">{selectedLead.cognome}</p>
+                </div>
+                <div>
+                  <Label>Telefono</Label>
+                  <p className="text-sm">{selectedLead.telefono}</p>
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <p className="text-sm">{selectedLead.email}</p>
+                </div>
+                <div>
+                  <Label>Provincia</Label>
+                  <p className="text-sm">{selectedLead.provincia}</p>
+                </div>
+                <div>
+                  <Label>Campagna</Label>
+                  <p className="text-sm">{selectedLead.campagna}</p>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <p className="text-sm">{selectedLead.status || selectedLead.esito || "N/A"}</p>
+                </div>
+                <div>
+                  <Label>Data Creazione</Label>
+                  <p className="text-sm">{new Date(selectedLead.created_at).toLocaleString("it-IT")}</p>
+                </div>
+              </div>
+              
+              {selectedLead.note && (
+                <div>
+                  <Label>Note</Label>
+                  <p className="text-sm">{selectedLead.note}</p>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => setSelectedLead(null)}>Chiudi</Button>
+            </CardFooter>
+          </Card>
+        </div>
       )}
 
       {/* Create Lead Modal */}
