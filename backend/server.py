@@ -10114,8 +10114,14 @@ async def export_clienti_excel(
             query["tipologia_contratto"] = tipologia_contratto
         if status:
             query["status"] = status
-        if created_by:
-            query["created_by"] = created_by
+        
+        # NEW: Filter by assigned user (not creator)
+        # This supports the "Utente Creatore" filter which should filter by assigned user
+        if assigned_to:
+            query["assigned_to"] = assigned_to
+        elif created_by:
+            # Backward compatibility: if old parameter is used, filter by assigned_to
+            query["assigned_to"] = created_by
         
         # NEW: Add servizio, segmento, and commessa filters
         if servizio_id:
