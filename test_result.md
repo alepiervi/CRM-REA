@@ -148,15 +148,16 @@ CONCLUSIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Backend configuration issue: F2F ha troppi servizi autorizzati invece di solo TLS"
 
-current_problem_statement: "TEST RAPIDO - VERIFICA FUNZIONALITÀ BASE NON ROTTE
+current_problem_statement: "TEST RAPIDO - SEZIONE LEAD FUNZIONANTE
 
 OBIETTIVO:
-Verificare che le funzionalità esistenti (Clienti, Commesse, Sub Agenzie) funzionino ancora correttamente dopo le modifiche per il sistema Lead/Unit.
+Verificare che la sezione Lead sia accessibile e non mostri l'errore 'lead is not defined'.
 
 CONTESTO:
-- L'utente ha segnalato che clienti, commesse e sub agenzie non caricano più
-- Ho implementato nuove funzionalità Unit e LeadStatus
-- Ho rimosso codice duplicato che causava errori
+- Ho fixato una duplicazione nella funzione updateLead
+- Ho creato un LeadDetailModal semplice
+- L'utente segnalava errore 'lead is not defined'
+- Era presente un errore di sintassi JavaScript che impediva il caricamento dell'app
 
 TEST DA ESEGUIRE:
 
