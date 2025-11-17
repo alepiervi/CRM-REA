@@ -223,16 +223,18 @@ TEST COMPLETATI:
    - Errori datetime precedenti erano prima del fix
 
 CRITERI DI SUCCESSO:
-✅ Export con date_from filtra clienti dalla data in poi
-✅ Export con date_to filtra clienti fino alla data
-✅ Export con date range filtra clienti nel periodo esatto
-✅ Filtro date si combina correttamente con altri filtri
-✅ Tutti i 9 filtri sono supportati e funzionanti
-✅ File Excel valido e scaricabile
+✅ Export con created_by funziona senza errori
+✅ Export con servizio_id funziona senza errori
+✅ Export con segmento funziona senza errori
+✅ Export con commessa_id_filter funziona senza errori
+✅ Combinazione dei 4 filtri funziona senza errori
+✅ Export senza filtri date funziona (no regressione)
+✅ Nessun errore "datetime" nei log backend
+✅ Tutti i file Excel sono validi e scaricabili
 
-SUCCESS RATE: 93.8% (15/16 tests passed) - ALL CRITICAL OBJECTIVES ACHIEVED
+SUCCESS RATE: 100% (14/14 tests passed) - ALL CRITICAL OBJECTIVES ACHIEVED
 
-STATO ATTUALE: ✅ PROBLEMA COMPLETAMENTE RISOLTO - L'export Excel rispetta correttamente il filtro per periodo di creazione (date_from e date_to)! Il sistema esporta SOLO i clienti creati nel periodo specificato. Tutti i test di verifica filtri date sono passati con successo. Questo completa l'implementazione di TUTTI i 9 filtri richiesti per l'export Excel."
+STATO ATTUALE: ✅ PROBLEMA COMPLETAMENTE RISOLTO - L'export Excel con i 4 filtri problematici ora funziona correttamente! Il fix del bug datetime ha risolto tutti gli errori. Tutti i filtri (created_by, servizio_id, segmento, commessa_id_filter) funzionano singolarmente e in combinazione senza errori. I file Excel vengono generati correttamente in formato .xlsx valido. Nessun errore datetime nei log backend recenti."
 
 previous_problem_statement: "CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM
 
