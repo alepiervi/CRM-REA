@@ -41457,11 +41457,11 @@ startxref
         else:
             print("🚨 EXCEL EXPORT CON FILTRI TEST: ❌ FAILED - PROBLEMI CON FILTRI EXPORT!")
         
-        if dynamic_types_success:
-            print("\n🎉 OVERALL RESULT: ✅ GESTIONE TIPOLOGIE DINAMICHE WORKING CORRECTLY!")
-            print("💡 CONCLUSION: Il sistema preserva correttamente QUALSIASI tipologia contratto senza conversioni automatiche")
+        if excel_export_success:
+            print("\n🎉 OVERALL RESULT: ✅ EXCEL EXPORT CON FILTRI WORKING CORRECTLY!")
+            print("💡 CONCLUSION: Il sistema esporta correttamente SOLO i clienti filtrati senza includere tutti i clienti")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ GESTIONE TIPOLOGIE DINAMICHE NEEDS BACKEND FIXES!")
+            print("\n🚨 OVERALL RESULT: ❌ EXCEL EXPORT CON FILTRI NEEDS BACKEND FIXES!")
         
         return excel_export_success
 
