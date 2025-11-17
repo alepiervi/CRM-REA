@@ -1244,8 +1244,76 @@ startxref
                     self.log_test("❌ Failed to verify assignment", False, f"Status: {status}")
                     return False
             else:
-                self.log_test("❌ Failed to update cliente assignment", False, f"Status: {status}")
-                return False
+                error_detail = update_response.get('detail', 'No detail provided') if isinstance(update_response, dict) else str(update_response)
+                self.log_test("❌ Failed to update cliente assignment", False, f"Status: {status}, Error: {error_detail}")
+                
+                # Let's try a different approach - create a new cliente instead
+                print(f"\n   🔄 Trying alternative approach: Create new cliente with assignment...")
+                
+                # Get valid commessa and sub agenzia for cliente creation
+                success, commesse_response, status = self.make_request('GET', 'commesse', expected_status=200)
+                if success and status == 200:
+                    commesse = commesse_response if isinstance(commesse_response, list) else []
+                    if commesse:
+                        success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+                        if success and status == 200:
+                            sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+                            if sub_agenzie:
+                                # Find compatible commessa and sub agenzia
+                                target_commessa = commesse[0]
+                                target_sub_agenzia = sub_agenzie[0]
+                                
+                                # Create new cliente with assignment
+                                new_cliente_payload = {
+                                    "nome": "Test",
+                                    "cognome": "Utente Creatore Filter",
+                                    "email": "test.utente.creatore@test.com",
+                                    "telefono": "3331234567",
+                                    "codice_fiscale": "TSTUTC85M01H501T",
+                                    "commessa_id": target_commessa.get('id'),
+                                    "sub_agenzia_id": target_sub_agenzia.get('id'),
+                                    "assigned_to": ale3_user_id
+                                }
+                                
+                                success, create_response, status = self.make_request(
+                                    'POST', 'clienti', 
+                                    new_cliente_payload, 
+                                    expected_status=200
+                                )
+                                
+                                if success and status == 200:
+                                    test_cliente = create_response
+                                    cliente_id = test_cliente.get('id')
+                                    cliente_nome = f"{test_cliente.get('nome', '')} {test_cliente.get('cognome', '')}"
+                                    
+                                    self.log_test("✅ New cliente created with assignment", True, 
+                                        f"Cliente: {cliente_nome}, assigned_to: {ale3_username}")
+                                    
+                                    # Continue with the test using the new cliente
+                                    created_by = test_cliente.get('created_by')
+                                    assigned_to = test_cliente.get('assigned_to')
+                                    
+                                    print(f"\n   📊 NEW TEST DATA SETUP:")
+                                    print(f"      • Cliente ID: {cliente_id}")
+                                    print(f"      • Cliente Nome: {cliente_nome}")
+                                    print(f"      • created_by: {created_by} (admin)")
+                                    print(f"      • assigned_to: {assigned_to} ({ale3_username})")
+                                    print(f"      • Expected behavior: Cliente should appear when filtering by {ale3_username}")
+                                else:
+                                    self.log_test("❌ Failed to create new cliente", False, f"Status: {status}")
+                                    return False
+                            else:
+                                self.log_test("❌ No sub agenzie found", False, "Cannot create cliente")
+                                return False
+                        else:
+                            self.log_test("❌ Failed to get sub agenzie", False, f"Status: {status}")
+                            return False
+                    else:
+                        self.log_test("❌ No commesse found", False, "Cannot create cliente")
+                        return False
+                else:
+                    self.log_test("❌ Failed to get commesse", False, f"Status: {status}")
+                    return False
         else:
             self.log_test("❌ No existing clienti found", False, "Need at least one cliente for testing")
             return False
