@@ -3286,40 +3286,8 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      console.log("📤 Sending unit data:", formData);
-      console.log("📤 Sending unit data JSON:", JSON.stringify(formData));
-      console.log("📤 API endpoint:", `${API}/units`);
-      
-      const token = localStorage.getItem('token');
-      console.log("📤 Token exists:", !!token);
-      console.log("📤 Headers:", {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      });
-      
-      const response = await axios.post(`${API}/units`, formData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log("✅ Response:", response.data);
-      toast({
-        title: "Successo",
-        description: "Unit creata con successo",
-      });
-      onSuccess();
-    } catch (error) {
-      console.error("❌ Error creating unit:", error);
-      console.error("❌ Error response:", error.response?.data);
-      toast({
-        title: "Errore",
-        description: error.response?.data?.detail || "Errore nella creazione dell'unit",
-        variant: "destructive",
-      });
-    }
+    // Pass data to parent onSuccess handler which will do the API call
+    onSuccess(formData);
   };
 
   const addCampagna = () => {
