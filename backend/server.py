@@ -331,9 +331,16 @@ class LeadCreate(BaseModel):
     provincia: Optional[str] = None  # Made optional to fix validation errors
     tipologia_abitazione: Optional[HouseType] = None  # Made optional to fix validation errors
     ip_address: Optional[str] = None
+    indirizzo: Optional[str] = None  # NEW: Address
+    otp: Optional[str] = None  # NEW: OTP code
+    inserzione: Optional[str] = None  # NEW: Ad/Insertion
+    regione: Optional[str] = None  # NEW: Region
+    url: Optional[str] = None  # NEW: URL source
     campagna: Optional[str] = None  # Made optional to fix validation errors
     gruppo: Optional[str] = None  # Made optional to fix validation errors
     contenitore: Optional[str] = None  # Made optional to fix validation errors
+    unit_id: Optional[str] = None  # NEW: Unit assignment
+    status: Optional[str] = None  # NEW: Dynamic status
     privacy_consent: bool = False
     marketing_consent: bool = False
     custom_fields: Dict[str, Any] = {}
