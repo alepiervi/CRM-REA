@@ -254,6 +254,7 @@ class UserUpdate(BaseModel):
     sub_agenzia_id: Optional[str] = None
     referente_id: Optional[str] = None
     provinces: Optional[List[str]] = None
+    unit_autorizzate: Optional[List[str]] = None  # NEW: Units agent can receive leads from
     commesse_autorizzate: Optional[List[str]] = None
     servizi_autorizzati: Optional[List[str]] = None
     sub_agenzie_autorizzate: Optional[List[str]] = None
