@@ -10226,9 +10226,16 @@ async def export_clienti_excel(
             # Get offerta name (principale del cliente)
             if cliente.get("offerta_id"):
                 offerta = await db["offerte"].find_one({"id": cliente["offerta_id"]})
-                base_cliente["offerta_name"] = offerta.get("nome", "") if offerta else ""
+                if offerta:
+                    offerta_nome = offerta.get("nome", "")
+                    base_cliente["offerta_name"] = offerta_nome if offerta_nome else ""
+                    logging.info(f"Cliente {cliente.get('id', 'N/A')[:8]} - Offerta found: {offerta_nome}")
+                else:
+                    base_cliente["offerta_name"] = ""
+                    logging.warning(f"Cliente {cliente.get('id', 'N/A')[:8]} - Offerta NOT found for ID: {cliente.get('offerta_id')}")
             else:
                 base_cliente["offerta_name"] = ""
+                logging.info(f"Cliente {cliente.get('id', 'N/A')[:8]} - No offerta_id")
             
             # Get creator name - Use assigned_to if present, otherwise created_by
             user_id_to_display = cliente.get("assigned_to") or cliente.get("created_by")
