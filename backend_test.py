@@ -42134,12 +42134,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the EXCEL EXPORT DATE FILTERS TEST AS REQUESTED
+        # Run the EXCEL EXPORT PROBLEMATIC FILTERS TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING EXCEL EXPORT DATE FILTERS TEST - AS REQUESTED")
+        print("🎯 RUNNING EXCEL EXPORT PROBLEMATIC FILTERS TEST - AS REQUESTED")
         print("="*80)
         
-        excel_export_success = self.test_excel_export_date_filters()
+        excel_export_success = self.test_excel_export_problematic_filters()
 
         # Print final summary
         print("\n" + "=" * 80)
