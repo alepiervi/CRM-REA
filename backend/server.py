@@ -4255,6 +4255,7 @@ async def get_leads(
     unit_id: Optional[str] = None,
     campagna: Optional[str] = None,
     provincia: Optional[str] = None,
+    status: Optional[str] = None,  # NEW: Filter by status
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     current_user: User = Depends(get_current_user)
@@ -4263,27 +4264,43 @@ async def get_leads(
     
     # Role-based filtering
     if current_user.role == UserRole.AGENTE:
+        # Agent sees only their assigned leads
         query["assigned_agent_id"] = current_user.id
+        
+        # Further filter by agent's authorized units
+        if current_user.unit_autorizzate:
+            if "unit_id" not in query:
+                query["unit_id"] = {"$in": current_user.unit_autorizzate}
+                
     elif current_user.role == UserRole.REFERENTE:
-        # Get all agents under this referente
-        agents = await db.users.find({"referente_id": current_user.id}).to_list(length=None)
+        # Referente sees leads of agents under them
+        agents = await db["users"].find({"referente_id": current_user.id}).to_list(length=None)
         agent_ids = [agent["id"] for agent in agents]
         agent_ids.append(current_user.id)  # Include referente's own leads if any
         query["assigned_agent_id"] = {"$in": agent_ids}
-    # Admin can see all leads
+        
+        # Filter by referente's authorized units
+        if current_user.unit_autorizzate:
+            query["unit_id"] = {"$in": current_user.unit_autorizzate}
+            
+    # Admin can see all leads (no role filter)
     
-    # Unit filtering
+    # Unit filtering (override role-based if specified)
     if unit_id:
-        query["gruppo"] = unit_id
-    elif current_user.role != UserRole.ADMIN and current_user.unit_id:
-        # Non-admin users can only see leads from their unit
-        query["gruppo"] = current_user.unit_id
+        query["unit_id"] = unit_id
+        # Backward compatibility with old field name
+        query["$or"] = [
+            {"unit_id": unit_id},
+            {"gruppo": unit_id}
+        ]
     
     # Apply additional filters
     if campagna:
         query["campagna"] = campagna
     if provincia:
         query["provincia"] = provincia
+    if status:
+        query["status"] = status
     if date_from:
         query["created_at"] = {"$gte": datetime.fromisoformat(date_from)}
     if date_to:
@@ -4292,7 +4309,7 @@ async def get_leads(
         else:
             query["created_at"] = {"$lte": datetime.fromisoformat(date_to)}
     
-    leads = await db.leads.find(query).to_list(length=None)
+    leads = await db["leads"].find(query).to_list(length=None)
     
     # Filter out leads with validation errors to prevent crashes
     valid_leads = []
