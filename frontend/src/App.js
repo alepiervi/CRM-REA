@@ -3471,9 +3471,6 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
   );
 };
 
-const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
-
-
 // ============================================================================
 // LEAD STATUS MANAGEMENT COMPONENT - For managing dynamic lead statuses
 // ============================================================================
