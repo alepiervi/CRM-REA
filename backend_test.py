@@ -45811,9 +45811,11 @@ if __name__ == "__main__":
                 result = tester.test_ale3_ale4_servizi_autorizzati_verification()
             elif test_name == "utente_creatore_filter":
                 result = tester.test_utente_creatore_filter_assigned_to_functionality()
+            elif test_name == "basic_functionality":
+                result = tester.test_basic_functionality_rapid_check()
             else:
                 print(f"Unknown test: {test_name}")
-                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart, nextcloud, nextcloud_download, dynamic_enum, f2f_services, ale3_ale4_verification, utente_creatore_filter")
+                print("Available tests: aruba_drive, aruba_upload, auth_me, password_fix, documents, excel_export, store_assistant, ale7_restart, nextcloud, nextcloud_download, dynamic_enum, f2f_services, ale3_ale4_verification, utente_creatore_filter, basic_functionality")
                 result = False
                 
             # Print summary
