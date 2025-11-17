@@ -3093,7 +3093,12 @@ const UnitsManagement = () => {
   const fetchUnits = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/units`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/units`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       setUnits(response.data);
     } catch (error) {
       console.error("Error fetching units:", error);
