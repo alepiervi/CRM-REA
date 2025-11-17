@@ -161,34 +161,25 @@ CONTESTO:
 
 TEST DA ESEGUIRE:
 
-1. **Login Admin** (admin/admin123)
+1. **Login** (admin/admin123)
 
-2. **Test GET /api/clienti**:
-   - Verifica che restituisca 200
-   - Verifica che ci siano clienti (almeno 1)
-   
-3. **Test GET /api/commesse**:
-   - Verifica che restituisca 200
-   - Verifica che ci siano commesse (almeno 1)
+2. **Naviga alla sezione Lead**:
+   - Cerca il link/button "Lead" o "Leads" nel menu
+   - Clicca per accedere alla sezione
 
-4. **Test GET /api/sub-agenzie**:
-   - Verifica che restituisca 200
-   - Verifica che ci siano sub agenzie (almeno 1)
+3. **Verifica caricamento**:
+   - La sezione deve caricarsi senza errori
+   - Deve mostrare lista lead (anche se vuota)
+   - NON deve mostrare errore "lead is not defined"
 
-5. **Test GET /api/units** (nuovo):
-   - Verifica che restituisca 200
-   - Non deve crashare anche se ci sono unit vecchie nel DB
-
-6. **Test GET /api/lead-status** (nuovo):
-   - Verifica che restituisca 200
+4. **Screenshot**:
+   - Prendi screenshot della sezione Lead funzionante
 
 CRITERI DI SUCCESSO:
-✅ Tutti gli endpoint rispondono 200
-✅ Clienti caricano correttamente
-✅ Commesse caricano correttamente
-✅ Sub Agenzie caricano correttamente
-✅ Nuovi endpoint units e lead-status funzionano
-✅ Nessun errore 500
+✅ Sezione Lead accessibile
+✅ Nessun errore "lead is not defined"
+✅ UI carica correttamente (filtri visibili, tabella visibile)
+✅ Screenshot mostra sezione funzionante
 
 TEST COMPLETATI:
 1. ✅ Login Admin (admin/admin123) - SUCCESS
