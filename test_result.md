@@ -159,34 +159,38 @@ CONTESTO:
 - Devo verificare che ora tutti i filtri funzionino senza errori
 
 TEST DA ESEGUIRE:
-1. Login Admin (admin/admin123)
-2. Verifica date di creazione clienti:
-   - GET /api/clienti per vedere tutti i clienti
-   - Annotare le date di creazione per capire il range
-3. Test filtro date_from (solo data inizio):
-   - Trova una data intermedia (es. 2025-01-15)
-   - Export Excel: GET /api/clienti/export/excel?date_from=2025-01-15
-   - Verifica che il file contenga SOLO clienti creati dal 15 gennaio in poi
-4. Test filtro date_to (solo data fine):
-   - Export Excel: GET /api/clienti/export/excel?date_to=2025-01-15
-   - Verifica che il file contenga SOLO clienti creati fino al 15 gennaio
-5. Test filtro date range completo (date_from + date_to):
-   - Export Excel: GET /api/clienti/export/excel?date_from=2025-01-01&date_to=2025-01-31
-   - Verifica che il file contenga SOLO clienti creati a gennaio 2025
-6. Test combinazione con altri filtri:
-   - Export con date + sub_agenzia: date_from=2025-01-01&sub_agenzia_id={id}
-   - Verifica che rispetti ENTRAMBI i filtri
-7. Riepilogo filtri completi:
-   - Verifica che TUTTI i 9 filtri siano supportati:
-     * sub_agenzia_id
-     * tipologia_contratto
-     * status
-     * created_by
-     * servizio_id
-     * segmento
-     * commessa_id_filter
-     * search + search_type
-     * date_from + date_to
+
+1. **Login Admin** (admin/admin123)
+
+2. **Test filtro Utente Creatore (created_by)**:
+   - Trova un utente che ha creato clienti
+   - Export Excel: GET /api/clienti/export/excel?created_by={user_id}
+   - Verifica: Status 200, file Excel valido, nessun errore
+
+3. **Test filtro Servizi (servizio_id)**:
+   - Trova un servizio con clienti (es. TLS, NEGOZI)
+   - Export Excel: GET /api/clienti/export/excel?servizio_id={servizio_id}
+   - Verifica: Status 200, file Excel valido, nessun errore
+
+4. **Test filtro Segmento (segmento)**:
+   - Export con segmento "privato": GET /api/clienti/export/excel?segmento=privato
+   - Verifica: Status 200, file Excel valido, nessun errore
+
+5. **Test filtro Commesse (commessa_id_filter)**:
+   - Trova commessa Fastweb
+   - Export Excel: GET /api/clienti/export/excel?commessa_id_filter={commessa_id}
+   - Verifica: Status 200, file Excel valido, nessun errore
+
+6. **Test combinazione filtri problematici**:
+   - Combina tutti i 4 filtri: created_by + servizio_id + segmento + commessa_id_filter
+   - Verifica: Status 200, file Excel valido, nessun errore
+
+7. **Test senza filtri date (regressione)**:
+   - Export senza date_from/date_to per verificare che il fix datetime non rompa altri casi
+   - Verifica: Status 200, file Excel valido
+
+8. **Verifica backend logs**:
+   - Controllare che non ci siano errori "datetime" o altri errori nei log
 
 TEST COMPLETATI:
 1. ✅ Login Admin (admin/admin123) - SUCCESS
