@@ -14644,6 +14644,16 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         params.append('search', searchQuery.trim());
         params.append('search_type', searchType);
       }
+      
+      // NEW: Add date range filter for creation period
+      if (dateFilter.enabled && (dateFilter.startDate || dateFilter.endDate)) {
+        if (dateFilter.startDate) {
+          params.append('date_from', dateFilter.startDate);
+        }
+        if (dateFilter.endDate) {
+          params.append('date_to', dateFilter.endDate);
+        }
+      }
 
       // Call backend Excel export endpoint
       const response = await axios.get(
