@@ -1392,7 +1392,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Cascade Servizi Sub Agenzia Filtering - New Endpoint Testing"
+    - "Excel Export with Filters - Verify Filter Compliance"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
