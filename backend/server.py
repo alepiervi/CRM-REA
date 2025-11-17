@@ -10058,7 +10058,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             ],
             "commesse": [
                 {"value": commessa["id"], "label": commessa.get("nome", "Nome non disponibile")}
-                for commessa in sorted(commesse, key=lambda x: x.get("nome", ""))
+                for commessa in sorted(commesse, key=lambda x: x.get("nome", "") or "")
             ]
         }
         
