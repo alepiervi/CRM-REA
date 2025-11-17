@@ -148,16 +148,15 @@ CONCLUSIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Backend configuration issue: F2F ha troppi servizi autorizzati invece di solo TLS"
 
-current_problem_statement: "TEST RAPIDO - SEZIONE LEAD FUNZIONANTE
+current_problem_statement: "TEST COMPLETO E2E - SISTEMA LEAD CON UNIT
 
 OBIETTIVO:
-Verificare che la sezione Lead sia accessibile e non mostri l'errore 'lead is not defined'.
+Testare l'intero flusso di creazione Unit e Lead Status come se fossi l'utente, verificando che tutti i fix funzionino.
 
 CONTESTO:
-- Ho fixato una duplicazione nella funzione updateLead
-- Ho creato un LeadDetailModal semplice
-- L'utente segnalava errore 'lead is not defined'
-- Era presente un errore di sintassi JavaScript che impediva il caricamento dell'app
+- Ho fixato l'errore 422 aggiungendo il token di autenticazione
+- Devo verificare che la creazione Unit funzioni completamente
+- Devo anche testare la creazione di Lead Status
 
 TEST DA ESEGUIRE:
 
