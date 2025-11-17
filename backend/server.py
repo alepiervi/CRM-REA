@@ -346,9 +346,57 @@ class LeadCreate(BaseModel):
     custom_fields: Dict[str, Any] = {}
 
 class LeadUpdate(BaseModel):
+    provincia: Optional[str] = None
+    tipologia_abitazione: Optional[HouseType] = None
+    indirizzo: Optional[str] = None
+    regione: Optional[str] = None
+    status: Optional[str] = None  # NEW: Dynamic status
     esito: Optional[CallOutcome] = None
     note: Optional[str] = None
+    assigned_agent_id: Optional[str] = None
     custom_fields: Optional[Dict[str, Any]] = None
+
+# NEW: Unit model for lead management units
+class Unit(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    commessa_id: str  # Link to commessa
+    campagne_autorizzate: List[str] = []  # Campaign names this unit handles
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UnitCreate(BaseModel):
+    nome: str
+    commessa_id: str
+    campagne_autorizzate: List[str] = []
+
+class UnitUpdate(BaseModel):
+    nome: Optional[str] = None
+    commessa_id: Optional[str] = None
+    campagne_autorizzate: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+# NEW: Dynamic Lead Status model
+class LeadStatusModel(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    unit_id: Optional[str] = None  # If None, status is global
+    ordine: int = 0  # Order for display
+    colore: Optional[str] = None  # Hex color code
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class LeadStatusCreate(BaseModel):
+    nome: str
+    unit_id: Optional[str] = None
+    ordine: int = 0
+    colore: Optional[str] = None
+
+class LeadStatusUpdate(BaseModel):
+    nome: Optional[str] = None
+    ordine: Optional[int] = None
+    colore: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class CustomField(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
