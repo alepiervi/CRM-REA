@@ -10145,6 +10145,23 @@ async def export_clienti_excel(
             elif search_type_value == 'email':
                 query["email"] = {"$regex": search_value, "$options": "i"}
         
+        # NEW: Add date range filter for creation period
+        if date_from or date_to:
+            date_query = {}
+            if date_from:
+                # Parse date and set to start of day (00:00:00)
+                from datetime import datetime, timezone
+                start_date = datetime.fromisoformat(date_from).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+                date_query["$gte"] = start_date
+            if date_to:
+                # Parse date and set to end of day (23:59:59)
+                from datetime import datetime, timezone
+                end_date = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+                date_query["$lte"] = end_date
+            
+            if date_query:
+                query["created_at"] = date_query
+        
         # Get clienti with enriched data
         clienti = await db.clienti.find(query).sort("created_at", -1).to_list(length=None)
         
