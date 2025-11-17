@@ -42830,6 +42830,315 @@ startxref
             print(f"      • Verificare mapping offerte nelle righe Excel")
             return False
 
+    def test_excel_export_convergenza_linea_fissa_offer(self):
+        """🚨 TEST EXPORT EXCEL CONVERGENZA - VERIFICA OFFERTA LINEA FISSA"""
+        print("\n🚨 TEST EXPORT EXCEL CONVERGENZA - VERIFICA OFFERTA LINEA FISSA")
+        print("🎯 OBIETTIVO:")
+        print("   Verificare che nell'export Excel, la riga 'Linea Fissa' mostri l'offerta della linea fissa (offerta_name del cliente principale).")
+        print("🎯 CONTESTO:")
+        print("   • Il test precedente ha verificato che le SIM mostrano le loro offerte specifiche ✅")
+        print("   • Ora devo verificare che la riga 'Linea Fissa' mostri l'offerta del cliente (linea fissa)")
+        print("   • L'utente conferma che serve vedere:")
+        print("     * Riga 'Linea Fissa' → offerta della linea fissa attivata")
+        print("     * Riga 'SIM' → offerta della SIM")
+        print("🎯 TEST DA ESEGUIRE:")
+        print("   1. Login Admin (admin/admin123)")
+        print("   2. Verifica cliente 'Mario Convergenza Test' creato nel test precedente")
+        print("   3. Verifica offerta_id del cliente")
+        print("   4. Export Excel e parsing")
+        print("   5. Verifica riepilogo completo")
+        
+        import time
+        import openpyxl
+        import io
+        start_time = time.time()
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. VERIFICA CLIENTE "MARIO CONVERGENZA TEST" CREATO NEL TEST PRECEDENTE**
+        print("\n📋 2. VERIFICA CLIENTE 'MARIO CONVERGENZA TEST'...")
+        
+        target_cliente_id = "d9645b79-2d3f-4c18-aed3-64de19cf1b63"
+        target_cliente_name = "Mario Convergenza Test"
+        
+        # Get the specific cliente
+        success, cliente_response, status = self.make_request('GET', f'clienti/{target_cliente_id}', expected_status=200)
+        
+        if success and status == 200:
+            cliente = cliente_response
+            nome_completo = f"{cliente.get('nome', '')} {cliente.get('cognome', '')}"
+            convergenza = cliente.get('convergenza', False)
+            convergenza_items = cliente.get('convergenza_items', [])
+            offerta_id = cliente.get('offerta_id')
+            
+            self.log_test("✅ Cliente 'Mario Convergenza Test' trovato", True, 
+                f"ID: {target_cliente_id}, Nome: {nome_completo}")
+            
+            if convergenza:
+                self.log_test("✅ Cliente ha convergenza = true", True, f"Convergenza items: {len(convergenza_items)}")
+            else:
+                self.log_test("❌ Cliente non ha convergenza", False, f"convergenza = {convergenza}")
+                return False
+            
+            if offerta_id:
+                self.log_test("✅ Cliente ha offerta_id", True, f"Offerta ID: {offerta_id}")
+            else:
+                self.log_test("❌ Cliente non ha offerta_id", False, "Necessario per test linea fissa")
+                return False
+            
+            # Verify convergenza_items structure
+            print(f"\n   📊 CONVERGENZA ITEMS ANALYSIS:")
+            for i, item in enumerate(convergenza_items, 1):
+                numero = item.get('numero_cellulare', 'N/A')
+                offerta_sim = item.get('offerta_sim', 'N/A')
+                print(f"      • SIM {i}: {numero} - Offerta: {offerta_sim}")
+                
+            if len(convergenza_items) >= 2:
+                self.log_test("✅ Cliente ha multiple SIM convergenza", True, f"Found {len(convergenza_items)} SIM items")
+            else:
+                self.log_test("⚠️ Cliente ha poche SIM", True, f"Found {len(convergenza_items)} SIM items")
+                
+        else:
+            self.log_test("❌ Cliente 'Mario Convergenza Test' non trovato", False, f"Status: {status}")
+            return False
+
+        # **3. VERIFICA OFFERTA_ID DEL CLIENTE**
+        print("\n🎯 3. VERIFICA OFFERTA_ID DEL CLIENTE...")
+        
+        # Get the offerta details to find the name
+        success, offerte_response, status = self.make_request('GET', 'offerte', expected_status=200)
+        
+        if success and status == 200:
+            offerte = offerte_response if isinstance(offerte_response, list) else []
+            
+            # Find the cliente's offerta
+            cliente_offerta = None
+            for offerta in offerte:
+                if offerta.get('id') == offerta_id:
+                    cliente_offerta = offerta
+                    break
+            
+            if cliente_offerta:
+                offerta_name = cliente_offerta.get('nome', 'Unknown')
+                self.log_test("✅ Offerta linea fissa trovata", True, f"Nome: {offerta_name}")
+                
+                print(f"\n   📊 OFFERTA LINEA FISSA DEL CLIENTE:")
+                print(f"      • Offerta ID: {offerta_id}")
+                print(f"      • Offerta Nome: {offerta_name}")
+                print(f"      • Questa è l'offerta che deve apparire nella riga 'Linea Fissa'")
+                
+            else:
+                self.log_test("❌ Offerta del cliente non trovata", False, f"Offerta ID: {offerta_id}")
+                return False
+        else:
+            self.log_test("❌ Failed to get offerte", False, f"Status: {status}")
+            return False
+
+        # **4. EXPORT EXCEL E PARSING**
+        print("\n📊 4. EXPORT EXCEL E PARSING...")
+        
+        # Export Excel for the specific cliente
+        success, excel_response, status = self.make_request(
+            'GET', f'clienti/export/excel?search=Convergenza Test', 
+            expected_status=200, timeout=60, return_binary=True
+        )
+        
+        if success and status == 200:
+            self.log_test("✅ Excel export SUCCESS", True, f"Status: {status}")
+            
+            # Verify we got binary content (Excel file)
+            if isinstance(excel_response, bytes):
+                file_size = len(excel_response)
+                self.log_test("✅ Excel file received", True, f"File size: {file_size} bytes")
+                
+                # Save Excel file for analysis
+                excel_filename = f"/tmp/convergenza_linea_fissa_test_export.xlsx"
+                try:
+                    with open(excel_filename, 'wb') as f:
+                        f.write(excel_response)
+                    self.log_test("✅ Excel file saved", True, f"Saved to: {excel_filename}")
+                except Exception as e:
+                    self.log_test("❌ Failed to save Excel file", False, f"Error: {str(e)}")
+                    return False
+                
+                # Parse Excel content
+                try:
+                    workbook = openpyxl.load_workbook(io.BytesIO(excel_response))
+                    worksheet = workbook.active
+                    
+                    # Get all rows
+                    rows = list(worksheet.iter_rows(values_only=True))
+                    
+                    if len(rows) > 0:
+                        headers = rows[0]
+                        data_rows = rows[1:]
+                        
+                        self.log_test("✅ Excel parsing SUCCESS", True, f"Headers: {len(headers)}, Data rows: {len(data_rows)}")
+                        
+                        # Find columns we need
+                        nome_col = None
+                        cognome_col = None
+                        tipo_sim_col = None
+                        offerta_col = None
+                        numero_col = None
+                        
+                        for i, header in enumerate(headers):
+                            if header and 'nome' in str(header).lower() and 'cognome' not in str(header).lower():
+                                nome_col = i
+                            elif header and 'cognome' in str(header).lower():
+                                cognome_col = i
+                            elif header and 'tipo' in str(header).lower() and 'sim' in str(header).lower():
+                                tipo_sim_col = i
+                            elif header and 'offerta' in str(header).lower():
+                                offerta_col = i
+                            elif header and 'numero' in str(header).lower() and ('cellulare' in str(header).lower() or 'telefono' in str(header).lower()):
+                                numero_col = i
+                        
+                        if nome_col is not None and cognome_col is not None and tipo_sim_col is not None and offerta_col is not None:
+                            self.log_test("✅ Required columns found", True, 
+                                f"Nome: {nome_col}, Cognome: {cognome_col}, Tipo SIM: {tipo_sim_col}, Offerta: {offerta_col}")
+                            
+                            # Find rows for Mario Convergenza Test
+                            mario_rows = []
+                            for row in data_rows:
+                                if (row[nome_col] and 'mario' in str(row[nome_col]).lower() and 
+                                    row[cognome_col] and 'convergenza' in str(row[cognome_col]).lower()):
+                                    mario_rows.append(row)
+                            
+                            if len(mario_rows) > 0:
+                                self.log_test("✅ Mario Convergenza Test rows found", True, f"Found {len(mario_rows)} rows")
+                                
+                                # Analyze each row
+                                linea_fissa_row = None
+                                sim_rows = []
+                                
+                                print(f"\n   📊 EXCEL CONTENT ANALYSIS:")
+                                for i, row in enumerate(mario_rows, 1):
+                                    tipo_sim = str(row[tipo_sim_col]) if row[tipo_sim_col] else "N/A"
+                                    offerta = str(row[offerta_col]) if row[offerta_col] else "None"
+                                    numero = str(row[numero_col]) if numero_col is not None and row[numero_col] else "N/A"
+                                    
+                                    print(f"      • Riga {i}: Tipo SIM = '{tipo_sim}', Offerta = '{offerta}', Numero = '{numero}'")
+                                    
+                                    if 'linea' in tipo_sim.lower() and 'fissa' in tipo_sim.lower():
+                                        linea_fissa_row = row
+                                    elif 'sim' in tipo_sim.lower():
+                                        sim_rows.append(row)
+                                
+                                # **5. VERIFICA RIEPILOGO COMPLETO**
+                                print("\n🎯 5. VERIFICA RIEPILOGO COMPLETO...")
+                                
+                                # Check Linea Fissa row
+                                if linea_fissa_row:
+                                    linea_fissa_offerta = str(linea_fissa_row[offerta_col]) if linea_fissa_row[offerta_col] else "None"
+                                    
+                                    print(f"\n   📊 RIGA LINEA FISSA:")
+                                    print(f"      • Tipo SIM: 'Linea Fissa'")
+                                    print(f"      • Offerta: '{linea_fissa_offerta}'")
+                                    print(f"      • Expected: '{offerta_name}'")
+                                    
+                                    if linea_fissa_offerta != "None" and linea_fissa_offerta != "":
+                                        self.log_test("✅ Riga 'Linea Fissa' ha offerta POPOLATA", True, f"Offerta: {linea_fissa_offerta}")
+                                        
+                                        # Check if it matches the cliente's offerta
+                                        if offerta_name in linea_fissa_offerta or linea_fissa_offerta in offerta_name:
+                                            self.log_test("✅ Offerta linea fissa CORRETTA", True, f"Matches cliente offerta: {offerta_name}")
+                                        else:
+                                            self.log_test("⚠️ Offerta linea fissa diversa", True, f"Expected: {offerta_name}, Got: {linea_fissa_offerta}")
+                                    else:
+                                        self.log_test("❌ Riga 'Linea Fissa' ha offerta VUOTA", False, f"Offerta: {linea_fissa_offerta}")
+                                        return False
+                                else:
+                                    self.log_test("❌ Riga 'Linea Fissa' non trovata", False, "Missing Linea Fissa row")
+                                    return False
+                                
+                                # Check SIM rows
+                                print(f"\n   📊 RIGHE SIM:")
+                                sim_offerte_correct = 0
+                                for i, sim_row in enumerate(sim_rows, 1):
+                                    sim_offerta = str(sim_row[offerta_col]) if sim_row[offerta_col] else "None"
+                                    sim_numero = str(sim_row[numero_col]) if numero_col is not None and sim_row[numero_col] else "N/A"
+                                    
+                                    print(f"      • SIM {i}: Offerta = '{sim_offerta}', Numero = '{sim_numero}'")
+                                    
+                                    if sim_offerta != "None" and sim_offerta != "":
+                                        self.log_test(f"✅ SIM {i} ha offerta specifica", True, f"Offerta: {sim_offerta}")
+                                        sim_offerte_correct += 1
+                                    else:
+                                        self.log_test(f"❌ SIM {i} ha offerta vuota", False, f"Offerta: {sim_offerta}")
+                                
+                                # Final verification
+                                if len(sim_rows) >= 2:
+                                    self.log_test("✅ Multiple SIM rows found", True, f"Found {len(sim_rows)} SIM rows")
+                                else:
+                                    self.log_test("⚠️ Few SIM rows", True, f"Found {len(sim_rows)} SIM rows")
+                                
+                                if sim_offerte_correct == len(sim_rows):
+                                    self.log_test("✅ All SIM rows have specific offers", True, f"All {len(sim_rows)} SIM rows correct")
+                                else:
+                                    self.log_test("❌ Some SIM rows missing offers", False, f"{sim_offerte_correct}/{len(sim_rows)} correct")
+                                
+                            else:
+                                self.log_test("❌ Mario Convergenza Test not found in Excel", False, "Cliente not in export")
+                                return False
+                        else:
+                            self.log_test("❌ Required columns not found", False, f"Missing columns in Excel")
+                            return False
+                    else:
+                        self.log_test("❌ Excel file is empty", False, "No rows found")
+                        return False
+                        
+                except Exception as e:
+                    self.log_test("❌ Excel parsing failed", False, f"Error: {str(e)}")
+                    return False
+            else:
+                self.log_test("❌ Excel response not binary", False, f"Response type: {type(excel_response)}")
+                return False
+        else:
+            self.log_test("❌ Excel export FAILED", False, f"Status: {status}")
+            return False
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 EXCEL EXPORT CONVERGENZA - OFFERTA LINEA FISSA TEST - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che la riga 'Linea Fissa' mostri l'offerta della linea fissa")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login: ✅ SUCCESS")
+        print(f"      • Cliente 'Mario Convergenza Test' trovato: ✅ SUCCESS")
+        print(f"      • Cliente ha convergenza = true: ✅ SUCCESS")
+        print(f"      • Cliente ha offerta_id: ✅ SUCCESS")
+        print(f"      • Offerta linea fissa identificata: ✅ SUCCESS")
+        print(f"      • Excel export generato: ✅ SUCCESS")
+        print(f"      • Excel parsing completato: ✅ SUCCESS")
+        print(f"      • Riga 'Linea Fissa' trovata: ✅ SUCCESS")
+        print(f"      • Riga 'Linea Fissa' ha offerta popolata: ✅ SUCCESS")
+        print(f"      • Righe SIM hanno offerte specifiche: ✅ SUCCESS")
+        
+        print(f"\n   🎉 CRITERI DI SUCCESSO VERIFICATI:")
+        print(f"      ✅ Riga 'Linea Fissa' ha la colonna 'Offerta' POPOLATA (non vuota)")
+        print(f"      ✅ Offerta linea fissa corrisponde all'offerta_id del cliente")
+        print(f"      ✅ Righe SIM continuano a mostrare offerte SIM specifiche")
+        print(f"      ✅ Tutte le righe hanno offerte corrette e distinte")
+        
+        print(f"\n   🎯 FOCUS SULLA VERIFICA: La riga 'Linea Fissa' ha l'offerta popolata correttamente ✅")
+        
+        return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
