@@ -2599,9 +2599,11 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const [selectedLead, setSelectedLead] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [customFields, setCustomFields] = useState([]);
+  const [leadStatuses, setLeadStatuses] = useState([]); // NEW: Dynamic statuses
   const [filters, setFilters] = useState({
     campagna: "",
     provincia: "",
+    status: "", // NEW: Status filter
     date_from: "",
     date_to: "",
   });
@@ -2611,6 +2613,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   useEffect(() => {
     fetchLeads();
     fetchCustomFields();
+    fetchLeadStatuses(); // NEW: Fetch dynamic statuses
   }, [selectedUnit, filters]);
 
   const fetchLeads = async () => {
@@ -2647,7 +2650,21 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     }
   };
 
-  const updateLead = async (leadId, esito, note, customFields) => {
+  // NEW: Fetch dynamic lead statuses
+  const fetchLeadStatuses = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedUnit && selectedUnit !== "all") {
+        params.append('unit_id', selectedUnit);
+      }
+      const response = await axios.get(`${API}/lead-status?${params}`);
+      setLeadStatuses(response.data);
+    } catch (error) {
+      console.error("Error fetching lead statuses:", error);
+    }
+  };
+
+  const updateLead = async (leadId, esito, note, customFields, status) => { // NEW: Added status parameter
     try {
       await axios.put(`${API}/leads/${leadId}`, { esito, note, custom_fields: customFields });
       toast({
