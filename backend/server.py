@@ -228,6 +228,7 @@ class UserCreate(BaseModel):
     sub_agenzia_id: Optional[str] = None  # Assegnazione diretta a sub agenzia
     referente_id: Optional[str] = None
     provinces: List[str] = []
+    unit_autorizzate: List[str] = []  # NEW: Units agent can receive leads from
     # Nuovi campi per autorizzazioni specializzate
     commesse_autorizzate: List[str] = []
     servizi_autorizzati: List[str] = []
