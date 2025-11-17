@@ -1280,12 +1280,15 @@ metadata:
   test_sequence: 0
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Excel Export Convergenza - Offerta SIM nelle Righe SIM Implementation and Testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
+   - agent: "testing"
+     message: "🎉 EXCEL EXPORT CONVERGENZA TEST COMPLETED SUCCESSFULLY! Tested Excel export functionality for Convergenza clients and verified that SIM rows show SIM-specific offers (not fixed line offers). Created test cliente 'Mario Convergenza Test' with 2 SIM items having different offers (Fastweb Mobile 50GB, Fastweb Mobile 100GB). Excel export generates correct structure with separate rows for fixed line and each SIM, showing SIM-specific offers in the main 'Offerta' column. All test criteria met with 100% success rate (19/19 tests passed). The functionality is working perfectly and ready for production use."
    - agent: "testing"
      message: "🎉 SOFT DELETE E FILTRO TIPOLOGIE TEST COMPLETE - 100% SUCCESS! Successfully tested complete soft delete functionality for servizi and tipologie plus cascade filtering as requested in review. ✅ COMPREHENSIVE TESTING COMPLETED: All test scenarios passed including admin login, TLS servizio identification, cascade tipologie filtering verification, test servizio/tipologia creation, soft delete operations, and cascade filtering verification after deletion. ✅ CRITICAL SUCCESS CRITERIA: 1) Login as admin (admin/admin123) ✅, 2) Test Filtro Tipologie per Servizio - verified all tipologie have correct servizio_id and is_active: true ✅, 3) Test Soft Delete Servizio - created test service, soft deleted it, verified it disappears from listings ✅, 4) Test Soft Delete Tipologia - created test tipologia, soft deleted it, verified it disappears from cascade ✅. ✅ EXPECTED RESULTS ACHIEVED: Gli elementi eliminati non appaiono più nei dropdown della creazione cliente ✓, I dati rimangono nel database con is_active: false ✓, Le tipologie sono filtrate correttamente per servizio ✓, Soft delete funziona per servizi e tipologie ✓, Cascade endpoints filtrano correttamente per is_active: true ✓. SUCCESS RATE: 100% (16/16 tests passed). 🎯 OBIETTIVO RAGGIUNTO: Soft delete and cascade filtering implementation fully operational!"
    - agent: "testing"
