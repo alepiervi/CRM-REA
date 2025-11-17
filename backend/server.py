@@ -10070,7 +10070,8 @@ async def export_clienti_excel(
     sub_agenzia_id: Optional[str] = Query(None),
     tipologia_contratto: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
-    created_by: Optional[str] = Query(None),
+    created_by: Optional[str] = Query(None),  # DEPRECATED: Use assigned_to instead
+    assigned_to: Optional[str] = Query(None),  # NEW: Filter by assigned user (not creator)
     servizio_id: Optional[str] = Query(None),  # NEW: Servizio filter
     segmento: Optional[str] = Query(None),  # NEW: Segmento filter
     commessa_id_filter: Optional[str] = Query(None),  # NEW: Commessa filter
