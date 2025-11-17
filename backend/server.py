@@ -267,7 +267,7 @@ class Token(BaseModel):
     token_type: str
     user: User
 
-class Unit(BaseModel):
+class AIUnit(BaseModel):  # AI/Assistant Unit model - renamed to avoid conflict with Lead Unit
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     description: Optional[str] = None
