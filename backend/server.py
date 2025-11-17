@@ -9446,7 +9446,8 @@ async def get_clienti(
     sub_agenzia_id: Optional[str] = None,
     status: Optional[str] = None,
     tipologia_contratto: Optional[str] = None,
-    created_by: Optional[str] = None,
+    created_by: Optional[str] = None,  # DEPRECATED: Use assigned_to instead
+    assigned_to: Optional[str] = None,  # NEW: Filter by assigned user (not creator)
     servizio_id: Optional[str] = None,  # NEW: Servizi filter
     segmento: Optional[str] = None,     # NEW: Segmento filter  
     commessa_id_filter: Optional[str] = None,  # NEW: Commesse filter (separate from main commessa_id)
