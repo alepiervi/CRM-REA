@@ -14213,7 +14213,12 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   const deleteUnit = async (unitId) => {
     if (window.confirm("Sei sicuro di voler eliminare questa unit?")) {
       try {
-        await axios.delete(`${API}/units/${unitId}`);
+        const token = localStorage.getItem('token');
+        await axios.delete(`${API}/units/${unitId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         setUnitsData(unitsData.filter(unit => unit.id !== unitId));
         toast({
           title: "Successo", 
@@ -14232,7 +14237,13 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
 
   const updateUnit = async (unitId, updateData) => {
     try {
-      const response = await axios.put(`${API}/units/${unitId}`, updateData);
+      const token = localStorage.getItem('token');
+      const response = await axios.put(`${API}/units/${unitId}`, updateData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       setUnitsData(unitsData.map(unit => 
         unit.id === unitId ? response.data : unit
       ));
