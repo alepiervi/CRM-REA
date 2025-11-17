@@ -3114,7 +3114,12 @@ const UnitsManagement = () => {
 
   const fetchCommesse = async () => {
     try {
-      const response = await axios.get(`${API}/commesse`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/commesse`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       setCommesse(response.data);
     } catch (error) {
       console.error("Error fetching commesse:", error);
@@ -3127,7 +3132,12 @@ const UnitsManagement = () => {
     }
 
     try {
-      await axios.delete(`${API}/units/${unitId}`);
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/units/${unitId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       toast({
         title: "Successo",
         description: "Unit eliminata con successo",
