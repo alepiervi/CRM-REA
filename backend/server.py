@@ -10063,7 +10063,9 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         }
         
     except Exception as e:
+        import traceback
         logging.error(f"Error getting clienti filter options: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Errore nel caricamento opzioni filtri: {str(e)}")
 
 @api_router.get("/clienti/export/excel")
