@@ -2989,6 +2989,452 @@ const LeadsManagement = ({ selectedUnit, units }) => {
 };
 
 // Enhanced Lead Detail Modal Component with Custom Fields
+
+
+// ============================================================================
+// UNITS MANAGEMENT COMPONENT - For managing lead units
+// ============================================================================
+const UnitsManagement = () => {
+  const [units, setUnits] = useState([]);
+  const [commesse, setCommesse] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUnit, setSelectedUnit] = useState(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchUnits();
+    fetchCommesse();
+  }, []);
+
+  const fetchUnits = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/units`);
+      setUnits(response.data);
+    } catch (error) {
+      console.error("Error fetching units:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento delle unit",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCommesse = async () => {
+    try {
+      const response = await axios.get(`${API}/commesse`);
+      setCommesse(response.data);
+    } catch (error) {
+      console.error("Error fetching commesse:", error);
+    }
+  };
+
+  const deleteUnit = async (unitId, unitName) => {
+    if (!window.confirm(`Sei sicuro di voler eliminare l'unit "${unitName}"?`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/units/${unitId}`);
+      toast({
+        title: "Successo",
+        description: "Unit eliminata con successo",
+      });
+      fetchUnits();
+    } catch (error) {
+      console.error("Error deleting unit:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione dell'unit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Caricamento...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-slate-800">Gestione Unit Lead</h2>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Nuova Unit
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Commessa</TableHead>
+                <TableHead>Campagne Autorizzate</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead className="text-right">Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {units.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-gray-500">
+                    Nessuna unit trovata
+                  </TableCell>
+                </TableRow>
+              ) : (
+                units.map((unit) => {
+                  const commessa = commesse.find((c) => c.id === unit.commessa_id);
+                  return (
+                    <TableRow key={unit.id}>
+                      <TableCell className="font-medium">{unit.nome}</TableCell>
+                      <TableCell>{commessa?.nome || "N/A"}</TableCell>
+                      <TableCell>
+                        {unit.campagne_autorizzate?.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {unit.campagne_autorizzate.slice(0, 3).map((campagna, idx) => (
+                              <Badge key={idx} variant="outline">{campagna}</Badge>
+                            ))}
+                            {unit.campagne_autorizzate.length > 3 && (
+                              <Badge variant="outline">+{unit.campagne_autorizzate.length - 3}</Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">Nessuna</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {unit.is_active ? (
+                          <Badge className="bg-green-100 text-green-800">Attiva</Badge>
+                        ) : (
+                          <Badge variant="secondary">Inattiva</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedUnit(unit);
+                            setShowEditModal(true);
+                          }}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteUnit(unit.id, unit.nome)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {showCreateModal && (
+        <CreateUnitModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            fetchUnits();
+          }}
+          commesse={commesse}
+        />
+      )}
+
+      {showEditModal && selectedUnit && (
+        <EditUnitModal
+          unit={selectedUnit}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedUnit(null);
+          }}
+          onSuccess={() => {
+            setShowEditModal(false);
+            setSelectedUnit(null);
+            fetchUnits();
+          }}
+          commesse={commesse}
+        />
+      )}
+    </div>
+  );
+};
+
+// Create Unit Modal
+const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
+  const [formData, setFormData] = useState({
+    nome: "",
+    commessa_id: "",
+    campagne_autorizzate: [],
+  });
+  const [campagnaInput, setCampagnaInput] = useState("");
+  const { toast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/units`, formData);
+      toast({
+        title: "Successo",
+        description: "Unit creata con successo",
+      });
+      onSuccess();
+    } catch (error) {
+      console.error("Error creating unit:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nella creazione dell'unit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addCampagna = () => {
+    if (campagnaInput.trim() && !formData.campagne_autorizzate.includes(campagnaInput.trim())) {
+      setFormData({
+        ...formData,
+        campagne_autorizzate: [...formData.campagne_autorizzate, campagnaInput.trim()],
+      });
+      setCampagnaInput("");
+    }
+  };
+
+  const removeCampagna = (campagna) => {
+    setFormData({
+      ...formData,
+      campagne_autorizzate: formData.campagne_autorizzate.filter((c) => c !== campagna),
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <CardHeader>
+          <CardTitle>Nuova Unit Lead</CardTitle>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="nome">Nome Unit *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="commessa_id">Commessa *</Label>
+              <select
+                id="commessa_id"
+                className="w-full border rounded-md p-2"
+                value={formData.commessa_id}
+                onChange={(e) => setFormData({ ...formData, commessa_id: e.target.value })}
+                required
+              >
+                <option value="">Seleziona commessa</option>
+                {commesse.map((commessa) => (
+                  <option key={commessa.id} value={commessa.id}>
+                    {commessa.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label>Campagne Autorizzate</Label>
+              <div className="flex gap-2 mb-2">
+                <Input
+                  value={campagnaInput}
+                  onChange={(e) => setCampagnaInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCampagna();
+                    }
+                  }}
+                  placeholder="Nome campagna"
+                />
+                <Button type="button" onClick={addCampagna} variant="outline">
+                  Aggiungi
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {formData.campagne_autorizzate.map((campagna, idx) => (
+                  <Badge key={idx} variant="secondary" className="flex items-center gap-1">
+                    {campagna}
+                    <X
+                      className="h-3 w-3 cursor-pointer"
+                      onClick={() => removeCampagna(campagna)}
+                    />
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">Crea Unit</Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
+  );
+};
+
+// Edit Unit Modal
+const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
+  const [formData, setFormData] = useState({
+    nome: unit.nome,
+    commessa_id: unit.commessa_id,
+    campagne_autorizzate: unit.campagne_autorizzate || [],
+    is_active: unit.is_active,
+  });
+  const [campagnaInput, setCampagnaInput] = useState("");
+  const { toast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/units/${unit.id}`, formData);
+      toast({
+        title: "Successo",
+        description: "Unit aggiornata con successo",
+      });
+      onSuccess();
+    } catch (error) {
+      console.error("Error updating unit:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'aggiornamento dell'unit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addCampagna = () => {
+    if (campagnaInput.trim() && !formData.campagne_autorizzate.includes(campagnaInput.trim())) {
+      setFormData({
+        ...formData,
+        campagne_autorizzate: [...formData.campagne_autorizzate, campagnaInput.trim()],
+      });
+      setCampagnaInput("");
+    }
+  };
+
+  const removeCampagna = (campagna) => {
+    setFormData({
+      ...formData,
+      campagne_autorizzate: formData.campagne_autorizzate.filter((c) => c !== campagna),
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <CardHeader>
+          <CardTitle>Modifica Unit Lead</CardTitle>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="nome">Nome Unit *</Label>
+              <Input
+                id="nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="commessa_id">Commessa *</Label>
+              <select
+                id="commessa_id"
+                className="w-full border rounded-md p-2"
+                value={formData.commessa_id}
+                onChange={(e) => setFormData({ ...formData, commessa_id: e.target.value })}
+                required
+              >
+                <option value="">Seleziona commessa</option>
+                {commesse.map((commessa) => (
+                  <option key={commessa.id} value={commessa.id}>
+                    {commessa.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label>Campagne Autorizzate</Label>
+              <div className="flex gap-2 mb-2">
+                <Input
+                  value={campagnaInput}
+                  onChange={(e) => setCampagnaInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCampagna();
+                    }
+                  }}
+                  placeholder="Nome campagna"
+                />
+                <Button type="button" onClick={addCampagna} variant="outline">
+                  Aggiungi
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {formData.campagne_autorizzate.map((campagna, idx) => (
+                  <Badge key={idx} variant="secondary" className="flex items-center gap-1">
+                    {campagna}
+                    <X
+                      className="h-3 w-3 cursor-pointer"
+                      onClick={() => removeCampagna(campagna)}
+                    />
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={formData.is_active}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              />
+              <Label htmlFor="is_active">Unit Attiva</Label>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">Salva Modifiche</Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
+  );
+};
+
 const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
   const [esito, setEsito] = useState(lead.esito || "");
   const [note, setNote] = useState(lead.note || "");
