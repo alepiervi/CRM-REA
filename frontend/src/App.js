@@ -2800,7 +2800,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
           <CardTitle className="text-lg">Filtri di Ricerca</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <Label>Campagna</Label>
               <Input
@@ -2816,6 +2816,21 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 value={filters.provincia}
                 onChange={(e) => setFilters({ ...filters, provincia: e.target.value })}
               />
+            </div>
+            <div>
+              <Label>Status</Label>
+              <select
+                className="w-full border rounded-md p-2"
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              >
+                <option value="">Tutti gli status</option>
+                {leadStatuses.map((status) => (
+                  <option key={status.id} value={status.nome}>
+                    {status.nome}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <Label>Da Data</Label>
