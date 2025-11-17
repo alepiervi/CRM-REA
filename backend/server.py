@@ -300,19 +300,28 @@ class Lead(BaseModel):
     provincia: Optional[str] = None  # Made optional to fix validation errors
     tipologia_abitazione: Optional[HouseType] = None  # Made optional to fix validation errors
     ip_address: Optional[str] = None
+    indirizzo: Optional[str] = None  # NEW: Address
+    otp: Optional[str] = None  # NEW: OTP code
+    inserzione: Optional[str] = None  # NEW: Ad/Insertion
+    regione: Optional[str] = None  # NEW: Region
+    url: Optional[str] = None  # NEW: URL source
     campagna: Optional[str] = None  # Made optional to fix validation errors
     gruppo: Optional[str] = None  # Made optional to fix validation errors (unit_id)
     contenitore: Optional[str] = None  # Made optional to fix validation errors
+    unit_id: Optional[str] = None  # NEW: Unit assignment
+    status: Optional[str] = None  # NEW: Dynamic status (not enum)
     privacy_consent: bool = False
     marketing_consent: bool = False
     assigned_agent_id: Optional[str] = None
-    esito: Optional[CallOutcome] = None
+    esito: Optional[CallOutcome] = None  # Keep for backward compatibility
     note: Optional[str] = None
     custom_fields: Dict[str, Any] = {}
     documents: List[str] = []  # URLs to stored documents
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     assigned_at: Optional[datetime] = None
     contacted_at: Optional[datetime] = None
+    closed_at: Optional[datetime] = None  # NEW: When lead was closed
+    tempo_gestione_minuti: Optional[int] = None  # NEW: Time to close in minutes
 
 class LeadCreate(BaseModel):
     nome: str
