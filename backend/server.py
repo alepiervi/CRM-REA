@@ -10258,6 +10258,10 @@ async def export_clienti_excel(
                     row["sim_titolare_diverso"] = ""
                     row["sim_offerta_name"] = ""
                     row["sim_assigned_user"] = ""
+                    # Ensure offerta_name is populated for Linea Fissa row
+                    # This shows the fixed line offer (cliente.offerta_id)
+                    if not row.get("offerta_name"):
+                        row["offerta_name"] = ""
                     # Linea fissa mantiene i dati di tecnologia, codice migrazione, gestore
                     expanded_rows.append(row)
                 
