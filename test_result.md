@@ -382,6 +382,18 @@ FOCUS CRITICO:
 **Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
+  - task: "Unit Creation and Management Complete - Duplicate Unit Model Bug Fix Verification"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 UNIT CREATION AND MANAGEMENT COMPLETE - 100% SUCCESS! ✅ COMPREHENSIVE TESTING COMPLETED: Tested complete Unit creation and management functionality to verify that Unit creation works correctly without 422 errors after fixing the duplicate Unit model bug. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ GET /api/units INITIAL SUCCESS: Status 200 OK, Found 4 existing units (test, Test Debug 422, ciao, DEBUG UNIT) - endpoint working correctly, no 422 errors. ✅ COMMESSE RETRIEVAL SUCCESS: Found 3 available commesse (Fastweb, Fotovoltaico, Telepass) for unit creation testing. ✅ CRITICAL SUCCESS - POST /api/units NO 422 ERROR: Created new unit 'Unit Test Finale' with commessa_id and campagne_autorizzate - Status 200 OK, NO 422 validation error! The duplicate Unit model bug is COMPLETELY FIXED. ✅ UNIT PERSISTENCE VERIFIED: GET /api/units shows newly created unit persisted in database with all fields correct (nome, commessa_id, campagne_autorizzate). ✅ UNIT MODIFICATION SUCCESS: PUT /api/units/{unit_id} successfully updated unit name to 'Unit Test Finale - Modificata' - Status 200 OK. ✅ SINGLE UNIT RETRIEVAL SUCCESS: GET /api/units/{unit_id} returns updated unit with modified name and all other fields intact. ✅ ALL CRUD OPERATIONS WORKING: Create (POST), Read (GET list + single), Update (PUT) all functioning correctly for Units. 🎯 ALL CRITICAL OBJECTIVES ACHIEVED: 1) GET /api/units funziona (200 OK) ✅, 2) POST /api/units crea la Unit SENZA errore 422 ✅, 3) La Unit viene salvata nel database ✅, 4) PUT /api/units/{unit_id} modifica la Unit ✅, 5) GET /api/units/{unit_id} ritorna la Unit modificata ✅. 🎉 OBIETTIVO RAGGIUNTO: Il problema dell'errore 422 è stato COMPLETAMENTE RISOLTO! La creazione di Unit Lead funziona correttamente. Il bug della classe Unit duplicata è stato risolto con successo rinominando la prima Unit in AIUnit per evitare conflitti. SUCCESS RATE: 100% (17/17 tests passed) - Unit creation and management fully operational!"
+
   - task: "Excel Export Problematic Filters Fix - DateTime Import Bug Resolution"
     implemented: true
     working: true
