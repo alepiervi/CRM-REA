@@ -41434,12 +41434,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the DYNAMIC CONTRACT TYPES PRESERVATION TEST AS REQUESTED
+        # Run the EXCEL EXPORT CON FILTRI TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING DYNAMIC CONTRACT TYPES PRESERVATION TEST - AS REQUESTED")
+        print("🎯 RUNNING EXCEL EXPORT CON FILTRI TEST - AS REQUESTED")
         print("="*80)
         
-        dynamic_types_success = self.test_dynamic_contract_types_preservation()
+        excel_export_success = self.test_excel_export_con_filtri()
 
         # Print final summary
         print("\n" + "=" * 80)
