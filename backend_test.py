@@ -41463,7 +41463,7 @@ startxref
         else:
             print("\n🚨 OVERALL RESULT: ❌ GESTIONE TIPOLOGIE DINAMICHE NEEDS BACKEND FIXES!")
         
-        return dynamic_types_success
+        return excel_export_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
