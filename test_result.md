@@ -330,6 +330,18 @@ FOCUS CRITICO:
 **Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
+  - task: "Excel Export Problematic Filters Fix - DateTime Import Bug Resolution"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 EXCEL EXPORT PROBLEMATIC FILTERS FIX COMPLETE - 100% SUCCESS! ✅ COMPREHENSIVE TESTING COMPLETED: Tested complete Excel export functionality with the 4 problematic filters that were causing datetime errors as requested in review. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ FILTER DATA ANALYSIS: Found 15 clienti with 2 unique created_by users, 5 unique servizi, segmento 'privato', and 4 unique commesse for comprehensive filter testing. ✅ CREATED_BY FILTER SUCCESS: GET /api/clienti/export/excel?created_by=b9359f9e-6b32-4077-ad1a-4b7c64f0df8b returns 200 Success - Excel file generated (6425 bytes), valid .xlsx format, no datetime errors. ✅ SERVIZIO_ID FILTER SUCCESS: GET /api/clienti/export/excel?servizio_id=8f50b9d7-770e-42f9-8215-25d86c5fb59f (Negozi) returns 200 Success - Excel file generated (6475 bytes), valid .xlsx format, no datetime errors. ✅ SEGMENTO FILTER SUCCESS: GET /api/clienti/export/excel?segmento=privato returns 200 Success - Excel file generated (10643 bytes), valid .xlsx format, no datetime errors. ✅ COMMESSA_ID_FILTER SUCCESS: GET /api/clienti/export/excel?commessa_id_filter=53c03522-acb6-4f94-bb30-ba6b0c8c6b1c returns 200 Success - Excel file generated (6306 bytes), valid .xlsx format, no datetime errors. ✅ COMBINED FILTERS SUCCESS: All 4 problematic filters combined working correctly - Excel file generated (6051 bytes), respects all filters simultaneously, no datetime errors. ✅ REGRESSION TEST SUCCESS: Export without date filters working correctly - Excel file generated (10643 bytes), no regression detected from datetime fix. ✅ BACKEND LOGS VERIFICATION: No datetime errors in recent logs, all requests show 200 OK status, previous datetime errors were before the fix was applied. 🎯 CRITICAL OBJECTIVES ACHIEVED: 1) Export con created_by funziona senza errori ✅, 2) Export con servizio_id funziona senza errori ✅, 3) Export con segmento funziona senza errori ✅, 4) Export con commessa_id_filter funziona senza errori ✅, 5) Combinazione dei 4 filtri funziona senza errori ✅, 6) Export senza filtri date funziona (no regressione) ✅, 7) Nessun errore datetime nei log backend ✅, 8) Tutti i file Excel sono validi e scaricabili ✅. 🎉 OBIETTIVO RAGGIUNTO: Il fix del bug datetime ha completamente risolto i problemi con i filtri problematici! Tutti i filtri (created_by, servizio_id, segmento, commessa_id_filter) funzionano singolarmente e in combinazione senza errori. SUCCESS RATE: 100% (14/14 tests passed) - Excel export problematic filters fully operational!"
+
   - task: "Excel Export Date Filters Implementation - Complete Date Range Filtering Support"
     implemented: true
     working: true
