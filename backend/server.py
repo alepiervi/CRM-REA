@@ -4344,16 +4344,22 @@ async def delete_lead(lead_id: str, current_user: User = Depends(get_current_use
 # ============================================================================
 
 @api_router.post("/units", response_model=Unit)
-async def create_unit(unit: UnitCreate, current_user: User = Depends(get_current_user)):
+async def create_unit(request: Request, unit: UnitCreate, current_user: User = Depends(get_current_user)):
     """Create a new lead unit - Admin only"""
     # MASSIVE LOGGING FOR DEBUG
-    logging.info(f"========== CREATE UNIT REQUEST ==========")
-    logging.info(f"User: {current_user.username} (role: {current_user.role})")
-    logging.info(f"Unit data received: {unit.dict()}")
-    logging.info(f"Unit nome: {unit.nome}")
-    logging.info(f"Unit commessa_id: {unit.commessa_id}")
-    logging.info(f"Unit campagne: {unit.campagne_autorizzate}")
-    logging.info(f"==========================================")
+    try:
+        body_bytes = await request.body()
+        logging.info(f"========== CREATE UNIT REQUEST ==========")
+        logging.info(f"Raw body bytes: {body_bytes}")
+        logging.info(f"Raw body decoded: {body_bytes.decode('utf-8')}")
+        logging.info(f"User: {current_user.username} (role: {current_user.role})")
+        logging.info(f"Unit data received: {unit.dict()}")
+        logging.info(f"Unit nome: {unit.nome}")
+        logging.info(f"Unit commessa_id: {unit.commessa_id}")
+        logging.info(f"Unit campagne: {unit.campagne_autorizzate}")
+        logging.info(f"==========================================")
+    except Exception as e:
+        logging.error(f"Error logging request: {e}")
     
     if current_user.role != UserRole.ADMIN:
         logging.error(f"Access denied: {current_user.username} is not admin")
