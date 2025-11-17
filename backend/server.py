@@ -4483,7 +4483,18 @@ async def get_units(
             query["is_active"] = is_active
         
         units = await db["units"].find(query).to_list(length=None)
-        return [Unit(**unit) for unit in units]
+        
+        # Filter out units with validation errors
+        valid_units = []
+        for unit_data in units:
+            try:
+                unit = Unit(**unit_data)
+                valid_units.append(unit)
+            except Exception as e:
+                logging.warning(f"Skipping unit {unit_data.get('id', 'unknown')} due to validation error: {str(e)}")
+                continue
+        
+        return valid_units
         
     except Exception as e:
         logging.error(f"Error fetching units: {e}")
