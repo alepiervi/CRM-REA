@@ -14187,7 +14187,13 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
 
   const createUnit = async (unitData) => {
     try {
-      const response = await axios.post(`${API}/units`, unitData);
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/units`, unitData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       setUnitsData([response.data, ...unitsData]);
       toast({
         title: "Successo",
