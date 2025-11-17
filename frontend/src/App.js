@@ -3288,9 +3288,16 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
     e.preventDefault();
     try {
       console.log("📤 Sending unit data:", formData);
+      console.log("📤 Sending unit data JSON:", JSON.stringify(formData));
       console.log("📤 API endpoint:", `${API}/units`);
       
       const token = localStorage.getItem('token');
+      console.log("📤 Token exists:", !!token);
+      console.log("📤 Headers:", {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      });
+      
       const response = await axios.post(`${API}/units`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
