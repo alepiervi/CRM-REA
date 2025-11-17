@@ -10070,6 +10070,8 @@ async def export_clienti_excel(
     commessa_id_filter: Optional[str] = Query(None),  # NEW: Commessa filter
     search: Optional[str] = Query(None),  # NEW: Search query
     search_type: Optional[str] = Query(None, regex="^(all|id|cognome|codice_fiscale|partita_iva|telefono|email)$"),  # NEW: Search type
+    date_from: Optional[str] = Query(None),  # NEW: Date range filter (start)
+    date_to: Optional[str] = Query(None),  # NEW: Date range filter (end)
     current_user: User = Depends(get_current_user)
 ):
     """Export clienti to Excel with enhanced filters and expanded SIM rows"""
