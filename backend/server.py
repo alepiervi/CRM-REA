@@ -4327,25 +4327,52 @@ async def get_leads(
 @api_router.put("/leads/{lead_id}", response_model=Lead)
 async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User = Depends(get_current_user)):
     # Find the lead
-    lead = await db.leads.find_one({"id": lead_id})
+    lead = await db["leads"].find_one({"id": lead_id})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
     # Check permissions
-    if current_user.role == UserRole.AGENTE and lead["assigned_agent_id"] != current_user.id:
+    if current_user.role == UserRole.AGENTE and lead.get("assigned_agent_id") != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+    elif current_user.role == UserRole.REFERENTE:
+        # Referente can update leads of their agents
+        if lead.get("assigned_agent_id"):
+            agent = await db["users"].find_one({"id": lead["assigned_agent_id"]})
+            if not agent or agent.get("referente_id") != current_user.id:
+                raise HTTPException(status_code=403, detail="Not enough permissions")
     
     # Update lead
     update_data = lead_update.dict(exclude_unset=True)
+    
+    # If esito is being set, update contacted_at
     if update_data.get("esito"):
         update_data["contacted_at"] = datetime.now(timezone.utc)
     
-    await db.leads.update_one(
+    # NEW: If status is being changed to a "closed" status, calculate tempo_gestione
+    if update_data.get("status"):
+        # Check if this is a closing status (you can define specific statuses as "closed")
+        # For now, any status change on an unassigned lead counts
+        if not lead.get("closed_at"):
+            # Check if status indicates closure (customize this logic based on your status names)
+            closing_statuses = ["Chiuso", "Convertito", "Perso", "Non Interessato"]
+            if update_data["status"] in closing_statuses:
+                now = datetime.now(timezone.utc)
+                update_data["closed_at"] = now
+                
+                # Calculate tempo_gestione in minutes
+                created_at = lead.get("created_at")
+                if created_at:
+                    if isinstance(created_at, str):
+                        created_at = datetime.fromisoformat(created_at)
+                    delta = now - created_at
+                    update_data["tempo_gestione_minuti"] = int(delta.total_seconds() / 60)
+    
+    await db["leads"].update_one(
         {"id": lead_id},
         {"$set": update_data}
     )
     
-    updated_lead = await db.leads.find_one({"id": lead_id})
+    updated_lead = await db["leads"].find_one({"id": lead_id})
     return Lead(**updated_lead)
 
 @api_router.delete("/leads/{lead_id}")
