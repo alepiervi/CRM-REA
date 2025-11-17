@@ -41452,10 +41452,10 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if dynamic_types_success:
-            print("🎉 DYNAMIC CONTRACT TYPES PRESERVATION TEST: ✅ SUCCESS - SISTEMA COMPLETAMENTE DINAMICO!")
+        if excel_export_success:
+            print("🎉 EXCEL EXPORT CON FILTRI TEST: ✅ SUCCESS - FILTRI APPLICATI CORRETTAMENTE!")
         else:
-            print("🚨 DYNAMIC CONTRACT TYPES PRESERVATION TEST: ❌ FAILED - CONVERSIONI AUTOMATICHE RILEVATE!")
+            print("🚨 EXCEL EXPORT CON FILTRI TEST: ❌ FAILED - PROBLEMI CON FILTRI EXPORT!")
         
         if dynamic_types_success:
             print("\n🎉 OVERALL RESULT: ✅ GESTIONE TIPOLOGIE DINAMICHE WORKING CORRECTLY!")
