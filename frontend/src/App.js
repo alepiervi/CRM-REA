@@ -3422,7 +3422,12 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${API}/units/${unit.id}`, formData);
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/units/${unit.id}`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       toast({
         title: "Successo",
         description: "Unit aggiornata con successo",
