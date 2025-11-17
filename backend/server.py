@@ -5308,16 +5308,93 @@ async def notify_agent_new_lead(agent_id: str, lead_data: dict):
 # Webhook endpoint for external integrations (Zapier)
 @api_router.post("/webhook/{unit_id}")
 async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
-    """Webhook endpoint for receiving leads from external sources"""
-    # Validate that unit exists
-    unit = await db.units.find_one({"id": unit_id})
-    if not unit:
-        raise HTTPException(status_code=404, detail="Unit not found")
-    
-    # Set the group (unit) for the lead
-    lead_data.gruppo = unit_id
-    
-    return await create_lead(lead_data)
+    """Webhook endpoint for receiving leads from external sources with auto-assignment"""
+    try:
+        # Validate that unit exists
+        unit = await db["units"].find_one({"id": unit_id})
+        if not unit:
+            raise HTTPException(status_code=404, detail="Unit not found")
+        
+        # Set unit_id for the lead
+        lead_data.unit_id = unit_id
+        lead_data.gruppo = unit_id  # Backward compatibility
+        
+        # AUTO-ASSIGNMENT LOGIC: Find best agent for this lead
+        assigned_agent_id = None
+        
+        if lead_data.campagna and lead_data.provincia:
+            # Check if campaign belongs to this unit
+            if lead_data.campagna in unit.get("campagne_autorizzate", []):
+                # Find agents authorized for this unit and provincia
+                agents = await db["users"].find({
+                    "role": UserRole.AGENTE,
+                    "is_active": True,
+                    "unit_autorizzate": unit_id,
+                    "provinces": lead_data.provincia
+                }).to_list(length=None)
+                
+                if agents:
+                    # Calculate agent workload and performance
+                    agent_scores = []
+                    for agent in agents:
+                        # Get agent's current lead count
+                        lead_count = await db["leads"].count_documents({
+                            "assigned_agent_id": agent["id"],
+                            "closed_at": None  # Only count open leads
+                        })
+                        
+                        # Get agent's average handling time
+                        agent_leads = await db["leads"].find({
+                            "assigned_agent_id": agent["id"],
+                            "tempo_gestione_minuti": {"$exists": True, "$ne": None}
+                        }).to_list(length=100)
+                        
+                        avg_time = 0
+                        if agent_leads:
+                            total_time = sum([l.get("tempo_gestione_minuti", 0) for l in agent_leads])
+                            avg_time = total_time / len(agent_leads)
+                        
+                        # Score: lower is better (less workload + faster handling)
+                        # Weight: 70% current workload, 30% avg handling time
+                        score = (lead_count * 0.7) + (avg_time / 60 * 0.3)  # Convert minutes to hours
+                        
+                        agent_scores.append({
+                            "agent_id": agent["id"],
+                            "score": score,
+                            "lead_count": lead_count,
+                            "avg_time": avg_time
+                        })
+                    
+                    # Sort by score (ascending) and pick the best agent
+                    agent_scores.sort(key=lambda x: x["score"])
+                    assigned_agent_id = agent_scores[0]["agent_id"]
+                    
+                    logging.info(f"Lead auto-assigned to agent {assigned_agent_id} (score: {agent_scores[0]['score']:.2f})")
+        
+        # Set assigned agent if found
+        if assigned_agent_id:
+            lead_data.assigned_agent_id = assigned_agent_id
+        
+        # Create the lead
+        lead_obj = Lead(**lead_data.dict())
+        if assigned_agent_id:
+            lead_obj.assigned_at = datetime.now(timezone.utc)
+        
+        await db["leads"].insert_one(lead_obj.dict())
+        logging.info(f"Lead created via webhook: {lead_obj.id} for unit {unit_id}")
+        
+        return {
+            "success": True,
+            "lead_id": lead_obj.id,
+            "assigned_agent_id": assigned_agent_id,
+            "message": f"Lead created and {'assigned to agent' if assigned_agent_id else 'awaiting assignment'}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in webhook for unit {unit_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process webhook: {str(e)}")
 
 # Dashboard stats
 @api_router.get("/dashboard/stats")
