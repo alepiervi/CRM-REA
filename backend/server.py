@@ -4055,14 +4055,6 @@ async def get_provinces():
     return {"provinces": ITALIAN_PROVINCES}
 
 # Unit management
-@api_router.post("/units", response_model=Unit)
-async def create_unit(unit_data: UnitCreate, current_user: User = Depends(get_current_user)):
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    
-    unit_obj = Unit(**unit_data.dict())
-    await db.units.insert_one(unit_obj.dict())
-    return unit_obj
 
 @api_router.post("/containers", response_model=Container)
 async def create_container(container_data: ContainerCreate, current_user: User = Depends(get_current_user)):
