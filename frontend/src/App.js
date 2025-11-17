@@ -14327,7 +14327,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         params.append('tipologia_contratto', clientiFilterTipologia);
       }
       if (clientiFilterCreatedBy && clientiFilterCreatedBy !== 'all') {
-        params.append('created_by', clientiFilterCreatedBy);
+        // Filter by assigned user (not creator) - assigned_to field
+        params.append('assigned_to', clientiFilterCreatedBy);
       }
       // NEW: Additional filters
       if (clientiFilterServizi && clientiFilterServizi !== 'all') {
