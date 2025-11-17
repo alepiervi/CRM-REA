@@ -1125,6 +1125,23 @@ startxref
             print(f"      • Controllare gestione errori 404/403")
             return False
 
+    def test_utente_creatore_filter_assigned_to_functionality(self):
+        """🚨 TEST FILTRO UTENTE CREATORE - FILTRA PER UTENTE ASSEGNATO"""
+        print("\n🚨 TEST FILTRO UTENTE CREATORE - FILTRA PER UTENTE ASSEGNATO")
+        print("🎯 OBIETTIVO:")
+        print("   Verificare che il filtro 'Utente Creatore' filtri per l'utente **assegnato** al cliente (campo assigned_to), non per l'utente che ha creato fisicamente il record.")
+        print("🎯 CONTESTO:")
+        print("   • Il filtro 'Utente Creatore' nella UI ora deve filtrare per assigned_to, non per created_by")
+        print("   • Un cliente creato da 'admin' ma assegnato a 'ale3' deve apparire quando filtro per 'ale3'")
+        print("   • Questo è il comportamento richiesto dall'utente")
+        print("🎯 TEST DA ESEGUIRE:")
+        print("   1. Login Admin (admin/admin123)")
+        print("   2. Setup Test Data - Trova/Crea cliente con assegnazione")
+        print("   3. Test filtro assigned_to nel GET /api/clienti")
+        print("   4. Test filtro assigned_to nell'export Excel")
+        print("   5. Test backward compatibility con created_by")
+        print("   6. Verifica logica di assegnazione")
+
     def test_cliente_creation_dynamic_enum_values(self):
         """🚨 TEST CLIENTE CREATION WITH DYNAMIC ENUM VALUES - Test energia_fastweb_tls and privato"""
         print("\n🚨 TEST CLIENTE CREATION WITH DYNAMIC ENUM VALUES")
