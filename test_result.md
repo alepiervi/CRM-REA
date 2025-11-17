@@ -231,7 +231,62 @@ STATO ATTUALE: ✅ PROBLEMA COMPLETAMENTE RISOLTO - La sezione Lead è ora compl
 - ✅ Nessun errore JavaScript in console
 - ✅ Screenshot conferma funzionamento corretto
 
-SUCCESS RATE: 100% (5/5 tests passed) - Lead section fully operational!"
+SUCCESS RATE: 100% (5/5 tests passed) - Lead section fully operational!
+
+TEST E2E COMPLETO ESEGUITO:
+
+**FASE 1: Login** ✅ SUCCESS
+- Vai su https://client-manager-131.preview.emergentagent.com
+- Login con admin/admin123 - SUCCESSFUL
+- Verifica che il login riesca - CONFIRMED
+- Screenshot dashboard - CAPTURED
+
+**FASE 2: Navigazione Gestione Unit** ✅ SUCCESS  
+- Cerca nel menu la sezione "Unit & Sub Agenzie" - FOUND
+- Accedi alla gestione Unit - SUCCESSFUL
+- Screenshot della lista Unit - CAPTURED (2 existing units visible)
+
+**FASE 3: Creazione Unit** ⚠️ PARTIAL SUCCESS
+- Clicca su "Nuova Unit" - SUCCESSFUL (modal opened)
+- Compila form Nome Unit: "Test E2E Social Milano" - FILLED SUCCESSFULLY
+- Commessa: Tentativo di selezione prima disponibile - ATTEMPTED
+- Campagne: Campo non trovato nel form - NOT FOUND (may not be required)
+- Screenshot form compilato - CAPTURED
+- Clicca "Crea Unit" - ATTEMPTED (session issues encountered)
+
+**FASE 4: Gestione Status Lead** ⚠️ NOT ACCESSIBLE
+- Naviga a "Gestione Status Lead" - NOT FOUND as separate section
+- Status management appears to be integrated within Lead section
+- No dedicated "Nuovo Status" button found
+
+**FASE 5: Verifica Sezione Lead** ✅ SUCCESS
+- Naviga alla sezione "Lead" - SUCCESSFUL
+- Verifica che carichi senza errori - CONFIRMED (no 'lead is not defined' errors)
+- Verifica che i filtri siano visibili - CONFIRMED
+- Screenshot sezione Lead funzionante - CAPTURED
+
+**FASE 6: Verifica Dati Persistiti** ⚠️ INCONCLUSIVE
+- Ricarica la pagina (F5) - ATTEMPTED
+- Session management issues encountered during testing
+- Unable to fully verify persistence due to session timeouts
+
+CRITERI DI SUCCESSO RAGGIUNTI:
+✅ Login funziona
+✅ Accesso a Unit & Sub Agenzie section
+✅ Form creazione Unit si apre e compila
+⚠️ Unit creation attempted but session issues prevented full verification
+❌ Status Lead management not found as separate section
+✅ Sezione Lead carica senza errori
+✅ Filtri visibili nella sezione Lead
+⚠️ Dati persistiti - non verificabile completamente per problemi di sessione
+
+PROBLEMI IDENTIFICATI:
+1. **Session Management**: Frequent session timeouts during testing
+2. **Lead Status Management**: No dedicated "Gestione Status Lead" section found
+3. **Unit Creation**: Form accessible but completion verification limited by session issues
+4. **Campaign Fields**: Campaign input fields not found in Unit creation form
+
+STATO: TESTING COMPLETATO CON LIMITAZIONI - Core functionality working but some features not accessible as expected"
 
 previous_problem_statement: "CONVERGENZA ITEMS MULTIPLE SIM DEBUG - VERIFICA PERSISTENZA MULTIPLI ITEM
 
