@@ -2665,7 +2665,6 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   };
 
   const updateLead = async (leadId, esito, note, customFields, status) => { // NEW: Added status parameter
-  const updateLead = async (leadId, esito, note, customFields, status) => { // NEW: Added status parameter
     try {
       const updateData = { esito, note, custom_fields: customFields };
       if (status) updateData.status = status; // NEW: Include status if provided
