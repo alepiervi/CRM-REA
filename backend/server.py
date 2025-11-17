@@ -10033,11 +10033,11 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         return {
             "tipologie_contratto": [
                 {"value": tip, "label": map_tipologia_display(tip)} 
-                for tip in sorted(tipologie_contratto)
+                for tip in sorted([t for t in tipologie_contratto if t is not None])
             ],
             "status_values": [
                 {"value": status, "label": map_status_display(status)} 
-                for status in sorted(status_values)
+                for status in sorted([s for s in status_values if s is not None])
             ],
             "segmenti": [
                 {"value": seg, "label": map_segmento_display(seg)} 
