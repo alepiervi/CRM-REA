@@ -10076,6 +10076,8 @@ async def export_clienti_excel(
 ):
     """Export clienti to Excel with enhanced filters and expanded SIM rows"""
     try:
+        from datetime import datetime, timezone
+        
         # Build query based on user role and filters (reuse logic from main endpoint)
         query = {}
         
