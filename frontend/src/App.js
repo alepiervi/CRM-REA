@@ -14381,7 +14381,7 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
                     <div className="flex items-center space-x-3">
                       <Building2 className="w-5 h-5 text-blue-600" />
                       <div>
-                        <CardTitle className="text-lg">{unit.name}</CardTitle>
+                        <CardTitle className="text-lg">{unit.nome || unit.name}</CardTitle>
                         <p className="text-sm text-slate-500">{unit.description}</p>
                       </div>
                     </div>
