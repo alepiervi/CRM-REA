@@ -3946,6 +3946,8 @@ const EditLeadStatusModal = ({ status, onClose, onSuccess, units }) => {
   );
 };
 
+// Lead Detail Modal Component
+const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
   const [esito, setEsito] = useState(lead.esito || "");
   const [note, setNote] = useState(lead.note || "");
   const [customFieldValues, setCustomFieldValues] = useState(lead.custom_fields || {});
