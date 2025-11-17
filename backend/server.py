@@ -4374,6 +4374,294 @@ async def delete_lead(lead_id: str, current_user: User = Depends(get_current_use
         logging.error(f"Error deleting lead {lead_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete lead")
 
+
+# ============================================================================
+# UNIT MANAGEMENT ENDPOINTS - For Lead Units
+# ============================================================================
+
+@api_router.post("/units", response_model=Unit)
+async def create_unit(unit: UnitCreate, current_user: User = Depends(get_current_user)):
+    """Create a new lead unit - Admin only"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can create units")
+    
+    try:
+        # Check if commessa exists
+        commessa = await db["commesse"].find_one({"id": unit.commessa_id})
+        if not commessa:
+            raise HTTPException(status_code=404, detail="Commessa not found")
+        
+        # Create unit
+        unit_obj = Unit(
+            nome=unit.nome,
+            commessa_id=unit.commessa_id,
+            campagne_autorizzate=unit.campagne_autorizzate
+        )
+        
+        await db["units"].insert_one(unit_obj.dict())
+        logging.info(f"Unit created: {unit_obj.id} by {current_user.username}")
+        
+        return unit_obj
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error creating unit: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create unit")
+
+@api_router.get("/units", response_model=List[Unit])
+async def get_units(
+    commessa_id: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all units - filtered by role"""
+    try:
+        query = {}
+        
+        # Role-based filtering
+        if current_user.role == UserRole.ADMIN:
+            pass  # Admin sees all
+        elif current_user.role == UserRole.REFERENTE:
+            # Referente sees units they are authorized for
+            if current_user.unit_autorizzate:
+                query["id"] = {"$in": current_user.unit_autorizzate}
+            else:
+                return []
+        else:
+            # Other roles don't see units
+            return []
+        
+        # Apply filters
+        if commessa_id:
+            query["commessa_id"] = commessa_id
+        if is_active is not None:
+            query["is_active"] = is_active
+        
+        units = await db["units"].find(query).to_list(length=None)
+        return [Unit(**unit) for unit in units]
+        
+    except Exception as e:
+        logging.error(f"Error fetching units: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch units")
+
+@api_router.get("/units/{unit_id}", response_model=Unit)
+async def get_unit(unit_id: str, current_user: User = Depends(get_current_user)):
+    """Get a specific unit"""
+    unit = await db["units"].find_one({"id": unit_id})
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    # Check permissions
+    if current_user.role not in [UserRole.ADMIN, UserRole.REFERENTE]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if current_user.role == UserRole.REFERENTE:
+        if unit_id not in current_user.unit_autorizzate:
+            raise HTTPException(status_code=403, detail="Access denied to this unit")
+    
+    return Unit(**unit)
+
+@api_router.put("/units/{unit_id}", response_model=Unit)
+async def update_unit(
+    unit_id: str, 
+    unit_update: UnitUpdate, 
+    current_user: User = Depends(get_current_user)
+):
+    """Update a unit - Admin only"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can update units")
+    
+    unit = await db["units"].find_one({"id": unit_id})
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    try:
+        update_dict = {k: v for k, v in unit_update.dict(exclude_unset=True).items() if v is not None}
+        
+        if update_dict:
+            await db["units"].update_one(
+                {"id": unit_id},
+                {"$set": update_dict}
+            )
+        
+        updated_unit = await db["units"].find_one({"id": unit_id})
+        return Unit(**updated_unit)
+        
+    except Exception as e:
+        logging.error(f"Error updating unit {unit_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update unit")
+
+@api_router.delete("/units/{unit_id}")
+async def delete_unit(unit_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a unit - Admin only"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete units")
+    
+    unit = await db["units"].find_one({"id": unit_id})
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    try:
+        # Check if unit has assigned leads
+        leads_count = await db["leads"].count_documents({"unit_id": unit_id})
+        if leads_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete unit. {leads_count} leads are assigned to this unit"
+            )
+        
+        # Check if unit has agents
+        agents_count = await db["users"].count_documents({"unit_autorizzate": unit_id})
+        if agents_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete unit. {agents_count} agents are authorized for this unit"
+            )
+        
+        await db["units"].delete_one({"id": unit_id})
+        
+        return {
+            "success": True,
+            "message": "Unit deleted successfully",
+            "unit_id": unit_id,
+            "unit_name": unit.get("nome", "")
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting unit {unit_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete unit")
+
+# ============================================================================
+# LEAD STATUS MANAGEMENT ENDPOINTS - Dynamic status for units
+# ============================================================================
+
+@api_router.post("/lead-status", response_model=LeadStatusModel)
+async def create_lead_status(
+    status: LeadStatusCreate, 
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new lead status - Admin only"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can create lead statuses")
+    
+    try:
+        # If unit_id is specified, check if unit exists
+        if status.unit_id:
+            unit = await db["units"].find_one({"id": status.unit_id})
+            if not unit:
+                raise HTTPException(status_code=404, detail="Unit not found")
+        
+        status_obj = LeadStatusModel(
+            nome=status.nome,
+            unit_id=status.unit_id,
+            ordine=status.ordine,
+            colore=status.colore
+        )
+        
+        await db["lead_status"].insert_one(status_obj.dict())
+        logging.info(f"Lead status created: {status_obj.id} by {current_user.username}")
+        
+        return status_obj
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error creating lead status: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create lead status")
+
+@api_router.get("/lead-status", response_model=List[LeadStatusModel])
+async def get_lead_statuses(
+    unit_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get lead statuses - filtered by unit"""
+    try:
+        query = {"is_active": True}
+        
+        if unit_id:
+            # Get statuses for specific unit + global statuses
+            query["$or"] = [
+                {"unit_id": unit_id},
+                {"unit_id": None}
+            ]
+        else:
+            # Get only global statuses if no unit specified
+            query["unit_id"] = None
+        
+        statuses = await db["lead_status"].find(query).sort("ordine", 1).to_list(length=None)
+        return [LeadStatusModel(**status) for status in statuses]
+        
+    except Exception as e:
+        logging.error(f"Error fetching lead statuses: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch lead statuses")
+
+@api_router.put("/lead-status/{status_id}", response_model=LeadStatusModel)
+async def update_lead_status(
+    status_id: str,
+    status_update: LeadStatusUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update a lead status - Admin only"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can update lead statuses")
+    
+    status = await db["lead_status"].find_one({"id": status_id})
+    if not status:
+        raise HTTPException(status_code=404, detail="Lead status not found")
+    
+    try:
+        update_dict = {k: v for k, v in status_update.dict(exclude_unset=True).items() if v is not None}
+        
+        if update_dict:
+            await db["lead_status"].update_one(
+                {"id": status_id},
+                {"$set": update_dict}
+            )
+        
+        updated_status = await db["lead_status"].find_one({"id": status_id})
+        return LeadStatusModel(**updated_status)
+        
+    except Exception as e:
+        logging.error(f"Error updating lead status {status_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update lead status")
+
+@api_router.delete("/lead-status/{status_id}")
+async def delete_lead_status(status_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a lead status - Admin only"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete lead statuses")
+    
+    status = await db["lead_status"].find_one({"id": status_id})
+    if not status:
+        raise HTTPException(status_code=404, detail="Lead status not found")
+    
+    try:
+        # Check if status is in use
+        leads_count = await db["leads"].count_documents({"status": status["nome"]})
+        if leads_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete status. {leads_count} leads are using this status"
+            )
+        
+        await db["lead_status"].delete_one({"id": status_id})
+        
+        return {
+            "success": True,
+            "message": "Lead status deleted successfully",
+            "status_id": status_id,
+            "status_name": status.get("nome", "")
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting lead status {status_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete lead status")
+
 # Custom Fields Management
 @api_router.get("/custom-fields", response_model=List[CustomField])
 async def get_custom_fields(current_user: User = Depends(get_current_user)):
