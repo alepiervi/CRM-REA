@@ -450,6 +450,18 @@ FOCUS CRITICO:
 **Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
+  - task: "Referenti Dropdown Endpoint Debug - Unit ID Assignment Issue"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🚨 REFERENTI DROPDOWN ISSUE ROOT CAUSE IDENTIFIED - 77.8% SUCCESS! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested the Referenti dropdown endpoint to identify why it's empty when creating an Agente. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ UNITS RETRIEVAL SUCCESS: GET /api/units found 1 unit (AGN, ID: 251eb0e5...) available for testing. ✅ USERS ANALYSIS SUCCESS: GET /api/users found 23 total users with 1 user having role 'referente' (username: prova). ❌ CRITICAL DATA ISSUE IDENTIFIED: Referente 'prova' exists but has unit_id = NULL/NOT SET, meaning it's not assigned to any unit. ✅ ENDPOINT VERIFICATION SUCCESS: GET /api/users/referenti/{unit_id} works correctly (Status: 200) but returns empty list (0 referenti) because no referenti are assigned to the target unit. 🎯 ROOT CAUSE CONFIRMED: The backend endpoint functions correctly, but the DATA is incomplete - referenti users exist but don't have unit_id populated. When creating an Agente and selecting a Unit, the dropdown is empty because the referenti are not assigned to any unit (unit_id field is NULL). ✅ BACKEND LOGIC WORKING: The filtering by unit_id works as expected - it correctly returns only referenti assigned to the specified unit. ❌ DATA INTEGRITY ISSUE: Referenti must have unit_id set to appear in dropdown. SOLUTION REQUIRED: 1) Assign unit_id to existing referenti users, 2) Ensure unit_id is set during referenti creation/modification, 3) Add validation to prevent referenti without unit_id. SUCCESS RATE: 77.8% (7/9 tests passed) - Root cause identified: referenti without unit_id assignment!"
+
   - task: "Unit Creation and Management Complete - Duplicate Unit Model Bug Fix Verification"
     implemented: true
     working: true
