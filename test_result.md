@@ -102,51 +102,49 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "VERIFICA SERVIZI AUTORIZZATI PER SUB AGENZIA F2F
+user_problem_statement: "VERIFICA LEAD CREATO DA ZAPIER
 
 OBIETTIVO: 
-Verificare perché la sub agenzia F2F dovrebbe avere solo il servizio 'TLS' autorizzato, ma nel frontend vede tutti i servizi della commessa Fastweb.
+Verificare se il lead inviato da Zapier è stato creato nel database e perché non si vede nel frontend.
 
 CONTESTO:
-- L'utente riporta che la sub agenzia F2F dovrebbe avere solo il servizio 'TLS' autorizzato
-- Nel frontend però vede tutti i servizi della commessa Fastweb
-- Necessario identificare se il problema è nel backend (servizi_autorizzati errato) o nel frontend
+- Zapier ha inviato un lead tramite webhook GET
+- Zapier mostra 'status: success' con request ID: 019a96d9-339f-9a9c-9799-63910a516dd1
+- L'utente non vede il lead nell'interfaccia
 
 TEST RICHIESTI:
-1. Login as admin (username: admin, password: admin123)
-2. Trova sub agenzia F2F e verifica il campo servizi_autorizzati
-3. Trova servizio TLS per la commessa Fastweb
-4. Verifica che TLS sia presente in servizi_autorizzati di F2F
-5. Test endpoint /api/cascade/servizi-by-sub-agenzia/{f2f_sub_agenzia_id}
-6. Confronta con servizi totali commessa Fastweb
+1. Controlla Log Backend - Cerca la richiesta webhook negli ultimi 10 minuti
+2. GET /api/leads - Lista tutti i lead recenti (limit=20)
+3. Verifica Ultimo Lead Creato - Identifica il lead più recente e verifica se ha i dati inviati da Zapier
+4. Verifica Unit e Commessa - GET /api/units e /api/commesse per verificare configurazione
+5. Possibili Cause se non si vede - Analizza perché il lead potrebbe non essere visibile nel frontend
 
 RISULTATI TEST COMPLETATI:
 ✅ Admin login (admin/admin123) - SUCCESS
-✅ F2F sub agenzia trovata: Nome 'F2F', ID: 7c70d4b5-4be0-4707-8bca-dfe84a0b9dee
-❌ F2F servizi_autorizzati: 6 servizi (PROBLEMA: dovrebbe essere solo 1 - TLS)
-✅ TLS servizio trovato: Nome 'TLS', ID: cc0648c1-0df1-4530-8281-f4c940934916
-✅ TLS in F2F autorizzati: TLS è presente in servizi_autorizzati
-❌ Endpoint servizi-by-sub-agenzia: restituisce 3 servizi (PROBLEMA: dovrebbe essere solo 1)
-❌ Confronto servizi: F2F vede TUTTI i 3 servizi Fastweb invece di solo TLS
-
-SERVIZI RESTITUITI PER F2F:
-1. NEGOZI (ID: cca3bdb9-a43b-467c-81bd-f36b83b25452) - NON dovrebbe essere visibile
-2. PRESIDI (ID: 861b02f4-fd76-4f6f-90c4-835b48a1d234) - NON dovrebbe essere visibile  
-3. TLS (ID: cc0648c1-0df1-4530-8281-f4c940934916) - ✅ Corretto
+✅ Backend logs check - COMPLETED (No webhook entries found in recent logs)
+✅ GET /api/leads - SUCCESS (0 total leads found)
+❌ Recent leads (10 min) - NONE (0 leads created in last 10 minutes)
+❌ Latest lead verification - FAILED (No leads found in database)
+✅ GET /api/units - SUCCESS (1 unit found: AGN)
+✅ GET /api/commesse - SUCCESS (5 commesse found including Fotovoltaico)
+✅ Fotovoltaico commessa - FOUND (ID: 5ef3ae82...)
 
 DIAGNOSI ROOT CAUSE:
-❌ BACKEND CONFIGURATION ISSUE - PROBLEMA LOCALIZZATO IN: BACKEND DATA
-- F2F ha 6 servizi autorizzati invece di solo TLS
-- L'endpoint /api/cascade/servizi-by-sub-agenzia NON filtra correttamente
-- F2F vede tutti i servizi della commessa Fastweb invece di solo quelli autorizzati
+🚨 CRITICAL: NO LEADS IN DATABASE - Zapier webhook failed to create lead
 
 CONCLUSIONI:
-1. ❌ Il problema NON è nel frontend - è nel backend
-2. ❌ F2F.servizi_autorizzati contiene troppi servizi (6 invece di 1)
-3. ❌ L'endpoint di filtro non funziona correttamente per F2F
-4. ✅ TLS è presente nei servizi autorizzati ma ci sono anche altri servizi non dovuti
+1. ❌ CRITICAL: No leads found in database - suggests Zapier webhook failed to create the lead
+2. ✅ Backend infrastructure is working (units and commesse are properly configured)
+3. ❌ No webhook entries found in backend logs for the reported request ID
+4. ❌ The Zapier 'success' status appears to be misleading - no lead was actually created
 
-STATO: PROBLEMA IDENTIFICATO - Backend configuration issue: F2F ha troppi servizi autorizzati invece di solo TLS"
+RACCOMANDAZIONI:
+1. Verificare configurazione webhook Zapier
+2. Controllare endpoint webhook nel backend
+3. Verificare che Zapier stia inviando dati corretti
+4. Controllare se esiste un endpoint webhook per la creazione lead nel backend
+
+STATO: PROBLEMA IDENTIFICATO - Zapier webhook integration failure: No lead created despite 'success' status"
 
 current_problem_statement: "TEST ENDPOINT REFERENTI E VERIFICA DATI UTENTI
 
