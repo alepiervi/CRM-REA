@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_login(username, password):
-    url = "https://leadmanager-21.preview.emergentagent.com/api/auth/login"
+    url = "https://nureal-crm-1.preview.emergentagent.com/api/auth/login"
     data = {'username': username, 'password': password}
     
     try:
@@ -27,7 +27,7 @@ def test_login(username, password):
         return None
 
 def test_documents(token):
-    url = "https://leadmanager-21.preview.emergentagent.com/api/documents"
+    url = "https://nureal-crm-1.preview.emergentagent.com/api/documents"
     headers = {'Authorization': f'Bearer {token}'}
     
     try:

@@ -2,7 +2,7 @@
 import requests
 import json
 
-BACKEND_URL = "https://leadmanager-21.preview.emergentagent.com"
+BACKEND_URL = "https://nureal-crm-1.preview.emergentagent.com"
 
 # Login as admin
 login_response = requests.post(

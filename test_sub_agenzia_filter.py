@@ -8,7 +8,7 @@ import sys
 import json
 
 class SubAgenziaFilterTester:
-    def __init__(self, base_url="https://leadmanager-21.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://nureal-crm-1.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
@@ -262,7 +262,7 @@ class SubAgenziaFilterTester:
 
 if __name__ == "__main__":
     print("🚀 Starting Sub Agenzia Filter Fix Testing...")
-    print(f"🌐 Base URL: https://leadmanager-21.preview.emergentagent.com/api")
+    print(f"🌐 Base URL: https://nureal-crm-1.preview.emergentagent.com/api")
     print("=" * 80)
     
     tester = SubAgenziaFilterTester()

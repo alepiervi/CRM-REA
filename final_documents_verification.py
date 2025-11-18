@@ -8,7 +8,7 @@ import requests
 import json
 
 def final_verification():
-    base_url = "https://leadmanager-21.preview.emergentagent.com/api"
+    base_url = "https://nureal-crm-1.preview.emergentagent.com/api"
     
     print("🔐 Final Verification - Authenticating as admin...")
     

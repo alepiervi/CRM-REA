@@ -13,7 +13,7 @@ import tempfile
 import os
 
 class DocumentAPITester:
-    def __init__(self, base_url="https://leadmanager-21.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://nureal-crm-1.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None

@@ -1,90 +1,77 @@
 <analysis>
-The trajectory outlines an extensive development and debugging process for the Nureal CRM application. The AI engineer's work can be segmented into three major phases.
+The trajectory documents an intensive debugging and feature development cycle for the Nureal CRM application. The work began by tackling a persistent  error on Unit creation. The initial investigation incorrectly isolated the issue to the frontend, leading to a series of fixes: resolving duplicate Pydantic  models in the backend, correcting  vs  inconsistencies in the frontend, and adding missing  imports.
 
-Phase 1 involved bug fixing and enhancements to the existing client management system. This included resolving API inconsistencies for client assignment, refining Excel export logic to correctly show assigned users and handle Convergenza SIMs, and implementing role-based editing permissions. A significant effort was dedicated to fixing a bug where a client's contract type was incorrectly changed upon editing, which was traced to flawed backend mapping logic. Another key task was making the Excel export respect all UI filters (name, sub-agency, date range, etc.), requiring modifications to both frontend and backend.
+The core of the work involved chasing down cascading bugs related to user and lead management. A major discovery was that multiple API calls in the frontend lacked JWT authentication headers, which was fixed. The most critical bug, causing the 422 error, was a flawed component interaction where a modal (/) made an API call and then triggered a parent function () that made a *second*, empty API call. This was resolved by refactoring the modals to only pass data up to the parent.
 
-Phase 2 was a large feature implementation: a complete Lead Management system. This involved creating new backend models (Unit, LeadStatus), CRUD endpoints for them, a sophisticated webhook for lead ingestion from Zapier with automatic assignment logic (based on province and agent availability), and updating user roles (Agent, Referente) to provide scoped access to leads.
+Later, the focus shifted to a major architectural change requested by the user: moving the lead system from a -based logic to a more robust -based system. This required significant backend modifications (updating  and  models, and the Zapier webhook logic) and creating new documentation.
 
-Phase 3 focused on the frontend implementation for the new Lead system and subsequent debugging. This included creating new React components (, ), integrating them, and then debugging a cascade of issues, including duplicate component declarations, missing authentication tokens in Axios requests, and a persistent  error on Unit creation.
-
-The work concluded with the engineer actively debugging this final 422 error. The backend endpoint was confirmed to be working correctly, pointing to a frontend-side issue, likely related to caching or the exact data payload being sent. The user's primary language is Italian. **Next agent, please respond in Italian.**
+The work concluded mid-task while implementing an editable lead detail modal. An attempt to replace an inline modal with a new, more complex component via a bulk edit failed, introducing a syntax error that broke the frontend compilation. The engineer was actively trying to fix this syntax error when the session ended. The user's primary language is Italian. **Next agent, please respond in Italian.**
 </analysis>
-
 <product_requirements>
-The Nureal CRM is a tool for managing clients, projects, and now, leads.
+The Nureal CRM is a comprehensive tool for managing clients, leads, and internal structures like Units (sub-agencies).
 
-**Existing Functionality (Pre-Trajectory):**
-*   Client and project management with role-based access.
-*   Data export to Excel.
-*   Multi-step client forms.
+**Core Functionality:**
+*   **Client Management**: Create, edit, and manage clients and their associated contracts.
+*   **User Management**: Role-based access for Admins, Referenti (supervisors), and Agenti (agents).
+*   **Excel Export**: Export filtered client data.
 
-**Implemented Features & Fixes (During Trajectory):**
-1.  **Client/SIM Assignment**: Implemented functionality to assign clients and individual SIMs to specific users, with assignment capabilities restricted by role.
-2.  **Excel Export Overhaul**:
-    *   The export now reflects the *assigned user*, not the creator.
-    *   Convergenza clients generate separate rows for the fixed line and each associated SIM, with each row showing the correct, specific offer.
-    *   The export is now filtered, showing only the clients that match the active filters in the UI (including name, sub-agency, status, creator/assigned user, services, segment, commesse, and creation date range).
+**Features Implemented/Fixed in Trajectory:**
+1.  **Lead Management System**:
+    *   **Units**: Admins can create and manage Units, which are entities that contain agents and manage leads.
+    *   **Dynamic Lead Statuses**: Admins can create custom lead statuses.
+    *   **Webhook Integration**: A Zapier-integrated webhook receives new leads. The architecture was changed from being  (campaign) based to  (project) based. The webhook now supports both POST and GET methods.
+    *   **Automatic Lead Assignment**: The webhook automatically assigns leads to agents within a Unit based on province and availability.
+2.  **Role-Based Views**:
+    *   Agents and Referenti can now see a Lead section in their menu instead of the Clienti section.
+    *   Admins and Referenti can see which agent a lead is assigned to; this is hidden from Agents.
 3.  **Bug Fixes**:
-    *   Corrected a critical bug where editing a client with a Mobile Fastweb contract type would incorrectly change it to Telefonia Fastweb. The system now preserves any contract type.
-    *   Fixed a  in the backend that prevented filter options from loading.
-4.  **New Lead Management System**:
-    *   **Units**: Creation of Units, which are entities (like sub-agencies) that exclusively manage leads.
-    *   **Dynamic Lead Statuses**: Admins can create and manage custom lead statuses.
-    *   **Webhook & Automatic Assignment**: A Zapier-integrated webhook receives new leads and automatically assigns them to agents within a Unit based on their authorized provinces using a load-balancing logic.
-    *   **Role-Based Access**: Agents see only their assigned leads. Referente users can see all leads assigned to the agents under them.
+    *   Resolved persistent  errors on Unit creation/editing.
+    *   Fixed dropdowns for user creation where Units and Referenti were not appearing.
+    *   Corrected an issue where the  was not being saved when creating/editing users.
 </product_requirements>
-
 <key_technical_concepts>
-- **Full Stack**: React.js (frontend) in a single  file, FastAPI (Python) for the backend.
-- **Database**: MongoDB, using  for async operations and  for data modeling and validation. UUIDs are used for IDs.
-- **Authentication**: JWT-based authentication. API requests are secured and require a bearer token.
-- **Authorization**: Granular role-based access control (RBAC) implemented in the backend to restrict access to endpoints and specific data fields.
-- **API Interaction**: Frontend uses  to communicate with the backend REST API.
+- **Full Stack**: Monolithic architecture with React.js (in a single  file) and a Python FastAPI backend (in a single  file).
+- **Database**: MongoDB, interacted with via the  async library.
+- **Data Modeling**:  is used for data validation and serialization in the backend.
+- **Authentication**: JWT-based authentication is enforced on most API endpoints. Frontend requests use  with bearer tokens in the authorization header.
+- **API**: A RESTful API with endpoints for CRUD operations on all major entities (clients, users, leads, units, etc.) and a webhook for lead ingestion.
 </key_technical_concepts>
-
 <code_architecture>
-The application follows a standard monolithic full-stack architecture with a React frontend and a FastAPI backend. Both reside in the  directory.
+The application is a monolith with the frontend and backend code co-located in the  directory.
 
 
 
 - ****
-    - **Importance**: This is the single, massive file containing the entire FastAPI backend application. It defines all Pydantic models, API endpoints, business logic, and database interactions.
-    - **Summary of Changes**: This file underwent extensive modifications.
-        - **New Models**: Added , , , , , . The  and  models were significantly expanded to include fields like , , , , and .
-        - **New Endpoints**: Implemented full CRUD endpoints for  and . A new, complex  endpoint was created to handle lead ingestion and automatic assignment.
-        - **Endpoint Modifications**: Updated  and  to accept and process a wide range of new filters (, , , , etc.). The logic for generating the Excel report was heavily modified to handle Convergenza cases correctly.
-        - **Bug Fixes**: Corrected a  in  by adding checks for  values before sorting. Removed faulty data conversion logic in the  endpoint that was causing the contract type bug. Numerous duplicate endpoint/model definitions were found and removed. Added extensive logging to the  endpoint for debugging.
+    - **Importance**: This single file contains the entire FastAPI application logic. It defines all Pydantic models, database interaction logic, and every API endpoint for the CRM.
+    - **Summary of Changes**: This file was heavily modified to support the new -based lead system.
+        - **Model Updates**: The  model was updated to include a . The  model was changed from having a single  and  to a list of , making it more flexible.
+        - **Webhook Enhancement**: The primary  endpoint (POST) was refactored to validate against the Unit's  list instead of . A new, parallel webhook endpoint was added for the GET method () to provide more flexibility for Zapier integration, accepting lead data as query parameters.
+        - **Bug Fixes**: A critical bug was fixed where the  model was being incorrectly assigned an  (a field it doesn't have), causing a validation error from Zapier. The logic was corrected to assign the agent ID *after* the lead object is created. Duplicate  model definitions were found and resolved.
 
 - ****
-    - **Importance**: This single file contains the entire React frontend application, including all components, modals, state management, and API calls.
-    - **Summary of Changes**: This file was also heavily modified.
-        - **New Components**: Created , , , and  components for the new admin functionalities.
-        - **Component Modifications**: The  component's  function was updated to pass all active UI filters to the backend. The  component was refactored to use dynamic statuses fetched from the backend.
-        - **Bug Fixes**: A significant amount of time was spent debugging frontend issues caused by copy-paste and refactoring errors. This included removing duplicate component declarations (), fixing incomplete component definitions (), and adding the missing authentication token to numerous  calls for the new Unit management features.
+    - **Importance**: This single file contains the entire React application, including all components, state management, and API calls.
+    - **Summary of Changes**: This file underwent numerous, complex fixes and refactors.
+        - **Authentication Fixes**: A critical recurring issue was API calls being made without the JWT authentication token. This was fixed in several places, including the , , and  functions, by adding the  object to  calls.
+        - **Component Logic Fixes**: The  and  were fixed to correctly populate the Referente dropdown by triggering  when a Unit is selected. The root cause of  not saving was also fixed by correctly setting  in the form state.
+        - **UI/UX Improvements**: The  view was updated to display the assigned agent's name. This was then refined to show only the name (not the email) and to be visible only to 'admin' and 'referente' roles. The main navigation menu was corrected to show Lead to 'agente' and 'referente' users instead of Clienti.
+        - **Failed Refactor**: The last action was an attempt to replace the inline lead detail modal with a new, fully editable component. This failed due to a syntax error during a bulk code replacement, leaving the frontend in a broken, non-compiling state.
 
-- ****
-    - **Importance**: A markdown file created to document the functionality of the new Lead Management system for the user.
+- ** & **
+    - **Importance**: These are new documentation files created to explain to the user how to configure the new GET webhook in Zapier, including the URL structure and a detailed list of all available fields.
 </code_architecture>
-
 <pending_tasks>
-- **Resolve Persistent 422 Error**: The user still experiences a  error when creating a Unit from the frontend, even though backend tests pass and the Unit is saved.
-- **Fix Unit List Display**: The user reports that the Unit list sometimes shows the Unit ID instead of its name, despite the code seeming correct. This is likely tied to the same 422 error or a frontend state/caching issue.
-- **Integrate Admin Menus**: The new Gestione Unit and Gestione Status Lead sections are not yet linked in the main admin navigation menu.
+- **Implement Editable Lead Modal**: The primary pending task is to create a fully editable modal for lead details. The fields sent by Zapier should be read-only, but other custom fields, notes, and the lead status should be editable. The previous attempt at this broke the application.
 </pending_tasks>
-
 <current_work>
-The AI engineer was in the final stages of debugging a persistent and frustrating  error. This error occurs when the user attempts to create a new Unit via the frontend UI.
+The AI engineer was in the middle of a major frontend refactor to implement an editable lead detail modal, as requested by the user. The goal was to replace the existing simple, read-only inline modal with a more powerful, reusable component that distinguishes between view and edit modes.
 
-**Investigation Summary:**
-1.  The user reported the error, noting that the Unit is still saved in the database despite the error message appearing in the UI.
-2.  The AI engineer confirmed through direct backend testing (using  with -like Python script) that the  endpoint works perfectly and returns a  status when provided with a valid payload. This isolated the problem to the frontend.
-3.  The engineer's hypothesis shifted to a client-side issue: either the browser is serving a cached, old version of the frontend code, or the  request is somehow malformed (e.g., wrong URL, incorrect headers, or bad payload structure).
-4.  Previous fixes included adding the missing JWT authentication token to the  call in the . This did not solve the user's issue.
-5.  The final action was to add MASSIVE logging directly into the  endpoint in . This logging prints the incoming request headers, body, and any Pydantic validation errors to the backend logs. The backend was then restarted.
+The engineer's process was:
+1.  Define the logic for the new modal, including states for edit mode (), form data (), and a save handler ().
+2.  Write the JSX for the new, complex modal and save it to a temporary file ().
+3.  Attempt to replace the old inline modal code block in  with the new component's code using a bulk write operation.
 
-The immediate goal is to capture the exact, raw request being sent from the user's browser to definitively diagnose why the backend is rejecting it with a 422 error, despite appearing to process it correctly in isolated tests.
+This process failed critically. The bulk replacement was not clean and introduced a fatal JSX syntax error at line 3062 in , preventing the entire React application from compiling. The last several actions in the trajectory show the engineer identifying the error, confirming it with the , and attempting to fix it by adding a missing closing bracket , but the compilation was still failing when the session ended. The application's frontend is currently broken and non-functional.
 </current_work>
-
 <optional_next_step>
-Check the backend logs immediately after the user triggers the Create Unit action from the frontend to analyze the detailed request payload and headers captured by the new logging.
+Fix the syntax error in  at line 3062 to get the application compiling again, then successfully integrate the new editable lead detail modal.
 </optional_next_step>
