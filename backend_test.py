@@ -45055,12 +45055,12 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if referente_test_success:
-            print("🎉 REFERENTE UNIT_ID VERIFICATION TEST: ✅ SUCCESS - UNIT_ID SALVATO CORRETTAMENTE!")
+        if unit_agn_agent_test_success:
+            print("🎉 UNIT AGN AGENT VERIFICATION TEST: ✅ SUCCESS - AGENTS AND LEADS ANALYZED!")
         else:
-            print("🚨 REFERENTE UNIT_ID VERIFICATION TEST: ❌ FAILED - PROBLEMI CON UNIT_ID O ENDPOINT!")
+            print("🚨 UNIT AGN AGENT VERIFICATION TEST: ❌ FAILED - ISSUES WITH AGENT CONFIGURATION!")
         
-        if referente_test_success:
+        if unit_agn_agent_test_success:
             print("\n🎉 OVERALL RESULT: ✅ REFERENTE UNIT_ID WORKING CORRECTLY!")
             print("💡 CONCLUSION: Il referente 'prova' ha unit_id salvato e l'endpoint restituisce i dati correttamente")
         else:
