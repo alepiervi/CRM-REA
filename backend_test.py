@@ -45269,7 +45269,7 @@ startxref
                 self.log_test("❌ SOME FIELDS NOT PERSISTED", False, f"{failed_verifications}/{total_verifications} fields failed")
                 
         else:
-            self.log_test("❌ GET /api/leads/{lead_id} FAILED", False, f"Status: {status}, Response: {verify_response}")
+            self.log_test("❌ GET /api/leads FAILED", False, f"Status: {status}, Response: {verify_response}")
             return False
 
         # **FINAL SUMMARY**
