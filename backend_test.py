@@ -47482,12 +47482,12 @@ if __name__ == "__main__":
             print("Available tests: zapier_webhook, trova_id_agn")
     else:
         # Run the specific test requested in the review
-        print("🎯 RUNNING SPECIFIC TEST: Zapier Webhook Lead Verification")
+        print("🎯 RUNNING SPECIFIC TEST: Trova ID Unit AGN per Zapier Webhook")
         print(f"🌐 Base URL: {tester.base_url}")
         print("=" * 80)
         
         try:
-            result = tester.test_zapier_webhook_lead_verification()
+            result = tester.test_trova_id_unit_agn_zapier_webhook()
             
             # Print summary
             print(f"\n📊 Final Test Results:")
@@ -47499,9 +47499,9 @@ if __name__ == "__main__":
                 print(f"   Success rate: N/A (no tests run)")
             
             if result:
-                print("🎉 ZAPIER WEBHOOK VERIFICATION SUCCESSFUL!")
+                print("🎉 UNIT AGN ID IDENTIFICATION SUCCESSFUL!")
             else:
-                print("❌ ZAPIER WEBHOOK VERIFICATION FAILED!")
+                print("❌ UNIT AGN ID IDENTIFICATION FAILED!")
                 
         except Exception as e:
             print(f"❌ Test failed with exception: {e}")
