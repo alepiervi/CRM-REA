@@ -6859,7 +6859,7 @@ const CreateContainerModal = ({ onClose, onSubmit, units, selectedUnit }) => {
               <SelectContent>
                 {units.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
-                    {unit.name}
+                    {unit.nome || unit.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -6920,7 +6920,7 @@ const EditContainerModal = ({ container, onClose, onSubmit, units }) => {
               <SelectContent>
                 {units.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
-                    {unit.name}
+                    {unit.nome || unit.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -11694,7 +11694,7 @@ const CopyWorkflowModal = ({ workflow, units, currentUnitId, onClose, onCopy }) 
               <SelectContent>
                 {availableUnits.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id}>
-                    {unit.name}
+                    {unit.nome || unit.name}
                   </SelectItem>
                 ))}
               </SelectContent>
