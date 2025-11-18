@@ -5898,11 +5898,18 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
       // Fetch referenti for this unit
       try {
         console.log('🔄 EditUser: Fetching referenti for unit:', unitId);
-        const refResponse = await axios.get(`${API}/users/referenti/${unitId}`);
+        const token = localStorage.getItem('token');
+        const refResponse = await axios.get(`${API}/users/referenti/${unitId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         console.log('✅ EditUser: Referenti loaded for unit:', refResponse.data.length);
+        console.log('✅ EditUser: Referenti data:', refResponse.data);
         setReferentiUnit(refResponse.data);
       } catch (error) {
-        console.error("EditUser: Error fetching referenti for unit:", error);
+        console.error("❌ EditUser: Error fetching referenti for unit:", error);
+        console.error("❌ EditUser: Error details:", error.response?.data);
         setReferentiUnit([]);
       }
     } catch (error) {
