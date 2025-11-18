@@ -3115,36 +3115,128 @@ const LeadsManagement = ({ selectedUnit, units }) => {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Sezione Dati da Zapier - Read Only */}
+              {/* Sezione Dati Principali - Bloccati se arrivano da Zapier */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-700 mb-3 flex items-center">
-                  <Lock className="w-5 h-5 mr-2 text-slate-500" />
-                  Dati da Zapier (Non Modificabili)
-                </h3>
-                <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+                <h3 className="text-lg font-semibold text-slate-700 mb-3">Dati Anagrafici</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Nome */}
                   <div>
-                    <Label className="text-sm font-medium text-slate-600">Nome</Label>
-                    <p className="text-sm font-medium">{selectedLead.nome}</p>
+                    <Label htmlFor="nome" className="flex items-center">
+                      Nome
+                      {selectedLead.nome && <Lock className="w-3 h-3 ml-1 text-slate-400" title="Campo bloccato: dato da Zapier" />}
+                    </Label>
+                    {selectedLead.nome ? (
+                      <div className="p-2 bg-slate-50 rounded text-sm">{selectedLead.nome}</div>
+                    ) : isEditingLead ? (
+                      <Input
+                        id="nome"
+                        value={leadEditData.nome || ""}
+                        onChange={(e) => setLeadEditData({...leadEditData, nome: e.target.value})}
+                        placeholder="Inserisci nome"
+                      />
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Non disponibile</p>
+                    )}
                   </div>
+
+                  {/* Cognome */}
                   <div>
-                    <Label className="text-sm font-medium text-slate-600">Cognome</Label>
-                    <p className="text-sm font-medium">{selectedLead.cognome}</p>
+                    <Label htmlFor="cognome" className="flex items-center">
+                      Cognome
+                      {selectedLead.cognome && <Lock className="w-3 h-3 ml-1 text-slate-400" title="Campo bloccato: dato da Zapier" />}
+                    </Label>
+                    {selectedLead.cognome ? (
+                      <div className="p-2 bg-slate-50 rounded text-sm">{selectedLead.cognome}</div>
+                    ) : isEditingLead ? (
+                      <Input
+                        id="cognome"
+                        value={leadEditData.cognome || ""}
+                        onChange={(e) => setLeadEditData({...leadEditData, cognome: e.target.value})}
+                        placeholder="Inserisci cognome"
+                      />
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Non disponibile</p>
+                    )}
                   </div>
+
+                  {/* Telefono */}
                   <div>
-                    <Label className="text-sm font-medium text-slate-600">Telefono</Label>
-                    <p className="text-sm">{selectedLead.telefono}</p>
+                    <Label htmlFor="telefono" className="flex items-center">
+                      Telefono
+                      {selectedLead.telefono && <Lock className="w-3 h-3 ml-1 text-slate-400" title="Campo bloccato: dato da Zapier" />}
+                    </Label>
+                    {selectedLead.telefono ? (
+                      <div className="p-2 bg-slate-50 rounded text-sm">{selectedLead.telefono}</div>
+                    ) : isEditingLead ? (
+                      <Input
+                        id="telefono"
+                        value={leadEditData.telefono || ""}
+                        onChange={(e) => setLeadEditData({...leadEditData, telefono: e.target.value})}
+                        placeholder="Inserisci telefono"
+                      />
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Non disponibile</p>
+                    )}
                   </div>
+
+                  {/* Email */}
                   <div>
-                    <Label className="text-sm font-medium text-slate-600">Email</Label>
-                    <p className="text-sm">{selectedLead.email}</p>
+                    <Label htmlFor="email" className="flex items-center">
+                      Email
+                      {selectedLead.email && <Lock className="w-3 h-3 ml-1 text-slate-400" title="Campo bloccato: dato da Zapier" />}
+                    </Label>
+                    {selectedLead.email ? (
+                      <div className="p-2 bg-slate-50 rounded text-sm">{selectedLead.email}</div>
+                    ) : isEditingLead ? (
+                      <Input
+                        id="email"
+                        value={leadEditData.email || ""}
+                        onChange={(e) => setLeadEditData({...leadEditData, email: e.target.value})}
+                        placeholder="Inserisci email"
+                      />
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Non disponibile</p>
+                    )}
                   </div>
+
+                  {/* Provincia */}
                   <div>
-                    <Label className="text-sm font-medium text-slate-600">Provincia</Label>
-                    <p className="text-sm">{selectedLead.provincia}</p>
+                    <Label htmlFor="provincia" className="flex items-center">
+                      Provincia
+                      {selectedLead.provincia && <Lock className="w-3 h-3 ml-1 text-slate-400" title="Campo bloccato: dato da Zapier" />}
+                    </Label>
+                    {selectedLead.provincia ? (
+                      <div className="p-2 bg-slate-50 rounded text-sm">{selectedLead.provincia}</div>
+                    ) : isEditingLead ? (
+                      <Input
+                        id="provincia"
+                        value={leadEditData.provincia || ""}
+                        onChange={(e) => setLeadEditData({...leadEditData, provincia: e.target.value})}
+                        placeholder="Inserisci provincia"
+                      />
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Non disponibile</p>
+                    )}
                   </div>
+
+                  {/* Campagna */}
                   <div>
-                    <Label className="text-sm font-medium text-slate-600">Campagna</Label>
-                    <p className="text-sm">{selectedLead.campagna || "N/A"}</p>
+                    <Label htmlFor="campagna" className="flex items-center">
+                      Campagna
+                      {selectedLead.campagna && <Lock className="w-3 h-3 ml-1 text-slate-400" title="Campo bloccato: dato da Zapier" />}
+                    </Label>
+                    {selectedLead.campagna ? (
+                      <div className="p-2 bg-slate-50 rounded text-sm">{selectedLead.campagna}</div>
+                    ) : isEditingLead ? (
+                      <Input
+                        id="campagna"
+                        value={leadEditData.campagna || ""}
+                        onChange={(e) => setLeadEditData({...leadEditData, campagna: e.target.value})}
+                        placeholder="Inserisci campagna"
+                      />
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Non disponibile</p>
+                    )}
                   </div>
                 </div>
               </div>
