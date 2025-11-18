@@ -1931,6 +1931,7 @@ const Dashboard = () => {
       items.push(
         { id: "leads", label: "Lead", icon: Phone },
         { id: "lead-status", label: "Gestione Status Lead", icon: Settings },
+        { id: "custom-fields", label: "Campi Personalizzati Lead", icon: Database },
         { id: "users", label: "Utenti", icon: Users },
         { id: "workflow-builder", label: "Workflow Builder", icon: Workflow },
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
