@@ -5248,23 +5248,32 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
           )}
 
           {/* AGENTE: Campo Referente */}
-          {formData.role === "agente" && (
+          {formData.role === "agente" && formData.unit_id && (
             <div>
               <Label htmlFor="referente_id">Referente</Label>
               <Select value={formData.referente_id} onValueChange={(value) => 
                 setFormData(prev => ({ ...prev, referente_id: value }))
               }>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleziona referente" />
+                  <SelectValue placeholder={referentiUnit.length > 0 ? "Seleziona referente" : "Nessun referente disponibile per questa unit"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {referenti.map((ref) => (
-                    <SelectItem key={ref.id} value={ref.id}>
-                      {ref.username}
-                    </SelectItem>
-                  ))}
+                  {referentiUnit.length > 0 ? (
+                    referentiUnit.map((ref) => (
+                      <SelectItem key={ref.id} value={ref.id}>
+                        {ref.username}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>Nessun referente disponibile</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+              {referentiUnit.length === 0 && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Crea prima un utente Referente per questa Unit
+                </p>
+              )}
             </div>
           )}
 
