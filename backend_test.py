@@ -48285,13 +48285,13 @@ if __name__ == "__main__":
             print(f"❌ Unknown test: {test_name}")
             print("Available tests: zapier_webhook, trova_id_agn")
     else:
-        # Run the specific test requested in the review
-        print("🎯 RUNNING SPECIFIC TEST: Unit AGN Agent Verification")
+        # Run the specific lead update test as requested in the review
+        print("🎯 RUNNING SPECIFIC TEST: Lead Update with JWT Authentication")
         print(f"🌐 Base URL: {tester.base_url}")
         print("=" * 80)
         
         try:
-            result = tester.test_unit_agn_agent_verification()
+            result = tester.test_lead_update_with_jwt_authentication()
             
             # Print summary
             print(f"\n📊 Final Test Results:")
@@ -48303,9 +48303,9 @@ if __name__ == "__main__":
                 print(f"   Success rate: N/A (no tests run)")
             
             if result:
-                print("🎉 UNIT AGN AGENT VERIFICATION SUCCESSFUL!")
+                print("🎉 LEAD UPDATE WITH JWT AUTHENTICATION SUCCESSFUL!")
             else:
-                print("❌ UNIT AGN AGENT VERIFICATION FAILED!")
+                print("❌ LEAD UPDATE WITH JWT AUTHENTICATION FAILED!")
                 
         except Exception as e:
             print(f"❌ Test failed with exception: {e}")
