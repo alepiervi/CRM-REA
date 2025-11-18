@@ -4466,7 +4466,7 @@ const CreateLeadModal = ({ onClose, onSuccess, units, customFields }) => {
                   <SelectContent>
                     {units.map((unit) => (
                       <SelectItem key={unit.id} value={unit.id}>
-                        {unit.name}
+                        {unit.nome || unit.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -5224,7 +5224,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                 <SelectContent>
                   {units.map((unit) => (
                     <SelectItem key={unit.id} value={unit.id}>
-                      {unit.name}
+                      {unit.nome || unit.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -6170,7 +6170,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                 <SelectContent>
                   {units.map((unit) => (
                     <SelectItem key={unit.id} value={unit.id}>
-                      {unit.name}
+                      {unit.nome || unit.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
