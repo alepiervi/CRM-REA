@@ -65,9 +65,35 @@ https://leadmanager-21.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-
 
 ### 2️⃣ Configura Zapier
 
+#### **METODO A: GET Webhook (Più Semplice - Consigliato)**
+
 **Trigger:** Form/Lead da fonte esterna (es. Facebook Lead Ads, Google Forms, ecc.)
 
-**Action:** Webhook POST
+**Action:** Webhooks by Zapier → GET Request
+
+**URL:** Costruisci l'URL con i parametri query string:
+```
+https://tuo-dominio.com/api/webhook/{unit_id}?nome={{nome}}&cognome={{cognome}}&telefono={{telefono}}&email={{email}}&provincia={{provincia}}&commessa_id=ID_COMMESSA&campagna={{campagna}}
+```
+
+**Esempio pratico in Zapier:**
+```
+https://leadmanager-21.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome={{1. Nome}}&cognome={{1. Cognome}}&telefono={{1. Telefono}}&email={{1. Email}}&provincia={{1. Provincia}}&commessa_id=abc123-def456&campagna=Facebook2025
+```
+
+**Vantaggi GET:**
+- ✅ Nessun header richiesto
+- ✅ Nessun body JSON da configurare
+- ✅ Facile da testare nel browser
+- ✅ Ideale per redirect URL e link diretti
+
+---
+
+#### **METODO B: POST Webhook (Avanzato)**
+
+**Trigger:** Form/Lead da fonte esterna
+
+**Action:** Webhooks by Zapier → POST Request
 
 **URL:** `https://tuo-dominio.com/api/webhook/{unit_id}`
 
