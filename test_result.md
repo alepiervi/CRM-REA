@@ -146,85 +146,110 @@ RACCOMANDAZIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Zapier webhook integration failure: No lead created despite 'success' status"
 
-current_problem_statement: "IMPLEMENTAZIONE MODAL EDITABILE LEAD - VERIFICA E TESTING
+current_problem_statement: "TEST E2E MODAL EDITABILE LEAD - Verifica completa funzionalità modifica lead
 
-OBIETTIVO: Implementare e testare il modal editabile per i dettagli dei lead
+OBIETTIVO:
+Testare il modal dei dettagli lead con funzionalità di modifica per verificare che tutto funzioni correttamente.
 
 CONTESTO:
-- Modal dei lead deve avere campi editabili per modificare informazioni
-- Campi da Zapier devono rimanere SOLA LETTURA (nome, cognome, telefono, email, provincia, campagna)
-- Altri campi devono essere editabili (tipologia abitazione, indirizzo, regione, consensi, note, status)
-- Autenticazione JWT aggiunta a handleSaveLead
+- Ho appena implementato il modal editabile per i lead
+- Campi da Zapier devono essere SOLA LETTURA
+- Altri campi sono editabili in modalità modifica
+- handleSaveLead include autenticazione JWT
+- Backend testing conferma endpoint PUT /api/leads/{id} funzionante (80% success)
 
-MODIFICHE IMPLEMENTATE:
-1. Rimosso codice duplicato/orfano dalle righe 3312-3347 di App.js
-2. Aggiunta autenticazione JWT a handleSaveLead (righe 2720-2738)
-3. Corretto errore di sintassi JSX nella mobile card view (righe 3069-3096)
-4. Modal già implementato con logica edit/view e pulsante "Modifica"
-5. Backend testing confermato funzionante (80% success)
+URL: https://nureal-crm-1.preview.emergentagent.com
 
-STATO CORRENTE:
-✅ Frontend compila senza errori
-✅ Servizi in esecuzione
-✅ Backend endpoint PUT /api/leads/{id} funziona con JWT
-✅ handleSaveLead include autenticazione
-⏳ Da testare: Frontend testing E2E del modal editabile
+CREDENZIALI:
+- Username: admin
+- Password: admin123
 
-TEST DA ESEGUIRE (FRONTEND TESTING):
+TEST DA ESEGUIRE:
 
-1. **Login Admin** (admin/admin123)
+**FASE 1: Login e Navigazione**
+1. Login con admin/admin123
+2. Naviga alla sezione "Lead" dal menu
+3. Verifica che la lista lead si carichi
+4. Screenshot della lista lead
 
-2. **Naviga alla sezione Lead**
-   - Verifica che la lista dei lead si carichi correttamente
+**FASE 2: Apertura Modal**
+5. Clicca sul pulsante "Vedi" (icona Eye) del primo lead
+6. Verifica che il modal si apra
+7. Verifica che i dati da Zapier siano visibili (Nome, Cognome, Telefono, Email, Provincia, Campagna) con icona Lock e sfondo grigio
+8. Verifica che il pulsante "Modifica" sia visibile
+9. Screenshot del modal in modalità visualizzazione
 
-3. **Apri Modal Lead**
-   - Clicca su un lead esistente per aprire il modal
-   - Verifica che il modal si apra correttamente
-   - Verifica che i dati da Zapier siano visualizzati (sola lettura)
-   - Verifica che il pulsante "Modifica" sia visibile
+**FASE 3: Modalità Modifica**
+10. Clicca sul pulsante "Modifica"
+11. Verifica che i campi editabili diventino modificabili:
+    - tipologia_abitazione (dropdown)
+    - indirizzo (input text)
+    - regione (input text)
+    - url (input text)
+    - otp (input text)
+    - inserzione (input text)
+    - privacy_consent (checkbox)
+    - marketing_consent (checkbox)
+    - esito (dropdown con lead statuses)
+    - note (textarea)
+12. Verifica che i campi da Zapier rimangano NON modificabili (Nome, Cognome, Telefono, Email, Provincia, Campagna)
+13. Screenshot del modal in modalità modifica
 
-4. **Entra in Modalità Modifica**
-   - Clicca su "Modifica"
-   - Verifica che i campi editabili diventino modificabili
-   - Campi da Zapier devono rimanere sola lettura (nome, cognome, telefono, email, provincia, campagna)
-   - Campi editabili: tipologia_abitazione, indirizzo, regione, url, otp, inserzione, privacy_consent, marketing_consent, esito, note
+**FASE 4: Modifica Campi**
+14. Modifica i seguenti campi:
+    - tipologia_abitazione → seleziona "condominio"
+    - indirizzo → inserisci "Via Test Modifica E2E 789"
+    - note → inserisci "Nota di test E2E - Modal editabile funzionante"
+15. Verifica che i pulsanti "Annulla" e "Salva Modifiche" siano visibili
+16. Screenshot con campi modificati
 
-5. **Modifica Campi**
-   - Modifica almeno 3 campi editabili:
-     * tipologia_abitazione → "condominio"
-     * indirizzo → "Via Test Modifica 456"
-     * note → "Nota di test aggiunta dal modal editabile"
-   - Verifica che i campi da Zapier non siano modificabili
+**FASE 5: Test Salvataggio**
+17. Clicca sul pulsante "Salva Modifiche"
+18. Verifica che appaia un toast di successo ("Lead aggiornato con successo")
+19. Verifica che il modal si chiuda
+20. Screenshot dopo il salvataggio
 
-6. **Salva Modifiche**
-   - Clicca su "Salva Modifiche"
-   - Verifica che appaia un toast di successo
-   - Verifica che il modal si chiuda
+**FASE 6: Verifica Persistenza**
+21. Riapri lo stesso lead cliccando su "Vedi"
+22. Verifica che le modifiche siano persistite:
+    - tipologia_abitazione = "condominio"
+    - indirizzo = "Via Test Modifica E2E 789"
+    - note = "Nota di test E2E - Modal editabile funzionante"
+23. Verifica che i dati da Zapier siano inalterati
+24. Screenshot del modal con dati persistiti
 
-7. **Verifica Persistenza**
-   - Riapri il modal dello stesso lead
-   - Verifica che le modifiche siano persistite:
-     * tipologia_abitazione = "condominio"
-     * indirizzo = "Via Test Modifica 456"
-     * note = "Nota di test aggiunta dal modal editabile"
-   - Verifica che i dati da Zapier siano inalterati
+**FASE 7: Test Annulla**
+25. Clicca su "Modifica"
+26. Modifica il campo indirizzo → "Modifica da annullare"
+27. Clicca su "Annulla"
+28. Verifica che il campo indirizzo torni al valore precedente ("Via Test Modifica E2E 789")
+29. Screenshot dopo annulla
 
-8. **Test Annulla**
-   - Entra in modalità modifica
-   - Modifica alcuni campi
-   - Clicca su "Annulla"
-   - Verifica che le modifiche vengano scartate
+**FASE 8: Test Campi Sola Lettura**
+30. Clicca su "Modifica"
+31. Verifica che i campi Nome, Cognome, Telefono, Email, Provincia, Campagna NON siano input editabili (devono essere tag <p> o text)
+32. Screenshot finale
 
 CRITERI DI SUCCESSO:
 ✅ Modal si apre correttamente
-✅ Pulsante "Modifica" visibile e funzionante
-✅ Campi da Zapier sono sola lettura
-✅ Campi editabili sono modificabili in modalità modifica
-✅ Salvataggio funziona con toast di successo
+✅ Dati da Zapier visibili con icona Lock e sfondo grigio (sola lettura)
+✅ Pulsante "Modifica" presente e funzionante
+✅ Modalità modifica attiva i campi editabili
+✅ Campi da Zapier rimangono sola lettura anche in modalità modifica
+✅ Salvataggio mostra toast di successo
+✅ Modal si chiude dopo il salvataggio
 ✅ Modifiche persistite nel database
-✅ Pulsante "Annulla" scarta le modifiche
+✅ Pulsante "Annulla" scarta le modifiche non salvate
+✅ Tutti i campi editabili funzionano correttamente
 
-STATO: PRONTO PER TESTING FRONTEND
+FOCUS CRITICO:
+- Verifica che i campi da Zapier (Nome, Cognome, Telefono, Email, Provincia, Campagna) siano SEMPRE sola lettura
+- Verifica autenticazione JWT funzionante (nessun errore 401 Unauthorized)
+- Verifica persistenza dati dopo ricaricamento modal
+
+Screenshot richiesti: login, lista lead, modal visualizzazione, modal modifica, campi modificati, dopo salvataggio, dati persistiti, dopo annulla, campi sola lettura
+
+STATO: PRONTO PER TESTING E2E COMPLETO
 
 previous_problem_statement: "TEST COMPLETO E2E - SISTEMA LEAD CON UNIT
 
