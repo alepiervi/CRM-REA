@@ -6285,25 +6285,38 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
             </div>
           )}
 
-          {formData.role === "agente" && (
+          {formData.role === "agente" && formData.unit_id && (
             <>
-              {referenti.length > 0 && (
-                <div>
-                  <Label htmlFor="referente_id">Referente</Label>
-                  <Select value={formData.referente_id} onValueChange={(value) => setFormData({ ...formData, referente_id: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona referente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {referenti.map((referente) => (
+              <div>
+                <Label htmlFor="referente_id">Referente</Label>
+                <Select value={formData.referente_id} onValueChange={(value) => setFormData({ ...formData, referente_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={referentiUnit.length > 0 ? "Seleziona referente" : "Nessun referente disponibile per questa unit"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {referentiUnit.length > 0 ? (
+                      referentiUnit.map((referente) => (
                         <SelectItem key={referente.id} value={referente.id}>
                           {referente.username} ({referente.email})
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>Nessun referente disponibile</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {referentiUnit.length === 0 && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Crea prima un utente Referente per questa Unit
+                  </p>
+                )}
+              </div>
+            </>{/* Closing tag for agente && unit_id block */}
+          )}
+          
+          {/* Province di Copertura - Moved outside and show only if formData.role === "agente" */}
+          {formData.role === "agente" && (
+            <>
 
               <div>
                 <Label>Province di Copertura</Label>
