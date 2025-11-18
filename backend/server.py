@@ -317,7 +317,7 @@ class Lead(BaseModel):
     privacy_consent: bool = False
     marketing_consent: bool = False
     assigned_agent_id: Optional[str] = None
-    esito: Optional[CallOutcome] = None  # Keep for backward compatibility
+    esito: Optional[str] = None  # Changed to string for dynamic values from lead_statuses
     note: Optional[str] = None
     custom_fields: Dict[str, Any] = {}
     documents: List[str] = []  # URLs to stored documents
