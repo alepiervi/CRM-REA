@@ -2716,6 +2716,27 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     setIsEditingLead(false);
   };
 
+  // NEW: Save lead edits
+  const handleSaveLead = async () => {
+    try {
+      await axios.put(`${API}/leads/${selectedLead.id}`, leadEditData);
+      toast({
+        title: "Successo",
+        description: "Lead aggiornato con successo",
+      });
+      setIsEditingLead(false);
+      fetchLeads(); // Refresh list
+      setSelectedLead(null);
+    } catch (error) {
+      console.error("Error updating lead:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'aggiornamento del lead",
+        variant: "destructive",
+      });
+    }
+  };
+
   const updateLead = async (leadId, esito, note, customFields, status) => { // NEW: Added status parameter
     try {
       const updateData = { esito, note, custom_fields: customFields };
