@@ -3066,7 +3066,28 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                         </div>
                       )}
                     </div>
-                  </Card>
+                    
+                    <div className="flex space-x-2 mt-3">
+                      <Button
+                        onClick={() => handleLeadClick(lead)}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Vedi
+                      </Button>
+                      {user.role === "admin" && (
+                        <Button
+                          onClick={() => deleteLead(lead.id, `${lead.nome} ${lead.cognome}`)}
+                          variant="destructive"
+                          size="sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
