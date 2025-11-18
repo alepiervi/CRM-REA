@@ -44484,9 +44484,9 @@ startxref
         else:
             print(f"\n   🚨 CRITICAL ISSUES IDENTIFIED:")
             if not referente_prova:
-                print(f"      ❌ Referente 'prova' not found in system")
+                print(f"      ❌ No referente found in system")
             elif not referente_prova.get('unit_id'):
-                print(f"      ❌ Referente 'prova' still has NO unit_id set")
+                print(f"      ❌ Referente '{ref_username}' still has NO unit_id set")
             if status != 200:
                 print(f"      ❌ Endpoint GET /api/users/referenti/{{unit_id}} not working (Status: {status})")
             
