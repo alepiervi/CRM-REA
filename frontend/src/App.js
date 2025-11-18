@@ -2905,6 +2905,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                       <TableHead>Telefono</TableHead>
                       <TableHead>Provincia</TableHead>
                       <TableHead>Campagna</TableHead>
+                      <TableHead>Assegnato a</TableHead>
                       <TableHead>Stato</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead>Azioni</TableHead>
