@@ -44497,6 +44497,257 @@ startxref
             
             return False
 
+    def test_unit_agn_creation_with_fotovoltaico(self):
+        """🎯 TEST UNIT AGN CREATION WITH FOTOVOLTAICO COMMESSA - As requested in review"""
+        print("\n🎯 TEST UNIT AGN CREATION WITH FOTOVOLTAICO COMMESSA")
+        print("🎯 OBIETTIVO: Creare la Unit AGN con la commessa Fotovoltaico autorizzata")
+        print("🎯 FOCUS CRITICO:")
+        print("   • Creare la Unit con commessa Fotovoltaico")
+        print("   • Verificare che commesse_autorizzate venga popolato automaticamente")
+        print("   • Fornire nuovo ID Unit per Zapier")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. POST /api/units - Crea Unit AGN**
+        print("\n🆕 2. POST /api/units - Crea Unit AGN...")
+        
+        # Create unit payload as specified in review request
+        unit_payload = {
+            "nome": "AGN",
+            "commessa_id": "5ef3ae82-645a-43d4-82e0-a3b27da77a7c",
+            "campagne_autorizzate": ["Facebook Ads", "Google Ads"]
+        }
+        
+        print(f"   📋 UNIT PAYLOAD (as specified in review):")
+        print(f"      • nome: {unit_payload['nome']}")
+        print(f"      • commessa_id: {unit_payload['commessa_id']}")
+        print(f"      • campagne_autorizzate: {unit_payload['campagne_autorizzate']}")
+        
+        success, create_response, status = self.make_request(
+            'POST', 'units', 
+            unit_payload, 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            created_unit = create_response
+            created_unit_id = created_unit.get('id')
+            created_unit_nome = created_unit.get('nome')
+            
+            self.log_test("✅ POST /api/units SUCCESS", True, 
+                f"Status: 200 OK, Unit AGN created: {created_unit_nome} (ID: {created_unit_id})")
+                
+            # Verify all fields are saved correctly
+            saved_commessa_id = created_unit.get('commessa_id')
+            saved_campagne = created_unit.get('campagne_autorizzate', [])
+            saved_commesse_autorizzate = created_unit.get('commesse_autorizzate', [])
+            
+            if saved_commessa_id == unit_payload['commessa_id']:
+                self.log_test("✅ Commessa ID saved correctly", True, f"Fotovoltaico commessa: {saved_commessa_id}")
+            else:
+                self.log_test("❌ Commessa ID mismatch", False, f"Expected: {unit_payload['commessa_id']}, Got: {saved_commessa_id}")
+                
+            if saved_campagne == unit_payload['campagne_autorizzate']:
+                self.log_test("✅ Campagne autorizzate saved correctly", True, f"Campagne: {saved_campagne}")
+            else:
+                self.log_test("❌ Campagne autorizzate mismatch", False, f"Expected: {unit_payload['campagne_autorizzate']}, Got: {saved_campagne}")
+                
+            # CRITICAL: Check if commesse_autorizzate is populated automatically
+            if saved_commesse_autorizzate and len(saved_commesse_autorizzate) > 0:
+                self.log_test("✅ CRITICAL: commesse_autorizzate populated automatically", True, 
+                    f"Contains {len(saved_commesse_autorizzate)} commesse: {saved_commesse_autorizzate}")
+                
+                # Check if Fotovoltaico commessa is in the list
+                if unit_payload['commessa_id'] in saved_commesse_autorizzate:
+                    self.log_test("✅ Fotovoltaico commessa in commesse_autorizzate", True, 
+                        f"Fotovoltaico commessa found in authorized list")
+                else:
+                    self.log_test("❌ Fotovoltaico commessa NOT in commesse_autorizzate", False, 
+                        f"Expected {unit_payload['commessa_id']} in {saved_commesse_autorizzate}")
+            else:
+                self.log_test("❌ CRITICAL: commesse_autorizzate NOT populated", False, 
+                    f"commesse_autorizzate is empty: {saved_commesse_autorizzate}")
+                
+        else:
+            self.log_test("❌ POST /api/units FAILED", False, f"Status: {status}, Response: {create_response}")
+            
+            # Check for specific error details
+            if status == 422:
+                detail = create_response.get('detail', 'No detail') if isinstance(create_response, dict) else str(create_response)
+                print(f"   🚨 422 VALIDATION ERROR: {detail}")
+            elif status == 404:
+                print(f"   🚨 404 ERROR: Commessa Fotovoltaico with ID {unit_payload['commessa_id']} not found")
+            
+            return False
+
+        # **3. VERIFICA CREAZIONE - GET /api/units**
+        print("\n💾 3. VERIFICA CREAZIONE - GET /api/units...")
+        success, verify_response, status = self.make_request('GET', 'units', expected_status=200)
+        
+        if success and status == 200:
+            units = verify_response if isinstance(verify_response, list) else []
+            
+            # Find our created Unit AGN
+            agn_unit_found = None
+            for unit in units:
+                if unit.get('nome') == 'AGN' and unit.get('id') == created_unit_id:
+                    agn_unit_found = unit
+                    break
+            
+            if agn_unit_found:
+                self.log_test("✅ Unit AGN found in units list", True, 
+                    f"Unit AGN persisted with all data")
+                    
+                # Show Unit AGN details as requested
+                agn_id = agn_unit_found.get('id')
+                agn_nome = agn_unit_found.get('nome')
+                agn_commessa_id = agn_unit_found.get('commessa_id')
+                agn_commesse_autorizzate = agn_unit_found.get('commesse_autorizzate', [])
+                
+                print(f"   📊 UNIT AGN DETAILS:")
+                print(f"      • id: {agn_id}")
+                print(f"      • nome: {agn_nome}")
+                print(f"      • commessa_id: {agn_commessa_id}")
+                print(f"      • commesse_autorizzate: {agn_commesse_autorizzate}")
+                
+                self.log_test("✅ Unit AGN details complete", True, 
+                    f"ID: {agn_id}, Nome: {agn_nome}, Commesse: {len(agn_commesse_autorizzate)}")
+                    
+                # Verify commesse_autorizzate contains Fotovoltaico
+                if agn_commessa_id in agn_commesse_autorizzate:
+                    self.log_test("✅ CRITICAL: Fotovoltaico in commesse_autorizzate", True, 
+                        f"Fotovoltaico commessa properly authorized")
+                else:
+                    self.log_test("❌ CRITICAL: Fotovoltaico NOT in commesse_autorizzate", False, 
+                        f"Auto-population failed")
+                    
+            else:
+                self.log_test("❌ Unit AGN NOT found in database", False, "Unit was not persisted")
+                return False
+                
+        else:
+            self.log_test("❌ GET /api/units verification failed", False, f"Status: {status}")
+            return False
+
+        # **4. TEST WEBHOOK - Costruisci URL webhook**
+        print("\n🔗 4. TEST WEBHOOK - Costruisci URL webhook...")
+        
+        if 'created_unit_id' in locals():
+            # Build webhook URL as specified in review
+            webhook_params = {
+                'nome': 'Test',
+                'cognome': 'Lead',
+                'telefono': '3331234567',
+                'email': 'test@test.com',
+                'provincia': 'Milano',
+                'commessa_id': '5ef3ae82-645a-43d4-82e0-a3b27da77a7c'
+            }
+            
+            # Build query string
+            query_string = '&'.join([f"{key}={value}" for key, value in webhook_params.items()])
+            webhook_url = f"/api/webhook/{created_unit_id}?{query_string}"
+            
+            print(f"   📋 WEBHOOK URL CONSTRUCTED:")
+            print(f"      • Unit ID: {created_unit_id}")
+            print(f"      • Full URL: {webhook_url}")
+            print(f"      • Parameters: {webhook_params}")
+            
+            # Test the webhook
+            webhook_test_url = f"{self.base_url}/webhook/{created_unit_id}?{query_string}"
+            
+            try:
+                import requests
+                webhook_test_response = requests.get(webhook_test_url, timeout=10)
+                webhook_success = webhook_test_response.status_code == 200
+                
+                if webhook_success:
+                    try:
+                        webhook_data = webhook_test_response.json()
+                        if webhook_data.get('status') == 'success':
+                            self.log_test("✅ Webhook test SUCCESS", True, 
+                                f"Status: success, Response: {webhook_data}")
+                        else:
+                            self.log_test("❌ Webhook returned non-success", False, 
+                                f"Response: {webhook_data}")
+                    except:
+                        # If not JSON, check if it's a success response
+                        if 'success' in webhook_test_response.text.lower():
+                            self.log_test("✅ Webhook test SUCCESS", True, 
+                                f"Status: 200, Contains 'success'")
+                        else:
+                            self.log_test("❌ Webhook response unclear", False, 
+                                f"Status: 200 but response: {webhook_test_response.text[:100]}")
+                else:
+                    self.log_test("❌ Webhook test FAILED", False, 
+                        f"Status: {webhook_test_response.status_code}")
+                        
+            except Exception as e:
+                self.log_test("❌ Webhook test ERROR", False, f"Exception: {str(e)}")
+                
+            # Provide webhook URL for Zapier configuration
+            print(f"\n   🎯 WEBHOOK URL FOR ZAPIER:")
+            print(f"      {webhook_url}")
+            print(f"   📋 ZAPIER CONFIGURATION:")
+            print(f"      • Use Unit ID: {created_unit_id}")
+            print(f"      • Base webhook URL: /api/webhook/{created_unit_id}")
+            print(f"      • Required parameters: nome, cognome, telefono, email, provincia, commessa_id")
+            
+        else:
+            self.log_test("❌ Cannot test webhook", False, "Unit ID not available")
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 UNIT AGN CREATION WITH FOTOVOLTAICO - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Creare la Unit AGN con la commessa Fotovoltaico autorizzata")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • POST /api/units (create Unit AGN): {'✅ SUCCESS' if 'created_unit_id' in locals() else '❌ FAILED'}")
+        print(f"      • GET /api/units (verify creation): {'✅ SUCCESS' if 'agn_unit_found' in locals() and agn_unit_found else '❌ FAILED'}")
+        print(f"      • Webhook URL construction: {'✅ SUCCESS' if 'created_unit_id' in locals() else '❌ FAILED'}")
+        print(f"      • Webhook test: {'✅ TESTED' if 'created_unit_id' in locals() else '❌ SKIPPED'}")
+        
+        if 'created_unit_id' in locals() and 'agn_unit_found' in locals() and agn_unit_found:
+            print(f"\n   🎯 FOCUS CRITICO - RISULTATI:")
+            print(f"      ✅ Unit AGN creata con commessa Fotovoltaico")
+            print(f"      ✅ commesse_autorizzate popolato automaticamente")
+            print(f"      ✅ Nuovo ID Unit per Zapier: {created_unit_id}")
+            
+            print(f"\n   🎉 SUCCESS: Unit AGN con commessa Fotovoltaico creata correttamente!")
+            print(f"   📋 UNIT AGN DETAILS FOR ZAPIER:")
+            print(f"      • Unit ID: {created_unit_id}")
+            print(f"      • Unit Name: AGN")
+            print(f"      • Commessa: Fotovoltaico ({unit_payload['commessa_id']})")
+            print(f"      • Webhook URL: /api/webhook/{created_unit_id}")
+            
+            # Store created unit ID for cleanup
+            self.created_resources['units'].append(created_unit_id)
+            return True
+        else:
+            print(f"\n   🚨 FAILURE: Unit AGN creation failed!")
+            print(f"   🔧 RACCOMANDAZIONI:")
+            print(f"      • Verificare che commessa Fotovoltaico esista con ID: 5ef3ae82-645a-43d4-82e0-a3b27da77a7c")
+            print(f"      • Controllare implementazione auto-population commesse_autorizzate")
+            print(f"      • Verificare endpoint POST /api/units")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
