@@ -45157,11 +45157,11 @@ startxref
             
             return False
 
-        # **4. GET /api/leads/{lead_id} - Verifica persistenza**
-        print("\n🔍 4. GET /api/leads/{lead_id} - Verifica persistenza...")
+        # **4. GET /api/leads - Verifica persistenza (get all leads and find the updated one)**
+        print("\n🔍 4. GET /api/leads - Verifica persistenza...")
         
         success, verify_response, status = self.make_request(
-            'GET', f'leads/{lead_id}', 
+            'GET', 'leads', 
             expected_status=200
         )
         
