@@ -314,8 +314,8 @@ class Lead(BaseModel):
     unit_id: Optional[str] = None  # NEW: Unit assignment
     commessa_id: Optional[str] = None  # NEW: Commessa assignment
     status: Optional[str] = None  # NEW: Dynamic status (not enum)
-    privacy_consent: bool = False
-    marketing_consent: bool = False
+    privacy_consent: Optional[bool] = None  # None = non arrivato da Zapier, True/False = arrivato da Zapier
+    marketing_consent: Optional[bool] = None  # None = non arrivato da Zapier, True/False = arrivato da Zapier
     assigned_agent_id: Optional[str] = None
     esito: Optional[str] = None  # Changed to string for dynamic values from lead_statuses
     note: Optional[str] = None
@@ -346,8 +346,8 @@ class LeadCreate(BaseModel):
     unit_id: Optional[str] = None  # NEW: Unit assignment
     commessa_id: Optional[str] = None  # NEW: Commessa assignment
     status: Optional[str] = None  # NEW: Dynamic status
-    privacy_consent: bool = False
-    marketing_consent: bool = False
+    privacy_consent: Optional[bool] = None  # None = non arrivato da Zapier, True/False = arrivato da Zapier
+    marketing_consent: Optional[bool] = None  # None = non arrivato da Zapier, True/False = arrivato da Zapier
     custom_fields: Dict[str, Any] = {}
 
 class LeadUpdate(BaseModel):
