@@ -44449,9 +44449,10 @@ startxref
         print(f"   🎯 OBIETTIVO: Verificare che il referente ora abbia unit_id salvato correttamente")
         print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
         print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
-        print(f"      • Referente 'prova' trovato: {'✅ SUCCESS' if referente_prova else '❌ FAILED'}")
-        print(f"      • Referente 'prova' unit_id: {'✅ POPULATED' if referente_prova and referente_prova.get('unit_id') else '❌ NOT SET'}")
-        print(f"      • Referente 'prova' is_active: {'✅ TRUE' if referente_prova and referente_prova.get('is_active') else '❌ FALSE'}")
+        ref_username = referente_prova.get('username') if referente_prova else 'none'
+        print(f"      • Referente '{ref_username}' trovato: {'✅ SUCCESS' if referente_prova else '❌ FAILED'}")
+        print(f"      • Referente '{ref_username}' unit_id: {'✅ POPULATED' if referente_prova and referente_prova.get('unit_id') else '❌ NOT SET'}")
+        print(f"      • Referente '{ref_username}' is_active: {'✅ TRUE' if referente_prova and referente_prova.get('is_active') else '❌ FALSE'}")
         print(f"      • Unit 'AGN' trovata: {'✅ SUCCESS' if unit_agn_id else '❌ FAILED'}")
         print(f"      • GET /api/users/referenti/{{unit_id}}: {'✅ SUCCESS (200)' if status == 200 else f'❌ FAILED ({status})'}")
         print(f"      • Authorization test: ✅ SUCCESS")
