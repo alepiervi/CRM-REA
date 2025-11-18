@@ -44337,9 +44337,9 @@ startxref
                     ref_unit_id = ref.get('unit_id', 'No unit_id')
                     print(f"         {i}. Username: {username}, Unit ID: {ref_unit_id}")
                     
-                    # Check if "prova" is in the results
-                    if username == 'prova':
-                        self.log_test("✅ Referente 'prova' FOUND in endpoint results", True, f"Username: {username}")
+                    # Check if our referente is in the results
+                    if username in ['prova', 'prova12'] and referente_prova and username == referente_prova.get('username'):
+                        self.log_test(f"✅ Referente '{username}' FOUND in endpoint results", True, f"Username: {username}")
                         
                         # Verify unit_id matches
                         if ref_unit_id == unit_agn_id:
@@ -44348,7 +44348,11 @@ startxref
                             self.log_test("❌ Unit IDs MISMATCH", False, f"Referente: {ref_unit_id}, Unit AGN: {unit_agn_id}")
                         break
                 else:
-                    self.log_test("❌ Referente 'prova' NOT in endpoint results", False, "Referente not returned by endpoint")
+                    if referente_prova:
+                        ref_username = referente_prova.get('username')
+                        self.log_test(f"❌ Referente '{ref_username}' NOT in endpoint results", False, "Referente not returned by endpoint")
+                    else:
+                        self.log_test("❌ No referente to check in endpoint results", False, "No referente found")
                     
             else:
                 self.log_test("⚠️ No referenti found for this unit", True, f"Empty list returned (this may be expected)")
