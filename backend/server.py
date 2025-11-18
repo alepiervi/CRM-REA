@@ -344,6 +344,7 @@ class LeadCreate(BaseModel):
     gruppo: Optional[str] = None  # Made optional to fix validation errors
     contenitore: Optional[str] = None  # Made optional to fix validation errors
     unit_id: Optional[str] = None  # NEW: Unit assignment
+    commessa_id: Optional[str] = None  # NEW: Commessa assignment
     status: Optional[str] = None  # NEW: Dynamic status
     privacy_consent: bool = False
     marketing_consent: bool = False
