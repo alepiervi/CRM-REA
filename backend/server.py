@@ -378,12 +378,14 @@ class Unit(BaseModel):
 
 class UnitCreate(BaseModel):
     nome: str
-    commessa_id: str
+    commessa_id: str  # Primary commessa
+    commesse_autorizzate: List[str] = []  # NEW: Additional commesse
     campagne_autorizzate: List[str] = []
 
 class UnitUpdate(BaseModel):
     nome: Optional[str] = None
     commessa_id: Optional[str] = None
+    commesse_autorizzate: Optional[List[str]] = None  # NEW: Additional commesse
     campagne_autorizzate: Optional[List[str]] = None
     is_active: Optional[bool] = None
 
