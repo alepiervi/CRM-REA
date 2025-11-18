@@ -45514,12 +45514,23 @@ startxref
                 
             # Verify dynamic value is persisted
             success, verify_dynamic, status = self.make_request(
-                'GET', f'leads/{lead_id}', 
+                'GET', 'leads', 
                 expected_status=200
             )
             
             if success and status == 200:
-                persisted_esito = verify_dynamic.get('esito')
+                # Find our specific lead in the list
+                all_leads_dynamic = verify_dynamic if isinstance(verify_dynamic, list) else []
+                dynamic_lead = None
+                for lead in all_leads_dynamic:
+                    if lead.get('id') == lead_id:
+                        dynamic_lead = lead
+                        break
+                
+                if dynamic_lead:
+                    persisted_esito = dynamic_lead.get('esito')
+                else:
+                    persisted_esito = None
                 if persisted_esito == "In Lavorazione":
                     self.log_test("✅ Dynamic esito value persisted", True, 
                         f"Custom esito '{persisted_esito}' saved correctly")
