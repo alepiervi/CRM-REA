@@ -46350,19 +46350,5 @@ if __name__ == "__main__":
         import traceback
         traceback.print_exc()
         result = False
-            print(f"   Tests run: {tester.tests_run}")
-            print(f"   Tests passed: {tester.tests_passed}")
-            print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
-            
-            if result:
-                print("🎉 ALL TESTS SUCCESSFUL!")
-            else:
-                print("❌ SOME TESTS FAILED!")
-                
-        except Exception as e:
-            print(f"❌ Test failed with exception: {e}")
-            import traceback
-            traceback.print_exc()
-            result = False
     
     exit(0 if result else 1)
