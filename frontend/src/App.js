@@ -5812,6 +5812,12 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   const [serviziPerCommessa, setServiziPerCommessa] = useState({}); // NEW: Servizi organizzati per commessa per responsabile_commessa
   const [referentiUnit, setReferentiUnit] = useState([]); // Referenti della Unit selezionata
   const { toast } = useToast();
+  
+  // DEBUG: Monitor referentiUnit changes
+  useEffect(() => {
+    console.log('🔍🔍🔍 referentiUnit STATE CHANGED:', referentiUnit);
+    console.log('🔍 referentiUnit.length:', referentiUnit.length);
+  }, [referentiUnit]);
 
   // NEW: Fetch servizi per una specifica commessa (per responsabile_commessa) - EditModal version
   const fetchServiziForCommessaEdit = async (commessaId) => {
