@@ -5338,42 +5338,42 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
             }).to_list(length=None)
             
             if agents:
-                    # Calculate agent workload and performance
-                    agent_scores = []
-                    for agent in agents:
-                        # Get agent's current lead count
-                        lead_count = await db["leads"].count_documents({
-                            "assigned_agent_id": agent["id"],
-                            "closed_at": None  # Only count open leads
-                        })
-                        
-                        # Get agent's average handling time
-                        agent_leads = await db["leads"].find({
-                            "assigned_agent_id": agent["id"],
-                            "tempo_gestione_minuti": {"$exists": True, "$ne": None}
-                        }).to_list(length=100)
-                        
-                        avg_time = 0
-                        if agent_leads:
-                            total_time = sum([l.get("tempo_gestione_minuti", 0) for l in agent_leads])
-                            avg_time = total_time / len(agent_leads)
-                        
-                        # Score: lower is better (less workload + faster handling)
-                        # Weight: 70% current workload, 30% avg handling time
-                        score = (lead_count * 0.7) + (avg_time / 60 * 0.3)  # Convert minutes to hours
-                        
-                        agent_scores.append({
-                            "agent_id": agent["id"],
-                            "score": score,
-                            "lead_count": lead_count,
-                            "avg_time": avg_time
-                        })
+                # Calculate agent workload and performance
+                agent_scores = []
+                for agent in agents:
+                    # Get agent's current lead count
+                    lead_count = await db["leads"].count_documents({
+                        "assigned_agent_id": agent["id"],
+                        "closed_at": None  # Only count open leads
+                    })
                     
-                    # Sort by score (ascending) and pick the best agent
-                    agent_scores.sort(key=lambda x: x["score"])
-                    assigned_agent_id = agent_scores[0]["agent_id"]
+                    # Get agent's average handling time
+                    agent_leads = await db["leads"].find({
+                        "assigned_agent_id": agent["id"],
+                        "tempo_gestione_minuti": {"$exists": True, "$ne": None}
+                    }).to_list(length=100)
                     
-                    logging.info(f"Lead auto-assigned to agent {assigned_agent_id} (score: {agent_scores[0]['score']:.2f})")
+                    avg_time = 0
+                    if agent_leads:
+                        total_time = sum([l.get("tempo_gestione_minuti", 0) for l in agent_leads])
+                        avg_time = total_time / len(agent_leads)
+                    
+                    # Score: lower is better (less workload + faster handling)
+                    # Weight: 70% current workload, 30% avg handling time
+                    score = (lead_count * 0.7) + (avg_time / 60 * 0.3)  # Convert minutes to hours
+                    
+                    agent_scores.append({
+                        "agent_id": agent["id"],
+                        "score": score,
+                        "lead_count": lead_count,
+                        "avg_time": avg_time
+                    })
+                
+                # Sort by score (ascending) and pick the best agent
+                agent_scores.sort(key=lambda x: x["score"])
+                assigned_agent_id = agent_scores[0]["agent_id"]
+                
+                logging.info(f"Lead auto-assigned to agent {assigned_agent_id} (score: {agent_scores[0]['score']:.2f})")
         
         # Set assigned agent if found
         if assigned_agent_id:
