@@ -44191,12 +44191,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the EXCEL EXPORT CONVERGENZA LINEA FISSA TEST AS REQUESTED
+        # Run the REFERENTE UNIT ID VERIFICATION TEST AS REQUESTED
         print("\n" + "="*80)
-        print("🎯 RUNNING EXCEL EXPORT CONVERGENZA LINEA FISSA TEST - AS REQUESTED")
+        print("🎯 RUNNING REFERENTE UNIT ID VERIFICATION TEST - AS REQUESTED")
         print("="*80)
         
-        excel_export_success = self.test_excel_export_convergenza_linea_fissa_offer()
+        referente_test_success = self.test_referente_unit_id_verification()
 
         # Print final summary
         print("\n" + "=" * 80)
