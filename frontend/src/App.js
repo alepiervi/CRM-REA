@@ -6311,10 +6311,9 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                   </p>
                 )}
               </div>
-            </>{/* Closing tag for agente && unit_id block */}
+            </>
           )}
           
-          {/* Province di Copertura - Moved outside and show only if formData.role === "agente" */}
           {formData.role === "agente" && (
             <>
 
