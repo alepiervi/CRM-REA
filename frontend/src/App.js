@@ -2703,6 +2703,14 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     };
     setSelectedLead(leadWithAgentName);
     setLeadEditData({
+      // Campi che possono essere vuoti da Zapier e quindi modificabili
+      nome: lead.nome || "",
+      cognome: lead.cognome || "",
+      telefono: lead.telefono || "",
+      email: lead.email || "",
+      provincia: lead.provincia || "",
+      campagna: lead.campagna || "",
+      // Altri campi editabili
       tipologia_abitazione: lead.tipologia_abitazione || "",
       indirizzo: lead.indirizzo || "",
       regione: lead.regione || "",
