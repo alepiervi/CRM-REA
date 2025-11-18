@@ -44754,12 +44754,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the REFERENTE UNIT ID VERIFICATION TEST AS REQUESTED
+        # Run the UNIT AGN CREATION TEST AS REQUESTED IN REVIEW
         print("\n" + "="*80)
-        print("🎯 RUNNING REFERENTE UNIT ID VERIFICATION TEST - AS REQUESTED")
+        print("🎯 RUNNING UNIT AGN CREATION TEST - AS REQUESTED IN REVIEW")
         print("="*80)
         
-        referente_test_success = self.test_referente_unit_id_verification_urgent()
+        unit_agn_test_success = self.test_unit_agn_creation_with_fotovoltaico()
 
         # Print final summary
         print("\n" + "=" * 80)
