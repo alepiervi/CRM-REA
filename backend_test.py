@@ -47733,12 +47733,12 @@ if __name__ == "__main__":
             print("Available tests: zapier_webhook, trova_id_agn")
     else:
         # Run the specific test requested in the review
-        print("🎯 RUNNING SPECIFIC TEST: Trova ID Unit AGN per Zapier Webhook")
+        print("🎯 RUNNING SPECIFIC TEST: Unit AGN Creation with Fotovoltaico")
         print(f"🌐 Base URL: {tester.base_url}")
         print("=" * 80)
         
         try:
-            result = tester.test_trova_id_unit_agn_zapier_webhook()
+            result = tester.test_unit_agn_creation_with_fotovoltaico()
             
             # Print summary
             print(f"\n📊 Final Test Results:")
