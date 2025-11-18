@@ -4374,10 +4374,16 @@ async def create_unit(unit: UnitCreate, current_user: User = Depends(get_current
         
         logging.info(f"Commessa found: {commessa.get('nome', 'N/A')}")
         
-        # Create unit
+        # Create unit with commesse_autorizzate
+        # Include primary commessa in commesse_autorizzate for consistency
+        commesse_autorizzate = unit.commesse_autorizzate.copy() if unit.commesse_autorizzate else []
+        if unit.commessa_id not in commesse_autorizzate:
+            commesse_autorizzate.append(unit.commessa_id)
+        
         unit_obj = Unit(
             nome=unit.nome,
             commessa_id=unit.commessa_id,
+            commesse_autorizzate=commesse_autorizzate,
             campagne_autorizzate=unit.campagne_autorizzate
         )
         
