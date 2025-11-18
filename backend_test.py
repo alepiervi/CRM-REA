@@ -44460,7 +44460,7 @@ startxref
         # Critical verification
         if referente_prova and referente_prova.get('unit_id') and status == 200:
             print(f"\n   🎉 CRITICAL VERIFICATION COMPLETE:")
-            print(f"      ✅ Il referente 'prova' HAS unit_id field properly saved in database")
+            print(f"      ✅ Il referente '{ref_username}' HAS unit_id field properly saved in database")
             print(f"      ✅ L'endpoint GET /api/users/referenti/{{unit_id}} funziona correttamente (200 OK)")
             print(f"      ✅ Authorization con Bearer token funziona")
             print(f"      ✅ Il problema precedente è stato RISOLTO!")
