@@ -4842,6 +4842,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
   const [servizi, setServizi] = useState([]);
   const [serviziDisponibili, setServiziDisponibili] = useState([]); // NEW: Servizi per UNIT/SUB selezionata
   const [serviziPerCommessa, setServiziPerCommessa] = useState({}); // NEW: Servizi organizzati per commessa per responsabile_commessa
+  const [referentiUnit, setReferentiUnit] = useState([]); // Referenti della Unit selezionata
   const { toast } = useToast();
 
   // NEW: Fetch servizi per una specifica commessa (per responsabile_commessa)
