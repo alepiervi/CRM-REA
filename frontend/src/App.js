@@ -2719,7 +2719,12 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   // NEW: Save lead edits
   const handleSaveLead = async () => {
     try {
-      await axios.put(`${API}/leads/${selectedLead.id}`, leadEditData);
+      const token = localStorage.getItem("token");
+      await axios.put(`${API}/leads/${selectedLead.id}`, leadEditData, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       toast({
         title: "Successo",
         description: "Lead aggiornato con successo",
