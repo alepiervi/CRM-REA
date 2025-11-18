@@ -45175,12 +45175,12 @@ startxref
             verification_results = []
             
             # Check tipologia_abitazione
-            if verified_lead.get('tipologia_abitazione') == 'singola':
-                verification_results.append("✅ tipologia_abitazione = 'singola'")
-                self.log_test("✅ tipologia_abitazione persisted", True, "Value: singola")
+            if verified_lead.get('tipologia_abitazione') == 'appartamento':
+                verification_results.append("✅ tipologia_abitazione = 'appartamento'")
+                self.log_test("✅ tipologia_abitazione persisted", True, "Value: appartamento")
             else:
                 verification_results.append(f"❌ tipologia_abitazione = '{verified_lead.get('tipologia_abitazione')}'")
-                self.log_test("❌ tipologia_abitazione not persisted", False, f"Expected: singola, Got: {verified_lead.get('tipologia_abitazione')}")
+                self.log_test("❌ tipologia_abitazione not persisted", False, f"Expected: appartamento, Got: {verified_lead.get('tipologia_abitazione')}")
             
             # Check indirizzo
             if verified_lead.get('indirizzo') == 'Via Test 123':
