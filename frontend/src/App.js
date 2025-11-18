@@ -3156,19 +3156,12 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                   <div>
                     <Label htmlFor="tipologia">Tipologia Abitazione</Label>
                     {isEditingLead ? (
-                      <Select
+                      <Input
+                        id="tipologia"
                         value={leadEditData.tipologia_abitazione}
-                        onValueChange={(value) => setLeadEditData({...leadEditData, tipologia_abitazione: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="singola">Singola</SelectItem>
-                          <SelectItem value="bifamiliare">Bifamiliare</SelectItem>
-                          <SelectItem value="condominio">Condominio</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        onChange={(e) => setLeadEditData({...leadEditData, tipologia_abitazione: e.target.value})}
+                        placeholder="Es: Appartamento, Villa, Casa indipendente..."
+                      />
                     ) : (
                       <p className="text-sm">{selectedLead.tipologia_abitazione || "N/A"}</p>
                     )}
