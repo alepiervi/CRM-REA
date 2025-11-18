@@ -228,7 +228,22 @@ Quando un lead arriva tramite webhook:
 
 ## 🧪 Test Webhook
 
-### Test con cURL:
+### **Test GET Webhook (Browser o cURL):**
+
+**Nel Browser (più semplice):**
+Apri questo URL nel browser (sostituisci con i tuoi dati):
+```
+https://leadmanager-21.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=TestNome&cognome=TestCognome&telefono=3331234567&email=test@example.com&provincia=Milano&commessa_id=abc123
+```
+
+**Con cURL:**
+```bash
+curl "https://tuo-dominio.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=Test&cognome=Lead&telefono=3331234567&email=test@example.com&provincia=Milano&commessa_id=abc123&campagna=TestCampaign"
+```
+
+---
+
+### **Test POST Webhook (cURL):**
 
 ```bash
 curl -X POST "https://tuo-dominio.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0" \
@@ -244,13 +259,15 @@ curl -X POST "https://tuo-dominio.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec
   }'
 ```
 
-**Risposta Attesa (200 OK):**
+---
+
+**Risposta Attesa (200 OK) per entrambi:**
 ```json
 {
-  "status": "success",
+  "success": true,
   "lead_id": "lead-uuid",
   "assigned_agent_id": "agent-uuid-or-null",
-  "message": "Lead created and assigned successfully"
+  "message": "Lead created and assigned to agent"
 }
 ```
 
