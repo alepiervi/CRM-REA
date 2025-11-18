@@ -3059,62 +3059,246 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                             {getAgentName(lead.assigned_agent_id)}
                           </span>
                         </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-2 border-t border-slate-100">
-                      <Button
-                        onClick={() => openLeadDetail(lead)}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        title="Visualizza dettagli"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        Vista
-                      </Button>
-                      {user.role === "admin" && (
-                        <Button
-                          onClick={() => deleteLead(lead.id, `${lead.nome} ${lead.cognome}`)}
-                          variant="destructive"
-                          size="sm"
-                          className="flex-1"
-                          title="Elimina lead"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Elimina
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Lead Detail Modal */}
-      {selectedLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
+{selectedLead && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Dettaglio Lead: {selectedLead.nome} {selectedLead.cognome}</CardTitle>
+              <div className="flex space-x-2">
+                {!isEditingLead && (
+                  <Button onClick={() => setIsEditingLead(true)} variant="outline" size="sm">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Modifica
+                  </Button>
+                )}
+                <Button onClick={() => { setSelectedLead(null); setIsEditingLead(false); }} variant="ghost" size="sm">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Nome</Label>
-                  <p className="text-sm">{selectedLead.nome}</p>
+            <CardContent className="space-y-6">
+              {/* Sezione Dati da Zapier - Read Only */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-700 mb-3 flex items-center">
+                  <Lock className="w-5 h-5 mr-2 text-slate-500" />
+                  Dati da Zapier (Non Modificabili)
+                </h3>
+                <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Nome</Label>
+                    <p className="text-sm font-medium">{selectedLead.nome}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Cognome</Label>
+                    <p className="text-sm font-medium">{selectedLead.cognome}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Telefono</Label>
+                    <p className="text-sm">{selectedLead.telefono}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Email</Label>
+                    <p className="text-sm">{selectedLead.email}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Provincia</Label>
+                    <p className="text-sm">{selectedLead.provincia}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-slate-600">Campagna</Label>
+                    <p className="text-sm">{selectedLead.campagna || "N/A"}</p>
+                  </div>
                 </div>
-                <div>
-                  <Label>Cognome</Label>
-                  <p className="text-sm">{selectedLead.cognome}</p>
+              </div>
+
+              {/* Sezione Dati Modificabili */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-700 mb-3">Informazioni Aggiuntive</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="tipologia">Tipologia Abitazione</Label>
+                    {isEditingLead ? (
+                      <Select
+                        value={leadEditData.tipologia_abitazione}
+                        onValueChange={(value) => setLeadEditData({...leadEditData, tipologia_abitazione: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleziona" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="singola">Singola</SelectItem>
+                          <SelectItem value="bifamiliare">Bifamiliare</SelectItem>
+                          <SelectItem value="condominio">Condominio</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-sm">{selectedLead.tipologia_abitazione || "N/A"}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="indirizzo">Indirizzo</Label>
+                    {isEditingLead ? (
+                      <Input
+                        id="indirizzo"
+                        value={leadEditData.indirizzo}
+                        onChange={(e) => setLeadEditData({...leadEditData, indirizzo: e.target.value})}
+                      />
+                    ) : (
+                      <p className="text-sm">{selectedLead.indirizzo || "N/A"}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="regione">Regione</Label>
+                    {isEditingLead ? (
+                      <Input
+                        id="regione"
+                        value={leadEditData.regione}
+                        onChange={(e) => setLeadEditData({...leadEditData, regione: e.target.value})}
+                      />
+                    ) : (
+                      <p className="text-sm">{selectedLead.regione || "N/A"}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="url">URL Sorgente</Label>
+                    {isEditingLead ? (
+                      <Input
+                        id="url"
+                        value={leadEditData.url}
+                        onChange={(e) => setLeadEditData({...leadEditData, url: e.target.value})}
+                      />
+                    ) : (
+                      <p className="text-sm">{selectedLead.url || "N/A"}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="otp">OTP</Label>
+                    {isEditingLead ? (
+                      <Input
+                        id="otp"
+                        value={leadEditData.otp}
+                        onChange={(e) => setLeadEditData({...leadEditData, otp: e.target.value})}
+                      />
+                    ) : (
+                      <p className="text-sm">{selectedLead.otp || "N/A"}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="inserzione">Inserzione</Label>
+                    {isEditingLead ? (
+                      <Input
+                        id="inserzione"
+                        value={leadEditData.inserzione}
+                        onChange={(e) => setLeadEditData({...leadEditData, inserzione: e.target.value})}
+                      />
+                    ) : (
+                      <p className="text-sm">{selectedLead.inserzione || "N/A"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <Label>Telefono</Label>
-                  <p className="text-sm">{selectedLead.telefono}</p>
+
+                {/* Consensi Privacy */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="privacy_consent"
+                      checked={isEditingLead ? leadEditData.privacy_consent : selectedLead.privacy_consent}
+                      onChange={(e) => isEditingLead && setLeadEditData({...leadEditData, privacy_consent: e.target.checked})}
+                      disabled={!isEditingLead}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="privacy_consent">Consenso Privacy</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="marketing_consent"
+                      checked={isEditingLead ? leadEditData.marketing_consent : selectedLead.marketing_consent}
+                      onChange={(e) => isEditingLead && setLeadEditData({...leadEditData, marketing_consent: e.target.checked})}
+                      disabled={!isEditingLead}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="marketing_consent">Consenso Marketing</Label>
+                  </div>
                 </div>
+              </div>
+
+              {/* Sezione Note e Stato */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-700 mb-3">Lavorazione Lead</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="stato">Stato</Label>
+                    {isEditingLead ? (
+                      <Select
+                        value={leadEditData.esito}
+                        onValueChange={(value) => setLeadEditData({...leadEditData, esito: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleziona stato" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {leadStatuses.map(status => (
+                            <SelectItem key={status.id} value={status.nome}>
+                              {status.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-sm">{selectedLead.esito || "N/A"}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="note">Note</Label>
+                    {isEditingLead ? (
+                      <textarea
+                        id="note"
+                        value={leadEditData.note}
+                        onChange={(e) => setLeadEditData({...leadEditData, note: e.target.value})}
+                        className="w-full p-2 border rounded-md"
+                        rows="4"
+                      />
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{selectedLead.note || "Nessuna nota"}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Assegnato a - Solo Admin e Referente */}
+              {(user?.role === "admin" || user?.role === "referente") && (
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Assegnato a</Label>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Users className="w-4 h-4 text-slate-400" />
+                    <p className={selectedLead.assigned_agent_id ? "text-green-700 font-medium" : "text-slate-500"}>
+                      {selectedLead.assigned_agent_name || "Non assegnato"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button onClick={() => { setSelectedLead(null); setIsEditingLead(false); }} variant="outline">
+                Chiudi
+              </Button>
+              {isEditingLead && (
+                <div className="flex space-x-2">
+                  <Button onClick={() => { setIsEditingLead(false); setLeadEditData({...selectedLead}); }} variant="outline">
+                    Annulla
+                  </Button>
+                  <Button onClick={handleSaveLead}>
+                    <Save className="w-4 h-4 mr-2" />
+                    Salva Modifiche
+                  </Button>
+                </div>
+              )}
+            </CardFooter>
+          </Card>
+        </div>
+      )}                </div>
                 <div>
                   <Label>Email</Label>
                   <p className="text-sm">{selectedLead.email}</p>
