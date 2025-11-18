@@ -5384,13 +5384,12 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
                 
                 logging.info(f"Lead auto-assigned to agent {assigned_agent_id} (score: {agent_scores[0]['score']:.2f})")
         
-        # Set assigned agent if found
-        if assigned_agent_id:
-            lead_data.assigned_agent_id = assigned_agent_id
-        
         # Create the lead
         lead_obj = Lead(**lead_data.dict())
+        
+        # Set assigned agent if found (after creating Lead object)
         if assigned_agent_id:
+            lead_obj.assigned_agent_id = assigned_agent_id
             lead_obj.assigned_at = datetime.now(timezone.utc)
         
         await db["leads"].insert_one(lead_obj.dict())
@@ -5522,13 +5521,12 @@ async def webhook_receive_lead_get(
                 
                 logging.info(f"Lead auto-assigned to agent {assigned_agent_id} (score: {agent_scores[0]['score']:.2f})")
         
-        # Set assigned agent if found
-        if assigned_agent_id:
-            lead_data.assigned_agent_id = assigned_agent_id
-        
         # Create the lead
         lead_obj = Lead(**lead_data.dict())
+        
+        # Set assigned agent if found (after creating Lead object)
         if assigned_agent_id:
+            lead_obj.assigned_agent_id = assigned_agent_id
             lead_obj.assigned_at = datetime.now(timezone.utc)
         
         await db["leads"].insert_one(lead_obj.dict())
