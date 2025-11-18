@@ -2701,6 +2701,19 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       assigned_agent_name: getAgentName(lead.assigned_agent_id)
     };
     setSelectedLead(leadWithAgentName);
+    setLeadEditData({
+      tipologia_abitazione: lead.tipologia_abitazione || "",
+      indirizzo: lead.indirizzo || "",
+      regione: lead.regione || "",
+      url: lead.url || "",
+      otp: lead.otp || "",
+      inserzione: lead.inserzione || "",
+      privacy_consent: lead.privacy_consent || false,
+      marketing_consent: lead.marketing_consent || false,
+      esito: lead.esito || "",
+      note: lead.note || ""
+    });
+    setIsEditingLead(false);
   };
 
   const updateLead = async (leadId, esito, note, customFields, status) => { // NEW: Added status parameter
