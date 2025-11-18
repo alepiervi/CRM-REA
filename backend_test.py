@@ -47301,9 +47301,12 @@ def main():
         elif test_name == "nextcloud_download":
             success = tester.test_nextcloud_document_download_endpoint()
             return 0 if success else 1
+        elif test_name == "lead_update":
+            success = tester.test_lead_update_all_fields_rapido()
+            return 0 if success else 1
         else:
             print(f"Unknown test: {test_name}")
-            print("Available tests: mobile_fastweb_fix, cascading_fix, fastweb_delete, nextcloud_download")
+            print("Available tests: mobile_fastweb_fix, cascading_fix, fastweb_delete, nextcloud_download, lead_update")
             return 1
     else:
         # Run the mobile fastweb fix test as default (as requested in review)
