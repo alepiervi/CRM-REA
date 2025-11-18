@@ -3998,9 +3998,20 @@ const EditLeadStatusModal = ({ status, onClose, onSuccess, units }) => {
 
 // Lead Detail Modal Component
 const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const [esito, setEsito] = useState(lead.esito || "");
   const [note, setNote] = useState(lead.note || "");
   const [customFieldValues, setCustomFieldValues] = useState(lead.custom_fields || {});
+  const [editableData, setEditableData] = useState({
+    tipologia_abitazione: lead.tipologia_abitazione || "",
+    indirizzo: lead.indirizzo || "",
+    regione: lead.regione || "",
+    url: lead.url || "",
+    otp: lead.otp || "",
+    inserzione: lead.inserzione || "",
+    privacy_consent: lead.privacy_consent || false,
+    marketing_consent: lead.marketing_consent || false,
+  });
 
   const handleSave = () => {
     onUpdate(lead.id, esito, note, customFieldValues);
