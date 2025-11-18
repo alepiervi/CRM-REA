@@ -4915,12 +4915,14 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       
       // Fetch all servizi for the authorized commesse of this unit
       const allServizi = [];
-      for (const commessaId of selectedUnitObj.commesse_autorizzate) {
-        try {
-          const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
-          allServizi.push(...response.data);
-        } catch (error) {
-          console.error(`Error fetching servizi for commessa ${commessaId}:`, error);
+      if (selectedUnitObj.commesse_autorizzate && selectedUnitObj.commesse_autorizzate.length > 0) {
+        for (const commessaId of selectedUnitObj.commesse_autorizzate) {
+          try {
+            const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+            allServizi.push(...response.data);
+          } catch (error) {
+            console.error(`Error fetching servizi for commessa ${commessaId}:`, error);
+          }
         }
       }
       
