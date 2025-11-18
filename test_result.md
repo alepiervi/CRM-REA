@@ -146,73 +146,94 @@ RACCOMANDAZIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Zapier webhook integration failure: No lead created despite 'success' status"
 
-current_problem_statement: "TEST ENDPOINT REFERENTI E VERIFICA DATI UTENTI
+current_problem_statement: "VERIFICA E AGGIORNA AGENTI PER NUOVA UNIT AGN
 
-OBIETTIVO: Capire perché il dropdown Referenti è vuoto quando si crea un Agente.
+OBIETTIVO: Verificare perché l'Agente non vede i lead e aggiornare la configurazione
 
 CONTESTO:
-- L'utente ha creato utenti con ruolo "Referente" nel sistema
-- Quando crea un nuovo "Agente" e seleziona una Unit, il dropdown Referenti è vuoto
-- L'endpoint backend è: GET /api/users/referenti/{unit_id}
+- Nuova Unit AGN creata con ID: 0298e80d-4f7d-487d-8d25-f1147f7e7847
+- Lead vengono creati dal webhook
+- Agente accede ma non vede i lead
 
 TEST DA ESEGUIRE:
 
 1. **Login Admin** (admin/admin123)
 
-2. **GET /api/units** - Prendi la lista delle Unit disponibili:
-   - Annota l'ID della prima Unit disponibile (es: unit_id_1)
-
-3. **GET /api/users** - Prendi tutti gli utenti:
-   - Filtra per ruolo "referente"
-   - Per ogni referente, mostra:
+2. **GET /api/users** - Trova tutti gli Agenti:
+   - Filtra per role="agente"
+   - Per ogni agente mostra:
+     * id
      * username
      * email
-     * role
-     * unit_id (se presente)
+     * unit_id (CRITICO!)
+     * provinces
      * is_active
-   - Verifica se ci sono referenti con il ruolo "referente"
 
-4. **GET /api/users/referenti/{unit_id_1}** - Testa l'endpoint con la Unit ID:
-   - Usa la Unit ID del punto 2
-   - Deve restituire la lista dei referenti per quella Unit
-   - Se vuota, significa che nessun referente è associato a quella Unit
+3. **GET /api/leads** - Verifica lead creati:
+   - Mostra gli ultimi 5 lead
+   - Per ogni lead mostra:
+     * id
+     * nome
+     * cognome
+     * unit_id (deve essere: 0298e80d-4f7d-487d-8d25-f1147f7e7847)
+     * assigned_agent_id
+     * provincia
 
-5. **ANALISI**:
-   - Se GET /api/users mostra referenti MA GET /api/users/referenti/{unit_id} è vuoto:
-     → Il referente esiste ma NON ha `unit_id` impostato o ha un `unit_id` diverso
-   - Se GET /api/users NON mostra referenti:
-     → Non ci sono utenti con ruolo "referente" nel sistema
+4. **DIAGNOSI:**
+   - Se l'agente ha unit_id DIVERSO dalla nuova Unit AGN → Devo aggiornarlo
+   - Se l'agente NON ha provinces configurate → Devo aggiungerle
+   - Se i lead non sono assegnati → Spiega perché (mancanza provincia match)
 
-FOCUS CRITICO: 
-- Devo verificare se i referenti esistenti hanno il campo `unit_id` correttamente popolato
-- Se il referente non ha `unit_id`, non verrà trovato dall'endpoint filtrato
+5. **FIX (se necessario):**
+   - Se trovi agente con vecchio unit_id, aggiornalo:
+     PUT /api/users/{agent_id}
+     ```json
+     {
+       "unit_id": "0298e80d-4f7d-487d-8d25-f1147f7e7847"
+     }
+     ```
+
+FOCUS CRITICO:
+- Identificare quale agente sta usando l'utente
+- Verificare se ha il nuovo unit_id
+- Aggiornarlo se necessario
 
 RISULTATI TEST COMPLETATI:
 ✅ Admin login (admin/admin123) - SUCCESS
-✅ GET /api/units - SUCCESS: Found 1 unit (AGN, ID: 251eb0e5...)
-✅ GET /api/users - SUCCESS: Found 23 total users, 1 with role 'referente'
-❌ CRITICAL ISSUE FOUND: Referente 'prova' has NO unit_id set (Unit ID: NOT SET)
-✅ GET /api/users/referenti/{unit_id} - SUCCESS but returns 0 referenti (empty list)
+✅ GET /api/users - SUCCESS: Found 24 total users, 1 agenti
+✅ AGENTE IDENTIFICATO: 'prova13' (ID: b9b8a678-d8a2-42c8-99cf-841e3da6fc54)
+❌ CRITICAL ISSUE FOUND: Agente 'prova13' has WRONG unit_id (Current: 251eb0e5..., Required: 0298e80d...)
+✅ Agente 'prova13' has provinces configured (109 provinces)
+✅ GET /api/leads - SUCCESS: Found 4 total leads
+✅ LEADS WITH TARGET UNIT AGN: Found 2 leads with correct unit_id (0298e80d-4f7d-487d-8d25-f1147f7e7847)
+❌ ALL LEADS UNASSIGNED: 4 leads have no assigned_agent_id
 
 ROOT CAUSE IDENTIFIED:
-❌ BACKEND DATA ISSUE - PROBLEMA LOCALIZZATO IN: USER DATA
-- Il referente 'prova' esiste nel sistema con ruolo 'referente'
-- MA il campo unit_id è NULL/vuoto (NOT SET)
-- L'endpoint /api/users/referenti/{unit_id} filtra correttamente per unit_id
-- Poiché il referente non ha unit_id impostato, non viene trovato dal filtro
+❌ AGENT CONFIGURATION ISSUE - PROBLEMA LOCALIZZATO IN: AGENT UNIT_ID
+- L'agente 'prova13' esiste nel sistema con ruolo 'agente'
+- MA ha unit_id SBAGLIATO (251eb0e5... invece di 0298e80d...)
+- I lead con la nuova Unit AGN esistono (2 su 4 lead)
+- I lead non vengono assegnati perché l'agente ha unit_id diverso
+
+FIX APPLICATO:
+✅ AGENT UPDATE SUCCESS: Aggiornato agente 'prova13' con nuovo unit_id
+✅ PUT /api/users/{agent_id} - Status: 200 OK
+✅ Unit ID FIXED: Agente ora ha unit_id corretto (0298e80d-4f7d-487d-8d25-f1147f7e7847)
+✅ Provinces PRESERVED: Agente mantiene le 109 provinces configurate
 
 DIAGNOSI FINALE:
-1. ✅ L'endpoint backend funziona correttamente
-2. ❌ Il problema è nei DATI: referenti senza unit_id assegnato
-3. ✅ Il filtro per unit_id funziona come previsto
-4. ❌ I referenti devono avere unit_id popolato per apparire nel dropdown
+1. ✅ Il sistema backend funziona correttamente
+2. ✅ I lead vengono creati con il nuovo unit_id corretto
+3. ❌ L'agente aveva unit_id sbagliato → RISOLTO
+4. ✅ L'agente ora dovrebbe vedere i lead della nuova Unit AGN
 
-SOLUZIONE RICHIESTA:
-- Assegnare unit_id ai referenti esistenti
-- Verificare che durante creazione/modifica utenti referenti il campo unit_id venga impostato
-- Implementare validazione per assicurare che referenti abbiano sempre unit_id
+RACCOMANDAZIONI:
+1. Verificare webhook crea lead con unit_id corretto: 0298e80d-4f7d-487d-8d25-f1147f7e7847
+2. Controllare logica assegnazione lead basata su province match
+3. Testare login agente per verificare che ora veda i lead
+4. Monitorare attività webhook per nuova creazione lead
 
-STATO: PROBLEMA IDENTIFICATO - Backend funziona, dati mancanti: referenti senza unit_id"
+STATO: PROBLEMA RISOLTO - Agente aggiornato con nuovo unit_id, dovrebbe ora vedere i lead"
 
 previous_problem_statement: "TEST COMPLETO E2E - SISTEMA LEAD CON UNIT
 
