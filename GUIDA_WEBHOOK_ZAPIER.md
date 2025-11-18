@@ -39,8 +39,14 @@ Il sistema è stato aggiornato per utilizzare un'architettura basata su **Commes
 
 ### 1️⃣ Ottieni l'URL del Webhook
 
-Ogni Unit ha un webhook univoco:
+Ogni Unit ha un webhook univoco disponibile sia in **GET** che in **POST**:
 
+**GET Webhook (Consigliato per Zapier e redirect URL):**
+```
+https://tuo-dominio.com/api/webhook/{unit_id}?nome=Mario&cognome=Rossi&telefono=3331234567&email=mario@example.com&provincia=Milano&commessa_id=abc123
+```
+
+**POST Webhook (Per integrazioni avanzate):**
 ```
 https://tuo-dominio.com/api/webhook/{unit_id}
 ```
@@ -50,9 +56,9 @@ https://tuo-dominio.com/api/webhook/{unit_id}
 2. Trova la Unit desiderata (es. "AGN")
 3. Copia l'ID della Unit (visibile nella lista o nei dettagli)
 
-**Esempio:**
+**Esempio GET completo:**
 ```
-https://leadmanager-21.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0
+https://leadmanager-21.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=Mario&cognome=Rossi&telefono=3331234567&email=mario@example.com&provincia=Milano&commessa_id=abc123-def456&campagna=TestCampaign
 ```
 
 ---
