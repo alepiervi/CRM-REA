@@ -146,17 +146,26 @@ RACCOMANDAZIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Zapier webhook integration failure: No lead created despite 'success' status"
 
-current_problem_statement: "TEST E2E MODAL EDITABILE LEAD - Verifica completa funzionalità modifica lead
+current_problem_statement: "TEST RAPIDO AGGIORNAMENTO LEAD CON NUOVI CAMPI - COMPLETATO CON SUCCESSO
 
-OBIETTIVO:
-Testare il modal dei dettagli lead con funzionalità di modifica per verificare che tutto funzioni correttamente.
+OBIETTIVO RAGGIUNTO:
+✅ Testato che l'endpoint PUT /api/leads/{id} ora accetti correttamente tutti i campi editabili inclusi i nuovi campi aggiunti.
 
-CONTESTO:
-- Ho appena implementato il modal editabile per i lead
-- Campi da Zapier devono essere SOLA LETTURA
-- Altri campi sono editabili in modalità modifica
-- handleSaveLead include autenticazione JWT
-- Backend testing conferma endpoint PUT /api/leads/{id} funzionante (80% success)
+CONTESTO COMPLETATO:
+✅ Ho aggiornato il modello LeadUpdate per includere: url, otp, inserzione, privacy_consent, marketing_consent
+✅ Ho cambiato tipologia_abitazione e esito da enum a stringhe per permettere valori dinamici
+✅ L'utente può ora configurare gli stati lead dinamicamente dal database
+✅ Backend testing conferma endpoint PUT /api/leads/{id} funzionante (100% success)
+
+RISULTATI TEST COMPLETATI:
+✅ PUT /api/leads/{id} ritorna 200 OK (NON 422)
+✅ Tutti i 10 campi editabili sono accettati dal backend
+✅ Tutti i campi sono persistiti correttamente nel database
+✅ privacy_consent e marketing_consent funzionano correttamente
+✅ esito accetta valori dinamici (non solo enum hardcoded)
+✅ Nessun errore di validazione Pydantic
+
+STATO: COMPLETATO CON SUCCESSO - Backend ready for frontend integration
 
 URL: https://nureal-crm-1.preview.emergentagent.com
 
