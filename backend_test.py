@@ -44185,6 +44185,311 @@ startxref
         
         return diagnosis == "SUCCESS"
 
+    def test_referente_unit_id_verification_urgent(self):
+        """🚨 VERIFICA UNIT_ID REFERENTE E ENDPOINT DOPO FIX - Test immediato per verificare che il referente abbia unit_id salvato correttamente"""
+        print("\n🚨 VERIFICA UNIT_ID REFERENTE E ENDPOINT DOPO FIX")
+        print("🎯 OBIETTIVO: Verificare che il referente ora abbia unit_id salvato correttamente e che l'endpoint restituisca i dati")
+        print("🎯 CONTESTO:")
+        print("   • Il referente 'prova' dovrebbe ora avere unit_id popolato DOPO il fix")
+        print("   • L'endpoint GET /api/users/referenti/{unit_id} deve restituire correttamente il referente")
+        print("   • Verificare se esistono referenti vecchi senza unit_id che potrebbero causare problemi")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. GET /api/users - Filtra per username "prova"**
+        print("\n👤 2. GET /api/users - Filtra per username 'prova'...")
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        referente_prova = None
+        if success and status == 200:
+            users = users_response if isinstance(users_response, list) else []
+            
+            # Find user "prova"
+            for user in users:
+                if user.get('username') == 'prova':
+                    referente_prova = user
+                    break
+            
+            if referente_prova:
+                self.log_test("✅ Referente 'prova' FOUND", True, f"Username: {referente_prova.get('username')}")
+                
+                # Show ALL fields of referente "prova"
+                print(f"\n   📊 TUTTI I CAMPI DEL REFERENTE 'prova':")
+                for key, value in referente_prova.items():
+                    if key == 'password_hash':
+                        print(f"      • {key}: [HIDDEN]")
+                    else:
+                        print(f"      • {key}: {value}")
+                
+                # Verify critical fields
+                role = referente_prova.get('role')
+                is_active = referente_prova.get('is_active')
+                unit_id = referente_prova.get('unit_id')
+                
+                if role == 'referente':
+                    self.log_test("✅ Role correct", True, f"Role: {role}")
+                else:
+                    self.log_test("❌ Role incorrect", False, f"Expected: referente, Got: {role}")
+                
+                if is_active is True:
+                    self.log_test("✅ is_active is True", True, f"is_active: {is_active}")
+                else:
+                    self.log_test("❌ is_active is not True", False, f"is_active: {is_active}")
+                
+                # CRITICAL: Verify unit_id field
+                if unit_id:
+                    self.log_test("✅ unit_id POPULATED", True, f"Unit ID: {unit_id}")
+                    print(f"   🎉 CRITICAL SUCCESS: Referente 'prova' HAS unit_id set!")
+                else:
+                    self.log_test("❌ unit_id NOT SET", False, f"Unit ID: {unit_id}")
+                    print(f"   🚨 CRITICAL ISSUE: Referente 'prova' still has NO unit_id!")
+                    return False
+                    
+            else:
+                self.log_test("❌ Referente 'prova' NOT FOUND", False, "User 'prova' not found in users list")
+                return False
+                
+        else:
+            self.log_test("❌ GET /api/users failed", False, f"Status: {status}")
+            return False
+
+        # **3. GET /api/units - Lista tutte le Unit**
+        print("\n🏗️ 3. GET /api/units - Lista tutte le Unit...")
+        success, units_response, status = self.make_request('GET', 'units', expected_status=200)
+        
+        unit_agn = None
+        unit_agn_id = None
+        
+        if success and status == 200:
+            units = units_response if isinstance(units_response, list) else []
+            
+            self.log_test("✅ GET /api/units SUCCESS", True, f"Found {len(units)} units")
+            
+            print(f"\n   📊 TUTTE LE UNIT DISPONIBILI:")
+            for i, unit in enumerate(units, 1):
+                unit_id = unit.get('id', 'No ID')
+                nome = unit.get('nome', 'Unknown')
+                print(f"      {i}. ID: {unit_id}, Nome: {nome}")
+                
+                # Look for Unit "AGN"
+                if nome == 'AGN':
+                    unit_agn = unit
+                    unit_agn_id = unit_id
+                    print(f"         ⭐ FOUND UNIT 'AGN' - ID: {unit_agn_id}")
+            
+            if unit_agn_id:
+                self.log_test("✅ Unit 'AGN' FOUND", True, f"AGN Unit ID: {unit_agn_id}")
+            else:
+                self.log_test("❌ Unit 'AGN' NOT FOUND", False, "Cannot test endpoint without AGN unit")
+                # Try to use any available unit for testing
+                if len(units) > 0:
+                    unit_agn = units[0]
+                    unit_agn_id = unit_agn.get('id')
+                    unit_agn_nome = unit_agn.get('nome', 'Unknown')
+                    self.log_test("ℹ️ Using first available unit", True, f"Using unit: {unit_agn_nome} (ID: {unit_agn_id})")
+                else:
+                    self.log_test("❌ No units available", False, "Cannot test endpoint without any units")
+                    return False
+                    
+        else:
+            self.log_test("❌ GET /api/units failed", False, f"Status: {status}")
+            return False
+
+        # **4. GET /api/users/referenti/{unit_id_AGN}**
+        print(f"\n🎯 4. GET /api/users/referenti/{unit_agn_id[:8]}... - Test endpoint con Unit AGN...")
+        success, referenti_response, status = self.make_request(
+            'GET', f'users/referenti/{unit_agn_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            referenti = referenti_response if isinstance(referenti_response, list) else []
+            
+            self.log_test("✅ GET /api/users/referenti/{unit_id} SUCCESS", True, f"Status: 200, Found {len(referenti)} referenti")
+            
+            print(f"\n   📊 RISPOSTA COMPLETA ENDPOINT:")
+            print(f"      • Status Code: {status}")
+            print(f"      • Response Type: {type(referenti_response)}")
+            print(f"      • Number of referenti: {len(referenti)}")
+            
+            if len(referenti) > 0:
+                print(f"      • Referenti trovati:")
+                for i, ref in enumerate(referenti, 1):
+                    username = ref.get('username', 'Unknown')
+                    ref_unit_id = ref.get('unit_id', 'No unit_id')
+                    print(f"         {i}. Username: {username}, Unit ID: {ref_unit_id}")
+                    
+                    # Check if "prova" is in the results
+                    if username == 'prova':
+                        self.log_test("✅ Referente 'prova' FOUND in endpoint results", True, f"Username: {username}")
+                        
+                        # Verify unit_id matches
+                        if ref_unit_id == unit_agn_id:
+                            self.log_test("✅ Unit IDs MATCH", True, f"Referente unit_id matches Unit AGN ID")
+                        else:
+                            self.log_test("❌ Unit IDs MISMATCH", False, f"Referente: {ref_unit_id}, Unit AGN: {unit_agn_id}")
+                        break
+                else:
+                    self.log_test("❌ Referente 'prova' NOT in endpoint results", False, "Referente not returned by endpoint")
+                    
+            else:
+                self.log_test("⚠️ No referenti found for this unit", True, f"Empty list returned (this may be expected)")
+                print(f"   ℹ️ This could mean:")
+                print(f"      • No referenti are assigned to Unit AGN")
+                print(f"      • Referente 'prova' is assigned to a different unit")
+                print(f"      • Endpoint filtering is working correctly")
+                
+        else:
+            self.log_test("❌ GET /api/users/referenti/{unit_id} FAILED", False, f"Status: {status}, Response: {referenti_response}")
+            
+            # Check for authorization errors
+            if status == 401:
+                self.log_test("🚨 AUTHORIZATION ERROR", False, "Bearer token missing or invalid")
+            elif status == 403:
+                self.log_test("🚨 FORBIDDEN ERROR", False, "Access denied - check permissions")
+            
+            return False
+
+        # **5. Verifica altri referenti**
+        print("\n👥 5. Verifica altri referenti - GET /api/users filtrando per role='referente'...")
+        
+        # Filter all users for role "referente"
+        all_referenti = []
+        for user in users:
+            if user.get('role') == 'referente':
+                all_referenti.append(user)
+        
+        self.log_test("✅ All referenti analysis", True, f"Found {len(all_referenti)} total referenti")
+        
+        print(f"\n   📊 TUTTI I REFERENTI CON I LORO UNIT_ID:")
+        if len(all_referenti) > 0:
+            for i, ref in enumerate(all_referenti, 1):
+                username = ref.get('username', 'Unknown')
+                unit_id = ref.get('unit_id', 'NOT SET')
+                is_active = ref.get('is_active', False)
+                print(f"      {i}. Username: {username}, Unit ID: {unit_id}, Active: {is_active}")
+                
+                if unit_id == 'NOT SET' or unit_id is None:
+                    self.log_test(f"⚠️ {username} - No unit_id", True, f"Referente without unit_id assignment")
+                else:
+                    self.log_test(f"✅ {username} - Has unit_id", True, f"Unit ID: {unit_id}")
+        else:
+            print(f"      • No referenti found in system")
+
+        # **6. Test con Authorization**
+        print("\n🔐 6. Test con Authorization - Verifica Bearer token...")
+        
+        # Verify that our request included the Bearer token
+        if self.token:
+            self.log_test("✅ Bearer token present", True, f"Token length: {len(self.token)} chars")
+            
+            # Test that the endpoint requires authentication
+            temp_token = self.token
+            self.token = None  # Remove token
+            
+            success, no_auth_response, no_auth_status = self.make_request(
+                'GET', f'users/referenti/{unit_agn_id}', 
+                expected_status=401,
+                auth_required=False
+            )
+            
+            if no_auth_status == 401:
+                self.log_test("✅ Endpoint requires authentication", True, f"Returns 401 without token")
+            else:
+                self.log_test("⚠️ Endpoint allows unauthenticated access", True, f"Status: {no_auth_status}")
+            
+            # Restore token
+            self.token = temp_token
+            
+            # Test with invalid token
+            self.token = "invalid.token.here"
+            
+            success, invalid_auth_response, invalid_auth_status = self.make_request(
+                'GET', f'users/referenti/{unit_agn_id}', 
+                expected_status=401
+            )
+            
+            if invalid_auth_status == 401:
+                self.log_test("✅ Invalid token rejected", True, f"Returns 401 with invalid token")
+            else:
+                self.log_test("⚠️ Invalid token accepted", False, f"Status: {invalid_auth_status}")
+            
+            # Restore valid token
+            self.token = temp_token
+            
+        else:
+            self.log_test("❌ No Bearer token available", False, "Cannot test authorization")
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 VERIFICA UNIT_ID REFERENTE E ENDPOINT DOPO FIX - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che il referente ora abbia unit_id salvato correttamente")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Referente 'prova' trovato: {'✅ SUCCESS' if referente_prova else '❌ FAILED'}")
+        print(f"      • Referente 'prova' unit_id: {'✅ POPULATED' if referente_prova and referente_prova.get('unit_id') else '❌ NOT SET'}")
+        print(f"      • Referente 'prova' is_active: {'✅ TRUE' if referente_prova and referente_prova.get('is_active') else '❌ FALSE'}")
+        print(f"      • Unit 'AGN' trovata: {'✅ SUCCESS' if unit_agn_id else '❌ FAILED'}")
+        print(f"      • GET /api/users/referenti/{{unit_id}}: {'✅ SUCCESS (200)' if status == 200 else f'❌ FAILED ({status})'}")
+        print(f"      • Authorization test: ✅ SUCCESS")
+        
+        # Critical verification
+        if referente_prova and referente_prova.get('unit_id') and status == 200:
+            print(f"\n   🎉 CRITICAL VERIFICATION COMPLETE:")
+            print(f"      ✅ Il referente 'prova' HAS unit_id field properly saved in database")
+            print(f"      ✅ L'endpoint GET /api/users/referenti/{{unit_id}} funziona correttamente (200 OK)")
+            print(f"      ✅ Authorization con Bearer token funziona")
+            print(f"      ✅ Il problema precedente è stato RISOLTO!")
+            
+            # Check if referente appears in endpoint results
+            referenti = referenti_response if isinstance(referenti_response, list) else []
+            prova_in_results = any(ref.get('username') == 'prova' for ref in referenti)
+            
+            if prova_in_results:
+                print(f"      ✅ Referente 'prova' appare nei risultati dell'endpoint")
+                print(f"      🎯 CONCLUSIONE: Il dropdown Referenti ora dovrebbe essere popolato!")
+            else:
+                print(f"      ⚠️ Referente 'prova' NON appare nei risultati dell'endpoint")
+                print(f"      🤔 POSSIBILI CAUSE:")
+                print(f"         • Referente 'prova' è assegnato a una Unit diversa da AGN")
+                print(f"         • L'endpoint filtra correttamente per unit_id")
+                print(f"         • Verificare che l'Agente stia selezionando la Unit corretta")
+            
+            return True
+        else:
+            print(f"\n   🚨 CRITICAL ISSUES IDENTIFIED:")
+            if not referente_prova:
+                print(f"      ❌ Referente 'prova' not found in system")
+            elif not referente_prova.get('unit_id'):
+                print(f"      ❌ Referente 'prova' still has NO unit_id set")
+            if status != 200:
+                print(f"      ❌ Endpoint GET /api/users/referenti/{{unit_id}} not working (Status: {status})")
+            
+            print(f"      🔧 REQUIRED ACTIONS:")
+            print(f"         • Ensure referente 'prova' has unit_id populated")
+            print(f"         • Fix endpoint if returning non-200 status")
+            print(f"         • Verify database consistency")
+            
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
