@@ -170,85 +170,61 @@ STATO CORRENTE:
 ✅ handleSaveLead include autenticazione
 ⏳ Da testare: Frontend testing E2E del modal editabile
 
-TEST DA ESEGUIRE:
+TEST DA ESEGUIRE (FRONTEND TESTING):
 
 1. **Login Admin** (admin/admin123)
 
-2. **GET /api/users** - Trova tutti gli Agenti:
-   - Filtra per role="agente"
-   - Per ogni agente mostra:
-     * id
-     * username
-     * email
-     * unit_id (CRITICO!)
-     * provinces
-     * is_active
+2. **Naviga alla sezione Lead**
+   - Verifica che la lista dei lead si carichi correttamente
 
-3. **GET /api/leads** - Verifica lead creati:
-   - Mostra gli ultimi 5 lead
-   - Per ogni lead mostra:
-     * id
-     * nome
-     * cognome
-     * unit_id (deve essere: 0298e80d-4f7d-487d-8d25-f1147f7e7847)
-     * assigned_agent_id
-     * provincia
+3. **Apri Modal Lead**
+   - Clicca su un lead esistente per aprire il modal
+   - Verifica che il modal si apra correttamente
+   - Verifica che i dati da Zapier siano visualizzati (sola lettura)
+   - Verifica che il pulsante "Modifica" sia visibile
 
-4. **DIAGNOSI:**
-   - Se l'agente ha unit_id DIVERSO dalla nuova Unit AGN → Devo aggiornarlo
-   - Se l'agente NON ha provinces configurate → Devo aggiungerle
-   - Se i lead non sono assegnati → Spiega perché (mancanza provincia match)
+4. **Entra in Modalità Modifica**
+   - Clicca su "Modifica"
+   - Verifica che i campi editabili diventino modificabili
+   - Campi da Zapier devono rimanere sola lettura (nome, cognome, telefono, email, provincia, campagna)
+   - Campi editabili: tipologia_abitazione, indirizzo, regione, url, otp, inserzione, privacy_consent, marketing_consent, esito, note
 
-5. **FIX (se necessario):**
-   - Se trovi agente con vecchio unit_id, aggiornalo:
-     PUT /api/users/{agent_id}
-     ```json
-     {
-       "unit_id": "0298e80d-4f7d-487d-8d25-f1147f7e7847"
-     }
-     ```
+5. **Modifica Campi**
+   - Modifica almeno 3 campi editabili:
+     * tipologia_abitazione → "condominio"
+     * indirizzo → "Via Test Modifica 456"
+     * note → "Nota di test aggiunta dal modal editabile"
+   - Verifica che i campi da Zapier non siano modificabili
 
-FOCUS CRITICO:
-- Identificare quale agente sta usando l'utente
-- Verificare se ha il nuovo unit_id
-- Aggiornarlo se necessario
+6. **Salva Modifiche**
+   - Clicca su "Salva Modifiche"
+   - Verifica che appaia un toast di successo
+   - Verifica che il modal si chiuda
 
-RISULTATI TEST COMPLETATI:
-✅ Admin login (admin/admin123) - SUCCESS
-✅ GET /api/users - SUCCESS: Found 24 total users, 1 agenti
-✅ AGENTE IDENTIFICATO: 'prova13' (ID: b9b8a678-d8a2-42c8-99cf-841e3da6fc54)
-❌ CRITICAL ISSUE FOUND: Agente 'prova13' has WRONG unit_id (Current: 251eb0e5..., Required: 0298e80d...)
-✅ Agente 'prova13' has provinces configured (109 provinces)
-✅ GET /api/leads - SUCCESS: Found 4 total leads
-✅ LEADS WITH TARGET UNIT AGN: Found 2 leads with correct unit_id (0298e80d-4f7d-487d-8d25-f1147f7e7847)
-❌ ALL LEADS UNASSIGNED: 4 leads have no assigned_agent_id
+7. **Verifica Persistenza**
+   - Riapri il modal dello stesso lead
+   - Verifica che le modifiche siano persistite:
+     * tipologia_abitazione = "condominio"
+     * indirizzo = "Via Test Modifica 456"
+     * note = "Nota di test aggiunta dal modal editabile"
+   - Verifica che i dati da Zapier siano inalterati
 
-ROOT CAUSE IDENTIFIED:
-❌ AGENT CONFIGURATION ISSUE - PROBLEMA LOCALIZZATO IN: AGENT UNIT_ID
-- L'agente 'prova13' esiste nel sistema con ruolo 'agente'
-- MA ha unit_id SBAGLIATO (251eb0e5... invece di 0298e80d...)
-- I lead con la nuova Unit AGN esistono (2 su 4 lead)
-- I lead non vengono assegnati perché l'agente ha unit_id diverso
+8. **Test Annulla**
+   - Entra in modalità modifica
+   - Modifica alcuni campi
+   - Clicca su "Annulla"
+   - Verifica che le modifiche vengano scartate
 
-FIX APPLICATO:
-✅ AGENT UPDATE SUCCESS: Aggiornato agente 'prova13' con nuovo unit_id
-✅ PUT /api/users/{agent_id} - Status: 200 OK
-✅ Unit ID FIXED: Agente ora ha unit_id corretto (0298e80d-4f7d-487d-8d25-f1147f7e7847)
-✅ Provinces PRESERVED: Agente mantiene le 109 provinces configurate
+CRITERI DI SUCCESSO:
+✅ Modal si apre correttamente
+✅ Pulsante "Modifica" visibile e funzionante
+✅ Campi da Zapier sono sola lettura
+✅ Campi editabili sono modificabili in modalità modifica
+✅ Salvataggio funziona con toast di successo
+✅ Modifiche persistite nel database
+✅ Pulsante "Annulla" scarta le modifiche
 
-DIAGNOSI FINALE:
-1. ✅ Il sistema backend funziona correttamente
-2. ✅ I lead vengono creati con il nuovo unit_id corretto
-3. ❌ L'agente aveva unit_id sbagliato → RISOLTO
-4. ✅ L'agente ora dovrebbe vedere i lead della nuova Unit AGN
-
-RACCOMANDAZIONI:
-1. Verificare webhook crea lead con unit_id corretto: 0298e80d-4f7d-487d-8d25-f1147f7e7847
-2. Controllare logica assegnazione lead basata su province match
-3. Testare login agente per verificare che ora veda i lead
-4. Monitorare attività webhook per nuova creazione lead
-
-STATO: PROBLEMA RISOLTO - Agente aggiornato con nuovo unit_id, dovrebbe ora vedere i lead"
+STATO: PRONTO PER TESTING FRONTEND
 
 previous_problem_statement: "TEST COMPLETO E2E - SISTEMA LEAD CON UNIT
 
