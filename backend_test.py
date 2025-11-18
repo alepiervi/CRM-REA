@@ -45312,6 +45312,265 @@ startxref
         
         return overall_success
 
+    def test_lead_update_all_fields_rapido(self):
+        """🚨 TEST RAPIDO AGGIORNAMENTO LEAD CON NUOVI CAMPI - Verifica che PUT /api/leads/{id} accetti tutti i campi editabili"""
+        print("\n🚨 TEST RAPIDO AGGIORNAMENTO LEAD CON NUOVI CAMPI")
+        print("🎯 OBIETTIVO: Testare che l'endpoint PUT /api/leads/{id} ora accetti correttamente tutti i campi editabili inclusi i nuovi campi aggiunti")
+        print("🎯 CONTESTO:")
+        print("   • Ho aggiornato il modello LeadUpdate per includere: url, otp, inserzione, privacy_consent, marketing_consent")
+        print("   • Ho cambiato tipologia_abitazione e esito da enum a stringhe per permettere valori dinamici")
+        print("   • L'utente deve poter configurare gli stati lead dinamicamente dal database")
+        print("🎯 TEST DA ESEGUIRE:")
+        print("   1. Login Admin (admin/admin123)")
+        print("   2. GET /api/leads - Trova un lead esistente")
+        print("   3. PUT /api/leads/{lead_id} - Test con TUTTI i nuovi campi")
+        print("   4. GET /api/leads/{lead_id} - Verifica persistenza TUTTI i campi")
+        print("   5. Test Valori Dinamici - Testa con valore personalizzato per esito")
+        print("🎯 CRITERI DI SUCCESSO:")
+        print("   ✅ PUT /api/leads/{id} ritorna 200 OK (NON 422)")
+        print("   ✅ Tutti i 10 campi editabili sono accettati dal backend")
+        print("   ✅ Tutti i campi sono persistiti correttamente nel database")
+        print("   ✅ privacy_consent e marketing_consent funzionano correttamente")
+        print("   ✅ esito accetta valori dinamici (non solo enum hardcoded)")
+        print("   ✅ Nessun errore di validazione Pydantic")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. GET /api/leads - Trova un lead esistente**
+        print("\n📋 2. GET /api/leads - Trova un lead esistente...")
+        success, leads_response, status = self.make_request('GET', 'leads', expected_status=200)
+        
+        if success and status == 200:
+            leads = leads_response if isinstance(leads_response, list) else []
+            leads_count = len(leads)
+            
+            if leads_count > 0:
+                # Use first lead for testing
+                test_lead = leads[0]
+                lead_id = test_lead.get('id')
+                lead_nome = test_lead.get('nome', 'Unknown')
+                lead_cognome = test_lead.get('cognome', 'Unknown')
+                
+                self.log_test("✅ Found test lead", True, 
+                    f"Lead: {lead_nome} {lead_cognome}, ID: {lead_id[:8]}..., Total leads: {leads_count}")
+                    
+                print(f"   📊 LEAD SELEZIONATO PER TEST:")
+                print(f"      • ID: {lead_id}")
+                print(f"      • Nome: {lead_nome} {lead_cognome}")
+                print(f"      • Email: {test_lead.get('email', 'N/A')}")
+                print(f"      • Telefono: {test_lead.get('telefono', 'N/A')}")
+                print(f"      • Provincia: {test_lead.get('provincia', 'N/A')}")
+                
+            else:
+                self.log_test("❌ No leads found for testing", False, "Cannot test lead update without existing leads")
+                print(f"   ℹ️ Create a lead first to test update functionality")
+                return False
+                
+        else:
+            self.log_test("❌ GET /api/leads failed", False, f"Status: {status}, Response: {leads_response}")
+            return False
+
+        # **3. PUT /api/leads/{lead_id} - Test con TUTTI i nuovi campi**
+        print("\n✏️ 3. PUT /api/leads/{lead_id} - Test con TUTTI i nuovi campi...")
+        
+        # Complete payload with ALL editable fields as specified in review
+        update_payload = {
+            "tipologia_abitazione": "Appartamento",
+            "indirizzo": "Via Test Completa 999",
+            "regione": "Lazio",
+            "url": "https://example.com/source",
+            "otp": "123456",
+            "inserzione": "Inserzione Test",
+            "privacy_consent": True,
+            "marketing_consent": True,
+            "esito": "FISSATO APPUNTAMENTO",
+            "note": "Test completo con tutti i campi - aggiornato"
+        }
+        
+        print(f"   📋 PAYLOAD COMPLETO CON TUTTI I CAMPI EDITABILI:")
+        for field, value in update_payload.items():
+            print(f"      • {field}: {value}")
+        
+        success, update_response, status = self.make_request(
+            'PUT', f'leads/{lead_id}', 
+            update_payload, 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            updated_lead = update_response
+            
+            self.log_test("✅ PUT /api/leads/{id} SUCCESS (200 OK - NON 422!)", True, 
+                f"Status: 200 OK, All fields accepted by backend")
+                
+            print(f"   🎉 CRITICAL SUCCESS: L'endpoint accetta TUTTI i campi senza errore 422!")
+            print(f"   📊 RESPONSE STRUCTURE:")
+            if isinstance(updated_lead, dict):
+                for field in update_payload.keys():
+                    response_value = updated_lead.get(field, 'MISSING')
+                    print(f"      • {field}: {response_value}")
+            
+        else:
+            self.log_test("❌ PUT /api/leads/{id} FAILED", False, f"Status: {status}, Response: {update_response}")
+            
+            # Check if it's the dreaded 422 error
+            if status == 422:
+                self.log_test("🚨 ERROR 422 DETECTED", False, "Backend still rejecting some fields!")
+                detail = update_response.get('detail', 'No detail') if isinstance(update_response, dict) else str(update_response)
+                print(f"   🚨 422 ERROR DETAILS: {detail}")
+                print(f"   🚨 CRITICAL: Il backend NON accetta tutti i campi come richiesto!")
+            
+            return False
+
+        # **4. GET /api/leads/{lead_id} - Verifica persistenza TUTTI i campi**
+        print("\n💾 4. GET /api/leads/{lead_id} - Verifica persistenza TUTTI i campi...")
+        
+        success, verify_response, status = self.make_request(
+            'GET', f'leads/{lead_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            persisted_lead = verify_response
+            
+            self.log_test("✅ GET /api/leads/{id} SUCCESS", True, 
+                f"Status: 200 OK, Lead retrieved for verification")
+            
+            # Verify ALL fields are persisted correctly
+            print(f"   📊 VERIFICA PERSISTENZA TUTTI I CAMPI:")
+            all_fields_correct = True
+            
+            for field, expected_value in update_payload.items():
+                actual_value = persisted_lead.get(field)
+                
+                if actual_value == expected_value:
+                    self.log_test(f"✅ {field} persisted correctly", True, f"Value: {actual_value}")
+                    print(f"      ✅ {field}: {actual_value} (CORRECT)")
+                else:
+                    self.log_test(f"❌ {field} NOT persisted correctly", False, f"Expected: {expected_value}, Got: {actual_value}")
+                    print(f"      ❌ {field}: Expected {expected_value}, Got {actual_value}")
+                    all_fields_correct = False
+            
+            if all_fields_correct:
+                self.log_test("🎉 ALL FIELDS PERSISTED CORRECTLY", True, "All 10 editable fields saved in database")
+                print(f"   🎉 SUCCESS: TUTTI i campi sono stati salvati correttamente nel database!")
+            else:
+                self.log_test("🚨 SOME FIELDS NOT PERSISTED", False, "Some fields were not saved correctly")
+                print(f"   🚨 FAILURE: Alcuni campi non sono stati salvati correttamente!")
+                
+        else:
+            self.log_test("❌ GET /api/leads/{id} verification failed", False, f"Status: {status}")
+            return False
+
+        # **5. Test Valori Dinamici - Testa con valore personalizzato per esito**
+        print("\n🔄 5. Test Valori Dinamici - Testa con valore personalizzato per esito...")
+        
+        # Test with custom dynamic value for esito
+        dynamic_payload = {
+            "esito": "In Lavorazione",  # Custom value not in original enum
+            "note": "Test valore dinamico per esito - non enum hardcoded"
+        }
+        
+        print(f"   📋 PAYLOAD CON VALORE DINAMICO:")
+        print(f"      • esito: '{dynamic_payload['esito']}' (valore personalizzato, non enum)")
+        print(f"      • note: {dynamic_payload['note']}")
+        
+        success, dynamic_response, status = self.make_request(
+            'PUT', f'leads/{lead_id}', 
+            dynamic_payload, 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            self.log_test("✅ Dynamic esito value accepted", True, 
+                f"Custom esito 'In Lavorazione' accepted (not hardcoded enum)")
+                
+            # Verify dynamic value is persisted
+            success, verify_dynamic, status = self.make_request(
+                'GET', f'leads/{lead_id}', 
+                expected_status=200
+            )
+            
+            if success and status == 200:
+                persisted_esito = verify_dynamic.get('esito')
+                if persisted_esito == "In Lavorazione":
+                    self.log_test("✅ Dynamic esito value persisted", True, 
+                        f"Custom esito '{persisted_esito}' saved correctly")
+                    print(f"   🎉 SUCCESS: Il campo esito accetta valori dinamici!")
+                else:
+                    self.log_test("❌ Dynamic esito value not persisted", False, 
+                        f"Expected: 'In Lavorazione', Got: {persisted_esito}")
+            else:
+                self.log_test("❌ Dynamic value verification failed", False, f"Status: {status}")
+                
+        else:
+            self.log_test("❌ Dynamic esito value rejected", False, f"Status: {status}, Response: {dynamic_response}")
+            
+            if status == 422:
+                print(f"   🚨 CRITICAL: Il backend ancora usa enum hardcoded per esito!")
+                detail = dynamic_response.get('detail', 'No detail') if isinstance(dynamic_response, dict) else str(dynamic_response)
+                print(f"   🚨 422 ERROR DETAILS: {detail}")
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 TEST RAPIDO AGGIORNAMENTO LEAD CON NUOVI CAMPI - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che PUT /api/leads/{{id}} accetti tutti i campi editabili")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • GET /api/leads (find existing): ✅ SUCCESS ({leads_count} leads found)")
+        print(f"      • PUT /api/leads/{{id}} (all fields): {'✅ SUCCESS (200 OK)' if status == 200 else f'❌ FAILED ({status})'}")
+        print(f"      • GET /api/leads/{{id}} (verify persistence): {'✅ SUCCESS' if 'all_fields_correct' in locals() and all_fields_correct else '❌ SOME ISSUES'}")
+        print(f"      • Dynamic esito test: {'✅ SUCCESS' if 'persisted_esito' in locals() and persisted_esito == 'In Lavorazione' else '❌ FAILED'}")
+        
+        print(f"\n   🎯 CRITERI DI SUCCESSO:")
+        success_criteria = {
+            "PUT returns 200 OK (not 422)": status == 200,
+            "All 10 editable fields accepted": status == 200,
+            "All fields persisted correctly": locals().get('all_fields_correct', False),
+            "privacy_consent and marketing_consent work": True,  # Tested in payload
+            "esito accepts dynamic values": locals().get('persisted_esito') == 'In Lavorazione',
+            "No Pydantic validation errors": status != 422
+        }
+        
+        for criterion, met in success_criteria.items():
+            status_icon = "✅" if met else "❌"
+            print(f"      {status_icon} {criterion}")
+        
+        all_criteria_met = all(success_criteria.values())
+        
+        if all_criteria_met:
+            print(f"\n   🎉 SUCCESS: TUTTI I CRITERI DI SUCCESSO RAGGIUNTI!")
+            print(f"   🎉 CONCLUSIONE: L'endpoint PUT /api/leads/{{id}} funziona correttamente!")
+            print(f"   🔧 FIX CONFERMATO: Tutti i nuovi campi sono accettati e persistiti")
+            print(f"   🔧 DYNAMIC VALUES: Il sistema supporta valori dinamici per esito")
+            return True
+        else:
+            failed_criteria = [criterion for criterion, met in success_criteria.items() if not met]
+            print(f"\n   🚨 FAILURE: ALCUNI CRITERI NON RAGGIUNTI!")
+            print(f"   🚨 CRITERI FALLITI:")
+            for criterion in failed_criteria:
+                print(f"      • {criterion}")
+            print(f"   🔧 REQUIRED: Fix dei problemi identificati")
+            return False
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
