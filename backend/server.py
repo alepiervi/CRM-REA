@@ -5315,19 +5315,27 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
         lead_data.unit_id = unit_id
         lead_data.gruppo = unit_id  # Backward compatibility
         
+        # VALIDATION: Check if commessa_id is provided and belongs to this unit
+        if lead_data.commessa_id:
+            unit_commesse = unit.get("commesse_autorizzate", [])
+            if lead_data.commessa_id not in unit_commesse:
+                logging.warning(f"Lead commessa_id {lead_data.commessa_id} not authorized for unit {unit_id}")
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Commessa {lead_data.commessa_id} not authorized for this unit"
+                )
+        
         # AUTO-ASSIGNMENT LOGIC: Find best agent for this lead
         assigned_agent_id = None
         
-        if lead_data.campagna and lead_data.provincia:
-            # Check if campaign belongs to this unit
-            if lead_data.campagna in unit.get("campagne_autorizzate", []):
-                # Find agents authorized for this unit and provincia
-                agents = await db["users"].find({
-                    "role": UserRole.AGENTE,
-                    "is_active": True,
-                    "unit_autorizzate": unit_id,
-                    "provinces": lead_data.provincia
-                }).to_list(length=None)
+        if lead_data.provincia:
+            # Find agents authorized for this unit and provincia
+            agents = await db["users"].find({
+                "role": UserRole.AGENTE,
+                "is_active": True,
+                "unit_id": unit_id,  # Changed from unit_autorizzate to unit_id
+                "provinces": lead_data.provincia
+            }).to_list(length=None)
                 
                 if agents:
                     # Calculate agent workload and performance
