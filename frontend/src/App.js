@@ -3309,41 +3309,6 @@ const LeadsManagement = ({ selectedUnit, units }) => {
             </CardFooter>
           </Card>
         </div>
-      )}                </div>
-                <div>
-                  <Label>Email</Label>
-                  <p className="text-sm">{selectedLead.email}</p>
-                </div>
-                <div>
-                  <Label>Provincia</Label>
-                  <p className="text-sm">{selectedLead.provincia}</p>
-                </div>
-                <div>
-                  <Label>Campagna</Label>
-                  <p className="text-sm">{selectedLead.campagna}</p>
-                </div>
-                <div>
-                  <Label>Status</Label>
-                  <p className="text-sm">{selectedLead.status || selectedLead.esito || "N/A"}</p>
-                </div>
-                <div>
-                  <Label>Data Creazione</Label>
-                  <p className="text-sm">{new Date(selectedLead.created_at).toLocaleString("it-IT")}</p>
-                </div>
-              </div>
-              
-              {selectedLead.note && (
-                <div>
-                  <Label>Note</Label>
-                  <p className="text-sm">{selectedLead.note}</p>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => setSelectedLead(null)}>Chiudi</Button>
-            </CardFooter>
-          </Card>
-        </div>
       )}
 
       {/* Create Lead Modal */}
