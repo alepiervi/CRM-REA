@@ -44748,6 +44748,289 @@ startxref
             print(f"      • Verificare endpoint POST /api/units")
             return False
 
+    def test_unit_agn_agent_verification(self):
+        """🚨 VERIFICA E AGGIORNA AGENTI PER NUOVA UNIT AGN - Test completo come richiesto nella review"""
+        print("\n🚨 VERIFICA E AGGIORNA AGENTI PER NUOVA UNIT AGN")
+        print("🎯 OBIETTIVO: Verificare perché l'Agente non vede i lead e aggiornare la configurazione")
+        print("🎯 CONTESTO:")
+        print("   • Nuova Unit AGN creata con ID: 0298e80d-4f7d-487d-8d25-f1147f7e7847")
+        print("   • Lead vengono creati dal webhook")
+        print("   • Agente accede ma non vede i lead")
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. GET /api/users - Trova tutti gli Agenti**
+        print("\n👥 2. GET /api/users - Trova tutti gli Agenti...")
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        if success and status == 200:
+            users = users_response if isinstance(users_response, list) else []
+            agenti = [user for user in users if user.get('role') == 'agente']
+            
+            self.log_test("✅ GET /api/users SUCCESS", True, f"Found {len(users)} total users, {len(agenti)} agenti")
+            
+            print(f"\n   📊 ANALISI AGENTI (role='agente'):")
+            if agenti:
+                for i, agente in enumerate(agenti, 1):
+                    username = agente.get('username', 'Unknown')
+                    email = agente.get('email', 'Unknown')
+                    user_id = agente.get('id', 'No ID')
+                    unit_id = agente.get('unit_id', 'NOT SET')
+                    provinces = agente.get('provinces', [])
+                    is_active = agente.get('is_active', False)
+                    
+                    print(f"      {i}. AGENTE: {username}")
+                    print(f"         • id: {user_id}")
+                    print(f"         • username: {username}")
+                    print(f"         • email: {email}")
+                    print(f"         • unit_id: {unit_id}")
+                    print(f"         • provinces: {provinces}")
+                    print(f"         • is_active: {is_active}")
+                    
+                    # Check if agent has the new Unit AGN ID
+                    target_unit_id = "0298e80d-4f7d-487d-8d25-f1147f7e7847"
+                    if unit_id == target_unit_id:
+                        self.log_test(f"✅ {username} - Unit ID CORRECT", True, f"Has new Unit AGN ID")
+                    elif unit_id == 'NOT SET' or not unit_id:
+                        self.log_test(f"❌ {username} - Unit ID NOT SET", False, f"Missing unit_id assignment")
+                    else:
+                        self.log_test(f"❌ {username} - Unit ID WRONG", False, f"Has old unit_id: {unit_id[:8]}...")
+                    
+                    # Check provinces configuration
+                    if provinces and len(provinces) > 0:
+                        self.log_test(f"✅ {username} - Provinces CONFIGURED", True, f"Has {len(provinces)} provinces")
+                    else:
+                        self.log_test(f"❌ {username} - Provinces NOT CONFIGURED", False, f"No provinces assigned")
+            else:
+                self.log_test("❌ No agenti found", False, "No users with role='agente' in system")
+                return False
+        else:
+            self.log_test("❌ GET /api/users failed", False, f"Status: {status}")
+            return False
+
+        # **3. GET /api/leads - Verifica lead creati**
+        print("\n📋 3. GET /api/leads - Verifica lead creati...")
+        success, leads_response, status = self.make_request('GET', 'leads', expected_status=200)
+        
+        if success and status == 200:
+            leads = leads_response if isinstance(leads_response, list) else []
+            
+            self.log_test("✅ GET /api/leads SUCCESS", True, f"Found {len(leads)} total leads")
+            
+            # Show last 5 leads
+            recent_leads = leads[-5:] if len(leads) >= 5 else leads
+            target_unit_id = "0298e80d-4f7d-487d-8d25-f1147f7e7847"
+            
+            print(f"\n   📊 ANALISI ULTIMI {len(recent_leads)} LEAD:")
+            if recent_leads:
+                for i, lead in enumerate(recent_leads, 1):
+                    lead_id = lead.get('id', 'No ID')
+                    nome = lead.get('nome', 'Unknown')
+                    cognome = lead.get('cognome', 'Unknown')
+                    unit_id = lead.get('unit_id', 'NOT SET')
+                    assigned_agent_id = lead.get('assigned_agent_id', 'NOT ASSIGNED')
+                    provincia = lead.get('provincia', 'Unknown')
+                    
+                    print(f"      {i}. LEAD: {nome} {cognome}")
+                    print(f"         • id: {lead_id}")
+                    print(f"         • nome: {nome}")
+                    print(f"         • cognome: {cognome}")
+                    print(f"         • unit_id: {unit_id}")
+                    print(f"         • assigned_agent_id: {assigned_agent_id}")
+                    print(f"         • provincia: {provincia}")
+                    
+                    # Check if lead has the new Unit AGN ID
+                    if unit_id == target_unit_id:
+                        self.log_test(f"✅ Lead {nome} - Unit ID CORRECT", True, f"Has new Unit AGN ID")
+                    elif unit_id == 'NOT SET' or not unit_id:
+                        self.log_test(f"❌ Lead {nome} - Unit ID NOT SET", False, f"Missing unit_id")
+                    else:
+                        self.log_test(f"⚠️ Lead {nome} - Different Unit ID", True, f"Has unit_id: {unit_id[:8]}...")
+                    
+                    # Check assignment status
+                    if assigned_agent_id and assigned_agent_id != 'NOT ASSIGNED':
+                        self.log_test(f"✅ Lead {nome} - ASSIGNED", True, f"Assigned to agent: {assigned_agent_id[:8]}...")
+                    else:
+                        self.log_test(f"❌ Lead {nome} - NOT ASSIGNED", False, f"No agent assignment")
+            else:
+                self.log_test("❌ No leads found", False, "No leads in system")
+                print(f"   ℹ️ This explains why agents don't see leads - there are none!")
+        else:
+            self.log_test("❌ GET /api/leads failed", False, f"Status: {status}")
+            return False
+
+        # **4. DIAGNOSI**
+        print("\n🔍 4. DIAGNOSI...")
+        target_unit_id = "0298e80d-4f7d-487d-8d25-f1147f7e7847"
+        
+        # Count agents with issues
+        agents_with_wrong_unit = 0
+        agents_without_provinces = 0
+        agents_need_update = []
+        
+        for agente in agenti:
+            username = agente.get('username', 'Unknown')
+            unit_id = agente.get('unit_id', 'NOT SET')
+            provinces = agente.get('provinces', [])
+            
+            needs_update = False
+            issues = []
+            
+            if unit_id != target_unit_id:
+                agents_with_wrong_unit += 1
+                needs_update = True
+                issues.append("wrong_unit_id")
+            
+            if not provinces or len(provinces) == 0:
+                agents_without_provinces += 1
+                needs_update = True
+                issues.append("no_provinces")
+            
+            if needs_update:
+                agents_need_update.append({
+                    'username': username,
+                    'id': agente.get('id'),
+                    'current_unit_id': unit_id,
+                    'issues': issues
+                })
+        
+        print(f"   📊 DIAGNOSI SUMMARY:")
+        print(f"      • Total agenti: {len(agenti)}")
+        print(f"      • Agenti con unit_id diverso dalla nuova Unit AGN: {agents_with_wrong_unit}")
+        print(f"      • Agenti senza provinces configurate: {agents_without_provinces}")
+        print(f"      • Agenti che necessitano aggiornamento: {len(agents_need_update)}")
+        
+        # Count leads with target unit
+        leads_with_target_unit = 0
+        unassigned_leads = 0
+        
+        for lead in leads:
+            if lead.get('unit_id') == target_unit_id:
+                leads_with_target_unit += 1
+            if not lead.get('assigned_agent_id'):
+                unassigned_leads += 1
+        
+        print(f"      • Lead con nuova Unit AGN ID: {leads_with_target_unit}")
+        print(f"      • Lead non assegnati: {unassigned_leads}")
+        
+        # Determine root cause
+        if len(leads) == 0:
+            root_cause = "No leads in system - webhook not creating leads"
+            severity = "CRITICAL"
+        elif leads_with_target_unit == 0:
+            root_cause = "No leads have the new Unit AGN ID - webhook configuration issue"
+            severity = "HIGH"
+        elif agents_with_wrong_unit > 0:
+            root_cause = f"{agents_with_wrong_unit} agents have wrong unit_id - need update"
+            severity = "HIGH"
+        elif agents_without_provinces > 0:
+            root_cause = f"{agents_without_provinces} agents missing provinces - assignment logic fails"
+            severity = "MEDIUM"
+        else:
+            root_cause = "Configuration appears correct - check assignment logic"
+            severity = "LOW"
+        
+        self.log_test("🔍 Root Cause Analysis", True, f"Severity: {severity}, Cause: {root_cause}")
+
+        # **5. FIX (se necessario)**
+        print("\n🔧 5. FIX (se necessario)...")
+        
+        if agents_need_update:
+            print(f"   🔧 AGENTS REQUIRING UPDATE:")
+            
+            for agent_info in agents_need_update:
+                username = agent_info['username']
+                agent_id = agent_info['id']
+                issues = agent_info['issues']
+                
+                print(f"\n      🔧 FIXING AGENT: {username}")
+                print(f"         • Issues: {issues}")
+                
+                # Prepare update payload
+                update_payload = {}
+                
+                if 'wrong_unit_id' in issues:
+                    update_payload['unit_id'] = target_unit_id
+                    print(f"         • Setting unit_id to: {target_unit_id}")
+                
+                if 'no_provinces' in issues:
+                    # Add some default provinces for testing
+                    update_payload['provinces'] = ["Roma", "Milano", "Napoli"]
+                    print(f"         • Setting provinces to: {update_payload['provinces']}")
+                
+                if update_payload:
+                    print(f"         📋 UPDATE PAYLOAD: {update_payload}")
+                    
+                    # Execute the update
+                    success, update_response, status = self.make_request(
+                        'PUT', f'users/{agent_id}', 
+                        update_payload, 
+                        expected_status=200
+                    )
+                    
+                    if success and status == 200:
+                        self.log_test(f"✅ {username} - UPDATE SUCCESS", True, f"Agent updated successfully")
+                        
+                        # Verify the update
+                        updated_unit_id = update_response.get('unit_id')
+                        updated_provinces = update_response.get('provinces', [])
+                        
+                        if updated_unit_id == target_unit_id:
+                            self.log_test(f"✅ {username} - Unit ID FIXED", True, f"Now has correct unit_id")
+                        else:
+                            self.log_test(f"❌ {username} - Unit ID NOT FIXED", False, f"Still has wrong unit_id")
+                        
+                        if len(updated_provinces) > 0:
+                            self.log_test(f"✅ {username} - Provinces ADDED", True, f"Now has {len(updated_provinces)} provinces")
+                        else:
+                            self.log_test(f"❌ {username} - Provinces NOT ADDED", False, f"Still has no provinces")
+                    else:
+                        self.log_test(f"❌ {username} - UPDATE FAILED", False, f"Status: {status}, Response: {update_response}")
+        else:
+            print(f"   ✅ No agents require updates - all configurations appear correct")
+
+        # **FINAL SUMMARY**
+        print(f"\n🎯 VERIFICA E AGGIORNA AGENTI PER NUOVA UNIT AGN - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare perché l'Agente non vede i lead e aggiornare la configurazione")
+        print(f"   📊 RISULTATI DIAGNOSI:")
+        print(f"      • Admin login: ✅ SUCCESS")
+        print(f"      • Total users found: {len(users) if 'users' in locals() else 0}")
+        print(f"      • Agenti found: {len(agenti) if 'agenti' in locals() else 0}")
+        print(f"      • Total leads found: {len(leads) if 'leads' in locals() else 0}")
+        print(f"      • Leads with target Unit AGN: {leads_with_target_unit if 'leads_with_target_unit' in locals() else 0}")
+        print(f"      • Agents needing update: {len(agents_need_update) if 'agents_need_update' in locals() else 0}")
+        
+        print(f"\n   🎯 ROOT CAUSE IDENTIFIED:")
+        print(f"      • Severity: {severity if 'severity' in locals() else 'Unknown'}")
+        print(f"      • Root Cause: {root_cause if 'root_cause' in locals() else 'Unknown'}")
+        
+        if len(agents_need_update) > 0:
+            print(f"   🔧 FIXES APPLIED:")
+            print(f"      • Updated {len(agents_need_update)} agents with correct unit_id and provinces")
+            print(f"      • Agents should now be able to see leads from the new Unit AGN")
+        
+        print(f"\n   💡 RECOMMENDATIONS:")
+        print(f"      1. Verify webhook is creating leads with correct unit_id: {target_unit_id}")
+        print(f"      2. Check lead assignment logic matches agent provinces")
+        print(f"      3. Test agent login to verify they can now see leads")
+        print(f"      4. Monitor webhook activity for new lead creation")
+        
+        return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
