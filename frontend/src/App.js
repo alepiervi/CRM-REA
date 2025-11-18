@@ -2692,6 +2692,15 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     return agent ? `${agent.username} (${agent.email})` : "Agente sconosciuto";
   };
 
+  // NEW: Open lead detail with agent name
+  const openLeadDetail = (lead) => {
+    const leadWithAgentName = {
+      ...lead,
+      assigned_agent_name: getAgentName(lead.assigned_agent_id)
+    };
+    setSelectedLead(leadWithAgentName);
+  };
+
   const updateLead = async (leadId, esito, note, customFields, status) => { // NEW: Added status parameter
     try {
       const updateData = { esito, note, custom_fields: customFields };
