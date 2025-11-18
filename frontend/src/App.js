@@ -4912,19 +4912,28 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       
       // Fetch referenti for this unit
       try {
-        console.log('🔄 Fetching referenti for unit:', unitId);
+        console.log('🔄🔄🔄 INIZIO FETCH REFERENTI per unit:', unitId);
         const token = localStorage.getItem('token');
+        console.log('🔑 Token presente?', !!token);
+        console.log('🌐 URL chiamata:', `${API}/users/referenti/${unitId}`);
+        
         const refResponse = await axios.get(`${API}/users/referenti/${unitId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        console.log('✅ Referenti loaded for unit:', refResponse.data.length);
+        
+        console.log('✅✅✅ REFERENTI CARICATI! Status:', refResponse.status);
+        console.log('✅ Numero referenti:', refResponse.data.length);
         console.log('✅ Referenti data:', refResponse.data);
+        
         setReferentiUnit(refResponse.data);
+        console.log('✅ setReferentiUnit chiamato con:', refResponse.data);
       } catch (error) {
-        console.error("❌ Error fetching referenti for unit:", error);
+        console.error("❌❌❌ ERRORE FETCH REFERENTI:", error);
+        console.error("❌ Error response:", error.response);
         console.error("❌ Error details:", error.response?.data);
+        console.error("❌ Error status:", error.response?.status);
         setReferentiUnit([]);
       }
     } catch (error) {
