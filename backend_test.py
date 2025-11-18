@@ -44221,17 +44221,18 @@ startxref
         if success and status == 200:
             users = users_response if isinstance(users_response, list) else []
             
-            # Find user "prova"
+            # Find any referente user (prova, prova12, etc.)
             for user in users:
-                if user.get('username') == 'prova':
+                if user.get('role') == 'referente' and user.get('username') in ['prova', 'prova12']:
                     referente_prova = user
                     break
             
             if referente_prova:
-                self.log_test("✅ Referente 'prova' FOUND", True, f"Username: {referente_prova.get('username')}")
+                username = referente_prova.get('username')
+                self.log_test(f"✅ Referente '{username}' FOUND", True, f"Username: {username}")
                 
-                # Show ALL fields of referente "prova"
-                print(f"\n   📊 TUTTI I CAMPI DEL REFERENTE 'prova':")
+                # Show ALL fields of referente
+                print(f"\n   📊 TUTTI I CAMPI DEL REFERENTE '{username}':")
                 for key, value in referente_prova.items():
                     if key == 'password_hash':
                         print(f"      • {key}: [HIDDEN]")
