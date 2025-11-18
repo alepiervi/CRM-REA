@@ -4120,6 +4120,16 @@ const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
               </p>
             </div>
 
+            <div>
+              <Label className="text-sm font-medium text-slate-600">Assegnato a</Label>
+              <div className="flex items-center space-x-2">
+                <Users className="w-4 h-4 text-slate-400" />
+                <p className={lead.assigned_agent_id ? "text-green-700 font-medium" : "text-slate-500"}>
+                  {lead.assigned_agent_name || "Non assegnato"}
+                </p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium text-slate-600">Privacy Consent</Label>
