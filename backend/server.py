@@ -5336,8 +5336,8 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
                 "unit_id": unit_id,  # Changed from unit_autorizzate to unit_id
                 "provinces": lead_data.provincia
             }).to_list(length=None)
-                
-                if agents:
+            
+            if agents:
                     # Calculate agent workload and performance
                     agent_scores = []
                     for agent in agents:
