@@ -1992,6 +1992,8 @@ const Dashboard = () => {
           return <LeadsManagement selectedUnit={selectedUnit} units={units} />;
         case "lead-status":
           return user.role === "admin" ? <LeadStatusManagement /> : <div>Non autorizzato</div>;
+        case "custom-fields":
+          return user.role === "admin" ? <CustomFieldsManagement /> : <div>Non autorizzato</div>;
         case "configurazioni":
           return <ConfigurazioniManagement 
             onFetchConfigs={() => {}} // Placeholder - useEffect nel Dashboard gestisce il caricamento
