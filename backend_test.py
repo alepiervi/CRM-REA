@@ -44501,7 +44501,7 @@ startxref
         print("🎯 RUNNING REFERENTE UNIT ID VERIFICATION TEST - AS REQUESTED")
         print("="*80)
         
-        referente_test_success = self.test_referente_unit_id_verification()
+        referente_test_success = self.test_referente_unit_id_verification_urgent()
 
         # Print final summary
         print("\n" + "=" * 80)
