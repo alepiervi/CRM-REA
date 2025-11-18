@@ -2931,14 +2931,17 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                           </div>
                         </TableCell>
                         <TableCell>{lead.campagna}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            <Users className="w-3 h-3 text-slate-400" />
-                            <span className={lead.assigned_agent_id ? "text-green-700 text-sm" : "text-slate-500 text-sm"}>
-                              {getAgentName(lead.assigned_agent_id)}
-                            </span>
-                          </div>
-                        </TableCell>
+                        {/* Cella Assegnato a - Solo per Admin e Referente */}
+                        {(user?.role === "admin" || user?.role === "referente") && (
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <Users className="w-3 h-3 text-slate-400" />
+                              <span className={lead.assigned_agent_id ? "text-green-700 text-sm" : "text-slate-500 text-sm"}>
+                                {getAgentName(lead.assigned_agent_id)}
+                              </span>
+                            </div>
+                          </TableCell>
+                        )}
                         <TableCell>{getStatusBadge(lead.esito)}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
