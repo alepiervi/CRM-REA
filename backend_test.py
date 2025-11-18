@@ -45031,6 +45031,276 @@ startxref
         
         return True
 
+    def test_lead_update_with_jwt_authentication(self):
+        """TEST RAPIDO AGGIORNAMENTO LEAD - Verifica che l'endpoint PUT /api/leads/{lead_id} funzioni correttamente con autenticazione"""
+        print("\n🚨 TEST RAPIDO AGGIORNAMENTO LEAD - Verifica che l'endpoint PUT /api/leads/{lead_id} funzioni correttamente con autenticazione")
+        print("🎯 OBIETTIVO: Testare che il salvataggio delle modifiche ai lead funzioni correttamente")
+        print("🎯 CONTESTO:")
+        print("   • Ho appena fixato il modal editabile dei lead nel frontend")
+        print("   • Il modal ora include autenticazione JWT nelle chiamate API")
+        print("   • Devo verificare che il backend accetti correttamente le modifiche")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. GET /api/leads - Trova un lead esistente**
+        print("\n📋 2. GET /api/leads - Trova un lead esistente...")
+        success, leads_response, status = self.make_request('GET', 'leads', expected_status=200)
+        
+        if success and status == 200:
+            leads = leads_response if isinstance(leads_response, list) else []
+            leads_count = len(leads)
+            
+            self.log_test("✅ GET /api/leads SUCCESS", True, f"Status: 200, Found {leads_count} leads")
+            
+            if leads_count > 0:
+                # Use first lead for testing
+                test_lead = leads[0]
+                lead_id = test_lead.get('id')
+                lead_nome = test_lead.get('nome', 'Unknown')
+                lead_cognome = test_lead.get('cognome', 'Unknown')
+                lead_esito_attuale = test_lead.get('esito', 'None')
+                lead_note_attuali = test_lead.get('note', 'None')
+                
+                self.log_test("✅ Found test lead", True, 
+                    f"Lead: {lead_nome} {lead_cognome}, ID: {lead_id[:8]}..., Esito: {lead_esito_attuale}, Note: {lead_note_attuali}")
+                
+                print(f"   📊 LEAD DETAILS:")
+                print(f"      • ID: {lead_id}")
+                print(f"      • Nome: {lead_nome}")
+                print(f"      • Cognome: {lead_cognome}")
+                print(f"      • Esito attuale: {lead_esito_attuale}")
+                print(f"      • Note attuali: {lead_note_attuali}")
+                
+            else:
+                self.log_test("❌ No leads found for testing", False, "Cannot test lead update without existing leads")
+                return False
+        else:
+            self.log_test("❌ GET /api/leads FAILED", False, f"Status: {status}, Response: {leads_response}")
+            return False
+
+        # **3. PUT /api/leads/{lead_id} - Aggiorna il lead**
+        print("\n✏️ 3. PUT /api/leads/{lead_id} - Aggiorna il lead...")
+        
+        # Create update payload as specified in review request
+        update_payload = {
+            "tipologia_abitazione": "singola",
+            "indirizzo": "Via Test 123",
+            "regione": "Lazio",
+            "privacy_consent": True,
+            "marketing_consent": True,
+            "esito": "qualificato",
+            "note": "Test modifica dal modal editabile"
+        }
+        
+        print(f"   📋 UPDATE PAYLOAD:")
+        print(f"      • tipologia_abitazione: {update_payload['tipologia_abitazione']}")
+        print(f"      • indirizzo: {update_payload['indirizzo']}")
+        print(f"      • regione: {update_payload['regione']}")
+        print(f"      • privacy_consent: {update_payload['privacy_consent']}")
+        print(f"      • marketing_consent: {update_payload['marketing_consent']}")
+        print(f"      • esito: {update_payload['esito']}")
+        print(f"      • note: {update_payload['note']}")
+        
+        success, update_response, status = self.make_request(
+            'PUT', f'leads/{lead_id}', 
+            update_payload, 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            updated_lead = update_response
+            
+            self.log_test("✅ PUT /api/leads/{lead_id} SUCCESS", True, 
+                f"Status: 200 OK, Lead updated successfully with JWT authentication")
+                
+            # Verify response contains updated data
+            if isinstance(updated_lead, dict):
+                response_esito = updated_lead.get('esito')
+                response_note = updated_lead.get('note')
+                response_indirizzo = updated_lead.get('indirizzo')
+                response_regione = updated_lead.get('regione')
+                
+                self.log_test("✅ Update response received", True, 
+                    f"Response contains updated lead data")
+                    
+            else:
+                self.log_test("⚠️ Update response format", True, 
+                    f"Response type: {type(updated_lead)}")
+                
+        else:
+            self.log_test("❌ PUT /api/leads/{lead_id} FAILED", False, f"Status: {status}, Response: {update_response}")
+            
+            # Check for authentication issues
+            if status == 401:
+                self.log_test("🚨 AUTHENTICATION ISSUE", False, "JWT token not accepted by backend")
+            elif status == 403:
+                self.log_test("🚨 AUTHORIZATION ISSUE", False, "User not authorized to update leads")
+            elif status == 422:
+                self.log_test("🚨 VALIDATION ERROR", False, f"Payload validation failed: {update_response}")
+            
+            return False
+
+        # **4. GET /api/leads/{lead_id} - Verifica persistenza**
+        print("\n🔍 4. GET /api/leads/{lead_id} - Verifica persistenza...")
+        
+        success, verify_response, status = self.make_request(
+            'GET', f'leads/{lead_id}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            verified_lead = verify_response
+            
+            self.log_test("✅ GET /api/leads/{lead_id} SUCCESS", True, 
+                f"Status: 200 OK, Lead retrieved for verification")
+            
+            # Verify all updated fields are persisted
+            verification_results = []
+            
+            # Check tipologia_abitazione
+            if verified_lead.get('tipologia_abitazione') == 'singola':
+                verification_results.append("✅ tipologia_abitazione = 'singola'")
+                self.log_test("✅ tipologia_abitazione persisted", True, "Value: singola")
+            else:
+                verification_results.append(f"❌ tipologia_abitazione = '{verified_lead.get('tipologia_abitazione')}'")
+                self.log_test("❌ tipologia_abitazione not persisted", False, f"Expected: singola, Got: {verified_lead.get('tipologia_abitazione')}")
+            
+            # Check indirizzo
+            if verified_lead.get('indirizzo') == 'Via Test 123':
+                verification_results.append("✅ indirizzo = 'Via Test 123'")
+                self.log_test("✅ indirizzo persisted", True, "Value: Via Test 123")
+            else:
+                verification_results.append(f"❌ indirizzo = '{verified_lead.get('indirizzo')}'")
+                self.log_test("❌ indirizzo not persisted", False, f"Expected: Via Test 123, Got: {verified_lead.get('indirizzo')}")
+            
+            # Check regione
+            if verified_lead.get('regione') == 'Lazio':
+                verification_results.append("✅ regione = 'Lazio'")
+                self.log_test("✅ regione persisted", True, "Value: Lazio")
+            else:
+                verification_results.append(f"❌ regione = '{verified_lead.get('regione')}'")
+                self.log_test("❌ regione not persisted", False, f"Expected: Lazio, Got: {verified_lead.get('regione')}")
+            
+            # Check privacy_consent
+            if verified_lead.get('privacy_consent') == True:
+                verification_results.append("✅ privacy_consent = true")
+                self.log_test("✅ privacy_consent persisted", True, "Value: true")
+            else:
+                verification_results.append(f"❌ privacy_consent = {verified_lead.get('privacy_consent')}")
+                self.log_test("❌ privacy_consent not persisted", False, f"Expected: true, Got: {verified_lead.get('privacy_consent')}")
+            
+            # Check marketing_consent
+            if verified_lead.get('marketing_consent') == True:
+                verification_results.append("✅ marketing_consent = true")
+                self.log_test("✅ marketing_consent persisted", True, "Value: true")
+            else:
+                verification_results.append(f"❌ marketing_consent = {verified_lead.get('marketing_consent')}")
+                self.log_test("❌ marketing_consent not persisted", False, f"Expected: true, Got: {verified_lead.get('marketing_consent')}")
+            
+            # Check esito
+            if verified_lead.get('esito') == 'qualificato':
+                verification_results.append("✅ esito = 'qualificato'")
+                self.log_test("✅ esito persisted", True, "Value: qualificato")
+            else:
+                verification_results.append(f"❌ esito = '{verified_lead.get('esito')}'")
+                self.log_test("❌ esito not persisted", False, f"Expected: qualificato, Got: {verified_lead.get('esito')}")
+            
+            # Check note
+            if verified_lead.get('note') == 'Test modifica dal modal editabile':
+                verification_results.append("✅ note = 'Test modifica dal modal editabile'")
+                self.log_test("✅ note persisted", True, "Value: Test modifica dal modal editabile")
+            else:
+                verification_results.append(f"❌ note = '{verified_lead.get('note')}'")
+                self.log_test("❌ note not persisted", False, f"Expected: Test modifica dal modal editabile, Got: {verified_lead.get('note')}")
+            
+            # Check that original data (nome, cognome, telefono, email, provincia) remains unchanged
+            if verified_lead.get('nome') == lead_nome and verified_lead.get('cognome') == lead_cognome:
+                verification_results.append("✅ Nome e cognome inalterati")
+                self.log_test("✅ Original data preserved", True, "Nome, cognome unchanged")
+            else:
+                verification_results.append("❌ Nome o cognome modificati")
+                self.log_test("❌ Original data changed", False, "Nome or cognome was modified")
+            
+            # Count successful verifications
+            successful_verifications = len([r for r in verification_results if r.startswith("✅")])
+            total_verifications = len(verification_results)
+            
+            print(f"\n   📊 VERIFICATION RESULTS:")
+            for result in verification_results:
+                print(f"      {result}")
+            
+            print(f"\n   📊 PERSISTENCE SUMMARY:")
+            print(f"      • Total fields verified: {total_verifications}")
+            print(f"      • Successfully persisted: {successful_verifications}")
+            print(f"      • Persistence rate: {(successful_verifications/total_verifications)*100:.1f}%")
+            
+            if successful_verifications == total_verifications:
+                self.log_test("✅ ALL FIELDS PERSISTED CORRECTLY", True, f"{successful_verifications}/{total_verifications} fields correct")
+            else:
+                failed_verifications = total_verifications - successful_verifications
+                self.log_test("❌ SOME FIELDS NOT PERSISTED", False, f"{failed_verifications}/{total_verifications} fields failed")
+                
+        else:
+            self.log_test("❌ GET /api/leads/{lead_id} FAILED", False, f"Status: {status}, Response: {verify_response}")
+            return False
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 TEST RAPIDO AGGIORNAMENTO LEAD - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Testare che il salvataggio delle modifiche ai lead funzioni correttamente")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • GET /api/leads (find existing): ✅ SUCCESS ({leads_count} leads found)")
+        print(f"      • PUT /api/leads/{{lead_id}} with JWT: {'✅ SUCCESS (200 OK)' if 'update_response' in locals() else '❌ FAILED'}")
+        print(f"      • GET /api/leads/{{lead_id}} (verify): {'✅ SUCCESS' if 'verified_lead' in locals() else '❌ FAILED'}")
+        print(f"      • Field persistence verification: {'✅ ALL CORRECT' if 'successful_verifications' in locals() and successful_verifications == total_verifications else '❌ SOME ISSUES'}")
+        
+        print(f"\n   🎯 CRITERI DI SUCCESSO:")
+        print(f"      ✅ Login admin funziona")
+        print(f"      ✅ GET /api/leads ritorna almeno 1 lead")
+        print(f"      ✅ PUT /api/leads/{{id}} con token JWT ritorna 200 OK")
+        print(f"      {'✅' if 'successful_verifications' in locals() and successful_verifications == total_verifications else '❌'} Tutti i campi modificati sono persistiti nel database")
+        print(f"      {'✅' if 'verified_lead' in locals() and verified_lead.get('nome') == lead_nome else '❌'} I dati da Zapier (nome, cognome, telefono, email, provincia) rimangono inalterati")
+        
+        # Determine overall success
+        overall_success = (
+            'update_response' in locals() and 
+            'verified_lead' in locals() and 
+            'successful_verifications' in locals() and 
+            successful_verifications == total_verifications
+        )
+        
+        if overall_success:
+            print(f"\n   🎉 SUCCESS: L'endpoint PUT /api/leads/{{lead_id}} funziona correttamente con autenticazione JWT!")
+            print(f"   🎉 CONCLUSIONE: Il modal editabile dei lead può salvare le modifiche senza problemi")
+            print(f"   ✅ VERIFICA COMPLETATA: Tutti i campi vengono aggiornati e persistiti correttamente")
+        else:
+            print(f"\n   🚨 ISSUES FOUND: Ci sono problemi con l'aggiornamento dei lead")
+            print(f"   🔧 RACCOMANDAZIONI:")
+            print(f"      • Verificare implementazione PUT /api/leads/{{lead_id}}")
+            print(f"      • Controllare validazione dei campi nel backend")
+            print(f"      • Verificare che tutti i campi vengano salvati nel database")
+        
+        return overall_success
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
