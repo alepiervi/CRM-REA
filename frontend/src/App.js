@@ -4315,6 +4315,519 @@ const EditLeadStatusModal = ({ status, onClose, onSuccess, units }) => {
   );
 };
 
+// Custom Fields Management Component
+const CustomFieldsManagement = () => {
+  const [customFields, setCustomFields] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedField, setSelectedField] = useState(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchCustomFields();
+  }, []);
+
+  const fetchCustomFields = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/custom-fields`);
+      setCustomFields(response.data);
+    } catch (error) {
+      console.error("Error fetching custom fields:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei campi personalizzati",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteField = async (fieldId, fieldName) => {
+    if (!window.confirm(`Sei sicuro di voler eliminare il campo "${fieldName}"?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API}/custom-fields/${fieldId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      toast({
+        title: "Successo",
+        description: "Campo eliminato con successo",
+      });
+      fetchCustomFields();
+    } catch (error) {
+      console.error("Error deleting custom field:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione del campo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Caricamento...</div>;
+  }
+
+  const fieldTypeLabels = {
+    text: "Testo",
+    number: "Numero",
+    select: "Selezione",
+    checkbox: "Checkbox",
+    date: "Data"
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-slate-800">Campi Personalizzati Lead</h2>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Nuovo Campo
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome Campo</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Richiesto</TableHead>
+                <TableHead>Opzioni</TableHead>
+                <TableHead className="text-right">Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {customFields.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-gray-500">
+                    Nessun campo personalizzato trovato. Aggiungi il primo campo!
+                  </TableCell>
+                </TableRow>
+              ) : (
+                customFields.map((field) => (
+                  <TableRow key={field.id}>
+                    <TableCell className="font-medium">{field.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{fieldTypeLabels[field.type] || field.type}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {field.required ? (
+                        <Badge className="bg-red-100 text-red-800">Obbligatorio</Badge>
+                      ) : (
+                        <Badge variant="secondary">Opzionale</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {field.options && field.options.length > 0 ? (
+                        <div className="text-sm text-gray-600">
+                          {field.options.slice(0, 3).join(", ")}
+                          {field.options.length > 3 && "..."}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedField(field);
+                          setShowEditModal(true);
+                        }}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteField(field.id, field.name)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {showCreateModal && (
+        <CreateCustomFieldModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            fetchCustomFields();
+          }}
+        />
+      )}
+
+      {showEditModal && selectedField && (
+        <EditCustomFieldModal
+          field={selectedField}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedField(null);
+          }}
+          onSuccess={() => {
+            setShowEditModal(false);
+            setSelectedField(null);
+            fetchCustomFields();
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// Create Custom Field Modal
+const CreateCustomFieldModal = ({ onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    type: "text",
+    required: false,
+    options: []
+  });
+  const [optionInput, setOptionInput] = useState("");
+  const { toast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim()) {
+      toast({
+        title: "Errore",
+        description: "Il nome del campo è obbligatorio",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.type === "select" && formData.options.length === 0) {
+      toast({
+        title: "Errore",
+        description: "Devi aggiungere almeno un'opzione per il campo select",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(`${API}/custom-fields`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      toast({
+        title: "Successo",
+        description: "Campo creato con successo",
+      });
+      onSuccess();
+    } catch (error) {
+      console.error("Error creating custom field:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nella creazione del campo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addOption = () => {
+    if (optionInput.trim()) {
+      setFormData({
+        ...formData,
+        options: [...formData.options, optionInput.trim()]
+      });
+      setOptionInput("");
+    }
+  };
+
+  const removeOption = (index) => {
+    setFormData({
+      ...formData,
+      options: formData.options.filter((_, i) => i !== index)
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>Nuovo Campo Personalizzato</CardTitle>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nome Campo *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Es: Numero Contratto, Data Installazione..."
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="type">Tipo Campo *</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => setFormData({ ...formData, type: value, options: [] })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Testo</SelectItem>
+                  <SelectItem value="number">Numero</SelectItem>
+                  <SelectItem value="select">Selezione (Dropdown)</SelectItem>
+                  <SelectItem value="checkbox">Checkbox</SelectItem>
+                  <SelectItem value="date">Data</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.type === "select" && (
+              <div>
+                <Label>Opzioni *</Label>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={optionInput}
+                    onChange={(e) => setOptionInput(e.target.value)}
+                    placeholder="Aggiungi un'opzione"
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addOption();
+                      }
+                    }}
+                  />
+                  <Button type="button" onClick={addOption} variant="outline">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="space-y-1">
+                  {formData.options.map((option, index) => (
+                    <div key={index} className="flex items-center justify-between bg-slate-50 p-2 rounded">
+                      <span className="text-sm">{option}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeOption(index)}
+                      >
+                        <X className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="required"
+                checked={formData.required}
+                onChange={(e) => setFormData({ ...formData, required: e.target.checked })}
+                className="rounded"
+              />
+              <Label htmlFor="required" className="cursor-pointer">
+                Campo obbligatorio
+              </Label>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">Crea Campo</Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
+  );
+};
+
+// Edit Custom Field Modal
+const EditCustomFieldModal = ({ field, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    name: field.name,
+    type: field.type,
+    required: field.required,
+    options: field.options || []
+  });
+  const [optionInput, setOptionInput] = useState("");
+  const { toast } = useToast();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim()) {
+      toast({
+        title: "Errore",
+        description: "Il nome del campo è obbligatorio",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.type === "select" && formData.options.length === 0) {
+      toast({
+        title: "Errore",
+        description: "Devi aggiungere almeno un'opzione per il campo select",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(`${API}/custom-fields/${field.id}`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      toast({
+        title: "Successo",
+        description: "Campo aggiornato con successo",
+      });
+      onSuccess();
+    } catch (error) {
+      console.error("Error updating custom field:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'aggiornamento del campo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addOption = () => {
+    if (optionInput.trim()) {
+      setFormData({
+        ...formData,
+        options: [...formData.options, optionInput.trim()]
+      });
+      setOptionInput("");
+    }
+  };
+
+  const removeOption = (index) => {
+    setFormData({
+      ...formData,
+      options: formData.options.filter((_, i) => i !== index)
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>Modifica Campo Personalizzato</CardTitle>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nome Campo *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Tipo Campo</Label>
+              <p className="text-sm text-gray-600 p-2 bg-slate-50 rounded">
+                {formData.type === "text" && "Testo"}
+                {formData.type === "number" && "Numero"}
+                {formData.type === "select" && "Selezione (Dropdown)"}
+                {formData.type === "checkbox" && "Checkbox"}
+                {formData.type === "date" && "Data"}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Il tipo non può essere modificato dopo la creazione
+              </p>
+            </div>
+
+            {formData.type === "select" && (
+              <div>
+                <Label>Opzioni *</Label>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={optionInput}
+                    onChange={(e) => setOptionInput(e.target.value)}
+                    placeholder="Aggiungi un'opzione"
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addOption();
+                      }
+                    }}
+                  />
+                  <Button type="button" onClick={addOption} variant="outline">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="space-y-1">
+                  {formData.options.map((option, index) => (
+                    <div key={index} className="flex items-center justify-between bg-slate-50 p-2 rounded">
+                      <span className="text-sm">{option}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeOption(index)}
+                      >
+                        <X className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="required"
+                checked={formData.required}
+                onChange={(e) => setFormData({ ...formData, required: e.target.checked })}
+                className="rounded"
+              />
+              <Label htmlFor="required" className="cursor-pointer">
+                Campo obbligatorio
+              </Label>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annulla
+            </Button>
+            <Button type="submit">Salva Modifiche</Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
+  );
+};
+
+
 // Lead Detail Modal Component
 const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
   const [isEditing, setIsEditing] = useState(false);
