@@ -3090,10 +3090,10 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Lead Detail Modal */}
       {selectedLead && (
