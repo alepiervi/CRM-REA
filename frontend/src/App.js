@@ -5904,7 +5904,10 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
 
   // NEW: Fetch servizi quando si seleziona una UNIT
   const handleUnitChange = async (unitId) => {
+    console.log('🚀🚀🚀 EditUser: handleUnitChange CHIAMATO! unitId:', unitId);
+    
     if (!unitId) {
+      console.log('⚠️ EditUser: unitId vuoto, reset stati');
       setServiziDisponibili([]);
       setReferentiUnit([]);
       return;
@@ -5913,19 +5916,32 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     try {
       console.log('🔄 EditUser: Fetching servizi for unit:', unitId);
       const selectedUnitObj = units.find(u => u.id === unitId);
-      if (!selectedUnitObj || !selectedUnitObj.commesse_autorizzate) {
+      console.log('🔍 EditUser: selectedUnitObj:', selectedUnitObj);
+      console.log('🔍 EditUser: commesse_autorizzate:', selectedUnitObj?.commesse_autorizzate);
+      
+      if (!selectedUnitObj) {
+        console.warn('⚠️ EditUser: Unit non trovata!');
         setServiziDisponibili([]);
         setReferentiUnit([]);
         return;
       }
       
+      // IMPORTANTE: Non bloccare se non ci sono commesse, i referenti vanno caricati comunque!
+      if (!selectedUnitObj.commesse_autorizzate || selectedUnitObj.commesse_autorizzate.length === 0) {
+        console.warn('⚠️ EditUser: Unit senza commesse autorizzate, ma carico comunque i referenti');
+        setServiziDisponibili([]);
+        // NON fare return qui! Continua per caricare i referenti
+      }
+      
       const allServizi = [];
-      for (const commessaId of selectedUnitObj.commesse_autorizzate) {
-        try {
-          const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
-          allServizi.push(...response.data);
-        } catch (error) {
-          console.error(`Error fetching servizi for commessa ${commessaId}:`, error);
+      if (selectedUnitObj.commesse_autorizzate && selectedUnitObj.commesse_autorizzate.length > 0) {
+        for (const commessaId of selectedUnitObj.commesse_autorizzate) {
+          try {
+            const response = await axios.get(`${API}/commesse/${commessaId}/servizi`);
+            allServizi.push(...response.data);
+          } catch (error) {
+            console.error(`EditUser: Error fetching servizi for commessa ${commessaId}:`, error);
+          }
         }
       }
       
