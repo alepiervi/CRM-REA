@@ -45486,7 +45486,7 @@ startxref
                 print(f"   🚨 FAILURE: Alcuni campi non sono stati salvati correttamente!")
                 
         else:
-            self.log_test("❌ GET /api/leads/{id} verification failed", False, f"Status: {status}")
+            self.log_test("❌ GET /api/leads verification failed", False, f"Status: {status}")
             return False
 
         # **5. Test Valori Dinamici - Testa con valore personalizzato per esito**
