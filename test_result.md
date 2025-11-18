@@ -146,14 +146,29 @@ RACCOMANDAZIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Zapier webhook integration failure: No lead created despite 'success' status"
 
-current_problem_statement: "VERIFICA E AGGIORNA AGENTI PER NUOVA UNIT AGN
+current_problem_statement: "IMPLEMENTAZIONE MODAL EDITABILE LEAD - VERIFICA E TESTING
 
-OBIETTIVO: Verificare perché l'Agente non vede i lead e aggiornare la configurazione
+OBIETTIVO: Implementare e testare il modal editabile per i dettagli dei lead
 
 CONTESTO:
-- Nuova Unit AGN creata con ID: 0298e80d-4f7d-487d-8d25-f1147f7e7847
-- Lead vengono creati dal webhook
-- Agente accede ma non vede i lead
+- Modal dei lead deve avere campi editabili per modificare informazioni
+- Campi da Zapier devono rimanere SOLA LETTURA (nome, cognome, telefono, email, provincia, campagna)
+- Altri campi devono essere editabili (tipologia abitazione, indirizzo, regione, consensi, note, status)
+- Autenticazione JWT aggiunta a handleSaveLead
+
+MODIFICHE IMPLEMENTATE:
+1. Rimosso codice duplicato/orfano dalle righe 3312-3347 di App.js
+2. Aggiunta autenticazione JWT a handleSaveLead (righe 2720-2738)
+3. Corretto errore di sintassi JSX nella mobile card view (righe 3069-3096)
+4. Modal già implementato con logica edit/view e pulsante "Modifica"
+5. Backend testing confermato funzionante (80% success)
+
+STATO CORRENTE:
+✅ Frontend compila senza errori
+✅ Servizi in esecuzione
+✅ Backend endpoint PUT /api/leads/{id} funziona con JWT
+✅ handleSaveLead include autenticazione
+⏳ Da testare: Frontend testing E2E del modal editabile
 
 TEST DA ESEGUIRE:
 
