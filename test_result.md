@@ -1681,10 +1681,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Excel Export with Filters - Verify Filter Compliance"
-  stuck_tasks: []
+    - "Zapier Webhook Lead Creation Verification"
+  stuck_tasks:
+    - "Zapier Webhook Lead Creation Verification"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "critical_first"
 
 agent_communication:
     - agent: "testing"
