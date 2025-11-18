@@ -45166,10 +45166,21 @@ startxref
         )
         
         if success and status == 200:
-            verified_lead = verify_response
+            all_leads = verify_response if isinstance(verify_response, list) else []
             
-            self.log_test("✅ GET /api/leads/{lead_id} SUCCESS", True, 
-                f"Status: 200 OK, Lead retrieved for verification")
+            # Find the updated lead by ID
+            verified_lead = None
+            for lead in all_leads:
+                if lead.get('id') == lead_id:
+                    verified_lead = lead
+                    break
+            
+            if verified_lead:
+                self.log_test("✅ GET /api/leads SUCCESS", True, 
+                    f"Status: 200 OK, Updated lead found in leads list")
+            else:
+                self.log_test("❌ Updated lead not found", False, f"Lead with ID {lead_id[:8]}... not found in leads list")
+                return False
             
             # Verify all updated fields are persisted
             verification_results = []
