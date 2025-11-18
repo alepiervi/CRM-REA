@@ -45281,7 +45281,7 @@ startxref
         print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
         print(f"      • GET /api/leads (find existing): ✅ SUCCESS ({leads_count} leads found)")
         print(f"      • PUT /api/leads/{{lead_id}} with JWT: {'✅ SUCCESS (200 OK)' if 'update_response' in locals() else '❌ FAILED'}")
-        print(f"      • GET /api/leads/{{lead_id}} (verify): {'✅ SUCCESS' if 'verified_lead' in locals() else '❌ FAILED'}")
+        print(f"      • GET /api/leads (verify): {'✅ SUCCESS' if 'verified_lead' in locals() else '❌ FAILED'}")
         print(f"      • Field persistence verification: {'✅ ALL CORRECT' if 'successful_verifications' in locals() and successful_verifications == total_verifications else '❌ SOME ISSUES'}")
         
         print(f"\n   🎯 CRITERI DI SUCCESSO:")
