@@ -44466,15 +44466,16 @@ startxref
             
             # Check if referente appears in endpoint results
             referenti = referenti_response if isinstance(referenti_response, list) else []
-            prova_in_results = any(ref.get('username') == 'prova' for ref in referenti)
+            ref_username = referente_prova.get('username') if referente_prova else 'unknown'
+            ref_in_results = any(ref.get('username') == ref_username for ref in referenti)
             
-            if prova_in_results:
-                print(f"      ✅ Referente 'prova' appare nei risultati dell'endpoint")
+            if ref_in_results:
+                print(f"      ✅ Referente '{ref_username}' appare nei risultati dell'endpoint")
                 print(f"      🎯 CONCLUSIONE: Il dropdown Referenti ora dovrebbe essere popolato!")
             else:
-                print(f"      ⚠️ Referente 'prova' NON appare nei risultati dell'endpoint")
+                print(f"      ⚠️ Referente '{ref_username}' NON appare nei risultati dell'endpoint")
                 print(f"      🤔 POSSIBILI CAUSE:")
-                print(f"         • Referente 'prova' è assegnato a una Unit diversa da AGN")
+                print(f"         • Referente '{ref_username}' è assegnato a una Unit diversa da AGN")
                 print(f"         • L'endpoint filtra correttamente per unit_id")
                 print(f"         • Verificare che l'Agente stia selezionando la Unit corretta")
             
