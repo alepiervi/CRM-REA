@@ -4896,10 +4896,21 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       console.log('🔄 Fetching servizi for unit:', unitId);
       // Find the selected unit
       const selectedUnitObj = units.find(u => u.id === unitId);
-      if (!selectedUnitObj || !selectedUnitObj.commesse_autorizzate) {
+      console.log('🔍 selectedUnitObj:', selectedUnitObj);
+      console.log('🔍 commesse_autorizzate:', selectedUnitObj?.commesse_autorizzate);
+      
+      if (!selectedUnitObj) {
+        console.warn('⚠️ Unit non trovata!');
         setServiziDisponibili([]);
         setReferentiUnit([]);
         return;
+      }
+      
+      // IMPORTANTE: Non bloccare se non ci sono commesse, i referenti vanno caricati comunque!
+      if (!selectedUnitObj.commesse_autorizzate || selectedUnitObj.commesse_autorizzate.length === 0) {
+        console.warn('⚠️ Unit senza commesse autorizzate, ma carico comunque i referenti');
+        setServiziDisponibili([]);
+        // NON fare return qui! Continua per caricare i referenti
       }
       
       // Fetch all servizi for the authorized commesse of this unit
