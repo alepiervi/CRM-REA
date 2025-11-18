@@ -148,7 +148,75 @@ CONCLUSIONI:
 
 STATO: PROBLEMA IDENTIFICATO - Backend configuration issue: F2F ha troppi servizi autorizzati invece di solo TLS"
 
-current_problem_statement: "TEST COMPLETO E2E - SISTEMA LEAD CON UNIT
+current_problem_statement: "TEST ENDPOINT REFERENTI E VERIFICA DATI UTENTI
+
+OBIETTIVO: Capire perché il dropdown Referenti è vuoto quando si crea un Agente.
+
+CONTESTO:
+- L'utente ha creato utenti con ruolo "Referente" nel sistema
+- Quando crea un nuovo "Agente" e seleziona una Unit, il dropdown Referenti è vuoto
+- L'endpoint backend è: GET /api/users/referenti/{unit_id}
+
+TEST DA ESEGUIRE:
+
+1. **Login Admin** (admin/admin123)
+
+2. **GET /api/units** - Prendi la lista delle Unit disponibili:
+   - Annota l'ID della prima Unit disponibile (es: unit_id_1)
+
+3. **GET /api/users** - Prendi tutti gli utenti:
+   - Filtra per ruolo "referente"
+   - Per ogni referente, mostra:
+     * username
+     * email
+     * role
+     * unit_id (se presente)
+     * is_active
+   - Verifica se ci sono referenti con il ruolo "referente"
+
+4. **GET /api/users/referenti/{unit_id_1}** - Testa l'endpoint con la Unit ID:
+   - Usa la Unit ID del punto 2
+   - Deve restituire la lista dei referenti per quella Unit
+   - Se vuota, significa che nessun referente è associato a quella Unit
+
+5. **ANALISI**:
+   - Se GET /api/users mostra referenti MA GET /api/users/referenti/{unit_id} è vuoto:
+     → Il referente esiste ma NON ha `unit_id` impostato o ha un `unit_id` diverso
+   - Se GET /api/users NON mostra referenti:
+     → Non ci sono utenti con ruolo "referente" nel sistema
+
+FOCUS CRITICO: 
+- Devo verificare se i referenti esistenti hanno il campo `unit_id` correttamente popolato
+- Se il referente non ha `unit_id`, non verrà trovato dall'endpoint filtrato
+
+RISULTATI TEST COMPLETATI:
+✅ Admin login (admin/admin123) - SUCCESS
+✅ GET /api/units - SUCCESS: Found 1 unit (AGN, ID: 251eb0e5...)
+✅ GET /api/users - SUCCESS: Found 23 total users, 1 with role 'referente'
+❌ CRITICAL ISSUE FOUND: Referente 'prova' has NO unit_id set (Unit ID: NOT SET)
+✅ GET /api/users/referenti/{unit_id} - SUCCESS but returns 0 referenti (empty list)
+
+ROOT CAUSE IDENTIFIED:
+❌ BACKEND DATA ISSUE - PROBLEMA LOCALIZZATO IN: USER DATA
+- Il referente 'prova' esiste nel sistema con ruolo 'referente'
+- MA il campo unit_id è NULL/vuoto (NOT SET)
+- L'endpoint /api/users/referenti/{unit_id} filtra correttamente per unit_id
+- Poiché il referente non ha unit_id impostato, non viene trovato dal filtro
+
+DIAGNOSI FINALE:
+1. ✅ L'endpoint backend funziona correttamente
+2. ❌ Il problema è nei DATI: referenti senza unit_id assegnato
+3. ✅ Il filtro per unit_id funziona come previsto
+4. ❌ I referenti devono avere unit_id popolato per apparire nel dropdown
+
+SOLUZIONE RICHIESTA:
+- Assegnare unit_id ai referenti esistenti
+- Verificare che durante creazione/modifica utenti referenti il campo unit_id venga impostato
+- Implementare validazione per assicurare che referenti abbiano sempre unit_id
+
+STATO: PROBLEMA IDENTIFICATO - Backend funziona, dati mancanti: referenti senza unit_id"
+
+previous_problem_statement: "TEST COMPLETO E2E - SISTEMA LEAD CON UNIT
 
 OBIETTIVO:
 Testare l'intero flusso di creazione Unit e Lead Status come se fossi l'utente, verificando che tutti i fix funzionino.
