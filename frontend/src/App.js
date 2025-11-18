@@ -3009,12 +3009,15 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                           {new Date(lead.created_at).toLocaleDateString("it-IT")}
                         </span>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Users className="w-3 h-3 text-slate-400" />
-                        <span className={lead.assigned_agent_id ? "text-green-700 font-medium" : "text-slate-500"}>
-                          {getAgentName(lead.assigned_agent_id)}
-                        </span>
-                      </div>
+                      {/* Assegnato a - Solo per Admin e Referente */}
+                      {(user?.role === "admin" || user?.role === "referente") && (
+                        <div className="flex items-center space-x-2">
+                          <Users className="w-3 h-3 text-slate-400" />
+                          <span className={lead.assigned_agent_id ? "text-green-700 font-medium" : "text-slate-500"}>
+                            {getAgentName(lead.assigned_agent_id)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-2 border-t border-slate-100">
