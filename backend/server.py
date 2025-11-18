@@ -5429,15 +5429,19 @@ async def webhook_receive_lead_get(
     url: Optional[str] = None,
     otp: Optional[str] = None,
     inserzione: Optional[str] = None,
-    privacy_consent: Optional[str] = None,  # Changed to str to accept yes/no/true/false/1/0
-    marketing_consent: Optional[str] = None,  # Changed to str to accept yes/no/true/false/1/0
+    privacy_consent: Optional[str] = None,  # English: privacy_consent
+    marketing_consent: Optional[str] = None,  # English: marketing_consent
+    consenso_privacy: Optional[str] = None,  # Italian alias: consenso_privacy
+    consenso_marketing: Optional[str] = None,  # Italian alias: consenso_marketing
 ):
     """GET Webhook endpoint for receiving leads from external sources (e.g., Zapier, URL redirects)
     
-    Accepts privacy_consent and marketing_consent as: yes/no, true/false, 1/0
+    Accepts both English (privacy_consent/marketing_consent) and Italian (consenso_privacy/consenso_marketing) parameter names
+    Accepts values as: yes/no, true/false, 1/0, si/sì
     
-    Example URL:
-    /api/webhook/{unit_id}?nome=Mario&cognome=Rossi&telefono=3331234567&email=mario@example.com&provincia=Milano&privacy_consent=yes&marketing_consent=no
+    Example URLs:
+    - English: ?privacy_consent=yes&marketing_consent=no
+    - Italian: ?consenso_privacy=true&consenso_marketing=false
     """
     try:
         # Helper function to convert string to boolean
@@ -5451,9 +5455,14 @@ async def webhook_receive_lead_get(
                 return False
             return None  # If invalid value, treat as None
         
+        # Support both English and Italian parameter names
+        # If Italian name is provided, use it; otherwise use English name
+        final_privacy = consenso_privacy if consenso_privacy is not None else privacy_consent
+        final_marketing = consenso_marketing if consenso_marketing is not None else marketing_consent
+        
         # Convert consent strings to booleans
-        privacy_bool = str_to_bool(privacy_consent)
-        marketing_bool = str_to_bool(marketing_consent)
+        privacy_bool = str_to_bool(final_privacy)
+        marketing_bool = str_to_bool(final_marketing)
         
         # Create LeadCreate object from query parameters
         lead_data = LeadCreate(
