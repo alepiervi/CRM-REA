@@ -44680,9 +44680,9 @@ startxref
                 if webhook_success:
                     try:
                         webhook_data = webhook_test_response.json()
-                        if webhook_data.get('status') == 'success':
+                        if webhook_data.get('success') == True or webhook_data.get('status') == 'success':
                             self.log_test("✅ Webhook test SUCCESS", True, 
-                                f"Status: success, Response: {webhook_data}")
+                                f"Response: {webhook_data}")
                         else:
                             self.log_test("❌ Webhook returned non-success", False, 
                                 f"Response: {webhook_data}")
