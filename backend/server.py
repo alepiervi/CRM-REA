@@ -365,8 +365,9 @@ class LeadUpdate(BaseModel):
 class Unit(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     nome: str
-    commessa_id: str  # Link to commessa
-    campagne_autorizzate: List[str] = []  # Campaign names this unit handles
+    commessa_id: str  # Primary commessa (backward compatibility)
+    commesse_autorizzate: List[str] = []  # NEW: Multiple commesse support for flexible assignment
+    campagne_autorizzate: List[str] = []  # Campaign names this unit handles (optional, for filtering)
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
