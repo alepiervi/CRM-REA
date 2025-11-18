@@ -45037,12 +45037,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the UNIT AGN CREATION TEST AS REQUESTED IN REVIEW
+        # Run the UNIT AGN AGENT VERIFICATION TEST AS REQUESTED IN REVIEW
         print("\n" + "="*80)
-        print("🎯 RUNNING UNIT AGN CREATION TEST - AS REQUESTED IN REVIEW")
+        print("🎯 RUNNING UNIT AGN AGENT VERIFICATION TEST - AS REQUESTED IN REVIEW")
         print("="*80)
         
-        unit_agn_test_success = self.test_unit_agn_creation_with_fotovoltaico()
+        unit_agn_agent_test_success = self.test_unit_agn_agent_verification()
 
         # Print final summary
         print("\n" + "=" * 80)
