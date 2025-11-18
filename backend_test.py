@@ -44514,18 +44514,18 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if excel_export_success:
-            print("🎉 EXCEL EXPORT CON FILTRI TEST: ✅ SUCCESS - FILTRI APPLICATI CORRETTAMENTE!")
+        if referente_test_success:
+            print("🎉 REFERENTE UNIT_ID VERIFICATION TEST: ✅ SUCCESS - UNIT_ID SALVATO CORRETTAMENTE!")
         else:
-            print("🚨 EXCEL EXPORT CON FILTRI TEST: ❌ FAILED - PROBLEMI CON FILTRI EXPORT!")
+            print("🚨 REFERENTE UNIT_ID VERIFICATION TEST: ❌ FAILED - PROBLEMI CON UNIT_ID O ENDPOINT!")
         
-        if excel_export_success:
-            print("\n🎉 OVERALL RESULT: ✅ EXCEL EXPORT CON FILTRI WORKING CORRECTLY!")
-            print("💡 CONCLUSION: Il sistema esporta correttamente SOLO i clienti filtrati senza includere tutti i clienti")
+        if referente_test_success:
+            print("\n🎉 OVERALL RESULT: ✅ REFERENTE UNIT_ID WORKING CORRECTLY!")
+            print("💡 CONCLUSION: Il referente 'prova' ha unit_id salvato e l'endpoint restituisce i dati correttamente")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ EXCEL EXPORT CON FILTRI NEEDS BACKEND FIXES!")
+            print("\n🚨 OVERALL RESULT: ❌ REFERENTE UNIT_ID NEEDS BACKEND FIXES!")
         
-        return excel_export_success
+        return referente_test_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
