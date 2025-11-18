@@ -45460,8 +45460,8 @@ startxref
                 self.log_test("❌ Updated lead not found in leads list", False, f"Lead ID {lead_id[:8]}... not found")
                 return False
             
-            self.log_test("✅ GET /api/leads/{id} SUCCESS", True, 
-                f"Status: 200 OK, Lead retrieved for verification")
+            self.log_test("✅ GET /api/leads SUCCESS", True, 
+                f"Status: 200 OK, Lead found in list for verification")
             
             # Verify ALL fields are persisted correctly
             print(f"   📊 VERIFICA PERSISTENZA TUTTI I CAMPI:")
