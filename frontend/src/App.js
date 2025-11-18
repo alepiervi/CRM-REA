@@ -5237,7 +5237,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             <div>
               <Label htmlFor="unit_id">Unit *</Label>
               <Select value={formData.unit_id} onValueChange={(value) => {
-                setFormData(prev => ({ ...prev, unit_id: value, servizi_autorizzati: [] }));
+                setFormData(prev => ({ ...prev, unit_id: value, assignment_type: "unit", servizi_autorizzati: [] }));
                 handleUnitChange(value);
               }}>
                 <SelectTrigger>
@@ -6214,7 +6214,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
             <div>
               <Label htmlFor="unit_id">Unit *</Label>
               <Select value={formData.unit_id} onValueChange={(value) => {
-                setFormData(prev => ({ ...prev, unit_id: value, servizi_autorizzati: [] }));
+                setFormData(prev => ({ ...prev, unit_id: value, assignment_type: "unit", servizi_autorizzati: [] }));
                 handleUnitChange(value);
               }}>
                 <SelectTrigger>
