@@ -2675,6 +2675,23 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  // NEW: Fetch users for agent names
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(`${API}/users`);
+      setUsers(response.data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  // NEW: Get agent name from ID
+  const getAgentName = (agentId) => {
+    if (!agentId) return "Non assegnato";
+    const agent = users.find(u => u.id === agentId);
+    return agent ? `${agent.username} (${agent.email})` : "Agente sconosciuto";
+  };
+
   const updateLead = async (leadId, esito, note, customFields, status) => { // NEW: Added status parameter
     try {
       const updateData = { esito, note, custom_fields: customFields };
