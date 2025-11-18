@@ -5416,10 +5416,10 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
 @api_router.get("/webhook/{unit_id}")
 async def webhook_receive_lead_get(
     unit_id: str,
-    nome: str,
-    cognome: str,
-    telefono: str,
-    email: str,
+    nome: Optional[str] = None,
+    cognome: Optional[str] = None,
+    telefono: Optional[str] = None,
+    email: Optional[str] = None,
     provincia: Optional[str] = None,
     commessa_id: Optional[str] = None,
     campagna: Optional[str] = None,
