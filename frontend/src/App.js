@@ -3331,29 +3331,70 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                   </div>
                 </div>
 
-                {/* Consensi Privacy */}
+                {/* Consensi Privacy - Bloccati se arrivano da Zapier */}
                 <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="privacy_consent"
-                      checked={isEditingLead ? leadEditData.privacy_consent : selectedLead.privacy_consent}
-                      onChange={(e) => isEditingLead && setLeadEditData({...leadEditData, privacy_consent: e.target.checked})}
-                      disabled={!isEditingLead}
-                      className="w-4 h-4"
-                    />
-                    <Label htmlFor="privacy_consent">Consenso Privacy</Label>
+                  {/* Privacy Consent */}
+                  <div>
+                    <Label className="flex items-center mb-2">
+                      Consenso Privacy
+                      {selectedLead.privacy_consent !== null && selectedLead.privacy_consent !== undefined && <Lock className="w-3 h-3 ml-1 text-slate-400" title="Campo bloccato: dato da Zapier" />}
+                    </Label>
+                    {selectedLead.privacy_consent !== null && selectedLead.privacy_consent !== undefined ? (
+                      <div className="p-2 bg-slate-50 rounded text-sm flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedLead.privacy_consent}
+                          disabled
+                          className="w-4 h-4 mr-2"
+                        />
+                        {selectedLead.privacy_consent ? "Consenso dato" : "Consenso non dato"}
+                      </div>
+                    ) : isEditingLead ? (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="privacy_consent"
+                          checked={leadEditData.privacy_consent || false}
+                          onChange={(e) => setLeadEditData({...leadEditData, privacy_consent: e.target.checked})}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="privacy_consent" className="cursor-pointer">Consenso dato</Label>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Non disponibile</p>
+                    )}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="marketing_consent"
-                      checked={isEditingLead ? leadEditData.marketing_consent : selectedLead.marketing_consent}
-                      onChange={(e) => isEditingLead && setLeadEditData({...leadEditData, marketing_consent: e.target.checked})}
-                      disabled={!isEditingLead}
-                      className="w-4 h-4"
-                    />
-                    <Label htmlFor="marketing_consent">Consenso Marketing</Label>
+
+                  {/* Marketing Consent */}
+                  <div>
+                    <Label className="flex items-center mb-2">
+                      Consenso Marketing
+                      {selectedLead.marketing_consent !== null && selectedLead.marketing_consent !== undefined && <Lock className="w-3 h-3 ml-1 text-slate-400" title="Campo bloccato: dato da Zapier" />}
+                    </Label>
+                    {selectedLead.marketing_consent !== null && selectedLead.marketing_consent !== undefined ? (
+                      <div className="p-2 bg-slate-50 rounded text-sm flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedLead.marketing_consent}
+                          disabled
+                          className="w-4 h-4 mr-2"
+                        />
+                        {selectedLead.marketing_consent ? "Consenso dato" : "Consenso non dato"}
+                      </div>
+                    ) : isEditingLead ? (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="marketing_consent"
+                          checked={leadEditData.marketing_consent || false}
+                          onChange={(e) => setLeadEditData({...leadEditData, marketing_consent: e.target.checked})}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="marketing_consent" className="cursor-pointer">Consenso dato</Label>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Non disponibile</p>
+                    )}
                   </div>
                 </div>
               </div>
