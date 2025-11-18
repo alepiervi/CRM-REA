@@ -3399,26 +3399,8 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API}/units/${unit.id}`, formData, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      toast({
-        title: "Successo",
-        description: "Unit aggiornata con successo",
-      });
-      onSuccess();
-    } catch (error) {
-      console.error("Error updating unit:", error);
-      toast({
-        title: "Errore",
-        description: error.response?.data?.detail || "Errore nell'aggiornamento dell'unit",
-        variant: "destructive",
-      });
-    }
+    // Pass data to parent onSuccess handler which will do the API call
+    onSuccess(formData);
   };
 
   const addCampagna = () => {
