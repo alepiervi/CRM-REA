@@ -45098,14 +45098,14 @@ startxref
         # **3. PUT /api/leads/{lead_id} - Aggiorna il lead**
         print("\n✏️ 3. PUT /api/leads/{lead_id} - Aggiorna il lead...")
         
-        # Create update payload as specified in review request
+        # Create update payload with correct enum values
         update_payload = {
-            "tipologia_abitazione": "singola",
+            "tipologia_abitazione": "appartamento",  # Fixed: use valid enum value
             "indirizzo": "Via Test 123",
             "regione": "Lazio",
             "privacy_consent": True,
             "marketing_consent": True,
-            "esito": "qualificato",
+            "esito": "FISSATO APPUNTAMENTO",  # Fixed: use valid enum value
             "note": "Test modifica dal modal editabile"
         }
         
