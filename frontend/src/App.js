@@ -2689,7 +2689,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const getAgentName = (agentId) => {
     if (!agentId) return "Non assegnato";
     const agent = users.find(u => u.id === agentId);
-    return agent ? `${agent.username} (${agent.email})` : "Agente sconosciuto";
+    return agent ? agent.username : "Agente sconosciuto";
   };
 
   // NEW: Open lead detail with agent name
