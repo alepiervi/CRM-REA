@@ -45215,12 +45215,12 @@ startxref
                 self.log_test("❌ marketing_consent not persisted", False, f"Expected: true, Got: {verified_lead.get('marketing_consent')}")
             
             # Check esito
-            if verified_lead.get('esito') == 'qualificato':
-                verification_results.append("✅ esito = 'qualificato'")
-                self.log_test("✅ esito persisted", True, "Value: qualificato")
+            if verified_lead.get('esito') == 'FISSATO APPUNTAMENTO':
+                verification_results.append("✅ esito = 'FISSATO APPUNTAMENTO'")
+                self.log_test("✅ esito persisted", True, "Value: FISSATO APPUNTAMENTO")
             else:
                 verification_results.append(f"❌ esito = '{verified_lead.get('esito')}'")
-                self.log_test("❌ esito not persisted", False, f"Expected: qualificato, Got: {verified_lead.get('esito')}")
+                self.log_test("❌ esito not persisted", False, f"Expected: FISSATO APPUNTAMENTO, Got: {verified_lead.get('esito')}")
             
             # Check note
             if verified_lead.get('note') == 'Test modifica dal modal editabile':
