@@ -68,6 +68,7 @@ import {
   PowerOff,
   ChevronDown,
   Edit,
+  Edit2,
   Trash2,
   Save,
   Upload,
