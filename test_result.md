@@ -466,6 +466,18 @@ backend:
           agent: "testing"
           comment: "🎉 VERIFICA UNIT_ID REFERENTE E ENDPOINT DOPO FIX COMPLETE - 100% SUCCESS! ✅ COMPREHENSIVE VERIFICATION COMPLETED: Successfully verified that referente now has unit_id saved correctly and endpoint returns data properly as requested in review. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ REFERENTE 'prova12' FOUND: Username: prova12, Role: referente, Active: True, Unit ID: 251eb0e5... (PROPERLY SET). ✅ ALL FIELDS VERIFIED: Showed ALL fields of referente 'prova12' including unit_id, is_active=True, role=referente, and all other user attributes. ✅ UNIT 'AGN' FOUND: Unit ID: 251eb0e5..., Nome: AGN - Unit exists in database and matches referente assignment. ✅ ENDPOINT VERIFICATION SUCCESS: GET /api/users/referenti/{unit_id_AGN} returns 200 OK with 1 referenti for Unit AGN. ✅ REFERENTE IN RESULTS: Referente 'prova12' correctly appears in endpoint results. ✅ AUTHORIZATION WORKING: Bearer token authentication working correctly, endpoint requires valid token. ✅ ALL REFERENTI ANALYSIS: Found 1 total referenti in system, all have unit_id properly set. 🎯 CRITICAL VERIFICATION COMPLETE: Il referente 'prova12' HAS unit_id field properly saved in database AFTER the fix. L'endpoint GET /api/users/referenti/{unit_id} funziona correttamente (200 OK). Authorization con Bearer token funziona. Il problema precedente è stato RISOLTO! 🎯 CONCLUSIONE: Il dropdown Referenti ora dovrebbe essere popolato! SUCCESS RATE: 100% (13/13 tests passed) - Unit ID assignment and endpoint functionality fully operational!"
 
+  - task: "Zapier Webhook Lead Creation Verification"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL ISSUE IDENTIFIED: Zapier webhook integration failure. TESTING RESULTS: ✅ Admin login successful, ✅ Backend infrastructure working (1 unit, 5 commesse including Fotovoltaico), ❌ NO LEADS IN DATABASE (0 total leads), ❌ No webhook entries in backend logs, ❌ No recent leads created in last 10 minutes. DIAGNOSIS: Zapier reports 'success' with request ID 019a96d9-339f-9a9c-9799-63910a516dd1 but no lead was actually created in database. ROOT CAUSE: Missing or non-functional webhook endpoint for lead creation. RECOMMENDATIONS: 1) Verify webhook endpoint exists in backend, 2) Check Zapier webhook configuration, 3) Implement proper webhook handler for lead creation, 4) Add webhook logging for debugging. SEVERITY: CRITICAL - Zapier integration completely non-functional despite reporting success."
+
   - task: "Unit Creation and Management Complete - Duplicate Unit Model Bug Fix Verification"
     implemented: true
     working: true
