@@ -5429,8 +5429,8 @@ async def webhook_receive_lead_get(
     url: Optional[str] = None,
     otp: Optional[str] = None,
     inserzione: Optional[str] = None,
-    privacy_consent: Optional[bool] = False,
-    marketing_consent: Optional[bool] = False,
+    privacy_consent: Optional[bool] = None,
+    marketing_consent: Optional[bool] = None,
 ):
     """GET Webhook endpoint for receiving leads from external sources (e.g., Zapier, URL redirects)
     
