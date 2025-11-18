@@ -48016,12 +48016,12 @@ if __name__ == "__main__":
             print("Available tests: zapier_webhook, trova_id_agn")
     else:
         # Run the specific test requested in the review
-        print("🎯 RUNNING SPECIFIC TEST: Unit AGN Creation with Fotovoltaico")
+        print("🎯 RUNNING SPECIFIC TEST: Unit AGN Agent Verification")
         print(f"🌐 Base URL: {tester.base_url}")
         print("=" * 80)
         
         try:
-            result = tester.test_unit_agn_creation_with_fotovoltaico()
+            result = tester.test_unit_agn_agent_verification()
             
             # Print summary
             print(f"\n📊 Final Test Results:")
@@ -48033,9 +48033,9 @@ if __name__ == "__main__":
                 print(f"   Success rate: N/A (no tests run)")
             
             if result:
-                print("🎉 UNIT AGN ID IDENTIFICATION SUCCESSFUL!")
+                print("🎉 UNIT AGN AGENT VERIFICATION SUCCESSFUL!")
             else:
-                print("❌ UNIT AGN ID IDENTIFICATION FAILED!")
+                print("❌ UNIT AGN AGENT VERIFICATION FAILED!")
                 
         except Exception as e:
             print(f"❌ Test failed with exception: {e}")
