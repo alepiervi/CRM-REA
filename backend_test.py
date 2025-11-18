@@ -43663,6 +43663,269 @@ startxref
         
         return True
 
+    def test_referenti_dropdown_endpoint_debug(self):
+        """🚨 TEST ENDPOINT REFERENTI E VERIFICA DATI UTENTI - Debug dropdown Referenti vuoto"""
+        print("\n🚨 TEST ENDPOINT REFERENTI E VERIFICA DATI UTENTI")
+        print("🎯 OBIETTIVO: Capire perché il dropdown Referenti è vuoto quando si crea un Agente")
+        print("🎯 CONTESTO:")
+        print("   • L'utente ha creato utenti con ruolo 'Referente' nel sistema")
+        print("   • Quando crea un nuovo 'Agente' e seleziona una Unit, il dropdown Referenti è vuoto")
+        print("   • L'endpoint backend è: GET /api/users/referenti/{unit_id}")
+        print("🎯 TEST DA ESEGUIRE:")
+        print("   1. Login Admin (admin/admin123)")
+        print("   2. GET /api/units - Prendi la lista delle Unit disponibili")
+        print("   3. GET /api/users - Prendi tutti gli utenti e filtra per ruolo 'referente'")
+        print("   4. GET /api/users/referenti/{unit_id} - Testa l'endpoint con la Unit ID")
+        print("   5. ANALISI: Verificare se i referenti hanno unit_id correttamente popolato")
+        
+        import time
+        start_time = time.time()
+        
+        # **1. LOGIN ADMIN**
+        print("\n🔐 1. LOGIN ADMIN (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # **2. GET /api/units - Prendi la lista delle Unit disponibili**
+        print("\n🏗️ 2. GET /api/units - Prendi la lista delle Unit disponibili...")
+        success, units_response, status = self.make_request('GET', 'units', expected_status=200)
+        
+        unit_id_1 = None
+        if success and status == 200:
+            units = units_response if isinstance(units_response, list) else []
+            units_count = len(units)
+            
+            self.log_test("✅ GET /api/units SUCCESS", True, f"Status: 200, Found {units_count} units")
+            
+            if units_count > 0:
+                # Annota l'ID della prima Unit disponibile
+                first_unit = units[0]
+                unit_id_1 = first_unit.get('id')
+                unit_nome = first_unit.get('nome', 'Unknown')
+                
+                self.log_test("✅ First unit identified", True, f"Unit: {unit_nome} (ID: {unit_id_1[:8]}...)")
+                
+                print(f"   📊 AVAILABLE UNITS:")
+                for i, unit in enumerate(units[:5], 1):  # Show first 5
+                    nome = unit.get('nome', 'Unknown')
+                    u_id = unit.get('id', 'No ID')
+                    commessa_id = unit.get('commessa_id', 'No Commessa')
+                    print(f"      {i}. {nome} (ID: {u_id[:8]}..., Commessa: {commessa_id[:8]}...)")
+                    
+            else:
+                self.log_test("❌ No units found", False, "Cannot test referenti endpoint without units")
+                return False
+        else:
+            self.log_test("❌ GET /api/units FAILED", False, f"Status: {status}, Response: {units_response}")
+            return False
+
+        # **3. GET /api/users - Prendi tutti gli utenti e filtra per ruolo 'referente'**
+        print("\n👥 3. GET /api/users - Prendi tutti gli utenti...")
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        referenti_users = []
+        if success and status == 200:
+            users = users_response if isinstance(users_response, list) else []
+            users_count = len(users)
+            
+            self.log_test("✅ GET /api/users SUCCESS", True, f"Status: 200, Found {users_count} total users")
+            
+            # Filtra per ruolo "referente"
+            for user in users:
+                user_role = user.get('role', '').lower()
+                if user_role == 'referente':
+                    referenti_users.append(user)
+            
+            referenti_count = len(referenti_users)
+            self.log_test(f"📊 Referenti users found", True, f"Found {referenti_count} users with role 'referente'")
+            
+            if referenti_count > 0:
+                print(f"\n   📊 REFERENTI USERS ANALYSIS:")
+                for i, referente in enumerate(referenti_users, 1):
+                    username = referente.get('username', 'Unknown')
+                    email = referente.get('email', 'Unknown')
+                    role = referente.get('role', 'Unknown')
+                    unit_id = referente.get('unit_id', None)
+                    is_active = referente.get('is_active', False)
+                    user_id = referente.get('id', 'No ID')
+                    
+                    print(f"      {i}. REFERENTE: {username}")
+                    print(f"         • Username: {username}")
+                    print(f"         • Email: {email}")
+                    print(f"         • Role: {role}")
+                    print(f"         • Unit ID: {unit_id[:8] + '...' if unit_id else 'NOT SET'}")
+                    print(f"         • Is Active: {is_active}")
+                    print(f"         • User ID: {user_id[:8]}...")
+                    
+                    # Critical check: Does this referente have unit_id set?
+                    if unit_id:
+                        self.log_test(f"✅ {username} has unit_id", True, f"Unit ID: {unit_id[:8]}...")
+                    else:
+                        self.log_test(f"❌ {username} missing unit_id", False, f"Unit ID is None/empty")
+                        
+                    # Check if unit_id matches our test unit
+                    if unit_id == unit_id_1:
+                        self.log_test(f"✅ {username} assigned to test unit", True, f"Matches unit_id_1")
+                    elif unit_id:
+                        self.log_test(f"ℹ️ {username} assigned to different unit", True, f"Different unit: {unit_id[:8]}...")
+                    
+            else:
+                self.log_test("❌ No referenti found", False, "No users with role 'referente' exist in system")
+                print(f"   🚨 ROOT CAUSE IDENTIFIED: No users with role 'referente' exist!")
+                print(f"   🔧 SOLUTION: Create users with role 'referente' first")
+                return False
+                
+        else:
+            self.log_test("❌ GET /api/users FAILED", False, f"Status: {status}, Response: {users_response}")
+            return False
+
+        # **4. GET /api/users/referenti/{unit_id} - Testa l'endpoint con la Unit ID**
+        print(f"\n🔍 4. GET /api/users/referenti/{unit_id_1[:8]}... - Testa l'endpoint...")
+        success, referenti_response, status = self.make_request(
+            'GET', f'users/referenti/{unit_id_1}', 
+            expected_status=200
+        )
+        
+        if success and status == 200:
+            referenti_for_unit = referenti_response if isinstance(referenti_response, list) else []
+            referenti_for_unit_count = len(referenti_for_unit)
+            
+            self.log_test("✅ GET /api/users/referenti/{unit_id} SUCCESS", True, 
+                f"Status: 200, Found {referenti_for_unit_count} referenti for unit")
+            
+            if referenti_for_unit_count > 0:
+                print(f"   📊 REFERENTI FOR UNIT {unit_id_1[:8]}...:")
+                for i, referente in enumerate(referenti_for_unit, 1):
+                    username = referente.get('username', 'Unknown')
+                    email = referente.get('email', 'Unknown')
+                    role = referente.get('role', 'Unknown')
+                    unit_id = referente.get('unit_id', None)
+                    
+                    print(f"      {i}. {username} (Email: {email}, Role: {role}, Unit: {unit_id[:8] + '...' if unit_id else 'None'})")
+                    
+                self.log_test("✅ Referenti endpoint returns data", True, 
+                    f"Dropdown should show {referenti_for_unit_count} referenti")
+                    
+            else:
+                self.log_test("❌ Referenti endpoint returns empty", False, 
+                    f"Endpoint works but returns no referenti for unit {unit_id_1[:8]}...")
+                print(f"   🚨 CRITICAL FINDING: Endpoint returns empty list!")
+                
+        else:
+            self.log_test("❌ GET /api/users/referenti/{unit_id} FAILED", False, 
+                f"Status: {status}, Response: {referenti_response}")
+            
+            # Check if endpoint exists
+            if status == 404:
+                self.log_test("🚨 Endpoint not found", False, "GET /api/users/referenti/{unit_id} endpoint does not exist")
+            elif status == 500:
+                self.log_test("🚨 Server error", False, "Internal server error in referenti endpoint")
+            
+            return False
+
+        # **5. ANALISI ROOT CAUSE**
+        print("\n🔍 5. ANALISI ROOT CAUSE...")
+        
+        # Count referenti with unit_id set
+        referenti_with_unit_id = [r for r in referenti_users if r.get('unit_id')]
+        referenti_with_target_unit = [r for r in referenti_users if r.get('unit_id') == unit_id_1]
+        referenti_without_unit_id = [r for r in referenti_users if not r.get('unit_id')]
+        
+        print(f"   📊 REFERENTI ANALYSIS:")
+        print(f"      • Total referenti in system: {len(referenti_users)}")
+        print(f"      • Referenti with unit_id set: {len(referenti_with_unit_id)}")
+        print(f"      • Referenti assigned to target unit: {len(referenti_with_target_unit)}")
+        print(f"      • Referenti without unit_id: {len(referenti_without_unit_id)}")
+        
+        # Determine root cause
+        if len(referenti_users) == 0:
+            root_cause = "No users with role 'referente' exist in the system"
+            solution = "Create users with role 'referente'"
+            severity = "CRITICAL"
+        elif len(referenti_without_unit_id) == len(referenti_users):
+            root_cause = "All referenti exist but NONE have unit_id set"
+            solution = "Assign referenti to units by setting their unit_id field"
+            severity = "CRITICAL"
+        elif len(referenti_with_target_unit) == 0:
+            root_cause = f"Referenti exist but none are assigned to the target unit ({unit_id_1[:8]}...)"
+            solution = "Assign at least one referente to the target unit"
+            severity = "HIGH"
+        elif referenti_for_unit_count == 0:
+            root_cause = "Referenti are assigned to unit but endpoint filter is not working"
+            solution = "Check backend endpoint implementation for filtering logic"
+            severity = "HIGH"
+        else:
+            root_cause = "System appears to be working correctly"
+            solution = "Check frontend dropdown implementation"
+            severity = "LOW"
+        
+        print(f"\n   🎯 ROOT CAUSE ANALYSIS:")
+        print(f"      • Severity: {severity}")
+        print(f"      • Root Cause: {root_cause}")
+        print(f"      • Recommended Solution: {solution}")
+        
+        self.log_test("🔍 Root Cause Analysis", True, f"Identified: {root_cause}")
+
+        # **FINAL DIAGNOSIS SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 TEST ENDPOINT REFERENTI - DIAGNOSIS SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Capire perché il dropdown Referenti è vuoto quando si crea un Agente")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • GET /api/units: ✅ SUCCESS ({units_count} units found)")
+        print(f"      • GET /api/users: ✅ SUCCESS ({users_count} total users)")
+        print(f"      • Users with role 'referente': {len(referenti_users)} found")
+        print(f"      • GET /api/users/referenti/{{unit_id}}: {'✅ SUCCESS' if success else '❌ FAILED'} ({referenti_for_unit_count if success else 0} referenti)")
+        
+        print(f"\n   🎯 FOCUS CRITICO - VERIFICA DATI:")
+        if len(referenti_users) > 0:
+            print(f"      ✅ Referenti esistono nel sistema: {len(referenti_users)} utenti")
+            if len(referenti_with_unit_id) > 0:
+                print(f"      ✅ Alcuni referenti hanno unit_id: {len(referenti_with_unit_id)} utenti")
+                if len(referenti_with_target_unit) > 0:
+                    print(f"      ✅ Referenti assegnati alla unit target: {len(referenti_with_target_unit)} utenti")
+                    if referenti_for_unit_count > 0:
+                        print(f"      ✅ Endpoint restituisce referenti: {referenti_for_unit_count} utenti")
+                        print(f"      🎉 SISTEMA FUNZIONA CORRETTAMENTE!")
+                    else:
+                        print(f"      ❌ Endpoint restituisce lista vuota nonostante referenti assegnati")
+                        print(f"      🚨 PROBLEMA: Backend endpoint filtering logic")
+                else:
+                    print(f"      ❌ Nessun referente assegnato alla unit target")
+                    print(f"      🚨 PROBLEMA: Referenti non assegnati alla unit corretta")
+            else:
+                print(f"      ❌ Nessun referente ha unit_id impostato")
+                print(f"      🚨 PROBLEMA: Campo unit_id vuoto per tutti i referenti")
+        else:
+            print(f"      ❌ Nessun utente con ruolo 'referente' nel sistema")
+            print(f"      🚨 PROBLEMA: Mancano utenti referenti")
+        
+        print(f"\n   🔧 RACCOMANDAZIONI:")
+        print(f"      1. {solution}")
+        if severity == "CRITICAL":
+            print(f"      2. Verificare processo di creazione utenti referenti")
+            print(f"      3. Assicurarsi che unit_id venga impostato durante creazione/modifica utente")
+        elif severity == "HIGH":
+            print(f"      2. Verificare logica di assegnazione referenti alle unit")
+            print(f"      3. Testare endpoint con unit_id diversi")
+        
+        # Determine if test was successful (found the root cause)
+        diagnosis_successful = True
+        
+        return diagnosis_successful
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
