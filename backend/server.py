@@ -5409,6 +5409,144 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
         logging.error(f"Error in webhook for unit {unit_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to process webhook: {str(e)}")
 
+@api_router.get("/webhook/{unit_id}")
+async def webhook_receive_lead_get(
+    unit_id: str,
+    nome: str,
+    cognome: str,
+    telefono: str,
+    email: str,
+    provincia: Optional[str] = None,
+    commessa_id: Optional[str] = None,
+    campagna: Optional[str] = None,
+    tipologia_abitazione: Optional[str] = None,
+    indirizzo: Optional[str] = None,
+    regione: Optional[str] = None,
+    url: Optional[str] = None,
+    otp: Optional[str] = None,
+    inserzione: Optional[str] = None,
+    privacy_consent: Optional[bool] = False,
+    marketing_consent: Optional[bool] = False,
+):
+    """GET Webhook endpoint for receiving leads from external sources (e.g., Zapier, URL redirects)
+    
+    Example URL:
+    /api/webhook/{unit_id}?nome=Mario&cognome=Rossi&telefono=3331234567&email=mario@example.com&provincia=Milano&commessa_id=abc123
+    """
+    try:
+        # Create LeadCreate object from query parameters
+        lead_data = LeadCreate(
+            nome=nome,
+            cognome=cognome,
+            telefono=telefono,
+            email=email,
+            provincia=provincia,
+            commessa_id=commessa_id,
+            campagna=campagna,
+            tipologia_abitazione=tipologia_abitazione,
+            indirizzo=indirizzo,
+            regione=regione,
+            url=url,
+            otp=otp,
+            inserzione=inserzione,
+            privacy_consent=privacy_consent,
+            marketing_consent=marketing_consent,
+        )
+        
+        # Validate that unit exists
+        unit = await db["units"].find_one({"id": unit_id})
+        if not unit:
+            raise HTTPException(status_code=404, detail="Unit not found")
+        
+        # Set unit_id for the lead
+        lead_data.unit_id = unit_id
+        lead_data.gruppo = unit_id  # Backward compatibility
+        
+        # VALIDATION: Check if commessa_id is provided and belongs to this unit
+        if lead_data.commessa_id:
+            unit_commesse = unit.get("commesse_autorizzate", [])
+            if lead_data.commessa_id not in unit_commesse:
+                logging.warning(f"Lead commessa_id {lead_data.commessa_id} not authorized for unit {unit_id}")
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Commessa {lead_data.commessa_id} not authorized for this unit"
+                )
+        
+        # AUTO-ASSIGNMENT LOGIC: Find best agent for this lead
+        assigned_agent_id = None
+        
+        if lead_data.provincia:
+            # Find agents authorized for this unit and provincia
+            agents = await db["users"].find({
+                "role": UserRole.AGENTE,
+                "is_active": True,
+                "unit_id": unit_id,
+                "provinces": lead_data.provincia
+            }).to_list(length=None)
+            
+            if agents:
+                # Calculate agent workload and performance
+                agent_scores = []
+                for agent in agents:
+                    # Get agent's current lead count
+                    lead_count = await db["leads"].count_documents({
+                        "assigned_agent_id": agent["id"],
+                        "closed_at": None  # Only count open leads
+                    })
+                    
+                    # Get agent's average handling time
+                    agent_leads = await db["leads"].find({
+                        "assigned_agent_id": agent["id"],
+                        "tempo_gestione_minuti": {"$exists": True, "$ne": None}
+                    }).to_list(length=100)
+                    
+                    avg_time = 0
+                    if agent_leads:
+                        total_time = sum([l.get("tempo_gestione_minuti", 0) for l in agent_leads])
+                        avg_time = total_time / len(agent_leads)
+                    
+                    # Score: lower is better (less workload + faster handling)
+                    # Weight: 70% current workload, 30% avg handling time
+                    score = (lead_count * 0.7) + (avg_time / 60 * 0.3)  # Convert minutes to hours
+                    
+                    agent_scores.append({
+                        "agent_id": agent["id"],
+                        "score": score,
+                        "lead_count": lead_count,
+                        "avg_time": avg_time
+                    })
+                
+                # Sort by score (ascending) and pick the best agent
+                agent_scores.sort(key=lambda x: x["score"])
+                assigned_agent_id = agent_scores[0]["agent_id"]
+                
+                logging.info(f"Lead auto-assigned to agent {assigned_agent_id} (score: {agent_scores[0]['score']:.2f})")
+        
+        # Set assigned agent if found
+        if assigned_agent_id:
+            lead_data.assigned_agent_id = assigned_agent_id
+        
+        # Create the lead
+        lead_obj = Lead(**lead_data.dict())
+        if assigned_agent_id:
+            lead_obj.assigned_at = datetime.now(timezone.utc)
+        
+        await db["leads"].insert_one(lead_obj.dict())
+        logging.info(f"Lead created via GET webhook: {lead_obj.id} for unit {unit_id}")
+        
+        return {
+            "success": True,
+            "lead_id": lead_obj.id,
+            "assigned_agent_id": assigned_agent_id,
+            "message": f"Lead created and {'assigned to agent' if assigned_agent_id else 'awaiting assignment'}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in GET webhook for unit {unit_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process webhook: {str(e)}")
+
 # Dashboard stats
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
