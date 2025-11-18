@@ -4014,7 +4014,14 @@ const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
   });
 
   const handleSave = () => {
-    onUpdate(lead.id, esito, note, customFieldValues);
+    const updateData = {
+      esito,
+      note,
+      custom_fields: customFieldValues,
+      ...editableData
+    };
+    onUpdate(lead.id, updateData);
+    setIsEditing(false);
   };
 
   const esitoOptions = [
