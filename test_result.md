@@ -1570,7 +1570,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Excel Export Convergenza - Offerta SIM nelle Righe SIM Implementation and Testing"
+    - "Lead Update with JWT Authentication - PUT /api/leads/{lead_id} Endpoint Verification"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
