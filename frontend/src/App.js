@@ -2937,7 +2937,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                         <TableCell>
                           <div className="flex space-x-1">
                             <Button
-                              onClick={() => setSelectedLead(lead)}
+                              onClick={() => openLeadDetail(lead)}
                               variant="ghost"
                               size="sm"
                               title="Visualizza dettagli"
