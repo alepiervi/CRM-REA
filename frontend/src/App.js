@@ -4910,11 +4910,18 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       // Fetch referenti for this unit
       try {
         console.log('🔄 Fetching referenti for unit:', unitId);
-        const refResponse = await axios.get(`${API}/users/referenti/${unitId}`);
+        const token = localStorage.getItem('token');
+        const refResponse = await axios.get(`${API}/users/referenti/${unitId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         console.log('✅ Referenti loaded for unit:', refResponse.data.length);
+        console.log('✅ Referenti data:', refResponse.data);
         setReferentiUnit(refResponse.data);
       } catch (error) {
-        console.error("Error fetching referenti for unit:", error);
+        console.error("❌ Error fetching referenti for unit:", error);
+        console.error("❌ Error details:", error.response?.data);
         setReferentiUnit([]);
       }
     } catch (error) {
