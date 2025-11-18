@@ -5429,15 +5429,32 @@ async def webhook_receive_lead_get(
     url: Optional[str] = None,
     otp: Optional[str] = None,
     inserzione: Optional[str] = None,
-    privacy_consent: Optional[bool] = None,
-    marketing_consent: Optional[bool] = None,
+    privacy_consent: Optional[str] = None,  # Changed to str to accept yes/no/true/false/1/0
+    marketing_consent: Optional[str] = None,  # Changed to str to accept yes/no/true/false/1/0
 ):
     """GET Webhook endpoint for receiving leads from external sources (e.g., Zapier, URL redirects)
     
+    Accepts privacy_consent and marketing_consent as: yes/no, true/false, 1/0
+    
     Example URL:
-    /api/webhook/{unit_id}?nome=Mario&cognome=Rossi&telefono=3331234567&email=mario@example.com&provincia=Milano&commessa_id=abc123
+    /api/webhook/{unit_id}?nome=Mario&cognome=Rossi&telefono=3331234567&email=mario@example.com&provincia=Milano&privacy_consent=yes&marketing_consent=no
     """
     try:
+        # Helper function to convert string to boolean
+        def str_to_bool(value: Optional[str]) -> Optional[bool]:
+            if value is None:
+                return None
+            value_lower = str(value).lower().strip()
+            if value_lower in ('yes', 'true', '1', 'si', 'sì'):
+                return True
+            elif value_lower in ('no', 'false', '0'):
+                return False
+            return None  # If invalid value, treat as None
+        
+        # Convert consent strings to booleans
+        privacy_bool = str_to_bool(privacy_consent)
+        marketing_bool = str_to_bool(marketing_consent)
+        
         # Create LeadCreate object from query parameters
         lead_data = LeadCreate(
             nome=nome,
@@ -5453,8 +5470,8 @@ async def webhook_receive_lead_get(
             url=url,
             otp=otp,
             inserzione=inserzione,
-            privacy_consent=privacy_consent,
-            marketing_consent=marketing_consent,
+            privacy_consent=privacy_bool,
+            marketing_consent=marketing_bool,
         )
         
         # Validate that unit exists
