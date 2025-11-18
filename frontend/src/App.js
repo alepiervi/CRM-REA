@@ -2609,6 +2609,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [customFields, setCustomFields] = useState([]);
   const [leadStatuses, setLeadStatuses] = useState([]); // NEW: Dynamic statuses
+  const [users, setUsers] = useState([]); // NEW: Users for agent names
   const [filters, setFilters] = useState({
     campagna: "",
     provincia: "",
@@ -2623,6 +2624,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     fetchLeads();
     fetchCustomFields();
     fetchLeadStatuses(); // NEW: Fetch dynamic statuses
+    fetchUsers(); // NEW: Fetch users for agent names
   }, [selectedUnit, filters]);
 
   const fetchLeads = async () => {
