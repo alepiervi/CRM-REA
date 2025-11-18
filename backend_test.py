@@ -44257,14 +44257,14 @@ startxref
                 # CRITICAL: Verify unit_id field
                 if unit_id:
                     self.log_test("✅ unit_id POPULATED", True, f"Unit ID: {unit_id}")
-                    print(f"   🎉 CRITICAL SUCCESS: Referente 'prova' HAS unit_id set!")
+                    print(f"   🎉 CRITICAL SUCCESS: Referente '{username}' HAS unit_id set!")
                 else:
                     self.log_test("❌ unit_id NOT SET", False, f"Unit ID: {unit_id}")
-                    print(f"   🚨 CRITICAL ISSUE: Referente 'prova' still has NO unit_id!")
+                    print(f"   🚨 CRITICAL ISSUE: Referente '{username}' still has NO unit_id!")
                     return False
                     
             else:
-                self.log_test("❌ Referente 'prova' NOT FOUND", False, "User 'prova' not found in users list")
+                self.log_test("❌ Referente NOT FOUND", False, "No referente user found in users list")
                 return False
                 
         else:
