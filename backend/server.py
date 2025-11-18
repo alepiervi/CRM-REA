@@ -352,11 +352,16 @@ class LeadCreate(BaseModel):
 
 class LeadUpdate(BaseModel):
     provincia: Optional[str] = None
-    tipologia_abitazione: Optional[HouseType] = None
+    tipologia_abitazione: Optional[str] = None  # Changed to string for dynamic values
     indirizzo: Optional[str] = None
     regione: Optional[str] = None
-    status: Optional[str] = None  # NEW: Dynamic status
-    esito: Optional[CallOutcome] = None
+    url: Optional[str] = None
+    otp: Optional[str] = None
+    inserzione: Optional[str] = None
+    privacy_consent: Optional[bool] = None
+    marketing_consent: Optional[bool] = None
+    status: Optional[str] = None  # Dynamic status from database
+    esito: Optional[str] = None  # Changed to string for dynamic values from lead_statuses
     note: Optional[str] = None
     assigned_agent_id: Optional[str] = None
     custom_fields: Optional[Dict[str, Any]] = None
