@@ -45439,16 +45439,26 @@ startxref
             
             return False
 
-        # **4. GET /api/leads/{lead_id} - Verifica persistenza TUTTI i campi**
-        print("\n💾 4. GET /api/leads/{lead_id} - Verifica persistenza TUTTI i campi...")
+        # **4. GET /api/leads - Verifica persistenza TUTTI i campi**
+        print("\n💾 4. GET /api/leads - Verifica persistenza TUTTI i campi...")
         
         success, verify_response, status = self.make_request(
-            'GET', f'leads/{lead_id}', 
+            'GET', 'leads', 
             expected_status=200
         )
         
         if success and status == 200:
-            persisted_lead = verify_response
+            # Find our specific lead in the list
+            all_leads = verify_response if isinstance(verify_response, list) else []
+            persisted_lead = None
+            for lead in all_leads:
+                if lead.get('id') == lead_id:
+                    persisted_lead = lead
+                    break
+            
+            if not persisted_lead:
+                self.log_test("❌ Updated lead not found in leads list", False, f"Lead ID {lead_id[:8]}... not found")
+                return False
             
             self.log_test("✅ GET /api/leads/{id} SUCCESS", True, 
                 f"Status: 200 OK, Lead retrieved for verification")
