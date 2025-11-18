@@ -301,7 +301,7 @@ class Lead(BaseModel):
     telefono: str
     email: str  # Obbligatorio  # Changed from EmailStr to str to handle invalid email formats
     provincia: Optional[str] = None  # Made optional to fix validation errors
-    tipologia_abitazione: Optional[HouseType] = None  # Made optional to fix validation errors
+    tipologia_abitazione: Optional[str] = None  # Changed to string for dynamic values
     ip_address: Optional[str] = None
     indirizzo: Optional[str] = None  # NEW: Address
     otp: Optional[str] = None  # NEW: OTP code
@@ -333,7 +333,7 @@ class LeadCreate(BaseModel):
     telefono: str
     email: str  # Obbligatorio  # Changed from EmailStr to str to handle invalid email formats
     provincia: Optional[str] = None  # Made optional to fix validation errors
-    tipologia_abitazione: Optional[HouseType] = None  # Made optional to fix validation errors
+    tipologia_abitazione: Optional[str] = None  # Changed to string for dynamic values
     ip_address: Optional[str] = None
     indirizzo: Optional[str] = None  # NEW: Address
     otp: Optional[str] = None  # NEW: OTP code
