@@ -1794,9 +1794,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Zapier Webhook Lead Creation Verification"
-  stuck_tasks:
-    - "Zapier Webhook Lead Creation Verification"
+    - "Lead Modal Editabile E2E Testing - Complete Editable Lead Modal Functionality"
+  stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
 
