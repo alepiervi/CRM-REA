@@ -485,6 +485,18 @@ FOCUS CRITICO:
 **Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
+  - task: "Lead Update All Fields Implementation - Dynamic Values Support"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 LEAD UPDATE ALL FIELDS IMPLEMENTATION COMPLETE - 100% SUCCESS! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested PUT /api/leads/{id} endpoint with all new editable fields as requested in review. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ EXISTING LEAD FOUND: Found test lead 'Pietro Capraro' (ID: 969bd876...) from 2 total leads available. ✅ CRITICAL SUCCESS - PUT /api/leads/{id} ACCEPTS ALL FIELDS: Status 200 OK (NOT 422!), All 10 editable fields accepted by backend without validation errors. ✅ ALL NEW FIELDS WORKING: url, otp, inserzione, privacy_consent, marketing_consent all accepted and processed correctly. ✅ DYNAMIC VALUES SUPPORT: tipologia_abitazione changed from HouseType enum to string - accepts 'Appartamento' value, esito changed from CallOutcome enum to string - accepts 'FISSATO APPUNTAMENTO' value. ✅ COMPLETE FIELD PERSISTENCE VERIFIED: All 10 fields persisted correctly in database: tipologia_abitazione='Appartamento', indirizzo='Via Test Completa 999', regione='Lazio', url='https://example.com/source', otp='123456', inserzione='Inserzione Test', privacy_consent=True, marketing_consent=True, esito='FISSATO APPUNTAMENTO', note='Test completo con tutti i campi - aggiornato'. ✅ DYNAMIC ESITO VALUES CONFIRMED: Custom esito value 'In Lavorazione' accepted and persisted (not hardcoded enum), system supports user-configurable lead statuses from database. ✅ NO PYDANTIC VALIDATION ERRORS: Backend models updated correctly - Lead and LeadUpdate models support dynamic string values. 🎯 ALL CRITICAL OBJECTIVES ACHIEVED: 1) PUT /api/leads/{id} returns 200 OK (not 422) ✅, 2) All 10 editable fields accepted ✅, 3) All fields persisted correctly ✅, 4) privacy_consent and marketing_consent work ✅, 5) esito accepts dynamic values ✅, 6) No Pydantic validation errors ✅. 🎉 OBIETTIVO RAGGIUNTO: L'endpoint PUT /api/leads/{id} funziona correttamente con tutti i nuovi campi! Il sistema supporta valori dinamici per tipologia_abitazione e esito come richiesto. SUCCESS RATE: 100% (17/17 tests passed) - Lead update with all fields fully operational!"
+
   - task: "Referenti Dropdown Endpoint Debug - Unit ID Assignment Issue"
     implemented: true
     working: true
