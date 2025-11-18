@@ -4877,7 +4877,10 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
 
   // NEW: Fetch servizi quando si seleziona una UNIT
   const handleUnitChange = async (unitId) => {
+    console.log('🚀🚀🚀 handleUnitChange CHIAMATO! unitId:', unitId);
+    
     if (!unitId) {
+      console.log('⚠️ unitId vuoto, reset stati');
       setServiziDisponibili([]);
       setReferentiUnit([]);
       return;
