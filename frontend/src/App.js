@@ -4878,6 +4878,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
   const handleUnitChange = async (unitId) => {
     if (!unitId) {
       setServiziDisponibili([]);
+      setReferentiUnit([]);
       return;
     }
     
@@ -4887,6 +4888,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       const selectedUnitObj = units.find(u => u.id === unitId);
       if (!selectedUnitObj || !selectedUnitObj.commesse_autorizzate) {
         setServiziDisponibili([]);
+        setReferentiUnit([]);
         return;
       }
       
@@ -4903,9 +4905,21 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       
       console.log('✅ Servizi loaded for unit:', allServizi.length);
       setServiziDisponibili(allServizi);
+      
+      // Fetch referenti for this unit
+      try {
+        console.log('🔄 Fetching referenti for unit:', unitId);
+        const refResponse = await axios.get(`${API}/users/referenti/${unitId}`);
+        console.log('✅ Referenti loaded for unit:', refResponse.data.length);
+        setReferentiUnit(refResponse.data);
+      } catch (error) {
+        console.error("Error fetching referenti for unit:", error);
+        setReferentiUnit([]);
+      }
     } catch (error) {
       console.error("Error fetching servizi for unit:", error);
       setServiziDisponibili([]);
+      setReferentiUnit([]);
     }
   };
 
