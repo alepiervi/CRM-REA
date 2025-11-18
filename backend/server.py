@@ -296,10 +296,10 @@ class AIUnitUpdate(BaseModel):  # Renamed to avoid conflict with Lead Unit
 class Lead(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     lead_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])  # Short ID for reference
-    nome: str
-    cognome: str
-    telefono: str
-    email: str  # Obbligatorio  # Changed from EmailStr to str to handle invalid email formats
+    nome: Optional[str] = None  # Made optional - Zapier might not send this
+    cognome: Optional[str] = None  # Made optional - Zapier might not send this
+    telefono: Optional[str] = None  # Made optional - Zapier might not send this
+    email: Optional[str] = None  # Made optional - Zapier might not send this
     provincia: Optional[str] = None  # Made optional to fix validation errors
     tipologia_abitazione: Optional[str] = None  # Changed to string for dynamic values
     ip_address: Optional[str] = None
