@@ -2622,6 +2622,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     status: "", // NEW: Status filter
     date_from: "",
     date_to: "",
+    assigned_agent_id: "", // NEW: Agent filter
+    search: "", // NEW: Search by name/phone
   });
   const { toast } = useToast();
   const { user } = useAuth();
