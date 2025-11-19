@@ -6861,37 +6861,6 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </>
           )}
 
-          {/* AREA MANAGER: Multi Sub Agenzie per gestione produzione e clienti */}
-          {formData.role === "area_manager" && (
-            <>
-              <div className="col-span-2">
-                <Label>Sub Agenzie Assegnate *</Label>
-                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {subAgenzie.map((subAgenzia) => (
-                      <div key={subAgenzia.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`subagenzia-area-${subAgenzia.id}`}
-                          checked={formData.sub_agenzie_autorizzate && formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
-                          onCheckedChange={(checked) => handleSubAgenziaAutorizzataChange(subAgenzia.id, checked)}
-                        />
-                        <Label htmlFor={`subagenzia-area-${subAgenzia.id}`} className="text-sm font-normal cursor-pointer">
-                          {subAgenzia.nome}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Selezionate: {formData.sub_agenzie_autorizzate?.length || 0} sub agenzie
-                </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  💡 Area Manager può vedere produzione e clienti delle sub agenzie selezionate
-                </p>
-              </div>
-            </>
-          )}
-
           {/* STORE ASSISTANT e PROMOTER PRESIDI: Singola Sub Agenzia → Multi Commesse → Servizi separati per commessa */}
           {(formData.role === "store_assist" || formData.role === "promoter_presidi") && (
             <>
