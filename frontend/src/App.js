@@ -2805,16 +2805,27 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const getStatusBadge = (esito) => {
     if (!esito) return <Badge variant="secondary">Nuovo</Badge>;
     
-    const statusColors = {
-      "FISSATO APPUNTAMENTO": "bg-green-100 text-green-800",
-      "KO": "bg-red-100 text-red-800",
-      "NR": "bg-yellow-100 text-yellow-800",
-      "RICHIAMARE": "bg-blue-100 text-blue-800",
-      "CONTRATTUALIZATO": "bg-purple-100 text-purple-800",
-    };
-
+    // Find the status configuration from leadStatuses
+    const statusConfig = leadStatuses.find(status => status.nome === esito);
+    
+    if (statusConfig && statusConfig.colore) {
+      // Use the configured color from database
+      return (
+        <Badge 
+          style={{ 
+            backgroundColor: statusConfig.colore,
+            color: '#fff',
+            border: 'none'
+          }}
+        >
+          {esito}
+        </Badge>
+      );
+    }
+    
+    // Fallback to default gray if no color configured
     return (
-      <Badge className={`${statusColors[esito] || "bg-gray-100 text-gray-800"} border-0`}>
+      <Badge className="bg-gray-100 text-gray-800 border-0">
         {esito}
       </Badge>
     );
