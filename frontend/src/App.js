@@ -10126,7 +10126,7 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
                   🔍 Seleziona Agente per Analytics Dettagliate
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 space-y-4">
                 <Select value={selectedAgent} onValueChange={(value) => {
                   setSelectedAgent(value);
                   if (value) fetchAgentAnalytics(value);
@@ -10142,6 +10142,39 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
                     ))}
                   </SelectContent>
                 </Select>
+                
+                {/* Date Filters */}
+                <div className="flex items-center space-x-4">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-slate-700 mb-1 block">Data Inizio</label>
+                    <Input
+                      type="date"
+                      value={analyticsDateRange.date_from}
+                      onChange={(e) => setAnalyticsDateRange(prev => ({ ...prev, date_from: e.target.value }))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-slate-700 mb-1 block">Data Fine</label>
+                    <Input
+                      type="date"
+                      value={analyticsDateRange.date_to}
+                      onChange={(e) => setAnalyticsDateRange(prev => ({ ...prev, date_to: e.target.value }))}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="pt-6">
+                    <Button 
+                      onClick={() => {
+                        if (selectedAgent) fetchAgentAnalytics(selectedAgent);
+                      }}
+                      disabled={!selectedAgent}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Applica Filtri
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
