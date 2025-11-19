@@ -7074,7 +7074,8 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   useEffect(() => {
     if ((formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" ||
          formData.role === "responsabile_store" || formData.role === "responsabile_presidi" ||
-         formData.role === "store_assist" || formData.role === "promoter_presidi") && 
+         formData.role === "store_assist" || formData.role === "promoter_presidi" ||
+         formData.role === "area_manager") && 
         user.commesse_autorizzate && user.commesse_autorizzate.length > 0) {
       console.log('🔄 [EDIT MODAL MOUNT] Loading servizi for existing commesse:', user.commesse_autorizzate);
       // Carica servizi per tutte le commesse già autorizzate dell'utente
