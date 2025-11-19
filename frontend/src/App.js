@@ -3684,7 +3684,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                             
                             return availableAgents.map((agent) => (
                               <SelectItem key={agent.id} value={agent.id}>
-                                👤 {agent.username} ({agent.email})
+                                👤 {agent.username}
                               </SelectItem>
                             ));
                           })()}
