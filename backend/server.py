@@ -10480,19 +10480,30 @@ async def get_clienti(
             user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
             user_ids_in_sub_agenzie.append(current_user.id)  # Include anche i propri clienti
             
-            query["$or"] = [
-                {"created_by": {"$in": user_ids_in_sub_agenzie}},
-                {"assigned_to": {"$in": user_ids_in_sub_agenzie}}
-            ]
+            # Build base query with created_by OR assigned_to
+            user_filter = {
+                "$or": [
+                    {"created_by": {"$in": user_ids_in_sub_agenzie}},
+                    {"assigned_to": {"$in": user_ids_in_sub_agenzie}}
+                ]
+            }
+            
             # Filter by authorized services (only if defined and not empty)
             if current_user.servizi_autorizzati and len(current_user.servizi_autorizzati) > 0:
                 # Include clients with matching servizio_id OR clients with no servizio_id (null/undefined)
-                query["$or"].append({"servizio_id": {"$in": current_user.servizi_autorizzati}})
-                query["$or"].append({"servizio_id": None})
-                query["$or"].append({"servizio_id": {"$exists": False}})
+                servizio_filter = {
+                    "$or": [
+                        {"servizio_id": {"$in": current_user.servizi_autorizzati}},
+                        {"servizio_id": None},
+                        {"servizio_id": {"$exists": False}}
+                    ]
+                }
+                query["$and"] = [user_filter, servizio_filter]
                 print(f"  Filtering by servizi_autorizzati: {current_user.servizi_autorizzati}")
             else:
+                query.update(user_filter)
                 print(f"  No servizi filter applied")
+            
             print(f"🔍 RESPONSABILE_PRESIDI: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(sub_agenzie_ids)} sub agenzie")
         else:
             # Se non ha sub agenzie assegnate, vede i propri clienti O quelli assegnati a lui
