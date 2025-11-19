@@ -8510,6 +8510,12 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
     endDate: format(new Date(), 'yyyy-MM-dd')
   });
   
+  // Analytics date filters
+  const [analyticsDateRange, setAnalyticsDateRange] = useState({
+    date_from: "",
+    date_to: ""
+  });
+  
   // NEW: Pivot Analytics States
   const [pivotFilters, setPivotFilters] = useState({
     sub_agenzia_ids: [],
