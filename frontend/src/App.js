@@ -114,7 +114,8 @@ import {
   CreditCard,
   Smartphone,
   FolderOpen,
-  Lock
+  Lock,
+  Filter
 } from "lucide-react";
 
 // Smart Backend URL Detection - works in all environments
