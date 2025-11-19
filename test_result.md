@@ -2007,7 +2007,8 @@ metadata:
 test_plan:
   current_focus:
     - "Lead Reassignment - Admin Only Manual Agent Assignment"
-  stuck_tasks: []
+  stuck_tasks:
+    - "Lead Reassignment - Admin Only Manual Agent Assignment"
   test_all: false
   test_priority: "high_first"
 
