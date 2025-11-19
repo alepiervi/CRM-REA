@@ -4232,7 +4232,16 @@ async def get_leads(
     if provincia:
         query["provincia"] = {"$regex": provincia, "$options": "i"}  # Case-insensitive search
     if status:
-        query["esito"] = status  # Changed from "status" to "esito"
+        # Special handling for "Nuovo" status - includes null/empty esito
+        if status == "Nuovo":
+            query["$or"] = [
+                {"esito": None},
+                {"esito": ""},
+                {"esito": "Nuovo"},
+                {"esito": {"$exists": False}}
+            ]
+        else:
+            query["esito"] = status
     if date_from:
         query["created_at"] = {"$gte": datetime.fromisoformat(date_from)}
     if date_to:
