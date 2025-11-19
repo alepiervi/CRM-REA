@@ -5237,31 +5237,32 @@ async def get_referente_analytics(
     total_leads = await db.leads.count_documents(base_query)
     
     # Contacted leads = leads with esito that is NOT "Nuovo" (null, empty, or "Nuovo" string)
-    contacted_leads = await db.leads.count_documents({
-        "assigned_agent_id": {"$in": agent_ids},
-        "$and": [
+    contacted_query = {**base_query, "$and": [
+        {"esito": {"$exists": True}},
+        {"esito": {"$ne": None}},
+        {"esito": {"$ne": ""}},
+        {"esito": {"$ne": "Nuovo"}}
+    ]}
+    contacted_leads = await db.leads.count_documents(contacted_query)
+    
+    # Per-agent breakdown - respect date filters
+    agent_stats = []
+    for agent in agents:
+        agent_base_query = {"assigned_agent_id": agent["id"]}
+        # Add same date filters as parent query
+        if "created_at" in base_query:
+            agent_base_query["created_at"] = base_query["created_at"]
+        
+        agent_leads = await db.leads.count_documents(agent_base_query)
+        
+        # Contacted leads = leads with esito that is NOT "Nuovo"
+        agent_contacted_query = {**agent_base_query, "$and": [
             {"esito": {"$exists": True}},
             {"esito": {"$ne": None}},
             {"esito": {"$ne": ""}},
             {"esito": {"$ne": "Nuovo"}}
-        ]
-    })
-    
-    # Per-agent breakdown
-    agent_stats = []
-    for agent in agents:
-        agent_leads = await db.leads.count_documents({"assigned_agent_id": agent["id"]})
-        
-        # Contacted leads = leads with esito that is NOT "Nuovo"
-        agent_contacted = await db.leads.count_documents({
-            "assigned_agent_id": agent["id"],
-            "$and": [
-                {"esito": {"$exists": True}},
-                {"esito": {"$ne": None}},
-                {"esito": {"$ne": ""}},
-                {"esito": {"$ne": "Nuovo"}}
-            ]
-        })
+        ]}
+        agent_contacted = await db.leads.count_documents(agent_contacted_query)
         
         agent_stats.append({
             "agent": {
@@ -5279,7 +5280,7 @@ async def get_referente_analytics(
     
     # Use MongoDB aggregation to get ALL distinct esito values with counts for all agents
     pipeline = [
-        {"$match": {"assigned_agent_id": {"$in": agent_ids}}},
+        {"$match": base_query},
         {"$group": {
             "_id": "$esito",
             "count": {"$sum": 1}
