@@ -3415,7 +3415,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 <h3 className="text-lg font-semibold text-slate-700 mb-3">Lavorazione Lead</h3>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="stato">Stato</Label>
+                    <Label htmlFor="stato">Stato Lead</Label>
                     {isEditingLead ? (
                       <Select
                         value={leadEditData.esito}
@@ -3427,13 +3427,23 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                         <SelectContent>
                           {leadStatuses.map(status => (
                             <SelectItem key={status.id} value={status.nome}>
-                              {status.nome}
+                              <div className="flex items-center gap-2">
+                                {status.colore && (
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{backgroundColor: status.colore}}
+                                  />
+                                )}
+                                {status.nome}
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     ) : (
-                      <p className="text-sm">{selectedLead.esito || "N/A"}</p>
+                      <div className="mt-2">
+                        {getStatusBadge(selectedLead.esito)}
+                      </div>
                     )}
                   </div>
                   <div>
