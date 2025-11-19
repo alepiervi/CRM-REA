@@ -5157,20 +5157,23 @@ async def get_agent_analytics(
         else:
             outcomes[esito_value] = count
     
-    # Leads this week/month
+    # Leads this week/month - respect date filters if provided
     now = datetime.now(timezone.utc)
     week_start = now.replace(hour=0, minute=0, second=0) - timedelta(days=7)
     month_start = now.replace(day=1, hour=0, minute=0, second=0)
     
-    leads_this_week = await db.leads.count_documents({
-        "assigned_agent_id": agent_id,
-        "created_at": {"$gte": week_start}
-    })
+    week_query = {**base_query}
+    # If no date filters provided, use week_start; otherwise use existing filter
+    if "created_at" not in base_query:
+        week_query["created_at"] = {"$gte": week_start}
     
-    leads_this_month = await db.leads.count_documents({
-        "assigned_agent_id": agent_id,
-        "created_at": {"$gte": month_start}
-    })
+    month_query = {**base_query}
+    # If no date filters provided, use month_start; otherwise use existing filter
+    if "created_at" not in base_query:
+        month_query["created_at"] = {"$gte": month_start}
+    
+    leads_this_week = await db.leads.count_documents(week_query)
+    leads_this_month = await db.leads.count_documents(month_query)
     
     return {
         "agent": {
