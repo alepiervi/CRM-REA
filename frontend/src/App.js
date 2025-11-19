@@ -3658,9 +3658,26 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="unassigned">Non assegnato</SelectItem>
-                        {users.filter(u => u.role === "agente").map((agent) => (
+                        {users.filter(u => {
+                          // Filter only agents
+                          if (u.role !== "agente") return false;
+                          
+                          // If agent has no provinces defined, they cover all provinces
+                          if (!u.provinces || u.provinces.length === 0) return true;
+                          
+                          // If lead has no provincia, show all agents
+                          if (!selectedLead.provincia) return true;
+                          
+                          // Otherwise, check if agent covers this lead's provincia
+                          return u.provinces.includes(selectedLead.provincia);
+                        }).map((agent) => (
                           <SelectItem key={agent.id} value={agent.id}>
                             👤 {agent.username} ({agent.email})
+                            {agent.provinces && agent.provinces.length > 0 && (
+                              <span className="text-xs text-slate-500 ml-1">
+                                ({agent.provinces.join(", ")})
+                              </span>
+                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>
