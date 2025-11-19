@@ -5228,6 +5228,31 @@ async def get_referente_analytics(referente_id: str, current_user: User = Depend
             "contact_rate": round((agent_contacted / agent_leads * 100) if agent_leads > 0 else 0, 2)
         })
     
+    # Leads by outcome - COUNT ALL ACTUAL VALUES IN DATABASE (same as agent analytics)
+    outcomes = {}
+    
+    # Use MongoDB aggregation to get ALL distinct esito values with counts for all agents
+    pipeline = [
+        {"$match": {"assigned_agent_id": {"$in": agent_ids}}},
+        {"$group": {
+            "_id": "$esito",
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"count": -1}}
+    ]
+    
+    esito_counts = await db.leads.aggregate(pipeline).to_list(length=None)
+    
+    for item in esito_counts:
+        esito_value = item["_id"]
+        count = item["count"]
+        
+        # Handle None/empty/Nuovo esito as "Nuovo"
+        if esito_value is None or esito_value == "" or not esito_value or esito_value == "Nuovo":
+            outcomes["Nuovo"] = outcomes.get("Nuovo", 0) + count
+        else:
+            outcomes[esito_value] = count
+    
     return {
         "referente": {
             "id": referente["id"],
@@ -5240,6 +5265,7 @@ async def get_referente_analytics(referente_id: str, current_user: User = Depend
             "contacted_leads": contacted_leads,
             "contact_rate": round((contacted_leads / total_leads * 100) if total_leads > 0 else 0, 2)
         },
+        "outcomes": outcomes,  # NEW: Distribution of lead outcomes
         "agent_breakdown": agent_stats
     }
 
