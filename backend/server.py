@@ -5119,8 +5119,9 @@ async def get_agent_analytics(agent_id: str, current_user: User = Depends(get_cu
         esito_value = item["_id"]
         count = item["count"]
         
-        # Handle None/empty esito as "Nuovo"
-        if esito_value is None or esito_value == "" or not esito_value:
+        # Handle None/empty/Nuovo esito as "Nuovo"
+        # This includes: null, empty string, "Nuovo" string, and non-existent field
+        if esito_value is None or esito_value == "" or not esito_value or esito_value == "Nuovo":
             outcomes["Nuovo"] = outcomes.get("Nuovo", 0) + count
         else:
             outcomes[esito_value] = count
