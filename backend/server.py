@@ -10522,25 +10522,68 @@ async def get_clienti(
         ]
         
     elif current_user.role == UserRole.AREA_MANAGER:
-        # Area Manager: vede clienti degli utenti con le stesse sub agenzie autorizzate
+        # Area Manager: vede clienti degli utenti con le stesse sub agenzie (stessa logica di Responsabile Presidi)
         print(f"🌍 AREA_MANAGER ACCESS: User {current_user.username} - clients from users with same sub agenzie")
+        
+        # Determina le sub agenzie da usare: può essere sub_agenzie_autorizzate O sub_agenzia_id
+        sub_agenzie_ids = []
         if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-            # Trova tutti gli utenti con le stesse sub agenzie autorizzate
+            sub_agenzie_ids = current_user.sub_agenzie_autorizzate
+            print(f"  Using sub_agenzie_autorizzate: {sub_agenzie_ids}")
+        elif hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
+            sub_agenzie_ids = [current_user.sub_agenzia_id]
+            print(f"  Using sub_agenzia_id: {sub_agenzie_ids}")
+        
+        if sub_agenzie_ids:
+            # Trova tutti gli utenti con le stesse sub agenzie
             users_in_sub_agenzie = await db.users.find({
-                "sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}
+                "sub_agenzia_id": {"$in": sub_agenzie_ids}
             }).to_list(length=None)
             
             user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
             user_ids_in_sub_agenzie.append(current_user.id)  # Include anche i propri clienti
             
-            query["$or"] = [
-                {"created_by": {"$in": user_ids_in_sub_agenzie}},
-                {"assigned_to": {"$in": user_ids_in_sub_agenzie}}
-            ]
-            # Filter by authorized services
-            if current_user.servizi_autorizzati:
-                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
-            print(f"🔍 AREA_MANAGER: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(current_user.sub_agenzie_autorizzate)} sub agenzie")
+            # Build base query with created_by OR assigned_to
+            user_filter = {
+                "$or": [
+                    {"created_by": {"$in": user_ids_in_sub_agenzie}},
+                    {"assigned_to": {"$in": user_ids_in_sub_agenzie}}
+                ]
+            }
+            
+            # Filter by authorized services (only if defined and not empty)
+            if current_user.servizi_autorizzati and len(current_user.servizi_autorizzati) > 0:
+                # Include clients with matching servizio_id OR clients with no servizio_id (null/undefined)
+                servizio_filter = {
+                    "$or": [
+                        {"servizio_id": {"$in": current_user.servizi_autorizzati}},
+                        {"servizio_id": None},
+                        {"servizio_id": {"$exists": False}}
+                    ]
+                }
+                query["$and"] = [user_filter, servizio_filter]
+                print(f"  Filtering by servizi_autorizzati: {current_user.servizi_autorizzati}")
+            else:
+                query.update(user_filter)
+                print(f"  No servizi filter applied")
+            
+            # Filter by authorized commesse (if defined)
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate and len(current_user.commesse_autorizzate) > 0:
+                commesse_filter = {
+                    "$or": [
+                        {"commessa_id": {"$in": current_user.commesse_autorizzate}},
+                        {"commessa_id": None},
+                        {"commessa_id": {"$exists": False}}
+                    ]
+                }
+                # Add commesse filter to existing query
+                if "$and" in query:
+                    query["$and"].append(commesse_filter)
+                else:
+                    query["$and"] = [user_filter, commesse_filter]
+                print(f"  Filtering by commesse_autorizzate: {current_user.commesse_autorizzate}")
+            
+            print(f"🔍 AREA_MANAGER: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(sub_agenzie_ids)} sub agenzie")
         else:
             # Se non ha sub agenzie assegnate, vede i propri clienti O quelli assegnati a lui
             print(f"⚠️ AREA_MANAGER: No sub agenzie assigned - own and assigned clients")
