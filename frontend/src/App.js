@@ -10163,7 +10163,7 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
                       className="w-full"
                     />
                   </div>
-                  <div className="pt-6">
+                  <div className="pt-6 flex space-x-2">
                     <Button 
                       onClick={() => {
                         if (selectedAgent) fetchAgentAnalytics(selectedAgent);
@@ -10172,6 +10172,20 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
                       className="bg-green-600 hover:bg-green-700"
                     >
                       Applica Filtri
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setAnalyticsDateRange({ date_from: "", date_to: "" });
+                        if (selectedAgent) {
+                          // Temporarily clear filters then refetch
+                          setTimeout(() => fetchAgentAnalytics(selectedAgent), 100);
+                        }
+                      }}
+                      disabled={!selectedAgent}
+                      variant="outline"
+                      className="border-slate-300 hover:bg-slate-100"
+                    >
+                      Azzera Filtri
                     </Button>
                   </div>
                 </div>
