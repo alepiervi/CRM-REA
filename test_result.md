@@ -1971,8 +1971,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Analytics Agent Outcomes in Performance Table"
-    - "Clear Filters Button Functionality"
+    - "Analytics Enhancements - Azzera Filtri Button and Dynamic Status Columns"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
