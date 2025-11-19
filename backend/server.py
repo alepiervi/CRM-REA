@@ -10458,8 +10458,36 @@ async def get_clienti(
             {"assigned_to": current_user.id}
         ]
         
-    elif current_user.role in [UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
-        # Ruoli Store e Presidi: vedono clienti creati da loro O assegnati a loro
+    elif current_user.role == UserRole.RESPONSABILE_PRESIDI:
+        # Responsabile Presidi: vede clienti degli utenti con le stesse sub agenzie autorizzate
+        print(f"🏛️ RESPONSABILE_PRESIDI ACCESS: User {current_user.username} - clients from users with same sub agenzie")
+        if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+            # Trova tutti gli utenti con le stesse sub agenzie autorizzate
+            users_in_sub_agenzie = await db.users.find({
+                "sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}
+            }).to_list(length=None)
+            
+            user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
+            user_ids_in_sub_agenzie.append(current_user.id)  # Include anche i propri clienti
+            
+            query["$or"] = [
+                {"created_by": {"$in": user_ids_in_sub_agenzie}},
+                {"assigned_to": {"$in": user_ids_in_sub_agenzie}}
+            ]
+            # Filter by authorized services
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+            print(f"🔍 RESPONSABILE_PRESIDI: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(current_user.sub_agenzie_autorizzate)} sub agenzie")
+        else:
+            # Se non ha sub agenzie assegnate, vede i propri clienti O quelli assegnati a lui
+            print(f"⚠️ RESPONSABILE_PRESIDI: No sub agenzie assigned - own and assigned clients")
+            query["$or"] = [
+                {"created_by": current_user.id},
+                {"assigned_to": current_user.id}
+            ]
+    
+    elif current_user.role in [UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI]:
+        # Ruoli Store e Presidi (escluso Responsabile Presidi): vedono clienti creati da loro O assegnati a loro
         print(f"🏪 {current_user.role} ACCESS: User {current_user.username} - own and assigned clients")
         query["$or"] = [
             {"created_by": current_user.id},
