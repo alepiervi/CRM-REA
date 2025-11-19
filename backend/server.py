@@ -5232,44 +5232,133 @@ async def create_excel_report(leads_data, custom_fields_list, filename="leads_ex
         cell.fill = header_fill
         cell.alignment = header_alignment
     
-    # Data rows
+    # Data rows - ALL fields (even if empty)
     for row, lead in enumerate(leads_data, 2):
-        ws.cell(row=row, column=1, value=lead.get("lead_id", lead.get("id", "")[:8]))
-        ws.cell(row=row, column=2, value=lead.get("nome", ""))
-        ws.cell(row=row, column=3, value=lead.get("cognome", ""))
-        ws.cell(row=row, column=4, value=lead.get("telefono", ""))
-        ws.cell(row=row, column=5, value=lead.get("email", ""))
-        ws.cell(row=row, column=6, value=lead.get("provincia", ""))
-        ws.cell(row=row, column=7, value=lead.get("tipologia_abitazione", "").replace("_", " ").title())
-        ws.cell(row=row, column=8, value=lead.get("ip_address", ""))
-        ws.cell(row=row, column=9, value=lead.get("campagna", ""))
-        ws.cell(row=row, column=10, value=lead.get("contenitore", ""))
-        ws.cell(row=row, column=11, value="Sì" if lead.get("privacy_consent") else "No")
-        ws.cell(row=row, column=12, value="Sì" if lead.get("marketing_consent") else "No")
-        ws.cell(row=row, column=13, value=lead.get("esito", ""))
-        ws.cell(row=row, column=14, value=lead.get("note", ""))
+        col = 1
         
-        # Format dates
+        # Base fields - always included even if None/empty
+        ws.cell(row=row, column=col, value=lead.get("lead_id", lead.get("id", "")[:8] if lead.get("id") else ""))
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("nome") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("cognome") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("telefono") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("email") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("provincia") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("campagna") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("commessa_id") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("unit_id") or lead.get("gruppo") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("tipologia_abitazione") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("indirizzo") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("regione") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("url") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("otp") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("inserzione") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("ip_address") or "")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("contenitore") or "")
+        col += 1
+        
+        # Consent fields - handle None separately
+        privacy = lead.get("privacy_consent")
+        ws.cell(row=row, column=col, value="Sì" if privacy is True else "No" if privacy is False else "Non specificato")
+        col += 1
+        
+        marketing = lead.get("marketing_consent")
+        ws.cell(row=row, column=col, value="Sì" if marketing is True else "No" if marketing is False else "Non specificato")
+        col += 1
+        
+        ws.cell(row=row, column=col, value=lead.get("esito") or "Nuovo")
+        col += 1
+        ws.cell(row=row, column=col, value=lead.get("note") or "")
+        col += 1
+        
+        # Assigned agent name (fetch from users)
+        agent_id = lead.get("assigned_agent_id")
+        agent_name = ""
+        if agent_id:
+            try:
+                agent = await db.users.find_one({"id": agent_id})
+                if agent:
+                    agent_name = agent.get("username", "")
+            except:
+                pass
+        ws.cell(row=row, column=col, value=agent_name)
+        col += 1
+        
+        # Format dates - always include column even if empty
         if lead.get("created_at"):
             try:
-                date_obj = datetime.fromisoformat(lead["created_at"].replace("Z", "+00:00"))
-                ws.cell(row=row, column=15, value=date_obj.strftime("%d/%m/%Y %H:%M"))
+                if isinstance(lead["created_at"], str):
+                    date_obj = datetime.fromisoformat(lead["created_at"].replace("Z", "+00:00"))
+                else:
+                    date_obj = lead["created_at"]
+                ws.cell(row=row, column=col, value=date_obj.strftime("%d/%m/%Y %H:%M"))
             except:
-                ws.cell(row=row, column=15, value=lead.get("created_at", ""))
+                ws.cell(row=row, column=col, value="")
+        else:
+            ws.cell(row=row, column=col, value="")
+        col += 1
         
         if lead.get("assigned_at"):
             try:
-                date_obj = datetime.fromisoformat(lead["assigned_at"].replace("Z", "+00:00"))
-                ws.cell(row=row, column=16, value=date_obj.strftime("%d/%m/%Y %H:%M"))
+                if isinstance(lead["assigned_at"], str):
+                    date_obj = datetime.fromisoformat(lead["assigned_at"].replace("Z", "+00:00"))
+                else:
+                    date_obj = lead["assigned_at"]
+                ws.cell(row=row, column=col, value=date_obj.strftime("%d/%m/%Y %H:%M"))
             except:
-                ws.cell(row=row, column=16, value=lead.get("assigned_at", ""))
+                ws.cell(row=row, column=col, value="")
+        else:
+            ws.cell(row=row, column=col, value="")
+        col += 1
         
         if lead.get("contacted_at"):
             try:
-                date_obj = datetime.fromisoformat(lead["contacted_at"].replace("Z", "+00:00"))
-                ws.cell(row=row, column=17, value=date_obj.strftime("%d/%m/%Y %H:%M"))
+                if isinstance(lead["contacted_at"], str):
+                    date_obj = datetime.fromisoformat(lead["contacted_at"].replace("Z", "+00:00"))
+                else:
+                    date_obj = lead["contacted_at"]
+                ws.cell(row=row, column=col, value=date_obj.strftime("%d/%m/%Y %H:%M"))
             except:
-                ws.cell(row=row, column=17, value=lead.get("contacted_at", ""))
+                ws.cell(row=row, column=col, value="")
+        else:
+            ws.cell(row=row, column=col, value="")
+        col += 1
+        
+        if lead.get("closed_at"):
+            try:
+                if isinstance(lead["closed_at"], str):
+                    date_obj = datetime.fromisoformat(lead["closed_at"].replace("Z", "+00:00"))
+                else:
+                    date_obj = lead["closed_at"]
+                ws.cell(row=row, column=col, value=date_obj.strftime("%d/%m/%Y %H:%M"))
+            except:
+                ws.cell(row=row, column=col, value="")
+        else:
+            ws.cell(row=row, column=col, value="")
+        col += 1
+        
+        # Custom fields - dynamically added
+        custom_fields_data = lead.get("custom_fields", {})
+        for custom_field in custom_fields_list:
+            field_id = custom_field["id"]
+            field_value = custom_fields_data.get(field_id, "")
+            ws.cell(row=row, column=col, value=str(field_value) if field_value else "")
+            col += 1
     
     # Auto-adjust column widths
     for column in ws.columns:
