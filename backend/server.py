@@ -5095,9 +5095,22 @@ async def get_agent_analytics(agent_id: str, current_user: User = Depends(get_cu
     
     # Get agent's leads statistics
     total_leads = await db.leads.count_documents({"assigned_agent_id": agent_id})
+    
+    # Contacted leads = leads with esito that is NOT "Nuovo" (null, empty, or "Nuovo" string)
+    # Only leads that have been worked on (changed from Nuovo to another status) count as contacted
     contacted_leads = await db.leads.count_documents({
         "assigned_agent_id": agent_id,
-        "esito": {"$ne": None}
+        "esito": {
+            "$ne": None,
+            "$ne": "",
+            "$ne": "Nuovo"
+        },
+        "$and": [
+            {"esito": {"$exists": True}},
+            {"esito": {"$ne": None}},
+            {"esito": {"$ne": ""}},
+            {"esito": {"$ne": "Nuovo"}}
+        ]
     })
     
     # Leads by outcome - COUNT ALL ACTUAL VALUES IN DATABASE
