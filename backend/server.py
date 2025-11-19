@@ -5200,19 +5200,26 @@ async def get_referente_analytics(referente_id: str, current_user: User = Depend
     }
 
 # Excel Export System
-async def create_excel_report(leads_data, filename="leads_export"):
-    """Create Excel file with leads data"""
+async def create_excel_report(leads_data, custom_fields_list, filename="leads_export"):
+    """Create Excel file with leads data - ALL fields including custom fields"""
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Lead Report"
     
-    # Headers
+    # Base Headers - ALL fields from database
     headers = [
         "Lead ID", "Nome", "Cognome", "Telefono", "Email", "Provincia", 
-        "Tipologia Abitazione", "IP Address", "Campagna", "Contenitore",
-        "Privacy Consent", "Marketing Consent", "Esito", "Note", 
-        "Data Creazione", "Data Assegnazione", "Data Contatto"
+        "Campagna", "Commessa ID", "Unit ID",
+        "Tipologia Abitazione", "Indirizzo", "Regione", 
+        "URL", "OTP", "Inserzione", "IP Address", "Contenitore",
+        "Privacy Consent", "Marketing Consent", 
+        "Stato/Esito", "Note", "Agente Assegnato",
+        "Data Creazione", "Data Assegnazione", "Data Contatto", "Data Chiusura"
     ]
+    
+    # Add dynamic custom fields headers
+    for custom_field in custom_fields_list:
+        headers.append(f"CF: {custom_field['name']}")  # CF = Custom Field
     
     # Header styling
     header_font = Font(bold=True, color="FFFFFF")
