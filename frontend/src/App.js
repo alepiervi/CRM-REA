@@ -16278,8 +16278,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       if (clientiFilterCommesse && clientiFilterCommesse !== 'all') {
         params.append('commessa_id_filter', clientiFilterCommesse);
       }
-      // No limit - show all clients
-      params.append('limit', '999999');
+      // No limit parameter - backend returns all clients
       
       const response = await axios.get(`${API}/clienti?${params}`);
       setAllClienti(response.data); // Store all clients
