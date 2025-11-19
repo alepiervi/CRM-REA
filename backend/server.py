@@ -10504,6 +10504,22 @@ async def get_clienti(
                 query.update(user_filter)
                 print(f"  No servizi filter applied")
             
+            # Filter by authorized commesse (if defined)
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate and len(current_user.commesse_autorizzate) > 0:
+                commesse_filter = {
+                    "$or": [
+                        {"commessa_id": {"$in": current_user.commesse_autorizzate}},
+                        {"commessa_id": None},
+                        {"commessa_id": {"$exists": False}}
+                    ]
+                }
+                # Add commesse filter to existing query
+                if "$and" in query:
+                    query["$and"].append(commesse_filter)
+                else:
+                    query["$and"] = [user_filter, commesse_filter]
+                print(f"  Filtering by commesse_autorizzate: {current_user.commesse_autorizzate}")
+            
             print(f"🔍 RESPONSABILE_PRESIDI: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(sub_agenzie_ids)} sub agenzie")
         else:
             # Se non ha sub agenzie assegnate, vede i propri clienti O quelli assegnati a lui
