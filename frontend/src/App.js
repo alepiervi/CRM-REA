@@ -2898,97 +2898,18 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       </div>
 
       {/* Filters */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-lg">Filtri di Ricerca</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {/* Search Bar - Full Width */}
-            <div className="md:col-span-3">
-              <Label>Ricerca per Nome o Telefono</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Cerca per nome, cognome o telefono..."
-                  value={filters.search}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                  className="pl-10"
-                />
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Search className="w-5 h-5 text-blue-600" />
               </div>
+              <CardTitle className="text-xl font-bold text-slate-800">Filtri di Ricerca</CardTitle>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div>
-              <Label>Campagna</Label>
-              <Input
-                placeholder="Nome campagna"
-                value={filters.campagna}
-                onChange={(e) => setFilters({ ...filters, campagna: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Provincia</Label>
-              <Input
-                placeholder="Nome provincia"
-                value={filters.provincia}
-                onChange={(e) => setFilters({ ...filters, provincia: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Status</Label>
-              <select
-                className="w-full border rounded-md p-2"
-                value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              >
-                <option value="">Tutti gli status</option>
-                {leadStatuses.map((status) => (
-                  <option key={status.id} value={status.nome}>
-                    {status.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label>Agente Assegnato</Label>
-              <select
-                className="w-full border rounded-md p-2"
-                value={filters.assigned_agent_id}
-                onChange={(e) => setFilters({ ...filters, assigned_agent_id: e.target.value })}
-              >
-                <option value="">Tutti gli agenti</option>
-                <option value="unassigned">Non assegnati</option>
-                {users.filter(u => u.role === "agente").map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.username}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label>Da Data</Label>
-              <Input
-                type="date"
-                value={filters.date_from}
-                onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>A Data</Label>
-              <Input
-                type="date"
-                value={filters.date_to}
-                onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
-              />
-            </div>
-          </div>
-          
-          {/* Reset Button */}
-          <div className="mt-4 flex justify-end">
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
               onClick={() => setFilters({
                 campagna: "",
                 provincia: "",
@@ -2998,11 +2919,210 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 assigned_agent_id: "",
                 search: "",
               })}
+              className="text-slate-600 hover:text-slate-900"
             >
-              <X className="w-4 h-4 mr-2" />
-              Azzera Filtri
+              <X className="w-4 h-4 mr-1" />
+              Azzera
             </Button>
           </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          {/* Search Bar - Prominent */}
+          <div className="mb-6">
+            <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+              <Search className="w-4 h-4 text-blue-500" />
+              Ricerca Rapida
+            </Label>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <Input
+                placeholder="🔍 Cerca per nome, cognome, telefono o email..."
+                value={filters.search}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                className="pl-12 pr-4 h-12 text-base border-2 border-slate-200 focus:border-blue-400 rounded-xl shadow-sm"
+              />
+              {filters.search && (
+                <button
+                  onClick={() => setFilters({ ...filters, search: "" })}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-slate-200 mb-6"></div>
+          
+          {/* Filter Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Campagna */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <FolderOpen className="w-4 h-4 text-amber-500" />
+                Campagna
+              </Label>
+              <div className="relative">
+                <Input
+                  placeholder="Filtra per campagna..."
+                  value={filters.campagna}
+                  onChange={(e) => setFilters({ ...filters, campagna: e.target.value })}
+                  className="pl-3 border-slate-200 focus:border-blue-400 rounded-lg"
+                />
+                {filters.campagna && (
+                  <button
+                    onClick={() => setFilters({ ...filters, campagna: "" })}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Provincia */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-green-500" />
+                Provincia
+              </Label>
+              <div className="relative">
+                <Input
+                  placeholder="Filtra per provincia..."
+                  value={filters.provincia}
+                  onChange={(e) => setFilters({ ...filters, provincia: e.target.value })}
+                  className="pl-3 border-slate-200 focus:border-blue-400 rounded-lg"
+                />
+                {filters.provincia && (
+                  <button
+                    onClick={() => setFilters({ ...filters, provincia: "" })}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Status */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-purple-500" />
+                Stato Lead
+              </Label>
+              <select
+                className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              >
+                <option value="">Tutti gli stati</option>
+                {leadStatuses.map((status) => (
+                  <option key={status.id} value={status.nome}>
+                    {status.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Agente */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-500" />
+                Agente Assegnato
+              </Label>
+              <select
+                className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
+                value={filters.assigned_agent_id}
+                onChange={(e) => setFilters({ ...filters, assigned_agent_id: e.target.value })}
+              >
+                <option value="">Tutti gli agenti</option>
+                <option value="unassigned">❌ Non assegnati</option>
+                {users.filter(u => u.role === "agente").map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    👤 {agent.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Da Data */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-teal-500" />
+                Da Data
+              </Label>
+              <Input
+                type="date"
+                value={filters.date_from}
+                onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
+                className="border-slate-200 focus:border-blue-400 rounded-lg"
+              />
+            </div>
+
+            {/* A Data */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-teal-500" />
+                A Data
+              </Label>
+              <Input
+                type="date"
+                value={filters.date_to}
+                onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
+                className="border-slate-200 focus:border-blue-400 rounded-lg"
+              />
+            </div>
+          </div>
+
+          {/* Active Filters Summary */}
+          {(filters.search || filters.campagna || filters.provincia || filters.status || filters.assigned_agent_id || filters.date_from || filters.date_to) && (
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Filtri attivi:</span>
+                  <div className="flex flex-wrap gap-2 ml-2">
+                    {filters.search && (
+                      <span className="px-2 py-1 bg-white border border-blue-300 rounded-md text-xs text-blue-700">
+                        🔍 "{filters.search}"
+                      </span>
+                    )}
+                    {filters.campagna && (
+                      <span className="px-2 py-1 bg-white border border-blue-300 rounded-md text-xs text-blue-700">
+                        📁 {filters.campagna}
+                      </span>
+                    )}
+                    {filters.provincia && (
+                      <span className="px-2 py-1 bg-white border border-blue-300 rounded-md text-xs text-blue-700">
+                        📍 {filters.provincia}
+                      </span>
+                    )}
+                    {filters.status && (
+                      <span className="px-2 py-1 bg-white border border-blue-300 rounded-md text-xs text-blue-700">
+                        📊 {filters.status}
+                      </span>
+                    )}
+                    {filters.assigned_agent_id && (
+                      <span className="px-2 py-1 bg-white border border-blue-300 rounded-md text-xs text-blue-700">
+                        👤 {filters.assigned_agent_id === "unassigned" ? "Non assegnati" : users.find(u => u.id === filters.assigned_agent_id)?.username}
+                      </span>
+                    )}
+                    {filters.date_from && (
+                      <span className="px-2 py-1 bg-white border border-blue-300 rounded-md text-xs text-blue-700">
+                        📅 Da: {filters.date_from}
+                      </span>
+                    )}
+                    {filters.date_to && (
+                      <span className="px-2 py-1 bg-white border border-blue-300 rounded-md text-xs text-blue-700">
+                        📅 A: {filters.date_to}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
