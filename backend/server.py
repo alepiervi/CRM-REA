@@ -5076,7 +5076,12 @@ async def list_lead_documents(
 
 # Analytics endpoints
 @api_router.get("/analytics/agent/{agent_id}")
-async def get_agent_analytics(agent_id: str, current_user: User = Depends(get_current_user)):
+async def get_agent_analytics(
+    agent_id: str, 
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
     # Permission check
     if current_user.role == UserRole.AGENTE and current_user.id != agent_id:
         raise HTTPException(status_code=403, detail="Can only view your own analytics")
@@ -5093,8 +5098,28 @@ async def get_agent_analytics(agent_id: str, current_user: User = Depends(get_cu
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     
+    # Build base query with date filters
+    base_query = {"assigned_agent_id": agent_id}
+    
+    # Add date filters if provided
+    if date_from or date_to:
+        date_filter = {}
+        if date_from:
+            try:
+                date_from_obj = datetime.fromisoformat(date_from).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+                date_filter["$gte"] = date_from_obj
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD")
+        if date_to:
+            try:
+                date_to_obj = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+                date_filter["$lte"] = date_to_obj
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
+        base_query["created_at"] = date_filter
+    
     # Get agent's leads statistics
-    total_leads = await db.leads.count_documents({"assigned_agent_id": agent_id})
+    total_leads = await db.leads.count_documents(base_query)
     
     # Contacted leads = leads with esito that is NOT "Nuovo" (null, empty, or "Nuovo" string)
     # Only leads that have been worked on (changed from Nuovo to another status) count as contacted
