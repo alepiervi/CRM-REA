@@ -10495,10 +10495,10 @@ async def get_clienti(
         ]
         
     elif current_user.role == UserRole.AREA_MANAGER:
-        # Area Manager: vede clienti delle sub agenzie a lui assegnate
-        print(f"🌍 AREA_MANAGER ACCESS: User {current_user.username} - clients from assigned sub agenzie")
+        # Area Manager: vede clienti degli utenti con le stesse sub agenzie autorizzate
+        print(f"🌍 AREA_MANAGER ACCESS: User {current_user.username} - clients from users with same sub agenzie")
         if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-            # Trova tutti gli utenti delle sub agenzie autorizzate
+            # Trova tutti gli utenti con le stesse sub agenzie autorizzate
             users_in_sub_agenzie = await db.users.find({
                 "sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}
             }).to_list(length=None)
@@ -10506,7 +10506,10 @@ async def get_clienti(
             user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
             user_ids_in_sub_agenzie.append(current_user.id)  # Include anche i propri clienti
             
-            query["created_by"] = {"$in": user_ids_in_sub_agenzie}
+            query["$or"] = [
+                {"created_by": {"$in": user_ids_in_sub_agenzie}},
+                {"assigned_to": {"$in": user_ids_in_sub_agenzie}}
+            ]
             # Filter by authorized services
             if current_user.servizi_autorizzati:
                 query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
