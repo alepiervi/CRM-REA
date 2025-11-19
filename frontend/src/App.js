@@ -2984,6 +2984,25 @@ const LeadsManagement = ({ selectedUnit, units }) => {
               />
             </div>
           </div>
+          
+          {/* Reset Button */}
+          <div className="mt-4 flex justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setFilters({
+                campagna: "",
+                provincia: "",
+                status: "",
+                date_from: "",
+                date_to: "",
+                assigned_agent_id: "",
+                search: "",
+              })}
+            >
+              <X className="w-4 h-4 mr-2" />
+              Azzera Filtri
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
