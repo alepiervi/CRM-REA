@@ -2724,7 +2724,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       inserzione: lead.inserzione || "",
       privacy_consent: lead.privacy_consent || false,
       marketing_consent: lead.marketing_consent || false,
-      esito: lead.esito || "",
+      esito: lead.esito || "Nuovo",  // Default to "Nuovo" if empty
       note: lead.note || ""
     });
     setIsEditingLead(false);
