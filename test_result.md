@@ -2015,10 +2015,8 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "Lead Reassignment - Admin Only Manual Agent Assignment"
-  stuck_tasks:
-    - "Lead Reassignment - Admin Only Manual Agent Assignment"
+  current_focus: []
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
