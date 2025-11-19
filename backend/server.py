@@ -10484,9 +10484,12 @@ async def get_clienti(
                 query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
             print(f"🔍 AREA_MANAGER: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(current_user.sub_agenzie_autorizzate)} sub agenzie")
         else:
-            # Se non ha sub agenzie assegnate, vede solo i propri clienti
-            print(f"⚠️ AREA_MANAGER: No sub agenzie assigned - only own clients")
-            query["created_by"] = current_user.id
+            # Se non ha sub agenzie assegnate, vede i propri clienti O quelli assegnati a lui
+            print(f"⚠️ AREA_MANAGER: No sub agenzie assigned - own and assigned clients")
+            query["$or"] = [
+                {"created_by": current_user.id},
+                {"assigned_to": current_user.id}
+            ]
         
     else:
         # Ruolo non riconosciuto - accesso negato
