@@ -5264,6 +5264,29 @@ async def get_referente_analytics(
         ]}
         agent_contacted = await db.leads.count_documents(agent_contacted_query)
         
+        # Get outcomes for this agent
+        agent_outcomes = {}
+        agent_pipeline = [
+            {"$match": agent_base_query},
+            {"$group": {
+                "_id": "$esito",
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"count": -1}}
+        ]
+        
+        agent_esito_counts = await db.leads.aggregate(agent_pipeline).to_list(length=None)
+        
+        for item in agent_esito_counts:
+            esito_value = item["_id"]
+            count = item["count"]
+            
+            # Handle None/empty/Nuovo esito as "Nuovo"
+            if esito_value is None or esito_value == "" or not esito_value or esito_value == "Nuovo":
+                agent_outcomes["Nuovo"] = agent_outcomes.get("Nuovo", 0) + count
+            else:
+                agent_outcomes[esito_value] = count
+        
         agent_stats.append({
             "agent": {
                 "id": agent["id"],
@@ -5272,7 +5295,8 @@ async def get_referente_analytics(
             },
             "total_leads": agent_leads,
             "contacted_leads": agent_contacted,
-            "contact_rate": round((agent_contacted / agent_leads * 100) if agent_leads > 0 else 0, 2)
+            "contact_rate": round((agent_contacted / agent_leads * 100) if agent_leads > 0 else 0, 2),
+            "outcomes": agent_outcomes
         })
     
     # Leads by outcome - COUNT ALL ACTUAL VALUES IN DATABASE (same as agent analytics)
