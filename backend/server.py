@@ -4185,9 +4185,11 @@ async def get_leads(
     unit_id: Optional[str] = None,
     campagna: Optional[str] = None,
     provincia: Optional[str] = None,
-    status: Optional[str] = None,  # NEW: Filter by status
+    status: Optional[str] = None,  # Filter by esito (status)
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
+    assigned_agent_id: Optional[str] = None,  # NEW: Filter by agent
+    search: Optional[str] = None,  # NEW: Search by name/phone
     current_user: User = Depends(get_current_user)
 ):
     query = {}
@@ -4226,11 +4228,11 @@ async def get_leads(
     
     # Apply additional filters
     if campagna:
-        query["campagna"] = campagna
+        query["campagna"] = {"$regex": campagna, "$options": "i"}  # Case-insensitive search
     if provincia:
-        query["provincia"] = provincia
+        query["provincia"] = {"$regex": provincia, "$options": "i"}  # Case-insensitive search
     if status:
-        query["status"] = status
+        query["esito"] = status  # Changed from "status" to "esito"
     if date_from:
         query["created_at"] = {"$gte": datetime.fromisoformat(date_from)}
     if date_to:
@@ -4238,6 +4240,29 @@ async def get_leads(
             query["created_at"]["$lte"] = datetime.fromisoformat(date_to)
         else:
             query["created_at"] = {"$lte": datetime.fromisoformat(date_to)}
+    
+    # NEW: Filter by assigned agent
+    if assigned_agent_id:
+        if assigned_agent_id == "unassigned":
+            # Show only unassigned leads
+            query["$or"] = [
+                {"assigned_agent_id": None},
+                {"assigned_agent_id": {"$exists": False}}
+            ]
+        else:
+            # Override role-based filter if admin/referente specifies an agent
+            if current_user.role == UserRole.ADMIN or current_user.role == UserRole.REFERENTE:
+                query["assigned_agent_id"] = assigned_agent_id
+    
+    # NEW: Search by name or phone
+    if search:
+        search_regex = {"$regex": search, "$options": "i"}  # Case-insensitive
+        query["$or"] = [
+            {"nome": search_regex},
+            {"cognome": search_regex},
+            {"telefono": search_regex},
+            {"email": search_regex}
+        ]
     
     leads = await db["leads"].find(query).to_list(length=None)
     
