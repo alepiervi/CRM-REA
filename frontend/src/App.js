@@ -3642,12 +3642,33 @@ const LeadsManagement = ({ selectedUnit, units }) => {
               {(user?.role === "admin" || user?.role === "referente") && (
                 <div>
                   <Label className="text-sm font-medium text-slate-600">Assegnato a</Label>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <Users className="w-4 h-4 text-slate-400" />
-                    <p className={selectedLead.assigned_agent_id ? "text-green-700 font-medium" : "text-slate-500"}>
-                      {selectedLead.assigned_agent_name || "Non assegnato"}
-                    </p>
-                  </div>
+                  
+                  {/* Admin can reassign leads, others can only view */}
+                  {user?.role === "admin" && isEditingLead ? (
+                    <Select 
+                      value={leadEditData.assigned_agent_id || ""}
+                      onValueChange={(value) => setLeadEditData({...leadEditData, assigned_agent_id: value})}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Seleziona agente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Non assegnato</SelectItem>
+                        {users.filter(u => u.role === "agente").map((agent) => (
+                          <SelectItem key={agent.id} value={agent.id}>
+                            👤 {agent.username} ({agent.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Users className="w-4 h-4 text-slate-400" />
+                      <p className={selectedLead.assigned_agent_id ? "text-green-700 font-medium" : "text-slate-500"}>
+                        {selectedLead.assigned_agent_name || "Non assegnato"}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
