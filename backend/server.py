@@ -5123,27 +5123,20 @@ async def get_agent_analytics(
     
     # Contacted leads = leads with esito that is NOT "Nuovo" (null, empty, or "Nuovo" string)
     # Only leads that have been worked on (changed from Nuovo to another status) count as contacted
-    contacted_leads = await db.leads.count_documents({
-        "assigned_agent_id": agent_id,
-        "esito": {
-            "$ne": None,
-            "$ne": "",
-            "$ne": "Nuovo"
-        },
-        "$and": [
-            {"esito": {"$exists": True}},
-            {"esito": {"$ne": None}},
-            {"esito": {"$ne": ""}},
-            {"esito": {"$ne": "Nuovo"}}
-        ]
-    })
+    contacted_query = {**base_query, "$and": [
+        {"esito": {"$exists": True}},
+        {"esito": {"$ne": None}},
+        {"esito": {"$ne": ""}},
+        {"esito": {"$ne": "Nuovo"}}
+    ]}
+    contacted_leads = await db.leads.count_documents(contacted_query)
     
     # Leads by outcome - COUNT ALL ACTUAL VALUES IN DATABASE
     outcomes = {}
     
     # Use MongoDB aggregation to get ALL distinct esito values with counts
     pipeline = [
-        {"$match": {"assigned_agent_id": agent_id}},
+        {"$match": base_query},
         {"$group": {
             "_id": "$esito",
             "count": {"$sum": 1}
