@@ -8856,10 +8856,19 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   const fetchAgentAnalytics = async (agentId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/analytics/agent/${agentId}`);
+      const params = new URLSearchParams();
+      if (analyticsDateRange.date_from) params.append('date_from', analyticsDateRange.date_from);
+      if (analyticsDateRange.date_to) params.append('date_to', analyticsDateRange.date_to);
+      
+      const url = params.toString() 
+        ? `${API}/analytics/agent/${agentId}?${params.toString()}`
+        : `${API}/analytics/agent/${agentId}`;
+      
+      const response = await axios.get(url);
       setAnalyticsData(response.data);
     } catch (error) {
       console.error("Error fetching agent analytics:", error);
+      toast({ title: "Errore", description: "Errore nel caricamento analytics agente", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -8868,10 +8877,19 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   const fetchReferenteAnalytics = async (referenteId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/analytics/referente/${referenteId}`);
+      const params = new URLSearchParams();
+      if (analyticsDateRange.date_from) params.append('date_from', analyticsDateRange.date_from);
+      if (analyticsDateRange.date_to) params.append('date_to', analyticsDateRange.date_to);
+      
+      const url = params.toString() 
+        ? `${API}/analytics/referente/${referenteId}?${params.toString()}`
+        : `${API}/analytics/referente/${referenteId}`;
+      
+      const response = await axios.get(url);
       setAnalyticsData(response.data);
     } catch (error) {
       console.error("Error fetching referente analytics:", error);
+      toast({ title: "Errore", description: "Errore nel caricamento analytics referente", variant: "destructive" });
     } finally {
       setLoading(false);
     }
