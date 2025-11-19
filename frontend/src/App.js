@@ -3646,42 +3646,61 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                   
                   {/* Admin can reassign leads, others can only view */}
                   {user?.role === "admin" && isEditingLead ? (
-                    <Select 
-                      value={leadEditData.assigned_agent_id || "unassigned"}
-                      onValueChange={(value) => {
-                        const newValue = value === "unassigned" ? "" : value;
-                        setLeadEditData({...leadEditData, assigned_agent_id: newValue});
-                      }}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Seleziona agente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unassigned">Non assegnato</SelectItem>
-                        {users.filter(u => {
-                          // Filter only agents
-                          if (u.role !== "agente") return false;
-                          
-                          // If agent has no provinces defined, they cover all provinces
-                          if (!u.provinces || u.provinces.length === 0) return true;
-                          
-                          // If lead has no provincia, show all agents
-                          if (!selectedLead.provincia) return true;
-                          
-                          // Otherwise, check if agent covers this lead's provincia
-                          return u.provinces.includes(selectedLead.provincia);
-                        }).map((agent) => (
-                          <SelectItem key={agent.id} value={agent.id}>
-                            👤 {agent.username} ({agent.email})
-                            {agent.provinces && agent.provinces.length > 0 && (
-                              <span className="text-xs text-slate-500 ml-1">
-                                ({agent.provinces.join(", ")})
-                              </span>
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div>
+                      <Select 
+                        value={leadEditData.assigned_agent_id || "unassigned"}
+                        onValueChange={(value) => {
+                          const newValue = value === "unassigned" ? "" : value;
+                          setLeadEditData({...leadEditData, assigned_agent_id: newValue});
+                        }}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Seleziona agente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unassigned">Non assegnato</SelectItem>
+                          {(() => {
+                            const availableAgents = users.filter(u => {
+                              // Filter only agents
+                              if (u.role !== "agente") return false;
+                              
+                              // If agent has no provinces defined, they cover all provinces
+                              if (!u.provinces || u.provinces.length === 0) return true;
+                              
+                              // If lead has no provincia, show all agents
+                              if (!selectedLead.provincia) return true;
+                              
+                              // Otherwise, check if agent covers this lead's provincia
+                              return u.provinces.includes(selectedLead.provincia);
+                            });
+                            
+                            if (availableAgents.length === 0) {
+                              return (
+                                <SelectItem value="no-agents" disabled>
+                                  Nessun agente disponibile per {selectedLead.provincia || "questa provincia"}
+                                </SelectItem>
+                              );
+                            }
+                            
+                            return availableAgents.map((agent) => (
+                              <SelectItem key={agent.id} value={agent.id}>
+                                👤 {agent.username} ({agent.email})
+                                {agent.provinces && agent.provinces.length > 0 && (
+                                  <span className="text-xs text-slate-500 ml-1">
+                                    - {agent.provinces.join(", ")}
+                                  </span>
+                                )}
+                              </SelectItem>
+                            ));
+                          })()}
+                        </SelectContent>
+                      </Select>
+                      {selectedLead.provincia && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          📍 Mostrando solo agenti che coprono: <span className="font-medium">{selectedLead.provincia}</span>
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <div className="flex items-center space-x-2 mt-1">
                       <Users className="w-4 h-4 text-slate-400" />
