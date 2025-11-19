@@ -5100,14 +5100,34 @@ async def get_agent_analytics(agent_id: str, current_user: User = Depends(get_cu
         "esito": {"$ne": None}
     })
     
-    # Leads by outcome
+    # Leads by outcome - USE DYNAMIC LEAD STATUSES FROM DATABASE
     outcomes = {}
-    for outcome in CallOutcome:
+    
+    # Get dynamic lead statuses from database
+    lead_statuses = await db.lead_statuses.find().to_list(length=None)
+    
+    # Count for each dynamic status
+    for status in lead_statuses:
+        status_name = status["nome"]
         count = await db.leads.count_documents({
             "assigned_agent_id": agent_id,
-            "esito": outcome.value
+            "esito": status_name
         })
-        outcomes[outcome.value] = count
+        if count > 0:  # Only include statuses with at least one lead
+            outcomes[status_name] = count
+    
+    # Also count "Nuovo" (leads without esito)
+    nuovo_count = await db.leads.count_documents({
+        "assigned_agent_id": agent_id,
+        "$or": [
+            {"esito": None},
+            {"esito": ""},
+            {"esito": "Nuovo"},
+            {"esito": {"$exists": False}}
+        ]
+    })
+    if nuovo_count > 0:
+        outcomes["Nuovo"] = nuovo_count
     
     # Leads this week/month
     now = datetime.now(timezone.utc)
