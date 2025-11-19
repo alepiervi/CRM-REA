@@ -1934,13 +1934,13 @@ backend:
           agent: "main"
           comment: "✅ AGENT OUTCOMES IN REFERENTE ANALYTICS COMPLETE: Modified /api/analytics/referente/{referente_id} agent_breakdown loop to include outcomes for each individual agent. Added MongoDB aggregation pipeline per agent to calculate outcome distribution with same logic as total outcomes (handles None/empty/'Nuovo' as 'Nuovo' status). Each agent in agent_breakdown now includes 'outcomes' field with count per status. TESTED WITH CURL: prova11 agent has outcomes 'Nuovo': 8, 'OK': 1, prova14 has 'Nuovo': 5, prova15 has 'Nuovo': 5. Backend returns complete outcome data for table display."
 
-  - task: "Lead Reassignment - Admin Only Manual Agent Assignment"
+  - task: "Lead Reassignment - Admin Only Manual Agent Assignment with Province Filter"
     implemented: true
-    working: false
+    working: "needs_testing"
     file: "/app/backend/server.py, /app/frontend/src/App.js"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "needs_testing"
           agent: "main"
@@ -1948,6 +1948,9 @@ backend:
         - working: false
           agent: "testing"
           comment: "🚨 LEAD REASSIGNMENT TESTING COMPLETE - CRITICAL ISSUE IDENTIFIED! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested lead reassignment functionality as requested in review. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated and accessed Lead section. ✅ LEAD MODAL ACCESS: Successfully opened lead detail modal for lead with assigned agent 'prova11'. ✅ 'ASSEGNATO A' SECTION VISIBLE: Found 'Assegnato a' section in modal showing current agent 'prova11'. ✅ 'MODIFICA' BUTTON FOUND: Located and clicked 'Modifica' button to enter edit mode. ❌ CRITICAL ISSUE - EDIT MODE NOT ACTIVATED: After clicking 'Modifica' button, edit mode was not activated - 'Salva' button not found, indicating isEditingLead state not set to true. ❌ AGENT DROPDOWN NOT VISIBLE: No Select dropdown found for agent reassignment - found 0 <select> elements and 0 combobox elements in modal. ❌ JAVASCRIPT ERRORS DETECTED: Console shows Select component errors: 'A <Select.Item /> must have a value prop that is not an empty string' - indicating Select component implementation issues. 🔍 ROOT CAUSE ANALYSIS: 1) 'Modifica' button click not properly setting isEditingLead=true state, 2) Select component has validation errors preventing proper rendering, 3) Frontend implementation exists (lines 3642-3665) but not functioning due to state management issues. 🎯 CRITICAL OBJECTIVES NOT ACHIEVED: 1) Admin cannot enter edit mode ❌, 2) Agent dropdown not visible ❌, 3) Cannot test reassignment functionality ❌. RECOMMENDATION: Fix isEditingLead state management and Select component validation errors. SUCCESS RATE: 40% (4/10 tests passed) - Core functionality not working due to frontend state and component issues!"
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ SELECT COMPONENT FIX AND PROVINCE FILTER IMPLEMENTATION COMPLETE! 1) FIX SELECT COMPONENT: Resolved 'value prop that is not an empty string' error by using 'unassigned' as special value instead of empty string. Added conversion logic in onValueChange to map 'unassigned' → empty string before saving. 2) PROVINCE FILTER LOGIC: Modified agent dropdown to show ONLY agents that cover lead's provincia. Filter logic: a) If agent.provinces is empty/undefined → agent covers ALL provinces (always shown), b) If lead.provincia is empty → show all agents, c) Otherwise → show only agents where agent.provinces.includes(lead.provincia). 3) UI ENHANCEMENTS: Added province display in dropdown for each agent showing covered provinces. Added informative text below dropdown showing lead's provincia being filtered. Added 'Nessun agente disponibile' message if no agents cover the provincia. READY FOR TESTING: Test dropdown shows only agents covering lead provincia, test agents with empty provinces shown for all leads, verify province filter message displayed."
 
 
 frontend:
