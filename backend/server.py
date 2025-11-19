@@ -5100,34 +5100,30 @@ async def get_agent_analytics(agent_id: str, current_user: User = Depends(get_cu
         "esito": {"$ne": None}
     })
     
-    # Leads by outcome - USE DYNAMIC LEAD STATUSES FROM DATABASE
+    # Leads by outcome - COUNT ALL ACTUAL VALUES IN DATABASE
     outcomes = {}
     
-    # Get dynamic lead statuses from database
-    lead_statuses = await db.lead_statuses.find().to_list(length=None)
+    # Use MongoDB aggregation to get ALL distinct esito values with counts
+    pipeline = [
+        {"$match": {"assigned_agent_id": agent_id}},
+        {"$group": {
+            "_id": "$esito",
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"count": -1}}
+    ]
     
-    # Count for each dynamic status
-    for status in lead_statuses:
-        status_name = status["nome"]
-        count = await db.leads.count_documents({
-            "assigned_agent_id": agent_id,
-            "esito": status_name
-        })
-        if count > 0:  # Only include statuses with at least one lead
-            outcomes[status_name] = count
+    esito_counts = await db.leads.aggregate(pipeline).to_list(length=None)
     
-    # Also count "Nuovo" (leads without esito)
-    nuovo_count = await db.leads.count_documents({
-        "assigned_agent_id": agent_id,
-        "$or": [
-            {"esito": None},
-            {"esito": ""},
-            {"esito": "Nuovo"},
-            {"esito": {"$exists": False}}
-        ]
-    })
-    if nuovo_count > 0:
-        outcomes["Nuovo"] = nuovo_count
+    for item in esito_counts:
+        esito_value = item["_id"]
+        count = item["count"]
+        
+        # Handle None/empty esito as "Nuovo"
+        if esito_value is None or esito_value == "" or not esito_value:
+            outcomes["Nuovo"] = outcomes.get("Nuovo", 0) + count
+        else:
+            outcomes[esito_value] = count
     
     # Leads this week/month
     now = datetime.now(timezone.utc)
