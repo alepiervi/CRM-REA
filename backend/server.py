@@ -5192,7 +5192,12 @@ async def get_agent_analytics(
     }
 
 @api_router.get("/analytics/referente/{referente_id}")
-async def get_referente_analytics(referente_id: str, current_user: User = Depends(get_current_user)):
+async def get_referente_analytics(
+    referente_id: str, 
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
     # Permission check
     if current_user.role == UserRole.REFERENTE and current_user.id != referente_id:
         raise HTTPException(status_code=403, detail="Can only view your own analytics")
@@ -5208,8 +5213,28 @@ async def get_referente_analytics(referente_id: str, current_user: User = Depend
     agents = await db.users.find({"referente_id": referente_id}).to_list(length=None)
     agent_ids = [agent["id"] for agent in agents]
     
+    # Build base query with date filters
+    base_query = {"assigned_agent_id": {"$in": agent_ids}}
+    
+    # Add date filters if provided
+    if date_from or date_to:
+        date_filter = {}
+        if date_from:
+            try:
+                date_from_obj = datetime.fromisoformat(date_from).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+                date_filter["$gte"] = date_from_obj
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD")
+        if date_to:
+            try:
+                date_to_obj = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+                date_filter["$lte"] = date_to_obj
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
+        base_query["created_at"] = date_filter
+    
     # Aggregate statistics for all agents under referente
-    total_leads = await db.leads.count_documents({"assigned_agent_id": {"$in": agent_ids}})
+    total_leads = await db.leads.count_documents(base_query)
     
     # Contacted leads = leads with esito that is NOT "Nuovo" (null, empty, or "Nuovo" string)
     contacted_leads = await db.leads.count_documents({
