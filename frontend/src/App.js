@@ -7281,10 +7281,11 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
         ...formData,
         commesse_autorizzate: [...currentCommesse, commessaId],
       });
-      // Carica i servizi per la commessa selezionata (per responsabile/backoffice commessa e ruoli store/presidi)
+      // Carica i servizi per la commessa selezionata (per responsabile/backoffice commessa e ruoli store/presidi/area manager)
       if (formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" ||
           formData.role === "responsabile_store" || formData.role === "responsabile_presidi" ||
-          formData.role === "store_assist" || formData.role === "promoter_presidi") {
+          formData.role === "store_assist" || formData.role === "promoter_presidi" ||
+          formData.role === "area_manager") {
         await fetchServiziForCommessaEdit(commessaId);
       } else {
         handleCommessaChange(commessaId);
