@@ -10451,9 +10451,12 @@ async def get_clienti(
             return []
             
     elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
-        # Agente Specializzato & Operatore: vedono solo clienti creati da loro
-        print(f"👤 {current_user.role} ACCESS: User {current_user.username} - only own clients")
-        query["created_by"] = current_user.id
+        # Agente Specializzato & Operatore: vedono clienti creati da loro O assegnati a loro
+        print(f"👤 {current_user.role} ACCESS: User {current_user.username} - own and assigned clients")
+        query["$or"] = [
+            {"created_by": current_user.id},
+            {"assigned_to": current_user.id}
+        ]
         
     elif current_user.role in [UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
         # Ruoli Store e Presidi: vedono solo clienti creati da loro (associati alla loro sub agenzia)
