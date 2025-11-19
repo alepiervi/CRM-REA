@@ -7,7 +7,7 @@ import requests
 import json
 import sys
 
-BASE_URL = "https://nureal-crm-1.preview.emergentagent.com/api"
+BASE_URL = "https://lead-master-7.preview.emergentagent.com/api"
 
 def test_critical_fixes():
     print("🚨 TESTING CRITICAL ARUBA DRIVE FIXES...")

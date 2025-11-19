@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://nureal-crm-1.preview.emergentagent.com"
+    base_url = "https://lead-master-7.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:

@@ -12,7 +12,7 @@ import uuid
 import subprocess
 
 class ArubaSimulationTester:
-    def __init__(self, base_url="https://nureal-crm-1.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://lead-master-7.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
