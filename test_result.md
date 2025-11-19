@@ -1933,6 +1933,18 @@ backend:
           comment: "✅ AGENT OUTCOMES IN REFERENTE ANALYTICS COMPLETE: Modified /api/analytics/referente/{referente_id} agent_breakdown loop to include outcomes for each individual agent. Added MongoDB aggregation pipeline per agent to calculate outcome distribution with same logic as total outcomes (handles None/empty/'Nuovo' as 'Nuovo' status). Each agent in agent_breakdown now includes 'outcomes' field with count per status. TESTED WITH CURL: prova11 agent has outcomes 'Nuovo': 8, 'OK': 1, prova14 has 'Nuovo': 5, prova15 has 'Nuovo': 5. Backend returns complete outcome data for table display."
 
 frontend:
+  - task: "Analytics Enhancements - Azzera Filtri Button and Dynamic Status Columns"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "testing"
+          comment: "✅ ANALYTICS ENHANCEMENTS IMPLEMENTATION READY FOR TESTING: 1) AZZERA FILTRI BUTTON: Found in both Analytics Agenti (line 10204) and Analytics Referenti (line 10308) sections with proper functionality to clear date filters and reload data. 2) DYNAMIC STATUS COLUMNS: Performance Agenti table (lines 9929-9934) has dynamic column generation based on outcomes data with sticky left column for agent names. 3) FILTER FUNCTIONALITY: Both sections have date range filters (analyticsDateRange state) that get cleared by Azzera Filtri button. 4) DATA RELOAD: Azzera Filtri triggers fetchAgentAnalytics/fetchReferenteAnalytics to reload data without filters. READY FOR COMPREHENSIVE TESTING: Verify Azzera Filtri clears date fields and reloads data, verify dynamic status columns show correct counts per agent."
+
   - task: "Analytics Date Filters and Outcome Distribution Frontend UI"
     implemented: true
     working: true
