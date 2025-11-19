@@ -1882,4 +1882,47 @@ agent_communication:
     - agent: "testing"
       message: "🚨 F2F SUB AGENZIA SERVICES VERIFICATION COMPLETE - BACKEND CONFIGURATION ISSUE IDENTIFIED! Tested F2F sub agenzia services authorization to identify why F2F sees all Fastweb services instead of only TLS. CRITICAL FINDINGS: ❌ F2F has 6 servizi_autorizzati instead of only 1 (TLS), ❌ GET /api/cascade/servizi-by-sub-agenzia returns 3 services (NEGOZI, PRESIDI, TLS) instead of only 1, ❌ No filtering detected - F2F sees ALL Fastweb services instead of authorized ones. ROOT CAUSE: BACKEND DATA ISSUE - F2F configuration in database has too many authorized services. The problem is NOT in frontend but in backend data configuration. REQUIRED ACTIONS: 1) Update F2F.servizi_autorizzati to contain only TLS ID (cc0648c1-0df1-4530-8281-f4c940934916), 2) Remove unauthorized service IDs from F2F configuration, 3) Verify endpoint filtering works after data correction. SUCCESS RATE: 75.0% (9/12 tests passed) - Backend configuration issue confirmed!"
     - agent: "testing"
+      message: "🚨 F2F SUB AGENZIA SERVICES VERIFICATION COMPLETE - BACKEND CONFIGURATION ISSUE IDENTIFIED! Tested F2F sub agenzia services authorization to identify why F2F sees all Fastweb services instead of only TLS. CRITICAL FINDINGS: ❌ F2F has 6 servizi_autorizzati instead of only 1 (TLS), ❌ GET /api/cascade/servizi-by-sub-agenzia returns 3 services (NEGOZI, PRESIDI, TLS) instead of only 1, ❌ No filtering detected - F2F sees ALL Fastweb services instead of authorized ones. ROOT CAUSE: BACKEND DATA ISSUE - F2F configuration in database has too many authorized services. The problem is NOT in frontend but in backend data configuration. REQUIRED ACTIONS: 1) Update F2F.servizi_autorizzati to contain only TLS ID (cc0648c1-0df1-4530-8281-f4c940934916), 2) Remove unauthorized service IDs from F2F configuration, 3) Verify endpoint filtering works after data correction. SUCCESS RATE: 75.0% (9/12 tests passed) - Backend configuration issue confirmed!"
+    - agent: "main"
+      message: "🎯 ANALYTICS DATE FILTERS AND OUTCOME DISTRIBUTION IMPLEMENTATION COMPLETE! ✅ BACKEND UPDATES: Modified both /api/analytics/agent/{agent_id} and /api/analytics/referente/{referente_id} endpoints to accept optional date_from and date_to parameters. All queries (total_leads, contacted_leads, outcomes, agent_breakdown) now respect date filters when provided. Backend tested successfully with curl - endpoints return correct filtered data. ✅ FRONTEND UPDATES: Added analyticsDateRange state for date filters. Updated fetchAgentAnalytics and fetchReferenteAnalytics functions to pass date parameters to backend. Added Date Filter UI components (Data Inizio, Data Fine, Applica Filtri button) to both Analytics Agenti and Analytics Referenti sections. Added 'Distribuzione Esiti' card in renderReferenteAnalytics to display outcomes data (same as agent analytics). ✅ TESTING: Backend curl tests confirm date filtering working correctly - referente analytics with 19 leads without filters, 0 leads with date range filter (no leads in Sep 2025). Outcomes distribution present in referente response: 'Nuovo': 18, 'OK': 1. READY FOR FRONTEND E2E TESTING!"
+
+backend:
+  - task: "Analytics Date Filters Backend Implementation - Agent and Referente Endpoints"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "✅ ANALYTICS DATE FILTERS BACKEND COMPLETE: 1) AGENT ENDPOINT (/api/analytics/agent/{agent_id}): Added date_from and date_to optional parameters, built base_query with date filters, updated all queries (total_leads, contacted_leads, outcomes pipeline, leads_this_week, leads_this_month) to respect date filters. 2) REFERENTE ENDPOINT (/api/analytics/referente/{referente_id}): Added same date_from and date_to parameters, built base_query with date filters for all agents under referente, updated agent_breakdown to respect date filters for each agent's statistics, updated outcomes aggregation pipeline to use filtered base_query. 3) TESTED WITH CURL: GET /api/analytics/referente/{referente_id} without filters returns 19 leads with outcomes 'Nuovo': 18, 'OK': 1. GET with date range filter (date_from=2025-09-01&date_to=2025-09-30) returns 0 leads and empty outcomes (no leads in that period). Date filters working correctly!"
+
+frontend:
+  - task: "Analytics Date Filters and Outcome Distribution Frontend UI"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ ANALYTICS FRONTEND IMPLEMENTATION COMPLETE: 1) DATE FILTER STATE: Added analyticsDateRange state with date_from and date_to fields (righe 8514-8517). 2) API FUNCTIONS UPDATED: Modified fetchAgentAnalytics and fetchReferenteAnalytics to build URL params with date filters and pass to backend (righe 8850-8891). 3) ANALYTICS AGENTI UI: Added date filter inputs (Data Inizio, Data Fine) and Applica Filtri button in agent selection card (righe 10123-10161). 4) ANALYTICS REFERENTI UI: Added same date filter inputs and button in referente selection card (righe 10180-10218). 5) OUTCOME DISTRIBUTION ADDED: Added 'Distribuzione Esiti' card in renderReferenteAnalytics function to display outcomes data in same format as agent analytics (righe 9872-9889). 6) CONDITIONAL RENDERING: Outcomes card only shows if outcomes data exists and has entries. READY FOR TESTING: Test date filters on both analytics pages, verify outcome distribution appears for referenti, test date range filtering affects all stats."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.2"
+  test_sequence: 15
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Analytics Date Filters and Outcome Distribution Frontend UI"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
       message: "🎉 BASIC FUNCTIONALITY RAPID CHECK COMPLETE - 100% SUCCESS! Successfully completed rapid verification test to ensure existing functionality (Clienti, Commesse, Sub Agenzie) still works correctly after Lead/Unit system modifications. RESULTS: ✅ Admin login (admin/admin123) successful, ✅ GET /api/clienti: Status 200, Found 18 clienti with valid structure, ✅ GET /api/commesse: Status 200, Found 5 commesse with valid structure and new fields (has_whatsapp, has_ai, has_call_center), ✅ GET /api/sub-agenzie: Status 200, Found 4 sub agenzie with valid structure and auth fields, ✅ GET /api/units: Status 200, Found 0 units (FIXED - was returning 422 due to duplicate route definition), ✅ GET /api/lead-status: Status 200, Found 0 lead statuses (new endpoint working). CRITICAL BUG FOUND AND FIXED: Units endpoint had malformed @api_router.get decorator at line 4067 causing 422 validation error. Removed orphaned decorator to fix the issue. CONCLUSION: Le funzionalità base NON sono rotte! Tutti gli endpoint core funzionano correttamente dopo le modifiche Lead/Unit. Nessun errore 500 rilevato. SUCCESS RATE: 100% (13/13 tests passed) - All critical objectives achieved!"
