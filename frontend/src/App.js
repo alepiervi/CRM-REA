@@ -9863,7 +9863,7 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   const renderReferenteAnalytics = () => {
     if (!analyticsData || !analyticsData.total_stats) return null;
 
-    const { referente, total_stats, agent_breakdown } = analyticsData;
+    const { referente, total_stats, agent_breakdown, outcomes } = analyticsData;
 
     return (
       <div className="space-y-6">
@@ -9892,6 +9892,25 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Distribuzione Esiti */}
+        {outcomes && Object.keys(outcomes).length > 0 && (
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle>Distribuzione Esiti</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {Object.entries(outcomes).map(([outcome, count]) => (
+                  <div key={outcome} className="text-center p-4 bg-slate-50 rounded-lg">
+                    <p className="text-xl font-bold">{count}</p>
+                    <p className="text-xs text-slate-600">{outcome}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-0 shadow-lg">
           <CardHeader>
