@@ -1992,16 +1992,18 @@ frontend:
 
     - agent: "main"
       message: "🎯 ANALYTICS ENHANCEMENTS - AGENT OUTCOMES AND CLEAR FILTERS COMPLETE! ✅ BACKEND UPDATE: Modified /api/analytics/referente/{referente_id} to include outcomes for each agent in agent_breakdown. Added aggregation pipeline to calculate outcomes per agent with same logic as total outcomes. Backend tested with curl - agent_breakdown now includes outcomes field (e.g., prova11: 'Nuovo': 8, 'OK': 1). ✅ FRONTEND UPDATES: Added 'Azzera Filtri' button in both Analytics Agenti and Analytics Referenti sections. Button clears date filters and refetches data automatically. Updated Performance Agenti table in renderReferenteAnalytics to show dynamic columns for each outcome status. Table now displays agent stats + individual outcome counts per agent. Added horizontal scroll for table with sticky first column (Agente name). READY FOR TESTING: Test 'Azzera Filtri' button functionality, verify outcome columns appear in Performance Agenti table for referenti!"
+    - agent: "main"
+      message: "🔒 LEAD REASSIGNMENT ADMIN-ONLY FEATURE COMPLETE! ✅ BACKEND SECURITY: Added permission check in PUT /api/leads/{lead_id} - only Admin can modify assigned_agent_id field. Non-Admin users receive 403 error if they attempt to reassign leads. ✅ FRONTEND UI: Admin users see Select dropdown to choose agent when editing lead. Referente/Agente users see only read-only text display. Dropdown shows all users with role='agente' with username and email. ✅ DATA FLOW: assigned_agent_id included in leadEditData and sent to backend on save. Backend validates permission before applying change. READY FOR TESTING: Test Admin can reassign leads, test Referente/Agente cannot reassign, verify 403 error for unauthorized attempts!"
 
 metadata:
   created_by: "main_agent"
-  version: "1.3"
-  test_sequence: 16
+  version: "1.4"
+  test_sequence: 17
   run_ui: true
 
 test_plan:
   current_focus:
-    - "Analytics Enhancements - Azzera Filtri Button and Dynamic Status Columns"
+    - "Lead Reassignment - Admin Only Manual Agent Assignment"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
