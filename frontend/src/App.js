@@ -2903,6 +2903,22 @@ const LeadsManagement = ({ selectedUnit, units }) => {
           <CardTitle className="text-lg">Filtri di Ricerca</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* Search Bar - Full Width */}
+            <div className="md:col-span-3">
+              <Label>Ricerca per Nome o Telefono</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Cerca per nome, cognome o telefono..."
+                  value={filters.search}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <Label>Campagna</Label>
@@ -2931,6 +2947,22 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 {leadStatuses.map((status) => (
                   <option key={status.id} value={status.nome}>
                     {status.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Agente Assegnato</Label>
+              <select
+                className="w-full border rounded-md p-2"
+                value={filters.assigned_agent_id}
+                onChange={(e) => setFilters({ ...filters, assigned_agent_id: e.target.value })}
+              >
+                <option value="">Tutti gli agenti</option>
+                <option value="unassigned">Non assegnati</option>
+                {users.filter(u => u.role === "agente").map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.username}
                   </option>
                 ))}
               </select>
