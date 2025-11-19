@@ -1934,6 +1934,19 @@ backend:
           agent: "main"
           comment: "✅ AGENT OUTCOMES IN REFERENTE ANALYTICS COMPLETE: Modified /api/analytics/referente/{referente_id} agent_breakdown loop to include outcomes for each individual agent. Added MongoDB aggregation pipeline per agent to calculate outcome distribution with same logic as total outcomes (handles None/empty/'Nuovo' as 'Nuovo' status). Each agent in agent_breakdown now includes 'outcomes' field with count per status. TESTED WITH CURL: prova11 agent has outcomes 'Nuovo': 8, 'OK': 1, prova14 has 'Nuovo': 5, prova15 has 'Nuovo': 5. Backend returns complete outcome data for table display."
 
+  - task: "Lead Reassignment - Admin Only Manual Agent Assignment"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py, /app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ LEAD REASSIGNMENT ADMIN-ONLY IMPLEMENTATION COMPLETE: 1) BACKEND (server.py): Modified PUT /api/leads/{lead_id} endpoint to check if assigned_agent_id is being modified. Added HTTPException 403 if non-Admin user attempts to change assigned_agent_id (righe 4310-4314). Only Admin role can reassign leads to different agents. 2) FRONTEND (App.js): Modified lead detail modal 'Assegnato a' section (righe 3641-3668). Added conditional rendering: Admin in edit mode sees Select dropdown with list of all agents, Referente/Agente see only text display (read-only). Added assigned_agent_id to leadEditData initialization (riga 2729). Select dropdown filters users by role='agente' and shows username + email. READY FOR TESTING: Test Admin can change assigned agent via dropdown, test Referente/Agente cannot modify assignment, verify backend blocks non-Admin assignment attempts."
+
+
 frontend:
   - task: "Analytics Enhancements - Azzera Filtri Button and Dynamic Status Columns"
     implemented: true
