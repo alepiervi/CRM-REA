@@ -2803,10 +2803,11 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   };
 
   const getStatusBadge = (esito) => {
-    if (!esito) return <Badge variant="secondary">Nuovo</Badge>;
+    // If no esito, try to find "Nuovo" status in database
+    const statusName = esito || "Nuovo";
     
     // Find the status configuration from leadStatuses
-    const statusConfig = leadStatuses.find(status => status.nome === esito);
+    const statusConfig = leadStatuses.find(status => status.nome === statusName);
     
     if (statusConfig && statusConfig.colore) {
       // Use the configured color from database
@@ -2818,7 +2819,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
             border: 'none'
           }}
         >
-          {esito}
+          {statusName}
         </Badge>
       );
     }
@@ -2826,7 +2827,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     // Fallback to default gray if no color configured
     return (
       <Badge className="bg-gray-100 text-gray-800 border-0">
-        {esito}
+        {statusName}
       </Badge>
     );
   };
