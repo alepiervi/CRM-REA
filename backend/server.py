@@ -10484,9 +10484,15 @@ async def get_clienti(
                 {"created_by": {"$in": user_ids_in_sub_agenzie}},
                 {"assigned_to": {"$in": user_ids_in_sub_agenzie}}
             ]
-            # Filter by authorized services
-            if current_user.servizi_autorizzati:
-                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+            # Filter by authorized services (only if defined and not empty)
+            if current_user.servizi_autorizzati and len(current_user.servizi_autorizzati) > 0:
+                # Include clients with matching servizio_id OR clients with no servizio_id (null/undefined)
+                query["$or"].append({"servizio_id": {"$in": current_user.servizi_autorizzati}})
+                query["$or"].append({"servizio_id": None})
+                query["$or"].append({"servizio_id": {"$exists": False}})
+                print(f"  Filtering by servizi_autorizzati: {current_user.servizi_autorizzati}")
+            else:
+                print(f"  No servizi filter applied")
             print(f"🔍 RESPONSABILE_PRESIDI: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(sub_agenzie_ids)} sub agenzie")
         else:
             # Se non ha sub agenzie assegnate, vede i propri clienti O quelli assegnati a lui
