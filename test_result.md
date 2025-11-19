@@ -1900,6 +1900,18 @@ backend:
         - working: true
           agent: "main"
           comment: "✅ ANALYTICS DATE FILTERS BACKEND COMPLETE: 1) AGENT ENDPOINT (/api/analytics/agent/{agent_id}): Added date_from and date_to optional parameters, built base_query with date filters, updated all queries (total_leads, contacted_leads, outcomes pipeline, leads_this_week, leads_this_month) to respect date filters. 2) REFERENTE ENDPOINT (/api/analytics/referente/{referente_id}): Added same date_from and date_to parameters, built base_query with date filters for all agents under referente, updated agent_breakdown to respect date filters for each agent's statistics, updated outcomes aggregation pipeline to use filtered base_query. 3) TESTED WITH CURL: GET /api/analytics/referente/{referente_id} without filters returns 19 leads with outcomes 'Nuovo': 18, 'OK': 1. GET with date range filter (date_from=2025-09-01&date_to=2025-09-30) returns 0 leads and empty outcomes (no leads in that period). Date filters working correctly!"
+  
+  - task: "Analytics Agent Outcomes in Referente Breakdown - Individual Agent Statistics"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "✅ AGENT OUTCOMES IN REFERENTE ANALYTICS COMPLETE: Modified /api/analytics/referente/{referente_id} agent_breakdown loop to include outcomes for each individual agent. Added MongoDB aggregation pipeline per agent to calculate outcome distribution with same logic as total outcomes (handles None/empty/'Nuovo' as 'Nuovo' status). Each agent in agent_breakdown now includes 'outcomes' field with count per status. TESTED WITH CURL: prova11 agent has outcomes 'Nuovo': 8, 'OK': 1, prova14 has 'Nuovo': 5, prova15 has 'Nuovo': 5. Backend returns complete outcome data for table display."
 
 frontend:
   - task: "Analytics Date Filters and Outcome Distribution Frontend UI"
