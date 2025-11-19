@@ -1936,15 +1936,18 @@ backend:
 
   - task: "Lead Reassignment - Admin Only Manual Agent Assignment"
     implemented: true
-    working: "needs_testing"
+    working: false
     file: "/app/backend/server.py, /app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
           comment: "✅ LEAD REASSIGNMENT ADMIN-ONLY IMPLEMENTATION COMPLETE: 1) BACKEND (server.py): Modified PUT /api/leads/{lead_id} endpoint to check if assigned_agent_id is being modified. Added HTTPException 403 if non-Admin user attempts to change assigned_agent_id (righe 4310-4314). Only Admin role can reassign leads to different agents. 2) FRONTEND (App.js): Modified lead detail modal 'Assegnato a' section (righe 3641-3668). Added conditional rendering: Admin in edit mode sees Select dropdown with list of all agents, Referente/Agente see only text display (read-only). Added assigned_agent_id to leadEditData initialization (riga 2729). Select dropdown filters users by role='agente' and shows username + email. READY FOR TESTING: Test Admin can change assigned agent via dropdown, test Referente/Agente cannot modify assignment, verify backend blocks non-Admin assignment attempts."
+        - working: false
+          agent: "testing"
+          comment: "🚨 LEAD REASSIGNMENT TESTING COMPLETE - CRITICAL ISSUE IDENTIFIED! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested lead reassignment functionality as requested in review. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated and accessed Lead section. ✅ LEAD MODAL ACCESS: Successfully opened lead detail modal for lead with assigned agent 'prova11'. ✅ 'ASSEGNATO A' SECTION VISIBLE: Found 'Assegnato a' section in modal showing current agent 'prova11'. ✅ 'MODIFICA' BUTTON FOUND: Located and clicked 'Modifica' button to enter edit mode. ❌ CRITICAL ISSUE - EDIT MODE NOT ACTIVATED: After clicking 'Modifica' button, edit mode was not activated - 'Salva' button not found, indicating isEditingLead state not set to true. ❌ AGENT DROPDOWN NOT VISIBLE: No Select dropdown found for agent reassignment - found 0 <select> elements and 0 combobox elements in modal. ❌ JAVASCRIPT ERRORS DETECTED: Console shows Select component errors: 'A <Select.Item /> must have a value prop that is not an empty string' - indicating Select component implementation issues. 🔍 ROOT CAUSE ANALYSIS: 1) 'Modifica' button click not properly setting isEditingLead=true state, 2) Select component has validation errors preventing proper rendering, 3) Frontend implementation exists (lines 3642-3665) but not functioning due to state management issues. 🎯 CRITICAL OBJECTIVES NOT ACHIEVED: 1) Admin cannot enter edit mode ❌, 2) Agent dropdown not visible ❌, 3) Cannot test reassignment functionality ❌. RECOMMENDATION: Fix isEditingLead state management and Select component validation errors. SUCCESS RATE: 40% (4/10 tests passed) - Core functionality not working due to frontend state and component issues!"
 
 
 frontend:
