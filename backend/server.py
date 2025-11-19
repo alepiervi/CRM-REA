@@ -5189,18 +5189,32 @@ async def get_referente_analytics(referente_id: str, current_user: User = Depend
     
     # Aggregate statistics for all agents under referente
     total_leads = await db.leads.count_documents({"assigned_agent_id": {"$in": agent_ids}})
+    
+    # Contacted leads = leads with esito that is NOT "Nuovo" (null, empty, or "Nuovo" string)
     contacted_leads = await db.leads.count_documents({
         "assigned_agent_id": {"$in": agent_ids},
-        "esito": {"$ne": None}
+        "$and": [
+            {"esito": {"$exists": True}},
+            {"esito": {"$ne": None}},
+            {"esito": {"$ne": ""}},
+            {"esito": {"$ne": "Nuovo"}}
+        ]
     })
     
     # Per-agent breakdown
     agent_stats = []
     for agent in agents:
         agent_leads = await db.leads.count_documents({"assigned_agent_id": agent["id"]})
+        
+        # Contacted leads = leads with esito that is NOT "Nuovo"
         agent_contacted = await db.leads.count_documents({
-            "assigned_agent_id": agent["id"], 
-            "esito": {"$ne": None}
+            "assigned_agent_id": agent["id"],
+            "$and": [
+                {"esito": {"$exists": True}},
+                {"esito": {"$ne": None}},
+                {"esito": {"$ne": ""}},
+                {"esito": {"$ne": "Nuovo"}}
+            ]
         })
         
         agent_stats.append({
