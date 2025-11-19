@@ -102,49 +102,68 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "VERIFICA LEAD CREATO DA ZAPIER
+user_problem_statement: "TEST ANALYTICS ENHANCEMENTS - AZZERA FILTRI E COLONNE STATI AGENTI
 
-OBIETTIVO: 
-Verificare se il lead inviato da Zapier è stato creato nel database e perché non si vede nel frontend.
+OBIETTIVO:
+Testare le nuove funzionalità aggiunte alla sezione Analytics Referenti:
+1. Pulsante "Azzera Filtri" in entrambe le sezioni (Agenti e Referenti)
+2. Colonne dinamiche degli stati nella tabella "Performance Agenti"
 
-CONTESTO:
-- Zapier ha inviato un lead tramite webhook GET
-- Zapier mostra 'status: success' con request ID: 019a96d9-339f-9a9c-9799-63910a516dd1
-- L'utente non vede il lead nell'interfaccia
+URL: https://lead-master-7.preview.emergentagent.com
+CREDENZIALI: admin / admin123
 
-TEST RICHIESTI:
-1. Controlla Log Backend - Cerca la richiesta webhook negli ultimi 10 minuti
-2. GET /api/leads - Lista tutti i lead recenti (limit=20)
-3. Verifica Ultimo Lead Creato - Identifica il lead più recente e verifica se ha i dati inviati da Zapier
-4. Verifica Unit e Commessa - GET /api/units e /api/commesse per verificare configurazione
-5. Possibili Cause se non si vede - Analizza perché il lead potrebbe non essere visibile nel frontend
+TEST DA ESEGUIRE:
 
-RISULTATI TEST COMPLETATI:
-✅ Admin login (admin/admin123) - SUCCESS
-✅ Backend logs check - COMPLETED (No webhook entries found in recent logs)
-✅ GET /api/leads - SUCCESS (0 total leads found)
-❌ Recent leads (10 min) - NONE (0 leads created in last 10 minutes)
-❌ Latest lead verification - FAILED (No leads found in database)
-✅ GET /api/units - SUCCESS (1 unit found: AGN)
-✅ GET /api/commesse - SUCCESS (5 commesse found including Fotovoltaico)
-✅ Fotovoltaico commessa - FOUND (ID: 5ef3ae82...)
+**FASE 1: Login e Navigazione**
+1. Login con admin/admin123
+2. Naviga alla sezione "Analytics"
+3. Vai alla tab "Analytics Referenti"
 
-DIAGNOSI ROOT CAUSE:
-🚨 CRITICAL: NO LEADS IN DATABASE - Zapier webhook failed to create lead
+**FASE 2: Test Pulsante "Azzera Filtri" - Referenti**
+4. Seleziona il referente "prova12" dal dropdown (ID: 87b66bb6-220b-45bb-9413-9bfdb9ae0ac4)
+5. Verifica che i dati analytics si carichino
+6. Compila "Data Inizio" con "2025-09-01"
+7. Compila "Data Fine" con "2025-09-30"
+8. Clicca su "Applica Filtri"
+9. Verifica che le statistiche cambino (dovrebbero mostrare 0 leads)
+10. Clicca su "Azzera Filtri"
+11. Verifica che i campi data si svuotino
+12. Verifica che le statistiche tornino ai valori originali (19 leads totali)
+13. Screenshot dopo aver cliccato "Azzera Filtri"
 
-CONCLUSIONI:
-1. ❌ CRITICAL: No leads found in database - suggests Zapier webhook failed to create the lead
-2. ✅ Backend infrastructure is working (units and commesse are properly configured)
-3. ❌ No webhook entries found in backend logs for the reported request ID
-4. ❌ The Zapier 'success' status appears to be misleading - no lead was actually created
+**FASE 3: Test Colonne Stati nella Tabella Performance Agenti**
+14. Scorri verso il basso fino alla tabella "Performance Agenti"
+15. Verifica che la tabella abbia colonne dinamiche per gli stati (es. "Nuovo", "OK")
+16. Verifica che ogni riga agente mostri i conteggi per stato:
+    - prova11: dovrebbe avere "Nuovo": 8, "OK": 1
+    - prova14: dovrebbe avere "Nuovo": 5
+    - prova15: dovrebbe avere "Nuovo": 5
+17. Screenshot della tabella Performance Agenti con colonne stati visibili
 
-RACCOMANDAZIONI:
-1. Verificare configurazione webhook Zapier
-2. Controllare endpoint webhook nel backend
-3. Verificare che Zapier stia inviando dati corretti
-4. Controllare se esiste un endpoint webhook per la creazione lead nel backend
+**FASE 4: Test Pulsante "Azzera Filtri" - Agenti**
+18. Vai alla tab "Analytics Agenti"
+19. Seleziona un agente dal dropdown
+20. Compila filtri date con valori qualsiasi
+21. Clicca su "Applica Filtri"
+22. Clicca su "Azzera Filtri"
+23. Verifica che i campi data si svuotino
+24. Screenshot con pulsante "Azzera Filtri" visibile
 
-STATO: PROBLEMA IDENTIFICATO - Zapier webhook integration failure: No lead created despite 'success' status"
+CRITERI DI SUCCESSO:
+✅ Pulsante "Azzera Filtri" presente in Analytics Agenti
+✅ Pulsante "Azzera Filtri" presente in Analytics Referenti
+✅ Click su "Azzera Filtri" svuota i campi data
+✅ Click su "Azzera Filtri" ricarica i dati senza filtri
+✅ Tabella Performance Agenti mostra colonne dinamiche per ogni stato
+✅ Ogni agente ha i conteggi corretti per ogni stato
+✅ Colonna "Agente" è sticky (rimane visibile durante scroll orizzontale)
+
+FOCUS CRITICO:
+- Verifica che "Azzera Filtri" svuoti effettivamente i campi e ricarichi i dati
+- Verifica che le colonne stati nella tabella siano dinamiche e mostrino i valori corretti
+- Test funzionalità in entrambe le sezioni (Agenti e Referenti)
+
+STATO: PRONTO PER TESTING COMPLETO"
 
 current_problem_statement: "TEST RAPIDO AGGIORNAMENTO LEAD CON NUOVI CAMPI - COMPLETATO CON SUCCESSO
 
