@@ -10459,12 +10459,22 @@ async def get_clienti(
         ]
         
     elif current_user.role == UserRole.RESPONSABILE_PRESIDI:
-        # Responsabile Presidi: vede clienti degli utenti con le stesse sub agenzie autorizzate
+        # Responsabile Presidi: vede clienti degli utenti con le stesse sub agenzie
         print(f"🏛️ RESPONSABILE_PRESIDI ACCESS: User {current_user.username} - clients from users with same sub agenzie")
+        
+        # Determina le sub agenzie da usare: può essere sub_agenzie_autorizzate O sub_agenzia_id
+        sub_agenzie_ids = []
         if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-            # Trova tutti gli utenti con le stesse sub agenzie autorizzate
+            sub_agenzie_ids = current_user.sub_agenzie_autorizzate
+            print(f"  Using sub_agenzie_autorizzate: {sub_agenzie_ids}")
+        elif hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
+            sub_agenzie_ids = [current_user.sub_agenzia_id]
+            print(f"  Using sub_agenzia_id: {sub_agenzie_ids}")
+        
+        if sub_agenzie_ids:
+            # Trova tutti gli utenti con le stesse sub agenzie
             users_in_sub_agenzie = await db.users.find({
-                "sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}
+                "sub_agenzia_id": {"$in": sub_agenzie_ids}
             }).to_list(length=None)
             
             user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
@@ -10477,7 +10487,7 @@ async def get_clienti(
             # Filter by authorized services
             if current_user.servizi_autorizzati:
                 query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
-            print(f"🔍 RESPONSABILE_PRESIDI: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(current_user.sub_agenzie_autorizzate)} sub agenzie")
+            print(f"🔍 RESPONSABILE_PRESIDI: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(sub_agenzie_ids)} sub agenzie")
         else:
             # Se non ha sub agenzie assegnate, vede i propri clienti O quelli assegnati a lui
             print(f"⚠️ RESPONSABILE_PRESIDI: No sub agenzie assigned - own and assigned clients")
