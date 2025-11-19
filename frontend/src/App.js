@@ -3647,14 +3647,17 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                   {/* Admin can reassign leads, others can only view */}
                   {user?.role === "admin" && isEditingLead ? (
                     <Select 
-                      value={leadEditData.assigned_agent_id || ""}
-                      onValueChange={(value) => setLeadEditData({...leadEditData, assigned_agent_id: value})}
+                      value={leadEditData.assigned_agent_id || "unassigned"}
+                      onValueChange={(value) => {
+                        const newValue = value === "unassigned" ? "" : value;
+                        setLeadEditData({...leadEditData, assigned_agent_id: newValue});
+                      }}
                     >
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Seleziona agente" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Non assegnato</SelectItem>
+                        <SelectItem value="unassigned">Non assegnato</SelectItem>
                         {users.filter(u => u.role === "agente").map((agent) => (
                           <SelectItem key={agent.id} value={agent.id}>
                             👤 {agent.username} ({agent.email})
