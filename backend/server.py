@@ -10566,7 +10566,8 @@ async def get_clienti(
     
     print(f"🔍 FINAL QUERY for {current_user.role}: {query}")
     
-    clienti = await db.clienti.find(query).sort("created_at", -1).limit(limit).to_list(length=None)
+    # No limit - return all matching clients (same as leads)
+    clienti = await db.clienti.find(query).sort("created_at", -1).to_list(length=None)
     print(f"📊 Found {len(clienti)} clients for user {current_user.username} ({current_user.role})")
     
     return [Cliente(**c) for c in clienti]
