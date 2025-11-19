@@ -9917,35 +9917,51 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
             <CardTitle>Performance Agenti</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Agente</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Totale Lead</TableHead>
-                  <TableHead>Contattati</TableHead>
-                  <TableHead>Tasso Contatti</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {agent_breakdown.map((agentData) => (
-                  <TableRow key={agentData.agent.id}>
-                    <TableCell className="font-medium">{agentData.agent.username}</TableCell>
-                    <TableCell>{agentData.agent.email}</TableCell>
-                    <TableCell>{agentData.total_leads}</TableCell>
-                    <TableCell>{agentData.contacted_leads}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={agentData.contact_rate >= 50 ? "default" : "secondary"}
-                        className={agentData.contact_rate >= 50 ? "bg-green-100 text-green-800" : ""}
-                      >
-                        {agentData.contact_rate}%
-                      </Badge>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="sticky left-0 bg-white z-10">Agente</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Totale Lead</TableHead>
+                    <TableHead>Contattati</TableHead>
+                    <TableHead>Tasso Contatti</TableHead>
+                    {/* Dynamic columns for each outcome status */}
+                    {outcomes && Object.keys(outcomes).length > 0 && 
+                      Object.keys(outcomes).map((outcome) => (
+                        <TableHead key={outcome} className="text-center">{outcome}</TableHead>
+                      ))
+                    }
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {agent_breakdown.map((agentData) => (
+                    <TableRow key={agentData.agent.id}>
+                      <TableCell className="font-medium sticky left-0 bg-white z-10">{agentData.agent.username}</TableCell>
+                      <TableCell>{agentData.agent.email}</TableCell>
+                      <TableCell>{agentData.total_leads}</TableCell>
+                      <TableCell>{agentData.contacted_leads}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={agentData.contact_rate >= 50 ? "default" : "secondary"}
+                          className={agentData.contact_rate >= 50 ? "bg-green-100 text-green-800" : ""}
+                        >
+                          {agentData.contact_rate}%
+                        </Badge>
+                      </TableCell>
+                      {/* Dynamic cells for each outcome status */}
+                      {outcomes && Object.keys(outcomes).length > 0 && 
+                        Object.keys(outcomes).map((outcome) => (
+                          <TableCell key={outcome} className="text-center">
+                            {agentData.outcomes && agentData.outcomes[outcome] ? agentData.outcomes[outcome] : 0}
+                          </TableCell>
+                        ))
+                      }
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
