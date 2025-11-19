@@ -5383,11 +5383,14 @@ async def export_leads_excel(
     unit_id: Optional[str] = None,
     campagna: Optional[str] = None,
     provincia: Optional[str] = None,
+    status: Optional[str] = None,  # NEW: Status filter
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
+    assigned_agent_id: Optional[str] = None,  # NEW: Agent filter
+    search: Optional[str] = None,  # NEW: Search filter
     current_user: User = Depends(get_current_user)
 ):
-    """Export leads to Excel file"""
+    """Export leads to Excel file with ALL filters and ALL fields including custom fields"""
     query = {}
     
     # Role-based filtering (same as get_leads)
@@ -5401,15 +5404,27 @@ async def export_leads_excel(
     
     # Unit filtering
     if unit_id:
-        query["gruppo"] = unit_id
-    elif current_user.role != UserRole.ADMIN and current_user.unit_id:
-        query["gruppo"] = current_user.unit_id
+        query["unit_id"] = unit_id
+        query["$or"] = [
+            {"unit_id": unit_id},
+            {"gruppo": unit_id}
+        ]
     
-    # Apply additional filters
+    # Apply additional filters - SAME AS GET /leads
     if campagna:
-        query["campagna"] = campagna
+        query["campagna"] = {"$regex": campagna, "$options": "i"}
     if provincia:
-        query["provincia"] = provincia
+        query["provincia"] = {"$regex": provincia, "$options": "i"}
+    if status:
+        if status == "Nuovo":
+            query["$or"] = [
+                {"esito": None},
+                {"esito": ""},
+                {"esito": "Nuovo"},
+                {"esito": {"$exists": False}}
+            ]
+        else:
+            query["esito"] = status
     if date_from:
         query["created_at"] = {"$gte": datetime.fromisoformat(date_from)}
     if date_to:
@@ -5418,14 +5433,38 @@ async def export_leads_excel(
         else:
             query["created_at"] = {"$lte": datetime.fromisoformat(date_to)}
     
+    # NEW: Filter by assigned agent
+    if assigned_agent_id:
+        if assigned_agent_id == "unassigned":
+            query["$or"] = [
+                {"assigned_agent_id": None},
+                {"assigned_agent_id": {"$exists": False}}
+            ]
+        else:
+            if current_user.role == UserRole.ADMIN or current_user.role == UserRole.REFERENTE:
+                query["assigned_agent_id"] = assigned_agent_id
+    
+    # NEW: Search by name or phone
+    if search:
+        search_regex = {"$regex": search, "$options": "i"}
+        query["$or"] = [
+            {"nome": search_regex},
+            {"cognome": search_regex},
+            {"telefono": search_regex},
+            {"email": search_regex}
+        ]
+    
+    # Get custom fields list to add dynamic columns
+    custom_fields = await db.custom_fields.find().to_list(length=None)
+    
     # Get leads data
     leads = await db.leads.find(query).to_list(length=None)
     
     if not leads:
         raise HTTPException(status_code=404, detail="Nessun lead trovato con i filtri specificati")
     
-    # Create Excel file
-    excel_file_path = await create_excel_report(leads, f"leads_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+    # Create Excel file with custom fields
+    excel_file_path = await create_excel_report(leads, custom_fields, f"leads_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
     
     # Return file
     return FileResponse(
