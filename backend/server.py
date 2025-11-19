@@ -4308,6 +4308,13 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     # Update lead
     update_data = lead_update.dict(exclude_unset=True)
     
+    # CRITICAL: Only Admin can reassign leads (change assigned_agent_id)
+    if "assigned_agent_id" in update_data and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=403, 
+            detail="Only administrators can reassign leads to different agents"
+        )
+    
     # If esito is being set, update contacted_at
     if update_data.get("esito"):
         update_data["contacted_at"] = datetime.now(timezone.utc)
