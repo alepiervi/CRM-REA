@@ -10975,12 +10975,10 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 ]
             else:
                 base_query["_id"] = {"$exists": False}
-        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
-            # Agente Specializzato, Operatore: only see clients created by them
-            base_query["created_by"] = current_user.id
-        elif current_user.role in [UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI]:
-            # Store Assistant, Responsabile Store, Promoter Presidi: see clients created by them OR assigned to them
-            # MUST match logic in GET /api/clienti endpoint (lines 10598-10601)
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI]:
+            # Agente Specializzato, Operatore, Responsabile Store, Store Assistant, Promoter Presidi
+            # All these roles see clients created by them OR assigned to them
+            # MUST match logic in GET /api/clienti endpoint (lines 10515-10521 and 10595-10601)
             base_query["$or"] = [
                 {"created_by": current_user.id},
                 {"assigned_to": current_user.id}
