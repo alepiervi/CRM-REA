@@ -11035,14 +11035,24 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         allowed_tipologie_ids = set(tipologie_from_clients)
         print(f"  Showing {len(allowed_tipologie_ids)} tipologie from user's accessible clients")
         
-        # For non-admin users with tipologie_autorizzate, also include those
-        if current_user.role != UserRole.ADMIN:
+        # For roles that see clients BEYOND their own (Responsabile Commessa, Backoffice, Area Manager),
+        # also include tipologie_autorizzate to allow filtering by all possible values
+        # Store Assistant, Agente, Operatore should ONLY see tipologie from their own clients
+        roles_with_extended_tipologie = [
+            UserRole.RESPONSABILE_COMMESSA, 
+            UserRole.BACKOFFICE_COMMESSA,
+            UserRole.RESPONSABILE_SUB_AGENZIA,
+            UserRole.BACKOFFICE_SUB_AGENZIA,
+            UserRole.AREA_MANAGER
+        ]
+        
+        if current_user.role in roles_with_extended_tipologie:
             if hasattr(current_user, 'tipologie_autorizzate') and current_user.tipologie_autorizzate:
                 allowed_tipologie_ids.update(current_user.tipologie_autorizzate)
-                print(f"  User has {len(current_user.tipologie_autorizzate)} authorized tipologie")
+                print(f"  {current_user.role}: Added {len(current_user.tipologie_autorizzate)} authorized tipologie")
         
         # FALLBACK: If user has no clients and no authorization, show ALL tipologie
-        # This only applies to users with no data yet
+        # This only applies to users with no data yet (new users with no activity)
         if not allowed_tipologie_ids:
             allowed_tipologie_ids = set(all_tipologie_dict.keys())
             print(f"  ⚠️ User has no restrictions - returning ALL {len(allowed_tipologie_ids)} tipologie")
