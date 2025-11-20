@@ -165,68 +165,51 @@ FOCUS CRITICO:
 
 STATO: PRONTO PER TESTING COMPLETO"
 
-current_problem_statement: "TEST CARICAMENTO TIPOLOGIE CONTRATTO - STORE ASSISTANT
+current_problem_statement: "FIX TIPOLOGIA CONTRATTO FILTER - ERRORE 500 RISOLTO
 
-OBIETTIVO:
-Verificare perché Store Assistant non vede le tipologie di contratto nel filtro e identificare l'errore esatto.
+CONTESTO:
+Il filtro "Tipologia Contratto" nella sezione Clienti non caricava per nessun utente (Admin, Store Assistant, etc.) a causa di un errore 500 nell'endpoint GET /api/clienti/filter-options.
 
-URL: https://nureal-crm-2.preview.emergentagent.com
+ROOT CAUSE IDENTIFICATA:
+L'endpoint backend aveva un errore `TypeError: '<' not supported between instances of 'dict' and 'dict'` causato da una chiamata `sorted()` che tentava di ordinare una lista di dizionari.
+
+FIX IMPLEMENTATO:
+✅ Rimossa la chiamata `sorted()` problematica dall'endpoint GET /api/clienti/filter-options
+✅ Rimosso il blocco di codice ridondante che causava l'errore
+✅ Backend riavviato per applicare le modifiche (processo 391 attivo)
+✅ Nessun errore nei log di avvio del backend
 
 TEST DA ESEGUIRE:
 
-**FASE 1: Login Store Assistant**
-1. Trova le credenziali di un utente Store Assistant nel database o crea un nuovo utente di test
-2. In alternativa, usa credenziali esistenti se disponibili
-3. Login con utente Store Assistant
-4. Verifica login riuscito
+**FASE 1: Test Endpoint Backend**
+1. Login Admin (admin/admin123)
+2. Test GET /api/clienti/filter-options - verificare status 200 (NON 500)
+3. Verificare che la risposta contenga tipologie_contratto popolate
+4. Verificare struttura risposta: {value, label} per ogni tipologia
 
-**FASE 2: Navigazione Clienti**
-5. Naviga alla sezione "Clienti" dal menu
-6. Verifica che la pagina clienti si carichi
-7. Screenshot della pagina clienti
+**FASE 2: Test Permessi Store Assistant**
+1. Login Store Assistant (se esistente) o Admin
+2. Test GET /api/clienti/filter-options
+3. Verificare che anche ruoli con permessi limitati ricevano dati corretti
 
-**FASE 3: Verifica Filtro Tipologia Contratto**
-8. Cerca il dropdown/select "Tipologia Contratto" nella sezione filtri
-9. Clicca sul dropdown "Tipologia Contratto"
-10. Verifica se ci sono opzioni nel dropdown
-11. Screenshot del dropdown aperto (anche se vuoto)
+**FASE 3: Test Frontend**
+1. Login come Admin
+2. Naviga alla sezione Clienti
+3. Verifica che il dropdown "Tipologia Contratto" si popoli correttamente
+4. Verifica nessun errore nella console browser
 
-**FASE 4: Analisi Console Browser**
-12. Cattura TUTTI i log della console durante il caricamento
-13. Cerca specificamente:
-    - "🔄 FETCH TIPOLOGIE START"
-    - "✅ Tipologie contratto ricevute"
-    - "❌ Error fetching tipologie contratto"
-    - Errori 401, 403, 500, 503
-14. Identifica l'errore esatto se presente
-15. Screenshot della console con gli errori
-
-**FASE 5: Test API Diretto**
-16. Se possibile, prova a chiamare direttamente GET /api/tipologie-contratto/all dal browser
-17. Verifica la risposta dell'endpoint
-18. Cattura il codice di stato HTTP (200, 401, 403, 500, etc.)
-
-**FASE 6: Confronto con Admin**
-19. Logout da Store Assistant
-20. Login come admin (admin/admin123)
-21. Naviga a Clienti
-22. Verifica se il dropdown Tipologia Contratto funziona per admin
-23. Screenshot del dropdown admin con opzioni visibili
+**FASE 4: Test Fallback Logic**
+1. Verificare che utenti senza permessi specifici ricevano comunque le tipologie base
+2. Verificare che il fallback funzioni correttamente
 
 CRITERI DI SUCCESSO:
-✅ Identificare errore esatto nella console
-✅ Determinare se è un problema 401/403 (autenticazione/permessi)
-✅ Determinare se è un problema 500/503 (server error)
-✅ Verificare se endpoint restituisce dati vuoti o errore
-✅ Confrontare comportamento Store Assistant vs Admin
+✅ GET /api/clienti/filter-options ritorna 200 OK (non 500)
+✅ Risposta contiene tipologie_contratto con formato corretto
+✅ Dropdown Tipologia Contratto si popola nel frontend
+✅ Nessun errore 500 nei log backend
+✅ Funziona per tutti i ruoli utente
 
-FOCUS CRITICO:
-- Catturare TUTTI i log della console
-- Identificare il codice HTTP esatto dell'errore
-- Verificare se la chiamata API viene effettivamente fatta
-- Verificare se il problema è nel backend o frontend
-
-STATO: DEBUGGING CRITICO - SERVE LOG COMPLETO
+STATO: FIX APPLICATO - READY FOR TESTING
 
 previous_problem_statement: "TEST COMPLETO E2E - SISTEMA LEAD CON UNIT
 
