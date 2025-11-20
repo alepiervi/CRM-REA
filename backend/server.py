@@ -9474,7 +9474,7 @@ async def should_use_hardcoded_elements():
 async def get_all_tipologie_contratto(
     current_user: User = Depends(get_current_user)
 ):
-    """Get ALL tipologie contratto (hardcoded + database) for UI selectors"""
+    """Get tipologie contratto filtered by user's tipologie_autorizzate"""
     
     try:
         all_tipologie = []
@@ -9515,6 +9515,18 @@ async def get_all_tipologie_contratto(
                 "source": "database"
             })
         
+        # Filter by user's tipologie_autorizzate (if defined and not admin)
+        if current_user.role != UserRole.ADMIN:
+            if hasattr(current_user, 'tipologie_autorizzate') and current_user.tipologie_autorizzate:
+                print(f"🔒 Filtering tipologie for {current_user.role}: {len(current_user.tipologie_autorizzate)} authorized")
+                # Only return tipologie that are in user's tipologie_autorizzate
+                all_tipologie = [t for t in all_tipologie if t["value"] in current_user.tipologie_autorizzate]
+            else:
+                # If user has no tipologie_autorizzate defined, return empty list for non-admin
+                print(f"⚠️ User {current_user.username} has no tipologie_autorizzate - returning empty list")
+                all_tipologie = []
+        
+        print(f"📊 Returning {len(all_tipologie)} tipologie for user {current_user.username} ({current_user.role})")
         return all_tipologie
         
     except Exception as e:
