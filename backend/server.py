@@ -11060,11 +11060,14 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 # CRITICAL FIX: Handle string tipologie from client data that don't match dictionary keys
                 # This happens when clients store tipologia as string but system expects UUID keys
                 # For these cases, use the string value as both value and label
-                tipologie_contratto.append({
-                    "value": tip_id,
-                    "label": tip_id.replace("_", " ").title()  # Convert "energia_fastweb" to "Energia Fastweb"
-                })
-                print(f"  ⚠️ Using string tipologia as fallback: {tip_id}")
+                if tip_id and isinstance(tip_id, str):
+                    tipologie_contratto.append({
+                        "value": tip_id,
+                        "label": tip_id.replace("_", " ").title()  # Convert "energia_fastweb" to "Energia Fastweb"
+                    })
+                    print(f"  ⚠️ Using string tipologia as fallback: {tip_id}")
+                else:
+                    print(f"  ⚠️ Skipping invalid tipologia: {tip_id} (type: {type(tip_id)})")
         
         # Sort by label
         tipologie_contratto.sort(key=lambda x: x["label"])
