@@ -1521,7 +1521,9 @@ const Dashboard = () => {
       });
       console.log("✅ Tipologie contratto ricevute:", response.data);
       console.log("✅ Numero tipologie:", response.data?.length);
+      console.log("✅ Setting formTipologieContratto state NOW");
       setFormTipologieContratto(response.data);
+      console.log("✅ formTipologieContratto state SET");
     } catch (error) {
       console.error("❌ Error fetching tipologie contratto:", error);
       console.error("❌ Error details:", {
