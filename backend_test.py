@@ -47495,12 +47495,12 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if agente_operatore_test_success:
-            print("🎉 AGENTE SPECIALIZZATO E OPERATORE TIPOLOGIE TEST: ✅ SUCCESS - NO BUG DETECTED!")
+        if area_manager_test_success:
+            print("🎉 AREA MANAGER TIPOLOGIE VISIBILITY TEST: ✅ SUCCESS - NO BUG DETECTED!")
         else:
-            print("🚨 AGENTE SPECIALIZZATO E OPERATORE TIPOLOGIE TEST: ❌ FAILED - BUG CONFIRMED!")
+            print("🚨 AREA MANAGER TIPOLOGIE VISIBILITY TEST: ❌ FAILED - BUG CONFIRMED!")
         
-        if agente_operatore_test_success:
+        if area_manager_test_success:
             print("\n🎉 OVERALL RESULT: ✅ AGENTE SPECIALIZZATO E OPERATORE WORKING CORRECTLY!")
             print("💡 CONCLUSION: These roles see appropriate tipologie based on their clienti")
         else:
