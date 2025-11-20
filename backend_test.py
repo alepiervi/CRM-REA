@@ -52147,13 +52147,13 @@ if __name__ == "__main__":
             print(f"❌ Unknown test: {test_name}")
             print("Available tests: zapier_webhook, trova_id_agn, lead_update, tipologia_filter")
     else:
-        # Run the Area Manager Excel Export test as requested in the review
-        print("🎯 RUNNING SPECIFIC TEST: Area Manager Excel Export Verification")
+        # Run the Excel Export Permissions test as requested in the review
+        print("🎯 RUNNING SPECIFIC TEST: Excel Export Permissions All Roles")
         print(f"🌐 Base URL: {tester.base_url}")
         print("=" * 80)
         
         try:
-            result = tester.test_area_manager_excel_export_verification()
+            result = tester.test_excel_export_permissions_all_roles()
             
             # Print summary
             print(f"\n📊 Final Test Results:")
