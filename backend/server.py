@@ -11030,24 +11030,22 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         # Build final list based on role and authorization
         allowed_tipologie_ids = set()
         
-        if current_user.role == UserRole.ADMIN:
-            # Admin sees ALL
-            allowed_tipologie_ids = set(all_tipologie_dict.keys())
-            print(f"  Admin: ALL tipologie allowed")
-        else:
-            # Non-admin: authorized + present in clients
+        # ALL USERS (including Admin): Show only tipologie present in their accessible clients
+        # This ensures the filter shows only relevant options, not all system tipologie
+        allowed_tipologie_ids = set(tipologie_from_clients)
+        print(f"  Showing {len(allowed_tipologie_ids)} tipologie from user's accessible clients")
+        
+        # For non-admin users with tipologie_autorizzate, also include those
+        if current_user.role != UserRole.ADMIN:
             if hasattr(current_user, 'tipologie_autorizzate') and current_user.tipologie_autorizzate:
                 allowed_tipologie_ids.update(current_user.tipologie_autorizzate)
                 print(f"  User has {len(current_user.tipologie_autorizzate)} authorized tipologie")
-            
-            # Always add tipologie from user's existing clients
-            allowed_tipologie_ids.update(tipologie_from_clients)
-            print(f"  Adding {len(tipologie_from_clients)} from clients")
-            
-            # FALLBACK: If user has no authorization AND no clients, show ALL tipologie
-            if not allowed_tipologie_ids:
-                allowed_tipologie_ids = set(all_tipologie_dict.keys())
-                print(f"  ⚠️ User has no restrictions - returning ALL {len(allowed_tipologie_ids)} tipologie")
+        
+        # FALLBACK: If user has no clients and no authorization, show ALL tipologie
+        # This only applies to users with no data yet
+        if not allowed_tipologie_ids:
+            allowed_tipologie_ids = set(all_tipologie_dict.keys())
+            print(f"  ⚠️ User has no restrictions - returning ALL {len(allowed_tipologie_ids)} tipologie")
         
         # Build final list with labels
         tipologie_contratto = []
