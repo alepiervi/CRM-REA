@@ -47477,12 +47477,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the AGENTE SPECIALIZZATO E OPERATORE TIPOLOGIE UUID TEST AS REQUESTED IN REVIEW
+        # Run the AREA MANAGER TIPOLOGIE VISIBILITY DEBUG TEST AS REQUESTED IN REVIEW
         print("\n" + "="*80)
-        print("🎯 RUNNING AGENTE SPECIALIZZATO E OPERATORE TIPOLOGIE UUID TEST - AS REQUESTED IN REVIEW")
+        print("🎯 RUNNING AREA MANAGER TIPOLOGIE VISIBILITY DEBUG TEST - AS REQUESTED IN REVIEW")
         print("="*80)
         
-        agente_operatore_test_success = self.test_agente_specializzato_operatore_tipologie_uuid_problem()
+        area_manager_test_success = self.test_area_manager_tipologie_visibility_debug()
 
         # Print final summary
         print("\n" + "=" * 80)
