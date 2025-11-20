@@ -1607,7 +1607,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Lead Update with JWT Authentication - PUT /api/leads/{lead_id} Endpoint Verification"
+    - "Store Assistant Tipologie Contratto Filter Debug - Console Log Analysis"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
