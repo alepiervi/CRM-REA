@@ -11076,11 +11076,11 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 allowed_tipologie_ids.update(current_user.tipologie_autorizzate)
                 print(f"  {current_user.role}: Added {len(current_user.tipologie_autorizzate)} authorized tipologie")
         
-        # FALLBACK: If user has no clients and no authorization, show ALL tipologie
-        # This only applies to users with no data yet (new users with no activity)
+        # NO FALLBACK: If user has no accessible clients, return empty tipologie list
+        # The filter should only show tipologie from clients the user can actually see
+        # Showing all system tipologie when user has 0 clients is confusing and incorrect
         if not allowed_tipologie_ids:
-            allowed_tipologie_ids = set(all_tipologie_dict.keys())
-            print(f"  ⚠️ User has no restrictions - returning ALL {len(allowed_tipologie_ids)} tipologie")
+            print(f"  ℹ️ User has no accessible clients - returning empty tipologie list")
         
         # Build final list with labels
         tipologie_contratto = []
