@@ -51880,7 +51880,7 @@ def main():
     
     try:
         tester = CRMAPITester()
-        result = tester.test_responsabile_sub_agenzia_client_visibility_debug()
+        result = tester.test_area_manager_excel_export_verification()
         
         print(f"\n📊 Final Test Results:")
         print(f"   Tests run: {tester.tests_run}")
@@ -51891,9 +51891,9 @@ def main():
             print(f"   Success rate: N/A (no tests run)")
         
         if result:
-            print("🎉 RESPONSABILE SUB AGENZIA CLIENT VISIBILITY TEST SUCCESSFUL!")
+            print("🎉 AREA MANAGER EXCEL EXPORT TEST SUCCESSFUL!")
         else:
-            print("❌ RESPONSABILE SUB AGENZIA CLIENT VISIBILITY TEST FAILED!")
+            print("❌ AREA MANAGER EXCEL EXPORT TEST FAILED!")
             
     except Exception as e:
         print(f"❌ Test failed with exception: {e}")
