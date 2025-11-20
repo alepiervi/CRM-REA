@@ -2045,7 +2045,8 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus: 
+    - "Responsabile Store Clienti Access Debug - Filter Options vs Clienti List Discrepancy"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
