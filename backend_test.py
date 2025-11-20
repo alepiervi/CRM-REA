@@ -46736,12 +46736,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the TIPOLOGIA CONTRATTO FILTER 500 ERROR FIX TEST AS REQUESTED IN REVIEW
+        # Run the STORE ASSISTANT TIPOLOGIE FILTER FIX TEST AS REQUESTED IN REVIEW
         print("\n" + "="*80)
-        print("🎯 RUNNING TIPOLOGIA CONTRATTO FILTER 500 ERROR FIX TEST - AS REQUESTED IN REVIEW")
+        print("🎯 RUNNING STORE ASSISTANT TIPOLOGIE FILTER FIX TEST - AS REQUESTED IN REVIEW")
         print("="*80)
         
-        tipologia_test_success = self.test_tipologia_contratto_filter_500_fix()
+        store_assistant_test_success = self.test_store_assistant_tipologie_filter_fix()
 
         # Print final summary
         print("\n" + "=" * 80)
