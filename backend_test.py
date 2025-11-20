@@ -46754,18 +46754,18 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if tipologia_test_success:
-            print("🎉 TIPOLOGIA CONTRATTO FILTER 500 ERROR FIX TEST: ✅ SUCCESS - FILTER NOW WORKS!")
+        if store_assistant_test_success:
+            print("🎉 STORE ASSISTANT TIPOLOGIE FILTER FIX TEST: ✅ SUCCESS - STORE ASSISTANT NOW SEES ONLY OWN TIPOLOGIE!")
         else:
-            print("🚨 TIPOLOGIA CONTRATTO FILTER 500 ERROR FIX TEST: ❌ FAILED - FILTER STILL BROKEN!")
+            print("🚨 STORE ASSISTANT TIPOLOGIE FILTER FIX TEST: ❌ FAILED - STORE ASSISTANT STILL SEES TOO MANY TIPOLOGIE!")
         
-        if tipologia_test_success:
-            print("\n🎉 OVERALL RESULT: ✅ TIPOLOGIA CONTRATTO FILTER WORKING CORRECTLY!")
-            print("💡 CONCLUSION: Il filtro Tipologia Contratto non restituisce più errore 500")
+        if store_assistant_test_success:
+            print("\n🎉 OVERALL RESULT: ✅ STORE ASSISTANT TIPOLOGIE FILTER WORKING CORRECTLY!")
+            print("💡 CONCLUSION: Store Assistant ora vede SOLO le tipologie dei propri clienti, non più le 38 UUID")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ ZAPIER WEBHOOK NEEDS BACKEND FIXES!")
+            print("\n🚨 OVERALL RESULT: ❌ STORE ASSISTANT TIPOLOGIE FILTER NEEDS MORE FIXES!")
         
-        return webhook_test_success
+        return store_assistant_test_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
