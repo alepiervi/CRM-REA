@@ -11001,29 +11001,39 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         # Get tipologie contratto from user's authorized tipologie (like /api/tipologie-contratto/all endpoint)
         all_tipologie = []
         
+        print(f"🔄 Loading tipologie for filter-options, user: {current_user.username} ({current_user.role})")
+        
         # Check if hardcoded elements should be included
         use_hardcoded = await should_use_hardcoded_elements()
+        print(f"  use_hardcoded: {use_hardcoded}")
         
         if use_hardcoded:
             hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+            print(f"  Hardcoded tipologie: {len(hardcoded_tipologie)}")
             for tipologia in hardcoded_tipologie:
                 all_tipologie.append(tipologia["value"])
         
         # Get database tipologie
         db_tipologie = await db.tipologie_contratto.find({"is_active": True}).to_list(length=None)
+        print(f"  Database tipologie: {len(db_tipologie)}")
         for tipologia in db_tipologie:
             all_tipologie.append(tipologia["id"])
+        
+        print(f"  Total all_tipologie: {len(all_tipologie)}")
         
         # Filter by user's tipologie_autorizzate (if not admin)
         if current_user.role == UserRole.ADMIN:
             tipologie_contratto = all_tipologie
+            print(f"  Admin: returning ALL {len(tipologie_contratto)} tipologie")
         elif hasattr(current_user, 'tipologie_autorizzate') and current_user.tipologie_autorizzate:
             tipologie_contratto = [t for t in all_tipologie if t in current_user.tipologie_autorizzate]
-            print(f"🔒 User {current_user.username} has {len(current_user.tipologie_autorizzate)} authorized tipologie, returning {len(tipologie_contratto)} matching")
+            print(f"  User has {len(current_user.tipologie_autorizzate)} authorized, returning {len(tipologie_contratto)} matching")
         else:
             # If user has no tipologie_autorizzate defined, return ALL for operational roles
-            print(f"⚠️ User {current_user.username} ({current_user.role}) has NO tipologie_autorizzate - returning ALL {len(all_tipologie)} tipologie")
+            print(f"  User has NO tipologie_autorizzate - returning ALL {len(all_tipologie)} tipologie")
             tipologie_contratto = all_tipologie
+        
+        print(f"✅ Final tipologie_contratto for filter-options: {len(tipologie_contratto)} items")
         
         # Get status values from actual client data + possible values
         status_pipeline = [{"$match": base_query}] if base_query else []
