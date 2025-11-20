@@ -14461,7 +14461,7 @@ const CommesseManagement = ({
       
       // Refresh tipologie after migration to get updated count
       console.log('🔄 Refreshing tipologie after migration...');
-      await fetchTipologieContratto();
+      await fetchTipologieContrattoAdmin();
       
     } catch (error) {
       console.error("❌ Error migrating segmenti:", error);
