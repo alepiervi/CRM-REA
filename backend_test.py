@@ -1207,6 +1207,275 @@ class CRMAPITester:
         
         return True
 
+    def test_tipologia_contratto_filter_doppio_fix_verification(self):
+        """🎯 TESTING TASK: TIPOLOGIA CONTRATTO FILTER - FINAL VERIFICATION DOPPIO FIX"""
+        print("\n🎯 TESTING TASK: TIPOLOGIA CONTRATTO FILTER - FINAL VERIFICATION DOPPIO FIX")
+        print("🎯 CONTESTO:")
+        print("   Ho applicato DUE fix al filtro Tipologia Contratto:")
+        print("   1. **FIX ERRORE 500**: Rimosso sorted() problematico → endpoint ora ritorna 200 OK ✅ (già verificato)")
+        print("   2. **FIX LOGICA FILTRO**: Modificato per mostrare SOLO tipologie presenti nei clienti accessibili, non tutte quelle del sistema")
+        print("")
+        print("🎯 PROBLEMA ORIGINALE:")
+        print("   - Filter mostrava 38 tipologie totali del sistema")
+        print("   - Doveva mostrare solo 6 tipologie presenti nei 21 clienti attuali")
+        print("   - Tipologie nei clienti: energia_fastweb, energia_fastweb_tls, mobile_fastweb, prova, telefonia_fastweb, telefonia_vodafone_negozi")
+        print("")
+        print("🎯 OBIETTIVO VERIFICATION:")
+        print("   Confermare che ora il filtro mostra ESATTAMENTE le 6 tipologie presenti, non più le 38 totali.")
+        
+        import time
+        start_time = time.time()
+        
+        # **FASE 1: Test Admin - Verifica Riduzione Tipologie**
+        print("\n🔐 FASE 1: Test Admin - Verifica Riduzione Tipologie")
+        
+        # 1. Login come Admin (admin/admin123)
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. GET /api/clienti/filter-options
+        print("\n📋 2. GET /api/clienti/filter-options - CRITICAL TEST")
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/filter-options SUCCESS", True, f"Status: 200 OK (NOT 500!)")
+            
+            # 3. VERIFICARE NUMERO TIPOLOGIE: Dovrebbe essere 6 (NON più 38!)
+            tipologie_contratto = filter_response.get('tipologie_contratto', [])
+            tipologie_count = len(tipologie_contratto)
+            
+            print(f"\n   📊 TIPOLOGIE CONTRATTO ANALYSIS:")
+            print(f"      • Total tipologie found: {tipologie_count}")
+            print(f"      • Expected: 6 tipologie (not 38)")
+            
+            if tipologie_count == 6:
+                self.log_test("✅ CRITICAL SUCCESS - Tipologie count CORRECT", True, 
+                    f"Found exactly 6 tipologie (not 38!) - Filter logic fix working!")
+            elif tipologie_count == 38:
+                self.log_test("❌ CRITICAL FAILURE - Still showing all system tipologie", False, 
+                    f"Found 38 tipologie - Filter logic fix NOT working!")
+                return False
+            else:
+                self.log_test("⚠️ Unexpected tipologie count", True, 
+                    f"Found {tipologie_count} tipologie - investigating...")
+            
+            # 4. VERIFICARE LE 6 TIPOLOGIE ESATTE
+            expected_tipologie = [
+                'energia_fastweb',
+                'energia_fastweb_tls', 
+                'mobile_fastweb',
+                'prova',
+                'telefonia_fastweb',
+                'telefonia_vodafone_negozi'
+            ]
+            
+            print(f"\n   📋 TIPOLOGIE VERIFICATION:")
+            found_tipologie = []
+            for tipologia in tipologie_contratto:
+                if isinstance(tipologia, dict):
+                    value = tipologia.get('value', tipologia.get('nome', ''))
+                else:
+                    value = str(tipologia)
+                found_tipologie.append(value)
+                print(f"      • Found: {value}")
+            
+            # Check if all expected tipologie are present
+            missing_tipologie = [t for t in expected_tipologie if t not in found_tipologie]
+            extra_tipologie = [t for t in found_tipologie if t not in expected_tipologie]
+            
+            if not missing_tipologie and not extra_tipologie:
+                self.log_test("✅ PERFECT MATCH - All 6 expected tipologie present", True, 
+                    f"Exact match: {found_tipologie}")
+            elif not missing_tipologie:
+                self.log_test("✅ All expected tipologie present", True, 
+                    f"Expected found, but also extra: {extra_tipologie}")
+            else:
+                self.log_test("❌ Missing expected tipologie", False, 
+                    f"Missing: {missing_tipologie}, Extra: {extra_tipologie}")
+            
+            # 5. Verificare formato {value, label} corretto
+            format_correct = True
+            for tipologia in tipologie_contratto:
+                if isinstance(tipologia, dict):
+                    if 'value' not in tipologia or 'label' not in tipologia:
+                        format_correct = False
+                        break
+                else:
+                    format_correct = False
+                    break
+            
+            if format_correct:
+                self.log_test("✅ Format {value, label} correct", True, "All tipologie have proper structure")
+            else:
+                self.log_test("❌ Format {value, label} incorrect", False, "Some tipologie missing value/label fields")
+                
+        else:
+            self.log_test("❌ GET /api/clienti/filter-options FAILED", False, f"Status: {status}, Response: {filter_response}")
+            return False
+
+        # **FASE 2: Verifica Corrispondenza con Clienti**
+        print("\n👥 FASE 2: Verifica Corrispondenza con Clienti")
+        
+        # 6. GET /api/clienti - prendere lista completa
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            clienti_count = len(clienti)
+            
+            self.log_test("✅ GET /api/clienti SUCCESS", True, f"Found {clienti_count} clienti")
+            
+            # 7. Estrarre tutte le tipologie_contratto uniche dai clienti
+            client_tipologie = set()
+            for cliente in clienti:
+                tipologia = cliente.get('tipologia_contratto')
+                if tipologia:
+                    client_tipologie.add(tipologia)
+            
+            client_tipologie_list = sorted(list(client_tipologie))
+            
+            print(f"\n   📊 CLIENT TIPOLOGIE ANALYSIS:")
+            print(f"      • Total clienti analyzed: {clienti_count}")
+            print(f"      • Unique tipologie in clienti: {len(client_tipologie_list)}")
+            print(f"      • Client tipologie: {client_tipologie_list}")
+            
+            # 8. CONFRONTARE con le 6 tipologie del filtro
+            filter_tipologie_values = []
+            for tipologia in tipologie_contratto:
+                if isinstance(tipologia, dict):
+                    value = tipologia.get('value', tipologia.get('nome', ''))
+                else:
+                    value = str(tipologia)
+                filter_tipologie_values.append(value)
+            
+            filter_tipologie_set = set(filter_tipologie_values)
+            
+            print(f"\n   🔍 COMPARISON ANALYSIS:")
+            print(f"      • Filter tipologie: {sorted(filter_tipologie_values)}")
+            print(f"      • Client tipologie: {client_tipologie_list}")
+            
+            # 9. Devono corrispondere ESATTAMENTE
+            if filter_tipologie_set == client_tipologie:
+                self.log_test("✅ PERFECT MATCH - Filter and client tipologie identical", True, 
+                    f"Filter shows exactly the tipologie present in clienti")
+            else:
+                missing_in_filter = client_tipologie - filter_tipologie_set
+                extra_in_filter = filter_tipologie_set - client_tipologie
+                
+                if missing_in_filter:
+                    self.log_test("❌ Filter missing client tipologie", False, 
+                        f"Missing: {missing_in_filter}")
+                if extra_in_filter:
+                    self.log_test("❌ Filter has extra tipologie", False, 
+                        f"Extra: {extra_in_filter}")
+                        
+                if not missing_in_filter and not extra_in_filter:
+                    self.log_test("✅ Filter and client tipologie match", True, 
+                        f"Same tipologie, different order/format")
+                        
+        else:
+            self.log_test("❌ GET /api/clienti FAILED", False, f"Status: {status}")
+            return False
+
+        # **FASE 4: Verifica Nessuna Regressione**
+        print("\n🔍 FASE 4: Verifica Nessuna Regressione")
+        
+        # 11. Verificare che l'endpoint ritorni ancora 200 OK (non 500)
+        # Already verified above
+        
+        # 12. Verificare formato {value, label} corretto
+        # Already verified above
+        
+        # 13. Verificare altri campi filter-options (sub_agenzie, users) ancora funzionanti
+        other_fields_working = True
+        
+        if 'sub_agenzie' in filter_response:
+            sub_agenzie = filter_response['sub_agenzie']
+            sub_agenzie_count = len(sub_agenzie) if isinstance(sub_agenzie, list) else 0
+            self.log_test("✅ sub_agenzie field present", True, f"Found {sub_agenzie_count} sub agenzie")
+        else:
+            self.log_test("❌ sub_agenzie field missing", False, "Regression in filter-options")
+            other_fields_working = False
+            
+        if 'users' in filter_response:
+            users = filter_response['users']
+            users_count = len(users) if isinstance(users, list) else 0
+            self.log_test("✅ users field present", True, f"Found {users_count} users")
+        else:
+            self.log_test("❌ users field missing", False, "Regression in filter-options")
+            other_fields_working = False
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 TIPOLOGIA CONTRATTO FILTER - FINAL VERIFICATION SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Confermare che ora il filtro mostra ESATTAMENTE le 6 tipologie presenti, non più le 38 totali")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • GET /api/clienti/filter-options: ✅ SUCCESS (200 OK, not 500)")
+        print(f"      • Tipologie count: {'✅ CORRECT (6)' if tipologie_count == 6 else f'❌ WRONG ({tipologie_count})'}")
+        print(f"      • Expected tipologie present: {'✅ YES' if not missing_tipologie else '❌ NO'}")
+        print(f"      • Format {value, label}: {'✅ CORRECT' if format_correct else '❌ INCORRECT'}")
+        print(f"      • Match with client tipologie: {'✅ PERFECT' if filter_tipologie_set == client_tipologie else '❌ MISMATCH'}")
+        print(f"      • Other fields working: {'✅ YES' if other_fields_working else '❌ NO'}")
+        
+        # Determine overall success
+        success_criteria = [
+            status == 200,  # Endpoint returns 200 OK
+            tipologie_count == 6,  # Exactly 6 tipologie
+            not missing_tipologie,  # All expected tipologie present
+            format_correct,  # Proper format
+            filter_tipologie_set == client_tipologie,  # Perfect match with clients
+            other_fields_working  # No regression
+        ]
+        
+        overall_success = all(success_criteria)
+        success_rate = (sum(success_criteria) / len(success_criteria)) * 100
+        
+        print(f"\n   🎯 CRITERI DI SUCCESSO:")
+        print(f"      ✅ GET /api/clienti/filter-options ritorna 200 OK: {'✅' if status == 200 else '❌'}")
+        print(f"      ✅ tipologie_contratto contiene ESATTAMENTE 6 elementi: {'✅' if tipologie_count == 6 else '❌'}")
+        print(f"      ✅ Le 6 tipologie corrispondono a quelle presenti nei clienti: {'✅' if filter_tipologie_set == client_tipologie else '❌'}")
+        print(f"      ✅ Formato {value, label} corretto: {'✅' if format_correct else '❌'}")
+        print(f"      ✅ Nessuna regressione su altri campi: {'✅' if other_fields_working else '❌'}")
+        
+        if overall_success:
+            print(f"\n   🎉 SUCCESS: DOPPIO FIX COMPLETAMENTE FUNZIONANTE!")
+            print(f"   🎉 CONCLUSIONE:")
+            print(f"      • Fix errore 500: ✅ RISOLTO (endpoint ritorna 200 OK)")
+            print(f"      • Fix logica filtro: ✅ RISOLTO (mostra solo 6 tipologie dei clienti, non 38 del sistema)")
+            print(f"      • Il filtro Tipologia Contratto ora funziona perfettamente!")
+            print(f"   🎯 SUCCESS RATE: {success_rate:.1f}% - All criteria met!")
+        else:
+            print(f"\n   🚨 PARTIAL SUCCESS: Alcuni problemi ancora presenti")
+            print(f"   🔧 RACCOMANDAZIONI:")
+            if status != 200:
+                print(f"      • Fix endpoint 500 error")
+            if tipologie_count != 6:
+                print(f"      • Adjust filter logic to show only client tipologie")
+            if missing_tipologie:
+                print(f"      • Ensure all client tipologie are included in filter")
+            if not format_correct:
+                print(f"      • Fix response format to include value/label")
+            if filter_tipologie_set != client_tipologie:
+                print(f"      • Align filter tipologie with actual client tipologie")
+            if not other_fields_working:
+                print(f"      • Fix regression in other filter fields")
+            print(f"   🎯 SUCCESS RATE: {success_rate:.1f}% - Needs improvement")
+        
+        return overall_success
+
     def test_document_download_view_functionality(self):
         """🚨 TEST DOWNLOAD E VIEW DOCUMENTI - Verifica funzionalità download e visualizzazione documenti"""
         print("\n🚨 TEST DOWNLOAD E VIEW DOCUMENTI NEL CRM NUREAL")
