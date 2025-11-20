@@ -1973,6 +1973,18 @@ backend:
           agent: "main"
           comment: "✅ SELECT COMPONENT FIX AND PROVINCE FILTER IMPLEMENTATION COMPLETE! 1) FIX SELECT COMPONENT: Resolved 'value prop that is not an empty string' error by using 'unassigned' as special value instead of empty string. Added conversion logic in onValueChange to map 'unassigned' → empty string before saving. 2) PROVINCE FILTER LOGIC: Modified agent dropdown to show ONLY agents that cover lead's provincia. Filter logic: a) If agent.provinces is empty/undefined → agent covers ALL provinces (always shown), b) If lead.provincia is empty → show all agents, c) Otherwise → show only agents where agent.provinces.includes(lead.provincia). 3) UI ENHANCEMENTS: Added province display in dropdown for each agent showing covered provinces. Added informative text below dropdown showing lead's provincia being filtered. Added 'Nessun agente disponibile' message if no agents cover the provincia. READY FOR TESTING: Test dropdown shows only agents covering lead provincia, test agents with empty provinces shown for all leads, verify province filter message displayed."
 
+  - task: "Responsabile Store Clienti Access Debug - Filter Options vs Clienti List Discrepancy"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL BUG CONFIRMED - RESPONSABILE STORE CLIENTI ACCESS ISSUE! ✅ COMPREHENSIVE DEBUG TESTING COMPLETED: Successfully identified the exact issue reported by user. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated and accessed user management. ✅ RESPONSABILE STORE USER IDENTIFIED: Found user 'ale7' with role 'responsabile_store', ID: 5722e291-c9e5-43e7-b188-c3ad54a48d2d, Sub Agenzia ID: 9b0b8890-81f6-4cdf-859e-48a8ae6e9856, Commesse Autorizzate: 1 item (72d1a8da...). ✅ RESPONSABILE STORE LOGIN: Successfully logged in as ale7 after password reset. ❌ CRITICAL ISSUE CONFIRMED: GET /api/clienti (as Responsabile Store) returns 0 clienti but GET /api/clienti/filter-options returns 38 tipologie! This is the exact discrepancy reported by user. 🚨 ADDITIONAL BUG IDENTIFIED: Filter returns UUID values instead of readable tipologie names! Filter shows 38 UUID values (e.g., ca4b7ab4-acfc-468b-afd5-25c3fa0b49a7) with empty labels instead of human-readable names like 'energia_fastweb', 'mobile_fastweb'. 🔍 ROOT CAUSE ANALYSIS: 1) Discrepancy between query logic in GET /api/clienti vs GET /api/clienti/filter-options for responsabile_store role, 2) Filter-options endpoint returns raw UUID values instead of proper {value, label} format, 3) Responsabile Store has sub_agenzia_id and commesse_autorizzate but clienti query doesn't find matching records. 🎯 CRITICAL IMPACT: Responsabile Store cannot see any clienti in the list but sees 38 tipologie in filter dropdown, making the functionality completely unusable. PRIORITY: HIGH - Core CRM functionality broken for responsabile_store role. RECOMMENDATIONS: 1) Fix GET /api/clienti/filter-options to return proper {value, label} format instead of UUIDs, 2) Align query logic between clienti and filter-options endpoints for responsabile_store role, 3) Verify MongoDB queries use same $or logic for created_by/assigned_to/sub_agenzia_id/commesse matching. SUCCESS RATE: 87.5% (7/8 tests passed) - Bug successfully identified and documented!"
+
 
 frontend:
   - task: "Analytics Enhancements - Azzera Filtri Button and Dynamic Status Columns"
