@@ -14099,7 +14099,7 @@ const CommesseManagement = ({
     }
   };
 
-  const fetchTipologieContratto = async (servizioId) => {
+  const fetchTipologieContrattoAdmin = async (servizioId) => {
     try {
       const response = await axios.get(`${API}/servizi/${servizioId}/tipologie-contratto`);
       console.log(`Tipologie contratto per servizio ${servizioId}:`, response.data);
