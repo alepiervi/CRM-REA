@@ -1641,8 +1641,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Store Assistant Tipologie Contratto Filter Debug - Console Log Analysis"
-  stuck_tasks: []
+    - "Store Assistant Tipologie Filter Fix - Role-Based Authorization Logic"
+  stuck_tasks:
+    - "Store Assistant Tipologie Filter Fix - Role-Based Authorization Logic"
   test_all: false
   test_priority: "high_first"
 
