@@ -8400,8 +8400,21 @@ async def get_all_servizi(current_user: User = Depends(get_current_user)):
     """Get all servizi for admin/management purposes"""
     
     try:
-        # Only admin and management roles can access all servizi
-        if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA, UserRole.RESPONSABILE_SUB_AGENZIA]:
+        # Admin, management roles and operational roles can access servizi for filters
+        allowed_roles = [
+            UserRole.ADMIN, 
+            UserRole.RESPONSABILE_COMMESSA, 
+            UserRole.RESPONSABILE_SUB_AGENZIA,
+            UserRole.RESPONSABILE_STORE,
+            UserRole.STORE_ASSIST,
+            UserRole.RESPONSABILE_PRESIDI,
+            UserRole.PROMOTER_PRESIDI,
+            UserRole.AREA_MANAGER,
+            UserRole.AGENTE_SPECIALIZZATO,
+            UserRole.OPERATORE,
+            UserRole.BACKOFFICE_COMMESSA
+        ]
+        if current_user.role not in allowed_roles:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
         
         # Get all active servizi
