@@ -1474,11 +1474,11 @@ backend:
 
   - task: "Tipologia Contratto Filter Bug Fix - 500 Error Sorted() Issue Resolution"
     implemented: true
-    working: "needs_testing"
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
@@ -1486,6 +1486,9 @@ backend:
         - working: "needs_testing"
           agent: "main"
           comment: "🔧 FILTRO LOGIC FIX IMPLEMENTATO - MOSTRA SOLO TIPOLOGIE PRESENTI: ✅ ISSUE IDENTIFICATO: Dopo fix errore 500, il filtro mostrava TUTTE le 38 tipologie del sistema invece delle sole 6 presenti nei clienti attuali. Testing agent ha confermato che dovrebbe mostrare 'solamente quelle dei clienti presenti nella lista'. ✅ FIX APPLICATO: Modificata logica in GET /api/clienti/filter-options (righe 11030-11050) per mostrare SOLO tipologie estratte dai clienti accessibili all'utente (tipologie_from_clients). Admin ora vede solo tipologie dei propri clienti, non tutte quelle del sistema. Utenti non-admin vedono tipologie dei propri clienti + tipologie_autorizzate se presenti. Fallback a tutte le tipologie SOLO se utente non ha né clienti né autorizzazioni. ✅ BACKEND RIAVVIATO: Server riavviato con successo (processo 1246 attivo), nessun errore nei log. 🎯 TESTING RICHIESTO: Verificare che Admin veda solo 6 tipologie (quelle presenti nei 21 clienti), verificare che altri ruoli vedano solo tipologie dei propri clienti, confermare che filtro funzioni correttamente nel frontend. READY FOR COMPREHENSIVE TESTING!"
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL STORE ASSISTANT FILTER BUG IDENTIFIED - WRONG TIPOLOGIE RETURNED! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested Store Assistant Tipologia Contratto filter bug as requested in urgent review. ✅ STORE ASSISTANT USER FOUND: Found existing Store Assistant user 'ale10' (role: store_assist, ID: 0c19e793-cfc6-4180-984b-bb23c5c53d7f) with proper sub_agenzia_id and 2 commesse_autorizzate. ✅ STORE ASSISTANT LOGIN SUCCESS: Login successful with valid JWT token (3 parts), proper authentication working. ✅ FILTER-OPTIONS ENDPOINT ACCESS: GET /api/clienti/filter-options returns 200 OK (not 401/403/500) - Store Assistant CAN access the endpoint. ✅ TIPOLOGIE FIELD PRESENT: Campo 'tipologie_contratto' presente nella risposta with 38 items (not empty). ❌ CRITICAL BUG - WRONG TIPOLOGIE RETURNED: Store Assistant sees 38 tipologie (ALL system tipologie) but should see only tipologie from their accessible clients. Store Assistant has 1 client with tipologia 'energia_fastweb' but filter shows 38 UUID-based tipologie that don't match. ❌ MISMATCH ANALYSIS: Filter tipologie: 38 UUID values (c5ca5418-2142-4c7e-9886-a756b1c61554, etc.), Client tipologie: 1 string value ('energia_fastweb'), NO OVERLAP between filter and client tipologie! ✅ ADMIN COMPARISON: Admin correctly sees 6 tipologie matching their 21 clients, Store Assistant incorrectly sees 38 system tipologie instead of 1 client tipologie. 🚨 ROOT CAUSE: Backend filter logic returns ALL system tipologie for Store Assistant instead of filtering by their accessible clients. The logic that should extract tipologie from Store Assistant's 1 client is not working correctly. 🔧 URGENT FIX REQUIRED: Debug why Store Assistant gets all system tipologie instead of tipologie from their accessible clients. The filter should return ['energia_fastweb'] for Store Assistant, not 38 UUID tipologie. SUCCESS RATE: 71% (10/14 tests passed) - Store Assistant can access endpoint but receives wrong tipologie data!"
 
 frontend:
   - task: "Store Assistant Tipologie Contratto Filter Debug - Console Log Analysis"
