@@ -10998,18 +10998,30 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         
         # Get available data from system collections AND actual client usage
         
-        # Get tipologie contratto from actual tipologie_contratto collection + actual client data
-        tipologie_pipeline = [{"$match": base_query}] if base_query else []
-        tipologie_pipeline += [
-            {"$group": {"_id": "$tipologia_contratto"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
-            {"$sort": {"_id": 1}}
-        ]
-        tipologie_result = await db.clienti.aggregate(tipologie_pipeline).to_list(length=None)
-        tipologie_from_clients = [item["_id"] for item in tipologie_result]
+        # Get tipologie contratto from user's authorized tipologie (like /api/tipologie-contratto/all endpoint)
+        all_tipologie = []
         
-        # Use only tipologie from actual client data (no user-created types from collection)
-        tipologie_contratto = tipologie_from_clients
+        # Check if hardcoded elements should be included
+        use_hardcoded = await should_use_hardcoded_elements()
+        
+        if use_hardcoded:
+            hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
+            for tipologia in hardcoded_tipologie:
+                all_tipologie.append(tipologia["value"])
+        
+        # Get database tipologie
+        db_tipologie = await db.tipologie_contratto.find({"is_active": True}).to_list(length=None)
+        for tipologia in db_tipologie:
+            all_tipologie.append(tipologia["id"])
+        
+        # Filter by user's tipologie_autorizzate (if not admin)
+        if current_user.role != UserRole.ADMIN:
+            if hasattr(current_user, 'tipologie_autorizzate') and current_user.tipologie_autorizzate:
+                tipologie_contratto = [t for t in all_tipologie if t in current_user.tipologie_autorizzate]
+            else:
+                tipologie_contratto = []
+        else:
+            tipologie_contratto = all_tipologie
         
         # Get status values from actual client data + possible values
         status_pipeline = [{"$match": base_query}] if base_query else []
