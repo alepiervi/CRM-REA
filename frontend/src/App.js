@@ -1495,7 +1495,8 @@ const Dashboard = () => {
         commessaId, 
         servizioId,
         selectedCommessa,
-        selectedServizio
+        selectedServizio,
+        userRole: user?.role
       });
       
       let url;
@@ -1515,12 +1516,26 @@ const Dashboard = () => {
         console.log("🌐 Using filtered tipologie endpoint:", url);
       }
       
-      const response = await axios.get(url);
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       console.log("✅ Tipologie contratto ricevute:", response.data);
+      console.log("✅ Numero tipologie:", response.data?.length);
       setFormTipologieContratto(response.data);
     } catch (error) {
       console.error("❌ Error fetching tipologie contratto:", error);
+      console.error("❌ Error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       setFormTipologieContratto([]);
+      // Show toast to user
+      toast({
+        title: "Errore caricamento tipologie",
+        description: "Impossibile caricare le tipologie di contratto",
+        variant: "destructive"
+      });
     }
   };
 
