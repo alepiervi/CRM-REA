@@ -165,27 +165,34 @@ FOCUS CRITICO:
 
 STATO: PRONTO PER TESTING COMPLETO"
 
-current_problem_statement: "VERIFICA RESPONSABILE PRESIDI - FILTRO SUB AGENZIE COMPLETATA
+current_problem_statement: "🚨 DEBUG RESPONSABILE SUB AGENZIA - CLIENTI NON VISIBILI - CRITICAL BUG IDENTIFIED
 
 CONTESTO:
-Ho appena fixato la logica del filtro sub_agenzie per Responsabile Presidi. Prima era raggruppato con altri ruoli e usava `sub_agenzia_id` (singola), ora usa `sub_agenzie_autorizzate` (multipla) come Area Manager.
+L'utente segnala che Responsabile Sub Agenzia e BackOffice Sub Agenzia non vedono i clienti associati alla loro sub agenzia. Devono vedere TUTTI i clienti della loro sub agenzia, non solo quelli creati da loro.
 
 OBIETTIVO:
-Verificare che Responsabile Presidi ora veda tutte le sub agenzie autorizzate nel filtro.
+Identificare perché questi ruoli non vedono i clienti della loro sub agenzia.
 
 TEST ESEGUITI:
-✅ FASE 1: Identificato Responsabile Presidi user 'ale8' con 1 sub_agenzia_autorizzata
-✅ FASE 2: Login Responsabile Presidi e test GET /api/clienti/filter-options
-✅ FASE 3: Verificato che filter mostra esattamente 1 sub agenzia (corrispondente alle autorizzate)
-✅ FASE 4: Test GET /api/clienti - 2 clienti visibili dalle sub agenzie autorizzate
+✅ FASE 1: Identificato Responsabile Sub Agenzia user 'ale3' con sub_agenzia_id popolato
+✅ FASE 2: Verificato che Admin vede 14 clienti con sub_agenzia_id = 7c70d4b5-4be0-4707-8bca-dfe84a0b9dee
+✅ FASE 3: Testato login Responsabile Sub Agenzia - vede 0 clienti (BUG CONFERMATO)
+✅ FASE 4: Analizzato backend logs - identificata query MongoDB errata
 
-RISULTATI:
-✅ Responsabile Presidi con 1 sub_agenzia_autorizzata → vede 1 nel filtro
-✅ Le sub agenzie nel filtro corrispondono a quelle autorizzate
-✅ Nessuna regressione su altri ruoli
-✅ Filter e clienti sono coerenti
+🚨 ROOT CAUSE IDENTIFICATO:
+La query MongoDB per Responsabile Sub Agenzia include un filtro servizio_id troppo restrittivo:
+- Query Admin: {} (vede tutti i 21 clienti)
+- Query Responsabile: {'sub_agenzia_id': '7c70d4b5...', 'servizio_id': {'$in': ['e000d779...', '9c1ece3f...', '8f50b9d7...', '62f75c5b...']}}
+- Clienti reali hanno servizio_id: [None, 'cc0648c1-0df1-4530-8281-f4c940934916']
+- I servizio_id non corrispondono → 0 risultati
 
-STATO: ✅ COMPLETATO CON SUCCESSO - Il fix funziona correttamente!
+PROBLEMA:
+Il backend applica un filtro servizio_id basato sui servizi_autorizzati dell'utente, ma i clienti hanno servizio_id diversi o NULL.
+
+SOLUZIONE RICHIESTA:
+Responsabile Sub Agenzia dovrebbe vedere TUTTI i clienti della sua sub agenzia, indipendentemente dal servizio_id.
+
+STATO: 🚨 CRITICAL BUG CONFIRMED - Backend query logic needs immediate fix"
 
 TEST DA ESEGUIRE:
 
