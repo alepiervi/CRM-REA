@@ -14429,7 +14429,7 @@ const CommesseManagement = ({
       
       // Refresh all data after disabling
       console.log('🔄 Refreshing all data after disabling hardcoded...');
-      await fetchTipologieContratto();
+      await fetchTipologieContrattoAdmin();
       await fetchCommesse();
       
     } catch (error) {
