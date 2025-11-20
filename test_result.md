@@ -1475,6 +1475,18 @@ backend:
           comment: "🎉 BASIC FUNCTIONALITY RAPID CHECK COMPLETE - 100% SUCCESS! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested all core endpoints to verify that existing functionality (Clienti, Commesse, Sub Agenzie) still works correctly after Lead/Unit system modifications. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ GET /api/clienti SUCCESS: Status 200, Found 18 clienti with valid structure (all required fields present). ✅ GET /api/commesse SUCCESS: Status 200, Found 5 commesse with valid structure and new fields (has_whatsapp, has_ai, has_call_center). ✅ GET /api/sub-agenzie SUCCESS: Status 200, Found 4 sub agenzie with valid structure and auth fields (commesse_autorizzate, servizi_autorizzati). ✅ GET /api/units SUCCESS (FIXED): Status 200, Found 0 units - endpoint working correctly after fixing duplicate route definition bug. ✅ GET /api/lead-status SUCCESS: Status 200, Found 0 lead statuses - new endpoint working correctly. ✅ CRITICAL BUG FOUND AND FIXED: Units endpoint was returning 422 validation error due to malformed/duplicate @api_router.get decorator at line 4067 in server.py. Removed orphaned decorator to fix the issue. ✅ NO 500 ERRORS: All endpoints respond with 200 status, no server errors detected. ✅ CORE FUNCTIONALITY INTACT: Clienti, Commesse, Sub Agenzie endpoints load correctly with proper data structure. ✅ NEW ENDPOINTS WORKING: Both units and lead-status endpoints function correctly without crashing. 🎯 ALL CRITICAL OBJECTIVES ACHIEVED: 1) Tutti gli endpoint rispondono 200 ✅, 2) Clienti caricano correttamente (18 found) ✅, 3) Commesse caricano correttamente (5 found) ✅, 4) Sub Agenzie caricano correttamente (4 found) ✅, 5) Nuovi endpoint units e lead-status funzionano ✅, 6) Nessun errore 500 ✅. 🎉 OBIETTIVO RAGGIUNTO: Le funzionalità base NON sono rotte! Tutti gli endpoint core funzionano correttamente dopo le modifiche Lead/Unit. Il bug nell'endpoint units è stato identificato e risolto. SUCCESS RATE: 100% (13/13 tests passed) - Basic functionality fully operational!"
 
 frontend:
+  - task: "Store Assistant Tipologie Contratto Filter Debug - Console Log Analysis"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "needs_testing"
+          agent: "main"
+          comment: "✅ STORE ASSISTANT TIPOLOGIE CONTRATTO FILTER DEBUG TASK CREATED: Need to test Store Assistant user to verify why they cannot see tipologie contratto options in the filter dropdown. TESTING REQUIRED: 1) Find or create Store Assistant user credentials, 2) Login as Store Assistant, 3) Navigate to Clienti section, 4) Check Tipologia Contratto dropdown, 5) Capture ALL console logs during loading, 6) Look for specific log messages (🔄 FETCH TIPOLOGIE START, ✅ Tipologie contratto ricevute, ❌ Error fetching tipologie contratto), 7) Check for HTTP errors (401, 403, 500, 503), 8) Test GET /api/tipologie-contratto/all endpoint directly, 9) Compare Store Assistant vs Admin behavior. FOCUS: Identify exact error in console, determine if authentication/permission issue or server error, verify if API call is made, compare with Admin functionality."
+
   - task: "Lead Section Functionality Fix - JavaScript Syntax Error Resolution"
     implemented: true
     working: true
