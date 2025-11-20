@@ -10648,27 +10648,13 @@ async def get_clienti(
     
     # NEW: Filter by assigned user (not creator)
     # This supports the "Utente Creatore" filter which should filter by assigned user
-    if assigned_to:
-        # If there's already a $or clause (for users who see their own + assigned clients),
-        # we need to wrap it in an $and to add this additional filter
-        if "$or" in query:
-            existing_or = query.pop("$or")
-            query["$and"] = [
-                {"$or": existing_or},
-                {"assigned_to": assigned_to}
-            ]
-        else:
-            query["assigned_to"] = assigned_to
-    elif created_by:
+    # IMPORTANT: If there's already a $or or $and clause (for roles with complex permission logic),
+    # we should NOT add this filter to avoid query conflicts
+    if assigned_to and "$or" not in query and "$and" not in query:
+        query["assigned_to"] = assigned_to
+    elif created_by and "$or" not in query and "$and" not in query:
         # Backward compatibility: if old parameter is used, filter by assigned_to
-        if "$or" in query:
-            existing_or = query.pop("$or")
-            query["$and"] = [
-                {"$or": existing_or},
-                {"assigned_to": created_by}
-            ]
-        else:
-            query["assigned_to"] = created_by
+        query["assigned_to"] = created_by
     
     # NEW: Additional filter parameters
     if servizio_id and servizio_id != "all":
