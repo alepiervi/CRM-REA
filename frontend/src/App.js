@@ -14400,7 +14400,7 @@ const CommesseManagement = ({
       
       // Refresh all data after migration
       console.log('🔄 Refreshing all data after migration...');
-      await fetchTipologieContratto();
+      await fetchTipologieContrattoAdmin();
       await fetchCommesse();
       
     } catch (error) {
