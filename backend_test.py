@@ -50234,13 +50234,13 @@ if __name__ == "__main__":
             print(f"❌ Unknown test: {test_name}")
             print("Available tests: zapier_webhook, trova_id_agn, lead_update, tipologia_filter")
     else:
-        # Run the specific lead update test as requested in the review
-        print("🎯 RUNNING SPECIFIC TEST: Lead Update with JWT Authentication")
+        # Run the specific agente specializzato operatore test as requested in the review
+        print("🎯 RUNNING SPECIFIC TEST: Agente Specializzato e Operatore Tipologie UUID Problem")
         print(f"🌐 Base URL: {tester.base_url}")
         print("=" * 80)
         
         try:
-            result = tester.test_lead_update_with_jwt_authentication()
+            result = tester.test_agente_specializzato_operatore_tipologie_uuid_problem()
             
             # Print summary
             print(f"\n📊 Final Test Results:")
@@ -50252,9 +50252,9 @@ if __name__ == "__main__":
                 print(f"   Success rate: N/A (no tests run)")
             
             if result:
-                print("🎉 LEAD UPDATE WITH JWT AUTHENTICATION SUCCESSFUL!")
+                print("🎉 AGENTE SPECIALIZZATO E OPERATORE TEST SUCCESSFUL!")
             else:
-                print("❌ LEAD UPDATE WITH JWT AUTHENTICATION FAILED!")
+                print("❌ AGENTE SPECIALIZZATO E OPERATORE TEST FAILED!")
                 
         except Exception as e:
             print(f"❌ Test failed with exception: {e}")
