@@ -2105,10 +2105,11 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Responsabile Store Clienti Access Debug - Filter Options vs Clienti List Discrepancy"
-  stuck_tasks: []
+    - "Responsabile Sub Agenzia Client Visibility - Critical Query Bug Fix"
+  stuck_tasks: 
+    - "Responsabile Sub Agenzia Client Visibility - Critical Query Bug Fix"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "critical_first"
 
       message: "🎉 BASIC FUNCTIONALITY RAPID CHECK COMPLETE - 100% SUCCESS! Successfully completed rapid verification test to ensure existing functionality (Clienti, Commesse, Sub Agenzie) still works correctly after Lead/Unit system modifications. RESULTS: ✅ Admin login (admin/admin123) successful, ✅ GET /api/clienti: Status 200, Found 18 clienti with valid structure, ✅ GET /api/commesse: Status 200, Found 5 commesse with valid structure and new fields (has_whatsapp, has_ai, has_call_center), ✅ GET /api/sub-agenzie: Status 200, Found 4 sub agenzie with valid structure and auth fields, ✅ GET /api/units: Status 200, Found 0 units (FIXED - was returning 422 due to duplicate route definition), ✅ GET /api/lead-status: Status 200, Found 0 lead statuses (new endpoint working). CRITICAL BUG FOUND AND FIXED: Units endpoint had malformed @api_router.get decorator at line 4067 causing 422 validation error. Removed orphaned decorator to fix the issue. CONCLUSION: Le funzionalità base NON sono rotte! Tutti gli endpoint core funzionano correttamente dopo le modifiche Lead/Unit. Nessun errore 500 rilevato. SUCCESS RATE: 100% (13/13 tests passed) - All critical objectives achieved!"
    - agent: "testing"
