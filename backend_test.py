@@ -47194,12 +47194,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the STORE ASSISTANT TIPOLOGIE FILTER FIX TEST AS REQUESTED IN REVIEW
+        # Run the AGENTE SPECIALIZZATO E OPERATORE TIPOLOGIE UUID TEST AS REQUESTED IN REVIEW
         print("\n" + "="*80)
-        print("🎯 RUNNING STORE ASSISTANT TIPOLOGIE FILTER FIX TEST - AS REQUESTED IN REVIEW")
+        print("🎯 RUNNING AGENTE SPECIALIZZATO E OPERATORE TIPOLOGIE UUID TEST - AS REQUESTED IN REVIEW")
         print("="*80)
         
-        store_assistant_test_success = self.test_store_assistant_tipologie_filter_fix()
+        agente_operatore_test_success = self.test_agente_specializzato_operatore_tipologie_uuid_problem()
 
         # Print final summary
         print("\n" + "=" * 80)
@@ -47212,18 +47212,19 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if store_assistant_test_success:
-            print("🎉 STORE ASSISTANT TIPOLOGIE FILTER FIX TEST: ✅ SUCCESS - STORE ASSISTANT NOW SEES ONLY OWN TIPOLOGIE!")
+        if agente_operatore_test_success:
+            print("🎉 AGENTE SPECIALIZZATO E OPERATORE TIPOLOGIE TEST: ✅ SUCCESS - NO BUG DETECTED!")
         else:
-            print("🚨 STORE ASSISTANT TIPOLOGIE FILTER FIX TEST: ❌ FAILED - STORE ASSISTANT STILL SEES TOO MANY TIPOLOGIE!")
+            print("🚨 AGENTE SPECIALIZZATO E OPERATORE TIPOLOGIE TEST: ❌ FAILED - BUG CONFIRMED!")
         
-        if store_assistant_test_success:
-            print("\n🎉 OVERALL RESULT: ✅ STORE ASSISTANT TIPOLOGIE FILTER WORKING CORRECTLY!")
-            print("💡 CONCLUSION: Store Assistant ora vede SOLO le tipologie dei propri clienti, non più le 38 UUID")
+        if agente_operatore_test_success:
+            print("\n🎉 OVERALL RESULT: ✅ AGENTE SPECIALIZZATO E OPERATORE WORKING CORRECTLY!")
+            print("💡 CONCLUSION: These roles see appropriate tipologie based on their clienti")
         else:
-            print("\n🚨 OVERALL RESULT: ❌ STORE ASSISTANT TIPOLOGIE FILTER NEEDS MORE FIXES!")
+            print("\n🚨 OVERALL RESULT: ❌ AGENTE SPECIALIZZATO E OPERATORE HAVE TIPOLOGIE UUID PROBLEM!")
+            print("💡 CONCLUSION: Same issue as Responsabile Store - tipologie_autorizzate incorrectly populated")
         
-        return store_assistant_test_success
+        return agente_operatore_test_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
