@@ -165,119 +165,68 @@ FOCUS CRITICO:
 
 STATO: PRONTO PER TESTING COMPLETO"
 
-current_problem_statement: "TEST RAPIDO AGGIORNAMENTO LEAD CON NUOVI CAMPI - COMPLETATO CON SUCCESSO
+current_problem_statement: "TEST CARICAMENTO TIPOLOGIE CONTRATTO - STORE ASSISTANT
 
-OBIETTIVO RAGGIUNTO:
-✅ Testato che l'endpoint PUT /api/leads/{id} ora accetti correttamente tutti i campi editabili inclusi i nuovi campi aggiunti.
-
-CONTESTO COMPLETATO:
-✅ Ho aggiornato il modello LeadUpdate per includere: url, otp, inserzione, privacy_consent, marketing_consent
-✅ Ho cambiato tipologia_abitazione e esito da enum a stringhe per permettere valori dinamici
-✅ L'utente può ora configurare gli stati lead dinamicamente dal database
-✅ Backend testing conferma endpoint PUT /api/leads/{id} funzionante (100% success)
-
-RISULTATI TEST COMPLETATI:
-✅ PUT /api/leads/{id} ritorna 200 OK (NON 422)
-✅ Tutti i 10 campi editabili sono accettati dal backend
-✅ Tutti i campi sono persistiti correttamente nel database
-✅ privacy_consent e marketing_consent funzionano correttamente
-✅ esito accetta valori dinamici (non solo enum hardcoded)
-✅ Nessun errore di validazione Pydantic
-
-STATO: COMPLETATO CON SUCCESSO - Backend ready for frontend integration
+OBIETTIVO:
+Verificare perché Store Assistant non vede le tipologie di contratto nel filtro e identificare l'errore esatto.
 
 URL: https://lead-master-7.preview.emergentagent.com
 
-CREDENZIALI:
-- Username: admin
-- Password: admin123
-
 TEST DA ESEGUIRE:
 
-**FASE 1: Login e Navigazione**
-1. Login con admin/admin123
-2. Naviga alla sezione "Lead" dal menu
-3. Verifica che la lista lead si carichi
-4. Screenshot della lista lead
+**FASE 1: Login Store Assistant**
+1. Trova le credenziali di un utente Store Assistant nel database o crea un nuovo utente di test
+2. In alternativa, usa credenziali esistenti se disponibili
+3. Login con utente Store Assistant
+4. Verifica login riuscito
 
-**FASE 2: Apertura Modal**
-5. Clicca sul pulsante "Vedi" (icona Eye) del primo lead
-6. Verifica che il modal si apra
-7. Verifica che i dati da Zapier siano visibili (Nome, Cognome, Telefono, Email, Provincia, Campagna) con icona Lock e sfondo grigio
-8. Verifica che il pulsante "Modifica" sia visibile
-9. Screenshot del modal in modalità visualizzazione
+**FASE 2: Navigazione Clienti**
+5. Naviga alla sezione "Clienti" dal menu
+6. Verifica che la pagina clienti si carichi
+7. Screenshot della pagina clienti
 
-**FASE 3: Modalità Modifica**
-10. Clicca sul pulsante "Modifica"
-11. Verifica che i campi editabili diventino modificabili:
-    - tipologia_abitazione (dropdown)
-    - indirizzo (input text)
-    - regione (input text)
-    - url (input text)
-    - otp (input text)
-    - inserzione (input text)
-    - privacy_consent (checkbox)
-    - marketing_consent (checkbox)
-    - esito (dropdown con lead statuses)
-    - note (textarea)
-12. Verifica che i campi da Zapier rimangano NON modificabili (Nome, Cognome, Telefono, Email, Provincia, Campagna)
-13. Screenshot del modal in modalità modifica
+**FASE 3: Verifica Filtro Tipologia Contratto**
+8. Cerca il dropdown/select "Tipologia Contratto" nella sezione filtri
+9. Clicca sul dropdown "Tipologia Contratto"
+10. Verifica se ci sono opzioni nel dropdown
+11. Screenshot del dropdown aperto (anche se vuoto)
 
-**FASE 4: Modifica Campi**
-14. Modifica i seguenti campi:
-    - tipologia_abitazione → seleziona "condominio"
-    - indirizzo → inserisci "Via Test Modifica E2E 789"
-    - note → inserisci "Nota di test E2E - Modal editabile funzionante"
-15. Verifica che i pulsanti "Annulla" e "Salva Modifiche" siano visibili
-16. Screenshot con campi modificati
+**FASE 4: Analisi Console Browser**
+12. Cattura TUTTI i log della console durante il caricamento
+13. Cerca specificamente:
+    - "🔄 FETCH TIPOLOGIE START"
+    - "✅ Tipologie contratto ricevute"
+    - "❌ Error fetching tipologie contratto"
+    - Errori 401, 403, 500, 503
+14. Identifica l'errore esatto se presente
+15. Screenshot della console con gli errori
 
-**FASE 5: Test Salvataggio**
-17. Clicca sul pulsante "Salva Modifiche"
-18. Verifica che appaia un toast di successo ("Lead aggiornato con successo")
-19. Verifica che il modal si chiuda
-20. Screenshot dopo il salvataggio
+**FASE 5: Test API Diretto**
+16. Se possibile, prova a chiamare direttamente GET /api/tipologie-contratto/all dal browser
+17. Verifica la risposta dell'endpoint
+18. Cattura il codice di stato HTTP (200, 401, 403, 500, etc.)
 
-**FASE 6: Verifica Persistenza**
-21. Riapri lo stesso lead cliccando su "Vedi"
-22. Verifica che le modifiche siano persistite:
-    - tipologia_abitazione = "condominio"
-    - indirizzo = "Via Test Modifica E2E 789"
-    - note = "Nota di test E2E - Modal editabile funzionante"
-23. Verifica che i dati da Zapier siano inalterati
-24. Screenshot del modal con dati persistiti
-
-**FASE 7: Test Annulla**
-25. Clicca su "Modifica"
-26. Modifica il campo indirizzo → "Modifica da annullare"
-27. Clicca su "Annulla"
-28. Verifica che il campo indirizzo torni al valore precedente ("Via Test Modifica E2E 789")
-29. Screenshot dopo annulla
-
-**FASE 8: Test Campi Sola Lettura**
-30. Clicca su "Modifica"
-31. Verifica che i campi Nome, Cognome, Telefono, Email, Provincia, Campagna NON siano input editabili (devono essere tag <p> o text)
-32. Screenshot finale
+**FASE 6: Confronto con Admin**
+19. Logout da Store Assistant
+20. Login come admin (admin/admin123)
+21. Naviga a Clienti
+22. Verifica se il dropdown Tipologia Contratto funziona per admin
+23. Screenshot del dropdown admin con opzioni visibili
 
 CRITERI DI SUCCESSO:
-✅ Modal si apre correttamente
-✅ Dati da Zapier visibili con icona Lock e sfondo grigio (sola lettura)
-✅ Pulsante "Modifica" presente e funzionante
-✅ Modalità modifica attiva i campi editabili
-✅ Campi da Zapier rimangono sola lettura anche in modalità modifica
-✅ Salvataggio mostra toast di successo
-✅ Modal si chiude dopo il salvataggio
-✅ Modifiche persistite nel database
-✅ Pulsante "Annulla" scarta le modifiche non salvate
-✅ Tutti i campi editabili funzionano correttamente
+✅ Identificare errore esatto nella console
+✅ Determinare se è un problema 401/403 (autenticazione/permessi)
+✅ Determinare se è un problema 500/503 (server error)
+✅ Verificare se endpoint restituisce dati vuoti o errore
+✅ Confrontare comportamento Store Assistant vs Admin
 
 FOCUS CRITICO:
-- Verifica che i campi da Zapier (Nome, Cognome, Telefono, Email, Provincia, Campagna) siano SEMPRE sola lettura
-- Verifica autenticazione JWT funzionante (nessun errore 401 Unauthorized)
-- Verifica persistenza dati dopo ricaricamento modal
+- Catturare TUTTI i log della console
+- Identificare il codice HTTP esatto dell'errore
+- Verificare se la chiamata API viene effettivamente fatta
+- Verificare se il problema è nel backend o frontend
 
-Screenshot richiesti: login, lista lead, modal visualizzazione, modal modifica, campi modificati, dopo salvataggio, dati persistiti, dopo annulla, campi sola lettura
-
-STATO: PRONTO PER TESTING E2E COMPLETO
+STATO: DEBUGGING CRITICO - SERVE LOG COMPLETO
 
 previous_problem_statement: "TEST COMPLETO E2E - SISTEMA LEAD CON UNIT
 
