@@ -14236,7 +14236,7 @@ const CommesseManagement = ({
       
       // Refresh tipologie list
       if (selectedServizio) {
-        fetchTipologieContratto(selectedServizio);
+        fetchTipologieContrattoAdmin(selectedServizio);
       }
       
       // Refresh filter options for ClientiManagement
@@ -14266,7 +14266,7 @@ const CommesseManagement = ({
       
       // Refresh tipologie list
       if (selectedServizio) {
-        fetchTipologieContratto(selectedServizio);
+        fetchTipologieContrattoAdmin(selectedServizio);
       }
       
       // Refresh filter options for ClientiManagement
@@ -14362,7 +14362,7 @@ const CommesseManagement = ({
       
       // Refresh tipologie list
       if (selectedServizio) {
-        fetchTipologieContratto(selectedServizio);
+        fetchTipologieContrattoAdmin(selectedServizio);
       }
       
       toast({
