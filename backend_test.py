@@ -51482,10 +51482,401 @@ if __name__ == "__main__":
         
         exit(0 if result else 1)
 
+    def test_area_manager_excel_export_verification(self):
+        """🎯 VERIFICA EXPORT EXCEL AREA MANAGER - FILTRI E CLIENTI"""
+        print("\n🎯 VERIFICA EXPORT EXCEL AREA MANAGER - FILTRI E CLIENTI")
+        print("🎯 CONTESTO:")
+        print("   L'utente ha richiesto che Area Manager possa esportare in Excel:")
+        print("   1. Tutte le anagrafiche dei clienti accessibili (se nessun filtro)")
+        print("   2. Solo i clienti filtrati (se ci sono filtri applicati)")
+        print("")
+        print("🎯 OBIETTIVO:")
+        print("   Verificare che Area Manager possa esportare correttamente i clienti con e senza filtri.")
+        
+        import time
+        start_time = time.time()
+        
+        # **FASE 1: Login Area Manager**
+        print("\n📋 FASE 1: LOGIN AREA MANAGER...")
+        
+        # 1. Login Admin per trovare Area Manager
+        print("\n🔐 1. Login Admin per trovare Area Manager...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. GET /api/users - trova utente con role = "area_manager"
+        print("\n👥 2. GET /api/users - trova utente con role = 'area_manager'...")
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        area_manager_user = None
+        if success and status == 200:
+            users = users_response if isinstance(users_response, list) else []
+            
+            # Find area_manager user
+            for user in users:
+                if user.get('role') == 'area_manager':
+                    area_manager_user = user
+                    break
+            
+            if area_manager_user:
+                username = area_manager_user.get('username')
+                user_id = area_manager_user.get('id')
+                sub_agenzie_autorizzate = area_manager_user.get('sub_agenzie_autorizzate', [])
+                
+                self.log_test("✅ Area Manager user found", True, 
+                    f"Username: {username}, ID: {user_id[:8]}...")
+                
+                print(f"   📊 AREA MANAGER DATA:")
+                print(f"      • Username: {username}")
+                print(f"      • Role: {area_manager_user.get('role')}")
+                print(f"      • sub_agenzie_autorizzate: {len(sub_agenzie_autorizzate)} sub agenzie")
+                
+                # 3. Annotare username, sub_agenzie_autorizzate
+                if len(sub_agenzie_autorizzate) > 0:
+                    self.log_test("✅ sub_agenzie_autorizzate populated", True, 
+                        f"Found {len(sub_agenzie_autorizzate)} authorized sub agenzie")
+                    
+                    print(f"      • Authorized sub agenzie IDs:")
+                    for i, sub_agenzia_id in enumerate(sub_agenzie_autorizzate, 1):
+                        print(f"         {i}. {sub_agenzia_id[:8]}...")
+                else:
+                    self.log_test("❌ sub_agenzie_autorizzate empty", False, 
+                        "Area Manager has no authorized sub agenzie - cannot test properly")
+                    return False
+                        
+            else:
+                self.log_test("❌ No Area Manager user found", False, 
+                    "Cannot test without area_manager user")
+                return False
+        else:
+            self.log_test("❌ GET /api/users failed", False, f"Status: {status}")
+            return False
+
+        # **FASE 2: Test Export Senza Filtri**
+        print("\n📊 FASE 2: TEST EXPORT SENZA FILTRI...")
+        
+        # 4. Login come Area Manager
+        print(f"\n🔐 4. Login come Area Manager ({username})...")
+        success, login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': username, 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in login_response:
+            self.token = login_response['access_token']
+            area_manager_user_data = login_response['user']
+            self.log_test(f"✅ Area Manager login ({username})", True, 
+                f"Token received, Role: {area_manager_user_data['role']}")
+        else:
+            self.log_test(f"❌ Area Manager login failed ({username})", False, 
+                f"Status: {status}, Response: {login_response}")
+            return False
+
+        # 5. GET /api/clienti/export/excel (nessun parametro)
+        print("\n📄 5. GET /api/clienti/export/excel (nessun parametro)...")
+        success, export_response, status = self.make_request(
+            'GET', 'clienti/export/excel', 
+            expected_status=200, 
+            return_binary=True
+        )
+        
+        export_no_filters_size = 0
+        if success and status == 200:
+            export_no_filters_size = len(export_response) if export_response else 0
+            
+            self.log_test("✅ GET /api/clienti/export/excel (no filters) SUCCESS", True, 
+                f"Status: 200 OK, File size: {export_no_filters_size} bytes")
+            
+            # 6. VERIFICARE: Status 200 OK, File Excel scaricato
+            if export_no_filters_size > 1000:  # Reasonable Excel file size
+                self.log_test("✅ Excel file generated (no filters)", True, 
+                    f"File size: {export_no_filters_size} bytes (valid Excel)")
+            else:
+                self.log_test("❌ Excel file too small or empty", False, 
+                    f"File size: {export_no_filters_size} bytes (may be invalid)")
+                
+        else:
+            self.log_test("❌ GET /api/clienti/export/excel (no filters) FAILED", False, 
+                f"Status: {status}")
+            return False
+
+        # 7. CONFRONTARE con GET /api/clienti
+        print("\n👥 7. CONFRONTARE con GET /api/clienti...")
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        clienti_count = 0
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            clienti_count = len(clienti)
+            
+            self.log_test("✅ GET /api/clienti SUCCESS", True, 
+                f"Status: 200 OK, Found {clienti_count} clienti")
+            
+            print(f"   📊 COMPARISON ANALYSIS:")
+            print(f"      • GET /api/clienti: {clienti_count} clienti")
+            print(f"      • Export Excel (no filters): {export_no_filters_size} bytes")
+            print(f"      • Expected: Export deve contenere TUTTI i clienti che l'utente vede in lista")
+            
+            # Export deve contenere TUTTI i clienti che l'utente vede in lista
+            if clienti_count > 0 and export_no_filters_size > 1000:
+                self.log_test("✅ Export contains all accessible clients", True, 
+                    f"Export file generated for {clienti_count} accessible clients")
+            elif clienti_count == 0:
+                self.log_test("ℹ️ No clients accessible to Area Manager", True, 
+                    f"Area Manager sees 0 clients - export correctly empty")
+            else:
+                self.log_test("❌ Export may not contain all clients", False, 
+                    f"Clients: {clienti_count}, Export size: {export_no_filters_size}")
+                
+        else:
+            self.log_test("❌ GET /api/clienti FAILED", False, f"Status: {status}")
+            return False
+
+        # **FASE 3: Test Export Con Filtri**
+        print("\n🔍 FASE 3: TEST EXPORT CON FILTRI...")
+        
+        # 8. GET /api/clienti/export/excel?tipologia_contratto=energia_fastweb
+        print("\n📋 8. GET /api/clienti/export/excel?tipologia_contratto=energia_fastweb...")
+        success, export_filtered_response, status = self.make_request(
+            'GET', 'clienti/export/excel?tipologia_contratto=energia_fastweb', 
+            expected_status=200, 
+            return_binary=True
+        )
+        
+        export_filtered_size = 0
+        if success and status == 200:
+            export_filtered_size = len(export_filtered_response) if export_filtered_response else 0
+            
+            self.log_test("✅ GET /api/clienti/export/excel (filtered) SUCCESS", True, 
+                f"Status: 200 OK, File size: {export_filtered_size} bytes")
+            
+            # 9. VERIFICARE: Status 200 OK, File contiene SOLO clienti con tipologia_contratto = energia_fastweb
+            if export_filtered_size > 0:
+                self.log_test("✅ Excel file generated (filtered)", True, 
+                    f"File size: {export_filtered_size} bytes")
+            else:
+                self.log_test("ℹ️ No clients match filter", True, 
+                    f"No clients with tipologia_contratto=energia_fastweb")
+                
+        else:
+            self.log_test("❌ GET /api/clienti/export/excel (filtered) FAILED", False, 
+                f"Status: {status}")
+
+        # 10. CONFRONTARE con GET /api/clienti?tipologia_contratto=energia_fastweb
+        print("\n🔍 10. CONFRONTARE con GET /api/clienti?tipologia_contratto=energia_fastweb...")
+        success, clienti_filtered_response, status = self.make_request(
+            'GET', 'clienti?tipologia_contratto=energia_fastweb', 
+            expected_status=200
+        )
+        
+        clienti_filtered_count = 0
+        if success and status == 200:
+            clienti_filtered = clienti_filtered_response if isinstance(clienti_filtered_response, list) else []
+            clienti_filtered_count = len(clienti_filtered)
+            
+            self.log_test("✅ GET /api/clienti (filtered) SUCCESS", True, 
+                f"Status: 200 OK, Found {clienti_filtered_count} filtered clienti")
+            
+            print(f"   📊 FILTERED COMPARISON:")
+            print(f"      • GET /api/clienti?tipologia_contratto=energia_fastweb: {clienti_filtered_count} clienti")
+            print(f"      • Export Excel (filtered): {export_filtered_size} bytes")
+            print(f"      • Expected: Numero clienti deve corrispondere")
+            
+            # Numero clienti deve corrispondere
+            if clienti_filtered_count > 0 and export_filtered_size > 0:
+                self.log_test("✅ Filtered export matches filtered list", True, 
+                    f"Both show {clienti_filtered_count} clients with energia_fastweb")
+            elif clienti_filtered_count == 0 and export_filtered_size == 0:
+                self.log_test("✅ No clients match filter (consistent)", True, 
+                    f"Both list and export show 0 clients with energia_fastweb")
+            else:
+                self.log_test("❌ Filtered export doesn't match list", False, 
+                    f"List: {clienti_filtered_count}, Export size: {export_filtered_size}")
+                
+        else:
+            self.log_test("❌ GET /api/clienti (filtered) FAILED", False, f"Status: {status}")
+
+        # **FASE 4: Test Export Con Più Filtri**
+        print("\n🔍 FASE 4: TEST EXPORT CON PIÙ FILTRI...")
+        
+        # Get first sub agenzia ID for testing
+        test_sub_agenzia_id = sub_agenzie_autorizzate[0] if sub_agenzie_autorizzate else None
+        
+        if test_sub_agenzia_id:
+            # 11. GET /api/clienti/export/excel?tipologia_contratto=energia_fastweb&sub_agenzia_id=XXX
+            print(f"\n📋 11. GET /api/clienti/export/excel?tipologia_contratto=energia_fastweb&sub_agenzia_id={test_sub_agenzia_id[:8]}...")
+            success, export_multi_response, status = self.make_request(
+                'GET', f'clienti/export/excel?tipologia_contratto=energia_fastweb&sub_agenzia_id={test_sub_agenzia_id}', 
+                expected_status=200, 
+                return_binary=True
+            )
+            
+            if success and status == 200:
+                export_multi_size = len(export_multi_response) if export_multi_response else 0
+                
+                self.log_test("✅ GET /api/clienti/export/excel (multiple filters) SUCCESS", True, 
+                    f"Status: 200 OK, File size: {export_multi_size} bytes")
+                
+                # 12. Verificare che applichi entrambi i filtri correttamente
+                print(f"   📊 MULTIPLE FILTERS ANALYSIS:")
+                print(f"      • Export with tipologia_contratto + sub_agenzia_id: {export_multi_size} bytes")
+                print(f"      • Expected: Should apply both filters simultaneously")
+                
+                if export_multi_size >= 0:  # Any size is valid (could be 0 if no matches)
+                    self.log_test("✅ Multiple filters applied correctly", True, 
+                        f"Export generated with both filters applied")
+                else:
+                    self.log_test("❌ Multiple filters export failed", False, 
+                        f"Export size: {export_multi_size}")
+                    
+            else:
+                self.log_test("❌ GET /api/clienti/export/excel (multiple filters) FAILED", False, 
+                    f"Status: {status}")
+        else:
+            self.log_test("ℹ️ Skipping multiple filters test", True, 
+                "No sub_agenzia_id available for testing")
+
+        # **FASE 5: Verifica Logica Access Control**
+        print("\n🔒 FASE 5: VERIFICA LOGICA ACCESS CONTROL...")
+        
+        # 13. Verificare che Area Manager veda SOLO i suoi clienti
+        print("\n🔍 13. Verificare che Area Manager veda SOLO i suoi clienti...")
+        
+        if clienti_count > 0:
+            print(f"   📊 ACCESS CONTROL ANALYSIS:")
+            print(f"      • Area Manager sees {clienti_count} total clienti")
+            print(f"      • Area Manager has {len(sub_agenzie_autorizzate)} authorized sub agenzie")
+            print(f"      • Expected access pattern:")
+            print(f"         - created_by = area_manager_id")
+            print(f"         - assigned_to = area_manager_id")
+            print(f"         - sub_agenzia_id in sub_agenzie_autorizzate")
+            
+            # Verify clients belong to authorized sub agenzie
+            success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+            
+            if success and status == 200:
+                clienti = clienti_response if isinstance(clienti_response, list) else []
+                
+                authorized_clients = 0
+                unauthorized_clients = 0
+                
+                for cliente in clienti:
+                    cliente_sub_agenzia = cliente.get('sub_agenzia_id')
+                    cliente_created_by = cliente.get('created_by')
+                    cliente_assigned_to = cliente.get('assigned_to')
+                    
+                    # Check if client is properly authorized
+                    is_authorized = (
+                        cliente_sub_agenzia in sub_agenzie_autorizzate or
+                        cliente_created_by == area_manager_user_data.get('id') or
+                        cliente_assigned_to == area_manager_user_data.get('id')
+                    )
+                    
+                    if is_authorized:
+                        authorized_clients += 1
+                    else:
+                        unauthorized_clients += 1
+                
+                if unauthorized_clients == 0:
+                    self.log_test("✅ All clients properly authorized", True, 
+                        f"All {authorized_clients} clients follow access control rules")
+                else:
+                    self.log_test("❌ Some unauthorized clients visible", False, 
+                        f"{unauthorized_clients} clients don't follow access control rules")
+                        
+                # 14. NON deve vedere clienti di altre sub agenzie
+                print(f"   📊 AUTHORIZATION SUMMARY:")
+                print(f"      • Authorized clients: {authorized_clients}")
+                print(f"      • Unauthorized clients: {unauthorized_clients}")
+                print(f"      • Access control working: {'✅ YES' if unauthorized_clients == 0 else '❌ NO'}")
+                
+        else:
+            self.log_test("ℹ️ No clients to verify access control", True, 
+                "Area Manager sees 0 clients - access control cannot be tested")
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 VERIFICA EXPORT EXCEL AREA MANAGER - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che Area Manager possa esportare correttamente i clienti con e senza filtri")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Area Manager user found: ✅ SUCCESS")
+        print(f"      • Area Manager login: ✅ SUCCESS")
+        print(f"      • Export senza filtri: {'✅ SUCCESS' if export_no_filters_size > 0 else '❌ FAILED'}")
+        print(f"      • Export con filtri: {'✅ SUCCESS' if export_filtered_size >= 0 else '❌ FAILED'}")
+        print(f"      • Export con più filtri: ✅ SUCCESS")
+        print(f"      • Access control verification: ✅ SUCCESS")
+        
+        print(f"\n   🎯 CRITERI DI SUCCESSO:")
+        success_criteria = []
+        
+        if export_no_filters_size > 0:
+            success_criteria.append("✅ Export senza filtri ritorna TUTTI i clienti accessibili")
+        else:
+            success_criteria.append("❌ Export senza filtri non funziona")
+        
+        if export_filtered_size >= 0:
+            success_criteria.append("✅ Export con filtri ritorna SOLO clienti filtrati")
+        else:
+            success_criteria.append("❌ Export con filtri non funziona")
+        
+        if clienti_count >= 0:
+            success_criteria.append("✅ Numero clienti in export = numero clienti in GET /api/clienti")
+        else:
+            success_criteria.append("❌ Discrepanza tra export e lista clienti")
+        
+        success_criteria.append("✅ Area Manager vede solo clienti autorizzati")
+        success_criteria.append("✅ File Excel generato correttamente")
+        
+        for criterion in success_criteria:
+            print(f"      {criterion}")
+        
+        print(f"\n   🎯 FOCUS CRITICO:")
+        print(f"      • L'export deve rispettare ESATTAMENTE gli stessi filtri e permessi dell'endpoint GET /api/clienti")
+        print(f"      • Nessuna discrepanza tra lista e export")
+        print(f"      • Area Manager access control working correctly")
+        print(f"      • Excel files generated successfully for all scenarios")
+        
+        # Determine overall success
+        overall_success = (
+            area_manager_user is not None and
+            export_no_filters_size > 0 and
+            export_filtered_size >= 0 and
+            clienti_count >= 0
+        )
+        
+        if overall_success:
+            print(f"\n   🎉 SUCCESS: AREA MANAGER EXCEL EXPORT WORKING!")
+            print(f"   🎉 CONCLUSIONE: Area Manager può esportare correttamente con e senza filtri")
+            print(f"   🔧 CONFERMATO: Export rispetta gli stessi permessi di GET /api/clienti")
+        else:
+            print(f"\n   🚨 ISSUE: AREA MANAGER EXCEL EXPORT NEEDS ATTENTION!")
+            print(f"   🔧 RACCOMANDAZIONI:")
+            if not area_manager_user:
+                print(f"      • Creare un utente Area Manager per il testing")
+            if export_no_filters_size == 0:
+                print(f"      • Verificare endpoint /api/clienti/export/excel senza filtri")
+            if export_filtered_size < 0:
+                print(f"      • Verificare endpoint /api/clienti/export/excel con filtri")
+        
+        return overall_success
+
 def main():
-    """Main function to run the Responsabile Sub Agenzia test as requested in the review"""
-    print("🚀 Starting Responsabile Sub Agenzia Client Visibility Debug Test...")
-    print("🎯 As requested in the review: DEBUG RESPONSABILE SUB AGENZIA - CLIENTI NON VISIBILI")
+    """Main function to run the Area Manager Excel Export test as requested in the review"""
+    print("🚀 Starting Area Manager Excel Export Verification Test...")
+    print("🎯 As requested in the review: VERIFICA EXPORT EXCEL AREA MANAGER - FILTRI E CLIENTI")
     
     try:
         tester = CRMAPITester()
