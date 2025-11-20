@@ -11015,12 +11015,14 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             all_tipologie.append(tipologia["id"])
         
         # Filter by user's tipologie_autorizzate (if not admin)
-        if current_user.role != UserRole.ADMIN:
-            if hasattr(current_user, 'tipologie_autorizzate') and current_user.tipologie_autorizzate:
-                tipologie_contratto = [t for t in all_tipologie if t in current_user.tipologie_autorizzate]
-            else:
-                tipologie_contratto = []
+        if current_user.role == UserRole.ADMIN:
+            tipologie_contratto = all_tipologie
+        elif hasattr(current_user, 'tipologie_autorizzate') and current_user.tipologie_autorizzate:
+            tipologie_contratto = [t for t in all_tipologie if t in current_user.tipologie_autorizzate]
+            print(f"🔒 User {current_user.username} has {len(current_user.tipologie_autorizzate)} authorized tipologie, returning {len(tipologie_contratto)} matching")
         else:
+            # If user has no tipologie_autorizzate defined, return ALL for operational roles
+            print(f"⚠️ User {current_user.username} ({current_user.role}) has NO tipologie_autorizzate - returning ALL {len(all_tipologie)} tipologie")
             tipologie_contratto = all_tipologie
         
         # Get status values from actual client data + possible values
