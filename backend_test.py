@@ -51452,13 +51452,13 @@ if __name__ == "__main__":
             print(f"❌ Unknown test: {test_name}")
             print("Available tests: zapier_webhook, trova_id_agn, lead_update, tipologia_filter")
     else:
-        # Run the specific agente specializzato operatore test as requested in the review
-        print("🎯 RUNNING SPECIFIC TEST: Agente Specializzato e Operatore Tipologie UUID Problem")
+        # Run the Area Manager Excel Export test as requested in the review
+        print("🎯 RUNNING SPECIFIC TEST: Area Manager Excel Export Verification")
         print(f"🌐 Base URL: {tester.base_url}")
         print("=" * 80)
         
         try:
-            result = tester.test_agente_specializzato_operatore_tipologie_uuid_problem()
+            result = tester.test_area_manager_excel_export_verification()
             
             # Print summary
             print(f"\n📊 Final Test Results:")
@@ -51470,9 +51470,9 @@ if __name__ == "__main__":
                 print(f"   Success rate: N/A (no tests run)")
             
             if result:
-                print("🎉 AGENTE SPECIALIZZATO E OPERATORE TEST SUCCESSFUL!")
+                print("🎉 AREA MANAGER EXCEL EXPORT TEST SUCCESSFUL!")
             else:
-                print("❌ AGENTE SPECIALIZZATO E OPERATORE TEST FAILED!")
+                print("❌ AREA MANAGER EXCEL EXPORT TEST FAILED!")
                 
         except Exception as e:
             print(f"❌ Test failed with exception: {e}")
