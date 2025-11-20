@@ -52569,13 +52569,13 @@ if __name__ == "__main__":
         return overall_success
 
 def main():
-    """Main function to run the Area Manager Excel Export test as requested in the review"""
-    print("🚀 Starting Area Manager Excel Export Verification Test...")
-    print("🎯 As requested in the review: VERIFICA EXPORT EXCEL AREA MANAGER - FILTRI E CLIENTI")
+    """Main function to run the Excel Export Permissions test as requested in the review"""
+    print("🚀 Starting Excel Export Permissions All Roles Test...")
+    print("🎯 As requested in the review: TEST RAPIDO EXPORT EXCEL - TUTTI I RUOLI AUTORIZZATI")
     
     try:
         tester = CRMAPITester()
-        result = tester.test_area_manager_excel_export_verification()
+        result = tester.test_excel_export_permissions_all_roles()
         
         print(f"\n📊 Final Test Results:")
         print(f"   Tests run: {tester.tests_run}")
