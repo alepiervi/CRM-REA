@@ -10975,9 +10975,36 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 ]
             else:
                 base_query["_id"] = {"$exists": False}
-        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
-            # Agente Specializzato, Operatore, Store e Presidi: only see clients created by them
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE]:
+            # Agente Specializzato, Operatore: only see clients created by them
             base_query["created_by"] = current_user.id
+        elif current_user.role in [UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI]:
+            # Store Assistant, Responsabile Store, Promoter Presidi: see clients created by them OR assigned to them
+            # MUST match logic in GET /api/clienti endpoint (lines 10598-10601)
+            base_query["$or"] = [
+                {"created_by": current_user.id},
+                {"assigned_to": current_user.id}
+            ]
+        elif current_user.role == UserRole.RESPONSABILE_PRESIDI:
+            # Responsabile Presidi: see clients from users in their sub agenzie
+            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+                users_in_sub_agenzie = await db.users.find({
+                    "sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}
+                }).to_list(length=None)
+                
+                user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
+                user_ids_in_sub_agenzie.append(current_user.id)
+                
+                base_query["$or"] = [
+                    {"created_by": {"$in": user_ids_in_sub_agenzie}},
+                    {"assigned_to": {"$in": user_ids_in_sub_agenzie}}
+                ]
+            else:
+                # Fallback: own and assigned clients
+                base_query["$or"] = [
+                    {"created_by": current_user.id},
+                    {"assigned_to": current_user.id}
+                ]
         elif current_user.role == UserRole.AREA_MANAGER:
             # Area Manager: vede clienti delle sub agenzie a lui assegnate
             if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
