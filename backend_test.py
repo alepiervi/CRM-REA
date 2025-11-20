@@ -46149,12 +46149,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the ZAPIER WEBHOOK PARTIAL DATA TEST AS REQUESTED IN REVIEW
+        # Run the TIPOLOGIA CONTRATTO FILTER 500 ERROR FIX TEST AS REQUESTED IN REVIEW
         print("\n" + "="*80)
-        print("🎯 RUNNING ZAPIER WEBHOOK PARTIAL DATA TEST - AS REQUESTED IN REVIEW")
+        print("🎯 RUNNING TIPOLOGIA CONTRATTO FILTER 500 ERROR FIX TEST - AS REQUESTED IN REVIEW")
         print("="*80)
         
-        webhook_test_success = self.test_zapier_webhook_partial_data()
+        tipologia_test_success = self.test_tipologia_contratto_filter_500_fix()
 
         # Print final summary
         print("\n" + "=" * 80)
