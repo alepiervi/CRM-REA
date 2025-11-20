@@ -1811,7 +1811,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Lead Modal Editabile E2E Testing - Complete Editable Lead Modal Functionality"
+    - "Tipologia Contratto Filter Bug Fix - 500 Error Sorted() Issue Resolution"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
