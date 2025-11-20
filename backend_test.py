@@ -50859,10 +50859,265 @@ if __name__ == "__main__":
         
         exit(0 if result else 1)
 
+    def test_responsabile_sub_agenzia_client_visibility_debug(self):
+        """🚨 DEBUG RESPONSABILE SUB AGENZIA - CLIENTI NON VISIBILI
+        
+        CONTESTO:
+        L'utente segnala che Responsabile Sub Agenzia e BackOffice Sub Agenzia non vedono i clienti 
+        associati alla loro sub agenzia. Devono vedere TUTTI i clienti della loro sub agenzia, 
+        non solo quelli creati da loro.
+        
+        OBIETTIVO:
+        Identificare perché questi ruoli non vedono i clienti della loro sub agenzia.
+        """
+        print("\n🚨 DEBUG RESPONSABILE SUB AGENZIA - CLIENTI NON VISIBILI")
+        print("🎯 CONTESTO:")
+        print("   L'utente segnala che Responsabile Sub Agenzia e BackOffice Sub Agenzia non vedono i clienti")
+        print("   associati alla loro sub agenzia. Devono vedere TUTTI i clienti della loro sub agenzia,")
+        print("   non solo quelli creati da loro.")
+        print("")
+        print("🎯 OBIETTIVO:")
+        print("   Identificare perché questi ruoli non vedono i clienti della loro sub agenzia.")
+        
+        import time
+        start_time = time.time()
+        
+        # **FASE 1: Identifica Responsabile Sub Agenzia**
+        print("\n📋 FASE 1: IDENTIFICA RESPONSABILE SUB AGENZIA...")
+        
+        # 1. Login Admin (admin/admin123)
+        print("\n🔐 1. Login Admin (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. GET /api/users - trova utente con role = "responsabile_sub_agenzia"
+        print("\n👥 2. GET /api/users - trova utente con role = 'responsabile_sub_agenzia'...")
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        responsabile_sub_agenzia_user = None
+        backoffice_sub_agenzia_user = None
+        
+        if success and status == 200:
+            users = users_response if isinstance(users_response, list) else []
+            
+            # Find responsabile_sub_agenzia and backoffice_sub_agenzia users
+            for user in users:
+                if user.get('role') == 'responsabile_sub_agenzia' and not responsabile_sub_agenzia_user:
+                    responsabile_sub_agenzia_user = user
+                elif user.get('role') == 'backoffice_sub_agenzia' and not backoffice_sub_agenzia_user:
+                    backoffice_sub_agenzia_user = user
+            
+            if responsabile_sub_agenzia_user:
+                username = responsabile_sub_agenzia_user.get('username')
+                user_id = responsabile_sub_agenzia_user.get('id')
+                sub_agenzia_id = responsabile_sub_agenzia_user.get('sub_agenzia_id')
+                
+                self.log_test("✅ Responsabile Sub Agenzia user found", True, 
+                    f"Username: {username}, ID: {user_id[:8]}...")
+                
+                print(f"   📊 RESPONSABILE SUB AGENZIA DATA:")
+                print(f"      • Username: {username}")
+                print(f"      • Role: {responsabile_sub_agenzia_user.get('role')}")
+                print(f"      • sub_agenzia_id: {sub_agenzia_id}")
+                print(f"      • is_active: {responsabile_sub_agenzia_user.get('is_active')}")
+                
+                # 3. Verificare: Ha sub_agenzia_id popolato? Quale sub agenzia?
+                if sub_agenzia_id:
+                    self.log_test("✅ sub_agenzia_id populated", True, f"Sub agenzia ID: {sub_agenzia_id[:8]}...")
+                    
+                    # Get sub agenzia details
+                    success, sub_agenzie_response, status = self.make_request('GET', 'sub-agenzie', expected_status=200)
+                    if success:
+                        sub_agenzie = sub_agenzie_response if isinstance(sub_agenzie_response, list) else []
+                        target_sub_agenzia = next((sa for sa in sub_agenzie if sa.get('id') == sub_agenzia_id), None)
+                        
+                        if target_sub_agenzia:
+                            sub_agenzia_nome = target_sub_agenzia.get('nome', 'Unknown')
+                            self.log_test("✅ Sub agenzia found", True, f"Nome: {sub_agenzia_nome}")
+                            print(f"      • Sub agenzia nome: {sub_agenzia_nome}")
+                        else:
+                            self.log_test("❌ Sub agenzia not found in database", False, f"ID {sub_agenzia_id} not found")
+                else:
+                    self.log_test("❌ sub_agenzia_id NOT populated", False, "User has no sub_agenzia_id - cannot see clients")
+                    return False
+                        
+            else:
+                self.log_test("❌ No Responsabile Sub Agenzia user found", False, 
+                    "Cannot test without responsabile_sub_agenzia user")
+                return False
+        else:
+            self.log_test("❌ GET /api/users failed", False, f"Status: {status}")
+            return False
+
+        # **FASE 2: Verifica Clienti nel Database**
+        print("\n📊 FASE 2: VERIFICA CLIENTI NEL DATABASE...")
+        
+        # 4. GET /api/clienti con token Admin
+        print("\n👥 4. GET /api/clienti con token Admin...")
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        admin_visible_clients = []
+        target_sub_agenzia_clients = []
+        
+        if success and status == 200:
+            admin_visible_clients = clienti_response if isinstance(clienti_response, list) else []
+            
+            # 5. Filtrare clienti con sub_agenzia_id uguale a quella del Responsabile
+            for cliente in admin_visible_clients:
+                if cliente.get('sub_agenzia_id') == sub_agenzia_id:
+                    target_sub_agenzia_clients.append(cliente)
+            
+            # 6. Quanti clienti esistono con quella sub_agenzia_id?
+            total_admin_clients = len(admin_visible_clients)
+            target_sub_agenzia_count = len(target_sub_agenzia_clients)
+            
+            self.log_test("✅ GET /api/clienti (Admin)", True, f"Total: {total_admin_clients} clienti")
+            self.log_test("✅ Clienti with target sub_agenzia_id", True, 
+                f"Found {target_sub_agenzia_count} clienti with sub_agenzia_id = {sub_agenzia_id[:8]}...")
+            
+            print(f"   📊 ADMIN CLIENTI ANALYSIS:")
+            print(f"      • Total clienti visible to Admin: {total_admin_clients}")
+            print(f"      • Clienti with sub_agenzia_id = {sub_agenzia_id[:8]}...: {target_sub_agenzia_count}")
+            
+            if target_sub_agenzia_count > 0:
+                print(f"      • Sample clienti in target sub agenzia:")
+                for i, cliente in enumerate(target_sub_agenzia_clients[:3], 1):  # Show first 3
+                    nome = cliente.get('nome', 'Unknown')
+                    cognome = cliente.get('cognome', 'Unknown')
+                    created_by = cliente.get('created_by', 'Unknown')
+                    print(f"         {i}. {nome} {cognome} (created_by: {created_by[:8]}...)")
+            else:
+                self.log_test("⚠️ No clienti found for target sub agenzia", True, 
+                    "This explains why Responsabile Sub Agenzia sees 0 clients")
+                print(f"   🚨 ROOT CAUSE IDENTIFIED: No clienti exist with sub_agenzia_id = {sub_agenzia_id}")
+                return True  # Test successful - found the issue
+                
+        else:
+            self.log_test("❌ GET /api/clienti (Admin) failed", False, f"Status: {status}")
+            return False
+
+        # **FASE 3: Test Responsabile Sub Agenzia**
+        print("\n🔍 FASE 3: TEST RESPONSABILE SUB AGENZIA...")
+        
+        # 7. Login come Responsabile Sub Agenzia
+        print(f"\n🔐 7. Login come Responsabile Sub Agenzia ({username})...")
+        success, login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': username, 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in login_response:
+            self.token = login_response['access_token']
+            resp_user_data = login_response['user']
+            self.log_test(f"✅ Responsabile Sub Agenzia login ({username})", True, 
+                f"Token received, Role: {resp_user_data['role']}")
+        else:
+            self.log_test(f"❌ Responsabile Sub Agenzia login failed ({username})", False, 
+                f"Status: {status}, Response: {login_response}")
+            return False
+
+        # 8. GET /api/clienti
+        print("\n👥 8. GET /api/clienti (as Responsabile Sub Agenzia)...")
+        success, resp_clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        resp_visible_clients = []
+        if success and status == 200:
+            resp_visible_clients = resp_clienti_response if isinstance(resp_clienti_response, list) else []
+            resp_visible_count = len(resp_visible_clients)
+            
+            # 9. VERIFICARE: Quanti clienti vede?
+            self.log_test("✅ GET /api/clienti (Responsabile Sub Agenzia)", True, 
+                f"Status: 200, Found {resp_visible_count} clienti")
+            
+            # 10. CONFRONTARE con il numero di clienti in Fase 2
+            print(f"   📊 COMPARISON ANALYSIS:")
+            print(f"      • Admin sees clienti with target sub_agenzia_id: {target_sub_agenzia_count}")
+            print(f"      • Responsabile Sub Agenzia sees total clienti: {resp_visible_count}")
+            
+            # 11. BUG: Se Admin vede 10 clienti con sub_agenzia_id X, ma Responsabile vede 0 → QUERY PROBLEMA
+            if target_sub_agenzia_count > 0 and resp_visible_count == 0:
+                self.log_test("🚨 BUG IDENTIFIED", False, 
+                    f"Admin sees {target_sub_agenzia_count} clienti with sub_agenzia_id, but Responsabile sees 0")
+                print(f"   🚨 CRITICAL BUG: QUERY PROBLEMA!")
+                print(f"      • Expected: Responsabile should see {target_sub_agenzia_count} clienti")
+                print(f"      • Actual: Responsabile sees {resp_visible_count} clienti")
+                print(f"      • Root Cause: Backend query logic not filtering correctly for responsabile_sub_agenzia role")
+                
+            elif target_sub_agenzia_count == resp_visible_count:
+                self.log_test("✅ Client visibility correct", True, 
+                    f"Responsabile sees {resp_visible_count} clienti as expected")
+                    
+            else:
+                self.log_test("⚠️ Client count mismatch", True, 
+                    f"Expected {target_sub_agenzia_count}, got {resp_visible_count} (investigate)")
+                    
+        else:
+            self.log_test("❌ GET /api/clienti (Responsabile Sub Agenzia) failed", False, f"Status: {status}")
+            return False
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 DEBUG RESPONSABILE SUB AGENZIA - CLIENTI NON VISIBILI - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Identificare perché questi ruoli non vedono i clienti della loro sub agenzia")
+        print(f"   📊 RISULTATI DIAGNOSI (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Responsabile Sub Agenzia user found: {'✅ SUCCESS' if responsabile_sub_agenzia_user else '❌ FAILED'}")
+        print(f"      • User has sub_agenzia_id: {'✅ SUCCESS' if sub_agenzia_id else '❌ FAILED'}")
+        print(f"      • Admin sees clienti with target sub_agenzia_id: {target_sub_agenzia_count}")
+        print(f"      • Responsabile Sub Agenzia sees clienti: {resp_visible_count if 'resp_visible_count' in locals() else 'N/A'}")
+        
+        # Determine root cause
+        if target_sub_agenzia_count == 0:
+            root_cause = "sub_agenzia_id non popolato nei clienti"
+            print(f"      • ROOT CAUSE: {root_cause}")
+            print(f"      • SOLUTION: Ensure clienti have correct sub_agenzia_id when created")
+        elif not sub_agenzia_id:
+            root_cause = "sub_agenzia_id non popolato nell'utente"
+            print(f"      • ROOT CAUSE: {root_cause}")
+            print(f"      • SOLUTION: Assign sub_agenzia_id to Responsabile Sub Agenzia users")
+        elif 'resp_visible_count' in locals() and target_sub_agenzia_count > 0 and resp_visible_count == 0:
+            root_cause = "Query MongoDB errata"
+            print(f"      • ROOT CAUSE: {root_cause}")
+            print(f"      • SOLUTION: Fix backend query logic for responsabile_sub_agenzia role")
+            print(f"      • INVESTIGATION: Check if servizio_id filter is too restrictive")
+        else:
+            root_cause = "Unknown - requires further investigation"
+            print(f"      • ROOT CAUSE: {root_cause}")
+            print(f"      • NEXT STEPS: Check backend logs and query implementation")
+        
+        # Determine overall success
+        overall_success = (
+            responsabile_sub_agenzia_user is not None and
+            sub_agenzia_id is not None and
+            'resp_visible_count' in locals() and
+            (target_sub_agenzia_count == 0 or resp_visible_count == target_sub_agenzia_count)
+        )
+        
+        if overall_success:
+            print(f"\n   🎉 SUCCESS: Client visibility working correctly!")
+        else:
+            print(f"\n   🚨 ISSUE IDENTIFIED: Client visibility problem confirmed!")
+            print(f"   🔧 IMMEDIATE ACTION REQUIRED: Fix backend query logic for sub agenzia roles")
+        
+        return overall_success
+
 def main():
-    """Main function to run the Area Manager test as requested in the review"""
-    print("🚀 Starting Area Manager Tipologie Visibility Debug Test...")
-    print("🎯 As requested in the review: DEBUG AREA MANAGER - TIPOLOGIE NON VISIBILI")
+    """Main function to run the Responsabile Sub Agenzia test as requested in the review"""
+    print("🚀 Starting Responsabile Sub Agenzia Client Visibility Debug Test...")
+    print("🎯 As requested in the review: DEBUG RESPONSABILE SUB AGENZIA - CLIENTI NON VISIBILI")
     
     try:
         tester = CRMAPITester()
