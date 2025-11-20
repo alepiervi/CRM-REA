@@ -2495,14 +2495,19 @@ const Dashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le Tipologie</SelectItem>
-                  {formTipologieContratto.map((tipologia) => (
-                    <SelectItem key={tipologia.value} value={tipologia.value}>
-                      <div className="flex items-center space-x-2">
-                        <FileText className="w-3 h-3" />
-                        <span className="text-sm">{tipologia.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {(() => {
+                    console.log("🔍 DROPDOWN RENDER - formTipologieContratto:", formTipologieContratto);
+                    console.log("🔍 DROPDOWN RENDER - Length:", formTipologieContratto?.length);
+                    console.log("🔍 DROPDOWN RENDER - User role:", user?.role);
+                    return formTipologieContratto.map((tipologia) => (
+                      <SelectItem key={tipologia.value} value={tipologia.value}>
+                        <div className="flex items-center space-x-2">
+                          <FileText className="w-3 h-3" />
+                          <span className="text-sm">{tipologia.label}</span>
+                        </div>
+                      </SelectItem>
+                    ));
+                  })()}
                 </SelectContent>
               </Select>
             </div>
