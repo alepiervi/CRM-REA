@@ -46167,14 +46167,14 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if webhook_test_success:
-            print("🎉 ZAPIER WEBHOOK PARTIAL DATA TEST: ✅ SUCCESS - WEBHOOK ACCEPTS PARTIAL DATA!")
+        if tipologia_test_success:
+            print("🎉 TIPOLOGIA CONTRATTO FILTER 500 ERROR FIX TEST: ✅ SUCCESS - FILTER NOW WORKS!")
         else:
-            print("🚨 ZAPIER WEBHOOK PARTIAL DATA TEST: ❌ FAILED - WEBHOOK STILL REQUIRES ALL FIELDS!")
+            print("🚨 TIPOLOGIA CONTRATTO FILTER 500 ERROR FIX TEST: ❌ FAILED - FILTER STILL BROKEN!")
         
-        if webhook_test_success:
-            print("\n🎉 OVERALL RESULT: ✅ ZAPIER WEBHOOK WORKING CORRECTLY WITH PARTIAL DATA!")
-            print("💡 CONCLUSION: Il webhook può accettare lead anche senza tutti i campi obbligatori")
+        if tipologia_test_success:
+            print("\n🎉 OVERALL RESULT: ✅ TIPOLOGIA CONTRATTO FILTER WORKING CORRECTLY!")
+            print("💡 CONCLUSION: Il filtro Tipologia Contratto non restituisce più errore 500")
         else:
             print("\n🚨 OVERALL RESULT: ❌ ZAPIER WEBHOOK NEEDS BACKEND FIXES!")
         
