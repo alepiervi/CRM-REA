@@ -47188,6 +47188,289 @@ startxref
             print(f"   ✅ DIFFERENT from Responsabile Store: These roles appear to be fixed")
             return True
 
+    def test_area_manager_tipologie_visibility_debug(self):
+        """🚨 DEBUG AREA MANAGER - TIPOLOGIE NON VISIBILI - Verifica sincronizzazione query tra clienti e filter-options"""
+        print("\n🚨 DEBUG AREA MANAGER - TIPOLOGIE NON VISIBILI")
+        print("🎯 CONTESTO:")
+        print("   L'utente segnala che Area Manager vede clienti nella lista ma NON vede le tipologie di quei clienti nel filtro.")
+        print("   Il filtro dovrebbe mostrare le tipologie dai clienti effettivamente presenti nella lista.")
+        print("")
+        print("🎯 OBIETTIVO:")
+        print("   Verificare se la query per Area Manager è diversa tra GET /api/clienti e GET /api/clienti/filter-options.")
+        print("")
+        print("🎯 TEST DA ESEGUIRE:")
+        print("   FASE 1: Identifica Area Manager")
+        print("   FASE 2: Test Area Manager - Clienti")
+        print("   FASE 3: Test Area Manager - Filter Options")
+        print("   FASE 4: Analisi Discrepanza")
+        print("   FASE 5: Verifica Log Backend")
+        
+        import time
+        start_time = time.time()
+        
+        # **FASE 1: IDENTIFICA AREA MANAGER**
+        print("\n🔍 FASE 1: IDENTIFICA AREA MANAGER...")
+        
+        # 1. Login Admin (admin/admin123)
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. GET /api/users - trova utente con role = "area_manager"
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        area_manager_user = None
+        if success and status == 200:
+            users = users_response if isinstance(users_response, list) else []
+            
+            # Find area manager user
+            for user in users:
+                if user.get('role') == 'area_manager':
+                    area_manager_user = user
+                    break
+            
+            if area_manager_user:
+                username = area_manager_user.get('username')
+                user_id = area_manager_user.get('id')
+                sub_agenzie_autorizzate = area_manager_user.get('sub_agenzie_autorizzate', [])
+                
+                self.log_test("✅ Area Manager found", True, 
+                    f"Username: {username}, ID: {user_id[:8]}..., Sub agenzie: {len(sub_agenzie_autorizzate)}")
+                
+                print(f"   📊 AREA MANAGER DETAILS:")
+                print(f"      • Username: {username}")
+                print(f"      • ID: {user_id}")
+                print(f"      • Sub agenzie autorizzate: {sub_agenzie_autorizzate}")
+                
+            else:
+                self.log_test("❌ No Area Manager found", False, "No user with role 'area_manager' found in system")
+                return False
+        else:
+            self.log_test("❌ GET /api/users failed", False, f"Status: {status}")
+            return False
+
+        # **FASE 2: TEST AREA MANAGER - CLIENTI**
+        print("\n👥 FASE 2: TEST AREA MANAGER - CLIENTI...")
+        
+        # 4. Login come Area Manager
+        area_manager_username = area_manager_user.get('username')
+        success, am_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': area_manager_username, 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in am_response:
+            self.token = am_response['access_token']
+            area_manager_data = am_response['user']
+            self.log_test("✅ Area Manager login", True, 
+                f"Username: {area_manager_username}, Role: {area_manager_data['role']}")
+        else:
+            self.log_test("❌ Area Manager login failed", False, f"Status: {status}, Response: {am_response}")
+            return False
+
+        # 5. GET /api/clienti
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        area_manager_clienti = []
+        area_manager_tipologie = set()
+        
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            area_manager_clienti = clienti
+            
+            # 6. VERIFICARE: Quanti clienti vede?
+            clienti_count = len(clienti)
+            self.log_test("✅ Area Manager clienti access", True, f"Found {clienti_count} clienti")
+            
+            # 7. Estrarre le tipologie_contratto uniche da questi clienti
+            for cliente in clienti:
+                tipologia = cliente.get('tipologia_contratto')
+                if tipologia:
+                    area_manager_tipologie.add(tipologia)
+            
+            tipologie_list = list(area_manager_tipologie)
+            self.log_test("✅ Tipologie from clienti extracted", True, 
+                f"Found {len(tipologie_list)} unique tipologie: {tipologie_list}")
+            
+            print(f"   📊 AREA MANAGER CLIENTI ANALYSIS:")
+            print(f"      • Total clienti visible: {clienti_count}")
+            print(f"      • Unique tipologie_contratto: {len(tipologie_list)}")
+            print(f"      • Tipologie list: {tipologie_list}")
+            
+            # 8. Esempio: Se vede 10 clienti con tipologie [energia_fastweb, mobile_fastweb] → queste sono le tipologie attese
+            if clienti_count > 0:
+                print(f"   🎯 EXPECTED BEHAVIOR:")
+                print(f"      • Filter should show EXACTLY {len(tipologie_list)} tipologie")
+                print(f"      • Filter tipologie should match: {tipologie_list}")
+            else:
+                print(f"   ⚠️ WARNING: Area Manager sees 0 clienti - filter should also show 0 tipologie")
+                
+        else:
+            self.log_test("❌ Area Manager GET /api/clienti failed", False, f"Status: {status}")
+            return False
+
+        # **FASE 3: TEST AREA MANAGER - FILTER OPTIONS**
+        print("\n🔍 FASE 3: TEST AREA MANAGER - FILTER OPTIONS...")
+        
+        # 9. GET /api/clienti/filter-options con token Area Manager
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        filter_tipologie = []
+        if success and status == 200:
+            filter_data = filter_response if isinstance(filter_response, dict) else {}
+            tipologie_contratto = filter_data.get('tipologie_contratto', [])
+            
+            # Extract tipologie values
+            for tipologia_item in tipologie_contratto:
+                if isinstance(tipologia_item, dict):
+                    value = tipologia_item.get('value')
+                    if value:
+                        filter_tipologie.append(value)
+                elif isinstance(tipologia_item, str):
+                    filter_tipologie.append(tipologia_item)
+            
+            # 10. VERIFICARE: Quante tipologie ritorna?
+            filter_tipologie_count = len(filter_tipologie)
+            self.log_test("✅ Area Manager filter-options access", True, 
+                f"Found {filter_tipologie_count} tipologie in filter")
+            
+            print(f"   📊 AREA MANAGER FILTER-OPTIONS ANALYSIS:")
+            print(f"      • Total tipologie in filter: {filter_tipologie_count}")
+            print(f"      • Filter tipologie list: {filter_tipologie}")
+            
+        else:
+            self.log_test("❌ Area Manager GET /api/clienti/filter-options failed", False, f"Status: {status}")
+            return False
+
+        # **FASE 4: ANALISI DISCREPANZA**
+        print("\n🔍 FASE 4: ANALISI DISCREPANZA...")
+        
+        # 11. CONFRONTARE con le tipologie estratte dai clienti in Fase 2
+        clienti_tipologie_count = len(area_manager_tipologie)
+        filter_tipologie_count = len(filter_tipologie)
+        
+        print(f"   📊 COMPARISON ANALYSIS:")
+        print(f"      • Clienti tipologie count: {clienti_tipologie_count}")
+        print(f"      • Filter tipologie count: {filter_tipologie_count}")
+        print(f"      • Clienti tipologie: {list(area_manager_tipologie)}")
+        print(f"      • Filter tipologie: {filter_tipologie}")
+        
+        # Check for exact match
+        clienti_tipologie_set = set(area_manager_tipologie)
+        filter_tipologie_set = set(filter_tipologie)
+        
+        if clienti_tipologie_set == filter_tipologie_set:
+            self.log_test("✅ Tipologie MATCH perfectly", True, 
+                f"Both clienti and filter show same {clienti_tipologie_count} tipologie")
+            discrepancy_found = False
+        else:
+            self.log_test("❌ Tipologie DISCREPANCY detected", False, 
+                f"Clienti: {clienti_tipologie_count}, Filter: {filter_tipologie_count}")
+            discrepancy_found = True
+            
+            # Analyze differences
+            missing_in_filter = clienti_tipologie_set - filter_tipologie_set
+            extra_in_filter = filter_tipologie_set - clienti_tipologie_set
+            
+            if missing_in_filter:
+                self.log_test("🚨 Missing tipologie in filter", False, 
+                    f"Clienti have these but filter doesn't: {list(missing_in_filter)}")
+            
+            if extra_in_filter:
+                self.log_test("🚨 Extra tipologie in filter", False, 
+                    f"Filter has these but clienti don't: {list(extra_in_filter)}")
+
+        # 12. BUG: Se clienti = 10 ma tipologie = 0 o diverse → QUERY NON SINCRONIZZATA
+        if len(area_manager_clienti) > 0 and filter_tipologie_count == 0:
+            self.log_test("🚨 CRITICAL BUG CONFIRMED", False, 
+                f"Area Manager sees {len(area_manager_clienti)} clienti but filter shows 0 tipologie")
+            bug_confirmed = True
+        elif discrepancy_found:
+            self.log_test("🚨 QUERY SYNCHRONIZATION BUG", False, 
+                f"Different query logic between /api/clienti and /api/clienti/filter-options")
+            bug_confirmed = True
+        else:
+            self.log_test("✅ No synchronization bug detected", True, 
+                f"Queries appear to be synchronized")
+            bug_confirmed = False
+
+        # **FASE 5: VERIFICA LOG BACKEND**
+        print("\n📊 FASE 5: VERIFICA LOG BACKEND...")
+        
+        # 13. Se c'è discrepanza, analizzare:
+        if discrepancy_found or bug_confirmed:
+            print(f"   🔍 BACKEND LOG ANALYSIS NEEDED:")
+            print(f"      • Check for 'AREA_MANAGER ACCESS' in /api/clienti logs")
+            print(f"      • Check for 'Loading tipologie for filter-options' in filter-options logs")
+            print(f"      • Look for 'Tipologie from user's clients: X' messages")
+            print(f"      • If X = 0 but clienti > 0 → BUG CONFIRMED")
+            
+            # Make additional requests to generate log entries
+            print(f"   📋 Generating additional log entries for analysis...")
+            
+            # Make clienti request again
+            success, _, _ = self.make_request('GET', 'clienti', expected_status=200)
+            if success:
+                self.log_test("✅ Additional clienti request for logs", True, "Generated log entry")
+            
+            # Make filter-options request again
+            success, _, _ = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+            if success:
+                self.log_test("✅ Additional filter-options request for logs", True, "Generated log entry")
+        else:
+            print(f"   ✅ No discrepancy found - backend logs should show consistent behavior")
+
+        # **FINAL DIAGNOSIS SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 DEBUG AREA MANAGER - TIPOLOGIE NON VISIBILI - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare se la query per Area Manager è diversa tra GET /api/clienti e GET /api/clienti/filter-options")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login: ✅ SUCCESS")
+        print(f"      • Area Manager identification: ✅ SUCCESS ({area_manager_username})")
+        print(f"      • Area Manager login: ✅ SUCCESS")
+        print(f"      • Area Manager clienti access: ✅ SUCCESS ({len(area_manager_clienti)} clienti)")
+        print(f"      • Area Manager filter-options access: ✅ SUCCESS ({filter_tipologie_count} tipologie)")
+        print(f"      • Query synchronization: {'❌ BUG DETECTED' if bug_confirmed else '✅ SYNCHRONIZED'}")
+        
+        print(f"\n   🎯 CRITERI DI SUCCESSO:")
+        if not bug_confirmed:
+            print(f"      ✅ Area Manager vede {len(area_manager_clienti)} clienti → filtro mostra le tipologie di quegli {len(area_manager_clienti)} clienti")
+            print(f"      ✅ Tipologie match: {list(area_manager_tipologie)}")
+            print(f"      ✅ Query logic is synchronized between endpoints")
+        else:
+            print(f"      ❌ Area Manager vede {len(area_manager_clienti)} clienti ma filtro mostra {filter_tipologie_count} tipologie")
+            print(f"      ❌ Query logic is NOT synchronized between endpoints")
+            
+        print(f"\n   🎯 FOCUS CRITICO:")
+        print(f"      La query per estrarre tipologie_from_clients deve usare la STESSA logica della query clienti per Area Manager")
+        print(f"      (sub_agenzie_autorizzate, users in sub agenzie, etc.)")
+        
+        if bug_confirmed:
+            print(f"\n   🚨 BUG CONFERMATO:")
+            print(f"      • ROOT CAUSE: Query discrepancy between /api/clienti and /api/clienti/filter-options")
+            print(f"      • IMPACT: Area Manager cannot filter by tipologie_contratto")
+            print(f"      • SOLUTION: Synchronize query logic in both endpoints")
+            print(f"      • PRIORITY: HIGH - Affects Area Manager functionality")
+        else:
+            print(f"\n   ✅ NO BUG DETECTED:")
+            print(f"      • Query logic appears to be synchronized")
+            print(f"      • Area Manager can see appropriate tipologie in filter")
+            print(f"      • Functionality working as expected")
+        
+        return not bug_confirmed
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
