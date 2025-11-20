@@ -1716,6 +1716,9 @@ const Dashboard = () => {
   };
 
   // useEffect per caricare tipologie contratto quando cambia commessa/servizio/unit
+  // COMMENTED OUT: This was clearing formTipologieContratto when filters were not all selected,
+  // interfering with the main fetchTipologieContratto that loads ALL tipologie
+  /*
   useEffect(() => {
     const loadTipologieContratto = async () => {
       if (selectedCommessa && selectedCommessa !== "all" && 
@@ -1738,6 +1741,7 @@ const Dashboard = () => {
 
     loadTipologieContratto();
   }, [selectedCommessa, selectedServizio, selectedUnit]);
+  */
 
   const handleUnitChange = (unitId) => {
     setSelectedUnit(unitId);
