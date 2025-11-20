@@ -10998,42 +10998,65 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         
         # Get available data from system collections AND actual client usage
         
-        # Get tipologie contratto from user's authorized tipologie (like /api/tipologie-contratto/all endpoint)
-        all_tipologie = []
-        
+        # Get tipologie contratto: combination of authorized + present in user's clients
         print(f"🔄 Loading tipologie for filter-options, user: {current_user.username} ({current_user.role})")
         
-        # Check if hardcoded elements should be included
-        use_hardcoded = await should_use_hardcoded_elements()
-        print(f"  use_hardcoded: {use_hardcoded}")
+        # Get tipologie from user's existing clients
+        tipologie_pipeline = [{"$match": base_query}] if base_query else []
+        tipologie_pipeline += [
+            {"$group": {"_id": "$tipologia_contratto"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$sort": {"_id": 1}}
+        ]
+        tipologie_result = await db.clienti.aggregate(tipologie_pipeline).to_list(length=None)
+        tipologie_from_clients = [item["_id"] for item in tipologie_result]
+        print(f"  Tipologie from user's clients: {len(tipologie_from_clients)}")
         
+        # Get ALL available tipologie (hardcoded + database) with labels
+        all_tipologie_dict = {}
+        
+        use_hardcoded = await should_use_hardcoded_elements()
         if use_hardcoded:
             hardcoded_tipologie = await get_hardcoded_tipologie_contratto()
-            print(f"  Hardcoded tipologie: {len(hardcoded_tipologie)}")
             for tipologia in hardcoded_tipologie:
-                all_tipologie.append(tipologia["value"])
+                all_tipologie_dict[tipologia["value"]] = tipologia["label"]
         
-        # Get database tipologie
         db_tipologie = await db.tipologie_contratto.find({"is_active": True}).to_list(length=None)
-        print(f"  Database tipologie: {len(db_tipologie)}")
         for tipologia in db_tipologie:
-            all_tipologie.append(tipologia["id"])
+            all_tipologie_dict[tipologia["id"]] = tipologia["nome"]
         
-        print(f"  Total all_tipologie: {len(all_tipologie)}")
+        print(f"  Total available tipologie: {len(all_tipologie_dict)}")
         
-        # Filter by user's tipologie_autorizzate (if not admin)
+        # Build final list based on role and authorization
+        allowed_tipologie_ids = set()
+        
         if current_user.role == UserRole.ADMIN:
-            tipologie_contratto = all_tipologie
-            print(f"  Admin: returning ALL {len(tipologie_contratto)} tipologie")
-        elif hasattr(current_user, 'tipologie_autorizzate') and current_user.tipologie_autorizzate:
-            tipologie_contratto = [t for t in all_tipologie if t in current_user.tipologie_autorizzate]
-            print(f"  User has {len(current_user.tipologie_autorizzate)} authorized, returning {len(tipologie_contratto)} matching")
+            # Admin sees ALL
+            allowed_tipologie_ids = set(all_tipologie_dict.keys())
+            print(f"  Admin: ALL tipologie allowed")
         else:
-            # If user has no tipologie_autorizzate defined, return ALL for operational roles
-            print(f"  User has NO tipologie_autorizzate - returning ALL {len(all_tipologie)} tipologie")
-            tipologie_contratto = all_tipologie
+            # Non-admin: authorized + present in clients
+            if hasattr(current_user, 'tipologie_autorizzate') and current_user.tipologie_autorizzate:
+                allowed_tipologie_ids.update(current_user.tipologie_autorizzate)
+                print(f"  User has {len(current_user.tipologie_autorizzate)} authorized tipologie")
+            
+            # Always add tipologie from user's existing clients
+            allowed_tipologie_ids.update(tipologie_from_clients)
+            print(f"  Adding {len(tipologie_from_clients)} from clients")
         
-        print(f"✅ Final tipologie_contratto for filter-options: {len(tipologie_contratto)} items")
+        # Build final list with labels
+        tipologie_contratto = []
+        for tip_id in allowed_tipologie_ids:
+            if tip_id in all_tipologie_dict:
+                tipologie_contratto.append({
+                    "value": tip_id,
+                    "label": all_tipologie_dict[tip_id]
+                })
+        
+        # Sort by label
+        tipologie_contratto.sort(key=lambda x: x["label"])
+        
+        print(f"✅ Final tipologie_contratto: {len(tipologie_contratto)} items with labels")
         
         # Get status values from actual client data + possible values
         status_pipeline = [{"$match": base_query}] if base_query else []
