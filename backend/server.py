@@ -10394,16 +10394,53 @@ async def get_clienti(
         pass  # No filtering for admin
         
     elif current_user.role == UserRole.RESPONSABILE_COMMESSA:
-        # Responsabile Commessa: vede clienti delle commesse autorizzate (già implementato con dual check)
+        # Responsabile Commessa: vede clienti delle commesse autorizzate + sub agenzie autorizzate
         print(f"🎯 RESPONSABILE_COMMESSA ACCESS: User {current_user.username}")
         accessible_commesse = await get_user_accessible_commesse(current_user)
-        if accessible_commesse:
-            query["commessa_id"] = {"$in": accessible_commesse}
+        
+        # Determina le sub agenzie da usare: può essere sub_agenzie_autorizzate O sub_agenzia_id
+        sub_agenzie_ids = []
+        if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+            sub_agenzie_ids = current_user.sub_agenzie_autorizzate
+            print(f"  Using sub_agenzie_autorizzate: {sub_agenzie_ids}")
+        elif hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
+            sub_agenzie_ids = [current_user.sub_agenzia_id]
+            print(f"  Using sub_agenzia_id: {sub_agenzie_ids}")
+        
+        if accessible_commesse or sub_agenzie_ids:
+            # Build query with commessa_id OR sub_agenzia_id
+            or_conditions = []
+            if accessible_commesse:
+                or_conditions.append({"commessa_id": {"$in": accessible_commesse}})
+            if sub_agenzie_ids:
+                or_conditions.append({"sub_agenzia_id": {"$in": sub_agenzie_ids}})
+            
+            if len(or_conditions) > 1:
+                query["$or"] = or_conditions
+            else:
+                query.update(or_conditions[0])
+            
             # Filter by authorized services
             if current_user.servizi_autorizzati:
-                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+                servizio_filter = {
+                    "$or": [
+                        {"servizio_id": {"$in": current_user.servizi_autorizzati}},
+                        {"servizio_id": None},
+                        {"servizio_id": {"$exists": False}}
+                    ]
+                }
+                if "$or" in query:
+                    # Already have $or for commesse/sub_agenzie, wrap in $and
+                    existing_or = query.pop("$or")
+                    query["$and"] = [{"$or": existing_or}, servizio_filter]
+                else:
+                    query["$and"] = [query.copy(), servizio_filter]
+                    # Clean up the duplicate keys
+                    for key in list(query.keys()):
+                        if key != "$and":
+                            del query[key]
         else:
-            print("⚠️ No accessible commesse found for responsabile_commessa")
+            print("⚠️ No accessible commesse or sub agenzie found for responsabile_commessa")
             return []
             
     elif current_user.role == UserRole.BACKOFFICE_COMMESSA:
