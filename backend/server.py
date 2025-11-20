@@ -11043,6 +11043,11 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             # Always add tipologie from user's existing clients
             allowed_tipologie_ids.update(tipologie_from_clients)
             print(f"  Adding {len(tipologie_from_clients)} from clients")
+            
+            # FALLBACK: If user has no authorization AND no clients, show ALL tipologie
+            if not allowed_tipologie_ids:
+                allowed_tipologie_ids = set(all_tipologie_dict.keys())
+                print(f"  ⚠️ User has no restrictions - returning ALL {len(allowed_tipologie_ids)} tipologie")
         
         # Build final list with labels
         tipologie_contratto = []
