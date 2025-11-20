@@ -1447,7 +1447,7 @@ class CRMAPITester:
         print(f"      ✅ GET /api/clienti/filter-options ritorna 200 OK: {'✅' if status == 200 else '❌'}")
         print(f"      ✅ tipologie_contratto contiene ESATTAMENTE 6 elementi: {'✅' if tipologie_count == 6 else '❌'}")
         print(f"      ✅ Le 6 tipologie corrispondono a quelle presenti nei clienti: {'✅' if filter_tipologie_set == client_tipologie else '❌'}")
-        print(f"      ✅ Formato {value, label} corretto: {'✅' if format_correct else '❌'}")
+        print(f"      ✅ Formato {{value, label}} corretto: {'✅' if format_correct else '❌'}")
         print(f"      ✅ Nessuna regressione su altri campi: {'✅' if other_fields_working else '❌'}")
         
         if overall_success:
