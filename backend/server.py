@@ -10480,11 +10480,12 @@ async def get_clienti(
             user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
             user_ids_in_sub_agenzie.append(current_user.id)  # Include anche i propri clienti
             
-            # Build base query with created_by OR assigned_to
+            # Build base query with created_by OR assigned_to OR sub_agenzia_id
             user_filter = {
                 "$or": [
                     {"created_by": {"$in": user_ids_in_sub_agenzie}},
-                    {"assigned_to": {"$in": user_ids_in_sub_agenzie}}
+                    {"assigned_to": {"$in": user_ids_in_sub_agenzie}},
+                    {"sub_agenzia_id": {"$in": sub_agenzie_ids}}  # NEW: Include clients directly on authorized sub agenzie
                 ]
             }
             
