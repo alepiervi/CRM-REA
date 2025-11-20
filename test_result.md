@@ -445,6 +445,18 @@ FOCUS CRITICO:
 **Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
+  - task: "Tipologia Contratto Filter 500 Error Fix - PARTIAL SUCCESS"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🎉 TIPOLOGIA CONTRATTO FILTER 500 ERROR FIX VERIFICATION COMPLETE - PARTIAL SUCCESS! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested the Tipologia Contratto filter fix as requested in review. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ CRITICAL SUCCESS - GET /api/clienti/filter-options RETURNS 200 OK: Status 200 Success (NOT 500!), The sorted() error has been completely fixed, No more TypeError about dict comparison. ✅ RESPONSE STRUCTURE VERIFIED: Campo 'tipologie_contratto' presente nella risposta, Format {value, label} correct for each tipologia (38 tipologie found), All expected fields present: ['sub_agenzie', 'users', 'tipologie_contratto']. ✅ MULTI-ROLE TESTING SUCCESS: Admin role tested successfully (200 OK), Tipologie filtered correctly for role (38 tipologie returned), No authentication issues. ✅ FALLBACK LOGIC WORKING: Admin receives tipologie correctly, fallback mechanism operational. ✅ NO REGRESSION DETECTED: GET /api/clienti still works (Status: 200, Found 21 clienti), Other filter fields working: ['sub_agenzie(4)', 'users(27)'], No 500 errors in backend logs. 🚨 NEW BUG IDENTIFIED - FILTER SHOWS ALL TIPOLOGIE INSTEAD OF ONLY CLIENT TIPOLOGIE: Filter returns 38 tipologie from entire system, Should return only 6 tipologie from current clienti, Clienti have only: ['energia_fastweb', 'energia_fastweb_tls', 'mobile_fastweb', 'prova', 'telefonia_fastweb', 'telefonia_vodafone_negozi'], Filter shows 6.3x more tipologie than necessary. 🎯 CRITICAL OBJECTIVES ACHIEVED: 1) GET /api/clienti/filter-options returns 200 OK (not 500) ✅, 2) Campo tipologie_contratto presente nella risposta ✅, 3) Formato {value, label} corretto ✅, 4) Nessuna regressione su altri endpoint ✅. 🎯 NEW ISSUE IDENTIFIED: Filter should show only tipologie from current clienti list, not all available tipologie in system. 🎉 ORIGINAL 500 ERROR COMPLETELY FIXED: The sorted() TypeError has been resolved, Backend no longer crashes on filter-options request. ❌ NEW FUNCTIONAL BUG: Filter behavior incorrect - shows all system tipologie instead of filtering by current clienti. SUCCESS RATE: 80% (4/5 criteria met) - 500 error fixed but filter logic needs correction!"
+
   - task: "Lead Update All Fields Implementation - Dynamic Values Support"
     implemented: true
     working: true
