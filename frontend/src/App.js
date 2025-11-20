@@ -14693,7 +14693,7 @@ const CommesseManagement = ({
                           onClick={() => {
                             if (selectedServizio !== servizio.id) {
                               setSelectedServizio(servizio.id);
-                              fetchTipologieContratto(servizio.id);
+                              fetchTipologieContrattoAdmin(servizio.id);
                             }
                           }}
                           className="p-2 h-8 w-full"
