@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_documents_endpoint():
-    base_url = "https://lead-master-7.preview.emergentagent.com/api"
+    base_url = "https://nureal-crm-2.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     

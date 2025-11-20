@@ -247,14 +247,14 @@ Container viene stoppato da Kubernetes"
    ```javascript
    // Già modificato nel codice!
    // nureal.it → usa preview backend temporaneo
-   return 'https://lead-master-7.preview.emergentagent.com';
+   return 'https://nureal-crm-2.preview.emergentagent.com';
    ```
 
 2. **Deploy frontend con fix temporaneo**
 
 3. **Setup UptimeRobot per preview**:
    ```
-   URL: https://lead-master-7.preview.emergentagent.com/api/health
+   URL: https://nureal-crm-2.preview.emergentagent.com/api/health
    Interval: 5 minutes
    ```
 
