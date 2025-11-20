@@ -46730,6 +46730,464 @@ startxref
         
         return True
 
+    def test_agente_specializzato_operatore_tipologie_uuid_problem(self):
+        """🚨 VERIFICA AGENTE SPECIALIZZATO E OPERATORE - TIPOLOGIE UUID PROBLEMA"""
+        print("\n🚨 VERIFICA AGENTE SPECIALIZZATO E OPERATORE - TIPOLOGIE UUID PROBLEMA")
+        print("🎯 CONTESTO:")
+        print("   L'utente segnala che Agente Specializzato e Operatore vedono 38 tipologie UUID")
+        print("   anche se non hanno clienti in lista (stesso problema di Responsabile Store).")
+        print("")
+        print("🎯 OBIETTIVO:")
+        print("   Verificare la situazione attuale e identificare se hanno tipologie_autorizzate")
+        print("   popolate che causano il problema.")
+        print("")
+        print("🎯 TEST DA ESEGUIRE:")
+        print("   **FASE 1: Trova Agente Specializzato**")
+        print("   1. Login Admin (admin/admin123)")
+        print("   2. GET /api/users - trova utente con role = 'agente_specializzato' o 'agente'")
+        print("   3. Verificare se ha: tipologie_autorizzate (e quante), clienti (quanti)")
+        print("")
+        print("   **FASE 2: Test Agente Specializzato**")
+        print("   4. Login come Agente Specializzato")
+        print("   5. GET /api/clienti - verificare quanti clienti vede")
+        print("   6. GET /api/clienti/filter-options - verificare quante tipologie vede")
+        print("   7. CONFRONTARE: se clienti = 0 ma tipologie > 0 → BUG CONFERMATO")
+        print("")
+        print("   **FASE 3: Verifica Tipologie Autorizzate**")
+        print("   8. Con token Admin, verificare il campo tipologie_autorizzate dell'utente")
+        print("   9. Se popolato con UUID → questo è il problema")
+        print("   10. Questi ruoli NON dovrebbero usare tipologie_autorizzate")
+        print("")
+        print("   **FASE 4: Test Operatore (se esiste)**")
+        print("   11. Ripetere test per ruolo 'operatore'")
+        print("   12. Verificare stessa situazione")
+        print("")
+        print("   **FASE 5: Analisi Log Backend**")
+        print("   13. Controllare log backend per questi utenti")
+        print("   14. Verificare se vedono:")
+        print("       - 'Tipologie from user's clients: 0'")
+        print("       - 'returning empty tipologie list' (comportamento corretto)")
+        print("       - O se vedono ancora 'returning ALL tipologie' (bug)")
+        print("")
+        print("🎯 CRITERI DI SUCCESSO:")
+        print("   ✅ Se utente ha 0 clienti → dovrebbe vedere 0 tipologie")
+        print("   ❌ Se utente ha 0 clienti ma vede 38 tipologie → BUG da fixare")
+        print("")
+        print("🎯 FOCUS:")
+        print("   Identificare se il problema è dovuto a tipologie_autorizzate popolate")
+        print("   o a un'altra causa.")
+        
+        import time
+        start_time = time.time()
+        
+        # **FASE 1: Login Admin e trova Agente Specializzato**
+        print("\n🔐 FASE 1: Login Admin e trova Agente Specializzato...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # Get all users to find Agente Specializzato and Operatore
+        print("\n👥 Searching for Agente Specializzato and Operatore users...")
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        if not success or status != 200:
+            self.log_test("❌ GET /api/users failed", False, f"Status: {status}")
+            return False
+            
+        users = users_response if isinstance(users_response, list) else []
+        self.log_test("✅ GET /api/users SUCCESS", True, f"Found {len(users)} total users")
+        
+        # Find target users
+        agente_specializzato_users = []
+        operatore_users = []
+        agente_users = []
+        
+        for user in users:
+            role = user.get('role', '')
+            username = user.get('username', '')
+            is_active = user.get('is_active', False)
+            
+            if role == 'agente_specializzato' and is_active:
+                agente_specializzato_users.append(user)
+            elif role == 'operatore' and is_active:
+                operatore_users.append(user)
+            elif role == 'agente' and is_active:
+                agente_users.append(user)
+        
+        print(f"\n   📊 USERS FOUND BY ROLE:")
+        print(f"      • agente_specializzato: {len(agente_specializzato_users)} users")
+        print(f"      • operatore: {len(operatore_users)} users")
+        print(f"      • agente: {len(agente_users)} users (fallback)")
+        
+        # Test users in priority order
+        test_users = []
+        
+        # Add agente_specializzato users first
+        for user in agente_specializzato_users:
+            test_users.append({
+                'user': user,
+                'role_type': 'agente_specializzato',
+                'priority': 1
+            })
+        
+        # Add operatore users
+        for user in operatore_users:
+            test_users.append({
+                'user': user,
+                'role_type': 'operatore', 
+                'priority': 2
+            })
+            
+        # Add agente users as fallback if no specialized users found
+        if len(agente_specializzato_users) == 0:
+            for user in agente_users[:2]:  # Limit to first 2 agente users
+                test_users.append({
+                    'user': user,
+                    'role_type': 'agente',
+                    'priority': 3
+                })
+        
+        if len(test_users) == 0:
+            self.log_test("❌ No target users found", False, "No agente_specializzato, operatore, or agente users found")
+            return False
+        
+        # Sort by priority and test each user
+        test_users.sort(key=lambda x: x['priority'])
+        
+        print(f"\n   📋 TESTING {len(test_users)} USERS:")
+        for i, test_user_info in enumerate(test_users, 1):
+            user = test_user_info['user']
+            role_type = test_user_info['role_type']
+            username = user.get('username', 'Unknown')
+            print(f"      {i}. {username} (role: {role_type})")
+        
+        # Test each user
+        bug_confirmed_users = []
+        working_correctly_users = []
+        
+        for test_user_info in test_users:
+            user = test_user_info['user']
+            role_type = test_user_info['role_type']
+            username = user.get('username', 'Unknown')
+            user_id = user.get('id', 'Unknown')
+            
+            print(f"\n{'='*60}")
+            print(f"🔍 TESTING USER: {username} (role: {role_type})")
+            print(f"{'='*60}")
+            
+            # **FASE 2: Analyze user data with Admin token**
+            print(f"\n📊 FASE 2: Analyze user data for {username}...")
+            
+            # Check tipologie_autorizzate field
+            tipologie_autorizzate = user.get('tipologie_autorizzate', [])
+            commesse_autorizzate = user.get('commesse_autorizzate', [])
+            sub_agenzie_autorizzate = user.get('sub_agenzie_autorizzate', [])
+            
+            print(f"   📋 USER AUTHORIZATION FIELDS:")
+            print(f"      • tipologie_autorizzate: {len(tipologie_autorizzate)} items")
+            print(f"      • commesse_autorizzate: {len(commesse_autorizzate)} items")
+            print(f"      • sub_agenzie_autorizzate: {len(sub_agenzie_autorizzate)} items")
+            
+            if len(tipologie_autorizzate) > 0:
+                print(f"      • tipologie_autorizzate content: {tipologie_autorizzate[:3]}{'...' if len(tipologie_autorizzate) > 3 else ''}")
+                self.log_test(f"🚨 {username} HAS tipologie_autorizzate", False, 
+                    f"Found {len(tipologie_autorizzate)} tipologie - this may be the bug!")
+            else:
+                print(f"      • tipologie_autorizzate: EMPTY (correct for this role)")
+                self.log_test(f"✅ {username} tipologie_autorizzate empty", True, 
+                    f"Correctly empty for role {role_type}")
+            
+            # **FASE 3: Test user login**
+            print(f"\n🔐 FASE 3: Test login for {username}...")
+            
+            # Try common passwords
+            test_passwords = ['admin123', 'password', '123456']
+            login_success = False
+            user_token = None
+            
+            for password in test_passwords:
+                success, login_response, status = self.make_request(
+                    'POST', 'auth/login', 
+                    {'username': username, 'password': password}, 
+                    expected_status=200, auth_required=False
+                )
+                
+                if success and status == 200 and 'access_token' in login_response:
+                    user_token = login_response['access_token']
+                    login_success = True
+                    self.log_test(f"✅ {username} login SUCCESS", True, f"Password: {password}")
+                    break
+            
+            if not login_success:
+                self.log_test(f"❌ {username} login FAILED", False, f"Tried passwords: {test_passwords}")
+                print(f"   ⚠️ Cannot test {username} - login failed with common passwords")
+                continue
+            
+            # **FASE 4: Test user's clienti access**
+            print(f"\n👥 FASE 4: Test {username}'s clienti access...")
+            
+            # Save admin token and use user token
+            admin_token = self.token
+            self.token = user_token
+            
+            # Get user's clienti
+            success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+            
+            if success and status == 200:
+                user_clienti = clienti_response if isinstance(clienti_response, list) else []
+                clienti_count = len(user_clienti)
+                
+                self.log_test(f"✅ {username} GET /api/clienti", True, f"Status: 200, Found {clienti_count} clienti")
+                
+                # Show some client details if any
+                if clienti_count > 0:
+                    print(f"   📊 {username}'S CLIENTI:")
+                    for i, cliente in enumerate(user_clienti[:3], 1):  # Show first 3
+                        nome = cliente.get('nome', 'Unknown')
+                        cognome = cliente.get('cognome', 'Unknown')
+                        tipologia = cliente.get('tipologia_contratto', 'Unknown')
+                        print(f"      {i}. {nome} {cognome} (tipologia: {tipologia})")
+                else:
+                    print(f"   📊 {username} HAS NO CLIENTI")
+                    
+            else:
+                self.log_test(f"❌ {username} GET /api/clienti FAILED", False, f"Status: {status}")
+                clienti_count = -1  # Error indicator
+            
+            # **FASE 5: Test user's filter-options**
+            print(f"\n🔍 FASE 5: Test {username}'s filter-options...")
+            
+            success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+            
+            if success and status == 200:
+                tipologie_contratto = filter_response.get('tipologie_contratto', [])
+                tipologie_count = len(tipologie_contratto)
+                
+                self.log_test(f"✅ {username} GET /api/clienti/filter-options", True, f"Status: 200, Found {tipologie_count} tipologie")
+                
+                print(f"   📊 {username}'S TIPOLOGIE FILTER:")
+                print(f"      • Total tipologie: {tipologie_count}")
+                
+                if tipologie_count > 0:
+                    # Show first few tipologie
+                    print(f"      • Sample tipologie:")
+                    for i, tipologia in enumerate(tipologie_contratto[:5], 1):
+                        if isinstance(tipologia, dict):
+                            value = tipologia.get('value', 'Unknown')
+                            label = tipologia.get('label', 'Unknown')
+                            print(f"         {i}. {label} (value: {value[:8]}{'...' if len(str(value)) > 8 else ''})")
+                        else:
+                            print(f"         {i}. {tipologia}")
+                    
+                    if tipologie_count > 5:
+                        print(f"         ... and {tipologie_count - 5} more")
+                        
+                    # Check if tipologie are UUIDs (indicating the bug)
+                    uuid_tipologie = 0
+                    string_tipologie = 0
+                    
+                    for tipologia in tipologie_contratto:
+                        if isinstance(tipologia, dict):
+                            value = tipologia.get('value', '')
+                        else:
+                            value = str(tipologia)
+                        
+                        # Check if value looks like UUID (contains hyphens and is long)
+                        if isinstance(value, str) and '-' in value and len(value) > 20:
+                            uuid_tipologie += 1
+                        else:
+                            string_tipologie += 1
+                    
+                    print(f"      • UUID tipologie: {uuid_tipologie}")
+                    print(f"      • String tipologie: {string_tipologie}")
+                    
+                    if uuid_tipologie > 0:
+                        self.log_test(f"🚨 {username} SEES UUID TIPOLOGIE", False, 
+                            f"Found {uuid_tipologie} UUID tipologie - this indicates the bug!")
+                    else:
+                        self.log_test(f"✅ {username} sees string tipologie", True, 
+                            f"All {string_tipologie} tipologie are strings (correct)")
+                        
+                else:
+                    print(f"      • No tipologie found")
+                    
+            else:
+                self.log_test(f"❌ {username} GET /api/clienti/filter-options FAILED", False, f"Status: {status}")
+                tipologie_count = -1  # Error indicator
+            
+            # Restore admin token
+            self.token = admin_token
+            
+            # **FASE 6: Analyze results for this user**
+            print(f"\n📊 FASE 6: Analyze results for {username}...")
+            
+            # Determine if bug is present
+            bug_present = False
+            bug_reasons = []
+            
+            # Check condition: 0 clienti but > 0 tipologie
+            if clienti_count == 0 and tipologie_count > 0:
+                bug_present = True
+                bug_reasons.append(f"Has 0 clienti but sees {tipologie_count} tipologie")
+            
+            # Check condition: has tipologie_autorizzate (shouldn't for these roles)
+            if len(tipologie_autorizzate) > 0:
+                bug_present = True
+                bug_reasons.append(f"Has tipologie_autorizzate populated ({len(tipologie_autorizzate)} items)")
+            
+            # Check condition: sees many tipologie (38 indicates system-wide view)
+            if tipologie_count >= 30:  # Threshold for "too many"
+                bug_present = True
+                bug_reasons.append(f"Sees {tipologie_count} tipologie (likely all system tipologie)")
+            
+            if bug_present:
+                bug_confirmed_users.append({
+                    'username': username,
+                    'role': role_type,
+                    'clienti_count': clienti_count,
+                    'tipologie_count': tipologie_count,
+                    'tipologie_autorizzate_count': len(tipologie_autorizzate),
+                    'reasons': bug_reasons
+                })
+                
+                print(f"   🚨 BUG CONFIRMED for {username}:")
+                for reason in bug_reasons:
+                    print(f"      • {reason}")
+                    
+                self.log_test(f"🚨 BUG CONFIRMED - {username}", False, 
+                    f"Role: {role_type}, Reasons: {'; '.join(bug_reasons)}")
+                    
+            else:
+                working_correctly_users.append({
+                    'username': username,
+                    'role': role_type,
+                    'clienti_count': clienti_count,
+                    'tipologie_count': tipologie_count,
+                    'tipologie_autorizzate_count': len(tipologie_autorizzate)
+                })
+                
+                print(f"   ✅ WORKING CORRECTLY for {username}")
+                print(f"      • Clienti: {clienti_count}, Tipologie: {tipologie_count}")
+                print(f"      • tipologie_autorizzate: {len(tipologie_autorizzate)} (correct)")
+                
+                self.log_test(f"✅ WORKING CORRECTLY - {username}", True, 
+                    f"Role: {role_type}, Clienti: {clienti_count}, Tipologie: {tipologie_count}")
+        
+        # **FINAL ANALYSIS**
+        total_time = time.time() - start_time
+        
+        print(f"\n{'='*80}")
+        print(f"🎯 VERIFICA AGENTE SPECIALIZZATO E OPERATORE - FINAL ANALYSIS")
+        print(f"{'='*80}")
+        
+        print(f"\n📊 SUMMARY RESULTS (Total time: {total_time:.2f}s):")
+        print(f"   • Total users tested: {len(test_users)}")
+        print(f"   • Users with BUG confirmed: {len(bug_confirmed_users)}")
+        print(f"   • Users working correctly: {len(working_correctly_users)}")
+        
+        if len(bug_confirmed_users) > 0:
+            print(f"\n🚨 BUG CONFIRMED USERS:")
+            for user_info in bug_confirmed_users:
+                username = user_info['username']
+                role = user_info['role']
+                clienti_count = user_info['clienti_count']
+                tipologie_count = user_info['tipologie_count']
+                tipologie_autorizzate_count = user_info['tipologie_autorizzate_count']
+                reasons = user_info['reasons']
+                
+                print(f"   • {username} (role: {role}):")
+                print(f"     - Clienti: {clienti_count}")
+                print(f"     - Tipologie seen: {tipologie_count}")
+                print(f"     - tipologie_autorizzate: {tipologie_autorizzate_count}")
+                print(f"     - Bug reasons: {'; '.join(reasons)}")
+        
+        if len(working_correctly_users) > 0:
+            print(f"\n✅ WORKING CORRECTLY USERS:")
+            for user_info in working_correctly_users:
+                username = user_info['username']
+                role = user_info['role']
+                clienti_count = user_info['clienti_count']
+                tipologie_count = user_info['tipologie_count']
+                
+                print(f"   • {username} (role: {role}): {clienti_count} clienti → {tipologie_count} tipologie")
+        
+        # **ROOT CAUSE ANALYSIS**
+        print(f"\n🔍 ROOT CAUSE ANALYSIS:")
+        
+        if len(bug_confirmed_users) > 0:
+            # Analyze common patterns in bug users
+            users_with_tipologie_autorizzate = [u for u in bug_confirmed_users if u['tipologie_autorizzate_count'] > 0]
+            users_with_zero_clienti_but_tipologie = [u for u in bug_confirmed_users if u['clienti_count'] == 0 and u['tipologie_count'] > 0]
+            users_with_many_tipologie = [u for u in bug_confirmed_users if u['tipologie_count'] >= 30]
+            
+            print(f"   • Users with tipologie_autorizzate populated: {len(users_with_tipologie_autorizzate)}")
+            print(f"   • Users with 0 clienti but >0 tipologie: {len(users_with_zero_clienti_but_tipologie)}")
+            print(f"   • Users seeing ≥30 tipologie (system-wide): {len(users_with_many_tipologie)}")
+            
+            if len(users_with_tipologie_autorizzate) > 0:
+                print(f"\n   🎯 PRIMARY ROOT CAUSE: tipologie_autorizzate field populated")
+                print(f"      • These roles (agente_specializzato, operatore) should NOT use tipologie_autorizzate")
+                print(f"      • They should see only tipologie from their own created clienti")
+                print(f"      • Solution: Clear tipologie_autorizzate for these roles")
+                
+            if len(users_with_zero_clienti_but_tipologie) > 0:
+                print(f"\n   🎯 SECONDARY ISSUE: Users with no clienti seeing tipologie")
+                print(f"      • If user has 0 clienti, they should see 0 tipologie")
+                print(f"      • Current behavior shows system-wide tipologie instead")
+                
+            self.log_test("🚨 BUG ANALYSIS COMPLETE", False, 
+                f"Found {len(bug_confirmed_users)} users with tipologie UUID problem")
+                
+        else:
+            print(f"   ✅ NO BUG DETECTED: All tested users working correctly")
+            print(f"   ✅ Users see appropriate number of tipologie based on their clienti")
+            print(f"   ✅ No users have inappropriate tipologie_autorizzate populated")
+            
+            self.log_test("✅ NO BUG DETECTED", True, 
+                f"All {len(working_correctly_users)} users working correctly")
+        
+        # **RECOMMENDATIONS**
+        print(f"\n💡 RECOMMENDATIONS:")
+        
+        if len(bug_confirmed_users) > 0:
+            print(f"   1. **IMMEDIATE FIX**: Clear tipologie_autorizzate for affected users")
+            print(f"      • Roles agente_specializzato, operatore should not use this field")
+            print(f"      • Update user records to set tipologie_autorizzate = []")
+            
+            print(f"   2. **BACKEND LOGIC FIX**: Modify GET /api/clienti/filter-options")
+            print(f"      • Ensure these roles use client-based filtering, not tipologie_autorizzate")
+            print(f"      • Add role-specific logic to ignore tipologie_autorizzate for these roles")
+            
+            print(f"   3. **VALIDATION**: Add checks to prevent tipologie_autorizzate population")
+            print(f"      • Prevent UI from setting tipologie_autorizzate for these roles")
+            print(f"      • Add backend validation to reject inappropriate role assignments")
+            
+        else:
+            print(f"   1. **MONITORING**: Continue monitoring these roles for the issue")
+            print(f"   2. **TESTING**: Test with users who have clienti to ensure filtering works")
+            print(f"   3. **DOCUMENTATION**: Document correct behavior for these roles")
+        
+        print(f"\n🎯 CONCLUSION:")
+        if len(bug_confirmed_users) > 0:
+            print(f"   🚨 BUG CONFIRMED: {len(bug_confirmed_users)} users affected by tipologie UUID problem")
+            print(f"   🚨 SAME ISSUE as Responsabile Store: tipologie_autorizzate incorrectly populated")
+            print(f"   🔧 SOLUTION REQUIRED: Clear tipologie_autorizzate and fix backend logic")
+            return False
+        else:
+            print(f"   ✅ NO BUG DETECTED: All users working correctly")
+            print(f"   ✅ DIFFERENT from Responsabile Store: These roles appear to be fixed")
+            return True
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
