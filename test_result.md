@@ -1477,15 +1477,18 @@ backend:
 frontend:
   - task: "Store Assistant Tipologie Contratto Filter Debug - Console Log Analysis"
     implemented: true
-    working: "needs_testing"
+    working: false
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
           comment: "✅ STORE ASSISTANT TIPOLOGIE CONTRATTO FILTER DEBUG TASK CREATED: Need to test Store Assistant user to verify why they cannot see tipologie contratto options in the filter dropdown. TESTING REQUIRED: 1) Find or create Store Assistant user credentials, 2) Login as Store Assistant, 3) Navigate to Clienti section, 4) Check Tipologia Contratto dropdown, 5) Capture ALL console logs during loading, 6) Look for specific log messages (🔄 FETCH TIPOLOGIE START, ✅ Tipologie contratto ricevute, ❌ Error fetching tipologie contratto), 7) Check for HTTP errors (401, 403, 500, 503), 8) Test GET /api/tipologie-contratto/all endpoint directly, 9) Compare Store Assistant vs Admin behavior. FOCUS: Identify exact error in console, determine if authentication/permission issue or server error, verify if API call is made, compare with Admin functionality."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL ISSUE IDENTIFIED - PERMISSION PROBLEM: Store Assistant (ale10) cannot see tipologie contratto options due to 403 FORBIDDEN errors on /api/servizi endpoint. DETAILED FINDINGS: 1) ✅ Store Assistant login successful, 2) ✅ Navigation to Clienti section works, 3) ❌ Tipologia Contratto dropdown shows 'Tutte le Tipologie' but appears empty when clicked, 4) ✅ Admin shows multiple options (Energia Fastweb, Mobile Fastweb, Telefonia Fastweb, etc.), 5) ✅ API /api/tipologie-contratto/all returns 200 OK with 38 items for BOTH Store Assistant and Admin, 6) ❌ CRITICAL: Store Assistant gets multiple 403 errors on /api/servizi endpoint, 7) ✅ Admin has NO 403 errors on /api/servizi. ROOT CAUSE: Store Assistant role lacks permission to access /api/servizi endpoint which is required for filter functionality. The tipologie data is received but frontend cannot process it due to missing servizi data dependency. BACKEND PERMISSION ISSUE - NOT FRONTEND BUG."
 
   - task: "Lead Section Functionality Fix - JavaScript Syntax Error Resolution"
     implemented: true
