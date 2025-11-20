@@ -1426,7 +1426,7 @@ class CRMAPITester:
         print(f"      • GET /api/clienti/filter-options: ✅ SUCCESS (200 OK, not 500)")
         print(f"      • Tipologie count: {'✅ CORRECT (6)' if tipologie_count == 6 else f'❌ WRONG ({tipologie_count})'}")
         print(f"      • Expected tipologie present: {'✅ YES' if not missing_tipologie else '❌ NO'}")
-        print(f"      • Format {value, label}: {'✅ CORRECT' if format_correct else '❌ INCORRECT'}")
+        print(f"      • Format {{value, label}}: {'✅ CORRECT' if format_correct else '❌ INCORRECT'}")
         print(f"      • Match with client tipologie: {'✅ PERFECT' if filter_tipologie_set == client_tipologie else '❌ MISMATCH'}")
         print(f"      • Other fields working: {'✅ YES' if other_fields_working else '❌ NO'}")
         
