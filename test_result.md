@@ -460,6 +460,18 @@ FOCUS CRITICO:
 **Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
+  - task: "Responsabile Sub Agenzia Client Visibility - Critical Query Bug Fix"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL BUG IDENTIFIED: Responsabile Sub Agenzia cannot see clients from their sub agenzia. ROOT CAUSE: Backend query includes restrictive servizio_id filter that doesn't match client data. DETAILS: Admin sees 14 clients with sub_agenzia_id='7c70d4b5-4be0-4707-8bca-dfe84a0b9dee', but Responsabile Sub Agenzia sees 0 clients due to query: {'sub_agenzia_id': '7c70d4b5...', 'servizio_id': {'$in': ['e000d779...', '9c1ece3f...', '8f50b9d7...', '62f75c5b...']}}. Client servizio_ids are [None, 'cc0648c1-0df1-4530-8281-f4c940934916'] which don't match expected IDs. SOLUTION NEEDED: Remove or fix servizio_id filter for responsabile_sub_agenzia role to show ALL clients from their sub agenzia regardless of servizio_id. IMPACT: High - users cannot see their assigned clients. TESTING: Comprehensive backend testing completed, issue confirmed via logs analysis."
+
   - task: "Tipologia Contratto Filter - Final Verification Doppio Fix"
     implemented: true
     working: true
