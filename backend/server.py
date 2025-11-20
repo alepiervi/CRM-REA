@@ -11163,11 +11163,25 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                     sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}
-        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI]:
             if current_user.sub_agenzia_id:
-                # Agenti, Operatori, Store e Presidi see only their own sub agenzia
+                # Agenti, Operatori, Store e Promoter Presidi see only their own sub agenzia
                 sub_agenzie_query["id"] = current_user.sub_agenzia_id
                 # Filter by authorized services (if applicable)
+                if current_user.servizi_autorizzati:
+                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
+            else:
+                sub_agenzie_query = {"_id": {"$exists": False}}
+        elif current_user.role == UserRole.RESPONSABILE_PRESIDI:
+            # Responsabile Presidi sees all their assigned sub agenzie (like Area Manager)
+            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+                sub_agenzie_query["id"] = {"$in": current_user.sub_agenzie_autorizzate}
+                # Filter by authorized services
+                if current_user.servizi_autorizzati:
+                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
+            elif current_user.sub_agenzia_id:
+                # Fallback: use single sub_agenzia_id if sub_agenzie_autorizzate not set
+                sub_agenzie_query["id"] = current_user.sub_agenzia_id
                 if current_user.servizi_autorizzati:
                     sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
