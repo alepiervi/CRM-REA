@@ -2108,9 +2108,8 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Responsabile Sub Agenzia Client Visibility - Critical Query Bug Fix"
-  stuck_tasks: 
-    - "Responsabile Sub Agenzia Client Visibility - Critical Query Bug Fix"
+    - "Backend testing completed successfully"
+  stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
 
