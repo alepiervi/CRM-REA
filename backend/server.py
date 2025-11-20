@@ -11350,58 +11350,62 @@ async def export_clienti_excel(
         # Build query based on user role and filters (reuse logic from main endpoint)
         query = {}
         
-        # Role-based access control (MUST match logic in GET /api/clienti)
+        # Role-based access control for EXPORT
+        # Export must filter by Sub Agenzia, Commessa AND Servizio autorizzati
         if current_user.role == UserRole.ADMIN:
             pass  # Admin can see all
         elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            # Filter by authorized commesse AND servizi
             if current_user.commesse_autorizzate:
                 query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
-                if current_user.servizi_autorizzati:
-                    query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
             else:
                 query["_id"] = {"$exists": False}
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
         elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
-            # See ALL clients from their sub agenzia (no servizio/commessa filter)
+            # Filter by sub_agenzia, commesse AND servizi autorizzati
             if current_user.sub_agenzia_id:
                 query["sub_agenzia_id"] = current_user.sub_agenzia_id
             else:
                 query["_id"] = {"$exists": False}
+            if current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
         elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI]:
-            # See clients created by them OR assigned to them
+            # Filter by own/assigned clients AND authorized sub agenzia/commessa/servizio
             query["$or"] = [
                 {"created_by": current_user.id},
                 {"assigned_to": current_user.id}
             ]
+            if current_user.sub_agenzia_id:
+                query["sub_agenzia_id"] = current_user.sub_agenzia_id
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
         elif current_user.role == UserRole.RESPONSABILE_PRESIDI:
-            # See clients from users in their authorized sub agenzie
+            # Filter by authorized sub agenzie AND commesse/servizi
             if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-                users_in_sub_agenzie = await db.users.find({
-                    "sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}
-                }).to_list(length=None)
-                user_ids = [u["id"] for u in users_in_sub_agenzie]
-                user_ids.append(current_user.id)
-                query["$or"] = [
-                    {"created_by": {"$in": user_ids}},
-                    {"assigned_to": {"$in": user_ids}}
-                ]
+                query["sub_agenzia_id"] = {"$in": current_user.sub_agenzie_autorizzate}
+            elif current_user.sub_agenzia_id:
+                query["sub_agenzia_id"] = current_user.sub_agenzia_id
             else:
-                query["$or"] = [
-                    {"created_by": current_user.id},
-                    {"assigned_to": current_user.id}
-                ]
+                query["_id"] = {"$exists": False}
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
         elif current_user.role == UserRole.AREA_MANAGER:
-            # Area Manager sees clients from authorized sub agenzie with full $or logic
+            # Filter by authorized sub agenzie AND commesse/servizi
             if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-                query["$or"] = [
-                    {"created_by": current_user.id},
-                    {"assigned_to": current_user.id},
-                    {"sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}}
-                ]
+                query["sub_agenzia_id"] = {"$in": current_user.sub_agenzie_autorizzate}
             else:
-                query["$or"] = [
-                    {"created_by": current_user.id},
-                    {"assigned_to": current_user.id}
-                ]
+                query["_id"] = {"$exists": False}
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
         else:
             query["_id"] = {"$exists": False}
         
