@@ -11213,10 +11213,8 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         
         # Format response with display names
         return {
-            "tipologie_contratto": [
-                {"value": tip, "label": map_tipologia_display(tip)} 
-                for tip in sorted([t for t in tipologie_contratto if t is not None])
-            ],
+            # tipologie_contratto is already a list of {"value": ..., "label": ...} objects
+            "tipologie_contratto": tipologie_contratto,
             "status_values": [
                 {"value": status, "label": map_status_display(status)} 
                 for status in sorted([s for s in status_values if s is not None])
