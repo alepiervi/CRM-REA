@@ -10489,25 +10489,27 @@ async def get_clienti(
                 return []
                 
     elif current_user.role == UserRole.RESPONSABILE_SUB_AGENZIA:
-        # Responsabile Agenzia: vede tutti i clienti della propria Sub Agenzia
-        print(f"🏪 RESPONSABILE_SUB_AGENZIA ACCESS: User {current_user.username}")
+        # Responsabile Sub Agenzia: vede TUTTI i clienti della propria Sub Agenzia
+        # Indipendentemente da chi li ha creati o dal servizio
+        print(f"🏪 RESPONSABILE_SUB_AGENZIA ACCESS: User {current_user.username} - ALL clients from sub agenzia")
         if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
             query["sub_agenzia_id"] = current_user.sub_agenzia_id
-            # Filter by authorized services
-            if current_user.servizi_autorizzati:
-                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+            # NO servizio_id filter - Responsabile Sub Agenzia sees ALL clients in their sub agenzia
+            # regardless of service assignment
+            print(f"  Sub Agenzia ID: {current_user.sub_agenzia_id}")
         else:
             print("⚠️ No sub_agenzia_id found for responsabile_sub_agenzia")
             return []
             
     elif current_user.role == UserRole.BACKOFFICE_SUB_AGENZIA:
-        # BackOffice Sub Agenzia: vede tutti i clienti della propria agenzia
-        print(f"🏬 BACKOFFICE_SUB_AGENZIA ACCESS: User {current_user.username}")
+        # BackOffice Sub Agenzia: vede TUTTI i clienti della propria agenzia
+        # Indipendentemente da chi li ha creati o dal servizio
+        print(f"🏬 BACKOFFICE_SUB_AGENZIA ACCESS: User {current_user.username} - ALL clients from sub agenzia")
         if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
             query["sub_agenzia_id"] = current_user.sub_agenzia_id
-            # Filter by authorized services
-            if current_user.servizi_autorizzati:
-                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+            # NO servizio_id filter - BackOffice Sub Agenzia sees ALL clients in their sub agenzia
+            # regardless of service assignment
+            print(f"  Sub Agenzia ID: {current_user.sub_agenzia_id}")
         else:
             print("⚠️ No sub_agenzia_id found for backoffice_sub_agenzia")
             return []
