@@ -10970,11 +10970,10 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             else:
                 base_query["_id"] = {"$exists": False}  # No results if no authorized commesse
         elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
-            if current_user.commesse_autorizzate and current_user.sub_agenzia_id:
-                base_query["$and"] = [
-                    {"commessa_id": {"$in": current_user.commesse_autorizzate}},
-                    {"sub_agenzia_id": current_user.sub_agenzia_id}
-                ]
+            # Responsabile/BackOffice Sub Agenzia: see ALL clients from their sub agenzia
+            # NO commessa or servizio filter - they manage the entire sub agenzia
+            if current_user.sub_agenzia_id:
+                base_query["sub_agenzia_id"] = current_user.sub_agenzia_id
             else:
                 base_query["_id"] = {"$exists": False}
         elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI]:
