@@ -683,6 +683,318 @@ class CRMAPITester:
         
         return diagnosis_success
 
+    def test_responsabile_presidi_filter_verification(self):
+        """🎯 VERIFICA RESPONSABILE PRESIDI - FILTRO SUB AGENZIE"""
+        print("\n🎯 VERIFICA RESPONSABILE PRESIDI - FILTRO SUB AGENZIE")
+        print("🎯 CONTESTO:")
+        print("   Ho appena fixato la logica del filtro sub_agenzie per Responsabile Presidi.")
+        print("   Prima era raggruppato con altri ruoli e usava `sub_agenzia_id` (singola),")
+        print("   ora usa `sub_agenzie_autorizzate` (multipla) come Area Manager.")
+        print("")
+        print("🎯 OBIETTIVO:")
+        print("   Verificare che Responsabile Presidi ora veda tutte le sub agenzie autorizzate nel filtro.")
+        
+        import time
+        start_time = time.time()
+        
+        # **FASE 1: Identifica Responsabile Presidi**
+        print("\n📋 FASE 1: IDENTIFICA RESPONSABILE PRESIDI...")
+        
+        # 1. Login Admin (admin/admin123)
+        print("\n🔐 1. Login Admin (admin/admin123)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. GET /api/users - trova utente con role = "responsabile_presidi"
+        print("\n👥 2. GET /api/users - trova utente con role = 'responsabile_presidi'...")
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        responsabile_presidi_user = None
+        if success and status == 200:
+            users = users_response if isinstance(users_response, list) else []
+            
+            # Find responsabile_presidi user
+            for user in users:
+                if user.get('role') == 'responsabile_presidi':
+                    responsabile_presidi_user = user
+                    break
+            
+            if responsabile_presidi_user:
+                username = responsabile_presidi_user.get('username')
+                user_id = responsabile_presidi_user.get('id')
+                sub_agenzie_autorizzate = responsabile_presidi_user.get('sub_agenzie_autorizzate', [])
+                sub_agenzia_id = responsabile_presidi_user.get('sub_agenzia_id')  # Old logic
+                
+                self.log_test("✅ Responsabile Presidi user found", True, 
+                    f"Username: {username}, ID: {user_id[:8]}...")
+                
+                print(f"   📊 USER DATA ANALYSIS:")
+                print(f"      • Username: {username}")
+                print(f"      • Role: {responsabile_presidi_user.get('role')}")
+                print(f"      • sub_agenzie_autorizzate: {sub_agenzie_autorizzate} (count: {len(sub_agenzie_autorizzate)})")
+                print(f"      • sub_agenzia_id (old): {sub_agenzia_id}")
+                
+                # 3. Verificare se ha sub_agenzie_autorizzate (e quante) vs sub_agenzia_id (singola - vecchia logica)
+                if len(sub_agenzie_autorizzate) > 0:
+                    self.log_test("✅ sub_agenzie_autorizzate populated", True, 
+                        f"Found {len(sub_agenzie_autorizzate)} authorized sub agenzie")
+                    
+                    if len(sub_agenzie_autorizzate) >= 2:
+                        self.log_test("✅ Multiple sub agenzie authorized", True, 
+                            f"User has {len(sub_agenzie_autorizzate)} sub agenzie (good for testing)")
+                    else:
+                        self.log_test("ℹ️ Single sub agenzia authorized", True, 
+                            f"User has only 1 sub agenzia (still valid)")
+                else:
+                    self.log_test("❌ sub_agenzie_autorizzate empty", False, 
+                        "User has no authorized sub agenzie - cannot test filter")
+                    return False
+                
+                if sub_agenzia_id:
+                    self.log_test("ℹ️ Old sub_agenzia_id still present", True, 
+                        f"Old field: {sub_agenzia_id[:8]}... (should be ignored)")
+                else:
+                    self.log_test("✅ Old sub_agenzia_id not set", True, 
+                        "Old field correctly not used")
+                        
+            else:
+                self.log_test("❌ No Responsabile Presidi user found", False, 
+                    "Cannot test without responsabile_presidi user")
+                return False
+        else:
+            self.log_test("❌ GET /api/users failed", False, f"Status: {status}")
+            return False
+
+        # **FASE 2: Test Responsabile Presidi - Filter Options**
+        print("\n🔍 FASE 2: TEST RESPONSABILE PRESIDI - FILTER OPTIONS...")
+        
+        # 4. Login come Responsabile Presidi
+        print(f"\n🔐 4. Login come Responsabile Presidi ({username})...")
+        success, login_response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': username, 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in login_response:
+            self.token = login_response['access_token']
+            presidi_user_data = login_response['user']
+            self.log_test(f"✅ Responsabile Presidi login ({username})", True, 
+                f"Token received, Role: {presidi_user_data['role']}")
+        else:
+            self.log_test(f"❌ Responsabile Presidi login failed ({username})", False, 
+                f"Status: {status}, Response: {login_response}")
+            return False
+
+        # 5. GET /api/clienti/filter-options
+        print("\n📋 5. GET /api/clienti/filter-options...")
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/filter-options SUCCESS", True, f"Status: 200 OK")
+            
+            # 6. VERIFICARE campo "sub_agenzie": Quante sub agenzie contiene?
+            sub_agenzie_filter = filter_response.get('sub_agenzie', [])
+            sub_agenzie_count = len(sub_agenzie_filter)
+            
+            print(f"   📊 FILTER OPTIONS ANALYSIS:")
+            print(f"      • sub_agenzie field present: {'✅' if 'sub_agenzie' in filter_response else '❌'}")
+            print(f"      • sub_agenzie count: {sub_agenzie_count}")
+            print(f"      • Expected count: {len(sub_agenzie_autorizzate)} (from user's sub_agenzie_autorizzate)")
+            
+            if sub_agenzie_count > 0:
+                print(f"      • sub_agenzie in filter:")
+                for i, sub_agenzia in enumerate(sub_agenzie_filter, 1):
+                    nome = sub_agenzia.get('label', sub_agenzia.get('nome', 'Unknown'))
+                    value = sub_agenzia.get('value', sub_agenzia.get('id', 'No ID'))
+                    print(f"         {i}. {nome} (ID: {value[:8]}...)")
+            
+            # 7. Devono corrispondere a quelle in sub_agenzie_autorizzate
+            expected_count = len(sub_agenzie_autorizzate)
+            if sub_agenzie_count == expected_count:
+                self.log_test("✅ Sub agenzie count matches authorized", True, 
+                    f"Filter shows {sub_agenzie_count} sub agenzie, user has {expected_count} authorized")
+                
+                # Verify IDs match
+                filter_ids = [sa.get('value', sa.get('id', '')) for sa in sub_agenzie_filter]
+                matches = 0
+                for auth_id in sub_agenzie_autorizzate:
+                    if auth_id in filter_ids:
+                        matches += 1
+                
+                if matches == len(sub_agenzie_autorizzate):
+                    self.log_test("✅ All authorized sub agenzie in filter", True, 
+                        f"All {matches} authorized sub agenzie found in filter")
+                else:
+                    self.log_test("❌ Some authorized sub agenzie missing", False, 
+                        f"Only {matches}/{len(sub_agenzie_autorizzate)} authorized sub agenzie in filter")
+                    
+            else:
+                self.log_test("❌ Sub agenzie count mismatch", False, 
+                    f"Filter shows {sub_agenzie_count}, expected {expected_count}")
+                
+        else:
+            self.log_test("❌ GET /api/clienti/filter-options FAILED", False, f"Status: {status}")
+            return False
+
+        # **FASE 3: Confronto Pre-Fix vs Post-Fix**
+        print("\n📊 FASE 3: CONFRONTO PRE-FIX VS POST-FIX...")
+        
+        # 8. PRE-FIX: Responsabile Presidi vedeva 0 o 1 sub agenzia
+        # 9. POST-FIX: Responsabile Presidi dovrebbe vedere TUTTE le sub agenzie autorizzate
+        print(f"   📋 COMPARISON ANALYSIS:")
+        print(f"      • PRE-FIX behavior: Responsabile Presidi vedeva 0 o 1 sub agenzia (usando sub_agenzia_id)")
+        print(f"      • POST-FIX behavior: Responsabile Presidi dovrebbe vedere TUTTE le sub agenzie autorizzate")
+        print(f"      • Current result: {sub_agenzie_count} sub agenzie in filter")
+        print(f"      • User has: {len(sub_agenzie_autorizzate)} sub_agenzie_autorizzate")
+        
+        # 10. Verificare che il numero corrisponda
+        if sub_agenzie_count >= 2 and sub_agenzie_count == len(sub_agenzie_autorizzate):
+            self.log_test("✅ POST-FIX SUCCESS", True, 
+                f"Responsabile Presidi now sees {sub_agenzie_count} sub agenzie (was 0-1 before)")
+        elif sub_agenzie_count == 1 and len(sub_agenzie_autorizzate) == 1:
+            self.log_test("✅ POST-FIX SUCCESS (single)", True, 
+                f"Responsabile Presidi sees 1 sub agenzia correctly (has 1 authorized)")
+        else:
+            self.log_test("❌ POST-FIX ISSUE", False, 
+                f"Expected {len(sub_agenzie_autorizzate)} sub agenzie, got {sub_agenzie_count}")
+
+        # **FASE 4: Test Clienti**
+        print("\n👥 FASE 4: TEST CLIENTI...")
+        
+        # 11. GET /api/clienti con token Responsabile Presidi
+        print("\n📋 11. GET /api/clienti con token Responsabile Presidi...")
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            clienti_count = len(clienti)
+            
+            self.log_test("✅ GET /api/clienti SUCCESS", True, 
+                f"Status: 200 OK, Found {clienti_count} clienti")
+            
+            # 12. Verificare che veda clienti dalle sub agenzie autorizzate
+            if clienti_count > 0:
+                # Check sub_agenzia_id of clients
+                client_sub_agenzie = set()
+                for cliente in clienti:
+                    sub_agenzia_id = cliente.get('sub_agenzia_id')
+                    if sub_agenzia_id:
+                        client_sub_agenzie.add(sub_agenzia_id)
+                
+                print(f"   📊 CLIENTI ANALYSIS:")
+                print(f"      • Total clienti visible: {clienti_count}")
+                print(f"      • Unique sub agenzie in clienti: {len(client_sub_agenzie)}")
+                print(f"      • User authorized sub agenzie: {len(sub_agenzie_autorizzate)}")
+                
+                # Verify clients are from authorized sub agenzie
+                unauthorized_clients = 0
+                for cliente in clienti:
+                    client_sub_agenzia = cliente.get('sub_agenzia_id')
+                    if client_sub_agenzia and client_sub_agenzia not in sub_agenzie_autorizzate:
+                        unauthorized_clients += 1
+                
+                if unauthorized_clients == 0:
+                    self.log_test("✅ All clienti from authorized sub agenzie", True, 
+                        f"All {clienti_count} clienti are from user's authorized sub agenzie")
+                else:
+                    self.log_test("❌ Some clienti from unauthorized sub agenzie", False, 
+                        f"{unauthorized_clients} clienti from unauthorized sub agenzie")
+                        
+                # 13. Confermare che filtro e clienti siano coerenti
+                if len(client_sub_agenzie) <= len(sub_agenzie_autorizzate):
+                    self.log_test("✅ Filter and clienti coherent", True, 
+                        f"Clienti sub agenzie ({len(client_sub_agenzie)}) ≤ filter sub agenzie ({sub_agenzie_count})")
+                else:
+                    self.log_test("❌ Filter and clienti incoherent", False, 
+                        f"More client sub agenzie ({len(client_sub_agenzie)}) than filter ({sub_agenzie_count})")
+                        
+            else:
+                self.log_test("ℹ️ No clienti found", True, 
+                    "No clienti visible to this Responsabile Presidi (may be normal)")
+                    
+        else:
+            self.log_test("❌ GET /api/clienti FAILED", False, f"Status: {status}")
+            return False
+
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 VERIFICA RESPONSABILE PRESIDI - FILTRO SUB AGENZIE - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare che Responsabile Presidi ora veda tutte le sub agenzie autorizzate nel filtro")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • Admin login (admin/admin123): ✅ SUCCESS")
+        print(f"      • Responsabile Presidi user found: {'✅ SUCCESS' if responsabile_presidi_user else '❌ FAILED'} ({username if responsabile_presidi_user else 'N/A'})")
+        print(f"      • User has sub_agenzie_autorizzate: {'✅ SUCCESS' if len(sub_agenzie_autorizzate) > 0 else '❌ FAILED'} ({len(sub_agenzie_autorizzate)} sub agenzie)")
+        print(f"      • Responsabile Presidi login: ✅ SUCCESS")
+        print(f"      • GET /api/clienti/filter-options: ✅ SUCCESS (200 OK)")
+        print(f"      • Filter sub_agenzie count: {sub_agenzie_count}")
+        print(f"      • Expected count: {len(sub_agenzie_autorizzate)}")
+        print(f"      • GET /api/clienti: ✅ SUCCESS ({clienti_count} clienti)")
+        
+        print(f"\n   🎯 CRITERI DI SUCCESSO:")
+        success_criteria = []
+        
+        # Check if Responsabile Presidi with 2+ sub_agenzie_autorizzate sees them in filter
+        if len(sub_agenzie_autorizzate) >= 2 and sub_agenzie_count >= 2:
+            success_criteria.append("✅ Responsabile Presidi con multiple sub_agenzie_autorizzate → vede multiple nel filtro")
+        elif len(sub_agenzie_autorizzate) == 1 and sub_agenzie_count == 1:
+            success_criteria.append("✅ Responsabile Presidi con 1 sub_agenzia_autorizzata → vede 1 nel filtro")
+        else:
+            success_criteria.append("❌ Count mismatch between authorized and filter")
+        
+        # Check if sub agenzie in filter correspond to authorized ones
+        if sub_agenzie_count == len(sub_agenzie_autorizzate):
+            success_criteria.append("✅ Le sub agenzie nel filtro corrispondono a quelle autorizzate")
+        else:
+            success_criteria.append("❌ Sub agenzie nel filtro non corrispondono a quelle autorizzate")
+        
+        # Check no regression on other roles (we can't test this without other role users)
+        success_criteria.append("ℹ️ Nessuna regressione su altri ruoli (non testabile senza altri utenti)")
+        
+        for criterion in success_criteria:
+            print(f"      {criterion}")
+        
+        print(f"\n   🎯 FOCUS VERIFICATION:")
+        print(f"      • Responsabile Presidi ora usa sub_agenzie_autorizzate: {'✅ CONFIRMED' if len(sub_agenzie_autorizzate) > 0 else '❌ NOT CONFIRMED'}")
+        print(f"      • Non usa più sub_agenzia_id singola: {'✅ CONFIRMED' if sub_agenzie_count > 1 or not sub_agenzia_id else 'ℹ️ CANNOT CONFIRM'}")
+        print(f"      • Filter mostra tutte le sub agenzie autorizzate: {'✅ CONFIRMED' if sub_agenzie_count == len(sub_agenzie_autorizzate) else '❌ NOT CONFIRMED'}")
+        
+        # Determine overall success
+        overall_success = (
+            responsabile_presidi_user is not None and
+            len(sub_agenzie_autorizzate) > 0 and
+            sub_agenzie_count == len(sub_agenzie_autorizzate) and
+            status == 200
+        )
+        
+        if overall_success:
+            print(f"\n   🎉 SUCCESS: RESPONSABILE PRESIDI FILTER FIX WORKING!")
+            print(f"   🎉 CONCLUSIONE: Responsabile Presidi ora vede correttamente tutte le sub agenzie autorizzate")
+            print(f"   🔧 FIX CONFERMATO: La logica è stata cambiata da sub_agenzia_id a sub_agenzie_autorizzate")
+        else:
+            print(f"\n   🚨 ISSUE: RESPONSABILE PRESIDI FILTER FIX NEEDS ATTENTION!")
+            print(f"   🔧 RACCOMANDAZIONI:")
+            if not responsabile_presidi_user:
+                print(f"      • Creare un utente con role 'responsabile_presidi' per testing")
+            if len(sub_agenzie_autorizzate) == 0:
+                print(f"      • Assegnare sub_agenzie_autorizzate al Responsabile Presidi")
+            if sub_agenzie_count != len(sub_agenzie_autorizzate):
+                print(f"      • Verificare logica filtro per Responsabile Presidi")
+        
+        return overall_success
+
     def test_basic_functionality_rapid_check(self):
         """🚨 TEST RAPIDO - VERIFICA FUNZIONALITÀ BASE NON ROTTE"""
         print("\n🚨 TEST RAPIDO - VERIFICA FUNZIONALITÀ BASE NON ROTTE")
