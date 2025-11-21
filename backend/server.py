@@ -11822,14 +11822,14 @@ async def get_pivot_analytics(
                 name = "Non specificato"
             enriched_offerta[name] = count
         
-        enriched_creator = {}
-        for creator_id, count in creator_counts.items():
-            if creator_id != "Non specificato":
-                user = await db.users.find_one({"id": creator_id})
-                name = user.get("username") if user else creator_id
+        enriched_assigned = {}
+        for assigned_id, count in assigned_counts.items():
+            if assigned_id != "Non specificato":
+                user = await db.users.find_one({"id": assigned_id})
+                name = user.get("username") if user else assigned_id
             else:
                 name = "Non specificato"
-            enriched_creator[name] = count
+            enriched_assigned[name] = count
         
         # Calculate percentages
         def calc_percentages(counts_dict):
