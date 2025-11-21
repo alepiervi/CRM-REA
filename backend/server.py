@@ -11659,22 +11659,58 @@ async def get_pivot_analytics(
         # Build query
         query = {}
         
-        # Role-based access control
+        # Role-based access control - Filter by Sub Agenzia, Commessa AND Servizio autorizzati
         if current_user.role == UserRole.ADMIN:
             pass
-        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA, UserRole.AREA_MANAGER]:
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
             if current_user.commesse_autorizzate:
                 query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
             else:
                 query["_id"] = {"$exists": False}
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
         elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
-            if current_user.commesse_autorizzate and current_user.sub_agenzia_id:
-                query["$and"] = [
-                    {"commessa_id": {"$in": current_user.commesse_autorizzate}},
-                    {"sub_agenzia_id": current_user.sub_agenzia_id}
-                ]
+            if current_user.sub_agenzia_id:
+                query["sub_agenzia_id"] = current_user.sub_agenzia_id
             else:
                 query["_id"] = {"$exists": False}
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+        elif current_user.role == UserRole.AREA_MANAGER:
+            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+                query["sub_agenzia_id"] = {"$in": current_user.sub_agenzie_autorizzate}
+            else:
+                query["_id"] = {"$exists": False}
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+        elif current_user.role == UserRole.RESPONSABILE_PRESIDI:
+            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+                query["sub_agenzia_id"] = {"$in": current_user.sub_agenzie_autorizzate}
+            elif current_user.sub_agenzia_id:
+                query["sub_agenzia_id"] = current_user.sub_agenzia_id
+            else:
+                query["_id"] = {"$exists": False}
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI]:
+            query["$or"] = [
+                {"created_by": current_user.id},
+                {"assigned_to": current_user.id}
+            ]
+            if current_user.sub_agenzia_id:
+                query["sub_agenzia_id"] = current_user.sub_agenzia_id
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            if current_user.servizi_autorizzati:
+                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+        else:
+            query["_id"] = {"$exists": False}
         
         # Apply filters
         if sub_agenzia_ids:
