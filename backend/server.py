@@ -11954,15 +11954,15 @@ async def get_sub_agenzie_analytics(
             query = base_query.copy()
             query["sub_agenzia_id"] = sa_id
             
-            # Apply role-based filters
+            # Apply role-based filters - Sub Agenzia, Commessa AND Servizio
             if current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA, UserRole.AREA_MANAGER]:
                 if current_user.commesse_autorizzate:
                     query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
-                # Filter by authorized services
                 if current_user.servizi_autorizzati:
                     query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
             elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
-                # Filter by authorized services
+                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                    query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
                 if current_user.servizi_autorizzati:
                     query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
             
