@@ -16155,6 +16155,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false); // NEW: For manual refresh animation
   const [autoRefresh, setAutoRefresh] = useState(true); // NEW: Auto-refresh toggle
+  const [lastUpdated, setLastUpdated] = useState(null); // NEW: Last refresh timestamp
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
