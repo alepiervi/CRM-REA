@@ -16221,6 +16221,18 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     }
   }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy, clientiFilterServizi, clientiFilterSegmento, clientiFilterCommesse]);
 
+  // Auto-refresh clienti every 30 seconds
+  useEffect(() => {
+    if (!autoRefresh) return; // Only auto-refresh if enabled
+
+    const intervalId = setInterval(() => {
+      fetchClienti(true); // true indica che è un refresh automatico
+    }, 30000); // 30 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy, clientiFilterServizi, clientiFilterSegmento, clientiFilterCommesse, autoRefresh]);
+
   const fetchCommesse = async () => {
     try {
       console.log("🔄 ClientiManagement: Caricando commesse...");
