@@ -11884,9 +11884,9 @@ async def get_pivot_analytics(
                     "counts": enriched_offerta,
                     "percentages": calc_percentages(enriched_offerta)
                 },
-                "created_by": {
-                    "counts": enriched_creator,
-                    "percentages": calc_percentages(enriched_creator)
+                "assigned_to": {
+                    "counts": enriched_assigned,
+                    "percentages": calc_percentages(enriched_assigned)
                 },
                 "convergenza": {
                     "counts": convergenza_counts,
