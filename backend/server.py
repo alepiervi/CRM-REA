@@ -11788,11 +11788,12 @@ async def get_pivot_analytics(
             offerta_id = cliente.get("offerta_id", "Non specificato")
             offerta_counts[offerta_id] = offerta_counts.get(offerta_id, 0) + 1
         
-        # Count by creator
-        creator_counts = {}
+        # Count by assigned user (not creator)
+        assigned_counts = {}
         for cliente in clienti:
-            creator_id = cliente.get("created_by", "Non specificato")
-            creator_counts[creator_id] = creator_counts.get(creator_id, 0) + 1
+            # Use assigned_to if present, otherwise fall back to created_by
+            assigned_id = cliente.get("assigned_to") or cliente.get("created_by", "Non specificato")
+            assigned_counts[assigned_id] = assigned_counts.get(assigned_id, 0) + 1
         
         # Count convergenza
         convergenza_counts = {"Si": 0, "No": 0}
