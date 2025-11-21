@@ -2694,6 +2694,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       
       const response = await axios.get(`${API}/leads?${params}`);
       setLeads(response.data);
+      setLastUpdated(new Date()); // Update timestamp after successful fetch
     } catch (error) {
       console.error("Error fetching leads:", error);
       toast({
