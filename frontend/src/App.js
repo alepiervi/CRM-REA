@@ -16712,6 +16712,11 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Gestione Clienti</h2>
         <div className="flex space-x-3 items-center">
+          {lastUpdated && (
+            <div className="text-sm text-gray-500">
+              Ultimo aggiornamento: {lastUpdated.toLocaleTimeString('it-IT')}
+            </div>
+          )}
           {isRefreshing && (
             <span className="text-sm text-blue-600 animate-pulse">
               Aggiornamento in corso...
