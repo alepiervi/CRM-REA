@@ -16281,9 +16281,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     }
   };
 
-  const fetchClienti = async () => {
+  const fetchClienti = async (isAutoRefresh = false) => {
     try {
-      setLoading(true);
+      if (!isAutoRefresh) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       const params = new URLSearchParams();
       if (selectedCommessaLocal) {
         params.append('commessa_id', selectedCommessaLocal);
@@ -16324,8 +16328,16 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      if (!isAutoRefresh) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
+  };
+
+  const handleManualRefresh = () => {
+    fetchClienti(false); // Manual refresh
   };
 
   // Filter clients based on search query and type
