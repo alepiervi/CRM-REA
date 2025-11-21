@@ -2936,6 +2936,11 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-slate-800">Gestione Lead</h2>
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+          {lastUpdated && (
+            <div className="text-sm text-gray-500">
+              Ultimo aggiornamento: {lastUpdated.toLocaleTimeString('it-IT')}
+            </div>
+          )}
           {isRefreshing && (
             <span className="text-sm text-blue-600 animate-pulse">
               Aggiornamento in corso...
