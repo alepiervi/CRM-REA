@@ -16702,7 +16702,37 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Gestione Clienti</h2>
-        <div className="flex space-x-3">
+        <div className="flex space-x-3 items-center">
+          {isRefreshing && (
+            <span className="text-sm text-blue-600 animate-pulse">
+              Aggiornamento in corso...
+            </span>
+          )}
+          
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="auto-refresh-clienti"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="auto-refresh-clienti" className="text-sm text-gray-700">
+              Auto refresh (30s)
+            </label>
+          </div>
+          
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleManualRefresh}
+            disabled={loading || isRefreshing}
+            className="flex items-center space-x-2"
+          >
+            <Clock className={`w-4 h-4 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
+            <span>Aggiorna ora</span>
+          </Button>
+          
           <Select 
             value={selectedCommessaLocal || "all"} 
             onValueChange={(value) => setSelectedCommessaLocal(value === "all" ? null : value)}
