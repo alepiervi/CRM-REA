@@ -12026,7 +12026,7 @@ async def get_sub_agenzie_analytics(
                 "total_clienti": total,
                 "status_breakdown": status_breakdown,
                 "tipologia_breakdown": tipologia_breakdown,
-                "top_creators": top_creators,
+                "top_assigned": top_assigned,
                 "timeline": timeline
             })
         
