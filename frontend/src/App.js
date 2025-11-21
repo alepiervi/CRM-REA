@@ -2638,6 +2638,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false); // NEW: For manual refresh animation
   const [autoRefresh, setAutoRefresh] = useState(true); // NEW: Auto-refresh toggle
+  const [lastUpdated, setLastUpdated] = useState(null); // NEW: Last refresh timestamp
   const [selectedLead, setSelectedLead] = useState(null);
   const [isEditingLead, setIsEditingLead] = useState(false);
   const [leadEditData, setLeadEditData] = useState({});
