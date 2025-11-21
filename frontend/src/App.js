@@ -16328,6 +16328,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       const response = await axios.get(`${API}/clienti?${params}`);
       setAllClienti(response.data); // Store all clients
       setClienti(response.data); // Display all initially
+      setLastUpdated(new Date()); // Update timestamp after successful fetch
     } catch (error) {
       console.error("Error fetching clienti:", error);
       toast({
