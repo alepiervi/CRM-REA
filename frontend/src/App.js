@@ -2933,7 +2933,37 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-slate-800">Gestione Lead</h2>
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
+          {isRefreshing && (
+            <span className="text-sm text-blue-600 animate-pulse">
+              Aggiornamento in corso...
+            </span>
+          )}
+          
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="auto-refresh-leads"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="auto-refresh-leads" className="text-sm text-gray-700">
+              Auto refresh (30s)
+            </label>
+          </div>
+          
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleManualRefresh}
+            disabled={loading || isRefreshing}
+            className="flex items-center space-x-2"
+          >
+            <Clock className={`w-4 h-4 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
+            <span>Aggiorna ora</span>
+          </Button>
+          
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <Button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700">
               <Download className="w-4 h-4 mr-2" />
@@ -2944,10 +2974,6 @@ const LeadsManagement = ({ selectedUnit, units }) => {
               Nuovo Lead  
             </Button>
           </div>
-          <Button onClick={fetchLeads} variant="outline" size="sm">
-            <Search className="w-4 h-4 mr-2" />
-            Aggiorna
-          </Button>
         </div>
       </div>
 
