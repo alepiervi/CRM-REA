@@ -11735,7 +11735,8 @@ async def get_pivot_analytics(
         
         if created_by_ids:
             ids = [id.strip() for id in created_by_ids.split(",")]
-            query["created_by"] = {"$in": ids}
+            # Use assigned_to instead of created_by to show the assigned user
+            query["assigned_to"] = {"$in": ids}
         
         if convergenza is not None:
             query["convergenza"] = convergenza
