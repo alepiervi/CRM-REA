@@ -11983,19 +11983,20 @@ async def get_sub_agenzie_analytics(
                 tipologia = cliente.get("tipologia_contratto", "Non specificato")
                 tipologia_breakdown[tipologia] = tipologia_breakdown.get(tipologia, 0) + 1
             
-            # Top creators
-            creator_counts = {}
+            # Top assigned users (not creators)
+            assigned_counts = {}
             for cliente in clienti:
-                creator_id = cliente.get("created_by")
-                if creator_id:
-                    creator_counts[creator_id] = creator_counts.get(creator_id, 0) + 1
+                # Use assigned_to if present, otherwise fall back to created_by
+                assigned_id = cliente.get("assigned_to") or cliente.get("created_by")
+                if assigned_id:
+                    assigned_counts[assigned_id] = assigned_counts.get(assigned_id, 0) + 1
             
-            # Enrich creator names
-            top_creators = []
-            for creator_id, count in sorted(creator_counts.items(), key=lambda x: x[1], reverse=True)[:5]:
-                user = await db.users.find_one({"id": creator_id})
-                top_creators.append({
-                    "name": user.get("username") if user else creator_id,
+            # Enrich assigned user names
+            top_assigned = []
+            for assigned_id, count in sorted(assigned_counts.items(), key=lambda x: x[1], reverse=True)[:5]:
+                user = await db.users.find_one({"id": assigned_id})
+                top_assigned.append({
+                    "name": user.get("username") if user else assigned_id,
                     "count": count
                 })
             
