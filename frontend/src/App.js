@@ -2636,6 +2636,8 @@ const Dashboard = () => {
 const LeadsManagement = ({ selectedUnit, units }) => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false); // NEW: For manual refresh animation
+  const [autoRefresh, setAutoRefresh] = useState(true); // NEW: Auto-refresh toggle
   const [selectedLead, setSelectedLead] = useState(null);
   const [isEditingLead, setIsEditingLead] = useState(false);
   const [leadEditData, setLeadEditData] = useState({});
