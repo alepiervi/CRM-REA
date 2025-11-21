@@ -2666,17 +2666,23 @@ const LeadsManagement = ({ selectedUnit, units }) => {
 
   // Auto-refresh leads every 30 seconds to show new leads from Zapier
   useEffect(() => {
+    if (!autoRefresh) return; // Only auto-refresh if enabled
+
     const intervalId = setInterval(() => {
-      fetchLeads();
+      fetchLeads(true); // true indica che è un refresh automatico
     }, 30000); // 30 seconds
 
     // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
-  }, [selectedUnit, filters]); // Re-create interval when filters change
+  }, [selectedUnit, filters, autoRefresh]); // Re-create interval when filters or autoRefresh change
 
-  const fetchLeads = async () => {
+  const fetchLeads = async (isAutoRefresh = false) => {
     try {
-      setLoading(true);
+      if (!isAutoRefresh) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
         if (value) params.append(key, value);
@@ -2695,8 +2701,16 @@ const LeadsManagement = ({ selectedUnit, units }) => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      if (!isAutoRefresh) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
+  };
+
+  const handleManualRefresh = () => {
+    fetchLeads(false); // Manual refresh
   };
 
   const fetchCustomFields = async () => {
