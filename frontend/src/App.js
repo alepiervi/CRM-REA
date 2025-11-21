@@ -2662,6 +2662,16 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     fetchUsers(); // NEW: Fetch users for agent names
   }, [selectedUnit, filters]);
 
+  // Auto-refresh leads every 30 seconds to show new leads from Zapier
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchLeads();
+    }, 30000); // 30 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [selectedUnit, filters]); // Re-create interval when filters change
+
   const fetchLeads = async () => {
     try {
       setLoading(true);
