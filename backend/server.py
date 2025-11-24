@@ -17191,6 +17191,15 @@ async def get_commesse_by_subagenzia(
             # Admin sees all commesse in sub agenzia
             authorized_commesse_ids = sub_agenzia_commesse_ids
             logging.info(f"🔓 CASCADE: Admin access - showing all sub agenzia commesse")
+        elif current_user.role in [UserRole.AREA_MANAGER, UserRole.RESPONSABILE_PRESIDI]:
+            # Area Manager & Responsabile Presidi: if they have commesse_autorizzate, filter by those
+            # Otherwise, see all commesse in their authorized sub agenzia
+            if user_commesse_ids:
+                authorized_commesse_ids = list(set(sub_agenzia_commesse_ids) & set(user_commesse_ids))
+                logging.info(f"🌍 CASCADE: {current_user.role} filtered commesse (intersection): {authorized_commesse_ids}")
+            else:
+                authorized_commesse_ids = sub_agenzia_commesse_ids
+                logging.info(f"🌍 CASCADE: {current_user.role} no commesse filter - showing all sub agenzia commesse")
         else:
             # Other users see only commesse they are authorized for within this sub agenzia
             authorized_commesse_ids = list(set(sub_agenzia_commesse_ids) & set(user_commesse_ids))
