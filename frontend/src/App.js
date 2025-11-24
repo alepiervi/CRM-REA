@@ -4164,7 +4164,7 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
 const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
   const [formData, setFormData] = useState({
     nome: unit.nome,
-    commessa_id: unit.commessa_id,
+    commesse_autorizzate: unit.commesse_autorizzate || [],
     campagne_autorizzate: unit.campagne_autorizzate || [],
     is_active: unit.is_active,
   });
