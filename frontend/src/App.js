@@ -17707,6 +17707,8 @@ const CreateCommessaModal = ({ isOpen, onClose, onSubmit }) => {
 };
 
 const ViewCommessaModal = ({ isOpen, onClose, commessa }) => {
+  const { toast } = useToast();
+  
   if (!isOpen || !commessa) return null;
 
   const copyToClipboard = (text) => {
