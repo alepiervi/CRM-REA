@@ -1713,9 +1713,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Store Assistant Tipologie Filter Fix - Role-Based Authorization Logic"
-  stuck_tasks:
-    - "Store Assistant Tipologie Filter Fix - Role-Based Authorization Logic"
+    - "Area Manager CASCADE Sub Agenzie - Dropdown Empty Debug"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
