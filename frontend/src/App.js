@@ -17769,7 +17769,37 @@ const ViewCommessaModal = ({ isOpen, onClose, commessa }) => {
 
           {/* Webhook Configuration */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Integrazione Webhook</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Integrazione Webhook / Zapier</h3>
+            
+            {/* ID Commessa */}
+            <div>
+              <Label className="text-sm font-medium text-gray-600">ID Commessa (per configurazione Zapier)</Label>
+              <div className="mt-1 flex items-center gap-2">
+                <Input 
+                  value={commessa.id || 'N/A'} 
+                  readOnly 
+                  className="flex-1 bg-blue-50 font-mono text-sm"
+                />
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => {
+                    copyToClipboard(commessa.id);
+                    toast({
+                      title: "Copiato!",
+                      description: "ID commessa copiato negli appunti",
+                    });
+                  }}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                💡 Usa questo ID per configurare l'integrazione Zapier
+              </p>
+            </div>
+
+            {/* URL Webhook */}
             <div>
               <Label className="text-sm font-medium text-gray-600">URL Webhook Zapier</Label>
               <div className="mt-1 flex items-center gap-2">
@@ -17782,7 +17812,13 @@ const ViewCommessaModal = ({ isOpen, onClose, commessa }) => {
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    onClick={() => copyToClipboard(commessa.webhook_zapier)}
+                    onClick={() => {
+                      copyToClipboard(commessa.webhook_zapier);
+                      toast({
+                        title: "Copiato!",
+                        description: "URL webhook copiato negli appunti",
+                      });
+                    }}
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
