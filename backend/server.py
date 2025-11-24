@@ -17126,9 +17126,9 @@ async def get_cascade_sub_agenzie(
                 "id": {"$in": user_sub_agenzie},
                 "is_active": True
             }
-            # Filter by authorized services
-            if current_user.servizi_autorizzati:
-                query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
+            # NO servizi_autorizzati filter for Area Manager & Responsabile Presidi
+            # They should see ALL their authorized sub agenzie regardless of services
+            # The filtering will happen in subsequent cascade steps (commesse, servizi)
             
             sub_agenzie_docs = await db.sub_agenzie.find(query).to_list(length=None)
             
