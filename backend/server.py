@@ -4411,24 +4411,32 @@ async def create_unit(unit: UnitCreate, current_user: User = Depends(get_current
         raise HTTPException(status_code=403, detail="Only admin can create units")
     
     try:
-        # Check if commessa exists
-        logging.info(f"Checking if commessa {unit.commessa_id} exists...")
-        commessa = await db["commesse"].find_one({"id": unit.commessa_id})
-        if not commessa:
-            logging.error(f"Commessa {unit.commessa_id} NOT FOUND")
-            raise HTTPException(status_code=404, detail="Commessa not found")
-        
-        logging.info(f"Commessa found: {commessa.get('nome', 'N/A')}")
-        
-        # Create unit with commesse_autorizzate
-        # Include primary commessa in commesse_autorizzate for consistency
+        # Multi-commesse support: validate all commesse exist
         commesse_autorizzate = unit.commesse_autorizzate.copy() if unit.commesse_autorizzate else []
-        if unit.commessa_id not in commesse_autorizzate:
-            commesse_autorizzate.append(unit.commessa_id)
         
+        # If legacy commessa_id is provided, add it to commesse_autorizzate
+        if unit.commessa_id:
+            if unit.commessa_id not in commesse_autorizzate:
+                commesse_autorizzate.append(unit.commessa_id)
+        
+        # Validate that at least one commessa is provided
+        if not commesse_autorizzate:
+            logging.error("No commesse provided - at least one is required")
+            raise HTTPException(status_code=422, detail="At least one commessa is required")
+        
+        # Check that all commesse exist
+        logging.info(f"Validating {len(commesse_autorizzate)} commesse...")
+        for commessa_id in commesse_autorizzate:
+            commessa = await db["commesse"].find_one({"id": commessa_id})
+            if not commessa:
+                logging.error(f"Commessa {commessa_id} NOT FOUND")
+                raise HTTPException(status_code=404, detail=f"Commessa {commessa_id} not found")
+            logging.info(f"✓ Commessa found: {commessa.get('nome', 'N/A')}")
+        
+        # Create unit with multi-commesse support
         unit_obj = Unit(
             nome=unit.nome,
-            commessa_id=unit.commessa_id,
+            commessa_id=commesse_autorizzate[0] if commesse_autorizzate else None,  # First commessa for legacy compatibility
             commesse_autorizzate=commesse_autorizzate,
             campagne_autorizzate=unit.campagne_autorizzate
         )
