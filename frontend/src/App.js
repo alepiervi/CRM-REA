@@ -4081,21 +4081,40 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
             </div>
 
             <div>
-              <Label htmlFor="commessa_id">Commessa *</Label>
-              <select
-                id="commessa_id"
-                className="w-full border rounded-md p-2"
-                value={formData.commessa_id}
-                onChange={(e) => setFormData({ ...formData, commessa_id: e.target.value })}
-                required
-              >
-                <option value="">Seleziona commessa</option>
-                {commesse.map((commessa) => (
-                  <option key={commessa.id} value={commessa.id}>
-                    {commessa.nome}
-                  </option>
-                ))}
-              </select>
+              <Label>Commesse Autorizzate *</Label>
+              <div className="space-y-2">
+                <div className="max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
+                  {commesse.map((commessa) => (
+                    <div key={commessa.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`commessa-${commessa.id}`}
+                        checked={formData.commesse_autorizzate.includes(commessa.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              commesse_autorizzate: [...formData.commesse_autorizzate, commessa.id]
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              commesse_autorizzate: formData.commesse_autorizzate.filter(id => id !== commessa.id)
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor={`commessa-${commessa.id}`} className="text-sm cursor-pointer">
+                        {commessa.nome}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Selezionate: {formData.commesse_autorizzate.length} commess{formData.commesse_autorizzate.length === 1 ? 'a' : 'e'}
+                </p>
+              </div>
             </div>
 
             <div>
@@ -4194,21 +4213,40 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
             </div>
 
             <div>
-              <Label htmlFor="commessa_id">Commessa *</Label>
-              <select
-                id="commessa_id"
-                className="w-full border rounded-md p-2"
-                value={formData.commessa_id}
-                onChange={(e) => setFormData({ ...formData, commessa_id: e.target.value })}
-                required
-              >
-                <option value="">Seleziona commessa</option>
-                {commesse.map((commessa) => (
-                  <option key={commessa.id} value={commessa.id}>
-                    {commessa.nome}
-                  </option>
-                ))}
-              </select>
+              <Label>Commesse Autorizzate *</Label>
+              <div className="space-y-2">
+                <div className="max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
+                  {commesse.map((commessa) => (
+                    <div key={commessa.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`commessa-${commessa.id}`}
+                        checked={formData.commesse_autorizzate.includes(commessa.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              commesse_autorizzate: [...formData.commesse_autorizzate, commessa.id]
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              commesse_autorizzate: formData.commesse_autorizzate.filter(id => id !== commessa.id)
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor={`commessa-${commessa.id}`} className="text-sm cursor-pointer">
+                        {commessa.nome}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Selezionate: {formData.commesse_autorizzate.length} commess{formData.commesse_autorizzate.length === 1 ? 'a' : 'e'}
+                </p>
+              </div>
             </div>
 
             <div>
