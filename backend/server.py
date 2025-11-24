@@ -17259,6 +17259,25 @@ async def get_servizi_autorizzati_by_commessa(
                 "commessa_id": commessa_id,
                 "is_active": True
             }).to_list(length=None)
+        elif current_user.role in ["area_manager", "responsabile_presidi"]:
+            # Area Manager & Responsabile Presidi: if they have servizi_autorizzati, filter by those
+            # Otherwise, see all servizi in the commessa
+            user_servizi_autorizzati = current_user.servizi_autorizzati or []
+            logging.info(f"🌍 CASCADE: {current_user.role} servizi_autorizzati: {user_servizi_autorizzati}")
+            
+            if user_servizi_autorizzati:
+                servizi_docs = await db.servizi.find({
+                    "commessa_id": commessa_id,
+                    "id": {"$in": user_servizi_autorizzati},
+                    "is_active": True
+                }).to_list(length=None)
+            else:
+                # No filter - see all servizi in commessa
+                logging.info(f"🌍 CASCADE: {current_user.role} no servizi filter - showing all servizi")
+                servizi_docs = await db.servizi.find({
+                    "commessa_id": commessa_id,
+                    "is_active": True
+                }).to_list(length=None)
         else:
             # Non-admin users: filter by servizi_autorizzati
             user_servizi_autorizzati = current_user.servizi_autorizzati or []
