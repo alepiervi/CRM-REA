@@ -4033,7 +4033,7 @@ const UnitsManagement = () => {
 const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
   const [formData, setFormData] = useState({
     nome: "",
-    commessa_id: "",
+    commesse_autorizzate: [], // Changed from commessa_id to commesse_autorizzate (array)
     campagne_autorizzate: [],
   });
   const [campagnaInput, setCampagnaInput] = useState("");
