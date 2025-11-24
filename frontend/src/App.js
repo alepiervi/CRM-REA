@@ -20038,8 +20038,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               
-              {/* SUB AGENZIA SELECTION (for Responsabili/Backoffice/Agenti) */}
-              {(user?.role === 'responsabile_commessa' || user?.role === 'backoffice_commessa' || user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'agente_specializzato' || user?.role === 'operatore' || user?.role === 'responsabile_store' || user?.role === 'responsabile_presidi' || user?.role === 'store_assist' || user?.role === 'promoter_presidi' || user?.role === 'admin') && (
+              {/* SUB AGENZIA SELECTION (for Responsabili/Backoffice/Agenti/Area Manager) */}
+              {(user?.role === 'responsabile_commessa' || user?.role === 'backoffice_commessa' || user?.role === 'responsabile_sub_agenzia' || user?.role === 'backoffice_sub_agenzia' || user?.role === 'agente_specializzato' || user?.role === 'operatore' || user?.role === 'responsabile_store' || user?.role === 'responsabile_presidi' || user?.role === 'store_assist' || user?.role === 'promoter_presidi' || user?.role === 'area_manager' || user?.role === 'admin') && (
                 <div className="space-y-2">
                   <Label className="text-base font-semibold text-gray-700">🏢 Sub Agenzia</Label>
                   <select 
