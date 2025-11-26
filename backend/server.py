@@ -11177,30 +11177,37 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             if current_user.sub_agenzia_id:
                 # Agenti, Operatori, Store e Promoter Presidi see only their own sub agenzia
                 sub_agenzie_query["id"] = current_user.sub_agenzia_id
-                # Filter by authorized services (if applicable)
+                # Filter by authorized commesse AND services
+                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                    sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
                 if current_user.servizi_autorizzati:
                     sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}
         elif current_user.role == UserRole.RESPONSABILE_PRESIDI:
-            # Responsabile Presidi sees all their assigned sub agenzie (like Area Manager)
+            # Responsabile Presidi sees all their assigned sub agenzie
             if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
                 sub_agenzie_query["id"] = {"$in": current_user.sub_agenzie_autorizzate}
-                # Filter by authorized services
+                # Filter by authorized commesse AND services
+                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                    sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
                 if current_user.servizi_autorizzati:
                     sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             elif current_user.sub_agenzia_id:
-                # Fallback: use single sub_agenzia_id if sub_agenzie_autorizzate not set
+                # Fallback: use single sub_agenzia_id
                 sub_agenzie_query["id"] = current_user.sub_agenzia_id
+                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                    sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
                 if current_user.servizi_autorizzati:
                     sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}
         elif current_user.role == UserRole.AREA_MANAGER:
             if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-                # Area Manager sees all their assigned sub agenzie
+                # Area Manager sees sub agenzie filtered by commesse AND services
                 sub_agenzie_query["id"] = {"$in": current_user.sub_agenzie_autorizzate}
-                # Filter by authorized services
+                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                    sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
                 if current_user.servizi_autorizzati:
                     sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
