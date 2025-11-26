@@ -11153,69 +11153,28 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         # Get ALL segmenti available
         segmenti_values = ["privato", "business"]
         
-        # Get ALL sub agenzie from sub_agenzie collection (filtered by user permissions - Commessa AND Servizi)
-        sub_agenzie_query = {}
-        if current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
-            if current_user.sub_agenzia_id:
-                sub_agenzie_query["id"] = current_user.sub_agenzia_id
-                # Filter by authorized commesse AND services
-                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
-                    sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
-                if current_user.servizi_autorizzati:
-                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
-            else:
-                sub_agenzie_query = {"_id": {"$exists": False}}  # No results
-        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
-            if current_user.commesse_autorizzate:
-                # Get sub agenzie for authorized commesse AND services
-                sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
-                if current_user.servizi_autorizzati:
-                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
-            else:
-                sub_agenzie_query = {"_id": {"$exists": False}}
-        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI]:
-            if current_user.sub_agenzia_id:
-                # Agenti, Operatori, Store e Promoter Presidi see only their own sub agenzia
-                sub_agenzie_query["id"] = current_user.sub_agenzia_id
-                # Filter by authorized commesse AND services
-                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
-                    sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
-                if current_user.servizi_autorizzati:
-                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
-            else:
-                sub_agenzie_query = {"_id": {"$exists": False}}
-        elif current_user.role == UserRole.RESPONSABILE_PRESIDI:
-            # Responsabile Presidi sees all their assigned sub agenzie
-            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-                sub_agenzie_query["id"] = {"$in": current_user.sub_agenzie_autorizzate}
-                # Filter by authorized commesse AND services
-                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
-                    sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
-                if current_user.servizi_autorizzati:
-                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
-            elif current_user.sub_agenzia_id:
-                # Fallback: use single sub_agenzia_id
-                sub_agenzie_query["id"] = current_user.sub_agenzia_id
-                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
-                    sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
-                if current_user.servizi_autorizzati:
-                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
-            else:
-                sub_agenzie_query = {"_id": {"$exists": False}}
-        elif current_user.role == UserRole.AREA_MANAGER:
-            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-                # Area Manager sees sub agenzie filtered by commesse AND services
-                sub_agenzie_query["id"] = {"$in": current_user.sub_agenzie_autorizzate}
-                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
-                    sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
-                if current_user.servizi_autorizzati:
-                    sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
-            else:
-                sub_agenzie_query = {"_id": {"$exists": False}}
-        # Admin sees all sub agenzie
+        # Get sub agenzie from ACTUAL clients - shows only sub agenzie in the client list
+        print(f"🔄 Loading sub agenzie for filter-options from actual clients")
         
-        sub_agenzie_cursor = db.sub_agenzie.find(sub_agenzie_query)
-        sub_agenzie = await sub_agenzie_cursor.to_list(length=None)
+        # Extract unique sub_agenzia_id from user's accessible clients
+        sub_agenzie_pipeline = [{"$match": base_query}] if base_query else []
+        sub_agenzie_pipeline += [
+            {"$group": {"_id": "$sub_agenzia_id"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$sort": {"_id": 1}}
+        ]
+        sub_agenzie_result = await db.clienti.aggregate(sub_agenzie_pipeline).to_list(length=None)
+        sub_agenzia_ids_from_clients = [item["_id"] for item in sub_agenzie_result]
+        print(f"  Sub agenzie from accessible clients: {len(sub_agenzia_ids_from_clients)}")
+        
+        # Now fetch sub agenzie details for these IDs only
+        if sub_agenzia_ids_from_clients:
+            sub_agenzie_cursor = db.sub_agenzie.find({"id": {"$in": sub_agenzia_ids_from_clients}})
+            sub_agenzie = await sub_agenzie_cursor.to_list(length=None)
+            print(f"  Found {len(sub_agenzie)} sub agenzie details")
+        else:
+            sub_agenzie = []
+            print(f"  No sub agenzie found in accessible clients")
         
         # Get users from ACTUAL clients (assigned_to field) - shows only users in the client list
         print(f"🔄 Loading users for filter-options from actual clients")
