@@ -11217,7 +11217,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         sub_agenzie_cursor = db.sub_agenzie.find(sub_agenzie_query)
         sub_agenzie = await sub_agenzie_cursor.to_list(length=None)
         
-        # Get ALL users who can create clients (filtered by permissions)  
+        # Get ALL users who can create clients (filtered by Commesse AND Servizi permissions)  
         users_query = {}
         if current_user.role == UserRole.ADMIN:
             # Admin sees all users
@@ -11226,20 +11226,28 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             # Agenti, Operatori, Store e Presidi see only themselves
             users_query["id"] = current_user.id
         elif current_user.role == UserRole.AREA_MANAGER:
-            # Area Manager sees all users from their assigned sub agenzie
+            # Area Manager sees users from their assigned sub agenzie with matching commesse/servizi
             if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-                users_query["$or"] = [
+                base_or = [
                     {"sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}},
                     {"id": current_user.id}  # Include self
                 ]
+                users_query["$or"] = base_or
+                # Additional filter: users must have overlapping commesse or servizi
+                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                    users_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
+                if current_user.servizi_autorizzati:
+                    users_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
                 users_query["id"] = current_user.id
         else:
-            # Other non-admin users see limited set based on their organization
+            # Other non-admin users see users with same sub agenzia AND overlapping commesse/servizi
             if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
                 users_query["sub_agenzia_id"] = current_user.sub_agenzia_id
-            elif hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
                 users_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
+            if current_user.servizi_autorizzati:
+                users_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
         # Admin sees all users
         
         users_cursor = db.users.find(users_query)
