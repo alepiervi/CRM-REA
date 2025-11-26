@@ -16981,7 +16981,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
           {/* Created By Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Utente Creatore</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Utente Assegnato</label>
             <Select value={clientiFilterCreatedBy} onValueChange={setClientiFilterCreatedBy}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Tutti gli Utenti" />
