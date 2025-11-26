@@ -11153,21 +11153,22 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         # Get ALL segmenti available
         segmenti_values = ["privato", "business"]
         
-        # Get ALL sub agenzie from sub_agenzie collection (filtered by user permissions)
+        # Get ALL sub agenzie from sub_agenzie collection (filtered by user permissions - Commessa AND Servizi)
         sub_agenzie_query = {}
         if current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
             if current_user.sub_agenzia_id:
                 sub_agenzie_query["id"] = current_user.sub_agenzia_id
-                # Filter by authorized services
+                # Filter by authorized commesse AND services
+                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
+                    sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
                 if current_user.servizi_autorizzati:
                     sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
                 sub_agenzie_query = {"_id": {"$exists": False}}  # No results
         elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
             if current_user.commesse_autorizzate:
-                # Get sub agenzie for authorized commesse
+                # Get sub agenzie for authorized commesse AND services
                 sub_agenzie_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
-                # Filter by authorized services
                 if current_user.servizi_autorizzati:
                     sub_agenzie_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
             else:
