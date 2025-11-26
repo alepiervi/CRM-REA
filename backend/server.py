@@ -11217,41 +11217,28 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         sub_agenzie_cursor = db.sub_agenzie.find(sub_agenzie_query)
         sub_agenzie = await sub_agenzie_cursor.to_list(length=None)
         
-        # Get ALL users who can create clients (filtered by Commesse AND Servizi permissions)  
-        users_query = {}
-        if current_user.role == UserRole.ADMIN:
-            # Admin sees all users
-            pass
-        elif current_user.role in [UserRole.AGENTE_SPECIALIZZATO, UserRole.OPERATORE, UserRole.RESPONSABILE_STORE, UserRole.STORE_ASSIST, UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
-            # Agenti, Operatori, Store e Presidi see only themselves
-            users_query["id"] = current_user.id
-        elif current_user.role == UserRole.AREA_MANAGER:
-            # Area Manager sees users from their assigned sub agenzie with matching commesse/servizi
-            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-                base_or = [
-                    {"sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}},
-                    {"id": current_user.id}  # Include self
-                ]
-                users_query["$or"] = base_or
-                # Additional filter: users must have overlapping commesse or servizi
-                if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
-                    users_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
-                if current_user.servizi_autorizzati:
-                    users_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
-            else:
-                users_query["id"] = current_user.id
-        else:
-            # Other non-admin users see users with same sub agenzia AND overlapping commesse/servizi
-            if hasattr(current_user, 'sub_agenzia_id') and current_user.sub_agenzia_id:
-                users_query["sub_agenzia_id"] = current_user.sub_agenzia_id
-            if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
-                users_query["commesse_autorizzate"] = {"$in": current_user.commesse_autorizzate}
-            if current_user.servizi_autorizzati:
-                users_query["servizi_autorizzati"] = {"$in": current_user.servizi_autorizzati}
-        # Admin sees all users
+        # Get users from ACTUAL clients (assigned_to field) - shows only users in the client list
+        print(f"🔄 Loading users for filter-options from actual clients")
         
-        users_cursor = db.users.find(users_query)
-        users = await users_cursor.to_list(length=None)
+        # Extract unique assigned_to user IDs from user's accessible clients
+        users_pipeline = [{"$match": base_query}] if base_query else []
+        users_pipeline += [
+            {"$group": {"_id": "$assigned_to"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$sort": {"_id": 1}}
+        ]
+        users_result = await db.clienti.aggregate(users_pipeline).to_list(length=None)
+        user_ids_from_clients = [item["_id"] for item in users_result]
+        print(f"  Users from accessible clients: {len(user_ids_from_clients)}")
+        
+        # Now fetch user details for these IDs only
+        if user_ids_from_clients:
+            users_cursor = db.users.find({"id": {"$in": user_ids_from_clients}})
+            users = await users_cursor.to_list(length=None)
+            print(f"  Found {len(users)} user details")
+        else:
+            users = []
+            print(f"  No users found in accessible clients")
         
         # NEW: Get servizi authorized for current user
         servizi_query = {}
