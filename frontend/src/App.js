@@ -17114,7 +17114,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                   <TableHead>Tipologia Contratto</TableHead>
                   <TableHead>Segmento</TableHead>
                   <TableHead>Sub Agenzia</TableHead>
-                  <TableHead>Creato da</TableHead>
+                  <TableHead>Assegnato a</TableHead>
                   <TableHead>Data Creazione</TableHead>
                   <TableHead>Nome Completo</TableHead>
                   <TableHead>Azioni</TableHead>
