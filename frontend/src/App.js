@@ -19156,6 +19156,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     // Campi specifici Telefonia Fissa
     tecnologia: '',
     codice_migrazione: '',
+    numero_portabilita: '',
     gestore: '',
     convergenza: false,
     convergenza_items: [{
