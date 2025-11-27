@@ -17327,7 +17327,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                   )}
                   
                   {/* Placeholder if Edit button is hidden to maintain layout */}
-                  {(user.role !== "backoffice_commessa" && (cliente.status === "inserito" || cliente.status === "ko")) && (
+                  {(user.role !== "admin" && user.role !== "responsabile_commessa" && user.role !== "backoffice_commessa" && (cliente.status === "inserito" || cliente.status === "ko")) && (
                     <div className="w-full flex items-center justify-center text-xs text-gray-400 border border-gray-300 rounded px-2 py-2">
                       🔒 Bloccato
                     </div>
