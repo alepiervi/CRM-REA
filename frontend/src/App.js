@@ -20626,6 +20626,14 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   />
                 </div>
                 <div>
+                  <Label htmlFor="numero_portabilita">Numero Portabilità</Label>
+                  <Input
+                    id="numero_portabilita"
+                    value={formData.numero_portabilita}
+                    onChange={(e) => setFormData({...formData, numero_portabilita: e.target.value})}
+                  />
+                </div>
+                <div>
                   <Label htmlFor="gestore">Gestore</Label>
                   <Input
                     id="gestore"
