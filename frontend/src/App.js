@@ -17313,8 +17313,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     Log
                   </Button>
                   
-                  {/* Modifica button - hidden for locked status unless backoffice_commessa */}
-                  {(user.role === "backoffice_commessa" || (cliente.status !== "inserito" && cliente.status !== "ko")) && (
+                  {/* Modifica button - hidden for locked status unless admin/responsabile_commessa/backoffice_commessa */}
+                  {(user.role === "admin" || user.role === "responsabile_commessa" || user.role === "backoffice_commessa" || (cliente.status !== "inserito" && cliente.status !== "ko")) && (
                     <Button 
                       variant="outline" 
                       size="sm"
