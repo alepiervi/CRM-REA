@@ -1640,9 +1640,9 @@ async def can_user_modify_cliente(user: User, cliente: Cliente) -> bool:
     """Check if user can modify a specific cliente"""
     
     # NEW: Check if cliente is locked (status "inserito" or "ko") - lowercase with underscore
-    # Only BACKOFFICE_COMMESSA can modify locked clients
+    # Only ADMIN, RESPONSABILE_COMMESSA and BACKOFFICE_COMMESSA can modify locked clients
     if cliente.status and cliente.status.lower() in ["inserito", "ko"]:
-        if user.role != UserRole.BACKOFFICE_COMMESSA:
+        if user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
             return False
     
     if user.role == UserRole.ADMIN:
