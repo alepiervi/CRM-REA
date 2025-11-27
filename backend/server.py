@@ -1054,6 +1054,7 @@ class Cliente(BaseModel):
     # Campi specifici Telefonia Fastweb
     tecnologia: Optional[Tecnologia] = None
     codice_migrazione: Optional[str] = None
+    numero_portabilita: Optional[str] = None  # NEW: Numero Portabilità
     gestore: Optional[str] = None
     convergenza: bool = False
     convergenza_items: List[ConvergenzaItem] = []
