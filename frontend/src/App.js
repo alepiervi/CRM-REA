@@ -19925,6 +19925,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       tecnologia: formData.tecnologia || null, // FIX: Send null instead of empty string for enum fields
       codice_migrazione: formData.codice_migrazione || '',
       gestore: formData.gestore || '',
+      numero_portabilita: formData.numero_portabilita || '', // NEW: Numero Portabilità field
       convergenza: Boolean(formData.convergenza),
       convergenza_items: formData.convergenza ? convergenzaItems : [],
       mobile_items: isMobile() ? mobileItems : [],
