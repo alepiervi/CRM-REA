@@ -22228,6 +22228,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     // Campi Telefonia Fissa
     tecnologia: cliente?.tecnologia || '',
     codice_migrazione: cliente?.codice_migrazione || '',
+    numero_portabilita: cliente?.numero_portabilita || '',
     gestore: cliente?.gestore || '',
     convergenza: cliente?.convergenza || false,
     convergenza_items: cliente?.convergenza_items || [],
