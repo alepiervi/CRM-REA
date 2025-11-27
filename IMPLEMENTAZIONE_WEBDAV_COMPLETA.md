@@ -106,7 +106,7 @@ sudo supervisorctl status backend
 # Output: backend RUNNING
 
 # Test endpoint debug accessibile
-curl https://nureal-crm-2.preview.emergentagent.com/api/documents/upload-debug
+curl https://crm-bug-tracker.preview.emergentagent.com/api/documents/upload-debug
 # Output: {"timestamp": null, "success": false, ...}
 ```
 
@@ -117,7 +117,7 @@ curl https://nureal-crm-2.preview.emergentagent.com/api/documents/upload-debug
 3. Carica documento PDF
 4. Controlla endpoint debug:
    ```
-   https://nureal-crm-2.preview.emergentagent.com/api/documents/upload-debug
+   https://crm-bug-tracker.preview.emergentagent.com/api/documents/upload-debug
    ```
 5. Cerca log:
    ```json
