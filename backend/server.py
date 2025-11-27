@@ -1655,8 +1655,8 @@ async def can_user_modify_cliente(user: User, cliente: Cliente) -> bool:
                      UserRole.RESPONSABILE_PRESIDI, UserRole.PROMOTER_PRESIDI]:
         return cliente.created_by == user.id
     
-    # For BACKOFFICE_COMMESSA: can modify all clients in their authorized commesse
-    if user.role == UserRole.BACKOFFICE_COMMESSA:
+    # For BACKOFFICE_COMMESSA and RESPONSABILE_COMMESSA: can modify all clients in their authorized commesse
+    if user.role in [UserRole.BACKOFFICE_COMMESSA, UserRole.RESPONSABILE_COMMESSA]:
         if hasattr(user, 'commesse_autorizzate') and user.commesse_autorizzate:
             return cliente.commessa_id in user.commesse_autorizzate
         # Fallback to authorization check
