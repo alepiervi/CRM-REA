@@ -23358,6 +23358,14 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     />
                   </div>
                   <div>
+                    <Label htmlFor="numero_portabilita">Numero Portabilità</Label>
+                    <Input
+                      id="numero_portabilita"
+                      value={formData.numero_portabilita}
+                      onChange={(e) => handleChange('numero_portabilita', e.target.value)}
+                    />
+                  </div>
+                  <div>
                     <Label htmlFor="gestore">Gestore Attuale</Label>
                     <Input
                       id="gestore"
