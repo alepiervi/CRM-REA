@@ -1221,6 +1221,16 @@ class ClienteUpdate(BaseModel):
     
     # Campi specifici Energia Fastweb
     codice_pod: Optional[str] = None
+    energia_tipologia: Optional[EnergiaTipologia] = None
+    codice_pdr: Optional[str] = None
+    energia_consumo_annuo: Optional[str] = None
+    energia_potenza_contatore: Optional[str] = None
+    energia_remi: Optional[str] = None
+    energia_potenza_impegnata: Optional[str] = None
+    # Campi condizionali per "Switch con voltura"
+    energia_vecchio_intestatario_nome: Optional[str] = None
+    energia_vecchio_intestatario_cognome: Optional[str] = None
+    energia_vecchio_intestatario_cf: Optional[str] = None
     
     # Campi specifici Telepass
     obu: Optional[str] = None
