@@ -23702,7 +23702,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           {isEditEnergiaFastweb() && !isEditTelepass() && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">⚡ Energia Fastweb</CardTitle>
+                <CardTitle className="text-lg">⚡ Energia</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Tipologia Dropdown */}
