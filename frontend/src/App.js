@@ -19167,6 +19167,15 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     
     // Campi specifici Energia Fastweb
     codice_pod: '',
+    energia_tipologia: '',
+    codice_pdr: '',
+    energia_consumo_annuo: '',
+    energia_potenza_contatore: '',
+    energia_remi: '',
+    energia_potenza_impegnata: '',
+    energia_vecchio_intestatario_nome: '',
+    energia_vecchio_intestatario_cognome: '',
+    energia_vecchio_intestatario_cf: '',
     
     // Modalità pagamento
     modalita_pagamento: '',
