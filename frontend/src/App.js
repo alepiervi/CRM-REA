@@ -19941,6 +19941,15 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       
       // Energia Fastweb conditional fields
       codice_pod: formData.codice_pod || '',
+      energia_tipologia: formData.energia_tipologia || null,
+      codice_pdr: formData.codice_pdr || '',
+      energia_consumo_annuo: formData.energia_consumo_annuo || '',
+      energia_potenza_contatore: formData.energia_potenza_contatore || '',
+      energia_remi: formData.energia_remi || '',
+      energia_potenza_impegnata: formData.energia_potenza_impegnata || '',
+      energia_vecchio_intestatario_nome: formData.energia_vecchio_intestatario_nome || '',
+      energia_vecchio_intestatario_cognome: formData.energia_vecchio_intestatario_cognome || '',
+      energia_vecchio_intestatario_cf: formData.energia_vecchio_intestatario_cf || '',
       
       // Telepass conditional fields
       obu: formData.obu || '',
