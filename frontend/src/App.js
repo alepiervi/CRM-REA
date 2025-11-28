@@ -22354,6 +22354,15 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     
     // Campi Energia Fastweb
     codice_pod: cliente?.codice_pod || '',
+    energia_tipologia: cliente?.energia_tipologia || '',
+    codice_pdr: cliente?.codice_pdr || '',
+    energia_consumo_annuo: cliente?.energia_consumo_annuo || '',
+    energia_potenza_contatore: cliente?.energia_potenza_contatore || '',
+    energia_remi: cliente?.energia_remi || '',
+    energia_potenza_impegnata: cliente?.energia_potenza_impegnata || '',
+    energia_vecchio_intestatario_nome: cliente?.energia_vecchio_intestatario_nome || '',
+    energia_vecchio_intestatario_cognome: cliente?.energia_vecchio_intestatario_cognome || '',
+    energia_vecchio_intestatario_cf: cliente?.energia_vecchio_intestatario_cf || '',
     
     // Campi Telepass
     obu: cliente?.obu || '',
