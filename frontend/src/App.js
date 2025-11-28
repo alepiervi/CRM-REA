@@ -23700,15 +23700,112 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
               <CardHeader>
                 <CardTitle className="text-lg">⚡ Energia Fastweb</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Tipologia Dropdown */}
                 <div>
-                  <Label htmlFor="codice_pod">Codice Pod</Label>
+                  <Label htmlFor="energia_tipologia">Tipologia</Label>
+                  <select
+                    id="energia_tipologia"
+                    value={formData.energia_tipologia}
+                    onChange={(e) => handleChange('energia_tipologia', e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Seleziona Tipologia...</option>
+                    <option value="Switch">Switch</option>
+                    <option value="Switch con voltura">Switch con voltura</option>
+                    <option value="Subentro">Subentro</option>
+                  </select>
+                </div>
+
+                {/* POD, PDR e REMI sulla stessa riga */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="codice_pod">Codice POD</Label>
+                    <Input
+                      id="codice_pod"
+                      value={formData.codice_pod}
+                      onChange={(e) => handleChange('codice_pod', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="codice_pdr">Codice PDR</Label>
+                    <Input
+                      id="codice_pdr"
+                      value={formData.codice_pdr}
+                      onChange={(e) => handleChange('codice_pdr', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="energia_remi">REMI</Label>
+                    <Input
+                      id="energia_remi"
+                      value={formData.energia_remi}
+                      onChange={(e) => handleChange('energia_remi', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Altri campi */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="energia_consumo_annuo">Consumo Annuo</Label>
+                    <Input
+                      id="energia_consumo_annuo"
+                      value={formData.energia_consumo_annuo}
+                      onChange={(e) => handleChange('energia_consumo_annuo', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="energia_potenza_contatore">Potenza del Contatore</Label>
+                    <Input
+                      id="energia_potenza_contatore"
+                      value={formData.energia_potenza_contatore}
+                      onChange={(e) => handleChange('energia_potenza_contatore', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="energia_potenza_impegnata">Potenza Impegnata</Label>
                   <Input
-                    id="codice_pod"
-                    value={formData.codice_pod}
-                    onChange={(e) => handleChange('codice_pod', e.target.value)}
+                    id="energia_potenza_impegnata"
+                    value={formData.energia_potenza_impegnata}
+                    onChange={(e) => handleChange('energia_potenza_impegnata', e.target.value)}
                   />
                 </div>
+
+                {/* Campi condizionali per "Switch con voltura" */}
+                {formData.energia_tipologia === 'Switch con voltura' && (
+                  <div className="space-y-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h4 className="text-sm font-semibold text-blue-900">Dati Vecchio Intestatario</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="energia_vecchio_intestatario_nome">Nome</Label>
+                        <Input
+                          id="energia_vecchio_intestatario_nome"
+                          value={formData.energia_vecchio_intestatario_nome}
+                          onChange={(e) => handleChange('energia_vecchio_intestatario_nome', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="energia_vecchio_intestatario_cognome">Cognome</Label>
+                        <Input
+                          id="energia_vecchio_intestatario_cognome"
+                          value={formData.energia_vecchio_intestatario_cognome}
+                          onChange={(e) => handleChange('energia_vecchio_intestatario_cognome', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="energia_vecchio_intestatario_cf">Codice Fiscale</Label>
+                        <Input
+                          id="energia_vecchio_intestatario_cf"
+                          value={formData.energia_vecchio_intestatario_cf}
+                          onChange={(e) => handleChange('energia_vecchio_intestatario_cf', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
