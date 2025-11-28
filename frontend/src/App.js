@@ -19056,7 +19056,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     
     const mappings = {
       'Telefonia Fissa': 'telefonia_fastweb',
-      'Energia Fastweb': 'energia_fastweb', 
+      'Energia': 'energia_fastweb', 
       'Ho Mobile': 'ho_mobile',
       'Telepass': 'telepass',
       'telepass_premium': 'telepass_premium',
