@@ -20752,7 +20752,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             return showEnergiaSection;
           })() && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">⚡ Energia Fastweb</h3>
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">⚡ Energia</h3>
               
               {/* Tipologia Dropdown */}
               <div>
