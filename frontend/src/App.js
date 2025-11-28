@@ -23221,7 +23221,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Tipologia Contratto</Label>
                   <p className="text-sm p-2 bg-gray-50 border rounded">
-                    {cliente?.tipologia_contratto === 'energia_fastweb' ? 'Energia Fastweb' :
+                    {cliente?.tipologia_contratto === 'energia_fastweb' ? 'Energia' :
                      cliente?.tipologia_contratto === 'telefonia_fastweb' ? 'Telefonia Fissa' :
                      cliente?.tipologia_contratto === 'mobile_fastweb' ? 'Mobile Fastweb' :
                      cliente?.tipologia_contratto === 'ho_mobile' ? 'Ho Mobile' :
