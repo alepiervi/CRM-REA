@@ -22135,13 +22135,13 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           </Card>
         )}
 
-        {/* Sezione Energia Fastweb - Condizionale */}
+        {/* Sezione Energia - Condizionale */}
         {isEnergiaFastweb() && !isTelepass() && (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
                 <Zap className="w-4 h-4 mr-2" />
-                Energia Fastweb
+                Energia
               </CardTitle>
             </CardHeader>
             <CardContent>
