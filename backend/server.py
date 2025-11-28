@@ -997,6 +997,11 @@ class ModalitaPagamento(str, Enum):
     IBAN = "iban"
     CARTA_CREDITO = "carta_credito"
 
+class EnergiaTipologia(str, Enum):
+    SWITCH = "Switch"
+    SWITCH_CON_VOLTURA = "Switch con voltura"
+    SUBENTRO = "Subentro"
+
 # Sigle Province Italiane per dropdown
 PROVINCE_ITALIANE = [
     "AG", "AL", "AN", "AO", "AR", "AP", "AT", "AV", "BA", "BT", "BL", "BN", "BG", "BI", "BO", "BZ", 
