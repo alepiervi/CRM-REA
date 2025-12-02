@@ -1109,6 +1109,17 @@ class Cliente(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
     last_contact: Optional[datetime] = None
+    
+    @model_validator(mode='before')
+    @classmethod
+    def convert_empty_strings_to_none(cls, data: Any) -> Any:
+        """Convert empty strings to None for enum fields to prevent validation errors"""
+        if isinstance(data, dict):
+            enum_fields = ['tipo_documento', 'tecnologia', 'modalita_pagamento', 'energia_tipologia']
+            for field in enum_fields:
+                if field in data and data[field] == '':
+                    data[field] = None
+        return data
 
 class ClienteCreate(BaseModel):
     # Campi base sempre presenti
