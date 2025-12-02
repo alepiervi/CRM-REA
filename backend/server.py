@@ -1183,6 +1183,17 @@ class ClienteCreate(BaseModel):
     sub_offerta_id: Optional[str] = None  # NEW: Sotto-offerta ID (per offerte con sotto-offerte)
     assigned_to: Optional[str] = None  # NEW: User assigned to this client
     dati_aggiuntivi: Dict[str, Any] = {}
+    
+    @model_validator(mode='before')
+    @classmethod
+    def convert_empty_strings_to_none(cls, data: Any) -> Any:
+        """Convert empty strings to None for enum fields to prevent validation errors"""
+        if isinstance(data, dict):
+            enum_fields = ['tipo_documento', 'tecnologia', 'modalita_pagamento', 'energia_tipologia']
+            for field in enum_fields:
+                if field in data and data[field] == '':
+                    data[field] = None
+        return data
 
 class ClienteUpdate(BaseModel):
     # Campi base sempre presenti
