@@ -13570,6 +13570,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onNodeClick={onNodeClick}
             fitView
             style={{ width: '100%', height: '100%' }}
           >
