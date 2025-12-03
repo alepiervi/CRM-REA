@@ -22983,6 +22983,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       backend_data: backendData
     });
     
+    // FIX: Close modal immediately before async operation
+    onClose();
+    
     onSubmit(backendData);
   };
 
