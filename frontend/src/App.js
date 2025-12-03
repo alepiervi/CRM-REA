@@ -1325,12 +1325,6 @@ const Dashboard = () => {
   const [segmenti, setSegmenti] = useState([]);
   const [offerte, setOfferte] = useState([]);
   
-  // Aruba Drive Configuration state
-  const [arubaDriveConfigs, setArubaDriveConfigs] = useState([]);
-  const [editingConfig, setEditingConfig] = useState(null);
-  const [testingConfigId, setTestingConfigId] = useState(null);
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  
   // 🎯 MOBILE-FRIENDLY: Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
