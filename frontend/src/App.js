@@ -20080,6 +20080,9 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     
     console.log("🎯 CALLING onSubmit FUNCTION...");
     
+    // FIX: Close modal immediately before async operation
+    onClose();
+    
     // Call the onSubmit function passed from parent
     onSubmit(cleanFormData);
     
