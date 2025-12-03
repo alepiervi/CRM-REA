@@ -11611,6 +11611,9 @@ const AIConfigModal = ({ onClose, onSuccess, existingConfig }) => {
 
     setIsLoading(true);
 
+    // FIX: Close modal immediately before async operation
+    onClose();
+
     try {
       const response = await axios.post(`${API}/ai-config`, {
         openai_api_key: apiKey.trim()
