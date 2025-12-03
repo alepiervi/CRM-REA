@@ -8799,10 +8799,19 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
       }
       
       const response = await axios.get(`${API}/analytics/sub-agenzie?${params}`);
-      setSubAgenzieData(response.data);
+      
+      // Ensure each item has the required properties with defaults
+      const sanitizedData = Array.isArray(response.data) ? response.data.map(sa => ({
+        ...sa,
+        status_breakdown: sa.status_breakdown || {},
+        top_creators: sa.top_creators || []
+      })) : [];
+      
+      setSubAgenzieData(sanitizedData);
       setSubAgenzieLoading(false);
     } catch (error) {
       console.error("Error fetching sub agenzie analytics:", error);
+      setSubAgenzieData([]);
       setSubAgenzieLoading(false);
     }
   };
