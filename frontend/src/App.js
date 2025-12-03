@@ -5888,6 +5888,7 @@ const UsersManagement = ({ selectedUnit, units }) => {
   const [commesse, setCommesse] = useState([]);
   const [servizi, setServizi] = useState([]);
   const [subAgenzie, setSubAgenzie] = useState([]);
+  const [searchQuery, setSearchQuery] = useState(""); // NEW: Search filter
   const { toast } = useToast();
 
   useEffect(() => {
