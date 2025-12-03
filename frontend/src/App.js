@@ -11763,7 +11763,7 @@ const AssistantUnitManagement = ({ assistants, onRefresh }) => {
                   return (
                     <tr key={unit.id} className="border-t hover:bg-slate-50">
                       <td className="p-3">
-                        <div className="font-medium text-slate-900">{unit.name}</div>
+                        <div className="font-medium text-slate-900">{unit.nome}</div>
                         <div className="text-xs text-slate-500">ID: {unit.id.slice(0, 8)}...</div>
                       </td>
                       <td className="p-3">
