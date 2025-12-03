@@ -11459,8 +11459,17 @@ const AIConfigurationManagement = () => {
       const response = await axios.get(`${API}/ai-config`);
       setConfig(response.data);
       
-      if (response.data && response.data.assistants) {
-        setAssistants(response.data.assistants);
+      // FIX: Fetch assistants from separate endpoint if configured
+      if (response.data && response.data.configured) {
+        try {
+          const assistantsResponse = await axios.get(`${API}/ai-assistants`);
+          if (assistantsResponse.data && assistantsResponse.data.assistants) {
+            setAssistants(assistantsResponse.data.assistants);
+          }
+        } catch (assistError) {
+          console.error("Error fetching assistants:", assistError);
+          setAssistants([]);
+        }
       }
     } catch (error) {
       console.error("Error fetching AI config:", error);
