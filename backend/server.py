@@ -393,6 +393,7 @@ class UnitUpdate(BaseModel):
     commesse_autorizzate: Optional[List[str]] = None  # NEW: Additional commesse
     campagne_autorizzate: Optional[List[str]] = None
     is_active: Optional[bool] = None
+    assistant_id: Optional[str] = None  # NEW: OpenAI Assistant ID assignment
 
 # NEW: Dynamic Lead Status model
 class LeadStatusModel(BaseModel):
