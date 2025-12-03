@@ -6437,6 +6437,9 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
         unit_id: submitData.unit_id
       });
       
+      // FIX: Close modal immediately before async operation
+      onClose();
+      
       const response = await axios.post(`${API}/users`, submitData);
       console.log("✅ Utente creato con successo:", response.data);
       toast({
