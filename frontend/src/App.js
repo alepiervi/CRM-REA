@@ -6375,6 +6375,18 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       } else {
         submitData.unit_id = null;
       }
+      
+      // FIX: Per ruoli che usano sub_agenzia_id direttamente (non tramite assignment_type)
+      // assicurati che sub_agenzia_id sia preservato e non vuoto
+      const subAgenziaRoles = ["responsabile_sub_agenzia", "backoffice_sub_agenzia", "agente_specializzato", "operatore"];
+      if (subAgenziaRoles.includes(formData.role)) {
+        // Se sub_agenzia_id è una stringa vuota, impostalo a null invece di mantenerlo vuoto
+        if (submitData.sub_agenzia_id === "" || !submitData.sub_agenzia_id) {
+          submitData.sub_agenzia_id = null;
+        }
+        // Assicurati che unit_id sia null per questi ruoli
+        submitData.unit_id = null;
+      }
 
       // Validazione dati critici
       if (!submitData.username || !submitData.email || !submitData.role) {
