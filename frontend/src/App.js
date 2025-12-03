@@ -6022,6 +6022,17 @@ const UsersManagement = ({ selectedUnit, units }) => {
     );
   };
 
+  // Filter users based on search query
+  const filteredUsers = users.filter(user => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      user.username?.toLowerCase().includes(query) ||
+      user.email?.toLowerCase().includes(query) ||
+      user.role?.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -6032,6 +6043,34 @@ const UsersManagement = ({ selectedUnit, units }) => {
           <UserPlus className="w-4 h-4 mr-2" />
           Nuovo Utente
         </Button>
+      </div>
+
+      {/* Search Filter */}
+      <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-sm border">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            type="text"
+            placeholder="Cerca per username, email o ruolo..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSearchQuery("")}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="w-4 h-4 mr-1" />
+            Cancella
+          </Button>
+        )}
+        <div className="text-sm text-gray-500">
+          {filteredUsers.length} di {users.length} utenti
+        </div>
       </div>
 
       <Card className="border-0 shadow-lg">
