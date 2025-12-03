@@ -13314,6 +13314,12 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     [setEdges],
   );
 
+  // Handle node click to edit
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedNode(node);
+    setShowNodeEditor(true);
+  }, []);
+
   // Add new node to canvas
   const addNode = (nodeType, nodeSubtype, nodeName, color) => {
     const id = `${nodeType}_${Date.now()}`;
