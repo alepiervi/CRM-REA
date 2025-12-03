@@ -11663,6 +11663,158 @@ const AIConfigModal = ({ onClose, onSuccess, existingConfig }) => {
 };
 
 
+// Assistant Unit Management Component
+const AssistantUnitManagement = ({ assistants, onRefresh }) => {
+  const [units, setUnits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [savingUnitId, setSavingUnitId] = useState(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchUnits();
+  }, []);
+
+  const fetchUnits = async () => {
+    try {
+      const response = await axios.get(`${API}/units`);
+      setUnits(response.data);
+    } catch (error) {
+      console.error("Error fetching units:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAssignAssistant = async (unitId, assistantId) => {
+    setSavingUnitId(unitId);
+    try {
+      await axios.put(`${API}/units/${unitId}`, {
+        assistant_id: assistantId || null
+      });
+      
+      toast({
+        title: "Successo",
+        description: "Assistant assegnato correttamente",
+      });
+      
+      // Refresh units
+      fetchUnits();
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      console.error("Error assigning assistant:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'assegnazione dell'assistant",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingUnitId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Assegnazione Assistenti per Unit</CardTitle>
+        <CardDescription>
+          Assegna un assistant OpenAI specifico a ciascuna unit
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Available Assistants Summary */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 className="font-medium text-blue-900 mb-2">Assistants Disponibili:</h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {assistants.map((assistant) => (
+                <div key={assistant.id} className="text-sm">
+                  <span className="font-medium text-blue-800">• {assistant.name}</span>
+                  <span className="text-blue-600 text-xs ml-1">({assistant.model})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Units Table */}
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="text-left p-3 font-medium text-slate-700">Unit</th>
+                  <th className="text-left p-3 font-medium text-slate-700">Assistant Assegnato</th>
+                  <th className="text-left p-3 font-medium text-slate-700">Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {units.map((unit) => {
+                  const assignedAssistant = assistants.find(a => a.id === unit.assistant_id);
+                  return (
+                    <tr key={unit.id} className="border-t hover:bg-slate-50">
+                      <td className="p-3">
+                        <div className="font-medium text-slate-900">{unit.name}</div>
+                        <div className="text-xs text-slate-500">ID: {unit.id.slice(0, 8)}...</div>
+                      </td>
+                      <td className="p-3">
+                        {assignedAssistant ? (
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <div>
+                              <div className="font-medium text-slate-900">{assignedAssistant.name}</div>
+                              <div className="text-xs text-slate-500">{assignedAssistant.model}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-sm italic">Nessun assistant assegnato</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <select
+                          value={unit.assistant_id || ""}
+                          onChange={(e) => handleAssignAssistant(unit.id, e.target.value)}
+                          disabled={savingUnitId === unit.id}
+                          className="w-full max-w-xs p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                        >
+                          <option value="">Nessun assistant</option>
+                          {assistants.map((assistant) => (
+                            <option key={assistant.id} value={assistant.id}>
+                              {assistant.name} ({assistant.model})
+                            </option>
+                          ))}
+                        </select>
+                        {savingUnitId === unit.id && (
+                          <span className="ml-2 text-xs text-blue-600">Salvando...</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {units.length === 0 && (
+            <div className="text-center py-8 text-slate-500">
+              <p>Nessuna unit disponibile</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 // WhatsApp Management Component
 const WhatsAppManagement = ({ selectedUnit, units }) => {
   const [config, setConfig] = useState(null);
