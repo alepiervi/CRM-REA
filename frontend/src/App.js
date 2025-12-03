@@ -9491,12 +9491,15 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
                     📊 Breakdown Status:
                   </p>
                   <div className="space-y-2">
-                    {Object.entries(sa.status_breakdown).map(([status, count]) => (
+                    {sa.status_breakdown && Object.entries(sa.status_breakdown).map(([status, count]) => (
                       <div key={status} className="flex justify-between items-center p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
                         <span className="text-sm font-medium">{status}</span>
                         <span className="font-bold text-blue-600">{count}</span>
                       </div>
                     ))}
+                    {!sa.status_breakdown && (
+                      <p className="text-sm text-gray-500 italic">Nessun dato disponibile</p>
+                    )}
                   </div>
                 </div>
                 
