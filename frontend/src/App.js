@@ -13590,7 +13590,158 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
           </ReactFlow>
         </div>
       </div>
+
+      {/* Node Editor Modal */}
+      {showNodeEditor && selectedNode && (
+        <NodeEditorModal
+          node={selectedNode}
+          nodeTypes={nodeTypes}
+          onClose={() => {
+            setShowNodeEditor(false);
+            setSelectedNode(null);
+          }}
+          onSave={(config) => updateNodeConfig(selectedNode.id, config)}
+        />
+      )}
     </div>
+  );
+};
+
+// Node Editor Modal Component
+const NodeEditorModal = ({ node, nodeTypes, onClose, onSave }) => {
+  const [config, setConfig] = useState(node.data.config || {});
+
+  const getNodeTypeInfo = () => {
+    const category = nodeTypes[node.data.nodeType];
+    if (!category) return null;
+    return category.subtypes[node.data.nodeSubtype];
+  };
+
+  const nodeInfo = getNodeTypeInfo();
+
+  const handleSave = () => {
+    onSave(config);
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Configura Nodo: {node.data.label}</DialogTitle>
+          <DialogDescription>
+            Configura i parametri per questo nodo del workflow
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Node Type Info */}
+          <div className="bg-slate-50 p-4 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className={`w-3 h-3 rounded-full ${
+                nodeInfo?.color === 'green' ? 'bg-green-500' :
+                nodeInfo?.color === 'blue' ? 'bg-blue-500' :
+                nodeInfo?.color === 'purple' ? 'bg-purple-500' :
+                nodeInfo?.color === 'orange' ? 'bg-orange-500' :
+                'bg-gray-500'
+              }`}></div>
+              <h3 className="font-medium">{node.data.label}</h3>
+            </div>
+            <p className="text-sm text-slate-600">{nodeInfo?.description}</p>
+          </div>
+
+          {/* Configuration Fields */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="node_name">Nome Nodo</Label>
+              <Input
+                id="node_name"
+                value={config.name || node.data.label}
+                onChange={(e) => setConfig({...config, name: e.target.value})}
+                placeholder="Nome personalizzato per il nodo"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="node_description">Descrizione</Label>
+              <textarea
+                id="node_description"
+                value={config.description || ''}
+                onChange={(e) => setConfig({...config, description: e.target.value})}
+                placeholder="Descrizione dettagliata del comportamento"
+                className="w-full p-2 border border-gray-300 rounded-lg min-h-[100px]"
+              />
+            </div>
+
+            {/* Additional config based on node type */}
+            {node.data.nodeType === 'triggers' && (
+              <div>
+                <Label htmlFor="trigger_event">Evento Trigger</Label>
+                <Input
+                  id="trigger_event"
+                  value={config.event || ''}
+                  onChange={(e) => setConfig({...config, event: e.target.value})}
+                  placeholder="Es: lead_created, status_changed"
+                />
+              </div>
+            )}
+
+            {node.data.nodeType === 'actions' && (
+              <>
+                <div>
+                  <Label htmlFor="action_type">Tipo Azione</Label>
+                  <select
+                    id="action_type"
+                    value={config.action_type || ''}
+                    onChange={(e) => setConfig({...config, action_type: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">Seleziona...</option>
+                    <option value="send_email">Invia Email</option>
+                    <option value="send_sms">Invia SMS</option>
+                    <option value="update_field">Aggiorna Campo</option>
+                    <option value="assign_user">Assegna Utente</option>
+                  </select>
+                </div>
+
+                {config.action_type && (
+                  <div>
+                    <Label htmlFor="action_params">Parametri Azione (JSON)</Label>
+                    <textarea
+                      id="action_params"
+                      value={config.params || '{}'}
+                      onChange={(e) => setConfig({...config, params: e.target.value})}
+                      placeholder='{"to": "user@example.com", "subject": "..."}'
+                      className="w-full p-2 border border-gray-300 rounded-lg min-h-[80px] font-mono text-sm"
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            {node.data.nodeType === 'conditions' && (
+              <div>
+                <Label htmlFor="condition_expr">Espressione Condizione</Label>
+                <Input
+                  id="condition_expr"
+                  value={config.expression || ''}
+                  onChange={(e) => setConfig({...config, expression: e.target.value})}
+                  placeholder="Es: lead.status == 'qualified'"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-2 mt-6">
+          <Button variant="outline" onClick={onClose}>
+            Annulla
+          </Button>
+          <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
+            Salva Configurazione
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
