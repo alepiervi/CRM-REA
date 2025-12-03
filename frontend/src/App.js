@@ -9508,12 +9508,15 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
                     🏆 Top Creatori:
                   </p>
                   <div className="space-y-2">
-                    {sa.top_creators.map((creator, idx) => (
+                    {sa.top_creators && sa.top_creators.length > 0 && sa.top_creators.map((creator, idx) => (
                       <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
                         <span className="text-sm font-medium">👤 {creator.name}</span>
                         <span className="font-bold text-green-600">{creator.count}</span>
                       </div>
                     ))}
+                    {(!sa.top_creators || sa.top_creators.length === 0) && (
+                      <p className="text-sm text-gray-500 italic">Nessun creatore disponibile</p>
+                    )}
                   </div>
                 </div>
               </CardContent>
