@@ -13283,6 +13283,8 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [nodeTypes, setNodeTypes] = useState({});
   const [loading, setLoading] = useState(true);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [showNodeEditor, setShowNodeEditor] = useState(false);
   const { toast } = useToast();
 
   // Fetch available node types from backend
