@@ -2015,19 +2015,6 @@ const Dashboard = () => {
           return user.role === "admin" ? <LeadStatusManagement /> : <div>Non autorizzato</div>;
         case "custom-fields":
           return user.role === "admin" ? <CustomFieldsManagement /> : <div>Non autorizzato</div>;
-        case "configurazioni":
-          return <ConfigurazioniManagement 
-            onFetchConfigs={() => {}} // Placeholder - useEffect nel Dashboard gestisce il caricamento
-            arubaDriveConfigs={arubaDriveConfigs}
-            onSaveConfig={saveArubaDriveConfig}
-            onDeleteConfig={deleteArubaDriveConfig}
-            onTestConfig={testArubaDriveConfig}
-            testingConfigId={testingConfigId}
-            editingConfig={editingConfig}
-            setEditingConfig={setEditingConfig}
-            showConfigModal={showConfigModal}
-            setShowConfigModal={setShowConfigModal}
-          />;
 
         // Sezione "Documenti" rimossa dalla sidebar - ora gestita all'interno della sezione Clienti
         case "users":
