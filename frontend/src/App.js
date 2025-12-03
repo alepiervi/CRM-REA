@@ -9551,7 +9551,7 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
                         </span>
                       </td>
                       <td className="text-right p-3">
-                        {sa.top_creators[0]?.name ? (
+                        {sa.top_creators && sa.top_creators[0]?.name ? (
                           <span className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
                             👤 {sa.top_creators[0].name} ({sa.top_creators[0].count})
                           </span>
