@@ -6093,7 +6093,7 @@ const UsersManagement = ({ selectedUnit, units }) => {
                   </TableRow>
                 </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium mobile-table">{user.username}</TableCell>
                     <TableCell className="mobile-table">{user.email}</TableCell>
