@@ -11546,37 +11546,12 @@ const AIConfigurationManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Assistants List */}
+      {/* Assistants Management */}
       {assistants && assistants.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Assistant Configurati</CardTitle>
-            <CardDescription>
-              Lista degli assistant AI configurati per le unità
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {assistants.map((assistant, index) => (
-                <div key={index} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{assistant.name || "Assistant"}</h4>
-                      <p className="text-sm text-slate-600">Unità: {assistant.unit_id || "Tutte"}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-600">Attivo</span>
-                    </div>
-                  </div>
-                  {assistant.description && (
-                    <p className="text-sm text-slate-600 mt-2">{assistant.description}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <AssistantUnitManagement 
+          assistants={assistants}
+          onRefresh={fetchAIConfig}
+        />
       )}
 
       {/* Configuration Modal */}
