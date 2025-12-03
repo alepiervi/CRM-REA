@@ -11498,7 +11498,7 @@ const AIConfigurationManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {config && config.openai_configured ? (
+          {config && config.configured ? (
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-5 h-5 text-green-500" />
