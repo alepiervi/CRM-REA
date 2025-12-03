@@ -6396,7 +6396,9 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       console.log("📤 Invio dati utente:", { 
         ...submitData, 
         password: `[${submitData.password.length} chars - ${submitData.password.substring(0,3)}...]`,
-        commesse_autorizzate: submitData.commesse_autorizzate?.length || 0
+        commesse_autorizzate: submitData.commesse_autorizzate?.length || 0,
+        sub_agenzia_id: submitData.sub_agenzia_id,
+        unit_id: submitData.unit_id
       });
       
       const response = await axios.post(`${API}/users`, submitData);
