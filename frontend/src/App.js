@@ -7398,6 +7398,9 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
         cleanData.referente_id = null;
       }
       
+      // FIX: Close modal immediately before async operation
+      onClose();
+      
       await axios.put(`${API}/users/${user.id}`, cleanData);
       toast({
         title: "Successo",
