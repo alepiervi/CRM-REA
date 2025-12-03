@@ -4608,7 +4608,8 @@ async def update_unit(
         raise HTTPException(status_code=404, detail="Unit not found")
     
     try:
-        update_dict = {k: v for k, v in unit_update.dict(exclude_unset=True).items() if v is not None}
+        # FIX: Allow None values for fields like assistant_id (to unassign)
+        update_dict = unit_update.dict(exclude_unset=True)
         
         if update_dict:
             await db["units"].update_one(
