@@ -6354,6 +6354,9 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     try {
       console.log("=== DEBUG CREAZIONE UTENTE ===");
       console.log("FormData originale:", { ...formData, password: formData.password ? `[${formData.password.length} chars]` : "[VUOTO]" });
+      console.log("🔍 sub_agenzia_id value:", formData.sub_agenzia_id);
+      console.log("🔍 unit_id value:", formData.unit_id);
+      console.log("🔍 assignment_type value:", formData.assignment_type);
       
       // Prepara i dati per l'invio, rimuovendo assignment_type e impostando correttamente unit_id/sub_agenzia_id
       const submitData = { ...formData };
