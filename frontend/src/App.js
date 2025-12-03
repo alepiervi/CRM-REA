@@ -13333,7 +13333,8 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
       data: { 
         label: nodeName,
         nodeType: nodeType,
-        nodeSubtype: nodeSubtype
+        nodeSubtype: nodeSubtype,
+        config: {}  // Configuration data for the node
       },
       style: {
         background: getNodeColor(color),
@@ -13348,6 +13349,31 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     };
     
     setNodes((nds) => nds.concat(newNode));
+  };
+
+  // Update node configuration
+  const updateNodeConfig = (nodeId, config) => {
+    setNodes((nds) => 
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              config: config
+            }
+          };
+        }
+        return node;
+      })
+    );
+    setShowNodeEditor(false);
+    setSelectedNode(null);
+    
+    toast({
+      title: "Successo",
+      description: "Configurazione nodo aggiornata",
+    });
   };
 
   // Get node background color
