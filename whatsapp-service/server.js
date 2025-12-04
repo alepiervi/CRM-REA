@@ -281,15 +281,34 @@ app.post('/init-session', async (req, res) => {
 })
 
 /**
- * Get QR code for session
+ * Get pairing code for session
+ */
+app.get('/pairing-code/:session_id', (req, res) => {
+    const { session_id } = req.params
+    const sessionData = activeSockets.get(session_id)
+    const pairingCode = pairingCodes.get(session_id)
+    
+    res.json({ 
+        pairing_code: pairingCode || null,
+        available: pairingCode ? true : false,
+        status: sessionData?.status || 'not_found'
+    })
+})
+
+/**
+ * Legacy QR endpoint (redirects to pairing code)
  */
 app.get('/qr/:session_id', (req, res) => {
     const { session_id } = req.params
-    const qr = qrCodes.get(session_id)
+    const sessionData = activeSockets.get(session_id)
+    const pairingCode = pairingCodes.get(session_id)
     
     res.json({ 
-        qr: qr || null,
-        available: qr ? true : false
+        qr: null, // No QR code, use pairing code instead
+        pairing_code: pairingCode,
+        available: pairingCode ? true : false,
+        status: sessionData?.status || 'not_found',
+        message: 'Use pairing_code instead of QR code'
     })
 })
 
