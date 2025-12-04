@@ -158,28 +158,31 @@ class WorkflowExecutor:
     # Action Implementations
     
     async def _action_assign_unit(self, config: Dict, context: Dict) -> Dict[str, Any]:
-        """Assign lead to unit based on tags"""
+        """Verify or update lead unit assignment"""
         lead_id = context.get("trigger", {}).get("lead_id")
-        unit_tag = context.get("trigger", {}).get("unit_tag")
         
-        if not lead_id or not unit_tag:
-            return {"success": False, "error": "Missing lead_id or unit_tag"}
+        if not lead_id:
+            return {"success": False, "error": "Missing lead_id"}
         
-        # Find unit by name/tag
-        unit = await self.db.units.find_one({"nome": unit_tag})
+        # Get lead
+        lead = await self.db.leads.find_one({"id": lead_id}, {"_id": 0})
+        if not lead:
+            return {"success": False, "error": "Lead not found"}
+        
+        # Lead già ha unit_id dal webhook - verifichiamo solo
+        unit_id = lead.get("unit_id")
+        if not unit_id:
+            return {"success": False, "error": "Lead not assigned to unit"}
+        
+        unit = await self.db.units.find_one({"id": unit_id}, {"_id": 0})
         if not unit:
-            return {"success": False, "error": f"Unit not found: {unit_tag}"}
-        
-        # Update lead
-        await self.db.leads.update_one(
-            {"id": lead_id},
-            {"$set": {"unit_id": unit["id"]}}
-        )
+            return {"success": False, "error": "Unit not found"}
         
         return {
             "success": True,
             "unit_id": unit["id"],
             "unit_name": unit["nome"],
+            "agent_id": lead.get("assigned_agent_id"),
             "continue": True
         }
     
