@@ -12150,6 +12150,30 @@ const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig, selectedUnit,
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Unit Selection */}
+          <div>
+            <Label htmlFor="unit-select">Unit *</Label>
+            <select
+              id="unit-select"
+              value={unitId}
+              onChange={(e) => setUnitId(e.target.value)}
+              disabled={selectedUnit && selectedUnit !== "all"}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            >
+              <option value="">Seleziona Unit...</option>
+              {units && units.filter(u => u.id !== "all").map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.nome}
+                </option>
+              ))}
+            </select>
+            {selectedUnit && selectedUnit !== "all" && (
+              <p className="text-xs text-gray-500 mt-1">
+                Unit preselezionata dal filtro
+              </p>
+            )}
+          </div>
+
           <div>
             <Label htmlFor="phone-number">Numero WhatsApp Business *</Label>
             <Input
