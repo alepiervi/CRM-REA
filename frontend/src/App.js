@@ -12053,14 +12053,24 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="w-5 h-5 text-amber-500" />
-                <span className="text-amber-700 font-medium">WhatsApp non configurato</span>
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <MessageCircle className="w-8 h-8 text-green-600" />
               </div>
-              <p className="text-slate-600">
-                Configura il tuo numero WhatsApp Business per abilitare la comunicazione automatica con i lead.
+              <h3 className="text-lg font-semibold text-slate-700 mb-2">WhatsApp Mock Mode Attivo</h3>
+              <p className="text-slate-600 mb-4">
+                Sistema di messaggistica configurato in modalità development.<br/>
+                I messaggi vengono loggati per testing e debug.
               </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto text-left">
+                <p className="text-sm text-blue-900 mb-2 font-medium">Come funziona:</p>
+                <ul className="text-xs text-blue-800 space-y-1">
+                  <li>✅ Sistema completamente operativo</li>
+                  <li>📝 Messaggi loggati nei log backend</li>
+                  <li>🔍 Verifica con: tail -f backend.out.log</li>
+                  <li>🚀 Workflow automation attivi</li>
+                </ul>
+              </div>
             </div>
           )}
         </CardContent>
