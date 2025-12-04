@@ -12078,8 +12078,9 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
 };
 
 // WhatsApp Configuration Modal Component
-const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig, selectedUnit }) => {
+const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig, selectedUnit, units }) => {
   const [phoneNumber, setPhoneNumber] = useState(existingConfig?.phone_number || "");
+  const [unitId, setUnitId] = useState(selectedUnit && selectedUnit !== "all" ? selectedUnit : "");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
