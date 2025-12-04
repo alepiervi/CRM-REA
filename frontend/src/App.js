@@ -12298,23 +12298,59 @@ const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig, selectedUnit,
 
 // WhatsApp Mock Modal Component (Development Mode)
 const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
+  const [qrCode, setQrCode] = useState(null);
+  const [qrImage, setQrImage] = useState(null);
+  const [status, setStatus] = useState('loading');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
-  // Automatically show mock mode and close
   useEffect(() => {
-    if (sessionData) {
-      // Simulate brief loading
-      setTimeout(() => {
+    if (!sessionData?.session_id) return;
+    
+    let pollInterval;
+    
+    const fetchQRCode = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3001/qr/${sessionData.session_id}`);
+        
+        if (response.data.status === 'connected') {
+          setStatus('connected');
+          setLoading(false);
+          clearInterval(pollInterval);
+          toast({
+            title: "✅ WhatsApp Connesso!",
+            description: "Dispositivo collegato con successo",
+          });
+          setTimeout(() => onConnected(), 2000);
+        } else if (response.data.available && response.data.qr) {
+          setQrCode(response.data.qr);
+          setQrImage(response.data.qr_image);
+          setStatus('qr_ready');
+          setLoading(false);
+        } else if (response.data.status === 'not_found') {
+          setStatus('error');
+          setLoading(false);
+          toast({
+            title: "Errore",
+            description: "Sessione non trovata. Riprova.",
+            variant: "destructive",
+          });
+        } else {
+          setStatus('initializing');
+        }
+      } catch (error) {
+        console.error('Error fetching QR code:', error);
+        setStatus('error');
         setLoading(false);
-        toast({
-          title: "✅ WhatsApp Configurato",
-          description: "Modalità Development/Testing attiva",
-        });
-        // Auto close after 2 seconds
-        setTimeout(() => onConnected(), 2000);
-      }, 500);
-    }
+      }
+    };
+    
+    fetchQRCode();
+    pollInterval = setInterval(fetchQRCode, 3000);
+    
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, [sessionData]);
 
   return (
@@ -12322,59 +12358,68 @@ const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-center">
-            ✅ WhatsApp Mock Configurato!
+            {status === 'connected' ? '✅ WhatsApp Connesso!' : '📱 Collega WhatsApp'}
           </DialogTitle>
           <DialogDescription className="text-center">
-            Modalità Development/Testing attiva
+            {status === 'connected' 
+              ? 'Dispositivo collegato con successo' 
+              : 'Scansiona il QR code con WhatsApp'
+            }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Mock WhatsApp Status Display */}
           <div className="flex justify-center">
             <div className="w-full bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-300 rounded-lg p-8">
-              {loading ? (
+              {loading || status === 'initializing' ? (
                 <div className="text-center">
                   <MessageCircle className="w-16 h-16 mx-auto mb-4 text-green-500 animate-pulse" />
-                  <p className="text-sm text-slate-600">Configurazione WhatsApp...</p>
+                  <p className="text-sm text-slate-600">Generazione QR Code...</p>
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto mt-2"></div>
                 </div>
-              ) : (
+              ) : status === 'connected' ? (
                 <div className="text-center">
                   <div className="w-20 h-20 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
                     <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <p className="text-lg font-bold text-green-600 mb-2">Configurazione Completata!</p>
-                  <p className="text-sm text-slate-600 mb-3">
-                    Numero: <span className="font-semibold">{sessionData?.phone_number}</span>
+                  <p className="text-lg font-bold text-green-600 mb-2">Connesso!</p>
+                  <p className="text-sm text-slate-600">
+                    WhatsApp collegato per: <span className="font-semibold">{sessionData?.phone_number}</span>
                   </p>
-                  <div className="bg-white/60 rounded-lg p-4 text-xs text-slate-700 text-left">
-                    <p className="font-semibold mb-2 text-center text-blue-600">Come Funziona</p>
-                    <ul className="space-y-1">
-                      <li>✅ Sistema completamente operativo</li>
-                      <li>📱 Messaggi WhatsApp vengono loggati</li>
-                      <li>📊 Visibili nei log del backend</li>
-                      <li>🚀 Workflow automation attivi</li>
-                      <li>🔍 Debug: tail -f backend.out.log</li>
-                    </ul>
+                </div>
+              ) : status === 'qr_ready' && qrImage ? (
+                <div className="text-center">
+                  <div className="bg-white p-4 rounded-lg inline-block mb-4">
+                    <img src={qrImage} alt="WhatsApp QR Code" className="w-64 h-64" />
                   </div>
+                  <p className="text-sm text-slate-600 font-medium">
+                    Scansiona con WhatsApp
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-red-600">Errore nel caricamento del QR Code</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Info Box */}
-          {!loading && (
+          {status === 'qr_ready' && (
             <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
               <div className="flex items-start space-x-2">
                 <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="text-xs text-blue-900">
-                  <p className="font-semibold mb-1">Modalità Development</p>
-                  <p>I messaggi vengono loggati per testing. Sistema completamente funzionante per sviluppo e staging.</p>
+                  <p className="font-semibold mb-1">Come Collegare:</p>
+                  <ol className="list-decimal ml-4 space-y-1">
+                    <li>Apri WhatsApp sul tuo telefono</li>
+                    <li>Vai su Impostazioni → Dispositivi collegati</li>
+                    <li>Tocca "Collega un dispositivo"</li>
+                    <li>Scansiona questo QR code</li>
+                  </ol>
                 </div>
               </div>
             </div>
@@ -12384,11 +12429,12 @@ const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
         <DialogFooter>
           <Button 
             type="button" 
-            className="bg-green-600 hover:bg-green-700 w-full" 
+            variant="outline"
+            className="w-full" 
             onClick={onClose}
             disabled={loading}
           >
-            {loading ? 'Configurazione...' : 'Perfetto, Continua'}
+            Chiudi
           </Button>
         </DialogFooter>
       </DialogContent>
