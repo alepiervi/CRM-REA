@@ -52594,7 +52594,33 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         test_name = sys.argv[1]
         
-        if test_name == "zapier_webhook":
+        if test_name == "backend_fixes":
+            print("🎯 RUNNING SPECIFIC TEST: Backend Fixes Verification")
+            print("🎯 Testing Import Workflow Template Fix + Backoffice Sub Agenzia User Creation Fix")
+            print(f"🌐 Base URL: {tester.base_url}")
+            print("=" * 80)
+            
+            try:
+                result = tester.run_backend_fixes_tests()
+                
+                # Print summary
+                print(f"\n📊 Final Test Results:")
+                print(f"   Tests run: {tester.tests_run}")
+                print(f"   Tests passed: {tester.tests_passed}")
+                if tester.tests_run > 0:
+                    print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+                else:
+                    print(f"   Success rate: N/A (no tests run)")
+                
+                if result:
+                    print("🎉 BACKEND FIXES VERIFICATION SUCCESSFUL!")
+                else:
+                    print("❌ BACKEND FIXES VERIFICATION FAILED!")
+                    
+            except Exception as e:
+                print(f"❌ Test failed with exception: {e}")
+                
+        elif test_name == "zapier_webhook":
             print("🎯 RUNNING SPECIFIC TEST: Zapier Webhook Lead Verification")
             print(f"🌐 Base URL: {tester.base_url}")
             print("=" * 80)
