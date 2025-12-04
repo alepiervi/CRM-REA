@@ -17657,11 +17657,7 @@ async def import_workflow_template(
         raise HTTPException(status_code=403, detail="Only admin can import templates")
     
     # Verify unit exists
-    print(f"[DEBUG] Looking for unit with id: {unit_id}")
     unit = await db.units.find_one({"id": unit_id})
-    print(f"[DEBUG] Unit found: {unit is not None}")
-    if unit:
-        print(f"[DEBUG] Unit details: {unit.get('id', 'NO_ID')} - {unit.get('name', 'NO_NAME')}")
     if not unit:
         raise HTTPException(status_code=404, detail="Unit not found")
     
