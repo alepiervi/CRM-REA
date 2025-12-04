@@ -17647,7 +17647,7 @@ async def get_workflow_templates(current_user: User = Depends(get_current_user))
 @api_router.post("/workflow-templates/{template_id}/import")
 async def import_workflow_template(
     template_id: str,
-    unit_id: str,
+    unit_id: str = Query(...),
     current_user: User = Depends(get_current_user)
 ):
     """Import a workflow template for a specific unit"""
