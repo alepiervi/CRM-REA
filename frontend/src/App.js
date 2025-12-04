@@ -13077,11 +13077,29 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
             </DialogHeader>
 
             <div className="space-y-4">
-              {/* Unit Selection Warning */}
-              {(!selectedUnit || selectedUnit === "all") && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800">
-                    ⚠️ Seleziona una Unit specifica per importare un template
+              {/* Unit Selection Dropdown */}
+              <div>
+                <Label htmlFor="unit_select">Seleziona Unit *</Label>
+                <select
+                  id="unit_select"
+                  value={selectedUnitForImport}
+                  onChange={(e) => setSelectedUnitForImport(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Seleziona una unit...</option>
+                  {units.filter(u => u.id !== "all").map((unit) => (
+                    <option key={unit.id} value={unit.id}>
+                      {unit.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Warning if no unit selected */}
+              {!selectedUnitForImport && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    💡 Seleziona la Unit per cui vuoi importare il workflow automatico
                   </p>
                 </div>
               )}
