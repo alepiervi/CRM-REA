@@ -6523,8 +6523,7 @@ async def configure_whatsapp(
             "config_id": config_id,
             "session_id": session_id,
             "phone_number": config_data.phone_number,
-            "connection_status": "qr_pending",
-            "qr_connection_url": f"{API_URL}/whatsapp-connect?session_id={session_id}"
+            "connection_status": "qr_pending"
         }
         
     except HTTPException:
