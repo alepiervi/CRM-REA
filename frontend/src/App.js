@@ -13566,6 +13566,15 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   const [showNodeEditor, setShowNodeEditor] = useState(false);
   const { toast } = useToast();
 
+  // Load workflow nodes and edges when workflow is provided
+  useEffect(() => {
+    if (workflow && workflow.nodes && workflow.edges) {
+      console.log("🔵 Loading workflow nodes and edges:", workflow.nodes.length, workflow.edges.length);
+      setNodes(workflow.nodes || []);
+      setEdges(workflow.edges || []);
+    }
+  }, [workflow]);
+
   // Fetch available node types from backend
   useEffect(() => {
     fetchNodeTypes();
