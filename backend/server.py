@@ -5802,11 +5802,52 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
         await db["leads"].insert_one(lead_obj.dict())
         logging.info(f"Lead created via webhook: {lead_obj.id} for unit {unit_id}")
         
+        # NEW: Auto-execute workflow if one exists for this unit
+        workflow_execution_result = None
+        try:
+            # Find active workflow for this unit with trigger "lead_created"
+            workflow = await db.workflows.find_one({
+                "unit_id": unit_id,
+                "is_active": True,
+                "trigger_type": "lead_created"
+            })
+            
+            if workflow:
+                # Get OpenAI API key
+                ai_config = await db.ai_configurations.find_one({}, {"_id": 0})
+                openai_key = ai_config.get("openai_api_key") if ai_config else None
+                
+                # Initialize and execute workflow
+                executor = WorkflowExecutor(db, openai_key)
+                workflow_result = await executor.execute_workflow(
+                    workflow["id"],
+                    {
+                        "lead_id": lead_obj.id,
+                        "unit_tag": unit.get("nome"),
+                        "lead_data": lead_obj.dict()
+                    }
+                )
+                
+                workflow_execution_result = {
+                    "workflow_executed": True,
+                    "workflow_id": workflow["id"],
+                    "result": workflow_result
+                }
+                
+                logging.info(f"Workflow auto-executed for lead {lead_obj.id}: {workflow_result.get('success')}")
+        except Exception as wf_error:
+            logging.error(f"Workflow execution error for lead {lead_obj.id}: {wf_error}")
+            workflow_execution_result = {
+                "workflow_executed": False,
+                "error": str(wf_error)
+            }
+        
         return {
             "success": True,
             "lead_id": lead_obj.id,
             "assigned_agent_id": assigned_agent_id,
-            "message": f"Lead created and {'assigned to agent' if assigned_agent_id else 'awaiting assignment'}"
+            "message": f"Lead created and {'assigned to agent' if assigned_agent_id else 'awaiting assignment'}",
+            "workflow": workflow_execution_result
         }
         
     except HTTPException:
