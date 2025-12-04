@@ -97,17 +97,42 @@ async function initWhatsAppForUnit(unitId, sessionId, phoneNumber) {
             }
 
             if (connection === 'close') {
-                const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut
-                logger.info(`Connection closed for ${sessionId}, reconnecting: ${shouldReconnect}`)
+                const statusCode = lastDisconnect?.error?.output?.statusCode
+                const shouldReconnect = statusCode !== DisconnectReason.loggedOut
+                
+                logger.info(`Connection closed for ${sessionId}, status: ${statusCode}, reconnecting: ${shouldReconnect}`)
 
                 if (shouldReconnect) {
-                    activeSockets.delete(sessionId)
-                    qrCodes.delete(sessionId)
-                    setTimeout(() => initWhatsAppForUnit(unitId, sessionId), 5000)
+                    // Implement exponential backoff
+                    const retries = connectionRetries.get(sessionId) || 0
+                    
+                    if (retries < MAX_RETRIES) {
+                        connectionRetries.set(sessionId, retries + 1)
+                        const delay = Math.min(5000 * Math.pow(2, retries), 30000) // Max 30s
+                        logger.info(`Retry ${retries + 1}/${MAX_RETRIES} for ${sessionId} in ${delay}ms`)
+                        setTimeout(() => initWhatsAppForUnit(unitId, sessionId, phoneNumber), delay)
+                    } else {
+                        logger.error(`Max retries reached for ${sessionId}, giving up`)
+                        activeSockets.delete(sessionId)
+                        pairingCodes.delete(sessionId)
+                        connectionRetries.delete(sessionId)
+                        
+                        try {
+                            await axios.post(`${FASTAPI_URL}/api/whatsapp-session-update`, {
+                                session_id: sessionId,
+                                unit_id: unitId,
+                                status: 'failed'
+                            })
+                        } catch (error) {
+                            logger.error('Failed to notify failure:', error.message)
+                        }
+                    }
                 } else {
-                    // Logged out - notify FastAPI
+                    // Logged out - clean up
                     activeSockets.delete(sessionId)
-                    qrCodes.delete(sessionId)
+                    pairingCodes.delete(sessionId)
+                    connectionRetries.delete(sessionId)
+                    
                     try {
                         await axios.post(`${FASTAPI_URL}/api/whatsapp-session-update`, {
                             session_id: sessionId,
@@ -119,8 +144,9 @@ async function initWhatsAppForUnit(unitId, sessionId, phoneNumber) {
                     }
                 }
             } else if (connection === 'open') {
-                logger.info(`WhatsApp connected for session: ${sessionId}`)
-                qrCodes.delete(sessionId)
+                logger.info(`✅ WhatsApp connected for session: ${sessionId}`)
+                pairingCodes.delete(sessionId)
+                connectionRetries.delete(sessionId) // Reset retries on success
                 
                 const sessionData = activeSockets.get(sessionId)
                 if (sessionData) {
