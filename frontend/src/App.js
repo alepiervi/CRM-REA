@@ -12382,38 +12382,61 @@ const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Connetti WhatsApp Web</DialogTitle>
+          <DialogTitle>
+            {connectionStatus === 'connected' ? '✅ WhatsApp Connesso!' : '📱 Scansiona QR Code'}
+          </DialogTitle>
           <DialogDescription>
-            Scansiona il QR code con WhatsApp per connettere il numero {phoneNumber}
+            {connectionStatus === 'connected' 
+              ? 'Il tuo WhatsApp è stato collegato con successo'
+              : `Collega WhatsApp per Unit: ${sessionData.unit_id}`
+            }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* QR Code Display */}
           <div className="flex justify-center">
-            <div className="w-64 h-64 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center">
-              {qrImageUrl ? (
+            <div className="w-80 h-80 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center">
+              {loading ? (
+                <div className="text-center">
+                  <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-400 animate-pulse" />
+                  <p className="text-sm text-slate-500">Generazione QR Code...</p>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mt-2"></div>
+                </div>
+              ) : connectionStatus === 'connected' ? (
+                <div className="text-center">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-lg font-semibold text-green-600">Connesso!</p>
+                  <p className="text-sm text-slate-500 mt-2">Puoi chiudere questa finestra</p>
+                </div>
+              ) : qrImageUrl ? (
                 <img 
                   src={qrImageUrl} 
                   alt="WhatsApp QR Code" 
                   className="w-full h-full object-contain p-4"
                 />
               ) : (
-                <div className="text-center">
+                <div className="text-center text-slate-500">
                   <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-                  <p className="text-sm text-slate-500">Generazione QR Code...</p>
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mt-2"></div>
+                  <p className="text-sm">Impossibile generare QR Code</p>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="bg-green-50 p-3 rounded-lg">
-            <div className="flex items-start space-x-2">
-              <MessageCircle className="w-4 h-4 text-green-600 mt-0.5" />
-              <div className="text-sm text-green-800">
-                <p className="font-medium mb-1">Come connettere:</p>
+          {/* Instructions */}
+          {connectionStatus !== 'connected' && qrImageUrl && (
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <MessageCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-green-900">
+                  <p className="font-semibold mb-2">Come connettere WhatsApp:</p>
                 <ol className="list-decimal list-inside space-y-1 text-xs">
                   <li>Apri WhatsApp sul telefono</li>
                   <li>Vai su Menu → WhatsApp Web</li>
