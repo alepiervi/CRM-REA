@@ -7888,6 +7888,13 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
             "name": "Conditions",
             "description": "Decision points in the workflow",
             "subtypes": {
+                "check_positive_response": {
+                    "name": "Verifica Risposta Positiva",
+                    "description": "Controlla se il lead ha risposto in modo affermativo (SI, OK, CERTO)",
+                    "icon": "check-circle",
+                    "color": "purple",
+                    "fields": []
+                },
                 "if_else": {
                     "name": "If/Else",
                     "description": "Branch workflow based on conditions",
