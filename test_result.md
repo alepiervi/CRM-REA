@@ -165,17 +165,13 @@ FOCUS CRITICO:
 
 STATO: PRONTO PER TESTING COMPLETO"
 
-current_problem_statement: "TEST WHATSAPP FRONTEND UI FLOW - COMPLETE CONFIGURATION VERIFICATION
+current_problem_statement: "TEST WHATSAPP CONFIGURATION FLOW POST-FIX - QR CODE MODAL VERIFICATION
 
 CONTESTO:
-Testare il flusso completo di configurazione WhatsApp nell'interfaccia frontend per verificare che l'integrazione WhatsApp-Web.js funzioni correttamente nell'UI.
+Ri-testare il flusso completo di configurazione WhatsApp dopo il fix dell'URL per verificare che il modale QR Code si apra correttamente (questo era il problema principale).
 
-OBIETTIVO:
-Verificare che il frontend mostri correttamente:
-1. Stato iniziale 'WhatsApp Non Configurato' (NON 'Mock Active')
-2. Form di configurazione con Unit e numero telefono
-3. QR code reale generato da WhatsApp-Web.js (NON mock)
-4. Stato post-configurazione 'Non Connesso' con badge 'Da Collegare'
+OBIETTIVO CRITICO:
+Verificare che il QR Code modal SI APRA dopo il fix dell'URL e mostri un QR code effettivo.
 
 URL: https://lead2ai-flow.preview.emergentagent.com
 CREDENZIALI: admin / admin123
@@ -184,40 +180,44 @@ TEST DA ESEGUIRE:
 
 **FASE 1: Login e Navigazione**
 1. Login con admin/admin123
-2. Naviga alla sezione 'WhatsApp' nel menu laterale
-3. Verifica che la pagina 'Gestione WhatsApp' si carichi
+2. Vai alla sezione WhatsApp
 
-**FASE 2: Stato Iniziale**
-4. Verifica che venga mostrato 'WhatsApp Non Configurato' (NON 'Mock Active')
-5. Verifica che ci sia il pulsante 'Configura Ora' o 'Configura Numero'
+**FASE 2: Configurazione WhatsApp**
+3. Clicca su "Configura Numero"
+4. Seleziona Unit dal dropdown
+5. Inserisci numero: +393401234560 (numero diverso per nuovo test)
+6. Salva la configurazione
 
-**FASE 3: Configurazione**
-6. Clicca sul pulsante 'Configura Numero' o 'Configura Ora'
-7. Seleziona una Unit dal dropdown (la prima disponibile)
-8. Inserisci numero di telefono: +393401234567
-9. Clicca su 'Salva' o 'Configura'
+**FASE 3: VERIFICA CRITICA - QR Code Modal**
+7. Verifica che il modale QR Code SI APRA (questo era il problema)
+8. Verifica che compaia il messaggio "Generazione QR Code..." inizialmente
+9. Attendi 5-10 secondi
+10. **IMPORTANTE**: Verifica che compaia un QR CODE effettivo (immagine base64 o canvas)
+11. Verifica che ci siano le istruzioni per scansionare
+12. Verifica che NON ci siano errori di rete nella console
 
-**FASE 4: QR Code Modal**
-10. Verifica che si apra un nuovo modale con titolo 'Collega WhatsApp'
-11. Verifica che compaia 'Generazione QR Code...' (inizialmente)
-12. Verifica che compaia un QR code effettivo (immagine)
-13. Verifica istruzioni su come scansionare il QR code
-14. IMPORTANTE: Verifica che NON compaia 'Mock Active' o 'Modalità Development'
+**FASE 4: Verifica Console Logs**
+13. Controlla che non ci siano errori tipo "Failed to fetch" o "localhost:3001"
+14. Verifica che la chiamata API vada all'endpoint corretto: /api/whatsapp-qr/{session_id}
 
-**FASE 5: Stato Post-Configurazione**
+**FASE 5: Verifica Stato Finale**
 15. Chiudi il modale
-16. Ricarica la pagina WhatsApp
-17. Verifica che lo stato sia cambiato a '⚠ Non Connesso' (giallo)
-18. Verifica badge 'Da Collegare' o 'Connessione Richiesta'
-19. Verifica che ci sia il pulsante 'Connetti WhatsApp'
+16. Verifica che lo stato sia "Non Connesso" con badge giallo
+17. Verifica che ci sia il pulsante "Connetti WhatsApp"
 
 CRITERI DI SUCCESSO:
-✅ NON deve apparire nessun riferimento a 'Mock', 'Development', o 'Testing'
-✅ Il QR code deve essere un'immagine reale generata da WhatsApp-Web.js
-✅ L'UI deve mostrare chiaramente che WhatsApp è configurato ma non ancora connesso
-✅ Lo stato deve essere persistito nel database
+✅ Il QR code modal DEVE apparire (fix principale)
+✅ Il QR code deve essere un'immagine visibile
+✅ NON devono esserci errori di rete
+✅ L'endpoint proxy /api/whatsapp-qr deve funzionare
 
-STATO: READY FOR FRONTEND UI TESTING"
+FOCUS CRITICO:
+- Il QR code modal DEVE aprirsi (era il problema principale)
+- Il QR code deve essere reale, non mock
+- Nessun errore di rete nella console
+- Endpoint corretto utilizzato
+
+STATO: READY FOR POST-FIX TESTING"
 
 TEST DA ESEGUIRE:
 
