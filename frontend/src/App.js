@@ -12148,9 +12148,11 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
         <WhatsAppConfigModal
           onClose={() => setShowConfigModal(false)}
           onSuccess={(sessionData) => {
-            setQrSessionData(sessionData);
             setShowConfigModal(false);
-            setShowQRModal(true);
+            setQrSessionData(sessionData);
+            setTimeout(() => {
+              setShowQRModal(true);
+            }, 300);
           }}
           existingConfig={config}
           selectedUnit={selectedUnit}
