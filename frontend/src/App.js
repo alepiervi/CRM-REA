@@ -12413,14 +12413,13 @@ const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Chiudi
+          <Button 
+            type="button" 
+            className="bg-green-600 hover:bg-green-700 w-full" 
+            onClick={onClose}
+          >
+            {connectionStatus === 'mock_active' ? 'Perfetto, Continua' : 'Chiudi'}
           </Button>
-          {connectionStatus === 'qr_pending' && (
-            <Button disabled className="bg-blue-600">
-              In attesa di scansione...
-            </Button>
-          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
