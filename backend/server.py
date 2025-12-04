@@ -7624,21 +7624,51 @@ async def execute_workflow(
         execution = WorkflowExecution(**execution_data)
         await db.workflow_executions.insert_one(execution.dict())
         
-        # For now, we'll just mark it as completed for testing
-        # In a real implementation, this would trigger background processing
-        await db.workflow_executions.update_one(
-            {"id": execution.id},
-            {"$set": {
-                "status": "completed",
-                "completed_at": datetime.now(timezone.utc)
-            }}
-        )
-        
-        return {
-            "detail": "Workflow execution started",
-            "execution_id": execution.id,
-            "workflow_id": workflow_id
-        }
+        # Execute workflow using WorkflowExecutor
+        try:
+            # Get OpenAI API key from config
+            ai_config = await db.ai_configurations.find_one({}, {"_id": 0})
+            openai_key = ai_config.get("openai_api_key") if ai_config else None
+            
+            # Initialize executor
+            executor = WorkflowExecutor(db, openai_key)
+            
+            # Execute workflow
+            result = await executor.execute_workflow(
+                workflow_id,
+                {
+                    "lead_id": execution_in.contact_id,
+                    "trigger_data": execution_in.trigger_data or {}
+                }
+            )
+            
+            # Update execution record
+            await db.workflow_executions.update_one(
+                {"id": execution.id},
+                {"$set": {
+                    "status": "completed" if result.get("success") else "failed",
+                    "completed_at": datetime.now(timezone.utc),
+                    "result": result
+                }}
+            )
+            
+            return {
+                "detail": "Workflow executed successfully" if result.get("success") else "Workflow execution failed",
+                "execution_id": execution.id,
+                "workflow_id": workflow_id,
+                "result": result
+            }
+        except Exception as exec_error:
+            # Mark as failed
+            await db.workflow_executions.update_one(
+                {"id": execution.id},
+                {"$set": {
+                    "status": "failed",
+                    "completed_at": datetime.now(timezone.utc),
+                    "error": str(exec_error)
+                }}
+            )
+            raise
         
     except HTTPException:
         raise
