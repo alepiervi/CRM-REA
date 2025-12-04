@@ -6589,35 +6589,70 @@ async def get_whatsapp_configuration(
             "error": True
         }
 
-@api_router.post("/whatsapp-connect")
-async def connect_whatsapp(
-    unit_id: Optional[str] = Query(None),
+@api_router.get("/whatsapp-qr/{session_id}")
+async def get_whatsapp_qr(
+    session_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Connect WhatsApp for specific unit (admin only)"""
+    """Generate QR code for WhatsApp connection"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can access QR code")
+    
+    try:
+        # Find configuration by session_id
+        config = await db.whatsapp_configurations.find_one({"session_id": session_id})
+        if not config:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # Generate QR code data (simulated for now - in production, use whatsapp-web.js)
+        # Format: unit_id:session_id:timestamp for unique identification
+        qr_data = f"whatsapp_connect:{config['unit_id']}:{session_id}:{int(datetime.now(timezone.utc).timestamp())}"
+        
+        # In production, you would generate an actual QR code image here
+        # For now, we return the data that should be encoded in QR
+        return {
+            "success": True,
+            "session_id": session_id,
+            "qr_data": qr_data,
+            "status": config.get("connection_status", "qr_pending"),
+            "unit_id": config.get("unit_id"),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+            "instructions": "Scan questo QR code con WhatsApp: Impostazioni > Dispositivi collegati > Collega un dispositivo"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"QR generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"QR generation failed: {str(e)}")
+
+@api_router.post("/whatsapp-connect")
+async def connect_whatsapp(
+    session_id: str = Query(...),
+    phone_number: str = Query(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark WhatsApp as connected after QR scan (simulated)"""
     
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Only admin can connect WhatsApp")
     
     try:
-        target_unit_id = unit_id or current_user.unit_id
-        if not target_unit_id:
-            raise HTTPException(status_code=400, detail="Unit ID is required")
-        
-        # Get configuration
-        config = await db.whatsapp_configurations.find_one({"unit_id": target_unit_id})
+        # Find configuration by session_id
+        config = await db.whatsapp_configurations.find_one({"session_id": session_id})
         if not config:
-            raise HTTPException(status_code=404, detail="WhatsApp configuration not found for this unit")
+            raise HTTPException(status_code=404, detail="Session not found")
         
-        # Simulate connection process
+        # Update connection status
         await db.whatsapp_configurations.update_one(
-            {"unit_id": target_unit_id},
+            {"session_id": session_id},
             {
                 "$set": {
                     "is_connected": True,
                     "connection_status": "connected",
+                    "connected_phone": phone_number,
                     "last_seen": datetime.now(timezone.utc),
-                    "qr_code": None,  # Clear QR code after connection
                     "updated_at": datetime.now(timezone.utc)
                 }
             }
@@ -6626,9 +6661,9 @@ async def connect_whatsapp(
         return {
             "success": True,
             "message": "WhatsApp connected successfully",
-            "unit_id": target_unit_id,
+            "unit_id": config["unit_id"],
             "connection_status": "connected",
-            "phone_number": config["phone_number"]
+            "phone_number": phone_number
         }
         
     except HTTPException:
