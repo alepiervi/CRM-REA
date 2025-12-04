@@ -6470,19 +6470,18 @@ async def configure_whatsapp(
         if not unit_id:
             raise HTTPException(status_code=400, detail="Unit ID is required")
         
-        # Generate QR code for connection simulation
-        qr_result = await whatsapp_service.generate_qr_code(unit_id)
+        # Generate session ID for this WhatsApp connection
+        session_id = f"wa_session_{unit_id}_{str(uuid.uuid4())[:8]}"
         
-        # Create/update WhatsApp configuration
+        # Create/update WhatsApp configuration with pending status
         config_dict = {
             "id": str(uuid.uuid4()),
             "unit_id": unit_id,
             "phone_number": config_data.phone_number,
-            "qr_code": qr_result.get("qr_code"),
+            "session_id": session_id,
             "is_connected": False,
-            "connection_status": "connecting",
-            "webhook_url": f"{os.environ.get('WEBHOOK_BASE_URL', 'https://your-domain.com')}/api/whatsapp/webhook",
-            "api_version": "v18.0",
+            "connection_status": "qr_pending",  # waiting for QR scan
+            "webhook_url": f"{os.environ.get('WEBHOOK_BASE_URL', 'https://crm-workflow-boost.preview.emergentagent.com')}/api/whatsapp/webhook",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
         }
@@ -6495,8 +6494,8 @@ async def configure_whatsapp(
                 {"unit_id": unit_id},
                 {"$set": {
                     "phone_number": config_data.phone_number,
-                    "qr_code": qr_result.get("qr_code"),
-                    "connection_status": "connecting",
+                    "session_id": session_id,
+                    "connection_status": "qr_pending",
                     "updated_at": datetime.now(timezone.utc)
                 }}
             )
@@ -6508,12 +6507,12 @@ async def configure_whatsapp(
         
         return {
             "success": True,
-            "message": "WhatsApp configuration saved successfully",
+            "message": "WhatsApp configuration created. Please scan QR code to connect.",
             "config_id": config_id,
-            "qr_code": qr_result.get("qr_code"),
-            "expires_at": qr_result.get("expires_at"),
+            "session_id": session_id,
             "phone_number": config_data.phone_number,
-            "connection_status": "connecting"
+            "connection_status": "qr_pending",
+            "qr_connection_url": f"{API_URL}/whatsapp-connect?session_id={session_id}"
         }
         
     except HTTPException:
