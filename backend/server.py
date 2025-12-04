@@ -6475,12 +6475,17 @@ async def configure_whatsapp(
         
         # Initialize WhatsApp session in Node.js service
         try:
-            whatsapp_service_response = await httpx.AsyncClient().post(
-                "http://localhost:3001/init-session",
-                json={"unit_id": unit_id, "session_id": session_id},
-                timeout=10.0
-            )
-            whatsapp_service_response.raise_for_status()
+            async with httpx.AsyncClient() as client:
+                whatsapp_service_response = await client.post(
+                    "http://localhost:3001/init-session",
+                    json={
+                        "unit_id": unit_id, 
+                        "session_id": session_id,
+                        "phone_number": config_data.phone_number
+                    },
+                    timeout=10.0
+                )
+                whatsapp_service_response.raise_for_status()
         except Exception as wa_error:
             logging.error(f"Failed to initialize WhatsApp session: {wa_error}")
             raise HTTPException(status_code=500, detail=f"Failed to initialize WhatsApp service: {str(wa_error)}")
