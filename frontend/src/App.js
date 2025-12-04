@@ -12011,66 +12011,93 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Always show Mock mode as configured */}
-          {config?.configured || selectedUnit ? (
+          {config?.configured ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <MessageCircle className="w-6 h-6 text-green-600" />
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    config.is_connected ? 'bg-green-100' : 'bg-yellow-100'
+                  }`}>
+                    <MessageCircle className={`w-6 h-6 ${
+                      config.is_connected ? 'text-green-600' : 'text-yellow-600'
+                    }`} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-800">{config?.phone_number || "WhatsApp Mock Mode"}</h3>
-                    <p className="text-sm text-slate-500">Sistema Messaggistica Attivo</p>
+                    <h3 className="font-semibold text-slate-800">{config?.phone_number || "WhatsApp Business"}</h3>
+                    <p className="text-sm text-slate-500">
+                      {config.is_connected ? 'Connesso e Attivo' : 'Configurato - Non Connesso'}
+                    </p>
                   </div>
                 </div>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  ✓ Mock Active
-                </span>
+                {config.is_connected ? (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    ✓ Connesso
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                    ⚠ Non Connesso
+                  </span>
+                )}
               </div>
               
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                 <div>
-                  <Label className="text-sm font-medium text-slate-600">Modalità</Label>
-                  <p className="text-sm font-medium text-blue-600">Development/Testing</p>
+                  <Label className="text-sm font-medium text-slate-600">Stato Connessione</Label>
+                  <p className={`text-sm font-medium ${
+                    config.is_connected ? 'text-green-600' : 'text-yellow-600'
+                  }`}>
+                    {config.is_connected ? 'Attivo' : 'Da Collegare'}
+                  </p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-slate-600">Stato Sistema</Label>
-                  <p className="text-sm font-medium text-green-600">Operativo</p>
+                  <Label className="text-sm font-medium text-slate-600">Unit</Label>
+                  <p className="text-sm font-medium text-slate-700">
+                    {units?.find(u => u.id === config.unit_id)?.name || 'N/A'}
+                  </p>
                 </div>
               </div>
 
-              <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-green-800 font-medium">WhatsApp Mock Configurato</span>
+              {config.is_connected ? (
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-green-800 font-medium">WhatsApp Attivo</span>
+                  </div>
+                  <p className="text-sm text-green-700 mt-2">
+                    ✅ Dispositivo collegato e operativo<br/>
+                    📱 Pronto a inviare e ricevere messaggi<br/>
+                    🚀 Workflow automation completamente funzionanti
+                  </p>
                 </div>
-                <p className="text-sm text-green-700 mt-2">
-                  📝 I messaggi WhatsApp vengono loggati nel sistema<br/>
-                  🔍 Visibili nei log: /var/log/supervisor/backend.out.log<br/>
-                  ✅ Workflow automation completamente funzionanti
-                </p>
-              </div>
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span className="text-yellow-800 font-medium">Connessione Richiesta</span>
+                  </div>
+                  <p className="text-sm text-yellow-700 mt-2">
+                    📱 Numero configurato ma non ancora collegato<br/>
+                    🔗 Clicca "Connetti WhatsApp" per scansionare il QR code<br/>
+                    ⏳ Workflow automation in attesa di connessione
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-8">
-              <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <MessageCircle className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                <MessageCircle className="w-8 h-8 text-slate-400" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-700 mb-2">WhatsApp Mock Mode Attivo</h3>
+              <h3 className="text-lg font-semibold text-slate-700 mb-2">WhatsApp Non Configurato</h3>
               <p className="text-slate-600 mb-4">
-                Sistema di messaggistica configurato in modalità development.<br/>
-                I messaggi vengono loggati per testing e debug.
+                Configura WhatsApp Business per iniziare a inviare messaggi automatici.
               </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto text-left">
-                <p className="text-sm text-blue-900 mb-2 font-medium">Come funziona:</p>
-                <ul className="text-xs text-blue-800 space-y-1">
-                  <li>✅ Sistema completamente operativo</li>
-                  <li>📝 Messaggi loggati nei log backend</li>
-                  <li>🔍 Verifica con: tail -f backend.out.log</li>
-                  <li>🚀 Workflow automation attivi</li>
-                </ul>
-              </div>
+              <Button onClick={() => setShowConfigModal(true)} className="bg-green-600 hover:bg-green-700">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Configura Ora
+              </Button>
             </div>
           )}
         </CardContent>
