@@ -7201,10 +7201,19 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
 
   // NEW: Load servizi when unit_id or sub_agenzia_id is set on mount
   useEffect(() => {
+    console.log("🟣 EDIT MODAL useEffect - Checking what to load:");
+    console.log("  - formData.unit_id:", formData.unit_id);
+    console.log("  - formData.sub_agenzia_id:", formData.sub_agenzia_id);
+    console.log("  - formData.assignment_type:", formData.assignment_type);
+    
     if (formData.unit_id && formData.assignment_type === "unit") {
+      console.log("🟣 Loading servizi for UNIT:", formData.unit_id);
       handleUnitChange(formData.unit_id);
     } else if (formData.sub_agenzia_id && formData.assignment_type === "sub_agenzia") {
+      console.log("🟣 Loading servizi for SUB_AGENZIA:", formData.sub_agenzia_id);
       handleSubAgenziaChange(formData.sub_agenzia_id);
+    } else {
+      console.log("🟣 NO MATCH - servizi will not be loaded automatically");
     }
   }, []);
 
