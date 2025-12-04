@@ -396,6 +396,7 @@ class UnitUpdate(BaseModel):
     campagne_autorizzate: Optional[List[str]] = None
     is_active: Optional[bool] = None
     assistant_id: Optional[str] = None  # NEW: OpenAI Assistant ID assignment
+    welcome_message: Optional[str] = None  # NEW: WhatsApp welcome message template
 
 # NEW: Dynamic Lead Status model
 class LeadStatusModel(BaseModel):
