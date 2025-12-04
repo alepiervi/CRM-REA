@@ -12321,69 +12321,60 @@ const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {connectionStatus === 'connected' ? '✅ WhatsApp Connesso!' : '📱 Scansiona QR Code'}
+          <DialogTitle className="text-center">
+            ✅ WhatsApp Mock Configurato!
           </DialogTitle>
-          <DialogDescription>
-            {connectionStatus === 'connected' 
-              ? 'Il tuo WhatsApp è stato collegato con successo'
-              : `Collega WhatsApp per Unit: ${sessionData.unit_id}`
-            }
+          <DialogDescription className="text-center">
+            Modalità Development/Testing attiva
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Mock WhatsApp Status Display */}
           <div className="flex justify-center">
-            <div className="w-80 h-80 bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-300 rounded-lg flex items-center justify-center">
+            <div className="w-full bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-300 rounded-lg p-8">
               {loading ? (
                 <div className="text-center">
                   <MessageCircle className="w-16 h-16 mx-auto mb-4 text-green-500 animate-pulse" />
                   <p className="text-sm text-slate-600">Configurazione WhatsApp...</p>
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto mt-2"></div>
                 </div>
-              ) : connectionStatus === 'mock_active' ? (
-                <div className="text-center p-6">
+              ) : (
+                <div className="text-center">
                   <div className="w-20 h-20 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
                     <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <p className="text-lg font-bold text-green-600 mb-2">✅ WhatsApp Configurato!</p>
+                  <p className="text-lg font-bold text-green-600 mb-2">Configurazione Completata!</p>
                   <p className="text-sm text-slate-600 mb-3">
-                    Modalità: <span className="font-semibold text-blue-600">Development/Testing</span>
+                    Numero: <span className="font-semibold">{sessionData?.phone_number}</span>
                   </p>
-                  <div className="bg-white/60 rounded-lg p-3 text-xs text-slate-700">
-                    <p className="mb-1">📱 Messaggi verranno loggati nel sistema</p>
-                    <p className="mb-1">📊 Visibili nei log del backend</p>
-                    <p>✨ Sistema completamente funzionante</p>
+                  <div className="bg-white/60 rounded-lg p-4 text-xs text-slate-700 text-left">
+                    <p className="font-semibold mb-2 text-center text-blue-600">Come Funziona</p>
+                    <ul className="space-y-1">
+                      <li>✅ Sistema completamente operativo</li>
+                      <li>📱 Messaggi WhatsApp vengono loggati</li>
+                      <li>📊 Visibili nei log del backend</li>
+                      <li>🚀 Workflow automation attivi</li>
+                      <li>🔍 Debug: tail -f backend.out.log</li>
+                    </ul>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <MessageCircle className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-                  <p className="text-sm">Configurazione in corso...</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Mock Mode Info */}
-          {connectionStatus === 'mock_active' && (
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+          {/* Info Box */}
+          {!loading && (
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
               <div className="flex items-start space-x-2">
                 <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <div className="text-sm text-blue-900">
-                  <p className="font-semibold mb-2">Modalità Development Attiva</p>
-                  <ul className="space-y-1 text-xs">
-                    <li>✅ Sistema completamente operativo</li>
-                    <li>📝 Messaggi WhatsApp vengono loggati</li>
-                    <li>🔍 Visibili in: /var/log/supervisor/backend.out.log</li>
-                    <li>🚀 Workflow automation attivi</li>
-                    <li>💡 Per WhatsApp reale: contattare amministratore</li>
-                  </ul>
+                <div className="text-xs text-blue-900">
+                  <p className="font-semibold mb-1">Modalità Development</p>
+                  <p>I messaggi vengono loggati per testing. Sistema completamente funzionante per sviluppo e staging.</p>
                 </div>
               </div>
             </div>
@@ -12395,8 +12386,9 @@ const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
             type="button" 
             className="bg-green-600 hover:bg-green-700 w-full" 
             onClick={onClose}
+            disabled={loading}
           >
-            {connectionStatus === 'mock_active' ? 'Perfetto, Continua' : 'Chiudi'}
+            {loading ? 'Configurazione...' : 'Perfetto, Continua'}
           </Button>
         </DialogFooter>
       </DialogContent>
