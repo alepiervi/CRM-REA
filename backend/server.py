@@ -17633,6 +17633,62 @@ async def get_offerte_by_filiera(
         logging.error(f"Error fetching offerte by filiera: {e}")
         raise HTTPException(status_code=500, detail=f"Errore nel caricamento offerte: {str(e)}")
 
+# Workflow Templates Endpoints
+@api_router.get("/workflow-templates")
+async def get_workflow_templates(current_user: User = Depends(get_current_user)):
+    """Get available workflow templates"""
+    from workflow_templates import get_available_templates
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can view templates")
+    
+    return {"templates": get_available_templates()}
+
+@api_router.post("/workflow-templates/{template_id}/import")
+async def import_workflow_template(
+    template_id: str,
+    unit_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Import a workflow template for a specific unit"""
+    from workflow_templates import get_lead_qualification_template
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can import templates")
+    
+    # Verify unit exists
+    unit = await db.units.find_one({"id": unit_id})
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    # Get template
+    if template_id == "lead_qualification_ai":
+        workflow = get_lead_qualification_template(unit_id)
+    else:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    # Check if similar workflow already exists
+    existing = await db.workflows.find_one({
+        "unit_id": unit_id,
+        "metadata.template_name": template_id
+    })
+    
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="A workflow from this template already exists for this unit"
+        )
+    
+    # Insert workflow
+    await db.workflows.insert_one(workflow)
+    
+    return {
+        "success": True,
+        "workflow_id": workflow["id"],
+        "message": f"Template '{workflow['name']}' imported successfully",
+        "workflow": workflow
+    }
+
 # Health check endpoint for monitoring and keep-alive
 @app.get("/api/health")
 async def health_check():
