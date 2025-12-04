@@ -13046,6 +13046,84 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
           onSuccess={handleCreateWorkflow}
         />
       )}
+
+      {/* Template Import Modal */}
+      {showTemplateModal && (
+        <Dialog open={true} onOpenChange={() => setShowTemplateModal(false)}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>📥 Importa Template Workflow</DialogTitle>
+              <DialogDescription>
+                Scegli un template pre-configurato da importare per la unit selezionata
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Unit Selection Warning */}
+              {(!selectedUnit || selectedUnit === "all") && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Seleziona una Unit specifica per importare un template
+                  </p>
+                </div>
+              )}
+
+              {/* Templates List */}
+              <div className="space-y-3">
+                {templates.map((template) => (
+                  <div key={template.id} className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-lg text-slate-900">{template.name}</h3>
+                        <p className="text-sm text-slate-600 mt-1">{template.description}</p>
+                        
+                        {/* Features */}
+                        <div className="mt-3 space-y-1">
+                          <p className="text-xs font-medium text-slate-700">Funzionalità incluse:</p>
+                          <ul className="grid grid-cols-2 gap-1">
+                            {template.features.map((feature, idx) => (
+                              <li key={idx} className="text-xs text-slate-600 flex items-center">
+                                <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                                {feature}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Metadata */}
+                        <div className="mt-3 flex items-center space-x-4 text-xs text-slate-500">
+                          <span>🎯 Trigger: {template.trigger}</span>
+                          <span>📦 {template.nodes_count} nodi</span>
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={() => importTemplate(template.id, selectedUnit)}
+                        disabled={!selectedUnit || selectedUnit === "all" || importingTemplate}
+                        className="ml-4"
+                      >
+                        {importingTemplate ? "Importando..." : "Importa"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                {templates.length === 0 && (
+                  <div className="text-center py-8 text-slate-500">
+                    <p>Nessun template disponibile</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={() => setShowTemplateModal(false)}>
+                Chiudi
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
