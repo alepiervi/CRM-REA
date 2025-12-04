@@ -12131,9 +12131,11 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
       {showConfigModal && (
         <WhatsAppConfigModal
           onClose={() => setShowConfigModal(false)}
-          onSuccess={() => {
-            fetchWhatsAppConfig(false); // Non mostrare loading
+          onSuccess={(sessionData) => {
+            console.log("📱 Config saved, opening QR modal with:", sessionData);
+            setQrSessionData(sessionData);
             setShowConfigModal(false);
+            setShowQRModal(true);
           }}
           existingConfig={config}
           selectedUnit={selectedUnit}
