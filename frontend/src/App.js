@@ -6345,17 +6345,29 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       }
       
       // FIX: Convert empty strings to null FIRST
-      if (submitData.unit_id === "") submitData.unit_id = null;
-      if (submitData.sub_agenzia_id === "") submitData.sub_agenzia_id = null;
-      
-      // Assicurati che solo uno tra unit_id e sub_agenzia_id sia impostato
-      if (formData.assignment_type === "unit" || submitData.unit_id) {
-        // If unit is set, clear sub_agenzia
-        submitData.sub_agenzia_id = null;
-      } else if (formData.assignment_type === "sub_agenzia" || submitData.sub_agenzia_id) {
-        // If sub_agenzia is set, clear unit
+      console.log("🟡 BEFORE conversion - unit_id:", submitData.unit_id, "sub_agenzia_id:", submitData.sub_agenzia_id);
+      if (submitData.unit_id === "") {
+        console.log("🟡 Converting unit_id from empty string to null");
         submitData.unit_id = null;
       }
+      if (submitData.sub_agenzia_id === "") {
+        console.log("🟡 Converting sub_agenzia_id from empty string to null");
+        submitData.sub_agenzia_id = null;
+      }
+      console.log("🟡 AFTER conversion - unit_id:", submitData.unit_id, "sub_agenzia_id:", submitData.sub_agenzia_id);
+      
+      // Assicurati che solo uno tra unit_id e sub_agenzia_id sia impostato
+      console.log("🟢 Assignment logic - assignment_type:", formData.assignment_type);
+      if (formData.assignment_type === "unit" || submitData.unit_id) {
+        console.log("🟢 UNIT path - clearing sub_agenzia_id");
+        submitData.sub_agenzia_id = null;
+      } else if (formData.assignment_type === "sub_agenzia" || submitData.sub_agenzia_id) {
+        console.log("🟢 SUB_AGENZIA path - clearing unit_id");
+        submitData.unit_id = null;
+      } else {
+        console.log("🟢 NO path matched - this is a problem!");
+      }
+      console.log("🟢 FINAL VALUES - unit_id:", submitData.unit_id, "sub_agenzia_id:", submitData.sub_agenzia_id);
 
       // Validazione dati critici
       if (!submitData.username || !submitData.email || !submitData.role) {
