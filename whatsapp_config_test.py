@@ -292,8 +292,10 @@ class WhatsAppConfigTester:
                     config_session_id = our_config.get('session_id')
                     config_phone = our_config.get('phone_number')
                     
+                    unit_display = config_unit_id[:8] + "..." if config_unit_id else "None"
+                    session_display = config_session_id[:12] + "..." if config_session_id else "None"
                     self.log_test("7.3 Configuration found in database", True, 
-                        f"Phone: {config_phone}, Unit: {config_unit_id[:8]}..., Session: {config_session_id[:12]}...")
+                        f"Phone: {config_phone}, Unit: {unit_display}, Session: {session_display}")
                     
                     if config_session_id == session_id:
                         self.log_test("7.4 Session ID matches", True, 
