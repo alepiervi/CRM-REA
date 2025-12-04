@@ -7820,29 +7820,56 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
             </>
           )}
 
-          {(formData.role === "responsabile_sub_agenzia" || formData.role === "backoffice_sub_agenzia") && (
-            <div>
-              <Label>Sub Agenzie Autorizzate *</Label>
-              <div className="border rounded-lg p-4 max-h-48 overflow-y-auto">
-                <div className="space-y-2">
-                  {subAgenzie.map((subAgenzia) => (
-                    <div key={subAgenzia.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={subAgenzia.id}
-                        checked={formData.sub_agenzie_autorizzate && formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
-                        onCheckedChange={(checked) => handleSubAgenziaAutorizzataChange(subAgenzia.id, checked)}
-                      />
-                      <Label htmlFor={subAgenzia.id} className="text-sm">
+          {/* RESPONSABILE/BACKOFFICE SUB AGENZIA, AGENTE SPECIALIZZATO, OPERATORE: Sub Agenzia → Commesse (multi) → Servizi (multi) - EDIT */}
+          {(formData.role === "responsabile_sub_agenzia" || formData.role === "backoffice_sub_agenzia" || 
+            formData.role === "agente_specializzato" || formData.role === "operatore") && (
+            <>
+              <div>
+                <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
+                <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
+                  console.log("🔵 EDIT - SUB AGENZIA SELECTED:", value);
+                  setFormData(prev => ({ ...prev, sub_agenzia_id: value, assignment_type: "sub_agenzia", commesse_autorizzate: [], servizi_autorizzati: [] }));
+                  handleSubAgenziaChange(value);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona sub agenzia" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subAgenzie.map((subAgenzia) => (
+                      <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
                         {subAgenzia.nome}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Selezionate: {formData.sub_agenzie_autorizzate ? formData.sub_agenzie_autorizzate.length : 0} sub agenzie
-              </p>
-            </div>
+
+              {/* Servizi disponibili della Sub Agenzia selezionata */}
+              {formData.sub_agenzia_id && serviziDisponibili.length > 0 && (
+                <div className="col-span-2">
+                  <Label>Servizi Autorizzati *</Label>
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {serviziDisponibili.map((servizio) => (
+                        <div key={servizio.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-servizio-sub-${servizio.id}`}
+                            checked={formData.servizi_autorizzati && formData.servizi_autorizzati.includes(servizio.id)}
+                            onCheckedChange={(checked) => handleServizioAutorizzatoChange(servizio.id, checked)}
+                          />
+                          <Label htmlFor={`edit-servizio-sub-${servizio.id}`} className="text-sm font-normal cursor-pointer">
+                            {servizio.nome}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Selezionati: {formData.servizi_autorizzati?.length || 0} servizi
+                  </p>
+                </div>
+              )}
+            </>
           )}
 
           {/* RESPONSABILE STORE, RESPONSABILE PRESIDI e AREA MANAGER: Multi Sub Agenzie → Multi Commesse → Servizi separati per commessa - EDIT */}
