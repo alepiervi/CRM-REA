@@ -17686,6 +17686,9 @@ async def import_workflow_template(
     # Insert workflow
     await db.workflows.insert_one(workflow)
     
+    # Remove _id from workflow before returning (not serializable)
+    workflow.pop("_id", None)
+    
     return {
         "success": True,
         "workflow_id": workflow["id"],
