@@ -12308,41 +12308,77 @@ const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig, selectedUnit,
   );
 };
 
-// WhatsApp QR Code Modal Component
-const WhatsAppQRModal = ({ qrCode, phoneNumber, onClose, onConnect, connecting }) => {
+// WhatsApp QR Code Modal Component (Nuovo sistema con fetch QR dal backend)
+const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
   const [qrImageUrl, setQrImageUrl] = useState(null);
+  const [qrData, setQrData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState('qr_pending');
+  const { toast } = useToast();
   
+  // Fetch QR code from backend
   useEffect(() => {
-    const generateQRCode = async () => {
+    const fetchQRCode = async () => {
       try {
-        // Importa QRCode dinamicamente
-        const QRCode = (await import('qrcode')).default;
+        setLoading(true);
+        const response = await axios.get(`${API}/whatsapp-qr/${sessionData.session_id}`);
         
-        // Decodifica il QR code base64 dal backend
-        const qrData = atob(qrCode);
-        
-        // Genera il QR code come URL immagine
-        const qrUrl = await QRCode.toDataURL(qrData, {
-          width: 256,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF',
-          },
-        });
-        
-        setQrImageUrl(qrUrl);
+        if (response.data.success) {
+          setQrData(response.data);
+          
+          // Generate QR code image from qr_data
+          const QRCode = (await import('qrcode')).default;
+          const qrUrl = await QRCode.toDataURL(response.data.qr_data, {
+            width: 300,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF',
+            },
+          });
+          
+          setQrImageUrl(qrUrl);
+        }
       } catch (error) {
-        console.error('Error generating QR code:', error);
-        // Fallback: usa il qrCode direttamente
-        setQrImageUrl(null);
+        console.error('Error fetching QR code:', error);
+        toast({
+          title: "Errore",
+          description: "Impossibile generare QR code",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
     };
     
-    if (qrCode) {
-      generateQRCode();
+    if (sessionData?.session_id) {
+      fetchQRCode();
     }
-  }, [qrCode]);
+  }, [sessionData]);
+  
+  // Poll for connection status (simulated for now)
+  useEffect(() => {
+    if (!qrData) return;
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await axios.get(`${API}/whatsapp-qr/${sessionData.session_id}`);
+        if (response.data.status === 'connected') {
+          setConnectionStatus('connected');
+          toast({
+            title: "Connesso!",
+            description: "WhatsApp connesso con successo",
+          });
+          clearInterval(pollInterval);
+          setTimeout(() => onConnected(), 1500);
+        }
+      } catch (error) {
+        console.error('Error polling status:', error);
+      }
+    }, 3000); // Poll every 3 seconds
+    
+    return () => clearInterval(pollInterval);
+  }, [qrData]);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
