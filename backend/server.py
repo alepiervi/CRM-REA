@@ -6737,22 +6737,45 @@ async def whatsapp_session_update(
 async def send_whatsapp_message(
     phone_number: str = Form(...),
     message: str = Form(...),
-    message_type: str = Form("text"),
+    unit_id: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user)
 ):
-    """Send WhatsApp message"""
+    """Send WhatsApp message via WhatsApp service"""
     
     if current_user.role not in [UserRole.ADMIN, UserRole.REFERENTE, UserRole.AGENTE]:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
     
     try:
-        result = await whatsapp_service.send_message(phone_number, message, message_type)
+        # Find active WhatsApp session for this unit
+        unit_id_to_use = unit_id or current_user.unit_id
+        if not unit_id_to_use:
+            raise HTTPException(status_code=400, detail="Unit ID required")
         
-        if result["success"]:
+        config = await db.whatsapp_configurations.find_one({
+            "unit_id": unit_id_to_use,
+            "is_connected": True
+        })
+        
+        if not config:
+            raise HTTPException(status_code=404, detail="No active WhatsApp session for this unit")
+        
+        # Send message via WhatsApp service
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "http://localhost:3001/send",
+                json={
+                    "session_id": config["session_id"],
+                    "phone_number": phone_number,
+                    "message": message
+                },
+                timeout=30.0
+            )
+            result = response.json()
+        
+        if result.get("success"):
             return {
                 "success": True,
                 "message": "Message sent successfully",
-                "message_id": result.get("message_id"),
                 "phone_number": phone_number
             }
         else:
