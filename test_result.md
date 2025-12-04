@@ -2229,15 +2229,18 @@ frontend:
   
   - task: "WhatsApp Frontend UI Flow - Complete Configuration Interface Testing"
     implemented: true
-    working: "needs_testing"
+    working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
           comment: "✅ WHATSAPP FRONTEND UI READY FOR TESTING: Frontend implementation includes complete WhatsApp management interface with configuration modal, QR code modal, and status display. Components: WhatsAppManagement (righe 11889+), WhatsAppConfigModal (righe 12181+), WhatsAppQRModal (righe 12327+). Features: Initial state display, Unit selection, phone number input, QR code generation via WhatsApp-Web.js service, status persistence. TESTING REQUIRED: Verify complete UI flow from initial state through configuration to QR code display, ensure no mock references, confirm real WhatsApp-Web.js integration."
+        - working: false
+          agent: "testing"
+          comment: "🚨 WHATSAPP FRONTEND UI FLOW TESTING - CRITICAL ISSUE IDENTIFIED! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested WhatsApp frontend UI flow and identified critical integration issue. ✅ INITIAL STATE VERIFICATION: Found correct 'WhatsApp Non Configurato' state (NOT 'Mock Active'), 'Configura Ora' button present and functional, no mock/development references in initial state. ✅ CONFIGURATION FLOW WORKING: Configuration modal opens correctly, Unit dropdown populated with available units, phone number input accepts +393401234567, form submission works without errors. ✅ BACKEND INTEGRATION VERIFIED: POST /api/whatsapp-config returns 200 Success with session_id, WhatsApp service running on port 3001 with 6 active sessions, QR code generation working (verified via curl - returns real base64 QR image). 🚨 CRITICAL ISSUE - QR MODAL NOT APPEARING: Configuration saves successfully but QR modal never opens, frontend shows 'WhatsApp Non Configurato' even after successful configuration, no QR code images found in DOM after 20+ seconds waiting. 🔍 ROOT CAUSE IDENTIFIED: Frontend QR modal uses hardcoded 'http://localhost:3001' URL (line 12341) which fails in production environment, should use proper backend URL or proxy configuration. ✅ NO MOCK REFERENCES: Confirmed no 'Mock Active', 'Development', or 'Testing' references in UI. 🎯 CRITICAL OBJECTIVES STATUS: 1) Initial state correct ✅, 2) Configuration form working ✅, 3) Backend integration working ✅, 4) QR modal display ❌ (URL issue), 5) No mock references ✅. 🔧 FIX REQUIRED: Update WhatsAppQRModal component to use proper backend URL instead of hardcoded localhost:3001. SUCCESS RATE: 80% (4/5 core requirements met) - QR modal URL configuration needs fix!"
 
   - task: "Analytics Clear Filters Button and Agent Outcomes Table - UI Enhancements"
     implemented: true
