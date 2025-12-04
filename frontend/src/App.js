@@ -13134,8 +13134,8 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
                       </div>
 
                       <Button
-                        onClick={() => importTemplate(template.id, selectedUnit)}
-                        disabled={!selectedUnit || selectedUnit === "all" || importingTemplate}
+                        onClick={() => importTemplate(template.id)}
+                        disabled={!selectedUnitForImport || importingTemplate}
                         className="ml-4"
                       >
                         {importingTemplate ? "Importando..." : "Importa"}
