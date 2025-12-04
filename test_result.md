@@ -2283,7 +2283,7 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "WhatsApp Frontend UI Flow - Complete Configuration Interface Testing"
+    - "WhatsApp Configuration Flow Post-Fix - QR Code Modal Verification"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
