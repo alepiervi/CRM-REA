@@ -48,6 +48,7 @@ async function initWhatsAppSession(unitId, sessionId) {
             }),
             puppeteer: {
                 headless: true,
+                executablePath: '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome',
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
