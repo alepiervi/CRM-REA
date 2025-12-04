@@ -282,7 +282,6 @@ const AuthProvider = ({ children }) => {
   };
 
   const startSessionTimer = () => {
-    console.log('🚀 Starting session timer');
     clearSessionTimers();
     
     // Update last activity
@@ -6182,7 +6181,6 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
 
   // NEW: Fetch servizi quando si seleziona una UNIT
   const handleUnitChange = async (unitId) => {
-    console.log('🚀🚀🚀 handleUnitChange CHIAMATO! unitId:', unitId);
     
     if (!unitId) {
       console.log('⚠️ unitId vuoto, reset stati');
@@ -6310,12 +6308,10 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
   };
 
   const handleSubmit = async (e) => {
-    console.log("🚀 HANDLESUBMIT CHIAMATO! Event:", e);
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      console.log("=== 🔴🔴🔴 DEBUG CREAZIONE UTENTE 🔴🔴🔴 ===");
       console.log("FormData originale:", JSON.stringify({ 
         username: formData.username,
         email: formData.email,
@@ -6345,36 +6341,26 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       }
       
       // FIX: Convert empty strings to null FIRST
-      console.log("🟡 BEFORE conversion - unit_id:", submitData.unit_id, "sub_agenzia_id:", submitData.sub_agenzia_id);
       if (submitData.unit_id === "") {
-        console.log("🟡 Converting unit_id from empty string to null");
         submitData.unit_id = null;
       }
       if (submitData.sub_agenzia_id === "") {
-        console.log("🟡 Converting sub_agenzia_id from empty string to null");
         submitData.sub_agenzia_id = null;
       }
-      console.log("🟡 AFTER conversion - unit_id:", submitData.unit_id, "sub_agenzia_id:", submitData.sub_agenzia_id);
       
       // Assicurati che solo uno tra unit_id e sub_agenzia_id sia impostato
-      console.log("🟢 Assignment logic - assignment_type:", formData.assignment_type);
       if (formData.assignment_type === "unit" || submitData.unit_id) {
-        console.log("🟢 UNIT path - clearing sub_agenzia_id");
         submitData.sub_agenzia_id = null;
       } else if (formData.assignment_type === "sub_agenzia" || submitData.sub_agenzia_id) {
-        console.log("🟢 SUB_AGENZIA path - clearing unit_id");
         submitData.unit_id = null;
       } else {
-        console.log("🟢 NO path matched - this is a problem!");
       }
-      console.log("🟢 FINAL VALUES - unit_id:", submitData.unit_id, "sub_agenzia_id:", submitData.sub_agenzia_id);
 
       // Validazione dati critici
       if (!submitData.username || !submitData.email || !submitData.role) {
         throw new Error("Campi obbligatori mancanti: username, email, o role");
       }
       
-      console.log("📤📤📤 FINAL PAYLOAD BEING SENT:", JSON.stringify({ 
         username: submitData.username,
         email: submitData.email,
         role: submitData.role,
@@ -6387,7 +6373,6 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       // FIX: Close modal immediately before async operation
       onClose();
       
-      console.log("🚀 Making POST request to:", `${API}/users`);
       const response = await axios.post(`${API}/users`, submitData);
       console.log("✅ Response received:", response.data.username, "sub_agenzia_id:", response.data.sub_agenzia_id);
       console.log("✅ Utente creato con successo:", response.data);
@@ -6776,9 +6761,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
               <div>
                 <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
                 <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
-                  console.log("🔵🔵🔵 SUB AGENZIA SELECTED:", value);
                   setFormData(prev => {
-                    console.log("🔵 Setting formData with sub_agenzia_id:", value);
                     return { ...prev, sub_agenzia_id: value, assignment_type: "sub_agenzia", commesse_autorizzate: [], servizi_autorizzati: [] };
                   });
                 }}>
@@ -7108,7 +7091,6 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
 
 // Edit User Modal Component
 const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, commesse, subAgenzie, fetchServizi }) => {
-  console.log("🟣🟣🟣 EDIT MODAL OPENED - User data:", {
     username: user.username,
     role: user.role,
     unit_id: user.unit_id,
@@ -7135,7 +7117,6 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     assignment_type: user.unit_id ? "unit" : (user.sub_agenzia_id ? "sub_agenzia" : "")
   });
   
-  console.log("🟣 EDIT MODAL - formData initialized:", {
     sub_agenzia_id: user.sub_agenzia_id || "",
     assignment_type: user.unit_id ? "unit" : (user.sub_agenzia_id ? "sub_agenzia" : "")
   });
@@ -7201,19 +7182,15 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
 
   // NEW: Load servizi when unit_id or sub_agenzia_id is set on mount
   useEffect(() => {
-    console.log("🟣 EDIT MODAL useEffect - Checking what to load:");
     console.log("  - formData.unit_id:", formData.unit_id);
     console.log("  - formData.sub_agenzia_id:", formData.sub_agenzia_id);
     console.log("  - formData.assignment_type:", formData.assignment_type);
     
     if (formData.unit_id && formData.assignment_type === "unit") {
-      console.log("🟣 Loading servizi for UNIT:", formData.unit_id);
       handleUnitChange(formData.unit_id);
     } else if (formData.sub_agenzia_id && formData.assignment_type === "sub_agenzia") {
-      console.log("🟣 Loading servizi for SUB_AGENZIA:", formData.sub_agenzia_id);
       handleSubAgenziaChange(formData.sub_agenzia_id);
     } else {
-      console.log("🟣 NO MATCH - servizi will not be loaded automatically");
     }
   }, []);
 
@@ -7234,7 +7211,6 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
 
   // NEW: Fetch servizi quando si seleziona una UNIT
   const handleUnitChange = async (unitId) => {
-    console.log('🚀🚀🚀 EditUser: handleUnitChange CHIAMATO! unitId:', unitId);
     
     if (!unitId) {
       console.log('⚠️ EditUser: unitId vuoto, reset stati');
@@ -7829,7 +7805,6 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
               <div>
                 <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
                 <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
-                  console.log("🔵 EDIT - SUB AGENZIA SELECTED:", value);
                   setFormData(prev => ({ ...prev, sub_agenzia_id: value, assignment_type: "sub_agenzia", commesse_autorizzate: [], servizi_autorizzati: [] }));
                   handleSubAgenziaChange(value);
                 }}>
@@ -12132,7 +12107,6 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
         <WhatsAppConfigModal
           onClose={() => setShowConfigModal(false)}
           onSuccess={(sessionData) => {
-            console.log("📱 Config saved, opening QR modal with:", sessionData);
             setQrSessionData(sessionData);
             setShowConfigModal(false);
             setShowQRModal(true);
@@ -13645,7 +13619,6 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   // Load workflow nodes and edges when workflow is provided
   useEffect(() => {
     if (workflow && workflow.nodes && workflow.edges) {
-      console.log("🔵 Loading workflow nodes and edges:", workflow.nodes.length, workflow.edges.length);
       setNodes(workflow.nodes || []);
       setEdges(workflow.edges || []);
     }
@@ -14949,7 +14922,6 @@ const CommesseManagement = ({
 
   const migrateHardcodedToDatabase = async (force = false) => {
     try {
-      console.log('🚀 Starting hardcoded to database migration...', force ? '(FORCE MODE)' : '');
       
       const response = await axios.post(`${API}/admin/migrate-hardcoded-to-database?force=${force}`);
       
@@ -15013,9 +14985,6 @@ const CommesseManagement = ({
 
   const migrateSegmenti = async () => {
     try {
-      console.log('🚀 Starting segmenti migration...');
-      console.log('🚀 API URL:', `${API}/admin/migrate-segmenti`);
-      console.log('🚀 User token present:', !!localStorage.getItem('token'));
       
       const response = await axios.post(`${API}/admin/migrate-segmenti`);
       
@@ -16900,12 +16869,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   };
 
   const createCliente = async (clienteData) => {
-    console.log("🚀 CREATE CLIENTE FUNCTION CALLED");
-    console.log("🚀 Cliente Data Received:", clienteData);
-    console.log("🚀 API URL:", `${API}/clienti`);
     
     try {
-      console.log("🚀 MAKING POST REQUEST TO BACKEND...");
       const response = await axios.post(`${API}/clienti`, clienteData);
       console.log("✅ POST REQUEST SUCCESS:", response);
       
@@ -19764,7 +19729,6 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     if (!tipologia) return false;
     
     const nome = tipologia.nome?.toLowerCase() || '';
-    console.log("📱 isMobile DEBUG:", {
       tipologiaId,
       tipologia_nome: tipologia.nome,
       nome_lower: nome,
@@ -19848,7 +19812,6 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   useEffect(() => {
     if (!isOpen) return;
     
-    console.log("🚀 CreateClienteModal opened - Initializing cascading flow");
     console.log("👤 User role:", user?.role);
     console.log("📋 Available data:", {
       commesse: commesse?.length || 0,
@@ -20467,7 +20430,6 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       has_offerta: Boolean(selectedData.offerta_id)
     });
     
-    console.log("📱 CONVERGENZA DATA BEING SENT:", {
       convergenza: cleanFormData.convergenza,
       convergenza_items_count: cleanFormData.convergenza_items.length,
       convergenza_items: cleanFormData.convergenza_items
@@ -23163,14 +23125,12 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
         const tipologia = editTipologieContratto.find(t => t && t.value === cliente?.tipologia_contratto);
         const tipologiaName = (tipologia?.label || '').toLowerCase();
         const isMobile = tipologiaName.includes('mobile');
-        console.log("📱 isEditMobile: Tipologia check:", {tipologiaName, isMobile});
         if (isMobile) return true;
       }
       
       // Terza priorità: controlla direttamente il valore della tipologia contratto
       const tipologiaValue = (cliente?.tipologia_contratto || '').toLowerCase();
       const isMobileByValue = tipologiaValue.includes('mobile');
-      console.log("📱 isEditMobile: Direct value check:", {tipologiaValue, isMobileByValue});
       return isMobileByValue;
     } catch (error) {
       console.error("❌ Error in isEditMobile:", error);
