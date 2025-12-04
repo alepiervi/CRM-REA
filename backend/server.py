@@ -7804,10 +7804,34 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
                     "color": "green"
                 },
                 "send_whatsapp": {
-                    "name": "Send WhatsApp",
+                    "name": "Invia WhatsApp",
                     "description": "Invia un messaggio WhatsApp al contatto",
                     "icon": "message-circle",
-                    "color": "green"
+                    "color": "green",
+                    "fields": [
+                        {"name": "message", "type": "textarea", "label": "Messaggio", "placeholder": "Inserisci il messaggio WhatsApp", "required": True}
+                    ]
+                },
+                "assign_to_unit": {
+                    "name": "Assegna a Unit",
+                    "description": "Assegna il lead alla unit basandosi sul tag/provincia",
+                    "icon": "users",
+                    "color": "blue",
+                    "fields": []
+                },
+                "start_ai_conversation": {
+                    "name": "Avvia AI Assistant",
+                    "description": "Inizia conversazione con AI Assistant per qualificare il lead",
+                    "icon": "cpu",
+                    "color": "purple",
+                    "fields": []
+                },
+                "update_lead_field": {
+                    "name": "Aggiorna Campi Lead",
+                    "description": "Estrae informazioni dalla conversazione AI e aggiorna i campi del lead",
+                    "icon": "edit-3",
+                    "color": "orange",
+                    "fields": []
                 },
                 "update_contact": {
                     "name": "Update Contact",
