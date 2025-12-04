@@ -1,0 +1,2 @@
+2025/12/04-15:33:44.025 1665 Creating DB /app/whatsapp-service/sessions/session-wa_session_c6dec7f6-d7c7-4c3c-8ab3-b0420c8edfa3_5de7ac4d/Default/shared_proto_db/metadata since it was missing.
+2025/12/04-15:33:44.035 1665 Reusing MANIFEST /app/whatsapp-service/sessions/session-wa_session_c6dec7f6-d7c7-4c3c-8ab3-b0420c8edfa3_5de7ac4d/Default/shared_proto_db/metadata/MANIFEST-000001
