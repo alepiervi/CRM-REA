@@ -4188,6 +4188,21 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
               </div>
             </div>
 
+            {/* Welcome Message for WhatsApp */}
+            <div>
+              <Label htmlFor="welcome_message">Messaggio Benvenuto WhatsApp</Label>
+              <textarea
+                id="welcome_message"
+                value={formData.welcome_message}
+                onChange={(e) => setFormData({ ...formData, welcome_message: e.target.value })}
+                placeholder="Ciao {nome}! Benvenuto in {unit_name}. Sei pronto per iniziare? Rispondi SI per continuare."
+                className="w-full p-2 border border-gray-300 rounded-lg min-h-[100px]"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Usa {"{nome}"}, {"{cognome}"}, {"{unit_name}"} come placeholder
+              </p>
+            </div>
+
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
