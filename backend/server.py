@@ -5807,7 +5807,27 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
         await db["leads"].insert_one(lead_obj.dict())
         logging.info(f"Lead created via webhook: {lead_obj.id} for unit {unit_id}")
         
-        # NEW: Auto-execute workflow if one exists for this unit
+        # STEP 3: Send WhatsApp welcome message (after agent assignment)
+        whatsapp_sent = False
+        if assigned_agent_id and unit.get("welcome_message"):
+            try:
+                # Get WhatsApp config for this unit
+                whatsapp_config = await db.whatsapp_configurations.find_one({"unit_id": unit_id})
+                
+                if whatsapp_config and lead_data.telefono:
+                    welcome_message = unit.get("welcome_message", "")
+                    # Replace placeholders
+                    welcome_message = welcome_message.replace("{nome}", lead_data.nome or "")
+                    welcome_message = welcome_message.replace("{unit_name}", unit.get("nome", ""))
+                    
+                    # TODO: Send WhatsApp message via Twilio/WhatsApp API
+                    # For now, just log it
+                    logging.info(f"WhatsApp welcome message ready for lead {lead_obj.id}: {welcome_message[:50]}...")
+                    whatsapp_sent = True
+            except Exception as wa_error:
+                logging.error(f"Error sending WhatsApp welcome message: {wa_error}")
+        
+        # STEP 4: Auto-execute workflow if one exists for this unit (AFTER agent assignment and WhatsApp)
         workflow_execution_result = None
         try:
             # Find active workflow for this unit with trigger "lead_created"
