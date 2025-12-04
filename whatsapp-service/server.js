@@ -245,34 +245,37 @@ async function sendMessageViaSession(sessionId, phoneNumber, text) {
 // ==================== REST API ENDPOINTS ====================
 
 /**
- * Initialize new WhatsApp session
+ * Initialize new WhatsApp session with PAIRING CODE
  */
 app.post('/init-session', async (req, res) => {
-    const { unit_id, session_id } = req.body
+    const { unit_id, session_id, phone_number } = req.body
     
-    if (!unit_id || !session_id) {
-        return res.status(400).json({ error: 'unit_id and session_id are required' })
+    if (!unit_id || !session_id || !phone_number) {
+        return res.status(400).json({ error: 'unit_id, session_id, and phone_number are required' })
     }
 
     try {
         // Check if session already exists
         if (activeSockets.has(session_id)) {
+            const sessionData = activeSockets.get(session_id)
             return res.json({ 
                 success: true, 
                 message: 'Session already initialized',
-                status: activeSockets.get(session_id).status
+                status: sessionData.status,
+                pairing_code: sessionData.pairingCode
             })
         }
 
-        // Start initialization
-        initWhatsAppForUnit(unit_id, session_id)
+        // Start initialization with phone number
+        initWhatsAppForUnit(unit_id, session_id, phone_number)
         
         res.json({ 
             success: true, 
-            message: 'Session initialization started',
+            message: 'Session initialization started. Wait for pairing code.',
             session_id
         })
     } catch (error) {
+        logger.error('Init session error:', error)
         res.status(500).json({ error: error.message })
     }
 })
