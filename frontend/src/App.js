@@ -4074,6 +4074,7 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
     commesse_autorizzate: unit.commesse_autorizzate || [],
     campagne_autorizzate: unit.campagne_autorizzate || [],
     is_active: unit.is_active,
+    welcome_message: unit.welcome_message || "",
   });
   const [campagnaInput, setCampagnaInput] = useState("");
   const { toast } = useToast();
