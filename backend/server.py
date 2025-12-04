@@ -17667,6 +17667,9 @@ async def import_workflow_template(
     else:
         raise HTTPException(status_code=404, detail="Template not found")
     
+    # Add created_by field (required by Workflow model)
+    workflow["created_by"] = current_user.id
+    
     # Check if similar workflow already exists
     existing = await db.workflows.find_one({
         "unit_id": unit_id,
