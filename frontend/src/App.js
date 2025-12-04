@@ -6315,9 +6315,18 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     setIsLoading(true);
 
     try {
-      console.log("=== DEBUG CREAZIONE UTENTE ===");
-      console.log("FormData originale:", { ...formData, password: formData.password ? `[${formData.password.length} chars]` : "[VUOTO]" });
+      console.log("=== 🔴🔴🔴 DEBUG CREAZIONE UTENTE 🔴🔴🔴 ===");
+      console.log("FormData originale:", JSON.stringify({ 
+        username: formData.username,
+        email: formData.email,
+        role: formData.role,
+        sub_agenzia_id: formData.sub_agenzia_id,
+        unit_id: formData.unit_id,
+        assignment_type: formData.assignment_type
+      }, null, 2));
       console.log("🔍 sub_agenzia_id value:", formData.sub_agenzia_id);
+      console.log("🔍 sub_agenzia_id type:", typeof formData.sub_agenzia_id);
+      console.log("🔍 sub_agenzia_id length:", formData.sub_agenzia_id?.length);
       console.log("🔍 unit_id value:", formData.unit_id);
       console.log("🔍 assignment_type value:", formData.assignment_type);
       
