@@ -165,34 +165,59 @@ FOCUS CRITICO:
 
 STATO: PRONTO PER TESTING COMPLETO"
 
-current_problem_statement: "🚨 DEBUG RESPONSABILE SUB AGENZIA - CLIENTI NON VISIBILI - CRITICAL BUG IDENTIFIED
+current_problem_statement: "TEST WHATSAPP FRONTEND UI FLOW - COMPLETE CONFIGURATION VERIFICATION
 
 CONTESTO:
-L'utente segnala che Responsabile Sub Agenzia e BackOffice Sub Agenzia non vedono i clienti associati alla loro sub agenzia. Devono vedere TUTTI i clienti della loro sub agenzia, non solo quelli creati da loro.
+Testare il flusso completo di configurazione WhatsApp nell'interfaccia frontend per verificare che l'integrazione WhatsApp-Web.js funzioni correttamente nell'UI.
 
 OBIETTIVO:
-Identificare perché questi ruoli non vedono i clienti della loro sub agenzia.
+Verificare che il frontend mostri correttamente:
+1. Stato iniziale 'WhatsApp Non Configurato' (NON 'Mock Active')
+2. Form di configurazione con Unit e numero telefono
+3. QR code reale generato da WhatsApp-Web.js (NON mock)
+4. Stato post-configurazione 'Non Connesso' con badge 'Da Collegare'
 
-TEST ESEGUITI:
-✅ FASE 1: Identificato Responsabile Sub Agenzia user 'ale3' con sub_agenzia_id popolato
-✅ FASE 2: Verificato che Admin vede 14 clienti con sub_agenzia_id = 7c70d4b5-4be0-4707-8bca-dfe84a0b9dee
-✅ FASE 3: Testato login Responsabile Sub Agenzia - vede 0 clienti (BUG CONFERMATO)
-✅ FASE 4: Analizzato backend logs - identificata query MongoDB errata
+URL: https://lead2ai-flow.preview.emergentagent.com
+CREDENZIALI: admin / admin123
 
-🚨 ROOT CAUSE IDENTIFICATO:
-La query MongoDB per Responsabile Sub Agenzia include un filtro servizio_id troppo restrittivo:
-- Query Admin: {} (vede tutti i 21 clienti)
-- Query Responsabile: {'sub_agenzia_id': '7c70d4b5...', 'servizio_id': {'$in': ['e000d779...', '9c1ece3f...', '8f50b9d7...', '62f75c5b...']}}
-- Clienti reali hanno servizio_id: [None, 'cc0648c1-0df1-4530-8281-f4c940934916']
-- I servizio_id non corrispondono → 0 risultati
+TEST DA ESEGUIRE:
 
-PROBLEMA:
-Il backend applica un filtro servizio_id basato sui servizi_autorizzati dell'utente, ma i clienti hanno servizio_id diversi o NULL.
+**FASE 1: Login e Navigazione**
+1. Login con admin/admin123
+2. Naviga alla sezione 'WhatsApp' nel menu laterale
+3. Verifica che la pagina 'Gestione WhatsApp' si carichi
 
-SOLUZIONE RICHIESTA:
-Responsabile Sub Agenzia dovrebbe vedere TUTTI i clienti della sua sub agenzia, indipendentemente dal servizio_id.
+**FASE 2: Stato Iniziale**
+4. Verifica che venga mostrato 'WhatsApp Non Configurato' (NON 'Mock Active')
+5. Verifica che ci sia il pulsante 'Configura Ora' o 'Configura Numero'
 
-STATO: 🚨 CRITICAL BUG CONFIRMED - Backend query logic needs immediate fix"
+**FASE 3: Configurazione**
+6. Clicca sul pulsante 'Configura Numero' o 'Configura Ora'
+7. Seleziona una Unit dal dropdown (la prima disponibile)
+8. Inserisci numero di telefono: +393401234567
+9. Clicca su 'Salva' o 'Configura'
+
+**FASE 4: QR Code Modal**
+10. Verifica che si apra un nuovo modale con titolo 'Collega WhatsApp'
+11. Verifica che compaia 'Generazione QR Code...' (inizialmente)
+12. Verifica che compaia un QR code effettivo (immagine)
+13. Verifica istruzioni su come scansionare il QR code
+14. IMPORTANTE: Verifica che NON compaia 'Mock Active' o 'Modalità Development'
+
+**FASE 5: Stato Post-Configurazione**
+15. Chiudi il modale
+16. Ricarica la pagina WhatsApp
+17. Verifica che lo stato sia cambiato a '⚠ Non Connesso' (giallo)
+18. Verifica badge 'Da Collegare' o 'Connessione Richiesta'
+19. Verifica che ci sia il pulsante 'Connetti WhatsApp'
+
+CRITERI DI SUCCESSO:
+✅ NON deve apparire nessun riferimento a 'Mock', 'Development', o 'Testing'
+✅ Il QR code deve essere un'immagine reale generata da WhatsApp-Web.js
+✅ L'UI deve mostrare chiaramente che WhatsApp è configurato ma non ancora connesso
+✅ Lo stato deve essere persistito nel database
+
+STATO: READY FOR FRONTEND UI TESTING"
 
 TEST DA ESEGUIRE:
 
