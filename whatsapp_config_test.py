@@ -171,8 +171,9 @@ class WhatsAppConfigTester:
                 unit_id = config_response.get('unit_id')
                 
                 if session_id:
+                    unit_display = unit_id[:8] + "..." if unit_id else "None"
                     self.log_test("4.2 Session ID returned", True, 
-                        f"Session ID: {session_id[:12]}..., Phone: {phone_number}, Unit: {unit_id[:8]}...")
+                        f"Session ID: {session_id[:12]}..., Phone: {phone_number}, Unit: {unit_display}")
                 else:
                     self.log_test("4.2 No session ID in response", False, 
                         f"Response keys: {list(config_response.keys())}")
