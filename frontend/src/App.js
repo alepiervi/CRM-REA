@@ -7647,6 +7647,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
           {/* NEW: Servizi Autorizzati per UNIT/SUB AGENZIA - Per TUTTI gli utenti con assignment (esclusi store/presidi che hanno sezioni dedicate) */}
           {!(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" || 
              formData.role === "responsabile_sub_agenzia" || formData.role === "backoffice_sub_agenzia" ||
+             formData.role === "agente_specializzato" || formData.role === "operatore" ||
              formData.role === "responsabile_store" || formData.role === "responsabile_presidi" ||
              formData.role === "store_assist" || formData.role === "promoter_presidi") && 
            ((formData.assignment_type === "unit" && formData.unit_id) || 
