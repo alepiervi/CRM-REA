@@ -6691,6 +6691,48 @@ async def connect_whatsapp(
         logging.error(f"WhatsApp connection error: {e}")
         raise HTTPException(status_code=500, detail=f"Connection failed: {str(e)}")
 
+
+@api_router.post("/whatsapp-session-update")
+async def whatsapp_session_update(
+    update_data: dict
+):
+    """Receive session status updates from WhatsApp service (called by Node.js service)"""
+    
+    try:
+        session_id = update_data.get("session_id")
+        unit_id = update_data.get("unit_id")
+        status = update_data.get("status")
+        phone_number = update_data.get("phone_number")
+        
+        if not session_id:
+            raise HTTPException(status_code=400, detail="session_id is required")
+        
+        # Update configuration in database
+        update_fields = {
+            "connection_status": status,
+            "updated_at": datetime.now(timezone.utc)
+        }
+        
+        if status == "connected":
+            update_fields["is_connected"] = True
+            update_fields["connected_phone"] = phone_number
+            update_fields["last_seen"] = datetime.now(timezone.utc)
+        elif status == "disconnected":
+            update_fields["is_connected"] = False
+        
+        await db.whatsapp_configurations.update_one(
+            {"session_id": session_id},
+            {"$set": update_fields}
+        )
+        
+        logging.info(f"WhatsApp session {session_id} status updated to: {status}")
+        
+        return {"success": True, "message": "Status updated"}
+        
+    except Exception as e:
+        logging.error(f"Session update error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/whatsapp/send")
 async def send_whatsapp_message(
     phone_number: str = Form(...),
