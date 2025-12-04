@@ -12826,7 +12826,52 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
 
   useEffect(() => {
     fetchWorkflows();
+    fetchTemplates();
   }, [selectedUnit]);
+
+  const fetchTemplates = async () => {
+    try {
+      const response = await axios.get(`${API}/workflow-templates`);
+      setTemplates(response.data.templates || []);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+    }
+  };
+
+  const importTemplate = async (templateId, unitId) => {
+    if (!unitId || unitId === "all") {
+      toast({
+        title: "Errore",
+        description: "Seleziona una Unit specifica per importare il template",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setImportingTemplate(true);
+    try {
+      const response = await axios.post(
+        `${API}/workflow-templates/${templateId}/import?unit_id=${unitId}`
+      );
+      
+      toast({
+        title: "Successo",
+        description: response.data.message,
+      });
+      
+      setShowTemplateModal(false);
+      fetchWorkflows();
+    } catch (error) {
+      console.error("Error importing template:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'importazione del template",
+        variant: "destructive",
+      });
+    } finally {
+      setImportingTemplate(false);
+    }
+  };
 
   const fetchWorkflows = async () => {
     try {
