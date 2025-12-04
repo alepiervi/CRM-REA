@@ -12060,6 +12060,7 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
           }}
           existingConfig={config}
           selectedUnit={selectedUnit}
+          units={units}
         />
       )}
 
