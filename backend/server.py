@@ -374,6 +374,7 @@ class Unit(BaseModel):
     commesse_autorizzate: List[str] = []  # Multiple commesse support - this is now the primary field
     campagne_autorizzate: List[str] = []  # Campaign names this unit handles (optional, for filtering)
     assistant_id: Optional[str] = None  # OpenAI Assistant ID for this unit
+    welcome_message: Optional[str] = None  # WhatsApp welcome message template for new leads
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
