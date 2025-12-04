@@ -581,6 +581,11 @@ class Workflow(BaseModel):
     is_active: bool = True
     is_published: bool = False
     workflow_data: Optional[dict] = None  # Canvas layout and configuration
+    nodes: Optional[list] = None  # Workflow nodes (for ReactFlow)
+    edges: Optional[list] = None  # Workflow edges (for ReactFlow)
+    trigger_type: Optional[str] = None  # Trigger type (e.g., "lead_created")
+    version: Optional[int] = None  # Workflow version
+    metadata: Optional[dict] = None  # Additional metadata
 
 class WorkflowCreate(BaseModel):
     name: str
