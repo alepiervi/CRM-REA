@@ -12390,19 +12390,22 @@ const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
             </div>
           </div>
 
-          {/* Instructions */}
-          {connectionStatus !== 'connected' && qrImageUrl && (
-            <div className="bg-green-50 p-4 rounded-lg">
+          {/* Mock Mode Info */}
+          {connectionStatus === 'mock_active' && (
+            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
               <div className="flex items-start space-x-2">
-                <MessageCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-green-900">
-                  <p className="font-semibold mb-2">Come connettere WhatsApp:</p>
-                  <ol className="list-decimal list-inside space-y-1 text-xs">
-                    <li>Apri WhatsApp sul telefono</li>
-                    <li>Vai su Menu → Impostazioni → Dispositivi collegati</li>
-                    <li>Tocca "Collega un dispositivo"</li>
-                    <li>Scansiona questo QR code con la fotocamera</li>
-                  </ol>
+                <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm text-blue-900">
+                  <p className="font-semibold mb-2">Modalità Development Attiva</p>
+                  <ul className="space-y-1 text-xs">
+                    <li>✅ Sistema completamente operativo</li>
+                    <li>📝 Messaggi WhatsApp vengono loggati</li>
+                    <li>🔍 Visibili in: /var/log/supervisor/backend.out.log</li>
+                    <li>🚀 Workflow automation attivi</li>
+                    <li>💡 Per WhatsApp reale: contattare amministratore</li>
+                  </ul>
                 </div>
               </div>
             </div>
