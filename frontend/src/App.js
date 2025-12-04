@@ -6374,18 +6374,22 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
         throw new Error("Campi obbligatori mancanti: username, email, o role");
       }
       
-      console.log("📤 Invio dati utente:", { 
-        ...submitData, 
-        password: `[${submitData.password.length} chars - ${submitData.password.substring(0,3)}...]`,
+      console.log("📤📤📤 FINAL PAYLOAD BEING SENT:", JSON.stringify({ 
+        username: submitData.username,
+        email: submitData.email,
+        role: submitData.role,
+        password: `[${submitData.password.length} chars]`,
         commesse_autorizzate: submitData.commesse_autorizzate?.length || 0,
         sub_agenzia_id: submitData.sub_agenzia_id,
         unit_id: submitData.unit_id
-      });
+      }, null, 2));
       
       // FIX: Close modal immediately before async operation
       onClose();
       
+      console.log("🚀 Making POST request to:", `${API}/users`);
       const response = await axios.post(`${API}/users`, submitData);
+      console.log("✅ Response received:", response.data.username, "sub_agenzia_id:", response.data.sub_agenzia_id);
       console.log("✅ Utente creato con successo:", response.data);
       toast({
         title: "Successo",
