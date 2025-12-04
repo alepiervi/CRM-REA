@@ -12437,24 +12437,27 @@ const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
                 <MessageCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-green-900">
                   <p className="font-semibold mb-2">Come connettere WhatsApp:</p>
-                <ol className="list-decimal list-inside space-y-1 text-xs">
-                  <li>Apri WhatsApp sul telefono</li>
-                  <li>Vai su Menu → WhatsApp Web</li>
-                  <li>Scansiona questo QR code</li>
-                  <li>Click "Connetti" quando pronto</li>
-                </ol>
+                  <ol className="list-decimal list-inside space-y-1 text-xs">
+                    <li>Apri WhatsApp sul telefono</li>
+                    <li>Vai su Menu → Impostazioni → Dispositivi collegati</li>
+                    <li>Tocca "Collega un dispositivo"</li>
+                    <li>Scansiona questo QR code con la fotocamera</li>
+                  </ol>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            Annulla
+            Chiudi
           </Button>
-          <Button onClick={onConnect} disabled={connecting} className="bg-green-600 hover:bg-green-700">
-            {connecting ? "Connessione..." : "Connetti"}
-          </Button>
+          {connectionStatus === 'qr_pending' && (
+            <Button disabled className="bg-blue-600">
+              In attesa di scansione...
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
