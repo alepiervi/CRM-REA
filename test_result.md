@@ -1650,15 +1650,18 @@ backend:
 frontend:
   - task: "WhatsApp Configuration Flow Post-Fix - QR Code Modal Verification"
     implemented: true
-    working: "needs_testing"
+    working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "needs_testing"
           agent: "main"
           comment: "✅ WHATSAPP URL FIX APPLIED: Fixed URL configuration issue that was preventing QR Code modal from opening. The main problem was incorrect URL usage causing network errors. Fix should resolve QR Code modal opening issue and enable proper WhatsApp configuration flow. READY FOR TESTING: Verify QR Code modal opens correctly, shows real QR code, no network errors in console, correct API endpoint usage."
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL ISSUE CONFIRMED: QR Code modal does NOT open after WhatsApp configuration save. COMPREHENSIVE TESTING RESULTS: ✅ BACKEND APIs WORKING: POST /api/whatsapp-config returns 200 OK with success=true and session_id, GET /api/whatsapp-qr/{session_id} returns 200 OK with real QR code image (base64), WhatsApp service healthy at localhost:3001. ✅ FRONTEND CONFIGURATION: Configuration modal opens correctly, Unit dropdown populated, Phone number input works, Save button functional. 🚨 CRITICAL FAILURE: After clicking 'Salvataggio...' (Save), configuration modal closes but QR Code modal NEVER opens. No JavaScript errors in console, No network errors detected, Backend API calls successful. 🎯 ROOT CAUSE: Frontend logic issue - QR modal not being triggered after successful configuration save. The onSuccess callback in WhatsAppConfigModal is not properly opening the QR modal. IMPACT: Users cannot complete WhatsApp setup - configuration saves but QR scanning step is inaccessible. REQUIRES: Frontend code fix in WhatsAppConfigModal onSuccess handler to properly trigger QR modal opening."
 
   - task: "Store Assistant Tipologie Contratto Filter Debug - Console Log Analysis"
     implemented: true
