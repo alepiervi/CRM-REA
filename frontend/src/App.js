@@ -12011,7 +12011,8 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {config?.configured ? (
+          {/* Always show Mock mode as configured */}
+          {config?.configured || selectedUnit ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
