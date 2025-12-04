@@ -1,8 +1,10 @@
-const { makeWASocket, useMultiFileAuthState, DisconnectReason, downloadMediaMessage } = require('@whiskeysockets/baileys')
+const { makeWASocket, useMultiFileAuthState, DisconnectReason, downloadMediaMessage, makeCacheableSignalKeyStore } = require('@whiskeysockets/baileys')
 const express = require('express')
 const cors = require('cors')
 const axios = require('axios')
 const P = require('pino')
+const fs = require('fs')
+const path = require('path')
 
 const app = express()
 app.use(cors())
@@ -13,9 +15,17 @@ const PORT = process.env.PORT || 3001
 
 // Store active WhatsApp sockets per unit_id
 const activeSockets = new Map()
-const qrCodes = new Map()
+const pairingCodes = new Map()
+const connectionRetries = new Map()
+const MAX_RETRIES = 3
 
 const logger = P({ level: 'info' })
+
+// Ensure auth sessions directory exists
+const AUTH_DIR = path.join(__dirname, 'auth_sessions')
+if (!fs.existsSync(AUTH_DIR)) {
+    fs.mkdirSync(AUTH_DIR, { recursive: true })
+}
 
 /**
  * Initialize WhatsApp connection for a specific unit
