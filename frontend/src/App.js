@@ -12338,7 +12338,7 @@ const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
     
     const fetchQRCode = async () => {
       try {
-        const response = await axios.get(`http://localhost:3001/qr/${sessionData.session_id}`);
+        const response = await axios.get(`${API}/whatsapp-qr/${sessionData.session_id}`);
         
         if (response.data.status === 'connected') {
           setStatus('connected');
