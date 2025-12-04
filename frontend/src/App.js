@@ -12198,9 +12198,15 @@ const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig, selectedUnit,
       if (response.data.success) {
         toast({
           title: "Successo",
-          description: "Configurazione WhatsApp salvata con successo",
+          description: "Configurazione salvata. Ora scansiona il QR code per collegare WhatsApp.",
         });
-        onSuccess();
+        
+        // Pass session_id and other data back to show QR modal
+        onSuccess({
+          session_id: response.data.session_id,
+          phone_number: cleanPhoneNumber,
+          unit_id: unitId
+        });
       }
     } catch (error) {
       console.error("Error saving WhatsApp config:", error);
