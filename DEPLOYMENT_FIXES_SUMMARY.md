@@ -14,7 +14,7 @@ if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
   return 'https://mobil-analytics-1.emergent.host';
 }
 if (hostname.includes('preview.emergentagent.com')) {
-  return 'https://crm-bug-tracker.preview.emergentagent.com';
+  return 'https://crm-workflow-boost.preview.emergentagent.com';
 }
 return 'http://localhost:8001';
 ```
@@ -46,7 +46,7 @@ production_domains = [
     "https://www.nureal.it",
     "https://mobil-analytics-1.emergent.host",
     "https://mobil-analytics-2.emergent.host",  # ✅ Added new deployment domain
-    "https://crm-bug-tracker.preview.emergentagent.com",
+    "https://crm-workflow-boost.preview.emergentagent.com",
     "https://cloudfile-fix.emergent.host",
 ]
 ```

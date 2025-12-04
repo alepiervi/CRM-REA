@@ -2,7 +2,7 @@
 import requests
 import json
 
-BACKEND_URL = "https://crm-bug-tracker.preview.emergentagent.com"
+BACKEND_URL = "https://crm-workflow-boost.preview.emergentagent.com"
 
 # Login as admin
 login_response = requests.post(

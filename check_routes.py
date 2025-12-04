@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://crm-bug-tracker.preview.emergentagent.com"
+    base_url = "https://crm-workflow-boost.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:

@@ -12923,7 +12923,7 @@ else:
         "https://k8s-error-resolved.emergent.host",  # NEW: Production backend domain
         "https://mobil-analytics-1.emergent.host",
         "https://mobil-analytics-2.emergent.host",  # New deployment domain
-        "https://crm-bug-tracker.preview.emergentagent.com",
+        "https://crm-workflow-boost.preview.emergentagent.com",
         "https://cloudfile-fix.emergent.host",  # Emergent native deployment domain
     ]
     

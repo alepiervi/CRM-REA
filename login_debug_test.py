@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_login_debug():
-    base_url = "https://crm-bug-tracker.preview.emergentagent.com/api"
+    base_url = "https://crm-workflow-boost.preview.emergentagent.com/api"
     
     print("🚨 FOCUSED LOGIN DEBUG TEST")
     print("=" * 50)

@@ -41,7 +41,7 @@ python seed_database.py
 
 Dopo l'esecuzione dello script:
 
-1. Vai su: `https://crm-bug-tracker.preview.emergentagent.com`
+1. Vai su: `https://crm-workflow-boost.preview.emergentagent.com`
 2. Accedi con:
    - **Username**: `admin`
    - **Password**: `admin123`

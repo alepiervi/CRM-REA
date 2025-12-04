@@ -1,70 +1,400 @@
-<analysis>
-I have conducted a thorough chronological analysis of the provided trajectory. The AI engineer's work involved an extensive series of iterative feature additions and complex bug fixes for the Nureal CRM application. The development was highly reactive to user requests, delivered in Italian.
+<analysis>**original_problem_statement:**
+The user's initial goal was to fix a series of complex, role-based permission bugs in the Nureal CRM application, particularly concerning filters and data visibility for different user roles. After resolving these, the project expanded to include numerous feature requests and further bug fixes.
 
-Key features implemented include:
-1.  **Enhanced Analytics**: Date filters were added to Agent and Referente analytics. The Referente view now includes an outcome distribution card and a dynamic Agent Performance table showing custom statuses.
-2.  **Role-Based Lead Reassignment**: A feature was built for Admins to reassign leads, which was later refined to only show agents covering the lead's specific province. The UI was simplified based on user feedback to only show usernames.
-3.  **Advanced Client Visibility**: The logic for viewing clients was completely overhauled. It started with removing search limits and evolved into a complex, role-based system. Now, users see clients they created OR are assigned to. Area Managers and Responsabile Presidi see all clients associated with their authorized sub-agencies, either by user assignment or directly by the client's sub-agency field.
-4.  **Complex Bug Squashing**: The most significant work involved debugging a non-functional Tipologia Contratto filter. This required a multi-step investigation, revealing and fixing several underlying issues: incorrect endpoint permissions, frontend function name collisions, conflicting  hooks, and finally, a critical backend logic error where the filter data was being sourced incorrectly and then processed in a way that caused a  and a 500 error.
+**PRODUCT REQUIREMENTS:**
+- **Bug Fixes:**
+  - Numero Portabilità field was not saving on new client creation. (COMPLETED)
+  - Deployment was failing due to a Pydantic validation error (422 Unprocessable Entity) when updating clients that didn't have an  set. (COMPLETED)
+  - A runtime error () occurred in the Analytics > Sub Agenzia section. (COMPLETED)
+  - When creating a Backoffice Sub agenzia user, the assigned sub-agency was not being saved. (IN PROGRESS)
+  - A 500 error occurs when trying to import a workflow template. (IN PROGRESS - Last item)
+- **Feature Requests & Enhancements:**
+  - Add several new fields to the Energia section for clients, including conditional fields based on a dropdown selection (Switch con voltura). (COMPLETED)
+  - Rename the Energia Fastweb section to simply Energia. (COMPLETED)
+  - Add a search filter to the user management section. (COMPLETED)
+  - Make confirmation dialogs (for create/edit operations) close immediately upon confirmation, not after the async operation completes. (COMPLETED)
+  - Remove the Configurazione section entirely from the UI and codebase. (COMPLETED)
+  - Fix the AI Configuration section: ensure the OpenAI secret key saves correctly and that the list of available assistants is fetched and displayed. (COMPLETED)
+  - Allow AI Assistants to be assigned to specific Units instead of being a global setting. (COMPLETED)
+  - Fix the Workflow Builder, which was not allowing nodes to be configured. (COMPLETED)
+  - Implement a complex, automated workflow:
+    1.  A new lead arrives via webhook.
+    2.  The system assigns the lead to an agent based on province.
+    3.  The workflow then triggers, sending a welcome message via WhatsApp from the number associated with the lead's Unit.
+    4.  If the lead responds positively, the AI assistant associated with the Unit takes over the conversation.
+    5.  The system must parse lead responses to update client fields in the CRM. (IN PROGRESS)
 
-The trajectory concludes with the AI engineer having just applied what is believed to be the final fix for the filter bug. The user's primary language is Italian. **Next agent, please respond in Italian.**
-</analysis>
+**User's preferred language**: Italian
 
-<product_requirements>
-The Nureal CRM is a web application for managing leads and clients, with role-based access for Admins, supervisors (Referente, Area Manager, etc.), and agents.
+**what currently exists?**
+The application is a monolithic Nureal CRM with a React frontend () and a Python FastAPI backend (). The initial phase of fixing complex role-based permission issues is complete. The application now has a functional Workflow Builder, AI assistant integration per Unit, and a WhatsApp integration backbone. The agent was in the middle of implementing a full end-to-end automated lead processing workflow, including creating backend executors and frontend UI for managing templates.
 
-**Core Features:**
-*   **Lead Management**: Ingests leads via Zapier, allows viewing/filtering, and editing through a dynamic modal where pre-filled data is locked. Admins can reassign leads, with the agent selection intelligently filtered by the lead's province.
-*   **Client Management**: A comprehensive client list with advanced, role-based visibility rules. Supervisors (Area Manager, Responsabile Presidi) can see all clients linked to their authorized sub-agencies. Standard users see clients they created or are assigned to. Search functionality is unlimited.
-*   **Dynamic Configuration**: Admins can create custom lead statuses and fields. The UI for user creation/editing is also dynamic, showing relevant authorization fields (sub-agencies, commesse, services) based on the selected user role (e.g., Area Manager, Responsabile Presidi).
-*   **Analytics**: Dashboards for Agenti and Referenti with date-range filtering. The Referente dashboard includes a breakdown of lead outcomes per agent, displayed in a dynamic table with columns for each custom status.
-*   **Data Export**: A dynamic Excel export for leads that respects all active filters.
-</product_requirements>
+**Last working item**:
+The user reported a 500 error when trying to import a workflow from a template. The agent had just started investigating this issue.
 
-<key_technical_concepts>
-- **Frameworks**: React.js (frontend), Python FastAPI (backend).
-- **Architecture**: Monolithic repository. The entire application logic is contained within  and .
-- **Database**: MongoDB, accessed asynchronously via the  library.
-- **API & Data**: RESTful API using Pydantic for validation and JWT for authentication.
-- **UI Library**: shadcn/ui for React components.
-</key_technical_concepts>
+- **Last item agent was working**: Debugging a 500 (Internal Server Error) that occurs on the backend when the  endpoint is called from the frontend.
+- **Status**: IN PROGRESS
+- **Agent Testing Done**: N
+- **Which testing method agent to use?**: backend testing agent. Start by checking the backend supervisor logs to get the specific traceback for the 500 error. Then, use curl to replicate the request and debug.
+- **User Testing Done**: Y (User reported the error)
 
-<code_architecture>
-The application is a monolith located in .
+**All Pending/In progress Issue list**:
+- **Issue 1**: Importing a workflow template results in a 500 error. (P0)
+- **Issue 2**: User creation for Backoffice Sub agenzia role might not be saving the sub-agency assignment. (P1)
+
+**Issues Detail**:
+- **Issue 1**:
+  - **Description**: When the user clicks the Importa button in the Importa da Template modal within the Workflow Builder, the frontend makes a POST request to  which fails with a 500 error.
+  - **Attempted fixes**: The agent identified the user's report but had not yet taken any debugging steps beyond acknowledging the issue.
+  - **Next debug checklist**:
+    1.  Use ==> /var/log/supervisor/backend.err.log <==
+nome
+  Field required [type=missing, input_value={'_id': ObjectId('68dbe73...00), 'updated_at': None}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+WARNING:root:Skipping unit 784aedbf-fdb3-4ac5-a990-ef4e7ecf28f5 due to validation error: 1 validation error for Unit
+nome
+  Field required [type=missing, input_value={'_id': ObjectId('68dbe73...00), 'updated_at': None}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+WARNING:root:Skipping unit 784aedbf-fdb3-4ac5-a990-ef4e7ecf28f5 due to validation error: 1 validation error for Unit
+nome
+  Field required [type=missing, input_value={'_id': ObjectId('68dbe73...00), 'updated_at': None}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+WARNING:root:Skipping unit 784aedbf-fdb3-4ac5-a990-ef4e7ecf28f5 due to validation error: 1 validation error for Unit
+nome
+  Field required [type=missing, input_value={'_id': ObjectId('68dbe73...00), 'updated_at': None}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+WARNING:root:Skipping unit 784aedbf-fdb3-4ac5-a990-ef4e7ecf28f5 due to validation error: 1 validation error for Unit
+nome
+  Field required [type=missing, input_value={'_id': ObjectId('68dbe73...00), 'updated_at': None}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+WARNING:root:Skipping unit 784aedbf-fdb3-4ac5-a990-ef4e7ecf28f5 due to validation error: 1 validation error for Unit
+nome
+  Field required [type=missing, input_value={'_id': ObjectId('68dbe73...00), 'updated_at': None}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+ERROR:root:Get WhatsApp configuration error: 'unit_id'
+ERROR:root:Get WhatsApp configuration error: 'unit_id'
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/encoders.py", line 322, in jsonable_encoder
+    data = dict(obj)
+           ^^^^^^^^^
+TypeError: 'ObjectId' object is not iterable
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/encoders.py", line 327, in jsonable_encoder
+    data = vars(obj)
+           ^^^^^^^^^
+TypeError: vars() argument must have __dict__ attribute
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/.venv/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 408, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 148, in simple_response
+    await self.app(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 756, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 776, in app
+    await route.handle(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/root/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/.venv/lib/python3.11/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 296, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/routing.py", line 180, in serialize_response
+    return jsonable_encoder(response_content)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/encoders.py", line 287, in jsonable_encoder
+    encoded_value = jsonable_encoder(
+                    ^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/encoders.py", line 287, in jsonable_encoder
+    encoded_value = jsonable_encoder(
+                    ^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/fastapi/encoders.py", line 330, in jsonable_encoder
+    raise ValueError(errors) from e
+ValueError: [TypeError("'ObjectId' object is not iterable"), TypeError('vars() argument must have __dict__ attribute')]
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [28] using WatchFiles
+
+==> /var/log/supervisor/backend.out.log <==
+INFO:     10.64.129.76:54546 - "GET /api/units HTTP/1.1" 200 OK
+INFO:     10.64.128.21:45300 - "GET /api/servizi HTTP/1.1" 200 OK
+INFO:     10.64.128.21:45296 - "GET /api/sub-agenzie HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.129.76:54572 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.21:45312 - "GET /api/commesse HTTP/1.1" 200 OK
+INFO:     10.64.129.76:54558 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.154:60488 - "GET /api/units HTTP/1.1" 200 OK
+INFO:     10.64.128.154:60488 - "GET /api/ai-assistants HTTP/1.1" 200 OK
+INFO:     10.64.128.144:58570 - "GET /api/sub-agenzie HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.129.77:34532 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.5:40262 - "GET /api/servizi HTTP/1.1" 200 OK
+INFO:     10.64.128.5:40262 - "GET /api/servizi HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.129.77:34532 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.129.77:34532 - "GET /api/servizi HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.129.77:34538 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.129.77:49968 - "GET /api/ai-assistants HTTP/1.1" 200 OK
+INFO:     10.64.128.144:35084 - "GET /api/units HTTP/1.1" 200 OK
+INFO:     10.64.129.77:49978 - "GET /api/commesse HTTP/1.1" 200 OK
+INFO:     10.64.128.154:36274 - "GET /api/servizi HTTP/1.1" 200 OK
+INFO:     10.64.128.154:36278 - "GET /api/sub-agenzie HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.5:49940 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.144:35098 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.144:35098 - "GET /api/units HTTP/1.1" 200 OK
+INFO:     10.64.129.78:55390 - "GET /api/ai-assistants HTTP/1.1" 200 OK
+INFO:     10.64.128.144:35098 - "GET /api/commesse HTTP/1.1" 200 OK
+INFO:     10.64.128.5:49940 - "GET /api/sub-agenzie HTTP/1.1" 200 OK
+INFO:     10.64.129.78:55406 - "GET /api/servizi HTTP/1.1" 200 OK
+INFO:     10.64.128.21:59526 - "GET /api/units HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.129.78:55418 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.144:35084 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.154:36278 - "GET /api/ai-assistants HTTP/1.1" 200 OK
+INFO:     10.64.128.144:35084 - "GET /api/servizi HTTP/1.1" 200 OK
+INFO:     10.64.128.21:59526 - "GET /api/sub-agenzie HTTP/1.1" 200 OK
+INFO:     10.64.129.78:55406 - "GET /api/units HTTP/1.1" 200 OK
+INFO:     10.64.128.154:36274 - "GET /api/commesse HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.5:49940 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.5:49950 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.5:49950 - "GET /api/ai-assistants HTTP/1.1" 200 OK
+INFO:     10.64.128.21:59526 - "GET /api/sub-agenzie HTTP/1.1" 200 OK
+INFO:     10.64.128.154:36274 - "GET /api/commesse HTTP/1.1" 200 OK
+INFO:     10.64.129.76:46556 - "GET /api/servizi HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.5:49940 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.5:49952 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.21:59526 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.21:59536 - "GET /api/servizi HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.21:59536 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.154:36274 - "GET /api/servizi HTTP/1.1" 200 OK
+INFO:     10.64.128.144:35084 - "GET /api/servizi HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.21:59536 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.5:49940 - "GET /api/servizi HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.144:35084 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.144:60656 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.154:46056 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.154:33392 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     10.64.128.5:58574 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     10.64.128.144:32848 - "GET /api/units HTTP/1.1" 200 OK
+INFO:     10.64.128.21:59030 - "GET /api/ai-assistants HTTP/1.1" 200 OK
+INFO:     10.64.128.154:33392 - "GET /api/servizi HTTP/1.1" 200 OK
+INFO:     10.64.128.144:32850 - "GET /api/commesse HTTP/1.1" 200 OK
+INFO:     10.64.128.144:32860 - "GET /api/sub-agenzie HTTP/1.1" 200 OK
+INFO:     10.64.128.5:58574 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.154:33404 - "GET /api/servizi HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.21:59038 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.144:32870 - "GET /api/ai-assistants HTTP/1.1" 200 OK
+INFO:     10.64.128.154:33410 - "GET /api/commesse HTTP/1.1" 200 OK
+INFO:     10.64.128.144:32884 - "GET /api/servizi HTTP/1.1" 200 OK
+INFO:     10.64.128.21:59062 - "GET /api/sub-agenzie HTTP/1.1" 200 OK
+INFO:     10.64.128.21:59052 - "GET /api/units HTTP/1.1" 200 OK
+INFO:     10.64.128.5:58608 - "GET /api/workflow-templates HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.5:58580 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.154:33426 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+📊 Returning 39 tipologie for user admin (UserRole.ADMIN)
+INFO:     10.64.128.144:32874 - "GET /api/tipologie-contratto/all HTTP/1.1" 200 OK
+INFO:     10.64.128.144:32890 - "GET /api/servizi HTTP/1.1" 200 OK
+INFO:     10.64.128.5:58596 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     10.64.128.5:58600 - "GET /api/workflows HTTP/1.1" 200 OK
+INFO:     10.64.128.154:33404 - "GET /api/whatsapp-config HTTP/1.1" 200 OK
+INFO:     10.64.128.21:59038 - "GET /api/workflow-templates HTTP/1.1" 200 OK
+INFO:     10.64.128.144:32850 - "GET /api/workflows HTTP/1.1" 200 OK
+INFO:     10.64.128.5:58608 - "GET /api/whatsapp-config HTTP/1.1" 200 OK
+INFO:     10.64.128.21:38290 - "GET /api/workflow-templates HTTP/1.1" 200 OK
+INFO:     10.64.128.21:38302 - "GET /api/workflows HTTP/1.1" 200 OK
+INFO:     10.64.128.144:57572 - "GET /api/workflow-templates HTTP/1.1" 200 OK
+INFO:     10.64.128.154:46898 - "GET /api/workflows HTTP/1.1" 200 OK
+INFO:     10.64.128.144:57572 - "POST /api/workflow-templates/lead_qualification_ai/import?unit_id=crm-workflow-boost HTTP/1.1" 500 Internal Server Error to find the Python traceback for the 500 error.
+    2.  Analyze the traceback to pinpoint the error in the  function in .
+    3.  Replicate the failing request using  to test potential fixes.
+    4.  The error is likely in how the template data is being processed or inserted into the  collection. Check for missing fields, incorrect data types, or issues with generating new IDs.
+  - **Why fix this issue and what will be achieved with the fix?**: This is a blocker for the user to utilize the pre-built workflow automation, which is a critical part of the current feature request.
+  - **Status**: IN PROGRESS
+  - **Is recurring issue?**: N
+  - **Should Test frontend/backend/both after fix?**: Backend.
+  - **Blocked on other issue**: None.
+
+- **Issue 2**:
+  - **Description**: The user reported that when creating a user with the Backoffice Sub agenzia role, the assigned sub-agency is not saved.
+  - **Attempted fixes**: The agent performed backend  tests and concluded the  endpoint was working correctly. The agent then suspected a frontend issue in 's  function and added several  statements and a fix to ensure  was converted from  to  before submission. However, the user never confirmed if this fix worked.
+  - **Next debug checklist**:
+    1.  Ask the user to re-test creating a Backoffice Sub agenzia user.
+    2.  If it still fails, check the browser's developer console for the log outputs added by the previous agent in the  function in  (around line 6389).
+    3.  Verify the  object right before the  call to ensure  has the correct value.
+  - **Why fix this issue and what will be achieved with the fix?**: This is a core functional bug preventing the proper setup of a key user role.
+  - **Status**: USER VERIFICATION PENDING
+  - **Is recurring issue?**: N
+  - **Should Test frontend/backend/both after fix?**: Frontend.
+  - **Blocked on other issue**: None.
+
+**In progress Task List**:
+- **Task 1**: Complete the implementation of the automated lead processing workflow. (P1)
+
+**Task Detail**:
+- **Task 1**:
+  - **Where to resume**: The core backend logic (, webhook modifications, template system) and frontend UI (import modal, welcome message field) are in place. The next steps are to ensure all pieces work together seamlessly. This task is blocked by the 500 error on template import (Issue 1).
+  - **What will be achieved with this?**: A fully automated system that captures leads, assigns them, sends a welcome message, and initiates an AI conversation, which was a major user requirement.
+  - **Status**: IN PROGRESS
+  - **Should Test frontend/backend/both after fix?**: Both.
+  - **Blocked on something**: Issue 1: Importing a workflow template results in a 500 error.
+
+**Upcoming and Future Tasks**
+None beyond completing the workflow automation.
+
+**Completed work in this session**
+- **Bug Fixes:**
+  - Fixed an issue where the Numero Portabilità field was not being saved for new clients.
+  - Resolved a critical 422 Unprocessable Entity deployment error by adding a Pydantic model validator to handle empty strings for  fields.
+  - Fixed a frontend crash ( of ) in the Analytics section for Sub-Agencies.
+  - Corrected bugs in the AI Configuration section, allowing the OpenAI key to be saved and assistants to be correctly fetched and displayed.
+- **Feature Implementation & Enhancement:**
+  - **New Client Fields**: Added a full set of fields for the Energia contract type, including a dropdown with conditional logic to show/hide fields for Switch con voltura.
+  - **UI/UX Improvements**:
+    - Renamed Energia Fastweb to Energia across the UI.
+    - Added a search filter to the User Management page.
+    - Modified all primary create/edit modals (, ) to close instantly on submission for a better user experience.
+    - Removed the entire Configurazione section and its related components/logic from the codebase.
+    - Added missing Unit selection dropdowns to the Workflow Template Import and WhatsApp Configuration modals.
+  - **Workflow & AI Automation**:
+    - Implemented per-Unit assignment of AI assistants.
+    - Added a configuration modal to the Workflow Builder, allowing users to edit the properties of nodes on the canvas.
+    - Created the backend foundation for a full lead-to-AI workflow, including a , modifications to the lead webhook, and a system for importing pre-defined workflow templates.
+    - Added a Welcome Message field to the Unit edit modal.
+
+**Earlier issues found/mentioned but not fixed**
+- **Issue 1**:
+  - **Description**:  and  roles reportedly see all 38 system UUIDs for the Tipologia Contratto filter, even with no clients.
+  - **Debug checklist**: Previous agent testing could not reproduce this on the backend. The next agent should advise the user to perform a hard refresh (Ctrl+Shift+R) and, if the issue persists, investigate the frontend logic for that specific filter and those roles.
+  - **Why to solve this issue and what will be achieved with this?**: It clutters the UI and makes the filter unusable for these roles.
+  - **Should Test frontend/backend/both after fix**: Frontend.
+  - **Is recurring issue?**: Y (Filter issues have been common).
+
+**Known issue recurrence from previous fork**
+- **Issue recurrence in previous fork**: Filter logic inconsistencies were a major theme in the previous fork. While the core issues were resolved, the item listed in Earlier issues found/mentioned but not fixed is a remnant of this larger problem.
+- **Recurrence count**: N/A
+- **Status**: RESOLVED (Mainly, with one outstanding part).
+
+**Code Architecture**
 
 
+**Key Technical Concepts**
+- **Frameworks**: React.js, Python FastAPI.
+- **Architecture**: Monolithic repository.
+- **Database**: MongoDB with .
+- **Validation**: Pydantic v2, extensive use of Enums and .
+- **Workflow**: A new system using  on the frontend and a custom executor on the backend.
 
--   ****
-    -   **Importance**: This single file contains the entire FastAPI backend, including all API endpoints, Pydantic models, and MongoDB database logic. It is the brain of the application.
-    -   **Summary of Changes**: This file was modified extensively.
-        -   **Analytics Endpoints ()**: Updated to accept  and  parameters. The referente analytics endpoint was enhanced to return outcome statistics for each individual agent.
-        -   **Lead Endpoint ()**: Logic was added to ensure only users with the  role can modify the .
-        -   **Client Endpoint ()**: This endpoint underwent a major overhaul. The default result limit was removed. Complex conditional logic was added to the MongoDB query based on the user's role (, , ) to control data visibility. The query now uses  to show clients where the user is either the creator () or the assignee (), and also checks the client's  directly.
-        -   **Filter Options Endpoint ()**: This endpoint was the source of a major bug. It was completely rewritten to fetch contract typologies () from the correct database collection based on user permissions, rather than deriving them from existing clients. It was also fixed to return data in the correct  format and to handle fallback cases for users with no specific permissions. A  causing a 500 error was fixed by removing a faulty  call on a list of dictionaries.
-        -   **Services Endpoint ()**: Permissions were expanded to include  and other roles to fix a dependency issue preventing other filters from loading.
+**key DB schema**
+- **clienti**: Contains all client data. Recently added  and numerous  fields.
+- **users**: Stores user information and roles.
+- **units**: Organizational units. Recently added  and .
+- **workflows**: Stores workflow definitions (nodes and edges).
+- **whatsapp_configurations**: Stores WhatsApp API credentials, now linked to .
+- **ai_configurations**: Stores OpenAI API key.
 
--   ****
-    -   **Importance**: This single file contains the entire React frontend, including all components, state management, and API calls. It controls everything the user sees and interacts with.
-    -   **Summary of Changes**: This file saw massive changes.
-        -   **Analytics UI**: Date picker controls were added to both analytics sections. The  component was updated to display a new Distribuzione Esiti card and a dynamic table for Performance Agenti that generates columns based on the statuses returned from the backend. A Reset Filters button was also added.
-        -   **Lead Reassignment UI**: In the lead detail modal, the Assigned Agent field was converted into a conditional  dropdown for Admins, which filters agents based on the lead's province. The display logic for the agent's name in the dropdown was simplified multiple times per user request.
-        -   **User Management Forms**: The conditional rendering logic for the Create User and Edit User forms was updated to show authorization fields (sub-agencies, commesse, services) for the  role, aligning it with . Duplicated UI sections were removed, and  hooks were fixed to ensure related data (like services) loads correctly when commesse are selected.
-        -   **Bug Fixes**: A function name collision between two  functions was resolved. A problematic  that was incorrectly clearing filter data was commented out, which was a key step in diagnosing the final filter bug.
+**changes in tech stack**
+None.
 
-</code_architecture>
+**All files of reference**
+- : Heavily modified to add new client fields, fix the Pydantic validation bug, and add new endpoints for workflows and AI assistants.
+- : Heavily modified to add new form fields, new modals, a search filter, the workflow builder UI, and fixes for various bugs and UX flows.
+- : New file created to house the logic for executing workflows.
+- : New file created to define pre-built workflow templates.
 
-<pending_tasks>
-- There are no outstanding feature requests from the user. All explicitly mentioned tasks have been addressed. The current focus is on verifying the latest bug fix.
-</pending_tasks>
+**Areas that need refactoring**:
+-  and  are extremely large and difficult to maintain. They are the source of most bugs and developer friction. A major refactor to break these files into smaller, feature-specific modules is highly recommended for long-term stability.
 
-<current_work>
-The AI engineer was in the final stages of a complex, multi-step debugging process to fix the Tipologia Contratto filter in the client list, which was not loading for any user.
+**key api endpoints**
+- : **(FAILING)** Imports a workflow.
+- : Executes a workflow.
+- : Webhook for new leads, now triggers workflow execution.
+- : Updated to allow setting  and .
+- : Fetches the list of OpenAI assistants.
+- : Creates a new user. Potentially has a frontend bug related to saving .
+- : Updates a client. The Pydantic validation for this endpoint was fixed.
 
-The root cause was traced to the backend endpoint . The AI had rewritten the logic to fetch contract typologies correctly, but this introduced a new . The logs revealed a , caused by a  function call trying to sort a list of dictionary objects.
+**Critical Info for New Agent**
+- **Workflow Implementation is the Priority**: The main unfinished task is the end-to-end lead automation workflow. Resolving the 500 error on template import is the immediate blocker.
+- **Pydantic Enums vs. Empty Strings**: The deployment failed because the frontend was sending  for optional  fields, which Pydantic v2 rejects. A  was added to  and  to convert empty strings to . Be aware of this pattern if adding new optional  fields.
+- **Monolithic Pain**: Be extremely careful when editing  and . They are over 20,000 and 7,000 lines long, respectively. Use search and  liberally to understand impacts before making changes.
+- **User Feedback is Key**: The user is very active in testing and provides precise error reports. Always wait for user verification on frontend changes.
 
-The immediate last action was editing  to remove the conflicting  call and the redundant code block that was causing the error. The backend has not yet been restarted to apply this final change. The goal is to resolve this 500 error, which should finally make the filter dropdown populate correctly for all users based on their specific permissions or fallback logic.
-</current_work>
+**documents created in this job**
+- 
+- 
 
-<optional_next_step>
-Restart the backend server to apply the fix for the 500 error. Then, I will confirm with the user that the Tipologia Contratto filter is now working correctly.
-</optional_next_step>
+**Last 10 User Messages and any pending user messages**
+1.  **User**: Asks to implement a complex, multi-step automated workflow for new leads. (IN PROGRESS)
+2.  **Agent**: Proposes two options; user chooses Option B (full implementation). (IN PROGRESS)
+3.  **Agent**: Implements the backend and frontend changes for the workflow. (IN PROGRESS)
+4.  **User**: Reports that the frontend changes are not visible and clarifies that the workflow should trigger *after* the lead is assigned to an agent. (PENDING)
+5.  **Agent**: Acknowledges the miss, adjusts the backend logic, and adds the frontend UI for managing templates and welcome messages. (IN PROGRESS)
+6.  **User**: Reports that the Import Template modal is missing a dropdown to select the Unit, and the WhatsApp config is also missing it. (PENDING)
+7.  **Agent**: Adds the missing Unit dropdowns to both modals. (COMPLETED)
+8.  **User**: Reports a 500 error when trying to import a workflow template. (IN PROGRESS - Last item)
+9.  **Agent**: Acknowledges the 500 error and prepares to investigate backend logs. (IN PROGRESS)
+
+**Project Health Check:**
+- **Broken**:
+  - Workflow template import feature ().
+- **Mocked**: None.
+
+**3rd Party Integrations**:
+- OpenAI - uses User API Key (for fetching assistants and presumably for conversations).
+
+**Testing status**
+- **Testing agent used after significant changes**: NO
+- **Troubleshoot agent used after agent stuck in loop**: NO
+- **Test files created**: None.
+- **Known regressions**: None.
+
+**Credentials to test flow:**
+The agent has used hardcoded admin credentials for backend  tests. These can be found in the message history if needed. The user handles all frontend testing.
+
+**What agent forgot to execute**
+The agent was actively working on the user's latest bug report (the 500 error). Nothing appears to have been forgotten.</analysis>
