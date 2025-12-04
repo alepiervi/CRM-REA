@@ -7767,6 +7767,13 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
             "name": "Triggers",
             "description": "Events that start a workflow",
             "subtypes": {
+                "lead_created": {
+                    "name": "Lead Creato",
+                    "description": "Si attiva quando un nuovo lead viene creato tramite webhook",
+                    "icon": "user-plus",
+                    "color": "green",
+                    "fields": []
+                },
                 "contact_created": {
                     "name": "Contact Created",
                     "description": "Triggers when a new contact is created",
