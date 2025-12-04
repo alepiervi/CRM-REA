@@ -8,7 +8,7 @@ import json
 
 class QuickTipologieTest:
     def __init__(self):
-        self.base_url = "https://crm-workflow-boost.preview.emergentagent.com/api"
+        self.base_url = "https://lead2ai-flow.preview.emergentagent.com/api"
         self.token = None
         
     def login_admin(self):

@@ -52466,7 +52466,7 @@ def main():
         
         if unit_agn:
             agn_id = unit_agn.get('id')
-            base_webhook_url = "https://crm-workflow-boost.preview.emergentagent.com/api/webhook"
+            base_webhook_url = "https://lead2ai-flow.preview.emergentagent.com/api/webhook"
             webhook_url = f"{base_webhook_url}/{agn_id}"
             
             print(f"\n   🎯 URL WEBHOOK COMPLETO PRONTO PER ZAPIER:")
@@ -52504,7 +52504,7 @@ def main():
         if unit_agn:
             agn_id = unit_agn.get('id')
             agn_is_active = unit_agn.get('is_active', False)
-            webhook_url = f"https://crm-workflow-boost.preview.emergentagent.com/api/webhook/{agn_id}"
+            webhook_url = f"https://lead2ai-flow.preview.emergentagent.com/api/webhook/{agn_id}"
             
             print(f"\n   🎉 SUCCESS: ID Unit AGN trovato e webhook URL costruito!")
             print(f"   📋 INFORMAZIONI FINALI:")

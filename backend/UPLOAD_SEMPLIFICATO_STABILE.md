@@ -84,7 +84,7 @@ if (hostname === 'nureal.it') {
 **DOPO**:
 ```javascript
 if (hostname === 'nureal.it') {
-    return 'https://crm-workflow-boost.preview.emergentagent.com';  // ✅ Funziona, no timeout
+    return 'https://lead2ai-flow.preview.emergentagent.com';  // ✅ Funziona, no timeout
 }
 ```
 
@@ -106,7 +106,7 @@ Quindi anche senza gerarchia, hai tutte le info necessarie!
 ```
 1. User upload documento da https://nureal.it
    ↓
-2. Frontend chiama: https://crm-workflow-boost.preview.emergentagent.com/api/documents/upload
+2. Frontend chiama: https://lead2ai-flow.preview.emergentagent.com/api/documents/upload
    ↓
 3. Backend verifica commessa ha aruba_drive_config.enabled=true
    ↓
@@ -160,7 +160,7 @@ F12 → Network tab → Check "Disable cache" → Reload
 ```
 Dovrebbe mostrare:
 ✅ Production environment detected - using preview backend (no timeout)
-📡 Backend URL: https://crm-workflow-boost.preview.emergentagent.com
+📡 Backend URL: https://lead2ai-flow.preview.emergentagent.com
 
 NON dovrebbe mostrare:
 ❌ mobil-analytics-1.emergent.host
@@ -213,14 +213,14 @@ Verifica file: Mario_Rossi_3331234567_documento.pdf
 
 **Console Browser**:
 ```
-📡 Backend URL: https://crm-workflow-boost.preview.emergentagent.com
+📡 Backend URL: https://lead2ai-flow.preview.emergentagent.com
 🚀 Uploading: Mario_Rossi_3331234567_documento.pdf
 ✅ Documento caricato con successo
 ```
 
 **Network Tab**:
 ```
-Request URL: https://crm-workflow-boost.preview.emergentagent.com/api/documents/upload
+Request URL: https://lead2ai-flow.preview.emergentagent.com/api/documents/upload
 Status: 200 OK
 Time: 10-15 seconds
 ```
@@ -285,7 +285,7 @@ Time: 10-15 seconds
 3. Reload https://nureal.it
 
 4. Verifica console mostra nuovo URL:
-   ✅ https://crm-workflow-boost.preview.emergentagent.com
+   ✅ https://lead2ai-flow.preview.emergentagent.com
 ```
 
 ### Problema: Upload ancora lento (>30s)
