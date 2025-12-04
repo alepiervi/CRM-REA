@@ -6652,12 +6652,27 @@ async def get_whatsapp_pairing_code(
 
 # Legacy QR endpoint (returns pairing code)
 @api_router.get("/whatsapp-qr/{session_id}")
-async def get_whatsapp_qr_legacy(
+async def get_whatsapp_qr(
     session_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Legacy endpoint - redirects to pairing code"""
-    return await get_whatsapp_pairing_code(session_id, current_user)
+    """Get QR code from WhatsApp service"""
+    
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can access QR code")
+    
+    try:
+        # Proxy request to WhatsApp service
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"http://localhost:3001/qr/{session_id}",
+                timeout=10.0
+            )
+            response.raise_for_status()
+            return response.json()
+    except Exception as e:
+        logging.error(f"Error fetching QR code: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch QR code: {str(e)}")
 
 @api_router.post("/whatsapp-connect")
 async def connect_whatsapp(
