@@ -28,20 +28,28 @@ if (!fs.existsSync(AUTH_DIR)) {
 }
 
 /**
- * Initialize WhatsApp connection for a specific unit
+ * Initialize WhatsApp connection for a specific unit using PAIRING CODE
  */
-async function initWhatsAppForUnit(unitId, sessionId) {
+async function initWhatsAppForUnit(unitId, sessionId, phoneNumber) {
     try {
         logger.info(`Initializing WhatsApp for unit: ${unitId}, session: ${sessionId}`)
         
-        const authDir = `auth_sessions/${sessionId}`
+        const authDir = path.join(AUTH_DIR, sessionId)
+        if (!fs.existsSync(authDir)) {
+            fs.mkdirSync(authDir, { recursive: true })
+        }
+        
         const { state, saveCreds } = await useMultiFileAuthState(authDir)
 
         const sock = makeWASocket({
-            auth: state,
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, P({ level: 'silent' }))
+            },
             printQRInTerminal: false,
             logger: P({ level: 'silent' }),
-            browser: ['Nureal CRM', 'Chrome', '1.0.0']
+            browser: ['Nureal CRM', 'Chrome', '1.0.0'],
+            markOnlineOnConnect: false
         })
 
         // Store socket reference
@@ -49,29 +57,42 @@ async function initWhatsAppForUnit(unitId, sessionId) {
             sock,
             unitId,
             sessionId,
+            phoneNumber,
             status: 'connecting',
             connectedAt: null,
-            phoneNumber: null
+            pairingCode: null
         })
 
         // Handle connection updates
         sock.ev.on('connection.update', async (update) => {
-            const { connection, lastDisconnect, qr } = update
-
-            if (qr) {
-                logger.info(`QR Code generated for session: ${sessionId}`)
-                qrCodes.set(sessionId, qr)
-                
-                // Update status in FastAPI
+            const { connection, lastDisconnect } = update
+            
+            // Check if we need pairing code (only for new connections)
+            if (!state.creds.registered && phoneNumber) {
                 try {
-                    await axios.post(`${FASTAPI_URL}/api/whatsapp-session-update`, {
-                        session_id: sessionId,
-                        unit_id: unitId,
-                        status: 'qr_ready',
-                        qr_code: qr
-                    })
+                    const code = await sock.requestPairingCode(phoneNumber.replace(/[^0-9]/g, ''))
+                    logger.info(`Pairing code generated for ${sessionId}: ${code}`)
+                    pairingCodes.set(sessionId, code)
+                    
+                    const sessionData = activeSockets.get(sessionId)
+                    if (sessionData) {
+                        sessionData.pairingCode = code
+                        sessionData.status = 'pairing_code_ready'
+                    }
+                    
+                    // Update status in FastAPI
+                    try {
+                        await axios.post(`${FASTAPI_URL}/api/whatsapp-session-update`, {
+                            session_id: sessionId,
+                            unit_id: unitId,
+                            status: 'pairing_code_ready',
+                            pairing_code: code
+                        })
+                    } catch (error) {
+                        logger.error('Failed to update session status:', error.message)
+                    }
                 } catch (error) {
-                    logger.error('Failed to update session status:', error.message)
+                    logger.error(`Failed to request pairing code: ${error.message}`)
                 }
             }
 
