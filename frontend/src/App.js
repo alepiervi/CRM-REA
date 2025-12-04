@@ -7108,6 +7108,15 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
 
 // Edit User Modal Component
 const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, commesse, subAgenzie, fetchServizi }) => {
+  console.log("🟣🟣🟣 EDIT MODAL OPENED - User data:", {
+    username: user.username,
+    role: user.role,
+    unit_id: user.unit_id,
+    sub_agenzia_id: user.sub_agenzia_id,
+    commesse_autorizzate: user.commesse_autorizzate?.length || 0,
+    servizi_autorizzati: user.servizi_autorizzati?.length || 0
+  });
+  
   const [formData, setFormData] = useState({
     username: user.username,
     email: user.email,
@@ -7123,6 +7132,11 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     sub_agenzie_autorizzate: user.sub_agenzie_autorizzate || [],
     can_view_analytics: user.can_view_analytics || false,
     entity_management: user.entity_management || "clienti",
+    assignment_type: user.unit_id ? "unit" : (user.sub_agenzia_id ? "sub_agenzia" : "")
+  });
+  
+  console.log("🟣 EDIT MODAL - formData initialized:", {
+    sub_agenzia_id: user.sub_agenzia_id || "",
     assignment_type: user.unit_id ? "unit" : (user.sub_agenzia_id ? "sub_agenzia" : "")
   });
   const [isLoading, setIsLoading] = useState(false);
