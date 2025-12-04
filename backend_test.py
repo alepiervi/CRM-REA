@@ -48939,6 +48939,89 @@ startxref
         
         return not bug_confirmed
 
+    def run_backend_fixes_tests(self):
+        """🚨 RUN BACKEND FIXES TESTS - Test the two specific fixes from review request"""
+        print("🚨 STARTING BACKEND FIXES TESTING SUITE...")
+        print("🎯 TESTING TWO CRITICAL BACKEND FIXES:")
+        print("   1. Import Workflow Template Fix (Priority P0)")
+        print("   2. Backoffice Sub Agenzia User Creation Fix (Priority P1)")
+        print(f"📍 Base URL: {self.base_url}")
+        print("=" * 80)
+        
+        fix1_success = False
+        fix2_success = False
+        
+        try:
+            # **TEST FIX 1: Import Workflow Template**
+            print("\n" + "🔥" * 50)
+            print("🔥 TESTING FIX 1: IMPORT WORKFLOW TEMPLATE")
+            print("🔥" * 50)
+            fix1_success = self.test_import_workflow_template_fix()
+            
+        except Exception as e:
+            self.log_test("❌ Fix 1 Exception", False, f"Error: {str(e)}")
+            fix1_success = False
+        
+        try:
+            # **TEST FIX 2: Backoffice Sub Agenzia User Creation**
+            print("\n" + "🔥" * 50)
+            print("🔥 TESTING FIX 2: BACKOFFICE SUB AGENZIA USER CREATION")
+            print("🔥" * 50)
+            fix2_success = self.test_backoffice_sub_agenzia_user_creation_fix()
+            
+        except Exception as e:
+            self.log_test("❌ Fix 2 Exception", False, f"Error: {str(e)}")
+            fix2_success = False
+        
+        # **FINAL SUMMARY**
+        print("\n" + "🎯" * 80)
+        print("🎯 BACKEND FIXES TESTING COMPLETE - FINAL SUMMARY")
+        print("🎯" * 80)
+        
+        print(f"\n📊 FIXES TEST RESULTS:")
+        print(f"   🔥 FIX 1 - Import Workflow Template: {'✅ SUCCESS' if fix1_success else '❌ FAILED'}")
+        print(f"   🔥 FIX 2 - Backoffice Sub Agenzia User Creation: {'✅ SUCCESS' if fix2_success else '❌ FAILED'}")
+        
+        total_fixes = 2
+        successful_fixes = sum([fix1_success, fix2_success])
+        success_rate = (successful_fixes / total_fixes) * 100
+        
+        print(f"\n📈 OVERALL RESULTS:")
+        print(f"   • Total fixes tested: {total_fixes}")
+        print(f"   • Successful fixes: {successful_fixes}")
+        print(f"   • Failed fixes: {total_fixes - successful_fixes}")
+        print(f"   • Success rate: {success_rate:.1f}%")
+        
+        if successful_fixes == total_fixes:
+            print(f"\n🎉 ALL BACKEND FIXES WORKING CORRECTLY!")
+            print(f"🎉 BOTH CRITICAL ISSUES HAVE BEEN RESOLVED:")
+            print(f"   ✅ Import Workflow Template no longer returns 500 errors")
+            print(f"   ✅ Backoffice Sub Agenzia users are created with sub_agenzia_id saved")
+            print(f"🎯 READY FOR PRODUCTION: Both fixes verified and working")
+        else:
+            print(f"\n🚨 SOME BACKEND FIXES NEED ATTENTION!")
+            if not fix1_success:
+                print(f"   ❌ Fix 1 (Import Workflow Template) - Still has issues")
+                print(f"      • Check MongoDB ObjectId serialization")
+                print(f"      • Verify datetime.isoformat() conversion")
+                print(f"      • Review workflow_templates.py changes")
+            if not fix2_success:
+                print(f"   ❌ Fix 2 (Backoffice Sub Agenzia User Creation) - Still has issues")
+                print(f"      • Check frontend App.js assignment_type logic")
+                print(f"      • Verify sub_agenzia_id is being sent in POST request")
+                print(f"      • Review backend user creation endpoint")
+        
+        print(f"\n📋 NEXT STEPS:")
+        if successful_fixes == total_fixes:
+            print(f"   ✅ All fixes working - Ready for user testing")
+            print(f"   ✅ Can proceed with production deployment")
+        else:
+            print(f"   🔧 Address failed fixes before production deployment")
+            print(f"   🔍 Review backend logs for detailed error information")
+            print(f"   🧪 Re-run tests after applying additional fixes")
+        
+        return successful_fixes == total_fixes
+
     def run_all_tests(self):
         """Run all test suites"""
         print("🚀 Starting CRM Backend API Testing...")
