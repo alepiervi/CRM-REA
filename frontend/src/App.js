@@ -12296,59 +12296,26 @@ const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig, selectedUnit,
   );
 };
 
-// WhatsApp QR Code Modal Component (Nuovo sistema con fetch QR dal backend)
+// WhatsApp Mock Modal Component (Development Mode)
 const WhatsAppQRModal = ({ sessionData, onClose, onConnected }) => {
-  const [qrImageUrl, setQrImageUrl] = useState(null);
-  const [qrData, setQrData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState('qr_pending');
   const { toast } = useToast();
   
-  // Check WhatsApp configuration status
+  // Automatically show mock mode and close
   useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        setLoading(true);
-        // WhatsApp Mock mode - sistema configurato correttamente
-        setConnectionStatus('mock_active');
-        setQrData({ mock: true });
-      } catch (error) {
-        console.error('Error checking WhatsApp status:', error);
-      } finally {
+    if (sessionData) {
+      // Simulate brief loading
+      setTimeout(() => {
         setLoading(false);
-      }
-    };
-    
-    if (sessionData?.session_id) {
-      checkStatus();
-      // Auto-close after showing mock message
-      setTimeout(() => onConnected(), 3000);
+        toast({
+          title: "✅ WhatsApp Configurato",
+          description: "Modalità Development/Testing attiva",
+        });
+        // Auto close after 2 seconds
+        setTimeout(() => onConnected(), 2000);
+      }, 500);
     }
   }, [sessionData]);
-  
-  // Poll for connection status (simulated for now)
-  useEffect(() => {
-    if (!qrData) return;
-    
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await axios.get(`${API}/whatsapp-qr/${sessionData.session_id}`);
-        if (response.data.status === 'connected') {
-          setConnectionStatus('connected');
-          toast({
-            title: "Connesso!",
-            description: "WhatsApp connesso con successo",
-          });
-          clearInterval(pollInterval);
-          setTimeout(() => onConnected(), 1500);
-        }
-      } catch (error) {
-        console.error('Error polling status:', error);
-      }
-    }, 3000); // Poll every 3 seconds
-    
-    return () => clearInterval(pollInterval);
-  }, [qrData]);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
