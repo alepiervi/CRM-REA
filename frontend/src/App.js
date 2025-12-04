@@ -6750,12 +6750,12 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
               <div>
                 <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
                 <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, sub_agenzia_id: value, commesse_autorizzate: [], servizi_autorizzati: [] }));
+                  setFormData(prev => ({ ...prev, sub_agenzia_id: value, assignment_type: "sub_agenzia", commesse_autorizzate: [], servizi_autorizzati: [] }));
                   // Carica commesse della sub agenzia selezionata
                   const selectedSub = subAgenzie.find(sa => sa.id === value);
                   if (selectedSub && selectedSub.commesse_autorizzate) {
                     // Le commesse disponibili sono quelle autorizzate per questa sub
-                    setFormData(prev => ({ ...prev, sub_agenzia_id: value, commesse_autorizzate: [], servizi_autorizzati: [] }));
+                    setFormData(prev => ({ ...prev, sub_agenzia_id: value, assignment_type: "sub_agenzia", commesse_autorizzate: [], servizi_autorizzati: [] }));
                   }
                 }}>
                   <SelectTrigger>
