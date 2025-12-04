@@ -12997,13 +12997,23 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
           )}
           
           {activeView === "list" && (
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nuovo Workflow
-            </Button>
+            <>
+              <Button
+                onClick={() => setShowTemplateModal(true)}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Importa Template
+              </Button>
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nuovo Workflow
+              </Button>
+            </>
           )}
         </div>
       </div>
