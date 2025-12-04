@@ -236,8 +236,8 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
         "is_published": False,
         "nodes": nodes,
         "edges": edges,
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
         "version": 1,
         "metadata": {
             "template": True,
