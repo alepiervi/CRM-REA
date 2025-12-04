@@ -6483,7 +6483,7 @@ async def configure_whatsapp(
                         "session_id": session_id,
                         "phone_number": config_data.phone_number
                     },
-                    timeout=10.0
+                    timeout=30.0
                 )
                 whatsapp_service_response.raise_for_status()
         except Exception as wa_error:
