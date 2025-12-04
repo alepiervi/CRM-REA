@@ -12144,13 +12144,18 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
       )}
 
       {/* QR Code Modal */}
-      {showQRModal && config?.qr_code && (
+      {showQRModal && qrSessionData && (
         <WhatsAppQRModal
-          qrCode={config.qr_code}
-          phoneNumber={config.phone_number}
-          onClose={() => setShowQRModal(false)}
-          onConnect={handleConnect}
-          connecting={connecting}
+          sessionData={qrSessionData}
+          onClose={() => {
+            setShowQRModal(false);
+            setQrSessionData(null);
+          }}
+          onConnected={() => {
+            setShowQRModal(false);
+            setQrSessionData(null);
+            fetchWhatsAppConfig(false);
+          }}
         />
       )}
     </div>
