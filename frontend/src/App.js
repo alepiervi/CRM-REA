@@ -7621,6 +7621,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
           {/* Campo Sub Agenzia - mostrato solo se assignment_type è "sub_agenzia" e non è per ruoli che hanno sezioni dedicate */}
           {formData.assignment_type === "sub_agenzia" && !(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" || 
             formData.role === "responsabile_sub_agenzia" || formData.role === "backoffice_sub_agenzia" ||
+            formData.role === "agente_specializzato" || formData.role === "operatore" ||
             formData.role === "responsabile_store" || formData.role === "responsabile_presidi" || 
             formData.role === "store_assist" || formData.role === "promoter_presidi") && (
             <div>
