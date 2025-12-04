@@ -12819,6 +12819,9 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeView, setActiveView] = useState("list"); // list, builder
+  const [templates, setTemplates] = useState([]);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [importingTemplate, setImportingTemplate] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
