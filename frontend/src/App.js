@@ -6335,17 +6335,18 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
         console.log("✅ Password già presente:", `[${submitData.password.length} chars]`);
       }
       
-      // Assicurati che solo uno tra unit_id e sub_agenzia_id sia impostato
-      if (formData.assignment_type === "unit") {
-        submitData.sub_agenzia_id = null;
-      } else {
-        submitData.unit_id = null;
-      }
-      
-      // FIX: Convert empty strings to null for unit_id and sub_agenzia_id
-      // to prevent backend validation issues
+      // FIX: Convert empty strings to null FIRST
       if (submitData.unit_id === "") submitData.unit_id = null;
       if (submitData.sub_agenzia_id === "") submitData.sub_agenzia_id = null;
+      
+      // Assicurati che solo uno tra unit_id e sub_agenzia_id sia impostato
+      if (formData.assignment_type === "unit" || submitData.unit_id) {
+        // If unit is set, clear sub_agenzia
+        submitData.sub_agenzia_id = null;
+      } else if (formData.assignment_type === "sub_agenzia" || submitData.sub_agenzia_id) {
+        // If sub_agenzia is set, clear unit
+        submitData.unit_id = null;
+      }
 
       // Validazione dati critici
       if (!submitData.username || !submitData.email || !submitData.role) {
