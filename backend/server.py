@@ -6605,15 +6605,15 @@ async def get_whatsapp_configuration(
             "error": True
         }
 
-@api_router.get("/whatsapp-qr/{session_id}")
-async def get_whatsapp_qr(
+@api_router.get("/whatsapp-pairing/{session_id}")
+async def get_whatsapp_pairing_code(
     session_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get QR code from WhatsApp service"""
+    """Get pairing code from WhatsApp service (FREE alternative to QR)"""
     
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Only admin can access QR code")
+        raise HTTPException(status_code=403, detail="Only admin can access pairing code")
     
     try:
         # Find configuration by session_id
@@ -6621,34 +6621,43 @@ async def get_whatsapp_qr(
         if not config:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        # Get QR code from WhatsApp service
+        # Get pairing code from WhatsApp service
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f"http://localhost:3001/qr/{session_id}",
+                    f"http://localhost:3001/pairing-code/{session_id}",
                     timeout=5.0
                 )
-                qr_data = response.json()
+                pairing_data = response.json()
         except Exception as wa_error:
-            logging.error(f"Failed to fetch QR from WhatsApp service: {wa_error}")
-            qr_data = {"qr": None, "available": False}
+            logging.error(f"Failed to fetch pairing code from WhatsApp service: {wa_error}")
+            pairing_data = {"pairing_code": None, "available": False, "status": "error"}
         
         return {
             "success": True,
             "session_id": session_id,
-            "qr_data": qr_data.get("qr"),
-            "available": qr_data.get("available", False),
-            "status": config.get("connection_status", "qr_pending"),
+            "pairing_code": pairing_data.get("pairing_code"),
+            "available": pairing_data.get("available", False),
+            "status": pairing_data.get("status", config.get("connection_status", "pending")),
             "unit_id": config.get("unit_id"),
-            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=2)).isoformat(),
-            "instructions": "Scan questo QR code con WhatsApp: Impostazioni > Dispositivi collegati > Collega un dispositivo"
+            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+            "instructions": "Apri WhatsApp → Impostazioni → Dispositivi collegati → Collega con numero di telefono → Inserisci questo codice"
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        logging.error(f"QR generation error: {e}")
-        raise HTTPException(status_code=500, detail=f"QR generation failed: {str(e)}")
+        logging.error(f"Pairing code error: {e}")
+        raise HTTPException(status_code=500, detail=f"Pairing code failed: {str(e)}")
+
+# Legacy QR endpoint (returns pairing code)
+@api_router.get("/whatsapp-qr/{session_id}")
+async def get_whatsapp_qr_legacy(
+    session_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Legacy endpoint - redirects to pairing code"""
+    return await get_whatsapp_pairing_code(session_id, current_user)
 
 @api_router.post("/whatsapp-connect")
 async def connect_whatsapp(
