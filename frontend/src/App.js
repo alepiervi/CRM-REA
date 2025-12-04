@@ -12838,6 +12838,7 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
   const [templates, setTemplates] = useState([]);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [importingTemplate, setImportingTemplate] = useState(false);
+  const [selectedUnitForImport, setSelectedUnitForImport] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
