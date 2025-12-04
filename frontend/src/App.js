@@ -11914,6 +11914,7 @@ const WhatsAppManagement = ({ selectedUnit, units }) => {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [qrSessionData, setQrSessionData] = useState(null); // session_id, phone_number, unit_id
   const { toast } = useToast();
 
   useEffect(() => {
