@@ -61,24 +61,24 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
             "type": "default",
             "position": {"x": 250, "y": 150},
             "data": {
-                "label": "Invia WhatsApp Benvenuto",
-                "nodeType": "actions",
-                "nodeSubtype": "send_whatsapp",
+                "label": "Attendi Risposta",
+                "nodeType": "delays",
+                "nodeSubtype": "wait",
                 "config": {
-                    "name": "Invia WhatsApp Benvenuto",
-                    "description": "Invia messaggio di benvenuto personalizzato via WhatsApp",
-                    "message": "Ciao {nome}! Benvenuto in {unit_name}. Sei pronto per iniziare? Rispondi SI per continuare."
+                    "name": "Attendi Risposta WhatsApp",
+                    "description": "Attende che il lead risponda al messaggio di benvenuto",
+                    "wait_time": "5 minutes"
                 }
             },
             "style": {
-                "background": "#3b82f6",
+                "background": "#64748b",
                 "color": "white",
-                "border": "2px solid #2563eb",
+                "border": "2px solid #475569",
                 "borderRadius": "8px",
-                "fontSize": "12px",
+                "fontSize": "11px",
                 "fontWeight": "bold",
-                "width": 180,
-                "height": 40
+                "width": 200,
+                "height": 50
             }
         },
         
@@ -86,15 +86,15 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
         {
             "id": "condition_positive_response",
             "type": "default",
-            "position": {"x": 100, "y": 400},
+            "position": {"x": 250, "y": 250},
             "data": {
                 "label": "Risposta Positiva?",
                 "nodeType": "conditions",
                 "nodeSubtype": "check_positive_response",
                 "config": {
                     "name": "Verifica Risposta Positiva",
-                    "description": "Controlla se il lead ha risposto in modo affermativo (SI, OK, CERTO)",
-                    "expression": "message contains positive_keywords"
+                    "description": "Controlla se il lead ha risposto SI/OK/CERTO",
+                    "positive_keywords": ["si", "ok", "certo", "va bene", "yes", "perfetto"]
                 }
             },
             "style": {
@@ -102,25 +102,25 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
                 "color": "white",
                 "border": "2px solid #9333ea",
                 "borderRadius": "8px",
-                "fontSize": "12px",
+                "fontSize": "11px",
                 "fontWeight": "bold",
-                "width": 180,
-                "height": 40
+                "width": 200,
+                "height": 50
             }
         },
         
-        # ACTION 3: Start AI Conversation
+        # ACTION 2: Start AI Conversation
         {
             "id": "action_start_ai",
             "type": "default",
-            "position": {"x": 100, "y": 500},
+            "position": {"x": 250, "y": 350},
             "data": {
                 "label": "Avvia AI Assistant",
                 "nodeType": "actions",
                 "nodeSubtype": "start_ai_conversation",
                 "config": {
                     "name": "Avvia AI Assistant",
-                    "description": "Inizia conversazione con AI Assistant per qualificare il lead"
+                    "description": "Inizia conversazione AI per qualificare lead"
                 }
             },
             "style": {
@@ -128,25 +128,25 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
                 "color": "white",
                 "border": "2px solid #2563eb",
                 "borderRadius": "8px",
-                "fontSize": "12px",
+                "fontSize": "11px",
                 "fontWeight": "bold",
-                "width": 180,
-                "height": 40
+                "width": 200,
+                "height": 50
             }
         },
         
-        # ACTION 4: Update Lead Fields
+        # ACTION 3: Update Lead Fields
         {
             "id": "action_update_lead",
             "type": "default",
-            "position": {"x": 100, "y": 600},
+            "position": {"x": 250, "y": 450},
             "data": {
                 "label": "Aggiorna Anagrafica",
                 "nodeType": "actions",
                 "nodeSubtype": "update_lead_field",
                 "config": {
                     "name": "Aggiorna Campi Lead",
-                    "description": "Estrae informazioni dalla conversazione AI e aggiorna i campi del lead"
+                    "description": "Estrae info da AI e aggiorna campi lead"
                 }
             },
             "style": {
@@ -154,10 +154,10 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
                 "color": "white",
                 "border": "2px solid #2563eb",
                 "borderRadius": "8px",
-                "fontSize": "12px",
+                "fontSize": "11px",
                 "fontWeight": "bold",
-                "width": 180,
-                "height": 40
+                "width": 200,
+                "height": 50
             }
         }
     ]
