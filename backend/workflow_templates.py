@@ -162,38 +162,37 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
         }
     ]
     
-    # Define edges (connections)
+    # Define edges (connections) - Nuovo flusso senza "Assegna a Unit"
     edges = [
         {
             "id": "edge_1",
             "source": "trigger_lead_created",
-            "target": "action_assign_unit",
-            "type": "default"
+            "target": "action_wait_response",
+            "type": "smoothstep",
+            "animated": True
         },
         {
             "id": "edge_2",
-            "source": "action_assign_unit",
-            "target": "action_send_whatsapp",
-            "type": "default"
+            "source": "action_wait_response",
+            "target": "condition_positive_response",
+            "type": "smoothstep",
+            "animated": True
         },
         {
             "id": "edge_3",
-            "source": "action_send_whatsapp",
-            "target": "condition_positive_response",
-            "type": "default"
+            "source": "condition_positive_response",
+            "target": "action_start_ai",
+            "type": "smoothstep",
+            "animated": True,
+            "label": "SI",
+            "style": {"stroke": "#22c55e", "strokeWidth": 2}
         },
         {
             "id": "edge_4",
-            "source": "condition_positive_response",
-            "target": "action_start_ai",
-            "type": "default",
-            "label": "SI"
-        },
-        {
-            "id": "edge_5",
             "source": "action_start_ai",
             "target": "action_update_lead",
-            "type": "default"
+            "type": "smoothstep",
+            "animated": True
         }
     ]
     
