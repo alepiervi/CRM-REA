@@ -53848,13 +53848,13 @@ if __name__ == "__main__":
         return success_criteria_met
 
 def main():
-    """Main function to run the Excel Export Permissions test as requested in the review"""
-    print("🚀 Starting Excel Export Permissions All Roles Test...")
-    print("🎯 As requested in the review: TEST RAPIDO EXPORT EXCEL - TUTTI I RUOLI AUTORIZZATI")
+    """Main function to run the critical bug fixes test as requested in the review"""
+    print("🚀 Starting CRM Lead Management System API Tests...")
+    print("🎯 TESTING FINALE COMPLETO - Verifica Risoluzione Bug Critici")
     
     try:
         tester = CRMAPITester()
-        result = tester.test_excel_export_permissions_all_roles()
+        result = tester.test_finale_completo_bug_fixes()
         
         print(f"\n📊 Final Test Results:")
         print(f"   Tests run: {tester.tests_run}")
@@ -53865,9 +53865,9 @@ def main():
             print(f"   Success rate: N/A (no tests run)")
         
         if result:
-            print("🎉 AREA MANAGER EXCEL EXPORT TEST SUCCESSFUL!")
+            print("🎉 All critical bug fixes verified successfully!")
         else:
-            print("❌ AREA MANAGER EXCEL EXPORT TEST FAILED!")
+            print("❌ Some critical bug fixes need attention!")
             
     except Exception as e:
         print(f"❌ Test failed with exception: {e}")
