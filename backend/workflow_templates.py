@@ -10,14 +10,12 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
     """
     Creates a pre-configured workflow template for Lead Qualification with AI
     
-    Workflow Flow:
-    1. Lead Created (Trigger)
-    2. Assign to Unit
-    3. Send WhatsApp Welcome
-    4. Wait for Response
-    5. Check Positive Response
-    6. Start AI Assistant
-    7. Update Lead Fields
+    Workflow Flow (NOTA: Agente già assegnato e WhatsApp già inviato dal webhook):
+    1. Lead Created (Trigger) - Lead già assegnato ad agente + WhatsApp benvenuto già inviato
+    2. Wait for Response - Attende risposta del lead
+    3. Check Positive Response - Verifica se risposta è positiva
+    4. Start AI Assistant - Avvia conversazione AI
+    5. Update Lead Fields - Aggiorna campi lead da conversazione AI
     
     Args:
         unit_id: ID of the unit to assign this workflow to
@@ -30,18 +28,18 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
     
     # Define nodes
     nodes = [
-        # TRIGGER: Lead Created
+        # TRIGGER: Lead Created (già assegnato ad agente + WhatsApp inviato)
         {
             "id": "trigger_lead_created",
             "type": "default",
-            "position": {"x": 100, "y": 100},
+            "position": {"x": 250, "y": 50},
             "data": {
-                "label": "Lead Creato",
+                "label": "Lead Creato e Assegnato",
                 "nodeType": "triggers",
                 "nodeSubtype": "lead_created",
                 "config": {
                     "name": "Lead Creato",
-                    "description": "Si attiva quando un nuovo lead viene creato tramite webhook",
+                    "description": "Lead già assegnato ad agente e WhatsApp benvenuto inviato",
                     "event": "lead_created"
                 }
             },
@@ -50,44 +48,18 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
                 "color": "white",
                 "border": "2px solid #16a34a",
                 "borderRadius": "8px",
-                "fontSize": "12px",
+                "fontSize": "11px",
                 "fontWeight": "bold",
-                "width": 180,
-                "height": 40
+                "width": 200,
+                "height": 50
             }
         },
         
-        # ACTION 1: Assign to Unit
+        # ACTION 1: Wait for Response (Attendi Risposta)
         {
-            "id": "action_assign_unit",
+            "id": "action_wait_response",
             "type": "default",
-            "position": {"x": 100, "y": 200},
-            "data": {
-                "label": "Assegna a Unit",
-                "nodeType": "actions",
-                "nodeSubtype": "assign_to_unit",
-                "config": {
-                    "name": "Assegna a Unit",
-                    "description": "Assegna il lead alla unit basandosi sul tag/nome unit"
-                }
-            },
-            "style": {
-                "background": "#3b82f6",
-                "color": "white",
-                "border": "2px solid #2563eb",
-                "borderRadius": "8px",
-                "fontSize": "12px",
-                "fontWeight": "bold",
-                "width": 180,
-                "height": 40
-            }
-        },
-        
-        # ACTION 2: Send WhatsApp Welcome
-        {
-            "id": "action_send_whatsapp",
-            "type": "default",
-            "position": {"x": 100, "y": 300},
+            "position": {"x": 250, "y": 150},
             "data": {
                 "label": "Invia WhatsApp Benvenuto",
                 "nodeType": "actions",
