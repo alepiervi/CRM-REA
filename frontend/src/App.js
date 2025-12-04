@@ -12102,14 +12102,19 @@ const WhatsAppConfigModal = ({ onClose, onSuccess, existingConfig, selectedUnit,
       // Remove all spaces and non-digit characters except + from phone number
       const cleanPhoneNumber = phoneNumber.trim().replace(/\s+/g, '').replace(/[^\d+]/g, '');
       
-      const requestData = {
-        phone_number: cleanPhoneNumber
-      };
-      
-      // Aggiungi unit_id se specificato
-      if (selectedUnit && selectedUnit !== "all") {
-        requestData.unit_id = selectedUnit;
+      if (!unitId) {
+        toast({
+          title: "Errore",
+          description: "Seleziona una Unit",
+          variant: "destructive",
+        });
+        return;
       }
+
+      const requestData = {
+        phone_number: cleanPhoneNumber,
+        unit_id: unitId
+      };
       
       const response = await axios.post(`${API}/whatsapp-config`, requestData);
 
