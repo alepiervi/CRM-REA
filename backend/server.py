@@ -6606,7 +6606,7 @@ async def get_whatsapp_qr(
     session_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Generate QR code for WhatsApp connection"""
+    """Get QR code from WhatsApp service"""
     
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Only admin can access QR code")
@@ -6617,19 +6617,26 @@ async def get_whatsapp_qr(
         if not config:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        # Generate QR code data (simulated for now - in production, use whatsapp-web.js)
-        # Format: unit_id:session_id:timestamp for unique identification
-        qr_data = f"whatsapp_connect:{config['unit_id']}:{session_id}:{int(datetime.now(timezone.utc).timestamp())}"
+        # Get QR code from WhatsApp service
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"http://localhost:3001/qr/{session_id}",
+                    timeout=5.0
+                )
+                qr_data = response.json()
+        except Exception as wa_error:
+            logging.error(f"Failed to fetch QR from WhatsApp service: {wa_error}")
+            qr_data = {"qr": None, "available": False}
         
-        # In production, you would generate an actual QR code image here
-        # For now, we return the data that should be encoded in QR
         return {
             "success": True,
             "session_id": session_id,
-            "qr_data": qr_data,
+            "qr_data": qr_data.get("qr"),
+            "available": qr_data.get("available", False),
             "status": config.get("connection_status", "qr_pending"),
             "unit_id": config.get("unit_id"),
-            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=2)).isoformat(),
             "instructions": "Scan questo QR code con WhatsApp: Impostazioni > Dispositivi collegati > Collega un dispositivo"
         }
         
