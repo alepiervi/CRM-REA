@@ -1,0 +1,2 @@
+2025/12/04-14:48:12.241 f7c Creating DB /app/whatsapp-service/sessions/session-wa_session_c6dec7f6-d7c7-4c3c-8ab3-b0420c8edfa3_0bb40c86/Default/Sync Data/LevelDB since it was missing.
+2025/12/04-14:48:12.250 f7c Reusing MANIFEST /app/whatsapp-service/sessions/session-wa_session_c6dec7f6-d7c7-4c3c-8ab3-b0420c8edfa3_0bb40c86/Default/Sync Data/LevelDB/MANIFEST-000001
