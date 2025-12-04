@@ -12855,8 +12855,8 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
     }
   };
 
-  const importTemplate = async (templateId, unitId) => {
-    if (!unitId || unitId === "all") {
+  const importTemplate = async (templateId) => {
+    if (!selectedUnitForImport || selectedUnitForImport === "all") {
       toast({
         title: "Errore",
         description: "Seleziona una Unit specifica per importare il template",
@@ -12868,7 +12868,7 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
     setImportingTemplate(true);
     try {
       const response = await axios.post(
-        `${API}/workflow-templates/${templateId}/import?unit_id=${unitId}`
+        `${API}/workflow-templates/${templateId}/import?unit_id=${selectedUnitForImport}`
       );
       
       toast({
@@ -12877,6 +12877,7 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
       });
       
       setShowTemplateModal(false);
+      setSelectedUnitForImport("");
       fetchWorkflows();
     } catch (error) {
       console.error("Error importing template:", error);
