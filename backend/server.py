@@ -11077,29 +11077,22 @@ async def get_clienti(
     if tipologia_contratto:
         query["tipologia_contratto"] = tipologia_contratto
     
-    # NEW: Filter by assigned user OR creator
-    # This supports the "Utente Assegnato" filter - searches BOTH assigned_to AND created_by
+    # NEW: Filter by assigned user (ONLY assigned_to field, NOT created_by)
+    # This supports the "Utente Assegnato" filter - searches ONLY the last assigned user
     # IMPORTANT: We need to add this filter even if there's already a $or or $and clause
     if assigned_to or created_by:
         user_id_to_filter = assigned_to or created_by
-        # Create a filter that matches EITHER assigned_to OR created_by
-        user_filter = {
-            "$or": [
-                {"assigned_to": user_id_to_filter},
-                {"created_by": user_id_to_filter}
-            ]
-        }
         
         if "$and" in query:
-            # Already have $and, add the user filter to it
-            query["$and"].append(user_filter)
+            # Already have $and, add the assigned_to filter to it
+            query["$and"].append({"assigned_to": user_id_to_filter})
         elif "$or" in query:
-            # Have $or, wrap everything in $and and add user filter
+            # Have $or, wrap everything in $and and add assigned_to
             existing_or = query.pop("$or")
-            query["$and"] = [{"$or": existing_or}, user_filter]
+            query["$and"] = [{"$or": existing_or}, {"assigned_to": user_id_to_filter}]
         else:
-            # Simple case - no complex clauses, add the $or directly
-            query.update(user_filter)
+            # Simple case - no complex clauses
+            query["assigned_to"] = user_id_to_filter
     
     # NEW: Additional filter parameters
     if servizio_id and servizio_id != "all":
