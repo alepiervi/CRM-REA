@@ -11686,7 +11686,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 for sub in sorted(sub_agenzie, key=lambda x: x.get("nome", "") or "")
             ],
             "users": [
-                {"value": user["id"], "label": f"{user.get('username', 'Unknown')} ({user.get('email', '')})"}
+                {"value": user["id"], "label": user.get('username', 'Unknown')}
                 for user in sorted(users, key=lambda x: x.get("username", "") or "")
             ],
             # NEW: Additional filter options
