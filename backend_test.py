@@ -49684,7 +49684,7 @@ startxref
         
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
-        if area_manager_test_success:
+        if presidi_filter_test_success:
             print("🎉 AREA MANAGER TIPOLOGIE VISIBILITY TEST: ✅ SUCCESS - NO BUG DETECTED!")
         else:
             print("🚨 AREA MANAGER TIPOLOGIE VISIBILITY TEST: ❌ FAILED - BUG CONFIRMED!")
