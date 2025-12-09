@@ -12907,11 +12907,44 @@ async def get_cliente_logs(
         logs_cursor = db.clienti_logs.find({"cliente_id": cliente_id}).sort("timestamp", -1).limit(limit)
         logs = await logs_cursor.to_list(length=None)
         
-        # Rimuovi _id MongoDB e formatta per il frontend
+        # Collect all user_ids from logs to fetch user details
+        user_ids_in_logs = set()
+        for log in logs:
+            if log.get('user_id'):
+                user_ids_in_logs.add(log['user_id'])
+            # Also check in details for assigned_to changes
+            if log.get('details'):
+                details = log['details']
+                if isinstance(details, dict):
+                    if details.get('new_value'):
+                        user_ids_in_logs.add(details['new_value'])
+                    if details.get('old_value'):
+                        user_ids_in_logs.add(details['old_value'])
+        
+        # Fetch user details for all user_ids found in logs
+        user_map = {}
+        if user_ids_in_logs:
+            users_cursor = db.users.find({"id": {"$in": list(user_ids_in_logs)}})
+            users = await users_cursor.to_list(length=None)
+            user_map = {user['id']: user.get('username', 'Unknown') for user in users}
+        
+        # Rimuovi _id MongoDB e formatta per il frontend con nomi utente
         formatted_logs = []
         for log in logs:
             if '_id' in log:
                 del log['_id']
+            
+            # Replace user_id with username
+            if log.get('user_id') and log['user_id'] in user_map:
+                log['user_name'] = user_map[log['user_id']]
+            
+            # Replace user_ids in details (for assigned_to changes)
+            if log.get('details') and isinstance(log['details'], dict):
+                details = log['details']
+                if details.get('new_value') and details['new_value'] in user_map:
+                    details['new_value_display'] = user_map[details['new_value']]
+                if details.get('old_value') and details['old_value'] in user_map:
+                    details['old_value_display'] = user_map[details['old_value']]
             
             # Formatta timestamp per display user-friendly
             if isinstance(log.get('timestamp'), datetime):
