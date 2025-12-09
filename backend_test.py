@@ -49685,16 +49685,11 @@ startxref
         # Highlight the critical test results
         print("\n🎯 CRITICAL TEST RESULTS:")
         if presidi_filter_test_success:
-            print("🎉 AREA MANAGER TIPOLOGIE VISIBILITY TEST: ✅ SUCCESS - NO BUG DETECTED!")
+            print("🎉 RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST: ✅ SUCCESS - FILTER WORKING!")
+            print("💡 CONCLUSION: assigned_to filter is correctly applied for RESPONSABILE_PRESIDI role")
         else:
-            print("🚨 AREA MANAGER TIPOLOGIE VISIBILITY TEST: ❌ FAILED - BUG CONFIRMED!")
-        
-        if area_manager_test_success:
-            print("\n🎉 OVERALL RESULT: ✅ AGENTE SPECIALIZZATO E OPERATORE WORKING CORRECTLY!")
-            print("💡 CONCLUSION: These roles see appropriate tipologie based on their clienti")
-        else:
-            print("\n🚨 OVERALL RESULT: ❌ AGENTE SPECIALIZZATO E OPERATORE HAVE TIPOLOGIE UUID PROBLEM!")
-            print("💡 CONCLUSION: Same issue as Responsabile Store - tipologie_autorizzate incorrectly populated")
+            print("🚨 RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST: ❌ FAILED - FILTER NOT WORKING!")
+            print("💡 CONCLUSION: assigned_to filter may be ignored or incorrectly implemented for this role")
         
         return agente_operatore_test_success
 
