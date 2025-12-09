@@ -1293,7 +1293,7 @@ class CRMAPITester:
             print(f"   ✅ DETTAGLI: Riduce i clienti da {total_clienti_count} a {filtered_clienti_count}")
             filter_working = True
         else:
-            filter_behavior = f"ANOMALO: {filtered_clienti_count} filtrati vs {total_clienti_count} totali"
+            filter_behavior = f"ANOMALO: {filtered_count} filtrati vs {total_clienti_count} totali"
             print(f"   ⚠️ COMPORTAMENTO ANOMALO: Risultati inaspettati")
         
         self.log_test("🎯 Filter behavior analysis", filter_working, filter_behavior)
