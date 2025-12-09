@@ -1263,10 +1263,7 @@ class CRMAPITester:
                 
         else:
             self.log_test("❌ GET /api/clienti?assigned_to={user_id} FAILED", False, f"Status: {status}")
-            return Falseed_to", False, 
-                        f"{wrong_assigned_to} clients have different assigned_to")
-            else:
-                print(f"      • No clienti returned by filter")
+            return False
                 
         else:
             self.log_test("❌ GET /api/clienti?assigned_to={user_id} FAILED", False, f"Status: {status}")
