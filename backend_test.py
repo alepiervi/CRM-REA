@@ -54834,13 +54834,13 @@ if __name__ == "__main__":
         return overall_success
 
 def main():
-    """Main function to run the production readiness test as requested in the review"""
+    """Main function to run the specific test requested in review"""
     print("🚀 Starting CRM Lead Management System API Tests...")
-    print("🎯 TESTING FINALE PRODUZIONE - Verifica Sistema Completo")
+    print("🎯 RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST - Verifica Filtro")
     
     try:
         tester = CRMAPITester()
-        result = tester.test_production_readiness_finale()
+        result = tester.test_responsabile_presidi_assigned_to_filter()
         
         print(f"\n📊 Final Test Results:")
         print(f"   Tests run: {tester.tests_run}")
@@ -54851,9 +54851,9 @@ def main():
             print(f"   Success rate: N/A (no tests run)")
         
         if result:
-            print("🎉 Sistema pronto per produzione - All tests passed!")
+            print("🎉 RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST SUCCESSFUL!")
         else:
-            print("❌ Sistema non pronto per produzione - Some tests failed!")
+            print("🚨 RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST FAILED!")
             
     except Exception as e:
         print(f"❌ Test failed with exception: {e}")
