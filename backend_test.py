@@ -1282,12 +1282,12 @@ class CRMAPITester:
                 filter_behavior = "OK: Restituisce 0 risultati perché nessun cliente ha assigned_to"
                 print(f"   ✅ COMPORTAMENTO CORRETTO: Nessun cliente ha assigned_to = {test_user_id[:8]}...")
                 filter_working = True
-        elif filtered_clienti_count == total_clienti_count:
+        elif filtered_count == total_clienti_count:
             filter_behavior = "PROBLEMA: Restituisce tutti i clienti invece di filtrare"
             print(f"   🚨 PROBLEMA IDENTIFICATO: Il filtro non viene applicato")
             print(f"   🚨 DETTAGLI: Stesso numero di clienti con e senza filtro")
             print(f"   🚨 POSSIBILE CAUSA: Filtro ignorato dal backend")
-        elif filtered_clienti_count > 0 and filtered_clienti_count < total_clienti_count:
+        elif filtered_count > 0 and filtered_count < total_clienti_count:
             filter_behavior = "OK: Filtra correttamente"
             print(f"   ✅ FILTRO FUNZIONA CORRETTAMENTE")
             print(f"   ✅ DETTAGLI: Riduce i clienti da {total_clienti_count} a {filtered_clienti_count}")
