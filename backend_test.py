@@ -1304,19 +1304,10 @@ class CRMAPITester:
         print(f"   📊 RISULTATI:")
         print(f"      • Login RESPONSABILE_PRESIDI (ale8): ✅ SUCCESS")
         print(f"      • Numero clienti senza filtro: {total_clienti_count}")
-        print(f"      • Numero clienti con filtro: {filtered_clienti_count}")
+        print(f"      • Numero clienti con filtro: {filtered_count}")
         print(f"      • User_id testato: {test_user_id[:8]}...")
-        print(f"      • Unique assigned_to user_ids trovati: {len(assigned_to_users)}")
+        print(f"      • Unique assigned_to user_ids trovati: {len(all_assigned_to_users)}")
         print(f"      • Comportamento filtro: {filter_behavior}")
-        
-        print(f"\n   📋 ESEMPIO CLIENTE E ASSIGNED_TO:")
-        if len(sample_clienti) > 0:
-            sample = sample_clienti[0]
-            print(f"      • Cliente: {sample['nome']} {sample['cognome']}")
-            print(f"      • ID: {sample['id']}")
-            print(f"      • assigned_to: {sample['assigned_to']}")
-        else:
-            print(f"      • Nessun cliente disponibile per esempio")
         
         print(f"\n   🎯 DIAGNOSI:")
         if filter_working:
@@ -1324,7 +1315,7 @@ class CRMAPITester:
             print(f"      • ✅ Applica il filtro e restituisce risultati appropriati")
             print(f"      • ✅ Non ci sono problemi tecnici con il filtro")
         else:
-            if filtered_clienti_count == 0 and len(assigned_to_users) > 0:
+            if filtered_count == 0 and len(all_assigned_to_users) > 0:
                 print(f"      • 🚨 PROBLEMA: Il filtro restituisce 0 risultati quando dovrebbe restituire alcuni")
                 print(f"      • 🚨 CAUSA PROBABILE: Query MongoDB non trova match o filtro non implementato")
                 print(f"      • 🔧 SOLUZIONE: Verificare implementazione filtro assigned_to nel backend")
