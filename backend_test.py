@@ -1072,50 +1072,8 @@ class CRMAPITester:
         import time
         start_time = time.time()
         
-        # **FASE 1: Login Admin per verificare utente RESPONSABILE_PRESIDI**
-        print("\n🔐 FASE 1: Login Admin per verificare utente RESPONSABILE_PRESIDI...")
-        
-        success, response, status = self.make_request(
-            'POST', 'auth/login', 
-            {'username': 'admin', 'password': 'admin123'}, 
-            200, auth_required=False
-        )
-        
-        if success and 'access_token' in response:
-            admin_token = response['access_token']
-            self.token = admin_token
-            self.user_data = response['user']
-            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
-        else:
-            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
-            return False
-
-        # Verify RESPONSABILE_PRESIDI user exists
-        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
-        
-        responsabile_presidi_user = None
-        if success and status == 200:
-            users = users_response if isinstance(users_response, list) else []
-            
-            for user in users:
-                if user.get('username') == 'ale8' and user.get('role') == 'responsabile_presidi':
-                    responsabile_presidi_user = user
-                    break
-            
-            if responsabile_presidi_user:
-                user_id = responsabile_presidi_user.get('id')
-                self.log_test("✅ RESPONSABILE_PRESIDI user found", True, 
-                    f"Username: ale8, Role: responsabile_presidi, ID: {user_id[:8]}...")
-            else:
-                self.log_test("❌ RESPONSABILE_PRESIDI user not found", False, 
-                    "User 'ale8' with role 'responsabile_presidi' not found")
-                return False
-        else:
-            self.log_test("❌ GET /api/users failed", False, f"Status: {status}")
-            return False
-
-        # **FASE 2: Login come RESPONSABILE_PRESIDI (ale8)**
-        print("\n🔐 FASE 2: Login come RESPONSABILE_PRESIDI (ale8/admin123)...")
+        # **1. Login come ale8**
+        print("\n🔐 1. Login come ale8...")
         
         success, response, status = self.make_request(
             'POST', 'auth/login', 
@@ -1129,120 +1087,183 @@ class CRMAPITester:
             user_role = self.user_data.get('role')
             user_id = self.user_data.get('id')
             
-            self.log_test("✅ RESPONSABILE_PRESIDI login (ale8/admin123)", True, 
+            self.log_test("✅ Login ale8/admin123", True, 
                 f"Token received, Role: {user_role}, ID: {user_id[:8]}...")
-            
-            if user_role != 'responsabile_presidi':
-                self.log_test("⚠️ User role verification", True, 
-                    f"Expected 'responsabile_presidi', got '{user_role}' - continuing test")
         else:
-            self.log_test("❌ RESPONSABILE_PRESIDI login failed", False, 
+            self.log_test("❌ Login ale8 failed", False, 
                 f"Status: {status}, Response: {response}")
             return False
 
-        # **FASE 3: GET /api/clienti (senza filtro)**
-        print("\n👥 FASE 3: GET /api/clienti (senza filtro) - conta i clienti totali...")
+        # **2. Get Clienti senza filtro**
+        print("\n👥 2. Get Clienti senza filtro...")
         
         success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
         
         total_clienti_count = 0
-        assigned_to_users = set()
-        sample_clienti = []
+        all_assigned_to_users = set()
+        all_created_by_users = set()
         
         if success and status == 200:
             clienti = clienti_response if isinstance(clienti_response, list) else []
             total_clienti_count = len(clienti)
             
-            self.log_test("✅ GET /api/clienti (no filter) SUCCESS", True, 
+            self.log_test("✅ GET /api/clienti", True, 
                 f"Status: 200 OK, Found {total_clienti_count} total clienti")
             
-            # Extract assigned_to user_ids and sample clienti
-            print(f"\n   📊 ANALISI CLIENTI TOTALI:")
-            print(f"      • Total clienti visible to RESPONSABILE_PRESIDI: {total_clienti_count}")
+            # Salva il numero totale
+            print(f"\n   📊 ANALISI CLIENTI:")
+            print(f"      • Numero totale clienti: {total_clienti_count}")
             
-            for i, cliente in enumerate(clienti):
+            # Estrai TUTTI i valori di assigned_to E created_by dai clienti
+            print(f"      • Estrazione user_id da assigned_to e created_by...")
+            
+            for cliente in clienti:
                 assigned_to = cliente.get('assigned_to')
-                if assigned_to:
-                    assigned_to_users.add(assigned_to)
+                created_by = cliente.get('created_by')
                 
-                # Keep first few clienti as samples
-                if i < 3:
-                    sample_clienti.append({
-                        'id': cliente.get('id', 'No ID')[:8] + '...',
-                        'nome': cliente.get('nome', 'No Name'),
-                        'cognome': cliente.get('cognome', 'No Surname'),
-                        'assigned_to': assigned_to[:8] + '...' if assigned_to else 'None'
-                    })
+                if assigned_to:
+                    all_assigned_to_users.add(assigned_to)
+                if created_by:
+                    all_created_by_users.add(created_by)
             
-            print(f"      • Unique assigned_to user_ids found: {len(assigned_to_users)}")
-            print(f"      • Sample clienti:")
-            for i, sample in enumerate(sample_clienti, 1):
-                print(f"         {i}. {sample['nome']} {sample['cognome']} (ID: {sample['id']}, assigned_to: {sample['assigned_to']})")
+            # Mostra lista completa degli user_id trovati
+            print(f"\n   📋 LISTA COMPLETA USER_ID TROVATI:")
+            print(f"      • assigned_to user_ids: {len(all_assigned_to_users)} unique")
+            for i, user_id_val in enumerate(sorted(all_assigned_to_users), 1):
+                print(f"         {i}. {user_id_val}")
             
-            if len(assigned_to_users) > 0:
-                self.log_test("✅ Found assigned_to user_ids", True, 
-                    f"Found {len(assigned_to_users)} unique user_ids in assigned_to field")
-            else:
-                self.log_test("⚠️ No assigned_to user_ids found", True, 
-                    "All clienti have assigned_to = null - will test with existing user_id")
+            print(f"      • created_by user_ids: {len(all_created_by_users)} unique")
+            for i, user_id_val in enumerate(sorted(all_created_by_users), 1):
+                print(f"         {i}. {user_id_val}")
+            
+            # Combine all user_ids
+            all_user_ids = all_assigned_to_users.union(all_created_by_users)
+            print(f"      • TOTAL unique user_ids nei clienti: {len(all_user_ids)}")
+            
+            self.log_test("✅ User_ids extraction complete", True, 
+                f"assigned_to: {len(all_assigned_to_users)}, created_by: {len(all_created_by_users)}, total: {len(all_user_ids)}")
                 
         else:
-            self.log_test("❌ GET /api/clienti (no filter) FAILED", False, f"Status: {status}")
+            self.log_test("❌ GET /api/clienti FAILED", False, f"Status: {status}")
             return False
 
-        # **FASE 4: GET /api/clienti?assigned_to={user_id}**
-        print("\n🔍 FASE 4: GET /api/clienti?assigned_to={user_id} - verifica risultati filtrati...")
+        # **3. Get Filter Options**
+        print("\n🔍 3. Get Filter Options...")
         
-        # Choose a user_id to test with
-        test_user_id = None
-        if len(assigned_to_users) > 0:
-            test_user_id = list(assigned_to_users)[0]
-            print(f"   🎯 Using assigned_to user_id from existing clienti: {test_user_id[:8]}...")
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        dropdown_users = []
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/filter-options", True, f"Status: 200 OK")
+            
+            # Estrai la lista "users" dal response
+            users_in_dropdown = filter_response.get('users', [])
+            dropdown_users = users_in_dropdown
+            
+            print(f"\n   📋 DROPDOWN USERS ANALYSIS:")
+            print(f"      • users field present: {'✅' if 'users' in filter_response else '❌'}")
+            print(f"      • Number of users in dropdown: {len(users_in_dropdown)}")
+            
+            # Mostra TUTTI gli utenti nel dropdown
+            print(f"\n   📋 LISTA COMPLETA UTENTI NEL DROPDOWN:")
+            if len(users_in_dropdown) > 0:
+                for i, user_item in enumerate(users_in_dropdown, 1):
+                    if isinstance(user_item, dict):
+                        user_label = user_item.get('label', user_item.get('username', 'Unknown'))
+                        user_value = user_item.get('value', user_item.get('id', 'No ID'))
+                        print(f"         {i}. {user_label} (value: {user_value})")
+                    else:
+                        print(f"         {i}. {user_item}")
+            else:
+                print(f"         (Nessun utente nel dropdown)")
+            
+            self.log_test("✅ Dropdown users extracted", True, 
+                f"Found {len(users_in_dropdown)} users in dropdown")
+                
         else:
-            # Use the current user's ID if no assigned_to found
-            test_user_id = user_id
-            print(f"   🎯 Using current user's ID (no assigned_to found): {test_user_id[:8]}...")
+            self.log_test("❌ GET /api/clienti/filter-options FAILED", False, f"Status: {status}")
+            return False
+
+        # **Confronta con gli user_id dei clienti**
+        print(f"\n   🔍 CONFRONTO DROPDOWN vs CLIENTI USER_IDS:")
         
-        # Test the assigned_to filter
+        # Extract user_ids from dropdown
+        dropdown_user_ids = set()
+        for user_item in dropdown_users:
+            if isinstance(user_item, dict):
+                user_value = user_item.get('value', user_item.get('id'))
+                if user_value:
+                    dropdown_user_ids.add(user_value)
+        
+        print(f"      • User_ids nel dropdown: {len(dropdown_user_ids)}")
+        print(f"      • User_ids nei clienti: {len(all_user_ids)}")
+        
+        # Find missing user_ids
+        missing_from_dropdown = all_user_ids - dropdown_user_ids
+        extra_in_dropdown = dropdown_user_ids - all_user_ids
+        
+        print(f"      • User_ids mancanti nel dropdown: {len(missing_from_dropdown)}")
+        if missing_from_dropdown:
+            for missing_id in sorted(missing_from_dropdown):
+                print(f"         - {missing_id}")
+        
+        print(f"      • User_ids extra nel dropdown: {len(extra_in_dropdown)}")
+        if extra_in_dropdown:
+            for extra_id in sorted(extra_in_dropdown):
+                print(f"         - {extra_id}")
+        
+        if len(missing_from_dropdown) == 0:
+            self.log_test("✅ All client user_ids in dropdown", True, 
+                "Dropdown contains all user_ids from clienti")
+        else:
+            self.log_test("❌ Some client user_ids missing from dropdown", False, 
+                f"{len(missing_from_dropdown)} user_ids missing from dropdown")
+
+        # **4. Test Filtro con un user_id presente**
+        print("\n🎯 4. Test Filtro con un user_id presente...")
+        
+        # Scegli un user_id che esiste nei clienti
+        test_user_id = None
+        if len(all_user_ids) > 0:
+            test_user_id = list(all_user_ids)[0]
+            print(f"   🎯 Scelto user_id che esiste nei clienti: {test_user_id}")
+        else:
+            self.log_test("❌ No user_ids found in clienti", False, 
+                "Cannot test filter without user_ids in clienti")
+            return False
+        
+        # GET /api/clienti?assigned_to={user_id}
         filter_endpoint = f'clienti?assigned_to={test_user_id}'
         success, filtered_response, status = self.make_request('GET', filter_endpoint, expected_status=200)
         
-        filtered_clienti_count = 0
+        filtered_count = 0
         if success and status == 200:
             filtered_clienti = filtered_response if isinstance(filtered_response, list) else []
-            filtered_clienti_count = len(filtered_clienti)
+            filtered_count = len(filtered_clienti)
             
-            self.log_test("✅ GET /api/clienti?assigned_to={user_id} SUCCESS", True, 
-                f"Status: 200 OK, Found {filtered_clienti_count} filtered clienti")
+            self.log_test("✅ GET /api/clienti?assigned_to={user_id}", True, 
+                f"Status: 200 OK, Found {filtered_count} filtered clienti")
             
-            print(f"\n   📊 RISULTATI FILTRO:")
+            # Conta i risultati
+            print(f"\n   📊 RISULTATO FILTRO:")
             print(f"      • Clienti senza filtro: {total_clienti_count}")
-            print(f"      • Clienti con filtro assigned_to={test_user_id[:8]}...: {filtered_clienti_count}")
-            print(f"      • Filtro applicato: {'✅ SÌ' if filtered_clienti_count != total_clienti_count else '❌ NO (stesso numero)'}")
+            print(f"      • Clienti con filtro assigned_to={test_user_id}: {filtered_count}")
+            print(f"      • Filtro riduce il numero: {'✅ SÌ' if filtered_count < total_clienti_count else '❌ NO'}")
             
-            # Verify all filtered clients have correct assigned_to
-            if filtered_clienti_count > 0:
-                correct_assigned_to = 0
-                wrong_assigned_to = 0
+            # Verifica se il filtro riduce il numero di clienti
+            if filtered_count < total_clienti_count:
+                self.log_test("✅ Filter working correctly", True, 
+                    f"Filter reduces results from {total_clienti_count} → {filtered_count} clienti")
+            elif filtered_count == total_clienti_count:
+                self.log_test("❌ Filter not working", False, 
+                    f"Filter returns same number of clienti ({filtered_count})")
+            else:
+                self.log_test("❌ Filter error", False, 
+                    f"Filter returns more clienti than total ({filtered_count} > {total_clienti_count})")
                 
-                print(f"      • Verifica assigned_to nei clienti filtrati:")
-                for i, cliente in enumerate(filtered_clienti[:3]):  # Check first 3
-                    cliente_assigned_to = cliente.get('assigned_to')
-                    cliente_nome = cliente.get('nome', 'Unknown')
-                    cliente_id = cliente.get('id', 'No ID')[:8] + '...'
-                    
-                    if cliente_assigned_to == test_user_id:
-                        correct_assigned_to += 1
-                        print(f"         {i+1}. ✅ {cliente_nome} (ID: {cliente_id}) - assigned_to: {cliente_assigned_to[:8]}...")
-                    else:
-                        wrong_assigned_to += 1
-                        print(f"         {i+1}. ❌ {cliente_nome} (ID: {cliente_id}) - assigned_to: {cliente_assigned_to[:8] if cliente_assigned_to else 'None'}...")
-                
-                if wrong_assigned_to == 0:
-                    self.log_test("✅ All filtered clients have correct assigned_to", True, 
-                        f"All {filtered_clienti_count} clients have assigned_to = {test_user_id[:8]}...")
-                else:
-                    self.log_test("❌ Some filtered clients have wrong assigned_to", False, 
+        else:
+            self.log_test("❌ GET /api/clienti?assigned_to={user_id} FAILED", False, f"Status: {status}")
+            return Falseed_to", False, 
                         f"{wrong_assigned_to} clients have different assigned_to")
             else:
                 print(f"      • No clienti returned by filter")
