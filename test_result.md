@@ -102,52 +102,26 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "TEST ANALYTICS ENHANCEMENTS - AZZERA FILTRI E COLONNE STATI AGENTI
+user_problem_statement: "ANALISI DETTAGLIATA PROBLEMA FILTRO UTENTI PER ale8 (RESPONSABILE_PRESIDI)
 
-OBIETTIVO:
-Testare le nuove funzionalità aggiunte alla sezione Analytics Referenti:
-1. Pulsante "Azzera Filtri" in entrambe le sezioni (Agenti e Referenti)
-2. Colonne dinamiche degli stati nella tabella "Performance Agenti"
+PROBLEMA CRITICO:
+- Admin NON appare nel dropdown (ma ha un cliente assegnato)
+- ale10 appare nel dropdown (ma NON dovrebbe)
+- ale12 NON appare nel dropdown (ma dovrebbe)
 
-URL: https://lead2ai-flow.preview.emergentagent.com
-CREDENZIALI: admin / admin123
+SETUP:
+- Backend: https://lead2ai-flow.preview.emergentagent.com
+- User: ale8/admin123
 
 TEST DA ESEGUIRE:
+1. Login come ale8
+2. GET /api/clienti (senza filtro)
+3. GET /api/clienti/filter-options
+4. Cerca gli utenti nella collection users
+5. DIAGNOSI CRITICA del mismatch
 
-**FASE 1: Login e Navigazione**
-1. Login con admin/admin123
-2. Naviga alla sezione "Analytics"
-3. Vai alla tab "Analytics Referenti"
-
-**FASE 2: Test Pulsante "Azzera Filtri" - Referenti**
-4. Seleziona il referente "prova12" dal dropdown (ID: 87b66bb6-220b-45bb-9413-9bfdb9ae0ac4)
-5. Verifica che i dati analytics si carichino
-6. Compila "Data Inizio" con "2025-09-01"
-7. Compila "Data Fine" con "2025-09-30"
-8. Clicca su "Applica Filtri"
-9. Verifica che le statistiche cambino (dovrebbero mostrare 0 leads)
-10. Clicca su "Azzera Filtri"
-11. Verifica che i campi data si svuotino
-12. Verifica che le statistiche tornino ai valori originali (19 leads totali)
-13. Screenshot dopo aver cliccato "Azzera Filtri"
-
-**FASE 3: Test Colonne Stati nella Tabella Performance Agenti**
-14. Scorri verso il basso fino alla tabella "Performance Agenti"
-15. Verifica che la tabella abbia colonne dinamiche per gli stati (es. "Nuovo", "OK")
-16. Verifica che ogni riga agente mostri i conteggi per stato:
-    - prova11: dovrebbe avere "Nuovo": 8, "OK": 1
-    - prova14: dovrebbe avere "Nuovo": 5
-    - prova15: dovrebbe avere "Nuovo": 5
-17. Screenshot della tabella Performance Agenti con colonne stati visibili
-
-**FASE 4: Test Pulsante "Azzera Filtri" - Agenti**
-18. Vai alla tab "Analytics Agenti"
-19. Seleziona un agente dal dropdown
-20. Compila filtri date con valori qualsiasi
-21. Clicca su "Applica Filtri"
-22. Clicca su "Azzera Filtri"
-23. Verifica che i campi data si svuotino
-24. Screenshot con pulsante "Azzera Filtri" visibile
+OBIETTIVO:
+Trovare il bug esatto che causa il mismatch tra assigned_to nei clienti e users nel dropdown."
 
 CRITERI DI SUCCESSO:
 ✅ Pulsante "Azzera Filtri" presente in Analytics Agenti
