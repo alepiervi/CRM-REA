@@ -2298,7 +2298,7 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "WhatsApp Configuration Flow Post-Fix - QR Code Modal Verification"
+    - "Responsabile Presidi Assigned To Filter - Query Logic Fix Verification"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
