@@ -53892,7 +53892,23 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         test_name = sys.argv[1]
         
-        if test_name == "backend_fixes":
+        if test_name == "ale8_filter":
+            print("🎯 RUNNING SPECIFIC TEST: ale8 Assigned To Filter Debug")
+            print("🎯 Testing Responsabile Presidi Assigned To Filter Issue")
+            print(f"🌐 Base URL: {tester.base_url}")
+            print("=" * 80)
+            
+            # Run the specific test
+            success = tester.test_ale8_assigned_to_filter_debug()
+            
+            print("\n" + "=" * 80)
+            if success:
+                print("🎉 ale8 Assigned To Filter Debug - SUCCESS!")
+            else:
+                print("❌ ale8 Assigned To Filter Debug - FAILED!")
+            print("=" * 80)
+            
+        elif test_name == "backend_fixes":
             print("🎯 RUNNING SPECIFIC TEST: Backend Fixes Verification")
             print("🎯 Testing Import Workflow Template Fix + Backoffice Sub Agenzia User Creation Fix")
             print(f"🌐 Base URL: {tester.base_url}")
