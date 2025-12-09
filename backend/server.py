@@ -11077,29 +11077,29 @@ async def get_clienti(
     if tipologia_contratto:
         query["tipologia_contratto"] = tipologia_contratto
     
-    # NEW: Filter by assigned user (not creator)
-    # This supports the "Utente Assegnato" filter
+    # NEW: Filter by assigned user OR creator
+    # This supports the "Utente Assegnato" filter - searches BOTH assigned_to AND created_by
     # IMPORTANT: We need to add this filter even if there's already a $or or $and clause
-    if assigned_to:
+    if assigned_to or created_by:
+        user_id_to_filter = assigned_to or created_by
+        # Create a filter that matches EITHER assigned_to OR created_by
+        user_filter = {
+            "$or": [
+                {"assigned_to": user_id_to_filter},
+                {"created_by": user_id_to_filter}
+            ]
+        }
+        
         if "$and" in query:
-            # Already have $and, add the assigned_to filter to it
-            query["$and"].append({"assigned_to": assigned_to})
+            # Already have $and, add the user filter to it
+            query["$and"].append(user_filter)
         elif "$or" in query:
-            # Have $or, wrap everything in $and and add assigned_to
+            # Have $or, wrap everything in $and and add user filter
             existing_or = query.pop("$or")
-            query["$and"] = [{"$or": existing_or}, {"assigned_to": assigned_to}]
+            query["$and"] = [{"$or": existing_or}, user_filter]
         else:
-            # Simple case - no complex clauses
-            query["assigned_to"] = assigned_to
-    elif created_by:
-        # Backward compatibility: if old parameter is used, filter by assigned_to
-        if "$and" in query:
-            query["$and"].append({"assigned_to": created_by})
-        elif "$or" in query:
-            existing_or = query.pop("$or")
-            query["$and"] = [{"$or": existing_or}, {"assigned_to": created_by}]
-        else:
-            query["assigned_to"] = created_by
+            # Simple case - no complex clauses, add the $or directly
+            query.update(user_filter)
     
     # NEW: Additional filter parameters
     if servizio_id and servizio_id != "all":
