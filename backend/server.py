@@ -11572,7 +11572,9 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         created_by_user_ids = [item["_id"] for item in created_by_result]
         
         # Combine both lists (UI shows assigned_to OR created_by, so filter should match UI)
-        user_ids_from_clients = list(set(assigned_user_ids + created_by_user_ids))
+        # Filter out None values before combining
+        all_user_ids = set(assigned_user_ids + created_by_user_ids)
+        user_ids_from_clients = [uid for uid in all_user_ids if uid is not None and uid != ""]
         print(f"  Users from accessible clients (assigned_to: {len(assigned_user_ids)}, created_by: {len(created_by_user_ids)}, total: {len(user_ids_from_clients)})")
         
         # Now fetch user details for these IDs only
@@ -11588,12 +11590,13 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             if missing_user_ids:
                 print(f"  ⚠️ {len(missing_user_ids)} user_ids without user records - adding placeholders")
                 for missing_id in missing_user_ids:
-                    users.append({
-                        "id": missing_id,
-                        "username": f"User {missing_id[:8]}",
-                        "nome": "Unknown",
-                        "cognome": "User"
-                    })
+                    if missing_id:  # Extra safety check
+                        users.append({
+                            "id": missing_id,
+                            "username": f"User {missing_id[:8]}",
+                            "nome": "Unknown",
+                            "cognome": "User"
+                        })
         else:
             users = []
             print(f"  No users found in accessible clients")
