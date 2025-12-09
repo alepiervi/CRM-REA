@@ -1319,7 +1319,7 @@ class CRMAPITester:
                 print(f"      • 🚨 PROBLEMA: Il filtro restituisce 0 risultati quando dovrebbe restituire alcuni")
                 print(f"      • 🚨 CAUSA PROBABILE: Query MongoDB non trova match o filtro non implementato")
                 print(f"      • 🔧 SOLUZIONE: Verificare implementazione filtro assigned_to nel backend")
-            elif filtered_clienti_count == total_clienti_count:
+            elif filtered_count == total_clienti_count:
                 print(f"      • 🚨 PROBLEMA: Il filtro viene ignorato")
                 print(f"      • 🚨 CAUSA PROBABILE: Parametro assigned_to non processato dal backend")
                 print(f"      • 🔧 SOLUZIONE: Verificare che il parametro assigned_to sia gestito nell'endpoint")
