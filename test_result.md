@@ -474,6 +474,18 @@ backend:
           agent: "testing"
           comment: "🎉 RESPONSABILE_PRESIDI ASSIGNED_TO FILTER RE-VERIFICATION COMPLETE - 100% SUCCESS! ✅ COMPREHENSIVE RE-TESTING COMPLETED: Successfully re-tested the assigned_to filter functionality for RESPONSABILE_PRESIDI role as specifically requested in review request. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ RESPONSABILE_PRESIDI USER FOUND: Found user 'ale8' with role 'responsabile_presidi', ID: bba6e430... ✅ RESPONSABILE_PRESIDI LOGIN (ale8/admin123): Successfully authenticated with token, Role: responsabile_presidi, ID: bba6e430... ✅ BASELINE TEST - GET /api/clienti (no filter): Status 200 OK, Found 3 total clienti visible to RESPONSABILE_PRESIDI. Analysis: 1 cliente with assigned_to field populated, 2 clienti with assigned_to = null, 1 unique assigned_to user_id found. ✅ CRITICAL SUCCESS - ASSIGNED_TO FILTER WORKING CORRECTLY: GET /api/clienti?assigned_to={user_id} returns 200 OK, Found 1 filtered cliente (filter working perfectly). Filter reduces results from 3 → 1 clienti, proving the assigned_to filter is being applied correctly (not ignored). ✅ FILTER VERIFICATION: All filtered clients have correct assigned_to field matching the filter parameter. Cliente 'Alessandro Piervincenzi Piervincenzi' (ID: 0b4e1f37...) has assigned_to = 3747e6ef... matching filter. ✅ BEHAVIOR ANALYSIS: Filter behavior = 'OK: Filtra correttamente' - reduces clienti from 3 to 1, applies filter properly, returns appropriate results. 🎯 REVIEW REQUEST OBJECTIVES ACHIEVED: 1) Login RESPONSABILE_PRESIDI (ale8) ✅, 2) GET /api/clienti (no filter) - count total clients ✅, 3) Extract user_ids from assigned_to field ✅, 4) GET /api/clienti?assigned_to={user_id} - verify filtered results ✅, 5) Count filtered clients ✅. 🎯 FILTER DIAGNOSIS COMPLETE: Filter does NOT return 0 results when should return some ✅, Filter does NOT return all clients instead of filtering ✅, Filter CORRECTLY filters and returns appropriate results ✅. 🎉 OBIETTIVO RAGGIUNTO: Il filtro assigned_to funziona PERFETTAMENTE per il ruolo RESPONSABILE_PRESIDI! Non ci sono problemi tecnici - il filtro applica correttamente la logica e restituisce i risultati appropriati. SUCCESS RATE: 100% (all tests passed) - Assigned_to filter fully operational and working correctly!"
 
+  - task: "User Filter Dropdown Synchronization for ale8 (RESPONSABILE_PRESIDI)"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL ISSUE IDENTIFIED: Backend endpoint /api/clienti/filter-options does not include all user_ids from clients. FINDINGS: 1) ale8 sees 3 clients with user_ids: admin (created_by), ale9 (assigned_to), ale12 (created_by). 2) Dropdown only shows: ale10 (NO clients), ale9 (has client). 3) MISSING from dropdown: admin (has client as created_by), ale12 (has client as created_by). 4) EXTRA in dropdown: ale10 (no clients). ROOT CAUSE: Filter-options logic only includes assigned_to users, NOT created_by users. SOLUTION NEEDED: Fix /api/clienti/filter-options to include ALL user_ids from both assigned_to AND created_by fields."
+
   - task: "Responsabile Presidi Enhanced Assigned To Filter - Dual Field Search and Complete Dropdown"
     implemented: true
     working: false
