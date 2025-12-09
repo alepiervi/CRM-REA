@@ -11565,34 +11565,24 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             sub_agenzie = []
             print(f"  No sub agenzie found in accessible clients")
         
-        # Get users from ACTUAL clients (both assigned_to AND created_by) because UI shows both
-        print(f"🔄 Loading users for filter-options from actual clients")
+        # Get users from ACTUAL visible clients - use same query as GET /api/clienti
+        print(f"🔄 Loading users for filter-options from visible clients")
         
-        # Extract unique assigned_to user IDs from user's accessible clients
-        assigned_users_pipeline = [{"$match": base_query}] if base_query else []
-        assigned_users_pipeline += [
-            {"$group": {"_id": "$assigned_to"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
-            {"$sort": {"_id": 1}}
-        ]
-        assigned_users_result = await db.clienti.aggregate(assigned_users_pipeline).to_list(length=None)
-        assigned_user_ids = [item["_id"] for item in assigned_users_result]
+        # NEW APPROACH: Get the actual clienti list that user sees, then extract user_ids
+        # This ensures dropdown shows ONLY users from visible clients
+        visible_clienti_cursor = db.clienti.find(query, {"assigned_to": 1, "created_by": 1, "_id": 0})
+        visible_clienti = await visible_clienti_cursor.to_list(length=None)
         
-        # Extract unique created_by user IDs from user's accessible clients
-        created_by_pipeline = [{"$match": base_query}] if base_query else []
-        created_by_pipeline += [
-            {"$group": {"_id": "$created_by"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
-            {"$sort": {"_id": 1}}
-        ]
-        created_by_result = await db.clienti.aggregate(created_by_pipeline).to_list(length=None)
-        created_by_user_ids = [item["_id"] for item in created_by_result]
+        # Extract unique user IDs from both assigned_to and created_by
+        all_user_ids = set()
+        for cliente in visible_clienti:
+            if cliente.get("assigned_to"):
+                all_user_ids.add(cliente["assigned_to"])
+            if cliente.get("created_by"):
+                all_user_ids.add(cliente["created_by"])
         
-        # Combine both lists (UI shows assigned_to OR created_by, so filter should match UI)
-        # Filter out None values before combining
-        all_user_ids = set(assigned_user_ids + created_by_user_ids)
-        user_ids_from_clients = [uid for uid in all_user_ids if uid is not None and uid != ""]
-        print(f"  Users from accessible clients (assigned_to: {len(assigned_user_ids)}, created_by: {len(created_by_user_ids)}, total: {len(user_ids_from_clients)})")
+        user_ids_from_clients = [uid for uid in all_user_ids if uid]
+        print(f"  Users from {len(visible_clienti)} visible clients: {len(user_ids_from_clients)} unique user_ids")
         
         # Now fetch user details for these IDs only
         if user_ids_from_clients:
