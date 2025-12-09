@@ -49666,12 +49666,12 @@ startxref
         print(f"🌐 Base URL: {self.base_url}")
         print("=" * 80)
 
-        # Run the AREA MANAGER TIPOLOGIE VISIBILITY DEBUG TEST AS REQUESTED IN REVIEW
+        # Run the RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST AS REQUESTED IN REVIEW
         print("\n" + "="*80)
-        print("🎯 RUNNING AREA MANAGER TIPOLOGIE VISIBILITY DEBUG TEST - AS REQUESTED IN REVIEW")
+        print("🎯 RUNNING RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST - AS REQUESTED IN REVIEW")
         print("="*80)
         
-        area_manager_test_success = self.test_area_manager_tipologie_visibility_debug()
+        presidi_filter_test_success = self.test_responsabile_presidi_assigned_to_filter()
 
         # Print final summary
         print("\n" + "=" * 80)
