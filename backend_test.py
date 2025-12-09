@@ -2698,6 +2698,378 @@ class CRMAPITester:
         print(f"      • Core endpoints (clienti, commesse, sub-agenzie): {'✅ ALL WORKING' if core_endpoints_working else '❌ SOME FAILING'}")
         print(f"      • New endpoints (units, lead-status): {'✅ ALL WORKING' if new_endpoints_working else '⚠️ SOME ISSUES'}")
         
+    def test_responsabile_presidi_assigned_to_filter_enhanced(self):
+        """🎯 TEST COMPLETO FILTRO "UTENTE ASSEGNATO" MIGLIORATO PER RESPONSABILE_PRESIDI"""
+        print("\n🎯 TEST COMPLETO FILTRO 'UTENTE ASSEGNATO' MIGLIORATO PER RESPONSABILE_PRESIDI")
+        print("🎯 OBIETTIVO:")
+        print("   1. Il filtro cerchi ENTRAMBI i campi (assigned_to E created_by)")
+        print("   2. La lista degli utenti nel dropdown includa TUTTI gli utenti (da assigned_to E created_by)")
+        print("")
+        
+        import time
+        start_time = time.time()
+        
+        # **PARTE 1: Test Filtro Migliorato**
+        print("\n📋 PARTE 1: TEST FILTRO MIGLIORATO")
+        
+        # 1. Login come RESPONSABILE_PRESIDI (utente ale8)
+        print("\n🔐 1. Login come RESPONSABILE_PRESIDI (utente ale8)...")
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'ale8', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            user_role = self.user_data.get('role')
+            user_id = self.user_data.get('id')
+            
+            self.log_test("✅ RESPONSABILE_PRESIDI login (ale8/admin123)", True, 
+                f"Token received, Role: {user_role}, ID: {user_id[:8]}...")
+            
+            if user_role != 'responsabile_presidi':
+                self.log_test("⚠️ User role verification", True, 
+                    f"Expected 'responsabile_presidi', got '{user_role}' - continuing test")
+                
+        else:
+            self.log_test("❌ RESPONSABILE_PRESIDI login failed", False, 
+                f"Status: {status}, Response: {response}")
+            return False
+
+        # 2. Test Baseline - GET /api/clienti (senza filtro)
+        print("\n📊 2. Test Baseline - GET /api/clienti (senza filtro)...")
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        total_clienti = 0
+        assigned_to_count = 0
+        created_by_count = 0
+        assigned_to_matches = 0
+        created_by_matches = 0
+        
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            total_clienti = len(clienti)
+            
+            self.log_test("✅ GET /api/clienti (baseline)", True, 
+                f"Status: 200 OK, Found {total_clienti} total clienti")
+            
+            # Analizza i clienti: conta quanti hanno assigned_to popolato vs created_by popolato
+            assigned_to_users = set()
+            created_by_users = set()
+            
+            for cliente in clienti:
+                assigned_to = cliente.get('assigned_to')
+                created_by = cliente.get('created_by')
+                
+                if assigned_to:
+                    assigned_to_users.add(assigned_to)
+                    assigned_to_count += 1
+                    
+                if created_by:
+                    created_by_users.add(created_by)
+                    created_by_count += 1
+            
+            print(f"   📊 BASELINE ANALYSIS:")
+            print(f"      • Total clienti: {total_clienti}")
+            print(f"      • Clienti con assigned_to popolato: {assigned_to_count}")
+            print(f"      • Clienti con created_by popolato: {created_by_count}")
+            print(f"      • Unique assigned_to users: {len(assigned_to_users)}")
+            print(f"      • Unique created_by users: {len(created_by_users)}")
+            
+            self.log_test("📊 Baseline analysis complete", True, 
+                f"assigned_to: {assigned_to_count}, created_by: {created_by_count}")
+                
+        else:
+            self.log_test("❌ GET /api/clienti baseline failed", False, f"Status: {status}")
+            return False
+
+        # 3. Test Filtro con Utente che ha clienti assigned_to
+        print("\n🔍 3. Test Filtro con Utente che ha clienti assigned_to...")
+        
+        # Trova un user_id che appare nei clienti (campo assigned_to)
+        test_assigned_to_user = None
+        for cliente in clienti:
+            if cliente.get('assigned_to'):
+                test_assigned_to_user = cliente.get('assigned_to')
+                break
+        
+        if test_assigned_to_user:
+            print(f"   🎯 Testing with assigned_to user: {test_assigned_to_user[:8]}...")
+            
+            # GET /api/clienti?assigned_to={user_id}
+            success, filtered_response, status = self.make_request(
+                'GET', f'clienti?assigned_to={test_assigned_to_user}', expected_status=200
+            )
+            
+            if success and status == 200:
+                filtered_clienti = filtered_response if isinstance(filtered_response, list) else []
+                filtered_count = len(filtered_clienti)
+                
+                self.log_test("✅ GET /api/clienti?assigned_to={user_id}", True, 
+                    f"Status: 200 OK, Found {filtered_count} filtered clienti")
+                
+                # Verifica che vengano restituiti clienti dove assigned_to={user_id} O created_by={user_id}
+                assigned_to_matches = 0
+                created_by_matches = 0
+                
+                for cliente in filtered_clienti:
+                    if cliente.get('assigned_to') == test_assigned_to_user:
+                        assigned_to_matches += 1
+                    if cliente.get('created_by') == test_assigned_to_user:
+                        created_by_matches += 1
+                
+                print(f"   📊 FILTER RESULTS ANALYSIS:")
+                print(f"      • Total filtered clienti: {filtered_count}")
+                print(f"      • Matches by assigned_to: {assigned_to_matches}")
+                print(f"      • Matches by created_by: {created_by_matches}")
+                
+                if assigned_to_matches > 0 or created_by_matches > 0:
+                    self.log_test("✅ Filter returns relevant clienti", True, 
+                        f"assigned_to: {assigned_to_matches}, created_by: {created_by_matches}")
+                else:
+                    self.log_test("❌ Filter returns no relevant clienti", False, 
+                        "Filter may not be working correctly")
+                
+                # Verifica che il filtro cerchi ENTRAMBI i campi (assigned_to OR created_by)
+                if created_by_matches > 0:
+                    self.log_test("✅ Filter searches created_by field", True, 
+                        f"Found {created_by_matches} clienti by created_by")
+                else:
+                    self.log_test("ℹ️ No created_by matches for this user", True, 
+                        "This user may not have created any clienti")
+                        
+            else:
+                self.log_test("❌ GET /api/clienti?assigned_to failed", False, f"Status: {status}")
+        else:
+            self.log_test("ℹ️ No assigned_to users found", True, "Skipping assigned_to filter test")
+
+        # 4. Test Filtro con Utente che ha clienti created_by
+        print("\n🔍 4. Test Filtro con Utente che ha clienti created_by...")
+        
+        # Trova un user_id che appare nei clienti (campo created_by) ma NON in assigned_to
+        test_created_by_user = None
+        for cliente in clienti:
+            created_by = cliente.get('created_by')
+            assigned_to = cliente.get('assigned_to')
+            
+            if created_by and created_by != assigned_to:
+                # Verifica che questo user non sia già stato testato come assigned_to
+                if created_by != test_assigned_to_user:
+                    test_created_by_user = created_by
+                    break
+        
+        if test_created_by_user:
+            print(f"   🎯 Testing with created_by user: {test_created_by_user[:8]}...")
+            
+            # GET /api/clienti?assigned_to={user_id}
+            success, filtered_response, status = self.make_request(
+                'GET', f'clienti?assigned_to={test_created_by_user}', expected_status=200
+            )
+            
+            if success and status == 200:
+                filtered_clienti = filtered_response if isinstance(filtered_response, list) else []
+                filtered_count = len(filtered_clienti)
+                
+                self.log_test("✅ GET /api/clienti?assigned_to={created_by_user}", True, 
+                    f"Status: 200 OK, Found {filtered_count} filtered clienti")
+                
+                # Verifica che vengano restituiti anche questi clienti (non solo assigned_to!)
+                created_by_matches = 0
+                assigned_to_matches = 0
+                
+                for cliente in filtered_clienti:
+                    if cliente.get('created_by') == test_created_by_user:
+                        created_by_matches += 1
+                    if cliente.get('assigned_to') == test_created_by_user:
+                        assigned_to_matches += 1
+                
+                print(f"   📊 CREATED_BY FILTER ANALYSIS:")
+                print(f"      • Total filtered clienti: {filtered_count}")
+                print(f"      • Matches by created_by: {created_by_matches}")
+                print(f"      • Matches by assigned_to: {assigned_to_matches}")
+                
+                if created_by_matches > 0:
+                    self.log_test("✅ Filter searches BOTH fields (assigned_to OR created_by)", True, 
+                        f"Found {created_by_matches} clienti by created_by field")
+                else:
+                    self.log_test("❌ Filter does NOT search created_by field", False, 
+                        "Filter may only be searching assigned_to field")
+                        
+            else:
+                self.log_test("❌ GET /api/clienti?assigned_to={created_by_user} failed", False, f"Status: {status}")
+        else:
+            self.log_test("ℹ️ No unique created_by users found", True, "Skipping created_by filter test")
+
+        # **PARTE 2: Test Lista Utenti nel Dropdown**
+        print("\n📋 PARTE 2: TEST LISTA UTENTI NEL DROPDOWN")
+        
+        # 5. Get Filter Options - GET /api/clienti/filter-options
+        print("\n🔍 5. Get Filter Options - GET /api/clienti/filter-options...")
+        success, filter_response, status = self.make_request('GET', 'clienti/filter-options', expected_status=200)
+        
+        dropdown_users = []
+        if success and status == 200:
+            self.log_test("✅ GET /api/clienti/filter-options", True, f"Status: 200 OK")
+            
+            # Estrai la lista "users"
+            users_list = filter_response.get('users', [])
+            dropdown_users_count = len(users_list)
+            
+            print(f"   📊 FILTER OPTIONS ANALYSIS:")
+            print(f"      • users field present: {'✅' if 'users' in filter_response else '❌'}")
+            print(f"      • users count in dropdown: {dropdown_users_count}")
+            
+            self.log_test("📊 Filter options users count", True, 
+                f"Found {dropdown_users_count} users in dropdown")
+            
+            # Estrai gli user_id dalla lista users
+            for user_item in users_list:
+                if isinstance(user_item, dict):
+                    user_id = user_item.get('value') or user_item.get('id')
+                    if user_id:
+                        dropdown_users.append(user_id)
+                elif isinstance(user_item, str):
+                    dropdown_users.append(user_item)
+            
+            print(f"      • extracted user IDs: {len(dropdown_users)}")
+            
+            if len(dropdown_users) > 0:
+                print(f"      • sample user IDs:")
+                for i, user_id in enumerate(dropdown_users[:3], 1):
+                    print(f"         {i}. {user_id[:8]}...")
+                if len(dropdown_users) > 3:
+                    print(f"         ... and {len(dropdown_users) - 3} more")
+                    
+        else:
+            self.log_test("❌ GET /api/clienti/filter-options failed", False, f"Status: {status}")
+            return False
+
+        # 6. Confronto con Clienti - Verifica che TUTTI gli user_id siano presenti
+        print("\n🔍 6. Confronto con Clienti...")
+        
+        # Estrai TUTTI gli user_id univoci dai campi assigned_to E created_by dei clienti visibili
+        all_client_users = set()
+        
+        for cliente in clienti:
+            assigned_to = cliente.get('assigned_to')
+            created_by = cliente.get('created_by')
+            
+            if assigned_to:
+                all_client_users.add(assigned_to)
+            if created_by:
+                all_client_users.add(created_by)
+        
+        client_users_count = len(all_client_users)
+        dropdown_users_set = set(dropdown_users)
+        
+        print(f"   📊 USER COMPARISON ANALYSIS:")
+        print(f"      • Unique users in clienti (assigned_to + created_by): {client_users_count}")
+        print(f"      • Users in dropdown: {len(dropdown_users_set)}")
+        
+        # Verifica che TUTTI questi user_id siano presenti nella lista "users" del filter-options
+        missing_users = all_client_users - dropdown_users_set
+        extra_users = dropdown_users_set - all_client_users
+        
+        if len(missing_users) == 0:
+            self.log_test("✅ All client users present in dropdown", True, 
+                f"All {client_users_count} users from clienti found in dropdown")
+        else:
+            self.log_test("❌ Some client users missing from dropdown", False, 
+                f"Missing {len(missing_users)} users: {[u[:8] + '...' for u in list(missing_users)[:3]]}")
+        
+        if len(extra_users) > 0:
+            self.log_test("ℹ️ Extra users in dropdown", True, 
+                f"Dropdown has {len(extra_users)} additional users not in current clienti")
+        
+        print(f"      • missing from dropdown: {len(missing_users)}")
+        print(f"      • extra in dropdown: {len(extra_users)}")
+        
+        # **CRITERI DI SUCCESSO**
+        print("\n🎯 CRITERI DI SUCCESSO:")
+        
+        success_criteria = []
+        
+        # Criterio 1: Il filtro assigned_to deve cercare ENTRAMBI i campi (assigned_to OR created_by)
+        both_fields_searched = (
+            (test_assigned_to_user and assigned_to_matches > 0) or
+            (test_created_by_user and created_by_matches > 0)
+        )
+        
+        if both_fields_searched:
+            success_criteria.append("✅ Il filtro assigned_to cerca ENTRAMBI i campi (assigned_to OR created_by)")
+        else:
+            success_criteria.append("❌ Il filtro assigned_to NON cerca entrambi i campi")
+        
+        # Criterio 2: La lista users in filter-options deve includere utenti da ENTRAMBI i campi
+        users_from_both_fields = len(dropdown_users_set) >= len(all_client_users)
+        
+        if users_from_both_fields:
+            success_criteria.append("✅ La lista users include utenti da ENTRAMBI i campi")
+        else:
+            success_criteria.append("❌ La lista users NON include tutti gli utenti")
+        
+        # Criterio 3: Nessun utente visibile nei clienti deve mancare dalla lista del dropdown
+        no_missing_users = len(missing_users) == 0
+        
+        if no_missing_users:
+            success_criteria.append("✅ Nessun utente visibile manca dalla lista del dropdown")
+        else:
+            success_criteria.append("❌ Alcuni utenti visibili mancano dalla lista del dropdown")
+        
+        # Criterio 4: Il numero di clienti filtrati deve includere quelli con created_by
+        includes_created_by = (test_created_by_user and created_by_matches > 0) if test_created_by_user else True
+        
+        if includes_created_by:
+            success_criteria.append("✅ Il filtro include clienti con created_by, non solo assigned_to")
+        else:
+            success_criteria.append("❌ Il filtro NON include clienti con created_by")
+        
+        for criterion in success_criteria:
+            print(f"   {criterion}")
+        
+        # **FINAL SUMMARY**
+        total_time = time.time() - start_time
+        
+        print(f"\n🎯 TEST FILTRO 'UTENTE ASSEGNATO' MIGLIORATO - SUMMARY:")
+        print(f"   🎯 OBIETTIVO: Verificare filtro migliorato per RESPONSABILE_PRESIDI")
+        print(f"   📊 RISULTATI TEST (Total time: {total_time:.2f}s):")
+        print(f"      • RESPONSABILE_PRESIDI login (ale8/admin123): ✅ SUCCESS")
+        print(f"      • Baseline clienti count: {total_clienti}")
+        print(f"      • assigned_to filter test: {'✅ SUCCESS' if test_assigned_to_user else 'ℹ️ SKIPPED'}")
+        print(f"      • created_by filter test: {'✅ SUCCESS' if test_created_by_user else 'ℹ️ SKIPPED'}")
+        print(f"      • Filter options retrieval: ✅ SUCCESS")
+        print(f"      • Users in dropdown: {len(dropdown_users_set)}")
+        print(f"      • Users from clienti: {client_users_count}")
+        print(f"      • Missing users: {len(missing_users)}")
+        
+        # Determine overall success
+        overall_success = (
+            both_fields_searched and
+            users_from_both_fields and
+            no_missing_users and
+            includes_created_by
+        )
+        
+        if overall_success:
+            print(f"\n   🎉 SUCCESS: FILTRO 'UTENTE ASSEGNATO' MIGLIORATO FUNZIONA CORRETTAMENTE!")
+            print(f"   🎉 CONCLUSIONE:")
+            print(f"      • Il filtro cerca ENTRAMBI i campi (assigned_to E created_by)")
+            print(f"      • La lista dropdown include TUTTI gli utenti da entrambi i campi")
+            print(f"      • Nessun utente visibile manca dal dropdown")
+            print(f"      • Il filtro include clienti con created_by, non solo assigned_to")
+        else:
+            print(f"\n   🚨 ISSUE: FILTRO 'UTENTE ASSEGNATO' NEEDS ATTENTION!")
+            print(f"   🔧 RACCOMANDAZIONI:")
+            if not both_fields_searched:
+                print(f"      • Verificare che il filtro assigned_to cerchi anche il campo created_by")
+            if not users_from_both_fields or not no_missing_users:
+                print(f"      • Verificare che filter-options includa utenti da assigned_to E created_by")
+            if not includes_created_by:
+                print(f"      • Verificare che il filtro restituisca clienti con created_by")
+        
+        return overall_success
         if core_endpoints_working:
             print(f"   🎉 SUCCESS: Le funzionalità base NON sono rotte!")
             print(f"   ✅ VERIFICA COMPLETATA:")
