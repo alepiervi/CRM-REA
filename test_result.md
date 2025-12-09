@@ -2309,7 +2309,7 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Responsabile Presidi Assigned To Filter - Query Logic Fix Verification"
+    - "User Filter Dropdown Synchronization for ale8 (RESPONSABILE_PRESIDI)"
   stuck_tasks: []
   test_all: false
   test_priority: "critical_first"
