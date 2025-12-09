@@ -164,6 +164,28 @@ class DropdownTester:
         print(f"   • Users nel dropdown: {dropdown_users_count}")
         print(f"   • Unique user_ids nei clienti: {len(unique_user_ids)}")
         
+        # Extract user_ids from dropdown for comparison
+        dropdown_user_ids = set()
+        for user_item in users_in_dropdown:
+            if isinstance(user_item, dict):
+                user_value = user_item.get('value', user_item.get('id'))
+                if user_value:
+                    dropdown_user_ids.add(user_value)
+        
+        # Find missing user_ids
+        missing_from_dropdown = unique_user_ids - dropdown_user_ids
+        extra_in_dropdown = dropdown_user_ids - unique_user_ids
+        
+        print(f"   • User_ids mancanti nel dropdown: {len(missing_from_dropdown)}")
+        if missing_from_dropdown:
+            for missing_id in sorted(missing_from_dropdown):
+                print(f"      - {missing_id}")
+        
+        print(f"   • User_ids extra nel dropdown: {len(extra_in_dropdown)}")
+        if extra_in_dropdown:
+            for extra_id in sorted(extra_in_dropdown):
+                print(f"      - {extra_id}")
+        
         # Il numero di users nel dropdown deve essere >= numero user_id nei clienti
         if dropdown_users_count >= len(unique_user_ids):
             self.log_test("Dropdown count >= client user_ids", True, 
@@ -175,6 +197,7 @@ class DropdownTester:
         # Verifica che l'utente 826c2ae9-ef71-4eef-81e3-690897fa6221 sia presente
         target_user_id = "826c2ae9-ef71-4eef-81e3-690897fa6221"
         target_user_present = target_user_id in unique_user_ids
+        target_user_in_dropdown = target_user_id in dropdown_user_ids
         
         if target_user_present:
             self.log_test("Target user 826c2ae9... present in clienti", True, 
@@ -182,6 +205,25 @@ class DropdownTester:
         else:
             self.log_test("Target user 826c2ae9... not in current clienti", True, 
                 f"User {target_user_id} not found in current clienti (may be expected)")
+        
+        if target_user_in_dropdown:
+            self.log_test("Target user 826c2ae9... present in dropdown", True, 
+                f"User {target_user_id} found in dropdown")
+        else:
+            if target_user_present:
+                self.log_test("❌ CRITICAL: Target user 826c2ae9... MISSING from dropdown", False, 
+                    f"User {target_user_id} is in clienti but NOT in dropdown - this is the bug!")
+            else:
+                self.log_test("Target user 826c2ae9... not in dropdown", True, 
+                    f"User {target_user_id} not in dropdown (expected since not in clienti)")
+        
+        # Check if all client user_ids are in dropdown
+        if len(missing_from_dropdown) == 0:
+            self.log_test("All client user_ids in dropdown", True, 
+                "Dropdown contains all user_ids from clienti")
+        else:
+            self.log_test("❌ CRITICAL: Some client user_ids missing from dropdown", False, 
+                f"{len(missing_from_dropdown)} user_ids missing from dropdown")
 
         # **5. Test Filtro**
         print("\n🎯 5. Test Filtro...")
