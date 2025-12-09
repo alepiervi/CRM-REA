@@ -11540,10 +11540,11 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             sub_agenzie = []
             print(f"  No sub agenzie found in accessible clients")
         
-        # Get users from ACTUAL clients (both assigned_to AND created_by fields) - shows only users in the client list
+        # Get users from ACTUAL clients (ONLY assigned_to field) - shows only users that can be filtered
         print(f"🔄 Loading users for filter-options from actual clients")
         
         # Extract unique assigned_to user IDs from user's accessible clients
+        # IMPORTANT: Only use assigned_to because the filter searches ONLY this field
         assigned_users_pipeline = [{"$match": base_query}] if base_query else []
         assigned_users_pipeline += [
             {"$group": {"_id": "$assigned_to"}},
@@ -11551,21 +11552,8 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             {"$sort": {"_id": 1}}
         ]
         assigned_users_result = await db.clienti.aggregate(assigned_users_pipeline).to_list(length=None)
-        assigned_user_ids = [item["_id"] for item in assigned_users_result]
-        
-        # Extract unique created_by user IDs from user's accessible clients
-        created_by_pipeline = [{"$match": base_query}] if base_query else []
-        created_by_pipeline += [
-            {"$group": {"_id": "$created_by"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
-            {"$sort": {"_id": 1}}
-        ]
-        created_by_result = await db.clienti.aggregate(created_by_pipeline).to_list(length=None)
-        created_by_user_ids = [item["_id"] for item in created_by_result]
-        
-        # Combine both lists and remove duplicates
-        user_ids_from_clients = list(set(assigned_user_ids + created_by_user_ids))
-        print(f"  Users from accessible clients (assigned_to + created_by): {len(user_ids_from_clients)}")
+        user_ids_from_clients = [item["_id"] for item in assigned_users_result]
+        print(f"  Users from accessible clients (assigned_to only): {len(user_ids_from_clients)}")
         
         # Now fetch user details for these IDs only
         if user_ids_from_clients:
