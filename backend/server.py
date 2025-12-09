@@ -11565,24 +11565,54 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
             sub_agenzie = []
             print(f"  No sub agenzie found in accessible clients")
         
-        # Get users from ACTUAL visible clients - use same query as GET /api/clienti
+        # Get users from ACTUAL visible clients - call get_clienti to ensure exact same filtering
         print(f"🔄 Loading users for filter-options from visible clients")
         
-        # NEW APPROACH: Get the actual clienti list that user sees, then extract user_ids
-        # This ensures dropdown shows ONLY users from visible clients
-        visible_clienti_cursor = db.clienti.find(query, {"assigned_to": 1, "created_by": 1, "_id": 0})
-        visible_clienti = await visible_clienti_cursor.to_list(length=None)
-        
-        # Extract unique user IDs from both assigned_to and created_by
-        all_user_ids = set()
-        for cliente in visible_clienti:
-            if cliente.get("assigned_to"):
-                all_user_ids.add(cliente["assigned_to"])
-            if cliente.get("created_by"):
-                all_user_ids.add(cliente["created_by"])
-        
-        user_ids_from_clients = [uid for uid in all_user_ids if uid]
-        print(f"  Users from {len(visible_clienti)} visible clients: {len(user_ids_from_clients)} unique user_ids")
+        # NEW APPROACH: Get the actual clienti list that user sees by calling get_clienti internally
+        # This ensures dropdown shows ONLY users from visible clients with ALL filters applied
+        try:
+            from fastapi import Request
+            from starlette.datastructures import QueryParams
+            
+            # Create a fake request with no filters to get all visible clienti
+            visible_clienti = await get_clienti(
+                current_user=current_user,
+                commessa_id=None,
+                sub_agenzia_id_filter="all",
+                status="all",
+                tipologia="all",
+                assigned_to=None,
+                created_by=None,
+                servizio_id="all",
+                segmento="all",
+                commessa_id_filter="all"
+            )
+            
+            # Extract unique user IDs from both assigned_to and created_by
+            all_user_ids = set()
+            for cliente in visible_clienti:
+                if hasattr(cliente, 'assigned_to') and cliente.assigned_to:
+                    all_user_ids.add(cliente.assigned_to)
+                if hasattr(cliente, 'created_by') and cliente.created_by:
+                    all_user_ids.add(cliente.created_by)
+            
+            user_ids_from_clients = [uid for uid in all_user_ids if uid]
+            print(f"  Users from {len(visible_clienti)} visible clients: {len(user_ids_from_clients)} unique user_ids")
+        except Exception as e:
+            print(f"  ⚠️ Error getting visible clienti: {e}")
+            # Fallback to base_query approach
+            visible_clienti_cursor = db.clienti.find(base_query, {"assigned_to": 1, "created_by": 1, "_id": 0})
+            visible_clienti = await visible_clienti_cursor.to_list(length=None)
+            
+            all_user_ids = set()
+            for cliente in visible_clienti:
+                if cliente.get("assigned_to"):
+                    all_user_ids.add(cliente["assigned_to"])
+                if cliente.get("created_by"):
+                    all_user_ids.add(cliente["created_by"])
+            
+            user_ids_from_clients = [uid for uid in all_user_ids if uid]
+            print(f"  Users from {len(visible_clienti)} visible clients (fallback): {len(user_ids_from_clients)} unique user_ids")
         
         # Now fetch user details for these IDs only
         if user_ids_from_clients:
