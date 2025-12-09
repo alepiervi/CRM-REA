@@ -11404,12 +11404,29 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
                 user_ids_in_sub_agenzie.append(current_user.id)  # Include anche i propri clienti
                 
-                # CRITICAL FIX: Use SAME $or query as GET /api/clienti
-                base_query["$or"] = [
-                    {"created_by": {"$in": user_ids_in_sub_agenzie}},
-                    {"assigned_to": {"$in": user_ids_in_sub_agenzie}},
-                    {"sub_agenzia_id": {"$in": sub_agenzie_ids}}
-                ]
+                # Build user filter (SAME AS GET /api/clienti)
+                user_filter = {
+                    "$or": [
+                        {"created_by": {"$in": user_ids_in_sub_agenzie}},
+                        {"assigned_to": {"$in": user_ids_in_sub_agenzie}},
+                        {"sub_agenzia_id": {"$in": sub_agenzie_ids}}
+                    ]
+                }
+                
+                # CRITICAL: Apply servizi_autorizzati filter (SAME AS GET /api/clienti)
+                if current_user.servizi_autorizzati and len(current_user.servizi_autorizzati) > 0:
+                    servizio_filter = {
+                        "$or": [
+                            {"servizio_id": {"$in": current_user.servizi_autorizzati}},
+                            {"servizio_id": None},
+                            {"servizio_id": {"$exists": False}}
+                        ]
+                    }
+                    base_query["$and"] = [user_filter, servizio_filter]
+                    print(f"  FILTER-OPTIONS: Applying servizi filter: {current_user.servizi_autorizzati}")
+                else:
+                    base_query.update(user_filter)
+                
                 print(f"  FILTER-OPTIONS: Monitoring {len(user_ids_in_sub_agenzie)} users across {len(sub_agenzie_ids)} sub agenzie")
             else:
                 # Se non ha sub agenzie assegnate, vede i propri clienti O quelli assegnati a lui
