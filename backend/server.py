@@ -12789,8 +12789,55 @@ async def get_cliente_logs(
     
     cliente = Cliente(**cliente_doc)
     
-    # Verifica permessi (stesso controllo degli altri endpoint clienti)
-    if not await can_user_modify_cliente(current_user, cliente):
+    # Verifica permessi: se l'utente può VEDERE il cliente (via GET /api/clienti), può vedere i log
+    # Usa logica più permissiva rispetto a can_user_modify_cliente
+    can_view = False
+    
+    if current_user.role == UserRole.ADMIN:
+        can_view = True
+    elif current_user.role == UserRole.RESPONSABILE_PRESIDI:
+        # Responsabile Presidi: può vedere log di clienti nelle sue sub agenzie
+        if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+            # Verifica se il cliente appartiene a una delle sue sub agenzie
+            if cliente.sub_agenzia_id in current_user.sub_agenzie_autorizzate:
+                can_view = True
+            else:
+                # Verifica se il cliente è stato creato o assegnato a utenti nelle sue sub agenzie
+                users_in_sub_agenzie = await db.users.find({
+                    "sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}
+                }).to_list(length=None)
+                user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
+                user_ids_in_sub_agenzie.append(current_user.id)
+                
+                if cliente.created_by in user_ids_in_sub_agenzie or cliente.assigned_to in user_ids_in_sub_agenzie:
+                    can_view = True
+        elif cliente.created_by == current_user.id or cliente.assigned_to == current_user.id:
+            can_view = True
+    elif current_user.role in [UserRole.AREA_MANAGER]:
+        # Area Manager: stessa logica di Responsabile Presidi
+        if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+            if cliente.sub_agenzia_id in current_user.sub_agenzie_autorizzate:
+                can_view = True
+            else:
+                users_in_sub_agenzie = await db.users.find({
+                    "sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}
+                }).to_list(length=None)
+                user_ids_in_sub_agenzie = [user["id"] for user in users_in_sub_agenzie]
+                user_ids_in_sub_agenzie.append(current_user.id)
+                
+                if cliente.created_by in user_ids_in_sub_agenzie or cliente.assigned_to in user_ids_in_sub_agenzie:
+                    can_view = True
+        elif cliente.created_by == current_user.id or cliente.assigned_to == current_user.id:
+            can_view = True
+    elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+        # Sub Agenzia roles: can view all clients from their sub agenzia
+        if current_user.sub_agenzia_id and cliente.sub_agenzia_id == current_user.sub_agenzia_id:
+            can_view = True
+    else:
+        # Per altri ruoli: usa la funzione can_user_modify_cliente esistente
+        can_view = await can_user_modify_cliente(current_user, cliente)
+    
+    if not can_view:
         raise HTTPException(status_code=403, detail="No permission to view this cliente's logs")
     
     try:
