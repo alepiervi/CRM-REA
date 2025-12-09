@@ -1051,6 +1051,277 @@ class CRMAPITester:
         
         return overall_success
 
+    def test_responsabile_presidi_assigned_to_filter(self):
+        """🚨 TEST VELOCE FILTRO ASSIGNED_TO PER RESPONSABILE_PRESIDI"""
+        print("\n🚨 TEST VELOCE FILTRO ASSIGNED_TO PER RESPONSABILE_PRESIDI")
+        print("🎯 OBIETTIVO: Capire perché il filtro assigned_to 'non funziona' - restituisce 0 risultati o non filtra?")
+        print("")
+        print("🎯 SETUP:")
+        print("   • Backend: https://lead2ai-flow.preview.emergentagent.com")
+        print("   • Credenziali: ale8/admin123 (RESPONSABILE_PRESIDI)")
+        print("")
+        print("🎯 TEST:")
+        print("   1. Login come RESPONSABILE_PRESIDI (ale8)")
+        print("   2. GET /api/clienti (senza filtro) - conta i clienti totali")
+        print("   3. Estrai alcuni user_id dal campo assigned_to")
+        print("   4. GET /api/clienti?assigned_to={user_id} - verifica risultati filtrati")
+        print("   5. Conta i clienti filtrati")
+        print("")
+        
+        import time
+        start_time = time.time()
+        
+        # **FASE 1: Login Admin per verificare utente RESPONSABILE_PRESIDI**
+        print("\n🔐 FASE 1: Login Admin per verificare utente RESPONSABILE_PRESIDI...")
+        
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'admin', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            admin_token = response['access_token']
+            self.token = admin_token
+            self.user_data = response['user']
+            self.log_test("✅ Admin login (admin/admin123)", True, f"Token received, Role: {self.user_data['role']}")
+        else:
+            self.log_test("❌ Admin login failed", False, f"Status: {status}, Response: {response}")
+            return False
+
+        # Verify RESPONSABILE_PRESIDI user exists
+        success, users_response, status = self.make_request('GET', 'users', expected_status=200)
+        
+        responsabile_presidi_user = None
+        if success and status == 200:
+            users = users_response if isinstance(users_response, list) else []
+            
+            for user in users:
+                if user.get('username') == 'ale8' and user.get('role') == 'responsabile_presidi':
+                    responsabile_presidi_user = user
+                    break
+            
+            if responsabile_presidi_user:
+                user_id = responsabile_presidi_user.get('id')
+                self.log_test("✅ RESPONSABILE_PRESIDI user found", True, 
+                    f"Username: ale8, Role: responsabile_presidi, ID: {user_id[:8]}...")
+            else:
+                self.log_test("❌ RESPONSABILE_PRESIDI user not found", False, 
+                    "User 'ale8' with role 'responsabile_presidi' not found")
+                return False
+        else:
+            self.log_test("❌ GET /api/users failed", False, f"Status: {status}")
+            return False
+
+        # **FASE 2: Login come RESPONSABILE_PRESIDI (ale8)**
+        print("\n🔐 FASE 2: Login come RESPONSABILE_PRESIDI (ale8/admin123)...")
+        
+        success, response, status = self.make_request(
+            'POST', 'auth/login', 
+            {'username': 'ale8', 'password': 'admin123'}, 
+            200, auth_required=False
+        )
+        
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_data = response['user']
+            user_role = self.user_data.get('role')
+            user_id = self.user_data.get('id')
+            
+            self.log_test("✅ RESPONSABILE_PRESIDI login (ale8/admin123)", True, 
+                f"Token received, Role: {user_role}, ID: {user_id[:8]}...")
+            
+            if user_role != 'responsabile_presidi':
+                self.log_test("⚠️ User role verification", True, 
+                    f"Expected 'responsabile_presidi', got '{user_role}' - continuing test")
+        else:
+            self.log_test("❌ RESPONSABILE_PRESIDI login failed", False, 
+                f"Status: {status}, Response: {response}")
+            return False
+
+        # **FASE 3: GET /api/clienti (senza filtro)**
+        print("\n👥 FASE 3: GET /api/clienti (senza filtro) - conta i clienti totali...")
+        
+        success, clienti_response, status = self.make_request('GET', 'clienti', expected_status=200)
+        
+        total_clienti_count = 0
+        assigned_to_users = set()
+        sample_clienti = []
+        
+        if success and status == 200:
+            clienti = clienti_response if isinstance(clienti_response, list) else []
+            total_clienti_count = len(clienti)
+            
+            self.log_test("✅ GET /api/clienti (no filter) SUCCESS", True, 
+                f"Status: 200 OK, Found {total_clienti_count} total clienti")
+            
+            # Extract assigned_to user_ids and sample clienti
+            print(f"\n   📊 ANALISI CLIENTI TOTALI:")
+            print(f"      • Total clienti visible to RESPONSABILE_PRESIDI: {total_clienti_count}")
+            
+            for i, cliente in enumerate(clienti):
+                assigned_to = cliente.get('assigned_to')
+                if assigned_to:
+                    assigned_to_users.add(assigned_to)
+                
+                # Keep first few clienti as samples
+                if i < 3:
+                    sample_clienti.append({
+                        'id': cliente.get('id', 'No ID')[:8] + '...',
+                        'nome': cliente.get('nome', 'No Name'),
+                        'cognome': cliente.get('cognome', 'No Surname'),
+                        'assigned_to': assigned_to[:8] + '...' if assigned_to else 'None'
+                    })
+            
+            print(f"      • Unique assigned_to user_ids found: {len(assigned_to_users)}")
+            print(f"      • Sample clienti:")
+            for i, sample in enumerate(sample_clienti, 1):
+                print(f"         {i}. {sample['nome']} {sample['cognome']} (ID: {sample['id']}, assigned_to: {sample['assigned_to']})")
+            
+            if len(assigned_to_users) > 0:
+                self.log_test("✅ Found assigned_to user_ids", True, 
+                    f"Found {len(assigned_to_users)} unique user_ids in assigned_to field")
+            else:
+                self.log_test("⚠️ No assigned_to user_ids found", True, 
+                    "All clienti have assigned_to = null - will test with existing user_id")
+                
+        else:
+            self.log_test("❌ GET /api/clienti (no filter) FAILED", False, f"Status: {status}")
+            return False
+
+        # **FASE 4: GET /api/clienti?assigned_to={user_id}**
+        print("\n🔍 FASE 4: GET /api/clienti?assigned_to={user_id} - verifica risultati filtrati...")
+        
+        # Choose a user_id to test with
+        test_user_id = None
+        if len(assigned_to_users) > 0:
+            test_user_id = list(assigned_to_users)[0]
+            print(f"   🎯 Using assigned_to user_id from existing clienti: {test_user_id[:8]}...")
+        else:
+            # Use the current user's ID if no assigned_to found
+            test_user_id = user_id
+            print(f"   🎯 Using current user's ID (no assigned_to found): {test_user_id[:8]}...")
+        
+        # Test the assigned_to filter
+        filter_endpoint = f'clienti?assigned_to={test_user_id}'
+        success, filtered_response, status = self.make_request('GET', filter_endpoint, expected_status=200)
+        
+        filtered_clienti_count = 0
+        if success and status == 200:
+            filtered_clienti = filtered_response if isinstance(filtered_response, list) else []
+            filtered_clienti_count = len(filtered_clienti)
+            
+            self.log_test("✅ GET /api/clienti?assigned_to={user_id} SUCCESS", True, 
+                f"Status: 200 OK, Found {filtered_clienti_count} filtered clienti")
+            
+            print(f"\n   📊 RISULTATI FILTRO:")
+            print(f"      • Clienti senza filtro: {total_clienti_count}")
+            print(f"      • Clienti con filtro assigned_to={test_user_id[:8]}...: {filtered_clienti_count}")
+            print(f"      • Filtro applicato: {'✅ SÌ' if filtered_clienti_count != total_clienti_count else '❌ NO (stesso numero)'}")
+            
+            # Verify all filtered clients have correct assigned_to
+            if filtered_clienti_count > 0:
+                correct_assigned_to = 0
+                wrong_assigned_to = 0
+                
+                print(f"      • Verifica assigned_to nei clienti filtrati:")
+                for i, cliente in enumerate(filtered_clienti[:3]):  # Check first 3
+                    cliente_assigned_to = cliente.get('assigned_to')
+                    cliente_nome = cliente.get('nome', 'Unknown')
+                    cliente_id = cliente.get('id', 'No ID')[:8] + '...'
+                    
+                    if cliente_assigned_to == test_user_id:
+                        correct_assigned_to += 1
+                        print(f"         {i+1}. ✅ {cliente_nome} (ID: {cliente_id}) - assigned_to: {cliente_assigned_to[:8]}...")
+                    else:
+                        wrong_assigned_to += 1
+                        print(f"         {i+1}. ❌ {cliente_nome} (ID: {cliente_id}) - assigned_to: {cliente_assigned_to[:8] if cliente_assigned_to else 'None'}...")
+                
+                if wrong_assigned_to == 0:
+                    self.log_test("✅ All filtered clients have correct assigned_to", True, 
+                        f"All {filtered_clienti_count} clients have assigned_to = {test_user_id[:8]}...")
+                else:
+                    self.log_test("❌ Some filtered clients have wrong assigned_to", False, 
+                        f"{wrong_assigned_to} clients have different assigned_to")
+            else:
+                print(f"      • No clienti returned by filter")
+                
+        else:
+            self.log_test("❌ GET /api/clienti?assigned_to={user_id} FAILED", False, f"Status: {status}")
+            return False
+
+        # **FASE 5: Verifica comportamento del filtro**
+        print("\n🎯 FASE 5: Verifica comportamento del filtro...")
+        
+        filter_behavior = "UNKNOWN"
+        filter_working = False
+        
+        if filtered_clienti_count == 0 and total_clienti_count > 0:
+            if len(assigned_to_users) > 0:
+                filter_behavior = "PROBLEMA: Restituisce 0 risultati quando dovrebbe restituire alcuni"
+                print(f"   🚨 PROBLEMA IDENTIFICATO: Il filtro restituisce 0 risultati")
+                print(f"   🚨 DETTAGLI: Esistono clienti con assigned_to, ma il filtro non li trova")
+                print(f"   🚨 POSSIBILE CAUSA: Filtro non implementato correttamente o query errata")
+            else:
+                filter_behavior = "OK: Restituisce 0 risultati perché nessun cliente ha assigned_to"
+                print(f"   ✅ COMPORTAMENTO CORRETTO: Nessun cliente ha assigned_to = {test_user_id[:8]}...")
+                filter_working = True
+        elif filtered_clienti_count == total_clienti_count:
+            filter_behavior = "PROBLEMA: Restituisce tutti i clienti invece di filtrare"
+            print(f"   🚨 PROBLEMA IDENTIFICATO: Il filtro non viene applicato")
+            print(f"   🚨 DETTAGLI: Stesso numero di clienti con e senza filtro")
+            print(f"   🚨 POSSIBILE CAUSA: Filtro ignorato dal backend")
+        elif filtered_clienti_count > 0 and filtered_clienti_count < total_clienti_count:
+            filter_behavior = "OK: Filtra correttamente"
+            print(f"   ✅ FILTRO FUNZIONA CORRETTAMENTE")
+            print(f"   ✅ DETTAGLI: Riduce i clienti da {total_clienti_count} a {filtered_clienti_count}")
+            filter_working = True
+        else:
+            filter_behavior = f"ANOMALO: {filtered_clienti_count} filtrati vs {total_clienti_count} totali"
+            print(f"   ⚠️ COMPORTAMENTO ANOMALO: Risultati inaspettati")
+        
+        self.log_test("🎯 Filter behavior analysis", filter_working, filter_behavior)
+
+        # **FASE 6: Report finale**
+        print(f"\n📋 REPORT FINALE - TEST FILTRO ASSIGNED_TO RESPONSABILE_PRESIDI:")
+        print(f"   🎯 OBIETTIVO: Capire perché il filtro assigned_to 'non funziona'")
+        print(f"   📊 RISULTATI:")
+        print(f"      • Login RESPONSABILE_PRESIDI (ale8): ✅ SUCCESS")
+        print(f"      • Numero clienti senza filtro: {total_clienti_count}")
+        print(f"      • Numero clienti con filtro: {filtered_clienti_count}")
+        print(f"      • User_id testato: {test_user_id[:8]}...")
+        print(f"      • Unique assigned_to user_ids trovati: {len(assigned_to_users)}")
+        print(f"      • Comportamento filtro: {filter_behavior}")
+        
+        print(f"\n   📋 ESEMPIO CLIENTE E ASSIGNED_TO:")
+        if len(sample_clienti) > 0:
+            sample = sample_clienti[0]
+            print(f"      • Cliente: {sample['nome']} {sample['cognome']}")
+            print(f"      • ID: {sample['id']}")
+            print(f"      • assigned_to: {sample['assigned_to']}")
+        else:
+            print(f"      • Nessun cliente disponibile per esempio")
+        
+        print(f"\n   🎯 DIAGNOSI:")
+        if filter_working:
+            print(f"      • ✅ Il filtro assigned_to FUNZIONA CORRETTAMENTE")
+            print(f"      • ✅ Applica il filtro e restituisce risultati appropriati")
+            print(f"      • ✅ Non ci sono problemi tecnici con il filtro")
+        else:
+            if filtered_clienti_count == 0 and len(assigned_to_users) > 0:
+                print(f"      • 🚨 PROBLEMA: Il filtro restituisce 0 risultati quando dovrebbe restituire alcuni")
+                print(f"      • 🚨 CAUSA PROBABILE: Query MongoDB non trova match o filtro non implementato")
+                print(f"      • 🔧 SOLUZIONE: Verificare implementazione filtro assigned_to nel backend")
+            elif filtered_clienti_count == total_clienti_count:
+                print(f"      • 🚨 PROBLEMA: Il filtro viene ignorato")
+                print(f"      • 🚨 CAUSA PROBABILE: Parametro assigned_to non processato dal backend")
+                print(f"      • 🔧 SOLUZIONE: Verificare che il parametro assigned_to sia gestito nell'endpoint")
+        
+        total_time = time.time() - start_time
+        print(f"\n   ⏱️ Test completato in {total_time:.2f} secondi")
+        
+        return filter_working
+
     def test_finale_completo_bug_fixes(self):
         """🚨 TESTING FINALE COMPLETO - Verifica Risoluzione Bug Critici"""
         print("\n🚨 TESTING FINALE COMPLETO - Verifica Risoluzione Bug Critici")
