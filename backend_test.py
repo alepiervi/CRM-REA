@@ -52530,11 +52530,37 @@ startxref
 
 
 def main():
-    """Main test execution - TIPOLOGIA CONTRATTO MOBILE FASTWEB FIX VERIFICATION"""
-    print("🚀 Starting CRM Backend API Tests - TIPOLOGIA CONTRATTO MOBILE FASTWEB FIX VERIFICATION...")
+    """Main test execution - RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST"""
+    print("🚀 Starting CRM Backend API Tests - RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST...")
+    print("🎯 REVIEW REQUEST: Verifica fix dropdown 'Utente Assegnato' per ale8")
     print("=" * 80)
     
     tester = CRMAPITester()
+    
+    # Run the specific test for the review request
+    try:
+        success = tester.test_responsabile_presidi_assigned_to_filter()
+        
+        print(f"\n📊 Final Test Results:")
+        print(f"   Tests run: {tester.tests_run}")
+        print(f"   Tests passed: {tester.tests_passed}")
+        if tester.tests_run > 0:
+            print(f"   Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+        else:
+            print(f"   Success rate: N/A (no tests run)")
+        
+        if success:
+            print("🎉 RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST SUCCESSFUL!")
+        else:
+            print("🚨 RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST FAILED!")
+            
+        return 0 if success else 1
+        
+    except Exception as e:
+        print(f"❌ Test failed with exception: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
     
     # Check if specific test is requested
     if len(sys.argv) > 1:
