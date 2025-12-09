@@ -1264,10 +1264,6 @@ class CRMAPITester:
         else:
             self.log_test("❌ GET /api/clienti?assigned_to={user_id} FAILED", False, f"Status: {status}")
             return False
-                
-        else:
-            self.log_test("❌ GET /api/clienti?assigned_to={user_id} FAILED", False, f"Status: {status}")
-            return False
 
         # **FASE 5: Verifica comportamento del filtro**
         print("\n🎯 FASE 5: Verifica comportamento del filtro...")
@@ -1275,8 +1271,9 @@ class CRMAPITester:
         filter_behavior = "UNKNOWN"
         filter_working = False
         
-        if filtered_clienti_count == 0 and total_clienti_count > 0:
-            if len(assigned_to_users) > 0:
+        # Use filtered_count instead of undefined filtered_clienti_count
+        if filtered_count == 0 and total_clienti_count > 0:
+            if len(all_assigned_to_users) > 0:
                 filter_behavior = "PROBLEMA: Restituisce 0 risultati quando dovrebbe restituire alcuni"
                 print(f"   🚨 PROBLEMA IDENTIFICATO: Il filtro restituisce 0 risultati")
                 print(f"   🚨 DETTAGLI: Esistono clienti con assigned_to, ma il filtro non li trova")
