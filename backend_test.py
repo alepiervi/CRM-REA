@@ -49691,7 +49691,7 @@ startxref
             print("🚨 RESPONSABILE_PRESIDI ASSIGNED_TO FILTER TEST: ❌ FAILED - FILTER NOT WORKING!")
             print("💡 CONCLUSION: assigned_to filter may be ignored or incorrectly implemented for this role")
         
-        return agente_operatore_test_success
+        return presidi_filter_test_success
 
     def run_nextcloud_verification_only(self):
         """Run only the Nextcloud upload verification test"""
