@@ -1051,21 +1051,22 @@ class CRMAPITester:
         
         return overall_success
 
-    def test_responsabile_presidi_assigned_to_filter(self):
-        """🚨 TEST VELOCE FILTRO ASSIGNED_TO PER RESPONSABILE_PRESIDI"""
-        print("\n🚨 TEST VELOCE FILTRO ASSIGNED_TO PER RESPONSABILE_PRESIDI")
-        print("🎯 OBIETTIVO: Capire perché il filtro assigned_to 'non funziona' - restituisce 0 risultati o non filtra?")
+    def test_responsabile_presidi_assigned_to_filter_debug(self):
+        """🚨 DEBUG FILTRO 'UTENTE ASSEGNATO' PER ale8 (RESPONSABILE_PRESIDI)"""
+        print("\n🚨 DEBUG FILTRO 'UTENTE ASSEGNATO' PER ale8 (RESPONSABILE_PRESIDI)")
+        print("🎯 PROBLEMA RIPORTATO:")
+        print("   1. Nel dropdown filtro non vede gli utenti presenti nei clienti")
+        print("   2. Quando filtra, non funziona (non filtra i clienti)")
         print("")
         print("🎯 SETUP:")
         print("   • Backend: https://lead2ai-flow.preview.emergentagent.com")
-        print("   • Credenziali: ale8/admin123 (RESPONSABILE_PRESIDI)")
+        print("   • User: ale8/admin123")
         print("")
-        print("🎯 TEST:")
-        print("   1. Login come RESPONSABILE_PRESIDI (ale8)")
-        print("   2. GET /api/clienti (senza filtro) - conta i clienti totali")
-        print("   3. Estrai alcuni user_id dal campo assigned_to")
-        print("   4. GET /api/clienti?assigned_to={user_id} - verifica risultati filtrati")
-        print("   5. Conta i clienti filtrati")
+        print("🎯 TEST DA ESEGUIRE:")
+        print("   1. Login come ale8")
+        print("   2. Get Clienti senza filtro")
+        print("   3. Get Filter Options")
+        print("   4. Test Filtro con un user_id presente")
         print("")
         
         import time
