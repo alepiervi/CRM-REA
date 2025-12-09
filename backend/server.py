@@ -11078,14 +11078,28 @@ async def get_clienti(
         query["tipologia_contratto"] = tipologia_contratto
     
     # NEW: Filter by assigned user (not creator)
-    # This supports the "Utente Creatore" filter which should filter by assigned user
-    # IMPORTANT: If there's already a $or or $and clause (for roles with complex permission logic),
-    # we should NOT add this filter to avoid query conflicts
-    if assigned_to and "$or" not in query and "$and" not in query:
-        query["assigned_to"] = assigned_to
-    elif created_by and "$or" not in query and "$and" not in query:
+    # This supports the "Utente Assegnato" filter
+    # IMPORTANT: We need to add this filter even if there's already a $or or $and clause
+    if assigned_to:
+        if "$and" in query:
+            # Already have $and, add the assigned_to filter to it
+            query["$and"].append({"assigned_to": assigned_to})
+        elif "$or" in query:
+            # Have $or, wrap everything in $and and add assigned_to
+            existing_or = query.pop("$or")
+            query["$and"] = [{"$or": existing_or}, {"assigned_to": assigned_to}]
+        else:
+            # Simple case - no complex clauses
+            query["assigned_to"] = assigned_to
+    elif created_by:
         # Backward compatibility: if old parameter is used, filter by assigned_to
-        query["assigned_to"] = created_by
+        if "$and" in query:
+            query["$and"].append({"assigned_to": created_by})
+        elif "$or" in query:
+            existing_or = query.pop("$or")
+            query["$and"] = [{"$or": existing_or}, {"assigned_to": created_by}]
+        else:
+            query["assigned_to"] = created_by
     
     # NEW: Additional filter parameters
     if servizio_id and servizio_id != "all":
