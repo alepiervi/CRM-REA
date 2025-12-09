@@ -17973,16 +17973,16 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                               {log.description}
                             </p>
                             
-                            {(log.old_value || log.new_value) && (
+                            {((log.details && (log.details.old_value || log.details.new_value)) || log.old_value || log.new_value) && (
                               <div className="text-sm text-gray-500 bg-gray-100 rounded p-2">
-                                {log.old_value && (
+                                {(log.details?.old_value || log.old_value) && (
                                   <div>
-                                    <span className="font-medium">Prima:</span> {log.old_value}
+                                    <span className="font-medium">Prima:</span> {log.details?.old_value_display || log.old_value}
                                   </div>
                                 )}
-                                {log.new_value && (
+                                {(log.details?.new_value || log.new_value) && (
                                   <div>
-                                    <span className="font-medium">Dopo:</span> {log.new_value}
+                                    <span className="font-medium">Dopo:</span> {log.details?.new_value_display || log.new_value}
                                   </div>
                                 )}
                               </div>
