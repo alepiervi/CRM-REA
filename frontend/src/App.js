@@ -1552,23 +1552,6 @@ const Dashboard = () => {
     }
   };
 
-  const fetchAvailableOfferte = async (servizioId, tipologiaId, segmentoId) => {
-    try {
-      console.log("🔄 Loading offerte for:", { servizioId, tipologiaId, segmentoId });
-      const response = await axios.get(
-        `${API}/cascade/offerte-by-filiera?commessa_id=${cliente.commessa_id}&servizio_id=${servizioId}&tipologia_id=${tipologiaId}&segmento_id=${segmentoId}`,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        }
-      );
-      setAvailableOfferte(response.data);
-      console.log("✅ Offerte loaded:", response.data.length);
-    } catch (error) {
-      console.error("❌ Error fetching offerte:", error);
-      setAvailableOfferte([]);
-    }
-  };
-
   const fetchOffertaInfo = async (offertaId) => {
     try {
       setIsLoadingOfferta(true);
