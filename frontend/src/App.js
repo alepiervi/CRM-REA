@@ -1891,7 +1891,13 @@ const Dashboard = () => {
         { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
-    } else if (user.role === "responsabile_commessa" || user.role === "backoffice_commessa") {
+    } else if (user.role === "responsabile_commessa") {
+      items.push(
+        { id: "users", label: "Utenti", icon: Users },
+        { id: "clienti", label: "Clienti", icon: UserCheck },
+        { id: "analytics", label: "Analytics", icon: TrendingUp }
+      );
+    } else if (user.role === "backoffice_commessa") {
       items.push(
         { id: "clienti", label: "Clienti", icon: UserCheck },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
