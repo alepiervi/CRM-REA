@@ -20304,10 +20304,69 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       const offerte = await response.json();
       setCascadeOfferte(offerte);
       
+      // AUTO-DETECT: Detect conditional sections based on tipologia_contratto
+      await autoDetectConditionalSections();
+      
       setSelectedData(prev => ({ ...prev, offerta_id: '' }));
     } catch (error) {
       console.error("❌ Error loading offerte:", error);
       setCascadeOfferte([]);
+    }
+  };
+  
+  // NEW: Auto-detect conditional sections when tipologia or segmento changes
+  const autoDetectConditionalSections = async () => {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userRole = currentUser.role;
+    
+    // Only admins and responsabile_commessa and backoffice_commessa can trigger auto-detection
+    if (!['admin', 'responsabile_commessa', 'backoffice_commessa'].includes(userRole)) {
+      return;
+    }
+    
+    // Get the selected tipologia contratto name
+    const tipologiaId = selectedData.tipologia_contratto;
+    if (!tipologiaId) return;
+    
+    // Find tipologia details from available options
+    const tipologiaObj = allTipologieContratto.find(t => t.id === tipologiaId || t.value === tipologiaId);
+    const tipologiaName = tipologiaObj?.nome || tipologiaObj?.label || '';
+    const tipologiaValue = tipologiaObj?.value || '';
+    
+    console.log("🔍 AUTO-DETECT: Checking conditional sections for:", tipologiaName);
+    
+    // Check if it's Energia Fastweb
+    const isEnergia = tipologiaName.toLowerCase().includes('energia') || 
+                      tipologiaValue.toLowerCase().includes('energia');
+    
+    // Check if it's Telefonia Fastweb
+    const isTelefonia = tipologiaName.toLowerCase().includes('telefonia') || 
+                        tipologiaValue.toLowerCase().includes('telefonia');
+    
+    // Check if it's Telepass
+    const isTelepass = tipologiaName.toLowerCase().includes('telepass') || 
+                       tipologiaValue.toLowerCase().includes('telepass');
+    
+    if (isEnergia) {
+      console.log("✅ AUTO-DETECT: Energia section detected - Setting default codice_pod field");
+      // Ensure the field exists (will be shown in UI)
+      setSelectedData(prev => ({
+        ...prev,
+        codice_pod: prev.codice_pod || ''
+      }));
+    }
+    
+    if (isTelefonia) {
+      console.log("✅ AUTO-DETECT: Telefonia section detected");
+      // Telefonia might have additional fields in the future
+    }
+    
+    if (isTelepass) {
+      console.log("✅ AUTO-DETECT: Telepass section detected - Setting default OBU field");
+      setSelectedData(prev => ({
+        ...prev,
+        obu: prev.obu || ''
+      }));
     }
   };
 
