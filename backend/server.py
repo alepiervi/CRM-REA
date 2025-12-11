@@ -4095,7 +4095,12 @@ async def update_user(user_id: str, user_update: UserUpdate, current_user: User 
                 UserRole.OPERATORE,
                 UserRole.STORE_ASSIST,
                 UserRole.AGENTE_SPECIALIZZATO,
-                UserRole.PROMOTER_PRESIDI
+                UserRole.PROMOTER_PRESIDI,
+                UserRole.BACKOFFICE_COMMESSA,
+                UserRole.BACKOFFICE_SUB_AGENZIA,
+                UserRole.RESPONSABILE_SUB_AGENZIA,
+                UserRole.AREA_MANAGER,
+                UserRole.RESPONSABILE_PRESIDI
             ]
             if user_update.role not in allowed_roles:
                 raise HTTPException(status_code=403, detail=f"Cannot change role to {user_update.role}")
