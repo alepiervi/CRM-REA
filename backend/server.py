@@ -4078,9 +4078,9 @@ async def update_user(user_id: str, user_update: UserUpdate, current_user: User 
         if user_id == current_user.id:
             raise HTTPException(status_code=403, detail="Cannot update your own account")
         
-        # Cannot update other RESPONSABILE_COMMESSA or ADMIN
+        # Cannot update ADMIN or other RESPONSABILE_COMMESSA
         user_role = user.get("role")
-        if user_role in ["admin", "responsabile_commessa", "area_manager", "responsabile_sub_agenzia", "backoffice_commessa"]:
+        if user_role in ["admin", "responsabile_commessa"]:
             raise HTTPException(status_code=403, detail=f"Cannot update user with role {user_role}")
         
         # Can only update users in their authorized commesse
