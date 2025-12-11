@@ -1938,7 +1938,7 @@ const Dashboard = () => {
 
         // Sezione "Documenti" rimossa dalla sidebar - ora gestita all'interno della sezione Clienti
         case "users":
-          return user.role === "admin" ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+          return (user.role === "admin" || user.role === "responsabile_commessa") ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "workflow-builder":
           return user.role === "admin" ? <WorkflowBuilderManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "ai-config":
