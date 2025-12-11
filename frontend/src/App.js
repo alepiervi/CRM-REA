@@ -20442,10 +20442,14 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
   const fetchSegmenti = async () => {
     try {
-      const response = await axios.get(`${API}/segmenti`);
+      console.log("🔄 Loading segmenti...");
+      const response = await axios.get(`${API}/segmenti`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       setSegmenti(response.data);
+      console.log("✅ Segmenti loaded:", response.data.length, response.data);
     } catch (error) {
-      console.error("Error fetching segmenti:", error);
+      console.error("❌ Error fetching segmenti:", error);
       setSegmenti([]);
     }
   };
