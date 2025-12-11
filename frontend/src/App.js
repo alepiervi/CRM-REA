@@ -23048,17 +23048,18 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   const fetchAvailableOfferte = async (servizioId, tipologiaId, segmentoId) => {
     try {
-      console.log("🔄 Loading offerte for:", { servizioId, tipologiaId, segmentoId });
-      const response = await axios.get(
-        `${API}/cascade/offerte-by-filiera?commessa_id=${cliente.commessa_id}&servizio_id=${servizioId}&tipologia_id=${tipologiaId}&segmento_id=${segmentoId}`,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        }
-      );
+      console.log("🔄 Loading offerte for:", { servizioId, tipologiaId, segmentoId, commessaId: cliente.commessa_id });
+      const url = `${API}/cascade/offerte-by-filiera?commessa_id=${cliente.commessa_id}&servizio_id=${servizioId}&tipologia_id=${tipologiaId}&segmento_id=${segmentoId}`;
+      console.log("📡 API URL:", url);
+      
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      
       setAvailableOfferte(response.data);
-      console.log("✅ Offerte loaded:", response.data.length);
+      console.log("✅ Offerte loaded:", response.data.length, response.data);
     } catch (error) {
-      console.error("❌ Error fetching offerte:", error);
+      console.error("❌ Error fetching offerte:", error.response?.data || error.message);
       setAvailableOfferte([]);
     }
   };
