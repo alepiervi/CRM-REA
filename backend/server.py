@@ -3841,8 +3841,46 @@ async def change_password(password_data: PasswordChange, current_user: User = De
 # User management endpoints
 @api_router.post("/users", response_model=User)
 async def create_user(user_data: UserCreate, current_user: User = Depends(get_current_user)):
-    if current_user.role != UserRole.ADMIN:
+    # Check permissions: ADMIN or RESPONSABILE_COMMESSA
+    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
         raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    # RESPONSABILE_COMMESSA restrictions
+    if current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        # Can only create users in their authorized commesse/servizi
+        if not hasattr(current_user, 'commesse_autorizzate') or not current_user.commesse_autorizzate:
+            raise HTTPException(status_code=403, detail="No authorized commesse")
+        
+        # Restrict which roles can be created
+        allowed_roles = [
+            UserRole.AGENTE,
+            UserRole.OPERATORE,
+            UserRole.STORE_ASSIST,
+            UserRole.AGENTE_SPECIALIZZATO,
+            UserRole.PROMOTER_PRESIDI
+        ]
+        if user_data.role not in allowed_roles:
+            raise HTTPException(status_code=403, detail=f"Cannot create user with role {user_data.role}")
+        
+        # Ensure created user gets only commesse/servizi that RESPONSABILE_COMMESSA has access to
+        if user_data.commesse_autorizzate:
+            # Check if all requested commesse are in responsabile's authorized list
+            unauthorized_commesse = set(user_data.commesse_autorizzate) - set(current_user.commesse_autorizzate)
+            if unauthorized_commesse:
+                raise HTTPException(status_code=403, detail=f"Cannot assign unauthorized commesse")
+        else:
+            # Auto-assign responsabile's commesse if not specified
+            user_data.commesse_autorizzate = current_user.commesse_autorizzate
+        
+        if user_data.servizi_autorizzati:
+            # Check if all requested servizi are in responsabile's authorized list
+            if hasattr(current_user, 'servizi_autorizzati') and current_user.servizi_autorizzati:
+                unauthorized_servizi = set(user_data.servizi_autorizzati) - set(current_user.servizi_autorizzati)
+                if unauthorized_servizi:
+                    raise HTTPException(status_code=403, detail=f"Cannot assign unauthorized servizi")
+        elif hasattr(current_user, 'servizi_autorizzati') and current_user.servizi_autorizzati:
+            # Auto-assign responsabile's servizi if not specified
+            user_data.servizi_autorizzati = current_user.servizi_autorizzati
     
     # Check if username or email already exists
     existing_user = await db.users.find_one({
