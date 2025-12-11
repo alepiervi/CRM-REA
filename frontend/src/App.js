@@ -23815,22 +23815,65 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Tipologia Contratto</Label>
-                  <p className="text-sm p-2 bg-gray-50 border rounded">
-                    {cliente?.tipologia_contratto === 'energia_fastweb' ? 'Energia' :
-                     cliente?.tipologia_contratto === 'telefonia_fastweb' ? 'Telefonia Fissa' :
-                     cliente?.tipologia_contratto === 'mobile_fastweb' ? 'Mobile Fastweb' :
-                     cliente?.tipologia_contratto === 'ho_mobile' ? 'Ho Mobile' :
-                     cliente?.tipologia_contratto === 'telepass' ? 'Telepass' :
-                     cliente?.tipologia_contratto || 'Non disponibile'}
-                  </p>
+                  {user && ['admin', 'responsabile_commessa', 'backoffice_commessa'].includes(user.role) ? (
+                    <select
+                      value={formData.tipologia_contratto || ""}
+                      onChange={(e) => {
+                        handleChange('tipologia_contratto', e.target.value);
+                        // Reload offerte when tipologia changes
+                        if (e.target.value && formData.segmento) {
+                          fetchAvailableOfferte(formData.servizio_id, e.target.value, formData.segmento);
+                        }
+                      }}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="">Seleziona tipologia</option>
+                      {editTipologieContratto && editTipologieContratto.length > 0 ? (
+                        editTipologieContratto.map((tip) => (
+                          <option key={tip.id} value={tip.id}>
+                            {tip.nome}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>Caricamento tipologie...</option>
+                      )}
+                    </select>
+                  ) : (
+                    <p className="text-sm p-2 bg-gray-50 border rounded">
+                      {editTipologieContratto?.find(t => t.id === cliente?.tipologia_contratto)?.nome || cliente?.tipologia_contratto || 'Non disponibile'}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Segmento</Label>
-                  <p className="text-sm p-2 bg-gray-50 border rounded">
-                    {cliente?.segmento === 'privato' ? 'Privato' :
-                     cliente?.segmento === 'business' ? 'Business' :
-                     cliente?.segmento || 'Non disponibile'}
-                  </p>
+                  {user && ['admin', 'responsabile_commessa', 'backoffice_commessa'].includes(user.role) ? (
+                    <select
+                      value={formData.segmento || ""}
+                      onChange={(e) => {
+                        handleChange('segmento', e.target.value);
+                        // Reload offerte when segmento changes
+                        if (e.target.value && formData.tipologia_contratto) {
+                          fetchAvailableOfferte(formData.servizio_id, formData.tipologia_contratto, e.target.value);
+                        }
+                      }}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="">Seleziona segmento</option>
+                      {segmenti && segmenti.length > 0 ? (
+                        segmenti.map((seg) => (
+                          <option key={seg.id} value={seg.id}>
+                            {seg.nome}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>Caricamento segmenti...</option>
+                      )}
+                    </select>
+                  ) : (
+                    <p className="text-sm p-2 bg-gray-50 border rounded">
+                      {segmenti?.find(s => s.id === cliente?.segmento)?.nome || cliente?.segmento || 'Non disponibile'}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="offerta_id">Offerta</Label>
