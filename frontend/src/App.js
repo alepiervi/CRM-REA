@@ -20265,6 +20265,9 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       console.log("✅ CASCADE: Segmenti loaded successfully:", segmenti);
       setCascadeSegmenti(segmenti);
       
+      // AUTO-DETECT: Detect conditional sections when tipologia changes
+      await autoDetectConditionalSections();
+      
       // Reset downstream selections
       setCascadeOfferte([]);
       setSelectedData(prev => ({ ...prev, segmento: '', offerta_id: '' }));
