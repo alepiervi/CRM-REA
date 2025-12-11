@@ -23411,19 +23411,33 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   };
 
   useEffect(() => {
+    // Carica servizi basandosi sulla commessa del cliente
     if (formData.commessa_id) {
       fetchServizi(formData.commessa_id);
     }
+    
+    // Carica info offerta corrente del cliente
     if (cliente?.offerta_id) {
       fetchOffertaInfo(cliente.offerta_id);
     }
+    
     // Carica tipologie contratto per risolvere i nomi
     if (formData.servizio_id) {
       fetchTipologieByServizio(formData.servizio_id);
     }
-    // Carica offerte per il segmento del cliente (o tutte se segmento non disponibile)
-    fetchOfferteBySegmento(formData.segmento);
+    
+    // Carica segmenti (necessario per il dropdown)
     fetchSegmenti();
+    
+    // Carica offerte disponibili basandosi su tipologia+segmento del cliente
+    if (formData.servizio_id && formData.tipologia_contratto && formData.segmento) {
+      console.log("🔄 Loading initial offerte for cliente:", {
+        servizio: formData.servizio_id,
+        tipologia: formData.tipologia_contratto,
+        segmento: formData.segmento
+      });
+      fetchAvailableOfferte(formData.servizio_id, formData.tipologia_contratto, formData.segmento);
+    }
   }, []);
 
   // Trigger re-render quando i dati vengono caricati
