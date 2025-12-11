@@ -4058,13 +4058,54 @@ async def get_referenti_by_unit(unit_id: str, current_user: User = Depends(get_c
 
 @api_router.put("/users/{user_id}", response_model=User)
 async def update_user(user_id: str, user_update: UserUpdate, current_user: User = Depends(get_current_user)):
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Only admin can update users")
+    # Check permissions: ADMIN or RESPONSABILE_COMMESSA
+    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
+        raise HTTPException(status_code=403, detail="Only admin or responsabile commessa can update users")
     
     # Find the user
     user = await db.users.find_one({"id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # RESPONSABILE_COMMESSA restrictions
+    if current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        # Cannot update themselves
+        if user_id == current_user.id:
+            raise HTTPException(status_code=403, detail="Cannot update your own account")
+        
+        # Cannot update other RESPONSABILE_COMMESSA or ADMIN
+        user_role = user.get("role")
+        if user_role in ["admin", "responsabile_commessa", "area_manager", "responsabile_sub_agenzia", "backoffice_commessa"]:
+            raise HTTPException(status_code=403, detail=f"Cannot update user with role {user_role}")
+        
+        # Can only update users in their authorized commesse
+        user_commesse = user.get("commesse_autorizzate", [])
+        if not any(commessa in current_user.commesse_autorizzate for commessa in user_commesse):
+            raise HTTPException(status_code=403, detail="User not in your authorized commesse")
+        
+        # Restrict role changes
+        if user_update.role is not None:
+            allowed_roles = [
+                UserRole.AGENTE,
+                UserRole.OPERATORE,
+                UserRole.STORE_ASSIST,
+                UserRole.AGENTE_SPECIALIZZATO,
+                UserRole.PROMOTER_PRESIDI
+            ]
+            if user_update.role not in allowed_roles:
+                raise HTTPException(status_code=403, detail=f"Cannot change role to {user_update.role}")
+        
+        # Restrict commesse/servizi changes to only those they have access to
+        if user_update.commesse_autorizzate is not None:
+            unauthorized_commesse = set(user_update.commesse_autorizzate) - set(current_user.commesse_autorizzate)
+            if unauthorized_commesse:
+                raise HTTPException(status_code=403, detail="Cannot assign unauthorized commesse")
+        
+        if user_update.servizi_autorizzati is not None:
+            if hasattr(current_user, 'servizi_autorizzati') and current_user.servizi_autorizzati:
+                unauthorized_servizi = set(user_update.servizi_autorizzati) - set(current_user.servizi_autorizzati)
+                if unauthorized_servizi:
+                    raise HTTPException(status_code=403, detail="Cannot assign unauthorized servizi")
     
     # Check if username or email conflicts with other users (only if they are being updated)
     conflict_conditions = []
