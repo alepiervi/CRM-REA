@@ -18079,6 +18079,8 @@ async def get_offerte_by_filiera(
             logging.info(f"📭 CASCADE: No active offerte found for filiera, returning empty array")
             return []
         
+        logging.info(f"✅ CASCADE: Found {len(offerte_docs)} active offerte matching filiera")
+        
         # Convert to JSON serializable format
         offerte = []
         for doc in offerte_docs:
