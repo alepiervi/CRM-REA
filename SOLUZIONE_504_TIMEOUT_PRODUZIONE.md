@@ -31,7 +31,7 @@ if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
 ```javascript
 if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
     // Use preview backend URL (verified working, no timeout issues)
-    return 'https://lead2ai-flow.preview.emergentagent.com';  // ✅ No timeout
+    return 'https://clientmanage-2.preview.emergentagent.com';  // ✅ No timeout
 }
 ```
 
@@ -51,7 +51,7 @@ production_domains = [
     "https://nureal.it",
     "https://www.nureal.it",
     "https://mobil-analytics-1.emergent.host",
-    "https://lead2ai-flow.preview.emergentagent.com",  # ✅ Aggiunto
+    "https://clientmanage-2.preview.emergentagent.com",  # ✅ Aggiunto
 ]
 ```
 
@@ -62,7 +62,7 @@ production_domains = [
 ```
 1. User su https://nureal.it
    ↓
-2. Frontend usa: https://lead2ai-flow.preview.emergentagent.com
+2. Frontend usa: https://clientmanage-2.preview.emergentagent.com
    ↓
 3. CORS permette: nureal.it → nureal-crm.preview.emergentagent.com
    ↓
@@ -93,7 +93,7 @@ https://nureal.it
 # Console browser dovrebbe mostrare:
 # 🌐 Detecting environment from hostname: nureal.it
 # ✅ Production environment detected - using preview backend (no timeout)
-# 📡 Backend URL configured: https://lead2ai-flow.preview.emergentagent.com
+# 📡 Backend URL configured: https://clientmanage-2.preview.emergentagent.com
 ```
 
 ### 2. Test Upload Documento
@@ -110,7 +110,7 @@ https://nureal.it
 
 ```bash
 # Network tab Chrome DevTools:
-# Request URL: https://lead2ai-flow.preview.emergentagent.com/api/documents/upload
+# Request URL: https://clientmanage-2.preview.emergentagent.com/api/documents/upload
 # Status: 200 OK (non 504)
 # Time: 10-30 secondi
 ```
@@ -133,13 +133,13 @@ https://nureal.it
 ```
 🌐 Detecting environment from hostname: nureal.it
 ✅ Production environment detected - using preview backend (no timeout)
-📡 Backend URL configured: https://lead2ai-flow.preview.emergentagent.com
-📡 API endpoint: https://lead2ai-flow.preview.emergentagent.com/api
+📡 Backend URL configured: https://clientmanage-2.preview.emergentagent.com
+📡 API endpoint: https://clientmanage-2.preview.emergentagent.com/api
 ```
 
 **Network Tab**:
 ```
-Request URL: https://lead2ai-flow.preview.emergentagent.com/api/documents/upload
+Request URL: https://clientmanage-2.preview.emergentagent.com/api/documents/upload
 Status: 200 OK
 Time: 15.23 seconds
 ```

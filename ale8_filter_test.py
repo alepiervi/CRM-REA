@@ -11,7 +11,7 @@ import uuid
 import time
 
 class Ale8FilterTester:
-    def __init__(self, base_url="https://lead2ai-flow.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://clientmanage-2.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
@@ -67,7 +67,7 @@ class Ale8FilterTester:
         print("   2. Quando filtra, non funziona (non filtra i clienti)")
         print("")
         print("🎯 SETUP:")
-        print("   • Backend: https://lead2ai-flow.preview.emergentagent.com")
+        print("   • Backend: https://clientmanage-2.preview.emergentagent.com")
         print("   • User: ale8/admin123")
         print("")
         

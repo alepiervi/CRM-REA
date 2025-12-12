@@ -58,7 +58,7 @@ https://tuo-dominio.com/api/webhook/{unit_id}
 
 **Esempio GET completo:**
 ```
-https://lead2ai-flow.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=Mario&cognome=Rossi&telefono=3331234567&email=mario@example.com&provincia=Milano&commessa_id=abc123-def456&campagna=TestCampaign
+https://clientmanage-2.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=Mario&cognome=Rossi&telefono=3331234567&email=mario@example.com&provincia=Milano&commessa_id=abc123-def456&campagna=TestCampaign
 ```
 
 ---
@@ -78,7 +78,7 @@ https://tuo-dominio.com/api/webhook/{unit_id}?nome={{nome}}&cognome={{cognome}}&
 
 **Esempio pratico in Zapier:**
 ```
-https://lead2ai-flow.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome={{1. Nome}}&cognome={{1. Cognome}}&telefono={{1. Telefono}}&email={{1. Email}}&provincia={{1. Provincia}}&commessa_id=abc123-def456&campagna=Facebook2025
+https://clientmanage-2.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome={{1. Nome}}&cognome={{1. Cognome}}&telefono={{1. Telefono}}&email={{1. Email}}&provincia={{1. Provincia}}&commessa_id=abc123-def456&campagna=Facebook2025
 ```
 
 **Vantaggi GET:**
@@ -233,7 +233,7 @@ Quando un lead arriva tramite webhook:
 **Nel Browser (più semplice):**
 Apri questo URL nel browser (sostituisci con i tuoi dati):
 ```
-https://lead2ai-flow.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=TestNome&cognome=TestCognome&telefono=3331234567&email=test@example.com&provincia=Milano&commessa_id=abc123
+https://clientmanage-2.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=TestNome&cognome=TestCognome&telefono=3331234567&email=test@example.com&provincia=Milano&commessa_id=abc123
 ```
 
 **Con cURL:**
