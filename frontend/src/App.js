@@ -23440,11 +23440,8 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       fetchTipologieByServizio(formData.servizio_id);
     }
     
-    // Carica segmenti (necessario per il dropdown)
-    fetchSegmenti();
-    
-    // NON caricare offerte qui - aspetta che tipologie e segmenti siano caricati
-    // Vedi useEffect separato sotto
+    // NON caricare segmenti e offerte qui - aspetta che tipologie siano caricate
+    // I segmenti dipendono dalla tipologia, vedi useEffect separato sotto
   }, []);
 
   // Trigger re-render quando i dati vengono caricati
