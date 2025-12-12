@@ -6544,53 +6544,41 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                   <SelectValue placeholder="Seleziona ruolo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Get current user from localStorage */}
-                  {(() => {
-                    const userData = JSON.parse(localStorage.getItem('user') || '{}');
-                    const currentUserRole = userData.role;
-                    
-                    // Admin can create all roles
-                    if (currentUserRole === 'admin') {
-                      return (
-                        <>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="referente">Referente</SelectItem>
-                          <SelectItem value="agente">Agente</SelectItem>
-                          <SelectItem value="responsabile_commessa">Responsabile Commessa</SelectItem>
-                          <SelectItem value="backoffice_commessa">BackOffice Commessa</SelectItem>
-                          <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
-                          <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
-                          <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
-                          <SelectItem value="operatore">Operatore</SelectItem>
-                          <SelectItem value="responsabile_store">Responsabile Store</SelectItem>
-                          <SelectItem value="store_assist">Store Assistant</SelectItem>
-                          <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
-                          <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
-                          <SelectItem value="area_manager">Area Manager</SelectItem>
-                        </>
-                      );
-                    }
-                    
-                    // Responsabile Commessa can create limited roles
-                    if (currentUserRole === 'responsabile_commessa') {
-                      return (
-                        <>
-                          <SelectItem value="agente">Agente</SelectItem>
-                          <SelectItem value="operatore">Operatore</SelectItem>
-                          <SelectItem value="store_assist">Store Assistant</SelectItem>
-                          <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
-                          <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
-                          <SelectItem value="backoffice_commessa">BackOffice Commessa</SelectItem>
-                          <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
-                          <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
-                          <SelectItem value="area_manager">Area Manager</SelectItem>
-                          <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
-                        </>
-                      );
-                    }
-                    
-                    return null;
-                  })()}
+                  {/* Admin can create all roles */}
+                  {currentUser?.role === 'admin' && (
+                    <>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="referente">Referente</SelectItem>
+                      <SelectItem value="agente">Agente</SelectItem>
+                      <SelectItem value="responsabile_commessa">Responsabile Commessa</SelectItem>
+                      <SelectItem value="backoffice_commessa">BackOffice Commessa</SelectItem>
+                      <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
+                      <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
+                      <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
+                      <SelectItem value="operatore">Operatore</SelectItem>
+                      <SelectItem value="responsabile_store">Responsabile Store</SelectItem>
+                      <SelectItem value="store_assist">Store Assistant</SelectItem>
+                      <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
+                      <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
+                      <SelectItem value="area_manager">Area Manager</SelectItem>
+                    </>
+                  )}
+                  
+                  {/* Responsabile Commessa can create limited roles */}
+                  {currentUser?.role === 'responsabile_commessa' && (
+                    <>
+                      <SelectItem value="agente">Agente</SelectItem>
+                      <SelectItem value="operatore">Operatore</SelectItem>
+                      <SelectItem value="store_assist">Store Assistant</SelectItem>
+                      <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
+                      <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
+                      <SelectItem value="backoffice_commessa">BackOffice Commessa</SelectItem>
+                      <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
+                      <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
+                      <SelectItem value="area_manager">Area Manager</SelectItem>
+                      <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -7564,53 +7552,41 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                   <SelectValue placeholder="Seleziona ruolo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Get current user from localStorage */}
-                  {(() => {
-                    const userData = JSON.parse(localStorage.getItem('user') || '{}');
-                    const currentUserRole = userData.role;
-                    
-                    // Admin can create all roles
-                    if (currentUserRole === 'admin') {
-                      return (
-                        <>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="referente">Referente</SelectItem>
-                          <SelectItem value="agente">Agente</SelectItem>
-                          <SelectItem value="responsabile_commessa">Responsabile Commessa</SelectItem>
-                          <SelectItem value="backoffice_commessa">BackOffice Commessa</SelectItem>
-                          <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
-                          <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
-                          <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
-                          <SelectItem value="operatore">Operatore</SelectItem>
-                          <SelectItem value="responsabile_store">Responsabile Store</SelectItem>
-                          <SelectItem value="store_assist">Store Assistant</SelectItem>
-                          <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
-                          <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
-                          <SelectItem value="area_manager">Area Manager</SelectItem>
-                        </>
-                      );
-                    }
-                    
-                    // Responsabile Commessa can create limited roles
-                    if (currentUserRole === 'responsabile_commessa') {
-                      return (
-                        <>
-                          <SelectItem value="agente">Agente</SelectItem>
-                          <SelectItem value="operatore">Operatore</SelectItem>
-                          <SelectItem value="store_assist">Store Assistant</SelectItem>
-                          <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
-                          <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
-                          <SelectItem value="backoffice_commessa">BackOffice Commessa</SelectItem>
-                          <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
-                          <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
-                          <SelectItem value="area_manager">Area Manager</SelectItem>
-                          <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
-                        </>
-                      );
-                    }
-                    
-                    return null;
-                  })()}
+                  {/* Admin can create all roles */}
+                  {currentUser?.role === 'admin' && (
+                    <>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="referente">Referente</SelectItem>
+                      <SelectItem value="agente">Agente</SelectItem>
+                      <SelectItem value="responsabile_commessa">Responsabile Commessa</SelectItem>
+                      <SelectItem value="backoffice_commessa">BackOffice Commessa</SelectItem>
+                      <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
+                      <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
+                      <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
+                      <SelectItem value="operatore">Operatore</SelectItem>
+                      <SelectItem value="responsabile_store">Responsabile Store</SelectItem>
+                      <SelectItem value="store_assist">Store Assistant</SelectItem>
+                      <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
+                      <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
+                      <SelectItem value="area_manager">Area Manager</SelectItem>
+                    </>
+                  )}
+                  
+                  {/* Responsabile Commessa can create limited roles */}
+                  {currentUser?.role === 'responsabile_commessa' && (
+                    <>
+                      <SelectItem value="agente">Agente</SelectItem>
+                      <SelectItem value="operatore">Operatore</SelectItem>
+                      <SelectItem value="store_assist">Store Assistant</SelectItem>
+                      <SelectItem value="agente_specializzato">Agente Specializzato</SelectItem>
+                      <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
+                      <SelectItem value="backoffice_commessa">BackOffice Commessa</SelectItem>
+                      <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
+                      <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
+                      <SelectItem value="area_manager">Area Manager</SelectItem>
+                      <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
