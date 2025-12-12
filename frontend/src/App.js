@@ -7508,7 +7508,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto z-50">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Modifica Utente</DialogTitle>
           <DialogDescription>
