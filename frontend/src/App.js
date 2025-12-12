@@ -17672,7 +17672,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     {/* Segmento */}
                     <TableCell>
                       <span className="text-sm capitalize">
-                        {cliente.segmento || 'N/A'}
+                        {cliente.segmento_nome || cliente.segmento || 'N/A'}
                       </span>
                     </TableCell>
                     {/* Sub Agenzia */}
