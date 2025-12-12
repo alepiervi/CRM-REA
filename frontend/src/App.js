@@ -23277,35 +23277,27 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   };
 
-  // Funzioni per rilevare i campi condizionali basati sui dati del cliente esistente - CON CONTROLLI DEFENSIVI
+  // Funzioni per rilevare i campi condizionali basati sui dati CORRENTI del form - AGGIORNATE DINAMICAMENTE
   const isEditEnergiaFastweb = () => {
     try {
-      // Prima priorità: controlla se il cliente ha già campi Energia Fastweb popolati
-      if (cliente?.codice_pod && cliente.codice_pod.trim() !== '') {
-        console.log("🔍 isEditEnergiaFastweb: TRUE - codice_pod present:", cliente.codice_pod);
-        return true;
-      }
+      // Usa formData.tipologia_contratto (valore corrente) invece di cliente.tipologia_contratto
+      const currentTipologiaId = formData.tipologia_contratto;
       
-      // Seconda priorità: controlla dal nome della tipologia se disponibile
-      if (Array.isArray(editTipologieContratto) && editTipologieContratto.length > 0) {
-        const tipologia = editTipologieContratto.find(t => t && t.value === cliente?.tipologia_contratto);
-        const tipologiaName = (tipologia?.label || '').toLowerCase();
+      // Trova la tipologia corrente per ottenere il nome
+      if (Array.isArray(editTipologieContratto) && editTipologieContratto.length > 0 && currentTipologiaId) {
+        const tipologia = editTipologieContratto.find(t => t && t.id === currentTipologiaId);
+        const tipologiaName = (tipologia?.nome || '').toLowerCase();
         const isEnergia = tipologiaName.includes('energia') || 
                          tipologiaName.includes('fotovoltaico') || 
                          tipologiaName.includes('solare') || 
                          tipologiaName.includes('pod') ||
                          tipologiaName.includes('luce') ||
                          tipologiaName.includes('gas');
-        console.log("🔍 isEditEnergiaFastweb: Tipologia check:", {tipologiaName, isEnergia});
-        if (isEnergia) return true;
+        console.log("🔍 isEditEnergiaFastweb: Dynamic check:", {tipologiaName, isEnergia});
+        return isEnergia;
       }
       
-      // Terza priorità: controlla direttamente il valore della tipologia contratto - MA ESCLUDE TELEFONIA
-      const tipologiaValue = (cliente?.tipologia_contratto || '').toLowerCase();
-      // NON deve includere "fastweb" generico perché "telefonia_fastweb" è diverso da "energia_fastweb"
-      const isEnergiaByValue = tipologiaValue.includes('energia') && !tipologiaValue.includes('telefonia');
-      console.log("🔍 isEditEnergiaFastweb: Direct value check:", {tipologiaValue, isEnergiaByValue});
-      return isEnergiaByValue;
+      return false;
     } catch (error) {
       console.error("❌ Error in isEditEnergiaFastweb:", error);
       return false;
