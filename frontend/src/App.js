@@ -23327,26 +23327,19 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   const isEditTelepass = () => {
     try {
-      // Prima priorità: controlla se il cliente ha già obu popolato
-      if (cliente?.obu && cliente.obu.trim() !== '') {
-        console.log("🔍 isEditTelepass: TRUE - obu present:", cliente.obu);
-        return true;
-      }
+      // Usa formData.tipologia_contratto (valore corrente) invece di cliente.tipologia_contratto
+      const currentTipologiaId = formData.tipologia_contratto;
       
-      // Seconda priorità: controlla dal nome della tipologia se disponibile
-      if (Array.isArray(editTipologieContratto) && editTipologieContratto.length > 0) {
-        const tipologia = editTipologieContratto.find(t => t && t.value === cliente?.tipologia_contratto);
-        const tipologiaName = (tipologia?.label || '').toLowerCase();
+      // Trova la tipologia corrente per ottenere il nome
+      if (Array.isArray(editTipologieContratto) && editTipologieContratto.length > 0 && currentTipologiaId) {
+        const tipologia = editTipologieContratto.find(t => t && t.id === currentTipologiaId);
+        const tipologiaName = (tipologia?.nome || '').toLowerCase();
         const isTelepass = tipologiaName.includes('telepass');
-        console.log("🚗 isEditTelepass: Tipologia check:", {tipologiaName, isTelepass});
-        if (isTelepass) return true;
+        console.log("🚗 isEditTelepass: Dynamic check:", {tipologiaName, isTelepass});
+        return isTelepass;
       }
       
-      // Terza priorità: controlla direttamente il valore della tipologia contratto
-      const tipologiaValue = (cliente?.tipologia_contratto || '').toLowerCase();
-      const isTelepassByValue = tipologiaValue.includes('telepass');
-      console.log("🚗 isEditTelepass: Direct value check:", {tipologiaValue, isTelepassByValue});
-      return isTelepassByValue;
+      return false;
     } catch (error) {
       console.error("❌ Error in isEditTelepass:", error);
       return false;
