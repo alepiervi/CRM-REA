@@ -23492,23 +23492,28 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   // NEW: Load offerte when both tipologie and segmenti are ready
   useEffect(() => {
     if (!isLoadingTipologie && editTipologieContratto.length > 0 && segmenti.length > 0) {
+      // Helper: normalize string for comparison
+      const normalize = (str) => (str || '').toLowerCase().replace(/[_\s]/g, '');
+      
       // Find UUID for tipologia
       const tipologiaByUUID = editTipologieContratto.find(t => t.id === cliente?.tipologia_contratto);
       const tipologiaByNome = editTipologieContratto.find(t => 
-        t.nome.toLowerCase() === (cliente?.tipologia_contratto || '').toLowerCase()
+        normalize(t.nome) === normalize(cliente?.tipologia_contratto)
       );
       const tipologiaUUID = tipologiaByUUID?.id || tipologiaByNome?.id || cliente?.tipologia_contratto;
       
       // Find UUID for segmento (cliente might store UUID or tipo)
       const segmentoByUUID = segmenti.find(s => s.id === cliente?.segmento);
       const segmentoByTipo = segmenti.find(s => s.tipo === cliente?.segmento);
-      const segmentoUUID = segmentoByUUID?.id || segmentoByTipo?.id || cliente?.segmento;
+      const segmentoByNome = segmenti.find(s => normalize(s.nome) === normalize(cliente?.segmento));
+      const segmentoUUID = segmentoByUUID?.id || segmentoByTipo?.id || segmentoByNome?.id || cliente?.segmento;
       
       console.log("🔍 Resolving IDs for offerte query:", {
         tipologia_cliente: cliente?.tipologia_contratto,
         tipologia_uuid: tipologiaUUID,
         segmento_cliente: cliente?.segmento,
-        segmento_uuid: segmentoUUID
+        segmento_uuid: segmentoUUID,
+        segmento_found_by: segmentoByUUID ? 'UUID' : segmentoByTipo ? 'tipo' : segmentoByNome ? 'nome' : 'fallback'
       });
       
       // Update formData with correct UUIDs so dropdowns show selected values
@@ -23516,6 +23521,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       const updates = {};
       
       if (segmentoUUID && segmentoUUID !== formData.segmento) {
+        console.log("✏️ Updating formData.segmento:", segmentoUUID);
         updates.segmento = segmentoUUID;
         needsUpdate = true;
       }
