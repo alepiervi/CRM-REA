@@ -23434,15 +23434,8 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     // Carica segmenti (necessario per il dropdown)
     fetchSegmenti();
     
-    // Carica offerte disponibili basandosi su tipologia+segmento del cliente
-    if (formData.servizio_id && formData.tipologia_contratto && formData.segmento) {
-      console.log("🔄 Loading initial offerte for cliente:", {
-        servizio: formData.servizio_id,
-        tipologia: formData.tipologia_contratto,
-        segmento: formData.segmento
-      });
-      fetchAvailableOfferte(formData.servizio_id, formData.tipologia_contratto, formData.segmento);
-    }
+    // NON caricare offerte qui - aspetta che tipologie e segmenti siano caricati
+    // Vedi useEffect separato sotto
   }, []);
 
   // Trigger re-render quando i dati vengono caricati
