@@ -23447,6 +23447,35 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   }, [isLoadingTipologie, editTipologieContratto]);
 
+  // NEW: Load offerte when tipologie and segmenti are ready
+  useEffect(() => {
+    // Wait for both tipologie and segmenti to be loaded
+    if (!isLoadingTipologie && editTipologieContratto.length > 0 && segmenti.length > 0) {
+      // Find UUID for tipologia_contratto (cliente stores enum value, we need UUID)
+      const tipologiaUUID = editTipologieContratto.find(t => t.enum_value === cliente?.tipologia_contratto)?.id || cliente?.tipologia_contratto;
+      
+      // Find UUID for segmento (cliente stores enum value, we need UUID)
+      const segmentoUUID = segmenti.find(s => s.enum_value === cliente?.segmento)?.id || cliente?.segmento;
+      
+      console.log("🔍 Converting enum to UUID:", {
+        tipologia_enum: cliente?.tipologia_contratto,
+        tipologia_uuid: tipologiaUUID,
+        segmento_enum: cliente?.segmento,
+        segmento_uuid: segmentoUUID
+      });
+      
+      // Now load offerte with correct UUIDs
+      if (formData.servizio_id && tipologiaUUID && segmentoUUID) {
+        console.log("🔄 Loading initial offerte for cliente with UUIDs:", {
+          servizio: formData.servizio_id,
+          tipologia: tipologiaUUID,
+          segmento: segmentoUUID
+        });
+        fetchAvailableOfferte(formData.servizio_id, tipologiaUUID, segmentoUUID);
+      }
+    }
+  }, [isLoadingTipologie, editTipologieContratto, segmenti]);
+
   // NEW: Load sub-offerte when component mounts if cliente has offerta_id
   useEffect(() => {
     if (cliente?.offerta_id) {
