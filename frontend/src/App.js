@@ -23348,37 +23348,23 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   const isEditTelefoniaFastweb = () => {
     try {
-      // Prima priorità: controlla se il cliente ha già campi Telefonia popolati
-      if (cliente?.tecnologia || cliente?.codice_migrazione || cliente?.gestore || cliente?.convergenza) {
-        console.log("🔍 isEditTelefoniaFastweb: TRUE - fields present:", {
-          tecnologia: cliente.tecnologia,
-          codice_migrazione: cliente.codice_migrazione, 
-          gestore: cliente.gestore,
-          convergenza: cliente.convergenza
-        });
-        return true;
-      }
+      // Usa formData.tipologia_contratto (valore corrente) invece di cliente.tipologia_contratto
+      const currentTipologiaId = formData.tipologia_contratto;
       
-      // Seconda priorità: controlla dal nome della tipologia se disponibile
-      if (Array.isArray(editTipologieContratto) && editTipologieContratto.length > 0) {
-        const tipologia = editTipologieContratto.find(t => t && t.value === cliente?.tipologia_contratto);
-        const tipologiaName = (tipologia?.label || '').toLowerCase();
+      // Trova la tipologia corrente per ottenere il nome
+      if (Array.isArray(editTipologieContratto) && editTipologieContratto.length > 0 && currentTipologiaId) {
+        const tipologia = editTipologieContratto.find(t => t && t.id === currentTipologiaId);
+        const tipologiaName = (tipologia?.nome || '').toLowerCase();
         const isTelefonia = tipologiaName.includes('telefonia') || 
                            tipologiaName.includes('mobile') ||
                            tipologiaName.includes('sim') ||
                            tipologiaName.includes('voce') ||
                            tipologiaName.includes('dati');
-        console.log("🔍 isEditTelefoniaFastweb: Tipologia check:", {tipologiaName, isTelefonia});
-        if (isTelefonia) return true;
+        console.log("🔍 isEditTelefoniaFastweb: Dynamic check:", {tipologiaName, isTelefonia});
+        return isTelefonia;
       }
       
-      // Terza priorità: controlla direttamente il valore della tipologia contratto - SPECIFICO PER TELEFONIA
-      const tipologiaValue = (cliente?.tipologia_contratto || '').toLowerCase();
-      const isTelefoniaByValue = tipologiaValue.includes('telefonia') || 
-                                tipologiaValue.includes('mobile') || 
-                                (tipologiaValue.includes('fastweb') && tipologiaValue.includes('telefonia'));
-      console.log("🔍 isEditTelefoniaFastweb: Direct value check:", {tipologiaValue, isTelefoniaByValue});
-      return isTelefoniaByValue;
+      return false;
     } catch (error) {
       console.error("❌ Error in isEditTelefoniaFastweb:", error);
       return false;
