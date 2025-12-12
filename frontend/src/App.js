@@ -22581,7 +22581,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
               <div>
                 <Label className="text-sm font-medium text-slate-600">Segmento</Label>
                 <p className="text-sm capitalize">
-                  {cliente.segmento || 'Non specificato'}
+                  {cliente.segmento_nome || cliente.segmento || 'Non specificato'}
                 </p>
               </div>
               <div>
