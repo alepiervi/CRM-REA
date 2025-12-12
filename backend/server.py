@@ -1109,7 +1109,8 @@ class Cliente(BaseModel):
     servizio_id: Optional[str] = None
     tipologia_contratto: Optional[str] = None  # Dynamic field - accepts any user-created tipologia
     tipologia_contratto_id: Optional[str] = None  # ADDED: UUID for filtering offerte
-    segmento: Optional[str] = None  # Dynamic field - accepts any user-created segmento
+    segmento: Optional[str] = None  # Dynamic field - accepts any user-created segmento (UUID or tipo)
+    segmento_nome: Optional[str] = None  # ENRICHED: Human-readable segmento name for display
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     sub_offerta_id: Optional[str] = None  # NEW: Sotto-offerta ID (per offerte Vodafone con sotto-offerte)
     status: ClienteStatus = ClienteStatus.DA_INSERIRE
