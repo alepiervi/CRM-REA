@@ -23373,17 +23373,19 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   const isEditBusinessSegment = () => {
     try {
-      // Prima priorità: controlla se il cliente ha già Partita IVA (indicatore di Business)
-      if (cliente?.partita_iva && String(cliente.partita_iva).trim() !== '') {
-        console.log("🔍 isEditBusinessSegment: TRUE - partita_iva present:", cliente.partita_iva);
-        return true;
+      // Usa formData.segmento (valore corrente) invece di cliente.segmento
+      const currentSegmentoId = formData.segmento;
+      
+      // Trova il segmento corrente per ottenere il tipo
+      if (Array.isArray(segmenti) && segmenti.length > 0 && currentSegmentoId) {
+        const segmento = segmenti.find(s => s && s.id === currentSegmentoId);
+        const segmentoTipo = (segmento?.tipo || '').toLowerCase();
+        const isBusiness = segmentoTipo === 'business';
+        console.log("🔍 isEditBusinessSegment: Dynamic check:", {segmentoTipo, isBusiness});
+        return isBusiness;
       }
       
-      // Seconda priorità: controlla dal segmento
-      const segmento = (cliente?.segmento || '').toLowerCase();
-      const isBusiness = segmento === 'business';
-      console.log("🔍 isEditBusinessSegment: Segmento check:", {segmento, isBusiness});
-      return isBusiness;
+      return false;
     } catch (error) {
       console.error("❌ Error in isEditBusinessSegment:", error);
       return false;
