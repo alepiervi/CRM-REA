@@ -10848,7 +10848,24 @@ async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depen
         }
     )
     
-    return cliente
+    # Enrich with segmento_nome for display
+    cliente_dict = cliente.dict()
+    if cliente_dict.get("segmento"):
+        segmento_doc = await db.segmenti.find_one({
+            "$or": [
+                {"id": cliente_dict["segmento"]},
+                {"tipo": cliente_dict["segmento"]}
+            ]
+        }, {"_id": 0})
+        
+        if segmento_doc:
+            cliente_dict["segmento_nome"] = segmento_doc.get("nome", cliente_dict["segmento"])
+        else:
+            cliente_dict["segmento_nome"] = cliente_dict["segmento"].capitalize()
+    else:
+        cliente_dict["segmento_nome"] = "N/A"
+    
+    return Cliente(**cliente_dict)
 
 @api_router.get("/clienti", response_model=List[Cliente])
 async def get_clienti(
