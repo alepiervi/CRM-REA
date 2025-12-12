@@ -18042,6 +18042,7 @@ async def get_offerte_by_filiera(
     """Get offerte based on entire selection chain (commessa, servizio, tipologia, segmento)
     NOTE: Excludes sub-offerte from results"""
     try:
+        logging.info(f"🔍 CASCADE: Query offerte with params: commessa={commessa_id}, servizio={servizio_id}, tipologia={tipologia_id}, segmento={segmento_id}")
         # Query offerte: match segmento_id directly (can be UUID or string "privato"/"business")
         # Show generic offerte (no filiera) OR specific matching offerte
         # EXCLUDE sub-offerte
