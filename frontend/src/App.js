@@ -23971,7 +23971,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     </select>
                   ) : (
                     <p className="text-sm p-2 bg-gray-50 border rounded">
-                      {segmenti?.find(s => s.id === cliente?.segmento)?.nome || cliente?.segmento || 'Non disponibile'}
+                      {segmenti?.find(s => s.id === cliente?.segmento || s.tipo === cliente?.segmento)?.nome || cliente?.segmento || 'Non disponibile'}
                     </p>
                   )}
                 </div>
