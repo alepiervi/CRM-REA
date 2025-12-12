@@ -23911,11 +23911,19 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     <select
                       value={formData.tipologia_contratto || ""}
                       onChange={(e) => {
-                        handleChange('tipologia_contratto', e.target.value);
-                        // Reload offerte when tipologia changes
-                        if (e.target.value && formData.segmento) {
-                          fetchAvailableOfferte(formData.servizio_id, e.target.value, formData.segmento);
+                        const newTipologiaId = e.target.value;
+                        handleChange('tipologia_contratto', newTipologiaId);
+                        
+                        // Load segmenti for new tipologia
+                        if (newTipologiaId) {
+                          fetchSegmenti(newTipologiaId);
+                        } else {
+                          setSegmenti([]);
                         }
+                        
+                        // Clear segmento and offerte when tipologia changes
+                        handleChange('segmento', '');
+                        setAvailableOfferte([]);
                       }}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                     >
