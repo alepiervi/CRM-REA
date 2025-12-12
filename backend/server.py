@@ -12645,6 +12645,22 @@ async def get_cliente(cliente_id: str, current_user: User = Depends(get_current_
     if not cliente_doc:
         raise HTTPException(status_code=404, detail="Cliente not found")
     
+    # Enrich with segmento_nome for display
+    if cliente_doc.get("segmento"):
+        segmento_doc = await db.segmenti.find_one({
+            "$or": [
+                {"id": cliente_doc["segmento"]},
+                {"tipo": cliente_doc["segmento"]}
+            ]
+        }, {"_id": 0})
+        
+        if segmento_doc:
+            cliente_doc["segmento_nome"] = segmento_doc.get("nome", cliente_doc["segmento"])
+        else:
+            cliente_doc["segmento_nome"] = cliente_doc["segmento"].capitalize()
+    else:
+        cliente_doc["segmento_nome"] = "N/A"
+    
     cliente = Cliente(**cliente_doc)
     
     # CRITICAL FIX: Role-based access control for single client
