@@ -23469,6 +23469,14 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
         resolved_uuid: tipologiaUUID
       });
       
+      // Update formData with correct UUID so dropdown shows selected value
+      if (tipologiaUUID && tipologiaUUID !== formData.tipologia_contratto) {
+        setFormData(prev => ({
+          ...prev,
+          tipologia_contratto: tipologiaUUID
+        }));
+      }
+      
       // Load segmenti for this tipologia
       if (tipologiaUUID) {
         fetchSegmenti(tipologiaUUID);
