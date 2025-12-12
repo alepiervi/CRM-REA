@@ -23306,24 +23306,19 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   const isEditMobile = () => {
     try {
-      // Prima priorità: controlla se il cliente ha già mobile_items popolati
-      if (cliente?.mobile_items && cliente.mobile_items.length > 0) {
-        console.log("🔍 isEditMobile: TRUE - mobile_items present:", cliente.mobile_items.length);
-        return true;
-      }
+      // Usa formData.tipologia_contratto (valore corrente) invece di cliente.tipologia_contratto
+      const currentTipologiaId = formData.tipologia_contratto;
       
-      // Seconda priorità: controlla dal nome della tipologia se disponibile
-      if (Array.isArray(editTipologieContratto) && editTipologieContratto.length > 0) {
-        const tipologia = editTipologieContratto.find(t => t && t.value === cliente?.tipologia_contratto);
-        const tipologiaName = (tipologia?.label || '').toLowerCase();
+      // Trova la tipologia corrente per ottenere il nome
+      if (Array.isArray(editTipologieContratto) && editTipologieContratto.length > 0 && currentTipologiaId) {
+        const tipologia = editTipologieContratto.find(t => t && t.id === currentTipologiaId);
+        const tipologiaName = (tipologia?.nome || '').toLowerCase();
         const isMobile = tipologiaName.includes('mobile');
-        if (isMobile) return true;
+        console.log("🔍 isEditMobile: Dynamic check:", {tipologiaName, isMobile});
+        return isMobile;
       }
       
-      // Terza priorità: controlla direttamente il valore della tipologia contratto
-      const tipologiaValue = (cliente?.tipologia_contratto || '').toLowerCase();
-      const isMobileByValue = tipologiaValue.includes('mobile');
-      return isMobileByValue;
+      return false;
     } catch (error) {
       console.error("❌ Error in isEditMobile:", error);
       return false;
