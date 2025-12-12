@@ -23457,20 +23457,25 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   useEffect(() => {
     // Wait for tipologie to be loaded
     if (!isLoadingTipologie && editTipologieContratto.length > 0) {
+      // Helper: normalize string for comparison (remove spaces/underscores, lowercase)
+      const normalize = (str) => (str || '').toLowerCase().replace(/[_\s]/g, '');
+      
       // Find UUID for tipologia (cliente might store UUID or nome/enum)
       const tipologiaByUUID = editTipologieContratto.find(t => t.id === cliente?.tipologia_contratto);
       const tipologiaByNome = editTipologieContratto.find(t => 
-        t.nome.toLowerCase() === (cliente?.tipologia_contratto || '').toLowerCase()
+        normalize(t.nome) === normalize(cliente?.tipologia_contratto)
       );
       const tipologiaUUID = tipologiaByUUID?.id || tipologiaByNome?.id || cliente?.tipologia_contratto;
       
       console.log("🔍 Resolved tipologia UUID:", {
         cliente_value: cliente?.tipologia_contratto,
-        resolved_uuid: tipologiaUUID
+        resolved_uuid: tipologiaUUID,
+        found_by: tipologiaByUUID ? 'UUID' : tipologiaByNome ? 'nome' : 'fallback'
       });
       
       // Update formData with correct UUID so dropdown shows selected value
       if (tipologiaUUID && tipologiaUUID !== formData.tipologia_contratto) {
+        console.log("✏️ Updating formData.tipologia_contratto:", tipologiaUUID);
         setFormData(prev => ({
           ...prev,
           tipologia_contratto: tipologiaUUID
