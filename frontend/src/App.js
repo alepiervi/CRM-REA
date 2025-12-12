@@ -23506,6 +23506,22 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
         segmento_uuid: segmentoUUID
       });
       
+      // Update formData with correct UUIDs so dropdowns show selected values
+      let needsUpdate = false;
+      const updates = {};
+      
+      if (segmentoUUID && segmentoUUID !== formData.segmento) {
+        updates.segmento = segmentoUUID;
+        needsUpdate = true;
+      }
+      
+      if (needsUpdate) {
+        setFormData(prev => ({
+          ...prev,
+          ...updates
+        }));
+      }
+      
       // Now load offerte with correct UUIDs
       if (formData.servizio_id && tipologiaUUID && segmentoUUID) {
         console.log("🔄 Loading initial offerte for cliente:", {
