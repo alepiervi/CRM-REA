@@ -23453,35 +23453,59 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   }, [isLoadingTipologie, editTipologieContratto]);
 
-  // NEW: Load offerte when tipologie and segmenti are ready
+  // NEW: Load segmenti when tipologie are ready
   useEffect(() => {
-    // Wait for tipologie to be loaded (segmenti are hardcoded and always available)
-    if (!isLoadingTipologie && editTipologieContratto.length > 0 && segmenti.length > 0) {
-      // For tipologia: cliente might store UUID directly, or we need to find it
-      // Check if cliente.tipologia_contratto is already in the list (UUID)
-      const tipologiaExists = editTipologieContratto.find(t => t.id === cliente?.tipologia_contratto);
-      const tipologiaUUID = tipologiaExists 
-        ? cliente.tipologia_contratto 
-        : editTipologieContratto.find(t => t.enum_value === cliente?.tipologia_contratto)?.id || cliente?.tipologia_contratto;
+    // Wait for tipologie to be loaded
+    if (!isLoadingTipologie && editTipologieContratto.length > 0) {
+      // Find UUID for tipologia (cliente might store UUID or nome/enum)
+      const tipologiaByUUID = editTipologieContratto.find(t => t.id === cliente?.tipologia_contratto);
+      const tipologiaByNome = editTipologieContratto.find(t => 
+        t.nome.toLowerCase() === (cliente?.tipologia_contratto || '').toLowerCase()
+      );
+      const tipologiaUUID = tipologiaByUUID?.id || tipologiaByNome?.id || cliente?.tipologia_contratto;
       
-      // For segmento: use the value directly (it's "privato" or "business")
-      const segmentoValue = cliente?.segmento;
+      console.log("🔍 Resolved tipologia UUID:", {
+        cliente_value: cliente?.tipologia_contratto,
+        resolved_uuid: tipologiaUUID
+      });
+      
+      // Load segmenti for this tipologia
+      if (tipologiaUUID) {
+        fetchSegmenti(tipologiaUUID);
+      }
+    }
+  }, [isLoadingTipologie, editTipologieContratto]);
+
+  // NEW: Load offerte when both tipologie and segmenti are ready
+  useEffect(() => {
+    if (!isLoadingTipologie && editTipologieContratto.length > 0 && segmenti.length > 0) {
+      // Find UUID for tipologia
+      const tipologiaByUUID = editTipologieContratto.find(t => t.id === cliente?.tipologia_contratto);
+      const tipologiaByNome = editTipologieContratto.find(t => 
+        t.nome.toLowerCase() === (cliente?.tipologia_contratto || '').toLowerCase()
+      );
+      const tipologiaUUID = tipologiaByUUID?.id || tipologiaByNome?.id || cliente?.tipologia_contratto;
+      
+      // Find UUID for segmento (cliente might store UUID or tipo)
+      const segmentoByUUID = segmenti.find(s => s.id === cliente?.segmento);
+      const segmentoByTipo = segmenti.find(s => s.tipo === cliente?.segmento);
+      const segmentoUUID = segmentoByUUID?.id || segmentoByTipo?.id || cliente?.segmento;
       
       console.log("🔍 Resolving IDs for offerte query:", {
         tipologia_cliente: cliente?.tipologia_contratto,
-        tipologia_resolved: tipologiaUUID,
+        tipologia_uuid: tipologiaUUID,
         segmento_cliente: cliente?.segmento,
-        segmento_resolved: segmentoValue
+        segmento_uuid: segmentoUUID
       });
       
-      // Now load offerte with correct values
-      if (formData.servizio_id && tipologiaUUID && segmentoValue) {
+      // Now load offerte with correct UUIDs
+      if (formData.servizio_id && tipologiaUUID && segmentoUUID) {
         console.log("🔄 Loading initial offerte for cliente:", {
           servizio: formData.servizio_id,
           tipologia: tipologiaUUID,
-          segmento: segmentoValue
+          segmento: segmentoUUID
         });
-        fetchAvailableOfferte(formData.servizio_id, tipologiaUUID, segmentoValue);
+        fetchAvailableOfferte(formData.servizio_id, tipologiaUUID, segmentoUUID);
       }
     }
   }, [isLoadingTipologie, editTipologieContratto, segmenti]);
