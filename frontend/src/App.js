@@ -23449,29 +23449,33 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   // NEW: Load offerte when tipologie and segmenti are ready
   useEffect(() => {
-    // Wait for both tipologie and segmenti to be loaded
+    // Wait for tipologie to be loaded (segmenti are hardcoded and always available)
     if (!isLoadingTipologie && editTipologieContratto.length > 0 && segmenti.length > 0) {
-      // Find UUID for tipologia_contratto (cliente stores enum value, we need UUID)
-      const tipologiaUUID = editTipologieContratto.find(t => t.enum_value === cliente?.tipologia_contratto)?.id || cliente?.tipologia_contratto;
+      // For tipologia: cliente might store UUID directly, or we need to find it
+      // Check if cliente.tipologia_contratto is already in the list (UUID)
+      const tipologiaExists = editTipologieContratto.find(t => t.id === cliente?.tipologia_contratto);
+      const tipologiaUUID = tipologiaExists 
+        ? cliente.tipologia_contratto 
+        : editTipologieContratto.find(t => t.enum_value === cliente?.tipologia_contratto)?.id || cliente?.tipologia_contratto;
       
-      // Find UUID for segmento (cliente stores enum value, we need UUID)
-      const segmentoUUID = segmenti.find(s => s.enum_value === cliente?.segmento)?.id || cliente?.segmento;
+      // For segmento: use the value directly (it's "privato" or "business")
+      const segmentoValue = cliente?.segmento;
       
-      console.log("🔍 Converting enum to UUID:", {
-        tipologia_enum: cliente?.tipologia_contratto,
-        tipologia_uuid: tipologiaUUID,
-        segmento_enum: cliente?.segmento,
-        segmento_uuid: segmentoUUID
+      console.log("🔍 Resolving IDs for offerte query:", {
+        tipologia_cliente: cliente?.tipologia_contratto,
+        tipologia_resolved: tipologiaUUID,
+        segmento_cliente: cliente?.segmento,
+        segmento_resolved: segmentoValue
       });
       
-      // Now load offerte with correct UUIDs
-      if (formData.servizio_id && tipologiaUUID && segmentoUUID) {
-        console.log("🔄 Loading initial offerte for cliente with UUIDs:", {
+      // Now load offerte with correct values
+      if (formData.servizio_id && tipologiaUUID && segmentoValue) {
+        console.log("🔄 Loading initial offerte for cliente:", {
           servizio: formData.servizio_id,
           tipologia: tipologiaUUID,
-          segmento: segmentoUUID
+          segmento: segmentoValue
         });
-        fetchAvailableOfferte(formData.servizio_id, tipologiaUUID, segmentoUUID);
+        fetchAvailableOfferte(formData.servizio_id, tipologiaUUID, segmentoValue);
       }
     }
   }, [isLoadingTipologie, editTipologieContratto, segmenti]);
