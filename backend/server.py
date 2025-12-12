@@ -11208,6 +11208,25 @@ async def get_clienti(
     clienti = await db.clienti.find(query).sort("created_at", -1).to_list(length=None)
     print(f"📊 Found {len(clienti)} clients for user {current_user.username} ({current_user.role})")
     
+    # Enrich clienti with segmento_nome for display purposes
+    for cliente in clienti:
+        if cliente.get("segmento"):
+            # Try to find segmento by ID or by tipo
+            segmento_doc = await db.segmenti.find_one({
+                "$or": [
+                    {"id": cliente["segmento"]},
+                    {"tipo": cliente["segmento"]}
+                ]
+            }, {"_id": 0})
+            
+            if segmento_doc:
+                cliente["segmento_nome"] = segmento_doc.get("nome", cliente["segmento"])
+            else:
+                # Fallback: capitalize and format the segmento value
+                cliente["segmento_nome"] = cliente["segmento"].capitalize()
+        else:
+            cliente["segmento_nome"] = "N/A"
+    
     return [Cliente(**c) for c in clienti]
 
 async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
