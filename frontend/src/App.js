@@ -23019,12 +23019,21 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     }
   };
 
-  const fetchSegmenti = async () => {
+  const fetchSegmenti = async (tipologiaId) => {
+    if (!tipologiaId) {
+      console.warn("⚠️ fetchSegmenti called without tipologiaId");
+      setSegmenti([]);
+      return;
+    }
     try {
-      const response = await axios.get(`${API}/segmenti`);
+      console.log("🔄 Loading segmenti for tipologia:", tipologiaId);
+      const response = await axios.get(`${API}/cascade/segmenti-by-tipologia/${tipologiaId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       setSegmenti(response.data);
+      console.log("✅ Segmenti loaded:", response.data.length, response.data);
     } catch (error) {
-      console.error("Error fetching segmenti:", error);
+      console.error("❌ Error fetching segmenti:", error);
       setSegmenti([]);
     }
   };
