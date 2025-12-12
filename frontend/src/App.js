@@ -23928,6 +23928,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                         // Clear segmento and offerte when tipologia changes
                         handleChange('segmento', '');
                         setAvailableOfferte([]);
+                        
+                        // Force re-render to update conditional sections
+                        setRenderTrigger(prev => prev + 1);
                       }}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                     >
