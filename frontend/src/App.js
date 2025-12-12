@@ -20297,8 +20297,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   
   // NEW: Auto-detect conditional sections when tipologia or segmento changes
   const autoDetectConditionalSections = async () => {
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    const userRole = currentUser.role;
+    const userRole = user?.role;
     
     // Only admins and responsabile_commessa and backoffice_commessa can trigger auto-detection
     if (!['admin', 'responsabile_commessa', 'backoffice_commessa'].includes(userRole)) {
