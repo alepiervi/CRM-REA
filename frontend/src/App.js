@@ -23962,6 +23962,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                         if (e.target.value && formData.tipologia_contratto) {
                           fetchAvailableOfferte(formData.servizio_id, formData.tipologia_contratto, e.target.value);
                         }
+                        
+                        // Force re-render to update conditional sections (Business fields)
+                        setRenderTrigger(prev => prev + 1);
                       }}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                     >
