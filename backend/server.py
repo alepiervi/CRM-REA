@@ -12915,6 +12915,23 @@ async def assign_cliente(
         
         # Return updated cliente
         cliente_doc = await db.clienti.find_one({"id": cliente_id})
+        
+        # Enrich with segmento_nome for display
+        if cliente_doc.get("segmento"):
+            segmento_doc = await db.segmenti.find_one({
+                "$or": [
+                    {"id": cliente_doc["segmento"]},
+                    {"tipo": cliente_doc["segmento"]}
+                ]
+            }, {"_id": 0})
+            
+            if segmento_doc:
+                cliente_doc["segmento_nome"] = segmento_doc.get("nome", cliente_doc["segmento"])
+            else:
+                cliente_doc["segmento_nome"] = cliente_doc["segmento"].capitalize()
+        else:
+            cliente_doc["segmento_nome"] = "N/A"
+        
         return Cliente(**cliente_doc)
     
     except HTTPException:
