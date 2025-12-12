@@ -7121,6 +7121,8 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
 
 // Edit User Modal Component
 const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, commesse, subAgenzie, fetchServizi }) => {
+  const { user: currentUser } = useAuth(); // Get current logged-in user
+  
   console.log("🟣🟣🟣 EDIT MODAL OPENED - User data:", {
     username: user.username,
     role: user.role,
