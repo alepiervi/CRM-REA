@@ -20862,9 +20862,18 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                           {offerta?.nome || 'Nome non disponibile'}
                         </option>
                       )) : 
-                      <option value="" disabled>Nessuna offerta disponibile</option>
+                      <option value="" disabled>
+                        {cascadeOfferte === null ? 'Caricamento...' : 
+                         Array.isArray(cascadeOfferte) ? 'Nessuna offerta disponibile per questa combinazione' : 
+                         'Errore nel caricamento offerte'}
+                      </option>
                     }
                   </select>
+                  {cascadeOfferte.length === 0 && (
+                    <p className="text-sm text-amber-600 mt-1">
+                      ⚠️ Nessuna offerta trovata. Verifica console (F12) per dettagli.
+                    </p>
+                  )}
                 </div>
               )}
               
