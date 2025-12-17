@@ -19644,6 +19644,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       offerte: cascadeOfferte.length
     });
   }, [cascadeTipologie, cascadeSegmenti, cascadeOfferte]);
+  
+  // Reset cascade data when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      console.log("🔄 Modal closed, resetting cascade data");
+      setCascadeSegmenti([]);
+      setCascadeOfferte([]);
+      setCascadeSubOfferte([]);
+    }
+  }, [isOpen]);
 
   // CLIENT FORM DATA (shown after offerta selection)
   const [formData, setFormData] = useState({
