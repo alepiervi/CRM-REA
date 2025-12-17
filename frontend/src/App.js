@@ -20217,6 +20217,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
   const handleTipologiaSelect = async (tipologiaId) => {
     console.log("📝 Tipologia selected:", tipologiaId);
+    console.log("📋 Current selectedData:", selectedData);
     setSelectedData(prev => ({ ...prev, tipologia_contratto: tipologiaId }));
     
     try {
@@ -20227,8 +20228,11 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
         return;
       }
       
+      const url = `${process.env.REACT_APP_BACKEND_URL}/api/cascade/segmenti-by-tipologia/${tipologiaId}`;
+      console.log("🔄 Loading segmenti from:", url);
+      
       // Load segmenti for this tipologia
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/cascade/segmenti-by-tipologia/${tipologiaId}`, {
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -20238,11 +20242,12 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       
       if (!response.ok) {
         console.error(`❌ CASCADE API Error: ${response.status} ${response.statusText}`);
+        console.error("Response body:", await response.text());
         return;
       }
       
       const segmenti = await response.json();
-      console.log("✅ CASCADE: Segmenti loaded successfully:", segmenti);
+      console.log("✅ CASCADE: Segmenti loaded successfully:", segmenti.length, segmenti);
       setCascadeSegmenti(segmenti);
       
       // AUTO-DETECT: Detect conditional sections when tipologia changes
