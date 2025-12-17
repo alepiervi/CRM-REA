@@ -19635,6 +19635,15 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const [cascadeSegmenti, setCascadeSegmenti] = useState([]);
   const [cascadeOfferte, setCascadeOfferte] = useState([]);
   const [cascadeSubOfferte, setCascadeSubOfferte] = useState([]);  // NEW: Sub-offerte
+  
+  // DEBUG: Log when cascade data changes
+  useEffect(() => {
+    console.log("🔄 Cascade data updated:", {
+      tipologie: cascadeTipologie.length,
+      segmenti: cascadeSegmenti.length,
+      offerte: cascadeOfferte.length
+    });
+  }, [cascadeTipologie, cascadeSegmenti, cascadeOfferte]);
 
   // CLIENT FORM DATA (shown after offerta selection)
   const [formData, setFormData] = useState({
