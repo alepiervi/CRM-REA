@@ -20344,8 +20344,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     const tipologiaId = selectedData.tipologia_contratto;
     if (!tipologiaId) return;
     
-    // Find tipologia details from available options
-    const tipologiaObj = allTipologieContratto.find(t => t.id === tipologiaId || t.value === tipologiaId);
+    // Find tipologia details from available options (use cascadeTipologie instead of allTipologieContratto)
+    const tipologiaObj = cascadeTipologie.find(t => t.id === tipologiaId || t.value === tipologiaId);
     const tipologiaName = tipologiaObj?.nome || tipologiaObj?.label || '';
     const tipologiaValue = tipologiaObj?.value || '';
     
