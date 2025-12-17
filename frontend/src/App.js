@@ -20836,6 +20836,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               {selectedData.segmento && (
                 <div className="space-y-2">
                   <Label className="text-base font-semibold text-gray-700">💡 Offerta</Label>
+                  {console.log("🎨 Rendering offerte dropdown. cascadeOfferte:", cascadeOfferte)}
                   
                   <select 
                     value={selectedData.offerta_id || ''} 
