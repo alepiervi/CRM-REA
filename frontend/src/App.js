@@ -20257,6 +20257,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   };
 
   const handleSegmentoSelect = async (segmentoId) => {
+    console.log("🎯 Segmento selected:", segmentoId);
     setSelectedData(prev => ({ ...prev, segmento: segmentoId }));
     
     try {
@@ -20267,24 +20268,33 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
         return;
       }
       
+      // Build URL with all parameters
+      const url = `${process.env.REACT_APP_BACKEND_URL}/api/cascade/offerte-by-filiera?commessa_id=${selectedData.commessa_id}&servizio_id=${selectedData.servizio_id}&tipologia_id=${selectedData.tipologia_contratto}&segmento_id=${segmentoId}`;
+      console.log("🔄 Loading offerte from:", url);
+      console.log("📋 Parameters:", {
+        commessa_id: selectedData.commessa_id,
+        servizio_id: selectedData.servizio_id,
+        tipologia_id: selectedData.tipologia_contratto,
+        segmento_id: segmentoId
+      });
+      
       // Load offerte based on entire selection chain
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/cascade/offerte-by-filiera?commessa_id=${selectedData.commessa_id}&servizio_id=${selectedData.servizio_id}&tipologia_id=${selectedData.tipologia_contratto}&segmento_id=${segmentoId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      );
+      });
       
       if (!response.ok) {
+        console.error(`❌ API Error: ${response.status} ${response.statusText}`);
         setCascadeOfferte([]);
         return;
       }
       
       const offerte = await response.json();
+      console.log("✅ Offerte loaded:", offerte.length, offerte);
       setCascadeOfferte(offerte);
       
       // AUTO-DETECT: Detect conditional sections based on tipologia_contratto
