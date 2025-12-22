@@ -4503,12 +4503,51 @@ async def create_lead_webhook_post(lead_data: LeadCreate):
     """Create lead via POST webhook (recommended for Zapier)
     Public endpoint - no authentication required"""
     
-    # Validate province if provided
+    logging.info(f"[WEBHOOK POST] Received lead: {lead_data.nome} {lead_data.cognome}, gruppo={lead_data.gruppo}")
+    
+    # Resolve gruppo (unit name) to unit_id (UUID)
+    unit_id = lead_data.unit_id  # Use provided unit_id if exists
+    commessa_id = lead_data.commessa_id  # Use provided commessa_id if exists
+    
+    if lead_data.gruppo and not unit_id:
+        try:
+            unit = await db.units.find_one({"name": lead_data.gruppo})
+            if not unit:
+                unit = await db.units.find_one({"nome": lead_data.gruppo})
+            
+            if unit:
+                unit_id = unit.get("id")
+                logging.info(f"[WEBHOOK POST] Resolved gruppo '{lead_data.gruppo}' to unit_id: {unit_id}")
+            else:
+                logging.warning(f"[WEBHOOK POST] Unit not found for gruppo: {lead_data.gruppo}")
+        except Exception as e:
+            logging.error(f"[WEBHOOK POST] Error resolving unit: {e}")
+    
+    # Resolve campagna to commessa_id
+    if lead_data.campagna and not commessa_id:
+        try:
+            commessa = await db.commesse.find_one({"nome": lead_data.campagna})
+            if commessa:
+                commessa_id = commessa.get("id")
+                logging.info(f"[WEBHOOK POST] Resolved campagna '{lead_data.campagna}' to commessa_id: {commessa_id}")
+            else:
+                logging.warning(f"[WEBHOOK POST] Commessa not found for campagna: {lead_data.campagna}")
+        except Exception as e:
+            logging.error(f"[WEBHOOK POST] Error resolving commessa: {e}")
+    
+    # Validate province if provided (but don't fail if invalid)
     if lead_data.provincia and lead_data.provincia not in ITALIAN_PROVINCES:
-        raise HTTPException(status_code=400, detail=f"Invalid province: {lead_data.provincia}")
+        logging.warning(f"[WEBHOOK POST] Invalid province: {lead_data.provincia}")
+        lead_data.provincia = None
+    
+    # Update lead_data with resolved IDs
+    lead_data.unit_id = unit_id
+    lead_data.commessa_id = commessa_id
     
     lead_obj = Lead(**lead_data.dict())
     await db.leads.insert_one(lead_obj.dict())
+    
+    logging.info(f"[WEBHOOK POST] Lead created: {lead_obj.id} with unit_id={unit_id}, commessa_id={commessa_id}")
     
     # Check if qualification should be started
     should_start_qualification = False
