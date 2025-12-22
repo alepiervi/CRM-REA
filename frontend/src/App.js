@@ -4839,7 +4839,7 @@ const CustomFieldsManagement = () => {
 const CreateCustomFieldModal = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: "",
-    type: "text",
+    field_type: "text",  // Fixed: was 'type', backend expects 'field_type'
     required: false,
     options: []
   });
