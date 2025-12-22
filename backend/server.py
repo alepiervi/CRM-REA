@@ -12064,14 +12064,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                     users = []
         
         # Process users for display (common for all roles)
-                            "id": missing_id,
-                            "username": f"User {missing_id[:8]}",
-                            "nome": "Unknown",
-                            "cognome": "User"
-                        })
-        else:
-            users = []
-            print(f"  No users found in accessible clients")
+        print(f"  Found {len(users)} user details in users collection")
         
         # NEW: Get servizi authorized for current user
         servizi_query = {}
