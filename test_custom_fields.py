@@ -195,7 +195,7 @@ class CustomFieldsTester:
             "custom_fields": sample_custom_fields
         }
         
-        success, create_response, status = self.make_request('POST', 'webhook/leads', lead_data, expected_status=200, auth_required=False)
+        success, create_response, status = self.make_request('POST', 'webhook/lead', lead_data, expected_status=200, auth_required=False)
         
         created_lead_id = None
         if success and status == 200:
