@@ -4351,6 +4351,92 @@ async def create_lead(lead_data: LeadCreate):
     
     return lead_obj
 
+@api_router.get("/webhook/lead")
+async def create_lead_webhook_get(
+    nome: Optional[str] = None,
+    cognome: Optional[str] = None,
+    telefono: Optional[str] = None,
+    email: Optional[str] = None,
+    provincia: Optional[str] = None,
+    campagna: Optional[str] = None,
+    gruppo: Optional[str] = None,
+    indirizzo: Optional[str] = None,
+    regione: Optional[str] = None,
+    url: Optional[str] = None,
+    inserzione: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    privacy_consent: Optional[bool] = None,
+    marketing_consent: Optional[bool] = None
+):
+    """Create lead via GET webhook (for systems like Zapier that use GET)
+    Public endpoint - no authentication required"""
+    
+    # Validate province if provided
+    if provincia and provincia not in ITALIAN_PROVINCES:
+        raise HTTPException(status_code=400, detail=f"Invalid province: {provincia}")
+    
+    # Create lead object
+    lead_data = LeadCreate(
+        nome=nome,
+        cognome=cognome,
+        telefono=telefono,
+        email=email,
+        provincia=provincia,
+        campagna=campagna,
+        gruppo=gruppo,
+        indirizzo=indirizzo,
+        regione=regione,
+        url=url,
+        inserzione=inserzione,
+        ip_address=ip_address,
+        privacy_consent=privacy_consent,
+        marketing_consent=marketing_consent
+    )
+    
+    lead_obj = Lead(**lead_data.dict())
+    await db.leads.insert_one(lead_obj.dict())
+    
+    # Check if qualification should be started based on commessa settings
+    should_start_qualification = False
+    
+    try:
+        # Find the commessa associated with this lead
+        commessa = None
+        if lead_obj.campagna:
+            commessa = await db.commesse.find_one({"nome": lead_obj.campagna})
+        elif lead_obj.gruppo:
+            commessa = await db.commesse.find_one({"nome": lead_obj.gruppo})
+        
+        if commessa:
+            should_start_qualification = commessa.get("has_ai", False)
+            logging.info(f"[WEBHOOK GET] Found commessa '{commessa.get('nome')}' for lead {lead_obj.id}. has_ai: {should_start_qualification}")
+        else:
+            logging.warning(f"[WEBHOOK GET] No commessa found for lead {lead_obj.id}")
+            should_start_qualification = False
+            
+    except Exception as e:
+        logging.error(f"[WEBHOOK GET] Error checking commessa AI settings for lead {lead_obj.id}: {e}")
+        should_start_qualification = False
+    
+    # Start qualification or immediate assignment
+    if should_start_qualification:
+        try:
+            await lead_qualification_bot.start_qualification_process(lead_obj.id)
+            logging.info(f"[WEBHOOK GET] Started automatic qualification for lead {lead_obj.id}")
+        except Exception as e:
+            logging.error(f"[WEBHOOK GET] Error starting qualification for lead {lead_obj.id}: {e}")
+            await assign_lead_to_agent(lead_obj)
+    else:
+        logging.info(f"[WEBHOOK GET] Immediate assignment for lead {lead_obj.id}")
+        await assign_lead_to_agent(lead_obj)
+    
+    return {
+        "success": True,
+        "message": "Lead created successfully",
+        "lead_id": lead_obj.id,
+        "lead": lead_obj
+    }
+
 @api_router.get("/leads", response_model=List[Lead])
 async def get_leads(
     unit_id: Optional[str] = None,
