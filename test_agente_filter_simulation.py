@@ -9,7 +9,7 @@ import json
 
 class AgenteFilterSimulation:
     def __init__(self):
-        self.base_url = "https://clientmanage-2.preview.emergentagent.com/api"
+        self.base_url = "https://role-manager-19.preview.emergentagent.com/api"
         self.token = None
         
     def login_admin(self):

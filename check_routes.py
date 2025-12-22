@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://clientmanage-2.preview.emergentagent.com"
+    base_url = "https://role-manager-19.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:

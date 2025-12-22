@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_documents_endpoint():
-    base_url = "https://clientmanage-2.preview.emergentagent.com/api"
+    base_url = "https://role-manager-19.preview.emergentagent.com/api"
     
     print("🔐 Authenticating as admin...")
     

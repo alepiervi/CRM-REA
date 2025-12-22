@@ -19,7 +19,7 @@ Il frontend su `nureal.it` deve sapere quale URL usare per chiamare il backend.
 4. **Identifica il Backend**
    - Vedrai 2 servizi:
      * **Frontend**: nureal.it (il tuo dominio custom)
-     * **Backend**: Un URL Emergent tipo `https://[qualcosa].emergent.host` o `https://clientmanage-2.preview.emergentagent.com`
+     * **Backend**: Un URL Emergent tipo `https://[qualcosa].emergent.host` o `https://role-manager-19.preview.emergentagent.com`
 
 5. **Copia l'URL Backend**
    - Click sul servizio backend
@@ -46,7 +46,7 @@ Prova questi URL nel browser o con curl:
 curl https://mobil-analytics-1.emergent.host/api/health
 
 # Test 2: URL alternativo trovato nei log
-curl https://clientmanage-2.preview.emergentagent.com/api/health
+curl https://role-manager-19.preview.emergentagent.com/api/health
 
 # Quello che risponde 200 OK o 404 è l'URL giusto
 # Se risponde con errore di connessione → URL sbagliato
@@ -58,8 +58,8 @@ Il backend Emergent può avere uno di questi formati:
 
 **Formato 1: UUID Preview**
 ```
-https://clientmanage-2.preview.emergentagent.com
-Esempio: https://clientmanage-2.preview.emergentagent.com
+https://role-manager-19.preview.emergentagent.com
+Esempio: https://role-manager-19.preview.emergentagent.com
 ```
 
 **Formato 2: App Name**
@@ -145,7 +145,7 @@ Il mio backend URL è: https://abc-123.emergent.host
 
 Oppure:
 ```
-Il mio backend URL è: https://clientmanage-2.preview.emergentagent.com
+Il mio backend URL è: https://role-manager-19.preview.emergentagent.com
 ```
 
 ## 🎯 Prossimi Passi

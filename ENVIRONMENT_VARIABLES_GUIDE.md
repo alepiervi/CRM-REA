@@ -4,7 +4,7 @@
 
 ### REACT_APP_BACKEND_URL
 ```bash
-REACT_APP_BACKEND_URL=https://clientmanage-2.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://role-manager-19.preview.emergentagent.com
 ```
 
 **Cosa Fa**:
@@ -19,13 +19,13 @@ REACT_APP_BACKEND_URL=https://clientmanage-2.preview.emergentagent.com
 - ⚠️ **NON viene usato in produzione se App.js ha auto-detection**
 - Il codice in `App.js` usa `window.location.hostname` per decidere:
   - `nureal.it` → `https://mobil-analytics-1.emergent.host` (produzione)
-  - `preview.emergentagent.com` → `https://clientmanage-2.preview.emergentagent.com` (preview)
+  - `preview.emergentagent.com` → `https://role-manager-19.preview.emergentagent.com` (preview)
   - `localhost` → `http://localhost:8001` (development)
 
 **Valore Raccomandato**:
 ```bash
 # Per preview/development
-REACT_APP_BACKEND_URL=https://clientmanage-2.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://role-manager-19.preview.emergentagent.com
 ```
 
 ---
@@ -93,7 +93,7 @@ REACT_APP_ENABLE_VISUAL_EDITS=false
 
 ### CORS_ORIGINS
 ```bash
-CORS_ORIGINS="https://nureal.it,https://www.nureal.it,https://clientmanage-2.preview.emergentagent.com"
+CORS_ORIGINS="https://nureal.it,https://www.nureal.it,https://role-manager-19.preview.emergentagent.com"
 ```
 
 **Cosa Fa**:
@@ -114,7 +114,7 @@ https://nureal.it
 https://www.nureal.it
 
 # Preview/Test
-https://clientmanage-2.preview.emergentagent.com
+https://role-manager-19.preview.emergentagent.com
 
 # Development (opzionale)
 http://localhost:3000
@@ -145,7 +145,7 @@ production_domains = [
 
 **Valore Corretto Attuale**:
 ```bash
-CORS_ORIGINS="https://nureal.it,https://www.nureal.it,https://clientmanage-2.preview.emergentagent.com"
+CORS_ORIGINS="https://nureal.it,https://www.nureal.it,https://role-manager-19.preview.emergentagent.com"
 ```
 
 ---
@@ -265,7 +265,7 @@ PLAYWRIGHT_BROWSERS_PATH="/pw-browsers"
 
 ### Frontend .env (Preview/Development)
 ```bash
-REACT_APP_BACKEND_URL=https://clientmanage-2.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://role-manager-19.preview.emergentagent.com
 WDS_SOCKET_PORT=443
 REACT_APP_ENABLE_VISUAL_EDITS=false
 ```
@@ -274,7 +274,7 @@ REACT_APP_ENABLE_VISUAL_EDITS=false
 ```bash
 MONGO_URL="mongodb://localhost:27017"
 DB_NAME="crm_database"
-CORS_ORIGINS="https://nureal.it,https://www.nureal.it,https://clientmanage-2.preview.emergentagent.com"
+CORS_ORIGINS="https://nureal.it,https://www.nureal.it,https://role-manager-19.preview.emergentagent.com"
 SECRET_KEY="crm-secret-key-change-in-production"
 EMERGENT_LLM_KEY="sk-emergent-6C5B3D385B6Bb82DeC"
 REDIS_URL="redis://localhost:6379"
