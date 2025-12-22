@@ -11963,50 +11963,8 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         # Get users from accessible clients
         print(f"🔄 Loading users for filter-options")
         
-        # Special handling for Responsabile Presidi: show all users in authorized sub agenzie
-        if current_user.role == UserRole.RESPONSABILE_PRESIDI:
-            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
-                # Get all users in the authorized sub agenzie
-                users_cursor = db.users.find({
-                    "sub_agenzia_id": {"$in": current_user.sub_agenzie_autorizzate}
-                })
-                users = await users_cursor.to_list(length=None)
-                print(f"  Responsabile Presidi: Found {len(users)} users in authorized sub agenzie")
-            else:
-                # Fallback: try to get users from clients
-                try:
-                    visible_clienti = await get_clienti(
-                        current_user=current_user,
-                        commessa_id=None,
-                        sub_agenzia_id=None,
-                        status="all",
-                        tipologia_contratto="all",
-                        assigned_to=None,
-                        created_by=None,
-                        servizio_id="all",
-                        segmento="all",
-                        commessa_id_filter="all"
-                    )
-                    
-                    all_user_ids = set()
-                    for cliente in visible_clienti:
-                        if hasattr(cliente, 'assigned_to') and cliente.assigned_to:
-                            all_user_ids.add(cliente.assigned_to)
-                        if hasattr(cliente, 'created_by') and cliente.created_by:
-                            all_user_ids.add(cliente.created_by)
-                    
-                    user_ids_from_clients = [uid for uid in all_user_ids if uid]
-                    
-                    if user_ids_from_clients:
-                        users_cursor = db.users.find({"id": {"$in": user_ids_from_clients}})
-                        users = await users_cursor.to_list(length=None)
-                    else:
-                        users = []
-                    print(f"  Responsabile Presidi (fallback): Found {len(users)} users from clients")
-                except Exception as e:
-                    print(f"  ⚠️ Error loading users for Responsabile Presidi: {e}")
-                    users = []
-        else:
+        # All roles including Responsabile Presidi: get users from visible clients only
+        if True:
             # For other roles: get users from accessible clients
             try:
                 visible_clienti = await get_clienti(
