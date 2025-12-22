@@ -202,8 +202,13 @@ class CustomFieldsTester:
             created_lead_id = create_response.get('id')
             lead_id_short = create_response.get('lead_id', 'Unknown')
             
-            self.log_test("✅ Lead created with custom fields", True, 
-                f"Lead ID: {created_lead_id[:8]}..., Short ID: {lead_id_short}")
+            if created_lead_id:
+                self.log_test("✅ Lead created with custom fields", True, 
+                    f"Lead ID: {created_lead_id[:8]}..., Short ID: {lead_id_short}")
+            else:
+                self.log_test("❌ Lead created but no ID returned", False, 
+                    f"Response: {create_response}")
+                return False
             
             # Verify custom fields were saved
             saved_custom_fields = create_response.get('custom_fields', {})
@@ -218,7 +223,7 @@ class CustomFieldsTester:
                 self.log_test("❌ Custom fields not saved", False, 
                     "Lead created but custom_fields is empty")
         else:
-            self.log_test("❌ Lead creation with custom fields FAILED", False, f"Status: {status}")
+            self.log_test("❌ Lead creation with custom fields FAILED", False, f"Status: {status}, Response: {create_response}")
             return False
         
         # **STEP 4: Retrieve the lead and verify custom fields persistence**
