@@ -4928,8 +4928,8 @@ const CreateCustomFieldModal = ({ onClose, onSuccess }) => {
             <div>
               <Label htmlFor="type">Tipo Campo *</Label>
               <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value, options: [] })}
+                value={formData.field_type}
+                onValueChange={(value) => setFormData({ ...formData, field_type: value, options: [] })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -4944,7 +4944,7 @@ const CreateCustomFieldModal = ({ onClose, onSuccess }) => {
               </Select>
             </div>
 
-            {formData.type === "select" && (
+            {formData.field_type === "select" && (
               <div>
                 <Label>Opzioni *</Label>
                 <div className="flex gap-2 mb-2">
