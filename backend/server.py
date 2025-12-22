@@ -4374,13 +4374,46 @@ async def create_lead_webhook_get(
     CORS-friendly and Cloudflare-compatible"""
     
     # Log the incoming request
-    logging.info(f"[WEBHOOK GET] Received request: nome={nome}, cognome={cognome}, telefono={telefono}")
+    logging.info(f"[WEBHOOK GET] Received request: nome={nome}, cognome={cognome}, telefono={telefono}, gruppo={gruppo}")
+    
+    # Resolve gruppo (unit name) to unit_id (UUID)
+    unit_id = None
+    commessa_id = None
+    
+    if gruppo:
+        try:
+            # Find unit by name
+            unit = await db.units.find_one({"name": gruppo})
+            if not unit:
+                # Try with 'nome' field as fallback
+                unit = await db.units.find_one({"nome": gruppo})
+            
+            if unit:
+                unit_id = unit.get("id")
+                logging.info(f"[WEBHOOK GET] Resolved gruppo '{gruppo}' to unit_id: {unit_id}")
+            else:
+                logging.warning(f"[WEBHOOK GET] Unit not found for gruppo: {gruppo}")
+        except Exception as e:
+            logging.error(f"[WEBHOOK GET] Error resolving unit: {e}")
+    
+    # Resolve campagna (commessa name) to commessa_id (UUID)
+    if campagna:
+        try:
+            # Find commessa by name
+            commessa = await db.commesse.find_one({"nome": campagna})
+            if commessa:
+                commessa_id = commessa.get("id")
+                logging.info(f"[WEBHOOK GET] Resolved campagna '{campagna}' to commessa_id: {commessa_id}")
+            else:
+                logging.warning(f"[WEBHOOK GET] Commessa not found for campagna: {campagna}")
+        except Exception as e:
+            logging.error(f"[WEBHOOK GET] Error resolving commessa: {e}")
     
     # Validate provincia if provided (but don't fail if invalid)
     if provincia and provincia not in ITALIAN_PROVINCES:
         logging.warning(f"[WEBHOOK GET] Invalid province received: {provincia}, proceeding anyway")
     
-    # Create lead object with all provided data
+    # Create lead object with all provided data + resolved IDs
     lead_data = LeadCreate(
         nome=nome,
         cognome=cognome,
@@ -4389,6 +4422,8 @@ async def create_lead_webhook_get(
         provincia=provincia if provincia in ITALIAN_PROVINCES else None,
         campagna=campagna,
         gruppo=gruppo,
+        unit_id=unit_id,  # IMPORTANT: Add resolved unit_id
+        commessa_id=commessa_id,  # IMPORTANT: Add resolved commessa_id
         indirizzo=indirizzo,
         regione=regione,
         url=url,
@@ -4401,7 +4436,7 @@ async def create_lead_webhook_get(
     lead_obj = Lead(**lead_data.dict())
     await db.leads.insert_one(lead_obj.dict())
     
-    logging.info(f"[WEBHOOK GET] Lead created: {lead_obj.id}")
+    logging.info(f"[WEBHOOK GET] Lead created: {lead_obj.id} with unit_id={unit_id}, commessa_id={commessa_id}")
     
     # Check if qualification should be started based on commessa settings
     should_start_qualification = False
