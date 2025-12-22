@@ -199,8 +199,18 @@ class CustomFieldsTester:
         
         created_lead_id = None
         if success and status == 200:
-            created_lead_id = create_response.get('id')
-            lead_id_short = create_response.get('lead_id', 'Unknown')
+            # Handle different response structures
+            if 'lead' in create_response:
+                # Webhook response structure
+                lead_obj = create_response['lead']
+                created_lead_id = lead_obj.get('id')
+                lead_id_short = lead_obj.get('lead_id', 'Unknown')
+                saved_custom_fields = lead_obj.get('custom_fields', {})
+            else:
+                # Direct response structure
+                created_lead_id = create_response.get('id')
+                lead_id_short = create_response.get('lead_id', 'Unknown')
+                saved_custom_fields = create_response.get('custom_fields', {})
             
             if created_lead_id:
                 self.log_test("✅ Lead created with custom fields", True, 
@@ -211,7 +221,6 @@ class CustomFieldsTester:
                 return False
             
             # Verify custom fields were saved
-            saved_custom_fields = create_response.get('custom_fields', {})
             if saved_custom_fields:
                 self.log_test("✅ Custom fields saved in lead", True, 
                     f"Saved {len(saved_custom_fields)} custom fields")
