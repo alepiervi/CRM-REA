@@ -5691,20 +5691,6 @@ const CreateLeadModal = ({ onClose, onSuccess, units, customFields }) => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="tipologia_abitazione">Tipologia Abitazione *</Label>
-                  <Select value={formData.tipologia_abitazione} onValueChange={(value) => setFormData({ ...formData, tipologia_abitazione: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona tipologia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="appartamento">Appartamento</SelectItem>
-                      <SelectItem value="villa">Villa</SelectItem>
-                      <SelectItem value="casa_indipendente">Casa Indipendente</SelectItem>
-                      <SelectItem value="altro">Altro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
               {/* Rimuovo il campo IP dalla creazione manuale */}
@@ -5731,22 +5717,6 @@ const CreateLeadModal = ({ onClose, onSuccess, units, customFields }) => {
                     {units.map((unit) => (
                       <SelectItem key={unit.id} value={unit.id}>
                         {unit.nome || unit.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="contenitore">Contenitore *</Label>
-                <Select value={formData.contenitore} onValueChange={(value) => setFormData({ ...formData, contenitore: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleziona contenitore" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {containers.map((container) => (
-                      <SelectItem key={container.id} value={container.id}>
-                        {container.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
