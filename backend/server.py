@@ -12021,32 +12021,47 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                     segmento="all",
                     commessa_id_filter="all"
                 )
-            
-            # Extract unique user IDs from both assigned_to and created_by
-            all_user_ids = set()
-            for cliente in visible_clienti:
-                if hasattr(cliente, 'assigned_to') and cliente.assigned_to:
-                    all_user_ids.add(cliente.assigned_to)
-                if hasattr(cliente, 'created_by') and cliente.created_by:
-                    all_user_ids.add(cliente.created_by)
-            
-            user_ids_from_clients = [uid for uid in all_user_ids if uid]
-            print(f"  Users from {len(visible_clienti)} visible clients: {len(user_ids_from_clients)} unique user_ids")
-        except Exception as e:
-            print(f"  ⚠️ Error getting visible clienti: {e}")
-            # Fallback to base_query approach
-            visible_clienti_cursor = db.clienti.find(base_query, {"assigned_to": 1, "created_by": 1, "_id": 0})
-            visible_clienti = await visible_clienti_cursor.to_list(length=None)
-            
-            all_user_ids = set()
-            for cliente in visible_clienti:
-                if cliente.get("assigned_to"):
-                    all_user_ids.add(cliente["assigned_to"])
-                if cliente.get("created_by"):
-                    all_user_ids.add(cliente["created_by"])
-            
-            user_ids_from_clients = [uid for uid in all_user_ids if uid]
-            print(f"  Users from {len(visible_clienti)} visible clients (fallback): {len(user_ids_from_clients)} unique user_ids")
+                
+                # Extract unique user IDs from both assigned_to and created_by
+                all_user_ids = set()
+                for cliente in visible_clienti:
+                    if hasattr(cliente, 'assigned_to') and cliente.assigned_to:
+                        all_user_ids.add(cliente.assigned_to)
+                    if hasattr(cliente, 'created_by') and cliente.created_by:
+                        all_user_ids.add(cliente.created_by)
+                
+                user_ids_from_clients = [uid for uid in all_user_ids if uid]
+                print(f"  Users from {len(visible_clienti)} visible clients: {len(user_ids_from_clients)} unique user_ids")
+                
+                # Now fetch user details for these IDs only
+                if user_ids_from_clients:
+                    users_cursor = db.users.find({"id": {"$in": user_ids_from_clients}})
+                    users = await users_cursor.to_list(length=None)
+                else:
+                    users = []
+                    
+            except Exception as e:
+                print(f"  ⚠️ Error getting visible clienti: {e}")
+                # Fallback to base_query approach
+                visible_clienti_cursor = db.clienti.find(base_query, {"assigned_to": 1, "created_by": 1, "_id": 0})
+                visible_clienti = await visible_clienti_cursor.to_list(length=None)
+                
+                all_user_ids = set()
+                for cliente in visible_clienti:
+                    if cliente.get("assigned_to"):
+                        all_user_ids.add(cliente["assigned_to"])
+                    if cliente.get("created_by"):
+                        all_user_ids.add(cliente["created_by"])
+                
+                user_ids_from_clients = [uid for uid in all_user_ids if uid]
+                print(f"  Users from {len(visible_clienti)} visible clients (fallback): {len(user_ids_from_clients)} unique user_ids")
+                
+                # Now fetch user details for these IDs only
+                if user_ids_from_clients:
+                    users_cursor = db.users.find({"id": {"$in": user_ids_from_clients}})
+                    users = await users_cursor.to_list(length=None)
+                else:
+                    users = []
         
         # Now fetch user details for these IDs only
         if user_ids_from_clients:
