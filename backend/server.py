@@ -4368,20 +4368,25 @@ async def create_lead_webhook_get(
     privacy_consent: Optional[bool] = None,
     marketing_consent: Optional[bool] = None
 ):
-    """Create lead via GET webhook (for systems like Zapier that use GET)
-    Public endpoint - no authentication required"""
+    """Create lead via GET webhook (for Zapier/systems that require GET)
+    Public endpoint - no authentication required
     
-    # Validate province if provided
+    CORS-friendly and Cloudflare-compatible"""
+    
+    # Log the incoming request
+    logging.info(f"[WEBHOOK GET] Received request: nome={nome}, cognome={cognome}, telefono={telefono}")
+    
+    # Validate provincia if provided (but don't fail if invalid)
     if provincia and provincia not in ITALIAN_PROVINCES:
-        raise HTTPException(status_code=400, detail=f"Invalid province: {provincia}")
+        logging.warning(f"[WEBHOOK GET] Invalid province received: {provincia}, proceeding anyway")
     
-    # Create lead object
+    # Create lead object with all provided data
     lead_data = LeadCreate(
         nome=nome,
         cognome=cognome,
         telefono=telefono,
         email=email,
-        provincia=provincia,
+        provincia=provincia if provincia in ITALIAN_PROVINCES else None,
         campagna=campagna,
         gruppo=gruppo,
         indirizzo=indirizzo,
@@ -4395,6 +4400,8 @@ async def create_lead_webhook_get(
     
     lead_obj = Lead(**lead_data.dict())
     await db.leads.insert_one(lead_obj.dict())
+    
+    logging.info(f"[WEBHOOK GET] Lead created: {lead_obj.id}")
     
     # Check if qualification should be started based on commessa settings
     should_start_qualification = False
@@ -4430,11 +4437,12 @@ async def create_lead_webhook_get(
         logging.info(f"[WEBHOOK GET] Immediate assignment for lead {lead_obj.id}")
         await assign_lead_to_agent(lead_obj)
     
+    # Return simple response (Cloudflare-friendly)
     return {
+        "status": "ok",
         "success": True,
         "message": "Lead created successfully",
-        "lead_id": lead_obj.id,
-        "lead": lead_obj
+        "lead_id": lead_obj.id
     }
 
 @api_router.post("/webhook/lead")
