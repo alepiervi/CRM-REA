@@ -5098,18 +5098,18 @@ const EditCustomFieldModal = ({ field, onClose, onSuccess }) => {
             <div>
               <Label>Tipo Campo</Label>
               <p className="text-sm text-gray-600 p-2 bg-slate-50 rounded">
-                {formData.type === "text" && "Testo"}
-                {formData.type === "number" && "Numero"}
-                {formData.type === "select" && "Selezione (Dropdown)"}
-                {formData.type === "checkbox" && "Checkbox"}
-                {formData.type === "date" && "Data"}
+                {formData.field_type === "text" && "Testo"}
+                {formData.field_type === "number" && "Numero"}
+                {formData.field_type === "select" && "Selezione (Dropdown)"}
+                {formData.field_type === "checkbox" && "Checkbox"}
+                {formData.field_type === "date" && "Data"}
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 Il tipo non può essere modificato dopo la creazione
               </p>
             </div>
 
-            {formData.type === "select" && (
+            {formData.field_type === "select" && (
               <div>
                 <Label>Opzioni *</Label>
                 <div className="flex gap-2 mb-2">
