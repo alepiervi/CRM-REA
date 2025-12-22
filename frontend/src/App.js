@@ -4761,7 +4761,7 @@ const CustomFieldsManagement = () => {
                   <TableRow key={field.id}>
                     <TableCell className="font-medium">{field.name}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{fieldTypeLabels[field.type] || field.type}</Badge>
+                      <Badge variant="outline">{fieldTypeLabels[field.field_type] || field.field_type}</Badge>
                     </TableCell>
                     <TableCell>
                       {field.required ? (
