@@ -4437,6 +4437,56 @@ async def create_lead_webhook_get(
         "lead": lead_obj
     }
 
+@api_router.post("/webhook/lead")
+async def create_lead_webhook_post(lead_data: LeadCreate):
+    """Create lead via POST webhook (recommended for Zapier)
+    Public endpoint - no authentication required"""
+    
+    # Validate province if provided
+    if lead_data.provincia and lead_data.provincia not in ITALIAN_PROVINCES:
+        raise HTTPException(status_code=400, detail=f"Invalid province: {lead_data.provincia}")
+    
+    lead_obj = Lead(**lead_data.dict())
+    await db.leads.insert_one(lead_obj.dict())
+    
+    # Check if qualification should be started
+    should_start_qualification = False
+    
+    try:
+        commessa = None
+        if lead_obj.campagna:
+            commessa = await db.commesse.find_one({"nome": lead_obj.campagna})
+        elif lead_obj.gruppo:
+            commessa = await db.commesse.find_one({"nome": lead_obj.gruppo})
+        
+        if commessa:
+            should_start_qualification = commessa.get("has_ai", False)
+            logging.info(f"[WEBHOOK POST] Found commessa for lead {lead_obj.id}. has_ai: {should_start_qualification}")
+        else:
+            logging.warning(f"[WEBHOOK POST] No commessa found for lead {lead_obj.id}")
+            
+    except Exception as e:
+        logging.error(f"[WEBHOOK POST] Error checking commessa for lead {lead_obj.id}: {e}")
+    
+    # Start qualification or immediate assignment
+    if should_start_qualification:
+        try:
+            await lead_qualification_bot.start_qualification_process(lead_obj.id)
+            logging.info(f"[WEBHOOK POST] Started qualification for lead {lead_obj.id}")
+        except Exception as e:
+            logging.error(f"[WEBHOOK POST] Error starting qualification: {e}")
+            await assign_lead_to_agent(lead_obj)
+    else:
+        logging.info(f"[WEBHOOK POST] Immediate assignment for lead {lead_obj.id}")
+        await assign_lead_to_agent(lead_obj)
+    
+    return {
+        "success": True,
+        "message": "Lead created successfully",
+        "lead_id": lead_obj.id,
+        "lead": lead_obj
+    }
+
 @api_router.get("/leads", response_model=List[Lead])
 async def get_leads(
     unit_id: Optional[str] = None,
