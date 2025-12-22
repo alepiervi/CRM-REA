@@ -2693,7 +2693,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       marketing_consent: lead.marketing_consent || false,
       esito: lead.esito || "Nuovo",  // Default to "Nuovo" if empty
       note: lead.note || "",
-      assigned_agent_id: lead.assigned_agent_id || ""  // NEW: For Admin reassignment
+      assigned_agent_id: lead.assigned_agent_id || "",  // For Admin reassignment
+      custom_fields: lead.custom_fields || {}  // Campi personalizzati
     });
     setIsEditingLead(false);
   };
