@@ -5468,10 +5468,8 @@ const CreateLeadModal = ({ onClose, onSuccess, units, customFields }) => {
     telefono: "",
     email: "",
     provincia: "",
-    tipologia_abitazione: "",
     campagna: "",
     gruppo: "",
-    contenitore: "",
     privacy_consent: false,
     marketing_consent: false,
     custom_fields: {}
