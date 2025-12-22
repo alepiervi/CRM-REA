@@ -3696,16 +3696,32 @@ whatsapp_service = WhatsAppService()
 lead_qualification_bot = LeadQualificationBot()
 
 async def assign_lead_to_agent(lead: Lead):
-    """Automatically assign lead to agent based on province coverage"""
-    # Find agents covering this province
-    agents = await db.users.find({
+    """Automatically assign lead to agent based on unit_id and province coverage"""
+    
+    # Build query for agents
+    query = {
         "role": "agente",
-        "is_active": True,
-        "provinces": {"$in": [lead.provincia]}
-    }).to_list(length=None)
+        "is_active": True
+    }
+    
+    # IMPORTANT: Filter by unit_id if lead has one
+    if lead.unit_id:
+        query["unit_id"] = lead.unit_id
+        logging.info(f"[ASSIGN] Looking for agents in unit_id: {lead.unit_id}")
+    
+    # Filter by province if available
+    if lead.provincia:
+        query["provinces"] = {"$in": [lead.provincia]}
+        logging.info(f"[ASSIGN] Looking for agents covering province: {lead.provincia}")
+    
+    # Find agents matching criteria
+    agents = await db.users.find(query).to_list(length=None)
     
     if not agents:
+        logging.warning(f"[ASSIGN] No agents found for lead {lead.id} with unit_id={lead.unit_id}, provincia={lead.provincia}")
         return None
+    
+    logging.info(f"[ASSIGN] Found {len(agents)} eligible agents for lead {lead.id}")
     
     # Simple round-robin assignment (can be improved with better logic)
     # For now, assign to first available agent
@@ -3721,6 +3737,8 @@ async def assign_lead_to_agent(lead: Lead):
             }
         }
     )
+    
+    logging.info(f"[ASSIGN] Lead {lead.id} assigned to agent {selected_agent['id']} ({selected_agent.get('username')})")
     
     # Send email notification to agent (async task)
     asyncio.create_task(notify_agent_new_lead(selected_agent["id"], lead.dict()))
