@@ -4402,8 +4402,10 @@ async def create_lead_webhook_get(
     telefono: Optional[str] = None,
     email: Optional[str] = None,
     provincia: Optional[str] = None,
-    campagna: Optional[str] = None,
-    gruppo: Optional[str] = None,
+    unit_id: Optional[str] = None,  # UUID della Unit (preferito)
+    commessa_id: Optional[str] = None,  # UUID della Commessa (preferito)
+    campagna: Optional[str] = None,  # Fallback: nome campagna
+    gruppo: Optional[str] = None,  # Fallback: nome unit
     indirizzo: Optional[str] = None,
     regione: Optional[str] = None,
     url: Optional[str] = None,
@@ -4412,62 +4414,67 @@ async def create_lead_webhook_get(
     privacy_consent: Optional[bool] = None,
     marketing_consent: Optional[bool] = None
 ):
-    """Create lead via GET webhook (for Zapier/systems that require GET)
+    """Create lead via GET webhook (for Zapier)
     Public endpoint - no authentication required
     
-    CORS-friendly and Cloudflare-compatible"""
+    Accepts either UUID directly (unit_id, commessa_id) or names (gruppo, campagna)
+    UUID is preferred for performance"""
     
-    # Log the incoming request
-    logging.info(f"[WEBHOOK GET] Received request: nome={nome}, cognome={cognome}, telefono={telefono}, gruppo={gruppo}")
+    logging.info(f"[WEBHOOK GET] Received: nome={nome}, cognome={cognome}, unit_id={unit_id}, gruppo={gruppo}")
     
-    # Resolve gruppo (unit name) to unit_id (UUID)
-    unit_id = None
-    commessa_id = None
+    # Convert provincia name to code if needed (e.g., "Roma" → "RM")
+    provincia_code = None
+    if provincia:
+        if len(provincia) == 2:
+            # Already a code
+            provincia_code = provincia.upper()
+        elif provincia in PROVINCE_TO_CODE:
+            # Convert full name to code
+            provincia_code = PROVINCE_TO_CODE[provincia]
+            logging.info(f"[WEBHOOK GET] Converted provincia '{provincia}' → '{provincia_code}'")
+        else:
+            logging.warning(f"[WEBHOOK GET] Unknown provincia: {provincia}")
     
-    if gruppo:
+    # Use provided unit_id OR lookup from gruppo name
+    final_unit_id = unit_id
+    if not final_unit_id and gruppo:
         try:
-            # Find unit by name
             unit = await db.units.find_one({"name": gruppo})
             if not unit:
-                # Try with 'nome' field as fallback
                 unit = await db.units.find_one({"nome": gruppo})
             
             if unit:
-                unit_id = unit.get("id")
-                logging.info(f"[WEBHOOK GET] Resolved gruppo '{gruppo}' to unit_id: {unit_id}")
+                final_unit_id = unit.get("id")
+                logging.info(f"[WEBHOOK GET] Resolved gruppo '{gruppo}' → unit_id: {final_unit_id}")
             else:
                 logging.warning(f"[WEBHOOK GET] Unit not found for gruppo: {gruppo}")
         except Exception as e:
             logging.error(f"[WEBHOOK GET] Error resolving unit: {e}")
     
-    # Resolve campagna (commessa name) to commessa_id (UUID)
-    if campagna:
+    # Use provided commessa_id OR lookup from campagna name
+    final_commessa_id = commessa_id
+    if not final_commessa_id and campagna:
         try:
-            # Find commessa by name
             commessa = await db.commesse.find_one({"nome": campagna})
             if commessa:
-                commessa_id = commessa.get("id")
-                logging.info(f"[WEBHOOK GET] Resolved campagna '{campagna}' to commessa_id: {commessa_id}")
+                final_commessa_id = commessa.get("id")
+                logging.info(f"[WEBHOOK GET] Resolved campagna '{campagna}' → commessa_id: {final_commessa_id}")
             else:
-                logging.warning(f"[WEBHOOK GET] Commessa not found for campagna: {campagna}")
+                logging.warning(f"[WEBHOOK GET] Commessa not found: {campagna}")
         except Exception as e:
             logging.error(f"[WEBHOOK GET] Error resolving commessa: {e}")
     
-    # Validate provincia if provided (but don't fail if invalid)
-    if provincia and provincia not in ITALIAN_PROVINCES:
-        logging.warning(f"[WEBHOOK GET] Invalid province received: {provincia}, proceeding anyway")
-    
-    # Create lead object with all provided data + resolved IDs
+    # Create lead object
     lead_data = LeadCreate(
         nome=nome,
         cognome=cognome,
         telefono=telefono,
         email=email,
-        provincia=provincia if provincia in ITALIAN_PROVINCES else None,
+        provincia=provincia_code,  # Use converted code
         campagna=campagna,
         gruppo=gruppo,
-        unit_id=unit_id,  # IMPORTANT: Add resolved unit_id
-        commessa_id=commessa_id,  # IMPORTANT: Add resolved commessa_id
+        unit_id=final_unit_id,
+        commessa_id=final_commessa_id,
         indirizzo=indirizzo,
         regione=regione,
         url=url,
@@ -4480,7 +4487,7 @@ async def create_lead_webhook_get(
     lead_obj = Lead(**lead_data.dict())
     await db.leads.insert_one(lead_obj.dict())
     
-    logging.info(f"[WEBHOOK GET] Lead created: {lead_obj.id} with unit_id={unit_id}, commessa_id={commessa_id}")
+    logging.info(f"[WEBHOOK GET] Lead created: {lead_obj.id} with unit_id={final_unit_id}, commessa_id={final_commessa_id}")
     
     # Check if qualification should be started based on commessa settings
     should_start_qualification = False
