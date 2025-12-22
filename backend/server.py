@@ -12063,21 +12063,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 else:
                     users = []
         
-        # Now fetch user details for these IDs only
-        if user_ids_from_clients:
-            users_cursor = db.users.find({"id": {"$in": user_ids_from_clients}})
-            users = await users_cursor.to_list(length=None)
-            print(f"  Found {len(users)} user details in users collection")
-            
-            # If some user_ids don't have corresponding user records, create placeholder entries
-            found_user_ids = {user["id"] for user in users}
-            missing_user_ids = set(user_ids_from_clients) - found_user_ids
-            
-            if missing_user_ids:
-                print(f"  ⚠️ {len(missing_user_ids)} user_ids without user records - adding placeholders")
-                for missing_id in missing_user_ids:
-                    if missing_id:  # Extra safety check
-                        users.append({
+        # Process users for display (common for all roles)
                             "id": missing_id,
                             "username": f"User {missing_id[:8]}",
                             "nome": "Unknown",
