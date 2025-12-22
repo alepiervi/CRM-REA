@@ -480,6 +480,18 @@ FOCUS CRITICO:
 **Il problema segnalato dall'utente è che non vede TUTTI i dati delle SIM nell'EditClienteModal. Devo verificare che il backend salvi e restituisca TUTTI gli items, non solo il primo.**"
 
 backend:
+  - task: "Custom Fields Functionality for Leads - Complete API Support"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎉 CUSTOM FIELDS FUNCTIONALITY FOR LEADS COMPLETE - 100% SUCCESS! ✅ COMPREHENSIVE TESTING COMPLETED: Successfully tested the custom fields functionality for leads as requested in review request. ✅ ADMIN LOGIN (admin/admin123): Successfully authenticated with token, Role: admin. ✅ CRITICAL SUCCESS - GET /api/custom-fields WORKING: Status 200 OK, Found 2 custom fields available (test, Tipologia Abitazione). ✅ LEAD CREATION WITH CUSTOM FIELDS SUCCESS: Created lead via POST /api/webhook/lead with 10 custom fields including source_campaign, lead_score, interest_level, preferred_contact_time, budget_range, property_type, roof_condition, current_energy_bill, installation_timeframe, referral_source. ✅ CUSTOM FIELDS PERSISTENCE VERIFIED: All 10 custom fields saved correctly in database and retrieved via GET /api/leads with exact values preserved. ✅ PUT /api/leads/{id} CUSTOM FIELDS UPDATE SUCCESS: Successfully updated lead with new custom_fields data, added 2 new fields (follow_up_notes, contact_attempts), updated existing fields, all changes persisted correctly. ✅ CUSTOM FIELDS UPDATE VERIFICATION: All 5 verification checks passed - source_campaign updated to 'Facebook Ads - Solar Panel Campaign', lead_score updated to 92, interest_level updated to 'Very High', follow_up_notes added with 'Very interested, wants quote ASAP', contact_attempts added with value 2. ✅ DATA TYPE SUPPORT CONFIRMED: Custom fields support various data types including strings, numbers, booleans, and complex objects. ✅ ZAPIER INTEGRATION READY: Webhook endpoint /api/webhook/lead accepts custom_fields from Zapier without authentication, perfect for integration. 🎯 ALL CRITICAL OBJECTIVES ACHIEVED: 1) Custom fields are returned by the API ✅, 2) Leads can store and retrieve custom_fields data ✅, 3) PUT endpoint correctly handles custom_fields in request body ✅, 4) Webhook endpoint supports Zapier integration ✅, 5) Data persistence works correctly ✅. 🎉 OBIETTIVO RAGGIUNTO: La funzionalità custom fields per i lead funziona perfettamente! Tutti i comportamenti attesi sono stati verificati con successo. Il sistema è pronto per l'uso in produzione con integrazione Zapier. SUCCESS RATE: 100% (18/18 tests passed) - Custom fields functionality fully operational!"
+
   - task: "Responsabile Presidi Assigned To Filter - Query Logic Fix Verification"
     implemented: true
     working: true
