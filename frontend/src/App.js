@@ -5010,7 +5010,7 @@ const CreateCustomFieldModal = ({ onClose, onSuccess }) => {
 const EditCustomFieldModal = ({ field, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: field.name,
-    type: field.type,
+    field_type: field.field_type,  // Fixed: was 'type', backend uses 'field_type'
     required: field.required,
     options: field.options || []
   });
