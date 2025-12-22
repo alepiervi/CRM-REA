@@ -4858,7 +4858,7 @@ const CreateCustomFieldModal = ({ onClose, onSuccess }) => {
       return;
     }
 
-    if (formData.type === "select" && formData.options.length === 0) {
+    if (formData.field_type === "select" && formData.options.length === 0) {
       toast({
         title: "Errore",
         description: "Devi aggiungere almeno un'opzione per il campo select",
@@ -5029,7 +5029,7 @@ const EditCustomFieldModal = ({ field, onClose, onSuccess }) => {
       return;
     }
 
-    if (formData.type === "select" && formData.options.length === 0) {
+    if (formData.field_type === "select" && formData.options.length === 0) {
       toast({
         title: "Errore",
         description: "Devi aggiungere almeno un'opzione per il campo select",
