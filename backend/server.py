@@ -11967,29 +11967,33 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         if True:
             # For other roles: get users from accessible clients
             try:
+                print(f"  📥 Calling get_clienti for user {current_user.username} ({current_user.role})")
                 visible_clienti = await get_clienti(
                     current_user=current_user,
                     commessa_id=None,
                     sub_agenzia_id=None,
-                    status="all",
-                    tipologia_contratto="all",
+                    status=None,
+                    tipologia_contratto=None,
                     assigned_to=None,
                     created_by=None,
-                    servizio_id="all",
-                    segmento="all",
-                    commessa_id_filter="all"
+                    servizio_id=None,
+                    segmento=None,
+                    commessa_id_filter=None
                 )
+                print(f"  📤 get_clienti returned {len(visible_clienti)} clients")
                 
                 # Extract unique user IDs from both assigned_to and created_by
                 all_user_ids = set()
                 for cliente in visible_clienti:
-                    if hasattr(cliente, 'assigned_to') and cliente.assigned_to:
-                        all_user_ids.add(cliente.assigned_to)
-                    if hasattr(cliente, 'created_by') and cliente.created_by:
-                        all_user_ids.add(cliente.created_by)
+                    assigned = getattr(cliente, 'assigned_to', None)
+                    created = getattr(cliente, 'created_by', None)
+                    if assigned:
+                        all_user_ids.add(assigned)
+                    if created:
+                        all_user_ids.add(created)
                 
                 user_ids_from_clients = [uid for uid in all_user_ids if uid]
-                print(f"  Users from {len(visible_clienti)} visible clients: {len(user_ids_from_clients)} unique user_ids")
+                print(f"  Users from {len(visible_clienti)} visible clients: {len(user_ids_from_clients)} unique user_ids: {user_ids_from_clients[:5]}")
                 
                 # Now fetch user details for these IDs only
                 if user_ids_from_clients:
