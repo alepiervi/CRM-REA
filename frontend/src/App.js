@@ -3514,6 +3514,107 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                       <p className="text-sm">{selectedLead.inserzione || "N/A"}</p>
                     )}
                   </div>
+
+                  {/* Campi Personalizzati - esclusi quelli già presenti come campi standard */}
+                  {customFields && customFields.filter(field => 
+                    !['tipologia abitazione', 'tipologia_abitazione'].includes(field.name.toLowerCase())
+                  ).map((field) => {
+                    const fieldValue = selectedLead.custom_fields?.[field.id] || "";
+                    const hasValue = fieldValue !== "" && fieldValue !== null && fieldValue !== undefined;
+                    
+                    return (
+                      <div key={field.id}>
+                        <Label className="flex items-center">
+                          {field.name}
+                          {hasValue && <Lock className="w-3 h-3 ml-1 text-slate-400" title="Campo bloccato: dato da Zapier" />}
+                        </Label>
+                        {hasValue ? (
+                          <div className="p-2 bg-slate-50 rounded text-sm">
+                            {field.field_type === "boolean" 
+                              ? (fieldValue === "true" || fieldValue === true ? "Sì" : "No")
+                              : fieldValue}
+                          </div>
+                        ) : isEditingLead ? (
+                          field.field_type === "select" ? (
+                            <Select
+                              value={leadEditData.custom_fields?.[field.id] || ""}
+                              onValueChange={(value) => setLeadEditData({
+                                ...leadEditData,
+                                custom_fields: {
+                                  ...leadEditData.custom_fields,
+                                  [field.id]: value
+                                }
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={`Seleziona ${field.name}`} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(field.options || []).map((option) => (
+                                  <SelectItem key={option} value={option}>
+                                    {option}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : field.field_type === "boolean" ? (
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Checkbox
+                                checked={leadEditData.custom_fields?.[field.id] === "true" || leadEditData.custom_fields?.[field.id] === true}
+                                onCheckedChange={(checked) => setLeadEditData({
+                                  ...leadEditData,
+                                  custom_fields: {
+                                    ...leadEditData.custom_fields,
+                                    [field.id]: checked.toString()
+                                  }
+                                })}
+                              />
+                              <span className="text-sm text-slate-600">Sì</span>
+                            </div>
+                          ) : field.field_type === "date" ? (
+                            <Input
+                              type="date"
+                              value={leadEditData.custom_fields?.[field.id] || ""}
+                              onChange={(e) => setLeadEditData({
+                                ...leadEditData,
+                                custom_fields: {
+                                  ...leadEditData.custom_fields,
+                                  [field.id]: e.target.value
+                                }
+                              })}
+                            />
+                          ) : field.field_type === "number" ? (
+                            <Input
+                              type="number"
+                              value={leadEditData.custom_fields?.[field.id] || ""}
+                              onChange={(e) => setLeadEditData({
+                                ...leadEditData,
+                                custom_fields: {
+                                  ...leadEditData.custom_fields,
+                                  [field.id]: e.target.value
+                                }
+                              })}
+                              placeholder={`Inserisci ${field.name}`}
+                            />
+                          ) : (
+                            <Input
+                              value={leadEditData.custom_fields?.[field.id] || ""}
+                              onChange={(e) => setLeadEditData({
+                                ...leadEditData,
+                                custom_fields: {
+                                  ...leadEditData.custom_fields,
+                                  [field.id]: e.target.value
+                                }
+                              })}
+                              placeholder={`Inserisci ${field.name}`}
+                            />
+                          )
+                        ) : (
+                          <p className="text-sm text-slate-400 italic">Non disponibile</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Consensi Privacy - Bloccati se arrivano da Zapier */}
