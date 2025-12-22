@@ -6243,6 +6243,7 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
 @api_router.get("/webhook/{unit_id}")
 async def webhook_receive_lead_get(
     unit_id: str,
+    request: Request,
     nome: Optional[str] = None,
     cognome: Optional[str] = None,
     telefono: Optional[str] = None,
@@ -6265,6 +6266,7 @@ async def webhook_receive_lead_get(
     
     Accepts both English (privacy_consent/marketing_consent) and Italian (consenso_privacy/consenso_marketing) parameter names
     Accepts values as: yes/no, true/false, 1/0, si/sì
+    Also accepts custom fields by name (e.g., ?test=valore&Tipologia%20Abitazione=casa)
     
     Example URLs:
     - English: ?privacy_consent=yes&marketing_consent=no
