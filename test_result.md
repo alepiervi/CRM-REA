@@ -139,7 +139,28 @@ FOCUS CRITICO:
 
 STATO: PRONTO PER TESTING COMPLETO"
 
-current_problem_statement: "TEST WHATSAPP CONFIGURATION FLOW POST-FIX - QR CODE MODAL VERIFICATION
+current_problem_statement: "TEST CUSTOM FIELDS FUNCTIONALITY FOR LEADS
+
+CONTESTO:
+Test the custom fields functionality for leads as requested in review request.
+
+OBIETTIVO CRITICO:
+Verificare che la funzionalità custom fields per i lead funzioni correttamente:
+1. Check if custom fields exist: Call GET /api/custom-fields to see available custom fields
+2. Create a test lead with custom field data: Create a lead that has custom_fields populated (simulating Zapier data)
+3. Update lead endpoint: Verify PUT /api/leads/{id} correctly handles custom_fields in the request body
+
+EXPECTED BEHAVIOR:
+- Custom fields should be returned by the API
+- Leads should be able to store and retrieve custom_fields data
+- The update endpoint should save custom_fields correctly
+
+API URL: Use REACT_APP_BACKEND_URL from /app/frontend/.env
+CREDENTIALS: admin / admin123
+
+STATO: READY FOR TESTING"
+
+previous_problem_statement: "TEST WHATSAPP CONFIGURATION FLOW POST-FIX - QR CODE MODAL VERIFICATION
 
 CONTESTO:
 Ri-testare il flusso completo di configurazione WhatsApp dopo il fix dell'URL per verificare che il modale QR Code si apra correttamente (questo era il problema principale).
