@@ -6293,6 +6293,34 @@ async def webhook_receive_lead_get(
         privacy_bool = str_to_bool(final_privacy)
         marketing_bool = str_to_bool(final_marketing)
         
+        # Process custom fields from query parameters
+        # Get all custom fields from database
+        custom_fields_db = await db.custom_fields.find().to_list(length=None)
+        custom_fields_map = {cf["name"].lower(): cf["id"] for cf in custom_fields_db}
+        
+        # Standard parameters to exclude from custom fields
+        standard_params = {
+            "unit_id", "nome", "cognome", "telefono", "email", "provincia",
+            "commessa_id", "campagna", "tipologia_abitazione", "indirizzo",
+            "regione", "url", "otp", "inserzione", "privacy_consent",
+            "marketing_consent", "consenso_privacy", "consenso_marketing"
+        }
+        
+        # Extract custom fields from query parameters
+        custom_fields_values = {}
+        all_query_params = dict(request.query_params)
+        
+        for param_name, param_value in all_query_params.items():
+            if param_name.lower() not in standard_params:
+                # Check if this param matches a custom field name (case-insensitive)
+                param_name_lower = param_name.lower()
+                if param_name_lower in custom_fields_map:
+                    field_id = custom_fields_map[param_name_lower]
+                    custom_fields_values[field_id] = param_value
+                    logging.info(f"[WEBHOOK] Custom field '{param_name}' -> ID {field_id} = '{param_value}'")
+        
+        logging.info(f"[WEBHOOK] Processed {len(custom_fields_values)} custom fields")
+        
         # Create LeadCreate object from query parameters
         lead_data = LeadCreate(
             nome=nome,
@@ -6310,6 +6338,7 @@ async def webhook_receive_lead_get(
             inserzione=inserzione,
             privacy_consent=privacy_bool,
             marketing_consent=marketing_bool,
+            custom_fields=custom_fields_values,  # Add custom fields
         )
         
         # Validate that unit exists
