@@ -6298,6 +6298,8 @@ async def webhook_receive_lead_get(
         custom_fields_db = await db.custom_fields.find().to_list(length=None)
         custom_fields_map = {cf["name"].lower(): cf["id"] for cf in custom_fields_db}
         
+        logging.info(f"[WEBHOOK] Available custom fields: {list(custom_fields_map.keys())}")
+        
         # Standard parameters to exclude from custom fields
         standard_params = {
             "unit_id", "nome", "cognome", "telefono", "email", "provincia",
@@ -6310,16 +6312,22 @@ async def webhook_receive_lead_get(
         custom_fields_values = {}
         all_query_params = dict(request.query_params)
         
+        logging.info(f"[WEBHOOK] All query params received: {list(all_query_params.keys())}")
+        
         for param_name, param_value in all_query_params.items():
-            if param_name.lower() not in standard_params:
+            param_name_lower = param_name.lower()
+            logging.info(f"[WEBHOOK] Processing param: '{param_name}' (lower: '{param_name_lower}')")
+            
+            if param_name_lower not in standard_params:
                 # Check if this param matches a custom field name (case-insensitive)
-                param_name_lower = param_name.lower()
                 if param_name_lower in custom_fields_map:
                     field_id = custom_fields_map[param_name_lower]
                     custom_fields_values[field_id] = param_value
-                    logging.info(f"[WEBHOOK] Custom field '{param_name}' -> ID {field_id} = '{param_value}'")
+                    logging.info(f"[WEBHOOK] ✅ Custom field MATCHED: '{param_name}' -> ID {field_id} = '{param_value}'")
+                else:
+                    logging.info(f"[WEBHOOK] ⚠️ Param '{param_name}' NOT in custom fields map")
         
-        logging.info(f"[WEBHOOK] Processed {len(custom_fields_values)} custom fields")
+        logging.info(f"[WEBHOOK] Final custom_fields_values: {custom_fields_values}")
         
         # Create LeadCreate object from query parameters
         lead_data = LeadCreate(
