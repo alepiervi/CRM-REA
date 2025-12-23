@@ -4713,7 +4713,7 @@ async def get_leads(
             {"email": search_regex}
         ]
     
-    leads = await db["leads"].find(query).to_list(length=None)
+    leads = await db["leads"].find(query).sort("created_at", -1).to_list(length=None)
     
     # Filter out leads with validation errors to prevent crashes
     valid_leads = []
