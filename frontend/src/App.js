@@ -2963,22 +2963,22 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 <FolderOpen className="w-4 h-4 text-amber-500" />
                 Campagna
               </Label>
-              <div className="relative">
-                <Input
-                  placeholder="Filtra per campagna..."
-                  value={filters.campagna}
-                  onChange={(e) => setFilters({ ...filters, campagna: e.target.value })}
-                  className="pl-3 border-slate-200 focus:border-blue-400 rounded-lg"
-                />
-                {filters.campagna && (
-                  <button
-                    onClick={() => setFilters({ ...filters, campagna: "" })}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+              <Select
+                value={filters.campagna || "all"}
+                onValueChange={(value) => setFilters({ ...filters, campagna: value === "all" ? "" : value })}
+              >
+                <SelectTrigger className="border-slate-200 focus:border-blue-400 rounded-lg">
+                  <SelectValue placeholder="Tutte le campagne" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte le campagne</SelectItem>
+                  {[...new Set(leads.map(l => l.campagna).filter(c => c && c.trim()))].sort().map((campagna) => (
+                    <SelectItem key={campagna} value={campagna}>
+                      {campagna}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Provincia */}
