@@ -3140,7 +3140,6 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                     <TableRow>
                       <TableHead>ID Lead</TableHead>
                       <TableHead>Nome</TableHead>
-                      <TableHead>Telefono</TableHead>
                       <TableHead>Provincia</TableHead>
                       <TableHead>Campagna</TableHead>
                       {/* Colonna Assegnato a - Solo per Admin e Referente */}
@@ -3161,7 +3160,6 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                         <TableCell className="font-medium">
                           {lead.nome} {lead.cognome}
                         </TableCell>
-                        <TableCell>{lead.telefono}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
                             <MapPin className="w-3 h-3 text-slate-400" />
