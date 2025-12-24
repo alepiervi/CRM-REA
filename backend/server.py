@@ -378,6 +378,11 @@ class LeadCreate(BaseModel):
     custom_fields: Dict[str, Any] = {}
 
 class LeadUpdate(BaseModel):
+    nome: Optional[str] = None
+    cognome: Optional[str] = None
+    telefono: Optional[str] = None
+    email: Optional[str] = None
+    campagna: Optional[str] = None
     provincia: Optional[str] = None
     tipologia_abitazione: Optional[str] = None  # Changed to string for dynamic values
     indirizzo: Optional[str] = None
