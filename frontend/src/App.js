@@ -3234,10 +3234,6 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                     
                     <div className="grid grid-cols-1 gap-2 mb-3 text-sm">
                       <div className="flex items-center space-x-2">
-                        <Phone className="w-3 h-3 text-slate-400" />
-                        <span className="text-slate-600">{lead.telefono}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
                         <MapPin className="w-3 h-3 text-slate-400" />
                         <span className="text-slate-600">{lead.provincia}</span>
                       </div>
