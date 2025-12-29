@@ -11543,11 +11543,61 @@ async def get_clienti(
         # Use separate field name to avoid conflict with main commessa_id parameter
         query["commessa_id"] = commessa_id_filter
     
+    # NEW: Search filter (name, email, phone, codice_fiscale)
+    if search and search.strip():
+        search_term = search.strip()
+        search_regex = {"$regex": search_term, "$options": "i"}
+        query["$or"] = query.get("$or", []) + [
+            {"nome": search_regex},
+            {"cognome": search_regex},
+            {"ragione_sociale": search_regex},
+            {"email": search_regex},
+            {"telefono": search_regex},
+            {"codice_fiscale": search_regex}
+        ] if "$or" not in query else None
+        
+        # Handle case where $or already exists
+        if "$or" in query and query["$or"] is None:
+            existing_conditions = query.copy()
+            if "$and" in existing_conditions:
+                existing_conditions["$and"].append({
+                    "$or": [
+                        {"nome": search_regex},
+                        {"cognome": search_regex},
+                        {"ragione_sociale": search_regex},
+                        {"email": search_regex},
+                        {"telefono": search_regex},
+                        {"codice_fiscale": search_regex}
+                    ]
+                })
+            else:
+                query["$and"] = [
+                    {k: v for k, v in existing_conditions.items() if k != "$or"},
+                    {
+                        "$or": [
+                            {"nome": search_regex},
+                            {"cognome": search_regex},
+                            {"ragione_sociale": search_regex},
+                            {"email": search_regex},
+                            {"telefono": search_regex},
+                            {"codice_fiscale": search_regex}
+                        ]
+                    }
+                ]
+    
     print(f"🔍 FINAL QUERY for {current_user.role}: {query}")
     
-    # No limit - return all matching clients (same as leads)
-    clienti = await db.clienti.find(query).sort("created_at", -1).to_list(length=None)
-    print(f"📊 Found {len(clienti)} clients for user {current_user.username} ({current_user.role})")
+    # Count total matching documents BEFORE pagination
+    total = await db.clienti.count_documents(query)
+    print(f"📊 Total matching clients: {total}")
+    
+    # Calculate pagination
+    total_pages = (total + page_size - 1) // page_size  # Ceiling division
+    skip = (page - 1) * page_size
+    
+    # Fetch paginated results
+    clienti = await db.clienti.find(query).sort("created_at", -1).skip(skip).limit(page_size).to_list(length=page_size)
+    print(f"📊 Returning page {page}/{total_pages} with {len(clienti)} clients for user {current_user.username}")
     
     # Enrich clienti with segmento_nome for display purposes
     for cliente in clienti:
@@ -11568,7 +11618,13 @@ async def get_clienti(
         else:
             cliente["segmento_nome"] = "N/A"
     
-    return [Cliente(**c) for c in clienti]
+    return ClientiPaginatedResponse(
+        clienti=[Cliente(**c) for c in clienti],
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages
+    )
 
 async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
     """Create Excel file with clienti data - ALL fields included, one row per SIM"""
