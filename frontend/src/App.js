@@ -7422,8 +7422,10 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
       // Clean data before sending
       const cleanData = { ...formData };
       
-      // Remove password field (not supported in UserUpdate model)
-      delete cleanData.password;
+      // Only include password if it was filled in (for password reset)
+      if (!cleanData.password || cleanData.password.trim() === '') {
+        delete cleanData.password;
+      }
       
       // Remove assignment_type field as it's only for UI
       delete cleanData.assignment_type;
