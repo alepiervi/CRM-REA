@@ -11188,7 +11188,7 @@ async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depen
     
     return Cliente(**cliente_dict)
 
-@api_router.get("/clienti", response_model=List[Cliente])
+@api_router.get("/clienti", response_model=ClientiPaginatedResponse)
 async def get_clienti(
     commessa_id: Optional[str] = None,
     sub_agenzia_id: Optional[str] = None,
@@ -11199,7 +11199,9 @@ async def get_clienti(
     servizio_id: Optional[str] = None,  # NEW: Servizi filter
     segmento: Optional[str] = None,     # NEW: Segmento filter  
     commessa_id_filter: Optional[str] = None,  # NEW: Commesse filter (separate from main commessa_id)
-    limit: Optional[int] = None,  # Optional limit parameter (ignored - returns all clients)
+    search: Optional[str] = None,  # NEW: Search by name, email, phone, codice_fiscale
+    page: int = 1,  # NEW: Page number (1-based)
+    page_size: int = 50,  # NEW: Items per page
     current_user: User = Depends(get_current_user)
 ):
     """Get clienti accessible to current user based on role"""
