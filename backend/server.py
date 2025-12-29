@@ -4207,6 +4207,10 @@ async def update_user(user_id: str, user_update: UserUpdate, current_user: User 
             if field == "password":
                 # Handle password hashing
                 update_data["password_hash"] = get_password_hash(value)
+                # Force password change on next login when admin resets password
+                update_data["password_change_required"] = True
+                update_data["password_last_changed"] = None  # Clear last changed date
+                print(f"🔐 Password reset by {current_user.username} for user {user_id} - password_change_required set to True")
             else:
                 update_data[field] = value
     
