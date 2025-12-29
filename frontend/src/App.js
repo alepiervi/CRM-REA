@@ -16764,6 +16764,11 @@ const STATUS_CLIENTI = [
 const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: commesseFromParent, subAgenzie: subAgenzieFromParent, servizi: serviziFromParent }) => {
   const [clienti, setClienti] = useState([]);
   const [allClienti, setAllClienti] = useState([]); // Store all clients for filtering
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalClienti, setTotalClienti] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
   const [commesse, setCommesse] = useState(commesseFromParent || []);
   const [subAgenzie, setSubAgenzie] = useState(subAgenzieFromParent || []);
   const [servizi, setServizi] = useState(serviziFromParent || []);
