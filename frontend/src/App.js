@@ -16992,56 +16992,31 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     setCurrentPage(1);
   };
 
-  // Filter clients based on search query and type
+  // Filter clients - now uses server-side filtering
   const filterClienti = (query, type) => {
-    if (!query.trim()) {
-      setClienti(allClienti);
-      return;
-    }
-
-    const searchQuery = query.toLowerCase().trim();
-    const filtered = allClienti.filter(cliente => {
-      switch (type) {
-        case 'id':
-          return cliente.cliente_id?.toLowerCase().includes(searchQuery);
-        case 'cognome':
-          return cliente.cognome?.toLowerCase().includes(searchQuery);
-        case 'codice_fiscale':
-          return cliente.codice_fiscale?.toLowerCase().includes(searchQuery);
-        case 'partita_iva':
-          return cliente.partita_iva?.toLowerCase().includes(searchQuery);
-        case 'telefono':
-          return cliente.telefono?.includes(searchQuery) || cliente.cellulare?.includes(searchQuery);
-        case 'email':
-          return cliente.email?.toLowerCase().includes(searchQuery);
-        case 'all':
-        default:
-          return (
-            cliente.cliente_id?.toLowerCase().includes(searchQuery) ||
-            cliente.cognome?.toLowerCase().includes(searchQuery) ||
-            cliente.nome?.toLowerCase().includes(searchQuery) ||
-            cliente.codice_fiscale?.toLowerCase().includes(searchQuery) ||
-            cliente.partita_iva?.toLowerCase().includes(searchQuery) ||
-            cliente.telefono?.includes(searchQuery) ||
-            cliente.cellulare?.includes(searchQuery) ||
-            cliente.email?.toLowerCase().includes(searchQuery)
-          );
-      }
-    });
-    
-    setClienti(filtered);
+    // Server-side filtering: reload from page 1 with search param
+    setCurrentPage(1);
+    fetchClienti(false, 1);
   };
 
-  // Handle search input change
+  // Handle search input change - debounced server-side search
   const handleSearchChange = (query) => {
     setSearchQuery(query);
-    filterClienti(query, searchType);
+    // Debounce: wait 500ms before triggering server-side search
+    if (window.searchTimeout) clearTimeout(window.searchTimeout);
+    window.searchTimeout = setTimeout(() => {
+      setCurrentPage(1);
+      fetchClienti(false, 1);
+    }, 500);
   };
 
   // Handle search type change
   const handleSearchTypeChange = (type) => {
     setSearchType(type);
-    filterClienti(searchQuery, type);
+    if (searchQuery) {
+      setCurrentPage(1);
+      fetchClienti(false, 1);
+    }
   };
 
   const createCliente = async (clienteData) => {
