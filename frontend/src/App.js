@@ -16910,7 +16910,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     }
   };
 
-  const fetchClienti = async (isAutoRefresh = false) => {
+  const fetchClienti = async (isAutoRefresh = false, page = currentPage) => {
     try {
       if (!isAutoRefresh) {
         setLoading(true);
@@ -16918,6 +16918,11 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         setIsRefreshing(true);
       }
       const params = new URLSearchParams();
+      
+      // Pagination params
+      params.append('page', page.toString());
+      params.append('page_size', pageSize.toString());
+      
       if (selectedCommessaLocal) {
         params.append('commessa_id', selectedCommessaLocal);
       }
@@ -16944,12 +16949,21 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       if (clientiFilterCommesse && clientiFilterCommesse !== 'all') {
         params.append('commessa_id_filter', clientiFilterCommesse);
       }
-      // No limit parameter - backend returns all clients
+      // Search param for server-side filtering
+      if (searchQuery && searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
       
       const response = await axios.get(`${API}/clienti?${params}`);
-      setAllClienti(response.data); // Store all clients
-      setClienti(response.data); // Display all initially
-      setLastUpdated(new Date()); // Update timestamp after successful fetch
+      
+      // Handle paginated response
+      const { clienti: clientiData, total, page: responsePage, page_size, total_pages } = response.data;
+      setClienti(clientiData);
+      setAllClienti(clientiData); // For local filtering compatibility
+      setTotalClienti(total);
+      setTotalPages(total_pages);
+      setCurrentPage(responsePage);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error("Error fetching clienti:", error);
       toast({
@@ -16966,8 +16980,16 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     }
   };
 
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      fetchClienti(false, newPage);
+    }
+  };
+
   const handleManualRefresh = () => {
-    fetchClienti(false); // Manual refresh
+    fetchClienti(false, 1); // Refresh from page 1
+    setCurrentPage(1);
   };
 
   // Filter clients based on search query and type
