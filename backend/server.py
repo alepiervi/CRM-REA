@@ -1336,6 +1336,14 @@ class ClienteUpdate(BaseModel):
                     data[field] = None
         return data
 
+# Modello risposta paginata per clienti
+class ClientiPaginatedResponse(BaseModel):
+    clienti: List[Cliente]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
 # Sistema di Audit Log per clienti
 class ClienteLogAction(str, Enum):
     CREATED = "created"
