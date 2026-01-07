@@ -407,6 +407,7 @@ class Unit(BaseModel):
     campagne_autorizzate: List[str] = []  # Campaign names this unit handles (optional, for filtering)
     assistant_id: Optional[str] = None  # OpenAI Assistant ID for this unit
     welcome_message: Optional[str] = None  # WhatsApp welcome message template for new leads
+    auto_assign_enabled: bool = True  # NEW: Enable/disable automatic lead assignment by province
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
@@ -420,12 +421,14 @@ class UnitCreate(BaseModel):
     commessa_id: Optional[str] = None  # Legacy field (optional for backward compatibility)
     commesse_autorizzate: List[str] = []  # Multiple commesse - primary field
     campagne_autorizzate: List[str] = []
+    auto_assign_enabled: bool = True  # NEW: Enable/disable automatic assignment
 
 class UnitUpdate(BaseModel):
     nome: Optional[str] = None
     commessa_id: Optional[str] = None
     commesse_autorizzate: Optional[List[str]] = None  # NEW: Additional commesse
     campagne_autorizzate: Optional[List[str]] = None
+    auto_assign_enabled: Optional[bool] = None  # NEW: Enable/disable automatic assignment
     is_active: Optional[bool] = None
     assistant_id: Optional[str] = None  # NEW: OpenAI Assistant ID assignment
     welcome_message: Optional[str] = None  # NEW: WhatsApp welcome message template
