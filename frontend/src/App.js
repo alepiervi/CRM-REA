@@ -17813,20 +17813,19 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       {/* Search Field */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
-          <div className="relative flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Cerca clienti... (premi Invio)"
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                onKeyPress={handleSearchKeyPress}
-                className="pl-10"
-              />
-            </div>
-            <Button onClick={handleSearchClick} variant="outline" size="sm">
-              <Search className="w-4 h-4" />
-            </Button>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Cerca clienti..."
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
+            {loading && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              </div>
+            )}
           </div>
         </div>
         <Select value={searchType} onValueChange={handleSearchTypeChange}>
