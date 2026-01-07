@@ -339,6 +339,7 @@ class Lead(BaseModel):
     gruppo: Optional[str] = None  # Made optional to fix validation errors (unit_id)
     contenitore: Optional[str] = None  # Made optional to fix validation errors
     unit_id: Optional[str] = None  # NEW: Unit assignment
+    unit_nome: Optional[str] = None  # NEW: Unit name for display (populated in response)
     commessa_id: Optional[str] = None  # NEW: Commessa assignment
     status: Optional[str] = None  # NEW: Dynamic status (not enum)
     privacy_consent: Optional[bool] = None  # None = non arrivato da Zapier, True/False = arrivato da Zapier
