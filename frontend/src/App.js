@@ -17049,7 +17049,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       if (clientiFilterCommesse && clientiFilterCommesse !== 'all') {
         params.append('commessa_id_filter', clientiFilterCommesse);
       }
-      // Search is now done client-side, removed server-side search param
+      // Include search query for server-side filtering
+      if (searchQuery && searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
       
       const response = await axios.get(`${API}/clienti?${params}`);
       
