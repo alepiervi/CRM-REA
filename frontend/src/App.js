@@ -4088,6 +4088,7 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
     nome: "",
     commesse_autorizzate: [], // Changed from commessa_id to commesse_autorizzate (array)
     campagne_autorizzate: [],
+    auto_assign_enabled: true, // NEW: Smistamento automatico abilitato di default
   });
   const [campagnaInput, setCampagnaInput] = useState("");
   const { toast } = useToast();
