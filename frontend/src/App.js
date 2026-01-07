@@ -3203,6 +3203,14 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                             <span>{lead.provincia}</span> 
                           </div>
                         </TableCell>
+                        {/* Cella Unit - Solo per Admin */}
+                        {user?.role === "admin" && (
+                          <TableCell>
+                            <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-medium">
+                              {lead.unit_nome || "N/A"}
+                            </span>
+                          </TableCell>
+                        )}
                         <TableCell>{lead.campagna}</TableCell>
                         {/* Cella Assegnato a - Solo per Admin e Referente */}
                         {(user?.role === "admin" || user?.role === "referente") && (
