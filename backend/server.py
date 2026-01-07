@@ -3741,6 +3741,13 @@ lead_qualification_bot = LeadQualificationBot()
 async def assign_lead_to_agent(lead: Lead):
     """Automatically assign lead to agent based on unit_id and province coverage"""
     
+    # Check if the Unit has auto_assign_enabled
+    if lead.unit_id:
+        unit = await db.units.find_one({"id": lead.unit_id})
+        if unit and not unit.get("auto_assign_enabled", True):
+            logging.info(f"[ASSIGN] Auto-assignment disabled for unit {lead.unit_id} ({unit.get('nome')}). Lead {lead.id} will remain unassigned.")
+            return None
+    
     # Build query for agents
     query = {
         "role": "agente",
