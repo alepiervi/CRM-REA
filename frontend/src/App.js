@@ -16994,7 +16994,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     }
   };
 
-  const fetchClienti = async (isAutoRefresh = false, page = currentPage) => {
+  const fetchClienti = async (isAutoRefresh = false, page = currentPage, searchValue = null) => {
     try {
       if (!isAutoRefresh) {
         setLoading(true);
@@ -17033,9 +17033,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       if (clientiFilterCommesse && clientiFilterCommesse !== 'all') {
         params.append('commessa_id_filter', clientiFilterCommesse);
       }
-      // Include search query for server-side filtering
-      if (searchQuery && searchQuery.trim()) {
-        params.append('search', searchQuery.trim());
+      // Use passed searchValue if provided, otherwise use state
+      const effectiveSearch = searchValue !== null ? searchValue : searchQuery;
+      if (effectiveSearch && effectiveSearch.trim()) {
+        params.append('search', effectiveSearch.trim());
       }
       
       const response = await axios.get(`${API}/clienti?${params}`);
