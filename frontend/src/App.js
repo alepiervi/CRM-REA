@@ -16905,6 +16905,24 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const getFilteredClients = () => {
     let filtered = clienti;
     
+    // Apply search filter (client-side)
+    if (searchQuery && searchQuery.trim()) {
+      const search = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(cliente => {
+        return (
+          cliente.nome?.toLowerCase().includes(search) ||
+          cliente.cognome?.toLowerCase().includes(search) ||
+          cliente.ragione_sociale?.toLowerCase().includes(search) ||
+          cliente.email?.toLowerCase().includes(search) ||
+          cliente.telefono?.includes(search) ||
+          cliente.cellulare?.includes(search) ||
+          cliente.codice_fiscale?.toLowerCase().includes(search) ||
+          cliente.partita_iva?.toLowerCase().includes(search) ||
+          cliente.cliente_id?.toLowerCase().includes(search)
+        );
+      });
+    }
+    
     // Apply date filter if enabled
     if (dateFilter.enabled) {
       filtered = filterClientsByDate(filtered);
