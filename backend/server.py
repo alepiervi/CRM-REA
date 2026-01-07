@@ -11572,43 +11572,23 @@ async def get_clienti(
     if search and search.strip():
         search_term = search.strip()
         search_regex = {"$regex": search_term, "$options": "i"}
-        query["$or"] = query.get("$or", []) + [
-            {"nome": search_regex},
-            {"cognome": search_regex},
-            {"ragione_sociale": search_regex},
-            {"email": search_regex},
-            {"telefono": search_regex},
-            {"codice_fiscale": search_regex}
-        ] if "$or" not in query else None
+        # Simple search with $or - add to existing query with $and if needed
+        search_conditions = {
+            "$or": [
+                {"nome": search_regex},
+                {"cognome": search_regex},
+                {"ragione_sociale": search_regex},
+                {"email": search_regex},
+                {"telefono": search_regex},
+                {"codice_fiscale": search_regex}
+            ]
+        }
         
-        # Handle case where $or already exists
-        if "$or" in query and query["$or"] is None:
-            existing_conditions = query.copy()
-            if "$and" in existing_conditions:
-                existing_conditions["$and"].append({
-                    "$or": [
-                        {"nome": search_regex},
-                        {"cognome": search_regex},
-                        {"ragione_sociale": search_regex},
-                        {"email": search_regex},
-                        {"telefono": search_regex},
-                        {"codice_fiscale": search_regex}
-                    ]
-                })
-            else:
-                query["$and"] = [
-                    {k: v for k, v in existing_conditions.items() if k != "$or"},
-                    {
-                        "$or": [
-                            {"nome": search_regex},
-                            {"cognome": search_regex},
-                            {"ragione_sociale": search_regex},
-                            {"email": search_regex},
-                            {"telefono": search_regex},
-                            {"codice_fiscale": search_regex}
-                        ]
-                    }
-                ]
+        # Combine with existing query using $and
+        if query:
+            query = {"$and": [query, search_conditions]}
+        else:
+            query = search_conditions
     
     print(f"🔍 FINAL QUERY for {current_user.role}: {query}")
     
