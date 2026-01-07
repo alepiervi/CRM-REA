@@ -17102,27 +17102,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const handleSearchChange = (query) => {
     setSearchQuery(query);
   };
-  
-  // Client-side filtering based on search query
-  const getFilteredBySearch = (clientiList) => {
-    if (!searchQuery || !searchQuery.trim()) {
-      return clientiList;
-    }
-    
-    const search = searchQuery.toLowerCase().trim();
-    return clientiList.filter(cliente => {
-      return (
-        cliente.nome?.toLowerCase().includes(search) ||
-        cliente.cognome?.toLowerCase().includes(search) ||
-        cliente.ragione_sociale?.toLowerCase().includes(search) ||
-        cliente.email?.toLowerCase().includes(search) ||
-        cliente.telefono?.includes(search) ||
-        cliente.cellulare?.includes(search) ||
-        cliente.codice_fiscale?.toLowerCase().includes(search) ||
-        cliente.partita_iva?.toLowerCase().includes(search) ||
-        cliente.cliente_id?.toLowerCase().includes(search)
-      );
-    });
+
+  // Handle search type change
+  const handleSearchTypeChange = (type) => {
+    setSearchType(type);
   };
 
   // Handle search type change
