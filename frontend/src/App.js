@@ -17108,15 +17108,6 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     setSearchType(type);
   };
 
-  // Handle search type change
-  const handleSearchTypeChange = (type) => {
-    setSearchType(type);
-    if (searchQuery) {
-      setCurrentPage(1);
-      fetchClienti(false, 1);
-    }
-  };
-
   const createCliente = async (clienteData) => {
     
     try {
