@@ -17007,7 +17007,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       params.append('page', page.toString());
       params.append('page_size', pageSize.toString());
       
-      if (selectedCommessaLocal) {
+      if (selectedCommessaLocal && selectedCommessaLocal !== 'all') {
         params.append('commessa_id', selectedCommessaLocal);
       }
       if (clientiFilterSubAgenzia && clientiFilterSubAgenzia !== 'all') {
