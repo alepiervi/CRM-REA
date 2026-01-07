@@ -17777,6 +17777,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
       <Card>
         <CardContent className="p-0">
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <p className="text-gray-500">Caricamento clienti...</p>
+            </div>
+          ) : (
+            <>
           {/* Desktop Table View */}
           <div className="hidden md:block">
             <Table>
