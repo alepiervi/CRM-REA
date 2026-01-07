@@ -17093,15 +17093,78 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     // If query is empty, immediately reload full list
     if (!query || query.trim() === '') {
       setCurrentPage(1);
-      fetchClienti(false, 1);
+      fetchClientiWithSearch(1, ''); // Pass empty search directly
       return;
     }
     
     // Debounce: wait 500ms before triggering server-side search
     window.searchTimeout = setTimeout(() => {
       setCurrentPage(1);
-      fetchClienti(false, 1);
+      fetchClientiWithSearch(1, query); // Pass search query directly
     }, 500);
+  };
+  
+  // Fetch clienti with explicit search parameter (to avoid state timing issues)
+  const fetchClientiWithSearch = async (page, searchValue) => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      // Pagination params
+      params.append('page', page.toString());
+      params.append('page_size', pageSize.toString());
+      
+      if (selectedCommessaLocal) {
+        params.append('commessa_id', selectedCommessaLocal);
+      }
+      if (clientiFilterSubAgenzia && clientiFilterSubAgenzia !== 'all') {
+        params.append('sub_agenzia_id', clientiFilterSubAgenzia);
+      }
+      if (clientiFilterStatus && clientiFilterStatus !== 'all') {
+        params.append('status', clientiFilterStatus);
+      }
+      if (clientiFilterTipologia && clientiFilterTipologia !== 'all') {
+        params.append('tipologia_contratto', clientiFilterTipologia);
+      }
+      if (clientiFilterCreatedBy && clientiFilterCreatedBy !== 'all') {
+        params.append('assigned_to', clientiFilterCreatedBy);
+      }
+      if (clientiFilterServizi && clientiFilterServizi !== 'all') {
+        params.append('servizio_id', clientiFilterServizi);
+      }
+      if (clientiFilterSegmento && clientiFilterSegmento !== 'all') {
+        params.append('segmento', clientiFilterSegmento);
+      }
+      if (clientiFilterCommesse && clientiFilterCommesse !== 'all') {
+        params.append('commessa_id_filter', clientiFilterCommesse);
+      }
+      
+      // Use the explicit search value passed as parameter
+      if (searchValue && searchValue.trim()) {
+        params.append('search', searchValue.trim());
+      }
+      
+      console.log("Fetching clienti with params:", params.toString());
+      const response = await axios.get(`${API}/clienti?${params}`);
+      
+      // Handle paginated response
+      const { clienti: clientiData, total, page: responsePage, page_size, total_pages } = response.data;
+      setClienti(clientiData);
+      setAllClienti(clientiData);
+      setTotalClienti(total);
+      setTotalPages(total_pages);
+      setCurrentPage(responsePage);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error("Error fetching clienti:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nel caricamento dei clienti",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle search type change
