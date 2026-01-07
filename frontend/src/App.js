@@ -4236,6 +4236,7 @@ const EditUnitModal = ({ unit, onClose, onSuccess, commesse }) => {
     nome: unit.nome,
     commesse_autorizzate: unit.commesse_autorizzate || [],
     campagne_autorizzate: unit.campagne_autorizzate || [],
+    auto_assign_enabled: unit.auto_assign_enabled !== false, // NEW: Default true if undefined
     is_active: unit.is_active,
     welcome_message: unit.welcome_message || "",
   });
