@@ -18120,8 +18120,6 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               </div>
             </div>
           )}
-            </>
-          )}
         </CardContent>
       </Card>
 
