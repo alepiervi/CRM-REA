@@ -17048,12 +17048,14 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       setLastUpdated(new Date());
     } catch (error) {
       console.error("Error fetching clienti:", error);
+      console.error("Error details:", error.response?.data || error.message);
       toast({
         title: "Errore",
         description: "Errore nel caricamento dei clienti",
         variant: "destructive",
       });
     } finally {
+      console.log("fetchClienti completed, setting loading to false");
       if (!isAutoRefresh) {
         setLoading(false);
       } else {
