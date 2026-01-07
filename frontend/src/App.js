@@ -17084,8 +17084,18 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   // Handle search input change - debounced server-side search
   const handleSearchChange = (query) => {
     setSearchQuery(query);
-    // Debounce: wait 500ms before triggering server-side search
+    
+    // Clear existing timeout
     if (window.searchTimeout) clearTimeout(window.searchTimeout);
+    
+    // If query is empty, immediately reload full list
+    if (!query || query.trim() === '') {
+      setCurrentPage(1);
+      fetchClienti(false, 1);
+      return;
+    }
+    
+    // Debounce: wait 500ms before triggering server-side search
     window.searchTimeout = setTimeout(() => {
       setCurrentPage(1);
       fetchClienti(false, 1);
