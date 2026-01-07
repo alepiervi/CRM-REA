@@ -4201,6 +4201,22 @@ const CreateUnitModal = ({ onClose, onSuccess, commesse }) => {
                 ))}
               </div>
             </div>
+
+            {/* Smistamento Automatico */}
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">Smistamento Automatico</Label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Se attivo, i lead vengono assegnati automaticamente agli agenti in base alla provincia
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.auto_assign_enabled}
+                  onCheckedChange={(checked) => setFormData({ ...formData, auto_assign_enabled: checked })}
+                />
+              </div>
+            </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
