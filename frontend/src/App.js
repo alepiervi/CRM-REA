@@ -17058,7 +17058,6 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         variant: "destructive",
       });
     } finally {
-      console.log("fetchClienti completed, setting loading to false");
       if (!isAutoRefresh) {
         setLoading(false);
       } else {
