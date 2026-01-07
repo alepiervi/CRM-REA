@@ -17084,18 +17084,29 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     fetchClienti(false, 1);
   };
 
-  // Handle search input change - triggers server-side search with debounce
+  // Handle search input change - updates state only, search triggered by Enter or button
   const handleSearchChange = (query) => {
     setSearchQuery(query);
     
-    // Clear existing timeout
-    if (window.clientiSearchTimeout) clearTimeout(window.clientiSearchTimeout);
-    
-    // Debounce: wait 500ms before triggering search
-    window.clientiSearchTimeout = setTimeout(() => {
+    // If empty, immediately reload all clients
+    if (!query || query.trim() === '') {
       setCurrentPage(1);
-      fetchClienti(false, 1, query); // Pass query directly to avoid state timing issues
-    }, 500);
+      fetchClienti(false, 1, '');
+    }
+  };
+  
+  // Trigger search when Enter is pressed
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      setCurrentPage(1);
+      fetchClienti(false, 1, searchQuery);
+    }
+  };
+  
+  // Trigger search button click
+  const handleSearchClick = () => {
+    setCurrentPage(1);
+    fetchClienti(false, 1, searchQuery);
   };
 
   // Handle search type change
