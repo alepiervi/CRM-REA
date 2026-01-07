@@ -17096,7 +17096,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     // Debounce: wait 500ms before triggering search
     window.clientiSearchTimeout = setTimeout(() => {
       setCurrentPage(1);
-      fetchClienti(false, 1);
+      fetchClienti(false, 1, query); // Pass query directly to avoid state timing issues
     }, 500);
   };
 
