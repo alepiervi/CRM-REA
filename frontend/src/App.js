@@ -3197,6 +3197,14 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                         <TableCell className="font-medium">
                           {lead.nome} {lead.cognome}
                         </TableCell>
+                        {/* Cella Unit - Solo per Admin */}
+                        {user?.role === "admin" && (
+                          <TableCell>
+                            <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-medium">
+                              {lead.unit_nome || "N/A"}
+                            </span>
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="flex items-center space-x-1">
                             <MapPin className="w-3 h-3 text-slate-400" />
