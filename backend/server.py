@@ -4736,10 +4736,20 @@ async def get_leads(
     
     leads = await db["leads"].find(query).sort("created_at", -1).to_list(length=None)
     
+    # Get all units for populating unit_nome
+    units = await db["units"].find().to_list(length=None)
+    units_map = {u["id"]: u.get("nome", "N/A") for u in units}
+    
     # Filter out leads with validation errors to prevent crashes
     valid_leads = []
     for lead_data in leads:
         try:
+            # Populate unit_nome from units_map
+            if lead_data.get("unit_id"):
+                lead_data["unit_nome"] = units_map.get(lead_data["unit_id"], "Unit sconosciuta")
+            else:
+                lead_data["unit_nome"] = "Non assegnata"
+            
             lead = Lead(**lead_data)
             valid_leads.append(lead)
         except Exception as e:
