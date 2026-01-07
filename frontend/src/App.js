@@ -3131,6 +3131,11 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                         📊 {filters.status}
                       </span>
                     )}
+                    {filters.unit_id && (
+                      <span className="px-2 py-1 bg-white border border-purple-300 rounded-md text-xs text-purple-700">
+                        🏢 {units?.find(u => u.id === filters.unit_id)?.nome || filters.unit_id}
+                      </span>
+                    )}
                     {filters.assigned_agent_id && (
                       <span className="px-2 py-1 bg-white border border-blue-300 rounded-md text-xs text-blue-700">
                         👤 {filters.assigned_agent_id === "unassigned" ? "Non assegnati" : users.find(u => u.id === filters.assigned_agent_id)?.username}
