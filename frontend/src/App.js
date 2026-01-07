@@ -2959,6 +2959,32 @@ const LeadsManagement = ({ selectedUnit, units }) => {
           
           {/* Filter Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Unit Filter - Solo per Admin */}
+            {user?.role === "admin" && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-purple-500" />
+                  Unit
+                </Label>
+                <Select
+                  value={filters.unit_id || "all"}
+                  onValueChange={(value) => setFilters({ ...filters, unit_id: value === "all" ? "" : value })}
+                >
+                  <SelectTrigger className="border-slate-200 focus:border-blue-400 rounded-lg">
+                    <SelectValue placeholder="Tutte le Unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutte le Unit</SelectItem>
+                    {units && units.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
             {/* Campagna */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
