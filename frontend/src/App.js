@@ -2912,6 +2912,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
               variant="ghost"
               size="sm"
               onClick={() => setFilters({
+                unit_id: "",
                 campagna: "",
                 provincia: "",
                 status: "",
