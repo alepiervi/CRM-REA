@@ -2,7 +2,7 @@
 import requests
 import json
 
-BACKEND_URL = "https://role-manager-19.preview.emergentagent.com"
+BACKEND_URL = "https://client-search-fix-3.preview.emergentagent.com"
 
 # Login as admin
 login_response = requests.post(

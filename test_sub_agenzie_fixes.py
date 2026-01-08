@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 class SubAgenzieFixesTester:
-    def __init__(self, base_url="https://role-manager-19.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://client-search-fix-3.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None

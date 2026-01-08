@@ -156,17 +156,17 @@ Il sistema valida automaticamente:
 
 ### Esempio 1: Lead Base
 ```
-https://role-manager-19.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=Mario&cognome=Rossi&telefono=3331234567&email=mario@example.com&provincia=Milano&commessa_id=abc123
+https://client-search-fix-3.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=Mario&cognome=Rossi&telefono=3331234567&email=mario@example.com&provincia=Milano&commessa_id=abc123
 ```
 
 ### Esempio 2: Lead Completo con Campagna
 ```
-https://role-manager-19.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=Giulia&cognome=Bianchi&telefono=3345678901&email=giulia@example.com&provincia=Roma&commessa_id=abc123&campagna=GoogleAds2025&indirizzo=Via+Milano+45&regione=Lazio&tipologia_abitazione=singola&privacy_consent=true&marketing_consent=true
+https://client-search-fix-3.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome=Giulia&cognome=Bianchi&telefono=3345678901&email=giulia@example.com&provincia=Roma&commessa_id=abc123&campagna=GoogleAds2025&indirizzo=Via+Milano+45&regione=Lazio&tipologia_abitazione=singola&privacy_consent=true&marketing_consent=true
 ```
 
 ### Esempio 3: Con Zapier Variables
 ```
-https://role-manager-19.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome={{1. First Name}}&cognome={{1. Last Name}}&telefono={{1. Phone}}&email={{1. Email}}&provincia={{1. City}}&commessa_id=abc123-def456&campagna=FacebookLeads2025
+https://client-search-fix-3.preview.emergentagent.com/api/webhook/251eb0e5-f4b3-4837-9f05-8f8eec6f62d0?nome={{1. First Name}}&cognome={{1. Last Name}}&telefono={{1. Phone}}&email={{1. Email}}&provincia={{1. City}}&commessa_id=abc123-def456&campagna=FacebookLeads2025
 ```
 
 ---

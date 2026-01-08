@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 class CRMAPITester:
-    def __init__(self, base_url="https://role-manager-19.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://client-search-fix-3.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
@@ -1059,7 +1059,7 @@ class CRMAPITester:
         print("   2. Quando filtra, non funziona (non filtra i clienti)")
         print("")
         print("🎯 SETUP:")
-        print("   • Backend: https://role-manager-19.preview.emergentagent.com")
+        print("   • Backend: https://client-search-fix-3.preview.emergentagent.com")
         print("   • User: ale8/admin123")
         print("")
         print("🎯 TEST DA ESEGUIRE:")
@@ -3302,7 +3302,7 @@ class CRMAPITester:
         """🚨 ANALISI DETTAGLIATA PROBLEMA FILTRO UTENTI PER ale8"""
         print("\n🚨 ANALISI DETTAGLIATA PROBLEMA FILTRO UTENTI PER ale8")
         print("🎯 SETUP:")
-        print("   • Backend: https://role-manager-19.preview.emergentagent.com")
+        print("   • Backend: https://client-search-fix-3.preview.emergentagent.com")
         print("   • User: ale8/admin123")
         print("")
         print("🎯 PROBLEMA CRITICO:")
@@ -50671,7 +50671,7 @@ startxref
         print("   2. Quando filtra, non funziona (non filtra i clienti)")
         print("")
         print("🎯 SETUP:")
-        print("   • Backend: https://role-manager-19.preview.emergentagent.com")
+        print("   • Backend: https://client-search-fix-3.preview.emergentagent.com")
         print("   • User: ale8/admin123")
         print("")
         
@@ -54058,7 +54058,7 @@ def main():
         
         if unit_agn:
             agn_id = unit_agn.get('id')
-            base_webhook_url = "https://role-manager-19.preview.emergentagent.com/api/webhook"
+            base_webhook_url = "https://client-search-fix-3.preview.emergentagent.com/api/webhook"
             webhook_url = f"{base_webhook_url}/{agn_id}"
             
             print(f"\n   🎯 URL WEBHOOK COMPLETO PRONTO PER ZAPIER:")
@@ -54096,7 +54096,7 @@ def main():
         if unit_agn:
             agn_id = unit_agn.get('id')
             agn_is_active = unit_agn.get('is_active', False)
-            webhook_url = f"https://role-manager-19.preview.emergentagent.com/api/webhook/{agn_id}"
+            webhook_url = f"https://client-search-fix-3.preview.emergentagent.com/api/webhook/{agn_id}"
             
             print(f"\n   🎉 SUCCESS: ID Unit AGN trovato e webhook URL costruito!")
             print(f"   📋 INFORMAZIONI FINALI:")
@@ -56143,7 +56143,7 @@ if __name__ == "__main__":
         """🎯 TEST REVIEW REQUEST: Verifica fix dropdown 'Utente Assegnato' per ale8"""
         print("\n🎯 TEST REVIEW REQUEST: Verifica fix dropdown 'Utente Assegnato' per ale8")
         print("🎯 SETUP:")
-        print("   • Backend: https://role-manager-19.preview.emergentagent.com")
+        print("   • Backend: https://client-search-fix-3.preview.emergentagent.com")
         print("   • User: ale8/admin123")
         print("")
         print("🎯 TEST:")

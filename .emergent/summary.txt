@@ -1,168 +1,179 @@
 <analysis>**original_problem_statement:**
-The user's initial goal was to fix role-based permission bugs. This expanded to implementing a functional, free-to-use WhatsApp integration. After the initial library (Baileys) failed, the user rejected the proposed Telegram alternative and insisted on a working WhatsApp solution. The agent then successfully implemented . Subsequent requests have focused on a series of complex and iterative fixes to role-based permissions, UI logic, and data handling, particularly concerning client and user management for different roles. The latest requests involved fixing production bugs, implementing a Zapier webhook for lead creation, and resolving a long-standing filter issue.
+The user's initial goal was to fix role-based permission bugs. This expanded to implementing a functional, free-to-use WhatsApp integration. The latest requests have focused on a series of complex and iterative fixes to role-based permissions, UI logic, data handling, and performance, particularly concerning client and user management. In this session, the user requested fixes for Zapier webhooks, lead management, user password resets, client list performance (pagination), and a highly problematic client search feature.
 
 **PRODUCT REQUIREMENTS:**
-- Implement a functional, free WhatsApp integration. (COMPLETED)
-- Fix numerous, evolving bugs related to client list filters for different user roles. (IN PROGRESS - Recurring)
-- Enhance client history logs to be more user-friendly. (COMPLETED)
-- Grant Responsabile Commessa the ability to create and manage users with specific constraints. (COMPLETED)
-- Implement dynamic, conditional UI sections in the client edit modal. (COMPLETED)
-- Fix a critical production bug where the role selector in user modals was empty. (COMPLETED)
-- Implement a Zapier webhook for lead creation, with evolving requirements for data format and unit-based separation. (COMPLETED)
-- Fix a deployment-blocking error in production. (COMPLETED)
-- Fix a 422 validation error on custom field creation. (COMPLETED)
-- Fix the Utente assegnato filter for the Responsabile Presidi role. (IN PROGRESS - User Verification Pending)
+- Fix the Utente assegnato filter for the  role. (COMPLETED)
+- Allow Zapier webhooks to accept and save custom lead fields by name. (COMPLETED)
+- Display custom lead fields in the lead view/edit modal, with conditional editability (read-only if pre-filled by Zapier). (COMPLETED)
+- Unify duplicate Informazioni Aggiuntive sections in the lead modal. (COMPLETED)
+- Sort the main lead list from newest to oldest. (COMPLETED)
+- Hide the phone number from the lead list view for privacy. (COMPLETED)
+- Convert the Campagna text filter into a dynamic dropdown in the lead section. (COMPLETED)
+- Fix the bug preventing the Campagna field from being saved when editing a lead. (COMPLETED)
+- Implement server-side pagination for the client list to improve loading speed. (IN PROGRESS - User is reporting bugs with search on this new implementation)
+- Fix the user password reset flow to force a password change on the next login. (COMPLETED)
+- Implement a Unit-based lead management system with specific visibility rules and an auto-assignment toggle. (COMPLETED)
+- Fix the client search bar to be stable, dynamic, and correctly handle state after refresh and clearing. (IN PROGRESS - Recurring & Critical)
+- Add Note Backoffice to the client view modal. (IN PROGRESS)
+- Make the quote/estimate (preventivo) editing screen identical to the creation screen. (NOT STARTED - Blocked)
 
 **User's preferred language**: Italian
 
 **what currently exists?**
-The application is a large monolithic React frontend () and FastAPI backend (). A  microservice provides WhatsApp integration. The application features highly complex, per-endpoint Role-Based Access Control (RBAC).
-
-In this session, a multitude of critical bugs and features were addressed:
-- **Client Modals**: The client creation and edit modals have been stabilized. They now correctly handle cascading dropdowns (Tipologia -> Segmento -> Offerte), pre-populate data on open, and dynamically update UI sections based on user selections.
-- **Data Display**: The client list now correctly displays the human-readable segment name () instead of the UUID, both on load and immediately after an edit without requiring a page refresh.
-- **User Modals**: A critical production bug was fixed where role-selector dropdowns were empty due to a z-index conflict between Shadcn's  and  components.
-- **Zapier Integration**:  and  webhooks are now available for lead creation via Zapier. They have been hardened to support unit-based lead assignment and accept data in specific formats requested by the user (full province names, UUIDs for  and ).
-- **Bug Fixes**: A deployment-blocking error was resolved, and a 422 validation error in the custom fields module was fixed.
+The application is a large monolithic React frontend () and FastAPI backend (). The agent has successfully implemented several major features and fixes in this session:
+- **Client List Performance**: Server-side pagination has been implemented on the  endpoint and the corresponding frontend component. However, the search functionality built on top of it is unstable.
+- **Lead Management by Unit**: A full-featured system for segregating leads by business Unit is now in place. This includes a new filter in the lead list, a new Unit column for admins, and a toggle in the Unit's settings to enable/disable automatic lead assignment.
+- **Zapier Webhook Enhancement**: The  endpoint now dynamically captures any extra query parameters and saves them as custom fields for the created lead, using the parameter name as the custom field name.
+- **Lead Modal UI**: Custom fields are now displayed directly within the lead detail/edit modal. They are read-only if they contain data (e.g., from Zapier) and editable if empty. Duplicate UI sections have been merged.
+- **Password Reset Flow**: The logic for an admin resetting a user's password has been fixed. It now correctly saves the new password and forces the user to change it upon their next login.
+- **Various UI/UX Fixes**: The lead list is now sorted newest-first, the phone number is hidden from the list view, and the Campagna filter is a dynamic dropdown.
 
 **Last working item**:
-The agent was fixing a bug where the Utente assegnato filter in the Clienti section appeared empty for users with the  role.
+The agent was tasked with adding the note_backoffice field to the client view modal.
 
-- **Last item agent was working**: The agent identified that the backend logic incorrectly tried to find users from an existing client list, instead of proactively fetching all users from the 's authorized sub-agencies. The fix was implemented in the  endpoint in .
-- **Status**: USER VERIFICATION PENDING
+- **Last item agent was working**: The agent had located the  component in  and was analyzing its structure to determine where to insert the Note Backoffice field.
+- **Status**: IN PROGRESS
 - **Agent Testing Done**: N
-- **Which testing method agent to use?**: Backend testing agent. The agent should log in as a  user, call the  endpoint, and verify that the  array in the response is correctly populated with all users from their authorized sub-agencies.
+- **Which testing method agent to use?**: Frontend testing agent or screenshot tool. The agent needs to open the client view modal after the fix and verify that the Note Backoffice field is present and displays the correct data.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Utente assegnato filter for  is empty. (P0)
-- **Issue 2**: Filter bug for  and  roles shows all 38 system UUIDs in the Tipologia Contratto filter. (P1)
+- **Issue 1**: The client search bar is unstable and causes infinite loops. (P0 - CRITICAL)
+- **Issue 2**: Add Note Backoffice to the client View modal. (P1)
+- **Issue 3**: The quote/estimate (preventivo) editing feature needs to be implemented. (P2 - BLOCKED)
 
 **Issues Detail**:
-- **Issue 1: Utente assegnato filter for  is empty**
-  - **Attempted fixes**: The agent modified the logic in  () to correctly query for all users associated with a 's authorized sub-agencies, instead of inferring them from the client list. The backend was restarted.
-  - **Next debug checklist**: Await user confirmation. If the issue persists, the next agent must log in as the specified role and manually test the  endpoint via curl to validate the contents of the  array.
-  - **Why fix this issue and what will be achieved with the fix?**: This is a critical filter for the user's workflow, allowing managers to view clients handled by specific agents they oversee.
-  - **Status**: USER VERIFICATION PENDING
+- **Issue 1: The client search bar is unstable and causes infinite loops.**
+  - **Attempted fixes**: The agent has tried multiple approaches: server-side search with debounce, client-side filtering, and server-side search triggered by a button/Enter key. Each attempt resulted in bugs, including infinite loading loops, failure to reset the list when the search is cleared, and state management issues with React's asynchronous updates. The current implementation attempts a debounced server-side search but is still causing loops.
+  - **Next debug checklist**:
+    1.  Review the  function and its debounced  call in  (around line 17090).
+    2.  Analyze the  hooks in the  component (around line 16918) to ensure they do not create a dependency loop.
+    3.  Ensure the  state is managed correctly and passed reliably to the  API call. The last attempt involved passing the query value directly to the fetch function to avoid issues with stale state. This needs to be re-verified.
+    4.  The core problem is the interaction between debouncing, React's state updates, and . A stable solution must be found.
+  - **Why fix this issue and what will be achieved with the fix?**: This is a critical usability bug that makes a core feature (client search) unusable and frustrating for the user. Fixing it will restore basic functionality.
+  - **Status**: IN PROGRESS
   - **Is recurring issue?**: Y
-  - **Should Test frontend/backend/both after fix?**: Both.
+  - **Should Test frontend/backend/both after fix?**: Frontend.
   - **Blocked on other issue**: None.
 
-- **Issue 2: Filter bug for  and **
-  - **Attempted fixes**: None. This is a long-standing issue that has not been prioritized.
-  - **Next debug checklist**: Investigate the  endpoint in  to understand how  options are generated for these specific roles and apply appropriate filtering.
-  - **Why fix this issue and what will be achieved with the fix?**: It's a UI/UX bug that makes the filter unusable for these roles by cluttering it with irrelevant options.
-  - **Status**: NOT STARTED
-  - **Is recurring issue?**: Y
-  - **Should Test frontend/backend/both after fix?**: Backend.
+- **Issue 2: Add Note Backoffice to the client View modal.**
+  - **Attempted fixes**: The agent has located the target component, , in  (around line 22560). No code has been written yet.
+  - **Next debug checklist**:
+    1.  Inside the  component, find the section displaying .
+    2.  Add a new section or field to display  with an appropriate label like Note Backoffice.
+  - **Why fix this issue and what will be achieved with the fix?**: Provides necessary information to users viewing client details, as requested.
+  - **Status**: IN PROGRESS
+  - **Is recurring issue?**: N
+  - **Should Test frontend/backend/both after fix?**: Frontend.
   - **Blocked on other issue**: None.
+
+- **Issue 3: The quote/estimate (preventivo) editing feature needs to be implemented.**
+  - **Attempted fixes**: The agent searched for preventivo, offerta, costi in the codebase but could not find a clear feature related to quotes or estimates.
+  - **Next debug checklist**: Use  to ask the user for clarification: Could you please tell me where the preventivi section is located in the application, or what it is called? For example, is it inside the client details, or is it a separate menu item like Offerte or Quotazioni?
+  - **Why fix this issue and what will be achieved with the fix?**: Fulfills a direct user feature request.
+  - **Status**: BLOCKED
+  - **Is recurring issue?**: N
+  - **Should Test frontend/backend/both after fix?**: Both.
+  - **Blocked on other issue**: Awaiting user input.
 
 **In progress Task List**:
-None.
+None other than the issues listed above.
 
 **Upcoming and Future Tasks**
 - **Future Tasks**:
   - **P2**: Critical Refactoring: The monolithic files  (>25,000 lines) and  (>13,000 lines) are the root cause of frequent regressions and debugging difficulties. They urgently need to be broken down into smaller, feature-specific modules for future stability and maintainability.
 
 **Completed work in this session**
-- **Client Edit Modal Overhaul**: Fixed cascading dropdowns, pre-population of fields on open, and dynamic UI updates based on form value changes.
-- **Client Data Display Fix**: Ensured the client list and detail views show the readable segment name () instead of an ID, updating instantly after an edit.
-- **Critical Production Bug Fix (User Modals)**: Resolved an issue where the role selector was empty in user create/edit modals by fixing a z-index conflict and refactoring the role-fetching logic.
-- **Client Creation Form Fix**: Fixed a JavaScript ReferenceError that prevented the Offerte dropdown from populating.
-- **Deployment & Validation Fixes**:
-  - Resolved a deployment-blocking Python error ().
-  - Fixed a 422 Validation Error on custom field creation by aligning frontend and backend field names ( vs. ).
-- **Lead Management & Zapier Integration**:
-  - Removed Tipologia Abitazione and Contenitore fields from the lead creation form as requested.
-  - Created and documented  and  webhook endpoints for Zapier lead creation.
-  - Enhanced webhooks to handle unit-based lead assignment and accept user-specified data formats (full province names, UUIDs).
+- **Filter Fix**: Resolved the Utente assegnato filter for the  role.
+- **Password Reset Fix**: Corrected the user password reset flow, enabling admins to reset passwords and force a user to change it on their next login.
+- **Lead Management Overhaul**:
+    - Implemented Unit-based lead visibility and an auto-assignment toggle.
+    - Added a Unit filter and column to the lead list.
+    - Enhanced the Zapier webhook to dynamically accept and save custom fields by name.
+    - Added custom fields to the lead view/edit modal with conditional editability.
+    - Fixed a bug preventing the Campagna field from being saved.
+    - Changed the Campagna filter to a dynamic select dropdown.
+    - Sorted the lead list from newest to oldest.
+    - Removed the phone number from the lead list view for privacy.
+- **Client List Pagination**: Implemented server-side pagination on the  endpoint and updated the frontend to use it, significantly improving initial load times.
+- **UI Error Fix**: Fixed a  by adding the missing import in .
 
 **Earlier issues found/mentioned but not fixed**
-- **Issue 1**: Filter bug for  and . This issue was carried over from the previous session and remains unresolved.
-  - **Debug checklist**: Investigate  endpoint in .
-  - **Why to solve this issue and what will be achieved with this?**: Fixes a UI bug making a filter unusable for two user roles.
-  - **Should Test frontend/backend/both after fix**: Backend.
-  - **Is recurring issue?**: Y.
+- The preventivo (quote/estimate) modification feature request remains unaddressed because the agent could not locate the feature in the codebase and requires user clarification.
 
 **Known issue recurrence from previous fork**
-- The general instability of client filters, especially for the  role, continues to be a recurring theme. The latest fix for the Utente assegnato filter addresses a specific instance of this.
+- **Client Search Instability**: The client list search bar has been a source of recurring bugs. The move to server-side pagination introduced new complexities that have led to multiple failed attempts and have left the feature in a broken state. The monolithic nature of  makes debugging this stateful, asynchronous feature extremely difficult.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frameworks**: React.js, Python FastAPI, Node.js Express.
-- **Architecture**: Monolithic repository with a supporting microservice.
-- **Permissions**: Complex, granular Role-Based Access Control (RBAC) implemented directly in API endpoints.
-- **State Management**: Heavy reliance on React's  and  for managing complex forms and cascaded data in a single large component ().
-- **Data Inconsistency**: A core challenge is handling data stored in multiple formats (UUIDs, string names, enum-like values) for the same entity. Robust frontend normalization logic was added to mitigate this.
-- **UI Debugging**: Resolved a z-index conflict between Shadcn's  and  (Portal-based) components.
-- **Webhook Integration**: Implemented public webhooks for Zapier, including handling potential proxy/firewall issues (Cloudflare).
+- **Server-Side Pagination**: Implemented on the  endpoint using MongoDB's  and . The API now returns an object containing the list of items for the current page and the total count of items.
+- **Dynamic Webhook Parameters**: The Zapier webhook endpoint () was refactored to use FastAPI's  object to iterate through all query parameters, identify which ones are custom fields, and save them.
+- **React State & Effect Management**: The agent encountered significant challenges with a recurring bug in the client search feature, caused by a combination of debouncing, asynchronous state updates (), and dependency loops in . This highlights the complexity of managing state in the massive  component.
+- **Pydantic Model Extension**: Numerous Pydantic models in  were updated.  was expanded to include  and other fields.  models were updated with . A new  model was created for the pagination response.
 
 **key DB schema**
-- **clienti**:  is a UUID. A non-DB field  is now added to the Pydantic model and API responses for display purposes.
-- **offerte**:  is a UUID that links to the  collection.
-- **segmenti**: Contains uid=0(root) gid=0(root) groups=0(root) (UUID),  (e.g., 'privato'), and  (e.g., 'Privato').
-- **tipologie_contratto**: Contains uid=0(root) gid=0(root) groups=0(root) (UUID) and . Legacy client records may store the  instead of the uid=0(root) gid=0(root) groups=0(root).
-- **custom_fields**: The model expects a  field, which was mismatched with the frontend.
-- **leads**: Now includes  (Optional[str]) to associate leads with a specific business unit.
+- **units**: Contains a new boolean field: .
+- **leads**: Now sorted by a  timestamp (descending). The  dictionary is populated by the Zapier webhook. It is linked to a .
+- **users**: The  boolean field is now correctly set and checked during login.
 
 **changes in tech stack**
 - No changes to the core technologies.
 
 **All files of reference**
-- : The core backend logic. Heavily modified across dozens of functions to fix bugs, add endpoints, and enrich data responses.
-- : The core frontend logic. Heavily modified to fix bugs in the client and user modals, custom fields components, and client list view.
+- : Heavily modified to implement client pagination, enhance the lead webhook, add Unit-based logic, and fix the user password update endpoint.
+- : Heavily modified to add pagination controls, the Unit filter/column for leads, the Unit auto-assign toggle, and numerous attempts to fix the client search bar.
 
 **Areas that need refactoring**:
--  and  are critically oversized and brittle. The high frequency of regressions and the difficulty of debugging are direct consequences of this technical debt. Breaking them down into smaller, manageable modules is essential for the project's long-term health.
+- ****: The client search logic is extremely brittle and has been refactored multiple times without achieving stability. The  section within this file is a prime candidate for being extracted into its own component to isolate its complex state (pagination, filters, search query, loading state).
+- ****: The file continues to grow, making it difficult to maintain.
 
 **key api endpoints**
-- : Modified to fix the Utente assegnato filter logic for .
-- , : Backend responses were enriched to include .
-- , : The frontend payload was fixed to align with the backend model, resolving a 422 error.
-- ****: New public endpoint for Zapier GET webhooks.
-- ****: Existing endpoint, logic updated for Zapier use case (e.g., handling ).
+- ****: Now paginated. Accepts , , and  parameters. Returns .
+- ****: Now dynamically processes all query parameters to populate  on new leads.
+- ****: Logic updated to handle password changes correctly and set the  flag.
+- ****:  model expanded to allow modification of  and other core fields.
+- ****: Logic updated to filter by  and populate a  field in the response.
 
 **Critical Info for New Agent**
-- **Data Inconsistency is Rampant**: Expect to find data for the same field stored as UUIDs, full names, or enum-like strings (e.g., 'privato' vs. a  UUID). The previous agent implemented robust normalization functions on the frontend (e.g.,  function, checking for ID then name) to handle this. You will likely need to extend or reuse this pattern.
-- **UI Component Conflicts**: Be mindful of z-index conflicts when working with nested portal-based components like Shadcn's  and . The fix was to remove the explicit  class from the  component.
-- **Monolith Dangers**: A fix in one modal can easily break another seemingly unrelated part of the app. Test carefully after every change. Refactoring  and  is the only long-term solution.
-- **Zapier Webhooks**: The  endpoint was specifically created to handle user requirements and bypass potential Cloudflare issues with GET requests. The webhook logic now supports province names and UUIDs for key relations.
+- **USER PREFERENCES**: The user will perform all frontend testing. The agent must focus on backend testing and get explicit user approval before making changes to unrelated functionality.
+- **CLIENT SEARCH IS CRITICAL & BROKEN**: The top priority is to fix the client search bar. The user is experiencing infinite loops. The agent must stabilize this feature. The root cause is likely complex state interactions within .
+- **PAGINATION IS LIVE**: The client list is now paginated. Any logic that assumes the full client list is available on the frontend (like client-side filtering) will no longer work and must be adapted to work with the paginated API. The search feature must use the  parameter on the API call.
 
-**documents and test_reports created in this job**
-None.
+**documents and test reports created in this job**
+- The testing subagent was used to validate backend fixes (e.g., for the Utente assegnato filter), but no persistent report files were generated.
 
 **Last 10 User Messages and any pending HUMAN messages**
-- User: filtro Avanzato utente assegnato (sezione clienti) del Responsabile presidi non fa vedere nessun utente
-- User: la provincia è scritta intera. in fase di sviluppo url mi avevi fatto mettere id della unit e dentro le stringhe mi hai fatto mettere id commessa la voglio così
-- User: ti ricordo che automazione dei lead deve essere anche diviso per ogni Unit ( ipotesi Unit 1 deve vedere i suoi lead autorizzati con le commesse associate. e non deve vedere quelli della unit 2)
-- User: Zapier mi da errore con URL che mi hai indicato (Cloudflare error). risolvimi il tutto perchè devo fare automazione
-- User: mi serve GET
-- User: mi puoi indicare URL che devo usare per automazione dei lead su Zapier in il dominio di produzione è nureal.it
-- User: nel form di creazione lead togli il campo Tipologia Abitazione e Contenitore
-- User: sto provando a creare i campi personalizzati per i lead ma mi da questo errore quando li salvo (422 Error)
-- User: Use deployment agent to identify the issues. Sharing build error logs... 
-- User: quando creo anagrafica cliente nella filiera non mi fa vedere le offerte associate alla filiera
+- User: The search finds a client, but the UI looks like it's still searching. When I clear the search bar, it shows only the last searched client, not the full list. It also needs to be dynamic, not require Enter. (Pending)
+- User: Can the spinner in the search bar be removed? (Completed)
+- User: I want to see Note Backoffice in the client view modal. (Pending - In Progress)
+- User: The client search gets stuck in a loading loop. (Pending)
+- User: Re: the broken search: This is not working. Find a stable solution or revert it. (Pending)
+- User: There's a compile error:  (Completed)
+- User: The client search finds the client, but the result disappears after the auto-refresh. (Completed, but the fix was part of the unstable implementation)
+- User: The client search is stuck in a loop again. When I clear the field, it shows the result instead of the full list. (Pending)
+- User: The browser console shows the fetch function being called in a loop. (Pending)
+- User: The search finds the contact now, but the loading indicator is stuck. When I clear the search, it only shows the searched client, not all of them. (Pending)
 
 **Project Health Check:**
-- **Broken**: None are confirmed broken, but the fix for the Utente assegnato filter is awaiting user validation.
+- **Broken**: The client search functionality is critically broken and is the highest priority to fix. It's stuck in loops and does not behave as expected.
 - **Mocked**: None.
 
 **3rd Party Integrations**
 - **OpenAI**: Uses User API Key for AI assistants in workflows.
 - **whatsapp-web.js (Node.js)**: Functional WhatsApp integration via a Puppeteer-controlled Chromium instance.
-- **Zapier**: Integrated via custom  and  webhooks for lead creation.
+- **Zapier**: Integrated via custom  and  webhooks for lead creation. The GET webhook was enhanced to dynamically handle custom fields by name.
 
 **Testing status**
-- **Testing agent used after significant changes**: NO
+- **Testing agent used after significant changes**: YES (for backend fixes).
 - **Troubleshoot agent used after agent stuck in loop**: NO
 - **Test files created**: None.
-- **Known regressions**: A UI fix in one modal caused a critical bug in another, which was subsequently fixed. This highlights the fragility of the monolithic codebase.
+- **Known regressions**: The client search functionality has severely regressed and is currently unusable due to multiple failed attempts to integrate it with the new server-side pagination.
 
 **Credentials to test flow:**
 -  / 
-- A user with the  role is required to test the latest fix and other related filter functionalities.
+- Users with specific roles (, etc.) may be required for testing role-specific logic.
 
 **What agent forgot to execute**
-- The agent has consistently overlooked the filter bug affecting  and  roles, which was present in the initial handoff and remains unfixed.</analysis>
+- The agent did not follow up on the user's request regarding the preventivo (quote/estimate) editing feature after initially being unable to locate it. This task is now blocked pending user clarification.</analysis>
