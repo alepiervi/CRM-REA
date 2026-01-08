@@ -23160,16 +23160,16 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
         )}
 
         {/* Note Back Office */}
-        {cliente.note_back_office && (
+        {cliente.note_backoffice && (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
                 <FileText className="w-4 h-4 mr-2" />
-                Note Back Office
+                Note Backoffice
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{cliente.note_back_office}</p>
+              <p className="text-sm whitespace-pre-wrap">{cliente.note_backoffice}</p>
             </CardContent>
           </Card>
         )}
