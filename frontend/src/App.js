@@ -2963,26 +2963,26 @@ const LeadsManagement = ({ selectedUnit, units }) => {
             </div>
           </div>
 
-          {/* Advanced Filters - Hidden on mobile unless expanded */}
-          <div className={`${showFilters ? 'block' : 'hidden'} md:block`}>
+          {/* Advanced Filters - Hidden on mobile unless expanded, scrollable */}
+          <div className={`${showFilters ? 'block max-h-[40vh] overflow-y-auto' : 'hidden'} md:block md:max-h-none md:overflow-visible`}>
             {/* Divider */}
-            <div className="border-t border-slate-200 mb-4 md:mb-6"></div>
+            <div className="border-t border-slate-200 mb-3 md:mb-6"></div>
           
-            {/* Filter Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+            {/* Filter Grid - 2 columns on mobile */}
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
             {/* Unit Filter - Solo per Admin */}
             {user?.role === "admin" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-purple-500" />
+              <div className="space-y-1">
+                <Label className="text-xs md:text-sm font-medium text-slate-700 flex items-center gap-1">
+                  <Building2 className="w-3 h-3 md:w-4 md:h-4 text-purple-500" />
                   Unit
                 </Label>
                 <Select
                   value={filters.unit_id || "all"}
                   onValueChange={(value) => setFilters({ ...filters, unit_id: value === "all" ? "" : value })}
                 >
-                  <SelectTrigger className="border-slate-200 focus:border-blue-400 rounded-lg">
-                    <SelectValue placeholder="Tutte le Unit" />
+                  <SelectTrigger className="h-9 text-sm border-slate-200 focus:border-blue-400 rounded-lg">
+                    <SelectValue placeholder="Tutte" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tutte le Unit</SelectItem>
@@ -2997,17 +2997,17 @@ const LeadsManagement = ({ selectedUnit, units }) => {
             )}
             
             {/* Campagna */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <FolderOpen className="w-4 h-4 text-amber-500" />
+            <div className="space-y-1">
+              <Label className="text-xs md:text-sm font-medium text-slate-700 flex items-center gap-1">
+                <FolderOpen className="w-3 h-3 md:w-4 md:h-4 text-amber-500" />
                 Campagna
               </Label>
               <Select
                 value={filters.campagna || "all"}
                 onValueChange={(value) => setFilters({ ...filters, campagna: value === "all" ? "" : value })}
               >
-                <SelectTrigger className="border-slate-200 focus:border-blue-400 rounded-lg">
-                  <SelectValue placeholder="Tutte le campagne" />
+                <SelectTrigger className="h-9 text-sm border-slate-200 focus:border-blue-400 rounded-lg">
+                  <SelectValue placeholder="Tutte" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutte le campagne</SelectItem>
