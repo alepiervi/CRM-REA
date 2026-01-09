@@ -9197,6 +9197,65 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  // NEW: Export lista clienti filtrati (Pivot)
+  const exportPivotClientiList = async () => {
+    try {
+      const params = new URLSearchParams();
+      
+      if (pivotFilters.sub_agenzia_ids.length > 0) {
+        params.append('sub_agenzia_ids', pivotFilters.sub_agenzia_ids.join(','));
+      }
+      if (pivotFilters.status_values.length > 0) {
+        params.append('status_values', pivotFilters.status_values.join(','));
+      }
+      if (pivotFilters.tipologia_contratto_values.length > 0) {
+        params.append('tipologia_contratto_values', pivotFilters.tipologia_contratto_values.join(','));
+      }
+      if (pivotFilters.segmento_values.length > 0) {
+        params.append('segmento_values', pivotFilters.segmento_values.join(','));
+      }
+      if (pivotFilters.offerta_ids.length > 0) {
+        params.append('offerta_ids', pivotFilters.offerta_ids.join(','));
+      }
+      if (pivotFilters.created_by_ids.length > 0) {
+        params.append('created_by_ids', pivotFilters.created_by_ids.join(','));
+      }
+      if (pivotFilters.convergenza !== null) {
+        params.append('convergenza', pivotFilters.convergenza);
+      }
+      if (pivotFilters.data_da) {
+        params.append('data_da', pivotFilters.data_da);
+      }
+      if (pivotFilters.data_a) {
+        params.append('data_a', pivotFilters.data_a);
+      }
+      
+      const response = await axios.get(`${API}/analytics/pivot/export-clienti?${params}`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `clienti_pivot_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast({
+        title: "Successo",
+        description: "Export lista clienti completato con successo"
+      });
+    } catch (error) {
+      console.error("Error exporting pivot clienti:", error);
+      toast({
+        title: "Errore",
+        description: "Errore nell'export della lista clienti",
+        variant: "destructive"
+      });
+    }
+  };
+
 
   const fetchDashboardData = async () => {
     try {
