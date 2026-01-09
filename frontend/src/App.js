@@ -3317,7 +3317,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                     
                     <div className="flex space-x-2 mt-3">
                       <Button
-                        onClick={() => handleLeadClick(lead)}
+                        onClick={() => openLeadDetail(lead)}
                         variant="outline"
                         size="sm"
                         className="flex-1"
