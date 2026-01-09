@@ -23328,8 +23328,8 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           </Card>
         )}
 
-        <DialogFooter className="mt-6">
-          <Button onClick={onClose}>Chiudi</Button>
+        <DialogFooter className="mt-6 sticky bottom-0 bg-white pt-4 border-t md:border-t-0 md:pt-0 md:static">
+          <Button onClick={onClose} className="w-full md:w-auto">Chiudi</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
