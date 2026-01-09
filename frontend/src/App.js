@@ -17877,10 +17877,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         </Select>
       </div>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           {/* Desktop Table View */}
-          <div className="hidden md:block">
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
