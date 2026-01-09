@@ -17932,6 +17932,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             Azzera Filtri
           </Button>
         </div>
+        </div>
       </div>
 
       {/* Search Field */}
