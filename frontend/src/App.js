@@ -17868,8 +17868,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           <div>
             <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Servizi</label>
             <Select value={clientiFilterServizi} onValueChange={setClientiFilterServizi}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tutti i Servizi" />
+              <SelectTrigger className="w-full h-9 text-sm">
+                <SelectValue placeholder="Tutti" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti i Servizi</SelectItem>
@@ -17884,10 +17884,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
           {/* NEW: Segmento Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Segmento</label>
+            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Segmento</label>
             <Select value={clientiFilterSegmento} onValueChange={setClientiFilterSegmento}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tutti i Segmenti" />
+              <SelectTrigger className="w-full h-9 text-sm">
+                <SelectValue placeholder="Tutti" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti i Segmenti</SelectItem>
@@ -17902,10 +17902,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
           {/* NEW: Commesse Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Commesse</label>
+            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Commesse</label>
             <Select value={clientiFilterCommesse} onValueChange={setClientiFilterCommesse}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tutte le Commesse" />
+              <SelectTrigger className="w-full h-9 text-sm">
+                <SelectValue placeholder="Tutte" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le Commesse</SelectItem>
@@ -17919,8 +17919,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           </div>
         </div>
 
-        {/* Clear All Filters Button */}
-        <div className="mt-4 flex justify-end">
+        {/* Clear All Filters Button - Inside collapsible section */}
+        <div className={`${showAdvancedFilters ? 'flex' : 'hidden'} md:flex mt-3 md:mt-4 justify-end`}>
           <Button
             variant="outline"
             size="sm"
