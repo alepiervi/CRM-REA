@@ -16853,39 +16853,38 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-800 flex items-center">
-            <Store className="w-8 h-8 mr-3 text-green-600" />
-            Unit & Sub Agenzie
-          </h2>
-          {selectedCommessa && selectedCommessa !== "all" && (
-            <p className="text-sm text-slate-600 mt-1 ml-11">
-              Filtrato per commessa: <Badge variant="secondary">{commesse.find(c => c.id === selectedCommessa)?.nome || selectedCommessa}</Badge>
-            </p>
-          )}
-        </div>
+    <div className="space-y-4 md:space-y-6">
+      {/* Header - Mobile Responsive */}
+      <div className="flex flex-col space-y-2">
+        <h2 className="text-xl md:text-3xl font-bold text-slate-800 flex items-center">
+          <Store className="w-6 h-6 md:w-8 md:h-8 mr-2 md:mr-3 text-green-600" />
+          Unit & Sub Agenzie
+        </h2>
+        {selectedCommessa && selectedCommessa !== "all" && (
+          <p className="text-sm text-slate-600 ml-8 md:ml-11">
+            Filtrato: <Badge variant="secondary">{commesse.find(c => c.id === selectedCommessa)?.nome || selectedCommessa}</Badge>
+          </p>
+        )}
       </div>
 
       {/* Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="units" className="flex items-center space-x-2">
+          <TabsTrigger value="units" className="flex items-center space-x-1 md:space-x-2">
             <Building2 className="w-4 h-4" />
             <span>Unit</span>
           </TabsTrigger>
-          <TabsTrigger value="sub-agenzie" className="flex items-center space-x-2">
+          <TabsTrigger value="sub-agenzie" className="flex items-center space-x-1 md:space-x-2">
             <Store className="w-4 h-4" />
             <span>Sub Agenzie</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="units" className="space-y-6">
+        <TabsContent value="units" className="space-y-4 md:space-y-6">
           {renderUnitsTab()}
         </TabsContent>
 
-        <TabsContent value="sub-agenzie" className="space-y-6">
+        <TabsContent value="sub-agenzie" className="space-y-4 md:space-y-6">
           {renderSubAgenzieTab()}
         </TabsContent>
       </Tabs>
