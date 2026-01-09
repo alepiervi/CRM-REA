@@ -15316,11 +15316,12 @@ const CommesseManagement = ({
   // Duplicate functions removed
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gestione Commesse</h2>
+    <div className="space-y-4 md:space-y-6">
+      {/* Header - Mobile Responsive */}
+      <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center">
+        <h2 className="text-xl md:text-2xl font-bold">Gestione Commesse</h2>
         <div className="flex gap-2">
-          <Button onClick={() => setShowCreateModal(true)}>
+          <Button onClick={() => setShowCreateModal(true)} size="sm" className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             Nuova Commessa
           </Button>
@@ -15328,12 +15329,12 @@ const CommesseManagement = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Lista Commesse */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Commesse</CardTitle>
+        {/* Lista Commesse - Scrollable on mobile */}
+        <Card className="lg:col-span-1 overflow-hidden">
+          <CardHeader className="p-3 md:p-4">
+            <CardTitle className="text-base md:text-lg">Commesse</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 md:p-4 pt-0 max-h-[50vh] lg:max-h-none overflow-y-auto">
             <div className="space-y-3">
               {commesse.map((commessa) => (
                 <div 
