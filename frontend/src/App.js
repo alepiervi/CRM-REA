@@ -3164,10 +3164,10 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                       </span>
                     )}
                   </div>
-                </div>
               </div>
             </div>
           )}
+          </div>
         </CardContent>
       </Card>
 
