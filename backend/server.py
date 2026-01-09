@@ -13034,6 +13034,197 @@ async def export_pivot_analytics(
         raise HTTPException(status_code=500, detail=f"Errore export pivot: {str(e)}")
 
 
+@api_router.get("/analytics/pivot/export-clienti")
+async def export_pivot_clienti_list(
+    sub_agenzia_ids: Optional[str] = Query(None),
+    status_values: Optional[str] = Query(None),
+    tipologia_contratto_values: Optional[str] = Query(None),
+    segmento_values: Optional[str] = Query(None),
+    offerta_ids: Optional[str] = Query(None),
+    created_by_ids: Optional[str] = Query(None),
+    convergenza: Optional[bool] = Query(None),
+    data_da: Optional[str] = Query(None),
+    data_a: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Export lista completa clienti filtrati (stesso criterio del pivot) in formato Excel"""
+    try:
+        from datetime import datetime, timezone
+        
+        # Build query based on filters
+        query = {}
+        
+        # Role-based access control
+        if current_user.role == UserRole.ADMIN:
+            pass  # Admin can see all
+        elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+            if current_user.commesse_autorizzate:
+                query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
+            else:
+                query["_id"] = {"$exists": False}
+        elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
+            if current_user.sub_agenzia_id:
+                query["sub_agenzia_id"] = current_user.sub_agenzia_id
+            else:
+                query["_id"] = {"$exists": False}
+        elif current_user.role == UserRole.RESPONSABILE_PRESIDI:
+            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+                query["sub_agenzia_id"] = {"$in": current_user.sub_agenzie_autorizzate}
+            elif current_user.sub_agenzia_id:
+                query["sub_agenzia_id"] = current_user.sub_agenzia_id
+            else:
+                query["_id"] = {"$exists": False}
+        elif current_user.role == UserRole.AREA_MANAGER:
+            if hasattr(current_user, 'sub_agenzie_autorizzate') and current_user.sub_agenzie_autorizzate:
+                query["sub_agenzia_id"] = {"$in": current_user.sub_agenzie_autorizzate}
+            else:
+                query["_id"] = {"$exists": False}
+        else:
+            query["_id"] = {"$exists": False}
+        
+        # Apply pivot filters
+        if sub_agenzia_ids:
+            sa_list = [s.strip() for s in sub_agenzia_ids.split(',') if s.strip()]
+            if sa_list:
+                query["sub_agenzia_id"] = {"$in": sa_list}
+        
+        if status_values:
+            status_list = [s.strip() for s in status_values.split(',') if s.strip()]
+            if status_list:
+                query["status"] = {"$in": status_list}
+        
+        if tipologia_contratto_values:
+            tipologia_list = [t.strip() for t in tipologia_contratto_values.split(',') if t.strip()]
+            if tipologia_list:
+                query["tipologia_contratto"] = {"$in": tipologia_list}
+        
+        if segmento_values:
+            segmento_list = [s.strip() for s in segmento_values.split(',') if s.strip()]
+            if segmento_list:
+                query["segmento"] = {"$in": segmento_list}
+        
+        if offerta_ids:
+            offerta_list = [o.strip() for o in offerta_ids.split(',') if o.strip()]
+            if offerta_list:
+                query["offerta_id"] = {"$in": offerta_list}
+        
+        if created_by_ids:
+            created_list = [c.strip() for c in created_by_ids.split(',') if c.strip()]
+            if created_list:
+                query["assigned_to"] = {"$in": created_list}
+        
+        if convergenza is not None:
+            query["convergenza"] = convergenza
+        
+        # Date filters
+        if data_da or data_a:
+            date_query = {}
+            if data_da:
+                date_query["$gte"] = datetime.strptime(data_da, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            if data_a:
+                date_query["$lte"] = datetime.strptime(data_a, "%Y-%m-%d").replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
+            if date_query:
+                query["created_at"] = date_query
+        
+        # Fetch clienti
+        clienti = await db.clienti.find(query, {"_id": 0}).sort("created_at", -1).to_list(None)
+        
+        # Fetch lookup data
+        sub_agenzie = await db.sub_agenzie.find({}, {"_id": 0}).to_list(None)
+        sub_agenzie_map = {sa["id"]: sa["nome"] for sa in sub_agenzie}
+        
+        users_list = await db.users.find({}, {"_id": 0, "id": 1, "username": 1}).to_list(None)
+        users_map = {u["id"]: u["username"] for u in users_list}
+        
+        commesse_list = await db.commesse.find({}, {"_id": 0, "id": 1, "nome": 1}).to_list(None)
+        commesse_map = {c["id"]: c["nome"] for c in commesse_list}
+        
+        servizi_list = await db.servizi.find({}, {"_id": 0, "id": 1, "nome": 1}).to_list(None)
+        servizi_map = {s["id"]: s["nome"] for s in servizi_list}
+        
+        # Create Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Lista Clienti"
+        
+        # Headers
+        headers = [
+            "ID", "Nome", "Cognome", "Codice Fiscale", "Partita IVA",
+            "Telefono", "Email", "Indirizzo", "Comune", "Provincia", "CAP",
+            "Sub Agenzia", "Commessa", "Servizio", "Status", "Tipologia Contratto",
+            "Segmento", "Convergenza", "Assegnato a", "Data Creazione", "Note"
+        ]
+        
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(1, col, header)
+            cell.font = header_font
+            cell.fill = header_fill
+        
+        # Data rows
+        for row_num, cliente in enumerate(clienti, 2):
+            ws.cell(row_num, 1, cliente.get("id", ""))
+            ws.cell(row_num, 2, cliente.get("nome", ""))
+            ws.cell(row_num, 3, cliente.get("cognome", ""))
+            ws.cell(row_num, 4, cliente.get("codice_fiscale", ""))
+            ws.cell(row_num, 5, cliente.get("partita_iva", ""))
+            ws.cell(row_num, 6, cliente.get("telefono", ""))
+            ws.cell(row_num, 7, cliente.get("email", ""))
+            ws.cell(row_num, 8, cliente.get("indirizzo", ""))
+            ws.cell(row_num, 9, cliente.get("comune", ""))
+            ws.cell(row_num, 10, cliente.get("provincia", ""))
+            ws.cell(row_num, 11, cliente.get("cap", ""))
+            ws.cell(row_num, 12, sub_agenzie_map.get(cliente.get("sub_agenzia_id", ""), ""))
+            ws.cell(row_num, 13, commesse_map.get(cliente.get("commessa_id", ""), ""))
+            ws.cell(row_num, 14, servizi_map.get(cliente.get("servizio_id", ""), ""))
+            ws.cell(row_num, 15, cliente.get("status", ""))
+            ws.cell(row_num, 16, cliente.get("tipologia_contratto", ""))
+            ws.cell(row_num, 17, cliente.get("segmento", ""))
+            ws.cell(row_num, 18, "Sì" if cliente.get("convergenza") else "No")
+            ws.cell(row_num, 19, users_map.get(cliente.get("assigned_to", ""), ""))
+            
+            created_at = cliente.get("created_at")
+            if created_at:
+                if isinstance(created_at, str):
+                    ws.cell(row_num, 20, created_at)
+                else:
+                    ws.cell(row_num, 20, created_at.strftime("%d/%m/%Y %H:%M"))
+            else:
+                ws.cell(row_num, 20, "")
+            
+            ws.cell(row_num, 21, cliente.get("note", ""))
+        
+        # Auto-fit columns
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        # Save
+        filename = f"clienti_pivot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filepath = f"/tmp/{filename}"
+        wb.save(filepath)
+        
+        return FileResponse(
+            path=filepath,
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            filename=filename
+        )
+        
+    except Exception as e:
+        logging.error(f"Error in pivot clienti export: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Errore export clienti: {str(e)}")
+
+
 @api_router.get("/clienti/{cliente_id}", response_model=Cliente)
 async def get_cliente(cliente_id: str, current_user: User = Depends(get_current_user)):
     """Get specific cliente with role-based access control"""
