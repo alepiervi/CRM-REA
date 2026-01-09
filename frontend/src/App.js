@@ -6111,62 +6111,67 @@ const UsersManagement = ({ selectedUnit, units }) => {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800">
+    <div className="space-y-4 md:space-y-6">
+      {/* Header - Mobile Responsive */}
+      <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-xl md:text-3xl font-bold text-slate-800">
           Gestione Utenti {selectedUnit && selectedUnit !== "all" && `- ${units.find(u => u.id === selectedUnit)?.name}`}
         </h2>
-        <Button onClick={() => setShowCreateModal(true)}>
+        <Button onClick={() => setShowCreateModal(true)} size="sm" className="w-full sm:w-auto">
           <UserPlus className="w-4 h-4 mr-2" />
           Nuovo Utente
         </Button>
       </div>
 
-      {/* Search Filter */}
-      <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-sm border">
+      {/* Search Filter - Mobile Responsive */}
+      <div className="flex flex-col sm:flex-row gap-2 bg-white p-3 md:p-4 rounded-lg shadow-sm border">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             type="text"
-            placeholder="Cerca per username, email o ruolo..."
+            placeholder="Cerca utenti..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
         </div>
-        {searchQuery && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSearchQuery("")}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X className="w-4 h-4 mr-1" />
-            Cancella
-          </Button>
-        )}
-        <div className="text-sm text-gray-500">
-          {filteredUsers.length} di {users.length} utenti
+        <div className="flex items-center justify-between sm:justify-end gap-2">
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchQuery("")}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Cancella
+            </Button>
+          )}
+          <div className="text-sm text-gray-500">
+            {filteredUsers.length}/{users.length}
+          </div>
         </div>
       </div>
 
-      <Card className="border-0 shadow-lg">
+      <Card className="border-0 shadow-lg overflow-hidden">
         <CardContent className="p-0">
           {loading ? (
             <div className="p-8 text-center">Caricamento...</div>
           ) : (
-            <div className="mobile-table-container">
-              <Table className="mobile-table">
+            <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="mobile-table">Username</TableHead>
-                    <TableHead className="mobile-table">Email</TableHead>
-                    <TableHead className="mobile-table">Ruolo</TableHead>
-                    <TableHead className="mobile-table">Unit</TableHead>
-                    <TableHead className="mobile-table">Province</TableHead>
-                    <TableHead className="mobile-table">Stato</TableHead>
-                    <TableHead className="mobile-table">Ultimo Accesso</TableHead>
-                    <TableHead className="mobile-table">Azioni</TableHead>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Ruolo</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead>Province</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead>Ultimo Accesso</TableHead>
+                    <TableHead>Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
               <TableBody>
