@@ -16944,6 +16944,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchType, setSearchType] = useState('all');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false); // Mobile: collapsed by default
   const [dateFilter, setDateFilter] = useState({
     startDate: '',
     endDate: '',
