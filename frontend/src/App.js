@@ -6177,13 +6177,13 @@ const UsersManagement = ({ selectedUnit, units }) => {
               <TableBody>
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium mobile-table">{user.username}</TableCell>
-                    <TableCell className="mobile-table">{user.email}</TableCell>
-                    <TableCell className="mobile-table">{getRoleBadge(user.role)}</TableCell>
-                    <TableCell className="mobile-table">
+                    <TableCell className="font-medium">{user.username}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>
                       {user.unit_id ? units.find(u => u.id === user.unit_id)?.name || "N/A" : "N/A"}
                     </TableCell>
-                    <TableCell className="mobile-table">
+                    <TableCell>
                       {user.provinces?.length > 0 ? (
                         <div className="text-xs">
                           {user.provinces.slice(0, 2).join(", ")}
@@ -6191,18 +6191,18 @@ const UsersManagement = ({ selectedUnit, units }) => {
                         </div>
                       ) : "N/A"}
                     </TableCell>
-                    <TableCell className="mobile-table">
+                    <TableCell>
                       <Badge variant={user.is_active ? "default" : "secondary"}>
                         {user.is_active ? "Attivo" : "Disattivo"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="mobile-table">
+                    <TableCell>
                       {user.last_login ? 
                         new Date(user.last_login).toLocaleDateString("it-IT") : 
                         "Mai"
                       }
                     </TableCell>
-                    <TableCell className="mobile-table">
+                    <TableCell>
                       <div className="flex space-x-1">
                         <Button
                           onClick={() => setEditingUser(user)}
@@ -6236,6 +6236,64 @@ const UsersManagement = ({ selectedUnit, units }) => {
               </TableBody>
             </Table>
             </div>
+            
+            {/* Mobile Card View */}
+            <div className="md:hidden max-h-[60vh] overflow-y-auto">
+              {filteredUsers.map((user) => (
+                <div key={user.id} className="border-b border-slate-200 p-4 last:border-b-0">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-slate-900">{user.username}</h3>
+                      <p className="text-sm text-slate-500">{user.email}</p>
+                    </div>
+                    <Badge variant={user.is_active ? "default" : "secondary"} className="text-xs">
+                      {user.is_active ? "Attivo" : "Disattivo"}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
+                    <div>
+                      <span className="text-slate-500">Ruolo:</span>
+                      <div className="mt-1">{getRoleBadge(user.role)}</div>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Unit:</span>
+                      <p className="text-slate-700">{user.unit_id ? units.find(u => u.id === user.unit_id)?.name || "N/A" : "N/A"}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Province:</span>
+                      <p className="text-slate-700 text-xs">
+                        {user.provinces?.length > 0 ? user.provinces.slice(0, 2).join(", ") : "N/A"}
+                        {user.provinces?.length > 2 && ` (+${user.provinces.length - 2})`}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Ultimo accesso:</span>
+                      <p className="text-slate-700">{user.last_login ? new Date(user.last_login).toLocaleDateString("it-IT") : "Mai"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2 border-t border-slate-100">
+                    <Button onClick={() => setEditingUser(user)} variant="outline" size="sm" className="flex-1">
+                      <Edit className="w-3 h-3 mr-1" /> Modifica
+                    </Button>
+                    <Button
+                      onClick={() => toggleUserStatus(user.id, user.is_active)}
+                      variant={user.is_active ? "destructive" : "default"}
+                      size="sm"
+                      className="flex-1"
+                    >
+                      {user.is_active ? <PowerOff className="w-3 h-3 mr-1" /> : <Power className="w-3 h-3 mr-1" />}
+                      {user.is_active ? "Disattiva" : "Attiva"}
+                    </Button>
+                    <Button onClick={() => deleteUser(user.id)} variant="destructive" size="sm">
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>
