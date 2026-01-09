@@ -26301,6 +26301,13 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Footer with Close button - sticky on mobile */}
+        <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 md:hidden">
+          <Button onClick={onClose} className="w-full">
+            Chiudi
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
