@@ -22843,13 +22843,24 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <UserCheck className="w-5 h-5 text-blue-600" />
-            <span>Anagrafica Completa Cliente: {cliente.nome} {cliente.cognome}</span>
-          </DialogTitle>
-          <DialogDescription>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center space-x-2">
+              <UserCheck className="w-5 h-5 text-blue-600" />
+              <span className="truncate">Anagrafica: {cliente.nome} {cliente.cognome}</span>
+            </DialogTitle>
+            {/* Close button - visible on mobile */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="flex-shrink-0 h-10 w-10 p-0 rounded-full hover:bg-slate-100 md:hidden"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <DialogDescription className="hidden sm:block">
             Visualizzazione completa di tutti i dati anagrafici del cliente
           </DialogDescription>
         </DialogHeader>
