@@ -2847,53 +2847,58 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-slate-800">Gestione Lead</h2>
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 items-center">
-          {lastUpdated && (
-            <div className="text-sm text-gray-500">
-              Ultimo aggiornamento: {lastUpdated.toLocaleTimeString('it-IT')}
+    <div className="space-y-4 md:space-y-6">
+      {/* Header - Mobile Responsive */}
+      <div className="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center md:justify-between">
+        <h2 className="text-xl md:text-3xl font-bold text-slate-800">Gestione Lead</h2>
+        
+        {/* Mobile: Compact controls */}
+        <div className="flex flex-col space-y-2">
+          {/* Status row */}
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {lastUpdated && (
+              <span className="text-gray-500">
+                Agg: {lastUpdated.toLocaleTimeString('it-IT')}
+              </span>
+            )}
+            {isRefreshing && (
+              <span className="text-blue-600 animate-pulse">Aggiornando...</span>
+            )}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="auto-refresh-leads"
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="auto-refresh-leads" className="text-sm text-gray-700">
+                Auto (30s)
+              </label>
             </div>
-          )}
-          {isRefreshing && (
-            <span className="text-sm text-blue-600 animate-pulse">
-              Aggiornamento in corso...
-            </span>
-          )}
-          
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="auto-refresh-leads"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="auto-refresh-leads" className="text-sm text-gray-700">
-              Auto refresh (30s)
-            </label>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleManualRefresh}
+              disabled={loading || isRefreshing}
+              className="flex items-center space-x-1"
+            >
+              <Clock className={`w-4 h-4 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Aggiorna</span>
+            </Button>
           </div>
           
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleManualRefresh}
-            disabled={loading || isRefreshing}
-            className="flex items-center space-x-2"
-          >
-            <Clock className={`w-4 h-4 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
-            <span>Aggiorna ora</span>
-          </Button>
-          
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-            <Button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700">
-              <Download className="w-4 h-4 mr-2" />
-              Esporta Excel
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={exportToExcel} size="sm" className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none">
+              <Download className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Esporta Excel</span>
+              <span className="sm:hidden">Esporta</span>
             </Button>
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nuovo Lead  
+            <Button onClick={() => setShowCreateModal(true)} size="sm" className="flex-1 sm:flex-none">
+              <Plus className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Nuovo Lead</span>
+              <span className="sm:hidden">Nuovo</span>
             </Button>
           </div>
         </div>
