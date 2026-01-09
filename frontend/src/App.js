@@ -2905,16 +2905,20 @@ const LeadsManagement = ({ selectedUnit, units }) => {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters - Collapsible on Mobile */}
       <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b p-3 md:p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Search className="w-5 h-5 text-blue-600" />
+            <button 
+              className="flex items-center gap-2 md:cursor-default"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <div className="p-1.5 md:p-2 bg-blue-100 rounded-lg">
+                <Search className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
               </div>
-              <CardTitle className="text-xl font-bold text-slate-800">Filtri di Ricerca</CardTitle>
-            </div>
+              <CardTitle className="text-base md:text-xl font-bold text-slate-800">Filtri</CardTitle>
+              <ChevronDown className={`w-5 h-5 text-gray-600 md:hidden transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+            </button>
             <Button
               variant="ghost"
               size="sm"
@@ -2931,41 +2935,41 @@ const LeadsManagement = ({ selectedUnit, units }) => {
               className="text-slate-600 hover:text-slate-900"
             >
               <X className="w-4 h-4 mr-1" />
-              Azzera
+              <span className="hidden sm:inline">Azzera</span>
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-6">
-          {/* Search Bar - Prominent */}
-          <div className="mb-6">
-            <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-              <Search className="w-4 h-4 text-blue-500" />
-              Ricerca Rapida
-            </Label>
+        
+        {/* Mobile: Show only search by default, expand for more filters */}
+        <CardContent className="p-3 md:p-6">
+          {/* Search Bar - Always visible */}
+          <div className="mb-4 md:mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5" />
               <Input
-                placeholder="🔍 Cerca per nome, cognome, telefono o email..."
+                placeholder="Cerca per nome, telefono..."
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                className="pl-12 pr-4 h-12 text-base border-2 border-slate-200 focus:border-blue-400 rounded-xl shadow-sm"
+                className="pl-10 pr-4 h-10 md:h-12 text-sm md:text-base border-2 border-slate-200 focus:border-blue-400 rounded-xl shadow-sm"
               />
               {filters.search && (
                 <button
                   onClick={() => setFilters({ ...filters, search: "" })}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-slate-200 mb-6"></div>
+          {/* Advanced Filters - Hidden on mobile unless expanded */}
+          <div className={`${showFilters ? 'block' : 'hidden'} md:block`}>
+            {/* Divider */}
+            <div className="border-t border-slate-200 mb-4 md:mb-6"></div>
           
-          {/* Filter Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Filter Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {/* Unit Filter - Solo per Admin */}
             {user?.role === "admin" && (
               <div className="space-y-2">
