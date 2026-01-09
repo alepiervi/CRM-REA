@@ -25854,16 +25854,27 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
       <DialogContent className="max-w-6xl w-[95vw] max-h-[95vh] overflow-y-auto p-0">
         <div className="sticky top-0 bg-white border-b border-slate-200 p-4 sm:p-6 z-10">
           <DialogHeader className="space-y-3">
-            <DialogTitle className="flex items-center space-x-3 text-lg sm:text-xl">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <FileText className="w-4 h-4 text-blue-600" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="font-semibold text-slate-900 truncate">Documenti Cliente</h2>
-                <p className="text-sm text-slate-600 truncate">{clientName}</p>
-              </div>
-            </DialogTitle>
-            <DialogDescription className="text-sm text-slate-500 leading-relaxed">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center space-x-3 text-lg sm:text-xl">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-semibold text-slate-900 truncate">Documenti Cliente</h2>
+                  <p className="text-sm text-slate-600 truncate">{clientName}</p>
+                </div>
+              </DialogTitle>
+              {/* Close button - always visible on mobile */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="flex-shrink-0 h-10 w-10 p-0 rounded-full hover:bg-slate-100"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <DialogDescription className="text-sm text-slate-500 leading-relaxed hidden sm:block">
               Gestisci documenti per questo cliente. I file vengono organizzati automaticamente su Aruba Drive.
             </DialogDescription>
           </DialogHeader>
