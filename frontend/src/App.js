@@ -17789,15 +17789,15 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         {/* Desktop: Always visible title */}
         <h3 className="hidden md:block text-lg font-semibold mb-4 text-gray-800">Filtri Avanzati</h3>
         
-        {/* Filters Grid - Hidden on mobile unless expanded */}
-        <div className={`${showAdvancedFilters ? 'block mt-4' : 'hidden'} md:block`}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-3 md:gap-4">
+        {/* Filters Grid - Hidden on mobile unless expanded, scrollable when open */}
+        <div className={`${showAdvancedFilters ? 'block mt-4 max-h-[50vh] overflow-y-auto' : 'hidden'} md:block md:max-h-none md:overflow-visible`}>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-2 md:gap-4">
           {/* Sub Agenzia Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sub Agenzia</label>
+            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Sub Agenzia</label>
             <Select value={clientiFilterSubAgenzia} onValueChange={setClientiFilterSubAgenzia}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tutte le Sub Agenzie" />
+              <SelectTrigger className="w-full h-9 text-sm">
+                <SelectValue placeholder="Tutte" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le Sub Agenzie</SelectItem>
