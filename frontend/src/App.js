@@ -18003,8 +18003,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             </Table>
           </div>
 
-          {/* Mobile Card View */}
-          <div className="md:hidden">
+          {/* Mobile Card View - Scrollable */}
+          <div className="md:hidden max-h-[60vh] overflow-y-auto">
             {getFilteredClients().map((cliente) => (
               <div key={cliente.id} className="border-b border-slate-200 p-4 last:border-b-0">
                 <div className="flex items-start justify-between mb-3">
