@@ -17769,10 +17769,23 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         </div>
       </div>
 
-      {/* Advanced Filters Section */}
-      <div className="bg-blue-50 p-4 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">Filtri Avanzati</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-3 md:gap-4">
+      {/* Advanced Filters Section - Collapsible on Mobile */}
+      <div className="bg-blue-50 p-3 md:p-4 rounded-lg border">
+        {/* Mobile: Toggle button */}
+        <button 
+          className="md:hidden w-full flex items-center justify-between text-left"
+          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+        >
+          <h3 className="text-base font-semibold text-gray-800">Filtri Avanzati</h3>
+          <ChevronDown className={`w-5 h-5 text-gray-600 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+        </button>
+        
+        {/* Desktop: Always visible title */}
+        <h3 className="hidden md:block text-lg font-semibold mb-4 text-gray-800">Filtri Avanzati</h3>
+        
+        {/* Filters Grid - Hidden on mobile unless expanded */}
+        <div className={`${showAdvancedFilters ? 'block mt-4' : 'hidden'} md:block`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-3 md:gap-4">
           {/* Sub Agenzia Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Sub Agenzia</label>
