@@ -3116,12 +3116,13 @@ const LeadsManagement = ({ selectedUnit, units }) => {
 
           {/* Active Filters Summary */}
           {(filters.search || filters.campagna || filters.provincia || filters.status || filters.assigned_agent_id || filters.date_from || filters.date_to) && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
+            <div className="mt-4 md:mt-6 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">Filtri attivi:</span>
-                  <div className="flex flex-wrap gap-2 ml-2">
+                  <span className="text-sm font-medium text-blue-900">Attivi:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
                     {filters.search && (
                       <span className="px-2 py-1 bg-white border border-blue-300 rounded-md text-xs text-blue-700">
                         🔍 "{filters.search}"
