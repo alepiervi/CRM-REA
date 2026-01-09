@@ -9652,7 +9652,14 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
                   variant="outline"
                   className="border-green-600 text-green-600 hover:bg-green-50"
                 >
-                  📥 Export Excel
+                  📥 Export Statistiche
+                </Button>
+                <Button 
+                  onClick={exportPivotClientiList} 
+                  variant="outline"
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                >
+                  📋 Export Lista Clienti
                 </Button>
                 <Button
                   onClick={() => {
