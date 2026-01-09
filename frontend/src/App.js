@@ -16732,22 +16732,24 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   // Render Sub Agenzie Tab
   const renderSubAgenzieTab = () => {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-lg font-medium text-slate-800">Gestione Sub Agenzie</h3>
-            <p className="text-sm text-slate-600">Gestisci le sub agenzie e le loro autorizzazioni</p>
+            <h3 className="text-base md:text-lg font-medium text-slate-800">Gestione Sub Agenzie</h3>
+            <p className="text-xs md:text-sm text-slate-600">Gestisci le sub agenzie</p>
           </div>
           <Button 
             onClick={() => setShowCreateSubModal(true)}
             disabled={!dataLoaded}
+            size="sm"
+            className="w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             {dataLoaded ? 'Nuova Sub Agenzia' : 'Caricamento...'}
           </Button>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-1">
           {subAgenzie
             .filter(subAgenzia => 
               selectedCommessa === "all" || 
