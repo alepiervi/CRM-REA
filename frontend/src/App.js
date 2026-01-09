@@ -17610,10 +17610,11 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         </div>
       </div>
 
-      {/* Date Filter Section */}
-      <div className="bg-gray-50 p-4 rounded-lg border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      {/* Date Filter Section - Mobile Responsive */}
+      <div className="bg-gray-50 p-3 md:p-4 rounded-lg border">
+        <div className="flex flex-col space-y-3">
+          {/* First Row: Checkbox + Total */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -17628,53 +17629,61 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="enable-date-filter" className="text-sm font-medium text-gray-700">
-                Filtra per periodo di creazione
+                Filtra per data
               </label>
             </div>
             
-            {dateFilter.enabled && (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <label className="text-sm text-gray-600">Dal:</label>
-                  <input
-                    type="date"
-                    value={dateFilter.startDate}
-                    onChange={(e) => setDateFilter(prev => ({
-                      ...prev,
-                      startDate: e.target.value
-                    }))}
-                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <label className="text-sm text-gray-600">Al:</label>
-                  <input
-                    type="date"
-                    value={dateFilter.endDate}
-                    onChange={(e) => setDateFilter(prev => ({
-                      ...prev,
-                      endDate: e.target.value
-                    }))}
-                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setDateFilter(prev => ({
-                      ...prev,
-                      startDate: '',
-                      endDate: ''
-                    }));
-                  }}
-                >
-                  <X className="w-3 h-3 mr-1" />
-                  Azzera
-                </Button>
-              </div>
-            )}
+            {/* Total count - always visible */}
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">Totale: </span>
+              <span className="text-blue-600 font-semibold">{totalClienti}</span>
+            </div>
           </div>
+          
+          {/* Second Row: Date inputs (only when enabled) */}
+          {dateFilter.enabled && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex items-center space-x-2 flex-1">
+                <label className="text-sm text-gray-600 w-8">Dal:</label>
+                <input
+                  type="date"
+                  value={dateFilter.startDate}
+                  onChange={(e) => setDateFilter(prev => ({
+                    ...prev,
+                    startDate: e.target.value
+                  }))}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex items-center space-x-2 flex-1">
+                <label className="text-sm text-gray-600 w-8">Al:</label>
+                <input
+                  type="date"
+                  value={dateFilter.endDate}
+                  onChange={(e) => setDateFilter(prev => ({
+                    ...prev,
+                    endDate: e.target.value
+                  }))}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setDateFilter(prev => ({
+                    ...prev,
+                    startDate: '',
+                    endDate: ''
+                  }));
+                }}
+                className="w-full sm:w-auto"
+              >
+                <X className="w-3 h-3 mr-1" />
+                Azzera
+              </Button>
+            </div>
+          )}
 
           {dateFilter.enabled && (dateFilter.startDate || dateFilter.endDate) && (
             <div className="text-sm text-gray-600">
