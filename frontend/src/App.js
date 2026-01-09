@@ -17478,10 +17478,25 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   }, [allClienti]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gestione Clienti</h2>
-        <div className="flex space-x-3 items-center">
+    <div className="space-y-4 md:space-y-6">
+      {/* Header - Mobile Responsive */}
+      <div className="flex flex-col space-y-3 md:space-y-0 md:flex-row md:justify-between md:items-center">
+        <h2 className="text-xl md:text-2xl font-bold">Gestione Clienti</h2>
+        
+        {/* Mobile: Status info */}
+        <div className="flex flex-wrap items-center gap-2 text-sm md:hidden">
+          {lastUpdated && (
+            <span className="text-gray-500">
+              Agg: {lastUpdated.toLocaleTimeString('it-IT')}
+            </span>
+          )}
+          {isRefreshing && (
+            <span className="text-blue-600 animate-pulse">Aggiornando...</span>
+          )}
+        </div>
+        
+        {/* Desktop: Status info */}
+        <div className="hidden md:flex space-x-3 items-center">
           {lastUpdated && (
             <div className="text-sm text-gray-500">
               Ultimo aggiornamento: {lastUpdated.toLocaleTimeString('it-IT')}
@@ -17492,7 +17507,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               Aggiornamento in corso...
             </span>
           )}
-          
+        </div>
+      </div>
+      
+      {/* Controls Row - Mobile Responsive */}
+      <div className="flex flex-col space-y-3">
+        {/* Auto refresh + Manual refresh */}
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
@@ -17511,17 +17532,20 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             variant="outline"
             onClick={handleManualRefresh}
             disabled={loading || isRefreshing}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-1"
           >
             <Clock className={`w-4 h-4 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
-            <span>Aggiorna ora</span>
+            <span className="hidden sm:inline">Aggiorna ora</span>
           </Button>
-          
+        </div>
+        
+        {/* Commessa Select + Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2">
           <Select 
             value={selectedCommessaLocal || "all"} 
             onValueChange={(value) => setSelectedCommessaLocal(value === "all" ? null : value)}
           >
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Seleziona Commessa" />
             </SelectTrigger>
             <SelectContent>
@@ -17533,16 +17557,20 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               ))}
             </SelectContent>
           </Select>
-          <div className="flex space-x-2">
+          
+          <div className="flex flex-wrap gap-2">
             <Button 
               onClick={() => {
                 fetchSubAgenzie();
                 setShowCreateModal(true);
               }}
               disabled={!selectedCommessa}
+              size="sm"
+              className="flex-1 sm:flex-none"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Nuovo Cliente
+              <Plus className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Nuovo Cliente</span>
+              <span className="sm:hidden">Nuovo</span>
             </Button>
             <Button 
               variant="outline"
@@ -17551,24 +17579,30 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                 setShowImportModal(true);
               }}
               disabled={!selectedCommessa}
+              size="sm"
+              className="flex-1 sm:flex-none"
             >
-              <Upload className="w-4 h-4 mr-2" />
-              Importa Clienti
+              <Upload className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Importa Clienti</span>
+              <span className="sm:hidden">Importa</span>
             </Button>
             <Button
               variant="outline"
               onClick={exportClients}
               disabled={clienti.length === 0 || isExporting}
+              size="sm"
+              className="flex-1 sm:flex-none"
             >
               {isExporting ? (
                 <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Esportando...
+                  <Clock className="w-4 h-4 mr-1 animate-spin" />
+                  <span className="hidden sm:inline">Esportando...</span>
                 </>
               ) : (
                 <>
-                  <Download className="w-4 h-4 mr-2" />
-                  Esporta Excel
+                  <Download className="w-4 h-4 mr-1" />
+                  <span className="hidden sm:inline">Esporta Excel</span>
+                  <span className="sm:hidden">Esporta</span>
                 </>
               )}
             </Button>
