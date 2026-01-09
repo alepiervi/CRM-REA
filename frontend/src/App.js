@@ -3021,17 +3021,17 @@ const LeadsManagement = ({ selectedUnit, units }) => {
             </div>
 
             {/* Provincia */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-green-500" />
+            <div className="space-y-1">
+              <Label className="text-xs md:text-sm font-medium text-slate-700 flex items-center gap-1">
+                <MapPin className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
                 Provincia
               </Label>
               <div className="relative">
                 <Input
-                  placeholder="Filtra per provincia..."
+                  placeholder="Provincia..."
                   value={filters.provincia}
                   onChange={(e) => setFilters({ ...filters, provincia: e.target.value })}
-                  className="pl-3 border-slate-200 focus:border-blue-400 rounded-lg"
+                  className="h-9 text-sm pl-3 border-slate-200 focus:border-blue-400 rounded-lg"
                 />
                 {filters.provincia && (
                   <button
@@ -3045,17 +3045,17 @@ const LeadsManagement = ({ selectedUnit, units }) => {
             </div>
 
             {/* Status */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-purple-500" />
-                Stato Lead
+            <div className="space-y-1">
+              <Label className="text-xs md:text-sm font-medium text-slate-700 flex items-center gap-1">
+                <BarChart3 className="w-3 h-3 md:w-4 md:h-4 text-purple-500" />
+                Stato
               </Label>
               <select
-                className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
+                className="w-full h-9 border border-slate-200 rounded-lg px-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               >
-                <option value="">Tutti gli stati</option>
+                <option value="">Tutti</option>
                 {leadStatuses.map((status) => (
                   <option key={status.id} value={status.nome}>
                     {status.nome}
@@ -3065,51 +3065,51 @@ const LeadsManagement = ({ selectedUnit, units }) => {
             </div>
 
             {/* Agente */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-500" />
-                Agente Assegnato
+            <div className="space-y-1">
+              <Label className="text-xs md:text-sm font-medium text-slate-700 flex items-center gap-1">
+                <Users className="w-3 h-3 md:w-4 md:h-4 text-blue-500" />
+                Agente
               </Label>
               <select
-                className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
+                className="w-full h-9 border border-slate-200 rounded-lg px-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
                 value={filters.assigned_agent_id}
                 onChange={(e) => setFilters({ ...filters, assigned_agent_id: e.target.value })}
               >
-                <option value="">Tutti gli agenti</option>
-                <option value="unassigned">❌ Non assegnati</option>
+                <option value="">Tutti</option>
+                <option value="unassigned">Non assegnati</option>
                 {users.filter(u => u.role === "agente").map((agent) => (
                   <option key={agent.id} value={agent.id}>
-                    👤 {agent.username}
+                    {agent.username}
                   </option>
                 ))}
               </select>
             </div>
 
             {/* Da Data */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-teal-500" />
-                Da Data
+            <div className="space-y-1">
+              <Label className="text-xs md:text-sm font-medium text-slate-700 flex items-center gap-1">
+                <Calendar className="w-3 h-3 md:w-4 md:h-4 text-teal-500" />
+                Da
               </Label>
               <Input
                 type="date"
                 value={filters.date_from}
                 onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
-                className="border-slate-200 focus:border-blue-400 rounded-lg"
+                className="h-9 text-sm border-slate-200 focus:border-blue-400 rounded-lg"
               />
             </div>
 
             {/* A Data */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-teal-500" />
-                A Data
+            <div className="space-y-1">
+              <Label className="text-xs md:text-sm font-medium text-slate-700 flex items-center gap-1">
+                <Calendar className="w-3 h-3 md:w-4 md:h-4 text-teal-500" />
+                A
               </Label>
               <Input
                 type="date"
                 value={filters.date_to}
                 onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
-                className="border-slate-200 focus:border-blue-400 rounded-lg"
+                className="h-9 text-sm border-slate-200 focus:border-blue-400 rounded-lg"
               />
             </div>
           </div>
