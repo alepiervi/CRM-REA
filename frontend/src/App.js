@@ -17812,10 +17812,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
           {/* Tipologia Contratto Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipologia Contratto</label>
+            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tipologia</label>
             <Select value={clientiFilterTipologia} onValueChange={setClientiFilterTipologia}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tutte le Tipologie" />
+              <SelectTrigger className="w-full h-9 text-sm">
+                <SelectValue placeholder="Tutte" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte le Tipologie</SelectItem>
@@ -17830,10 +17830,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Status</label>
             <Select value={clientiFilterStatus} onValueChange={setClientiFilterStatus}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tutti gli Status" />
+              <SelectTrigger className="w-full h-9 text-sm">
+                <SelectValue placeholder="Tutti" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti gli Status</SelectItem>
@@ -17848,10 +17848,10 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
           {/* Created By Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Utente Assegnato</label>
+            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Assegnato</label>
             <Select value={clientiFilterCreatedBy} onValueChange={setClientiFilterCreatedBy}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tutti gli Utenti" />
+              <SelectTrigger className="w-full h-9 text-sm">
+                <SelectValue placeholder="Tutti" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti gli Utenti</SelectItem>
@@ -17866,7 +17866,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
           {/* NEW: Servizi Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Servizi</label>
+            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Servizi</label>
             <Select value={clientiFilterServizi} onValueChange={setClientiFilterServizi}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Tutti i Servizi" />
