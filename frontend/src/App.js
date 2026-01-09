@@ -2559,6 +2559,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const [customFields, setCustomFields] = useState([]);
   const [leadStatuses, setLeadStatuses] = useState([]); // NEW: Dynamic statuses
   const [users, setUsers] = useState([]); // NEW: Users for agent names
+  const [showFilters, setShowFilters] = useState(false); // Mobile: filters collapsed
   const [filters, setFilters] = useState({
     unit_id: "", // NEW: Unit filter
     campagna: "",
