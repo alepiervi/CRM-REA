@@ -24093,11 +24093,23 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Edit className="w-5 h-5 text-blue-600" />
-            <span>Modifica Cliente: {cliente?.nome} {cliente?.cognome}</span>
-          </DialogTitle>
-          <DialogDescription>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center space-x-2">
+              <Edit className="w-5 h-5 text-blue-600" />
+              <span className="truncate">Modifica: {cliente?.nome} {cliente?.cognome}</span>
+            </DialogTitle>
+            {/* Close button - visible on mobile */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="flex-shrink-0 h-10 w-10 p-0 rounded-full hover:bg-slate-100 md:hidden"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <DialogDescription className="hidden sm:block">
             Modifica i dati anagrafici del cliente. I campi contrassegnati con * sono obbligatori.
           </DialogDescription>
         </DialogHeader>
