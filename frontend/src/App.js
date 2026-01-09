@@ -17687,17 +17687,12 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
           {dateFilter.enabled && (dateFilter.startDate || dateFilter.endDate) && (
             <div className="text-sm text-gray-600">
-              <span className="font-medium">Clienti filtrati: </span>
+              <span className="font-medium">Filtrati: </span>
               <span className="text-blue-600 font-semibold">
                 {getFilteredClients().length} di {totalClienti}
               </span>
             </div>
           )}
-          {/* Total count display */}
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">Totale: </span>
-            <span className="text-blue-600 font-semibold">{totalClienti} clienti</span>
-          </div>
         </div>
       </div>
 
