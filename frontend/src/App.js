@@ -3161,14 +3161,14 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       </Card>
 
       {/* Leads Table */}
-      <Card className="border-0 shadow-lg">
+      <Card className="border-0 shadow-lg overflow-hidden">
         <CardContent className="p-0">
           {loading ? (
             <div className="p-8 text-center">Caricamento...</div>
           ) : (
             <div>
               {/* Desktop Table View */}
-              <div className="hidden md:block">
+              <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
