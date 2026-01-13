@@ -54,7 +54,7 @@ try:
     logging.info(f"🔗 Connecting to MongoDB: {mongo_url[:50]}...")
     logging.info(f"📊 Database: {db_name}")
     
-    client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=10000)
+    client = AsyncIOMotorClient(mongo_url)
     db = client[db_name]
     
     logging.info("✅ MongoDB client initialized successfully")
