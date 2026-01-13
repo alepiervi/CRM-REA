@@ -26080,8 +26080,12 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
                                     <div className="flex items-center justify-between">
                                       <span className="text-xs text-slate-600">
                                         {uploadProgress[file.name].status === 'uploading' && 'Caricamento...'}
-                                        {uploadProgress[file.name].status === 'completed' && 'Completato'}
-                                        {uploadProgress[file.name].status === 'error' && 'Errore'}
+                                        {uploadProgress[file.name].status === 'completed' && 'Salvato su Aruba Drive'}
+                                        {uploadProgress[file.name].status === 'error' && (
+                                          <span className="text-red-600 font-medium">
+                                            NON salvato - {uploadProgress[file.name].error || 'Errore server Aruba'}
+                                          </span>
+                                        )}
                                       </span>
                                       {uploadProgress[file.name].status === 'uploading' && (
                                         <span className="text-xs text-slate-500">
