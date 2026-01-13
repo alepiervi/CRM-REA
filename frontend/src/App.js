@@ -25838,9 +25838,19 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
     }
     
     if (errorCount > 0 && successCount === 0) {
+      // Get the first error message for details
+      const firstError = uploadResults.find(r => !r.success);
+      const errorDetail = firstError?.error || "Errore di connessione";
+      
       toast({
-        title: "Errore Upload",
-        description: `Tutti i ${errorCount} file hanno fallito il caricamento`,
+        title: "Errore Upload - Server Aruba",
+        description: `Il documento NON è stato salvato. ${errorDetail}`,
+        variant: "destructive",
+      });
+    } else if (errorCount > 0) {
+      toast({
+        title: "Upload Parziale",
+        description: `${successCount} file caricati, ${errorCount} falliti. I file falliti NON sono stati salvati.`,
         variant: "destructive",
       });
     }
