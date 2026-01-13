@@ -5423,11 +5423,22 @@ async def upload_document(
                 import traceback
                 add_debug_log(f"🔍 Full traceback: {traceback.format_exc()}")
                 last_upload_debug["error"] = f"{type(nextcloud_exception).__name__}: {str(nextcloud_exception)}"
-                add_debug_log(f"⚠️ Nextcloud upload failed, using local storage fallback")
-                # Continue with local storage fallback
+                # NUOVO: Se Aruba è configurato ma fallisce, restituisci errore invece di fallback locale
+                raise HTTPException(
+                    status_code=503, 
+                    detail=f"Errore di connessione al server Aruba Drive. Il documento NON è stato salvato. Dettaglio: {str(nextcloud_exception)}"
+                )
         
-        # Local storage fallback (ONLY if cloud upload failed or not configured)
-        if not upload_success:
+        # MODIFICATO: Se Aruba è configurato ma l'upload non è andato a buon fine, errore
+        if aruba_config and aruba_config.get('enabled') and not upload_success:
+            add_debug_log(f"❌ Aruba Drive configurato ma upload fallito - NON salvo localmente")
+            raise HTTPException(
+                status_code=503, 
+                detail="Errore: il server Aruba Drive non ha risposto correttamente. Il documento NON è stato salvato."
+            )
+        
+        # Local storage SOLO se Aruba NON è configurato
+        if not upload_success and not (aruba_config and aruba_config.get('enabled')):
             documents_dir = Path("/app/documents")
             documents_dir.mkdir(exist_ok=True)
             file_path = documents_dir / unique_filename
