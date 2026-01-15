@@ -3514,9 +3514,14 @@ Buona giornata! 😊"""
             responses_count = qualification.get("lead_responses", 0)
             
             if responses_count > 0:
-                # Lead responded but didn't complete - assign to agent
+                # Lead responded but didn't complete - NON assegnare, rimane in attesa
                 await self.complete_qualification(lead_id, "timeout", 50)
-                await self.assign_qualified_lead_to_agent(lead_id, "timeout_with_responses")
+                logging.info(f"Lead {lead_id} timeout with responses - will be assigned when status changes to 'Lead Interessato'")
+                # Aggiorna solo lo status senza assegnare
+                await db.leads.update_one(
+                    {"id": lead_id},
+                    {"$set": {"esito": "Timeout Bot"}}
+                )
             else:
                 # No response - mark as unresponsive
                 await self.complete_qualification(lead_id, "timeout", 20)
