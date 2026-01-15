@@ -11243,11 +11243,14 @@ async def get_clienti(
     """Get clienti accessible to current user based on role"""
     query = {}
     
+    # IMPORTANT: Exclude soft-deleted clients from normal listing
+    query["$or"] = [{"is_deleted": False}, {"is_deleted": {"$exists": False}}]
+    
     # CRITICAL FIX: Role-based client visibility system
     if current_user.role == UserRole.ADMIN:
-        # Admin può vedere tutti i clienti
+        # Admin può vedere tutti i clienti (non eliminati)
         print(f"🔓 ADMIN ACCESS: User {current_user.username} can see all clients")
-        pass  # No filtering for admin
+        pass  # No additional filtering for admin
         
     elif current_user.role == UserRole.RESPONSABILE_COMMESSA:
         # Responsabile Commessa: vede clienti delle commesse autorizzate + sub agenzie autorizzate
