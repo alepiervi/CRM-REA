@@ -13162,6 +13162,10 @@ async def export_pivot_clienti_list(
         servizi_list = await db.servizi.find({}, {"_id": 0, "id": 1, "nome": 1}).to_list(None)
         servizi_map = {s["id"]: s["nome"] for s in servizi_list}
         
+        # Fetch segmenti for name lookup
+        segmenti_list = await db.segmenti.find({}, {"_id": 0, "id": 1, "nome": 1}).to_list(None)
+        segmenti_map = {s["id"]: s["nome"] for s in segmenti_list}
+        
         # Create Excel
         wb = openpyxl.Workbook()
         ws = wb.active
