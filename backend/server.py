@@ -4421,12 +4421,11 @@ async def create_lead(lead_data: LeadCreate):
             
         except Exception as e:
             logging.error(f"Error starting qualification for new lead {lead_obj.id}: {e}")
-            # If qualification fails, proceed with immediate assignment
-            await assign_lead_to_agent(lead_obj)
+            # NON assegnare qui - l'assegnazione avviene solo quando lo status cambia a "Lead Interessato"
+            logging.info(f"Lead {lead_obj.id} remains unassigned until status changes to 'Lead Interessato'")
     else:
-        logging.info(f"Skipping qualification for lead {lead_obj.id} - commessa does not have AI enabled. Proceeding with immediate assignment.")
-        # Immediately assign to agent since commessa doesn't have AI enabled
-        await assign_lead_to_agent(lead_obj)
+        # NON assegnare qui - l'assegnazione avviene solo quando lo status cambia a "Lead Interessato"
+        logging.info(f"Skipping qualification for lead {lead_obj.id} - Lead created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
     
     return lead_obj
 
