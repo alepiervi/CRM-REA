@@ -4821,6 +4821,35 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     if update_data.get("esito"):
         update_data["contacted_at"] = datetime.now(timezone.utc)
     
+    # NEW: Auto-assign when status changes from "Nuovo" to "Lead Interessato"
+    old_esito = lead.get("esito", "Nuovo") or "Nuovo"
+    new_esito = update_data.get("esito")
+    
+    if new_esito and new_esito == "Lead Interessato" and old_esito in ["Nuovo", "", None]:
+        # Check if lead is currently unassigned
+        if not lead.get("assigned_agent_id"):
+            # Check if Unit has auto_assign_enabled
+            unit_id = lead.get("unit_id")
+            should_auto_assign = True
+            
+            if unit_id:
+                unit = await db.units.find_one({"id": unit_id})
+                if unit and not unit.get("auto_assign_enabled", True):
+                    should_auto_assign = False
+                    logging.info(f"[AUTO-ASSIGN] Unit {unit_id} has auto_assign disabled. Lead {lead_id} will remain unassigned.")
+            
+            if should_auto_assign:
+                # Create Lead object for assignment
+                lead_obj = Lead(**lead)
+                assigned_agent_id = await assign_lead_to_agent(lead_obj)
+                
+                if assigned_agent_id:
+                    update_data["assigned_agent_id"] = assigned_agent_id
+                    update_data["assigned_at"] = datetime.now(timezone.utc)
+                    logging.info(f"[AUTO-ASSIGN] Lead {lead_id} auto-assigned to agent {assigned_agent_id} after status change to 'Lead Interessato'")
+                else:
+                    logging.warning(f"[AUTO-ASSIGN] No agent found for lead {lead_id} with provincia {lead.get('provincia')}")
+    
     # NEW: If status is being changed to a "closed" status, calculate tempo_gestione
     if update_data.get("status"):
         # Check if this is a closing status (you can define specific statuses as "closed")
