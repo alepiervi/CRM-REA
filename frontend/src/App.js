@@ -3374,6 +3374,88 @@ const LeadsManagement = ({ selectedUnit, units }) => {
         </CardContent>
       </Card>
 
+      {/* Pagination Controls */}
+      {totalPages > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 md:p-4 bg-white rounded-lg shadow border">
+          {/* Info text */}
+          <div className="text-sm text-slate-600 text-center sm:text-left">
+            <span className="hidden sm:inline">Mostrando </span>{leads.length} di {totalLeads} 
+            <span className="hidden sm:inline"> lead</span>
+            <span className="mx-1">•</span>
+            Pag. {currentPage}/{totalPages}
+          </div>
+          
+          {/* Pagination buttons */}
+          <div className="flex items-center justify-center gap-1">
+            {/* First/Prev */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              className="hidden sm:flex"
+            >
+              Prima
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <span className="sm:hidden">←</span>
+              <span className="hidden sm:inline">← Prec</span>
+            </Button>
+            
+            {/* Page numbers */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className="w-8 sm:w-10 px-0"
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              <span className="sm:hidden">→</span>
+              <span className="hidden sm:inline">Succ →</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              className="hidden sm:flex"
+            >
+              Ultima
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Lead Detail Modal */}
       {selectedLead && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
