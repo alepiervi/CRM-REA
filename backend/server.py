@@ -4637,17 +4637,18 @@ async def create_lead_webhook_post(lead_data: LeadCreate):
     except Exception as e:
         logging.error(f"[WEBHOOK POST] Error checking commessa for lead {lead_obj.id}: {e}")
     
-    # Start qualification or immediate assignment
+    # Start qualification or leave unassigned until status changes
     if should_start_qualification:
         try:
             await lead_qualification_bot.start_qualification_process(lead_obj.id)
             logging.info(f"[WEBHOOK POST] Started qualification for lead {lead_obj.id}")
         except Exception as e:
             logging.error(f"[WEBHOOK POST] Error starting qualification: {e}")
-            await assign_lead_to_agent(lead_obj)
+            # NON assegnare qui - l'assegnazione avviene solo quando lo status cambia a "Lead Interessato"
+            logging.info(f"[WEBHOOK POST] Lead {lead_obj.id} remains unassigned until status changes to 'Lead Interessato'")
     else:
-        logging.info(f"[WEBHOOK POST] Immediate assignment for lead {lead_obj.id}")
-        await assign_lead_to_agent(lead_obj)
+        # NON assegnare qui - l'assegnazione avviene solo quando lo status cambia a "Lead Interessato"
+        logging.info(f"[WEBHOOK POST] Lead {lead_obj.id} created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
     
     return {
         "success": True,
