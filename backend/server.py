@@ -4781,7 +4781,13 @@ async def get_leads(
             logging.warning(f"Skipping lead {lead_data.get('id', 'unknown')} due to validation error: {str(e)}")
             continue
     
-    return valid_leads
+    return LeadsPaginatedResponse(
+        leads=valid_leads,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages
+    )
 
 @api_router.put("/leads/{lead_id}", response_model=Lead)
 async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User = Depends(get_current_user)):
