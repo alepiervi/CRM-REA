@@ -3488,9 +3488,15 @@ Buona giornata! 😊"""
                 }
             )
             
-            # If qualified, assign to agent
+            # MODIFICATO: NON assegnare automaticamente dopo qualificazione
+            # Il lead rimane non assegnato fino a quando lo status non viene cambiato a "Lead Interessato"
             if result == "qualified" and score >= 70:
-                await self.assign_qualified_lead_to_agent(lead_id)
+                logging.info(f"Lead {lead_id} qualified with score {score} - will be assigned when status changes to 'Lead Interessato'")
+                # Aggiorna solo lo status a "Bot Qualificato" senza assegnare
+                await db.leads.update_one(
+                    {"id": lead_id},
+                    {"$set": {"esito": "Bot Qualificato", "qualification_score": score}}
+                )
                 
             logging.info(f"Completed qualification for lead {lead_id} with result: {result}, score: {score}")
             
