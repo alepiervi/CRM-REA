@@ -4655,7 +4655,7 @@ async def create_lead_webhook_post(lead_data: LeadCreate):
         "lead": lead_obj
     }
 
-@api_router.get("/leads", response_model=List[Lead])
+@api_router.get("/leads", response_model=LeadsPaginatedResponse)
 async def get_leads(
     unit_id: Optional[str] = None,
     campagna: Optional[str] = None,
@@ -4665,6 +4665,8 @@ async def get_leads(
     date_to: Optional[str] = None,
     assigned_agent_id: Optional[str] = None,  # NEW: Filter by agent
     search: Optional[str] = None,  # NEW: Search by name/phone
+    page: int = Query(1, ge=1),  # Pagination: page number
+    page_size: int = Query(50, ge=1, le=200),  # Pagination: items per page
     current_user: User = Depends(get_current_user)
 ):
     query = {}
@@ -4748,7 +4750,15 @@ async def get_leads(
             {"email": search_regex}
         ]
     
-    leads = await db["leads"].find(query).sort("created_at", -1).to_list(length=None)
+    # Count total matching documents BEFORE pagination
+    total = await db["leads"].count_documents(query)
+    
+    # Calculate pagination
+    skip = (page - 1) * page_size
+    total_pages = (total + page_size - 1) // page_size if total > 0 else 1
+    
+    # Fetch paginated leads
+    leads = await db["leads"].find(query).sort("created_at", -1).skip(skip).limit(page_size).to_list(length=page_size)
     
     # Get all units for populating unit_nome
     units = await db["units"].find().to_list(length=None)
