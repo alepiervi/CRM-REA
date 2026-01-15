@@ -4832,11 +4832,13 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     if update_data.get("esito"):
         update_data["contacted_at"] = datetime.now(timezone.utc)
     
-    # NEW: Auto-assign when status changes from "Nuovo" to "Lead Interessato"
+    # NEW: Auto-assign when status changes to "Lead Interessato"
+    # Status che indicano che il lead non è ancora stato lavorato/assegnato
+    unassigned_statuses = ["Nuovo", "Bot Qualificato", "Timeout Bot", "", None]
     old_esito = lead.get("esito", "Nuovo") or "Nuovo"
     new_esito = update_data.get("esito")
     
-    if new_esito and new_esito == "Lead Interessato" and old_esito in ["Nuovo", "", None]:
+    if new_esito and new_esito == "Lead Interessato" and old_esito in unassigned_statuses:
         # Check if lead is currently unassigned
         if not lead.get("assigned_agent_id"):
             # Check if Unit has auto_assign_enabled
