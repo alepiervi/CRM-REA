@@ -116,7 +116,10 @@ import {
   Smartphone,
   FolderOpen,
   Lock,
-  Filter
+  Filter,
+  RefreshCw,
+  Archive,
+  RotateCcw
 } from "lucide-react";
 
 // Smart Backend URL Detection - works in all environments
