@@ -2566,6 +2566,13 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const [leadStatuses, setLeadStatuses] = useState([]); // NEW: Dynamic statuses
   const [users, setUsers] = useState([]); // NEW: Users for agent names
   const [showFilters, setShowFilters] = useState(false); // Mobile: filters collapsed
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 50;
+  
   const [filters, setFilters] = useState({
     unit_id: "", // NEW: Unit filter
     campagna: "",
@@ -2580,7 +2587,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const { user } = useAuth();
 
   useEffect(() => {
-    fetchLeads();
+    setCurrentPage(1); // Reset to page 1 when filters change
+    fetchLeads(false, 1);
     fetchCustomFields();
     fetchLeadStatuses(); // NEW: Fetch dynamic statuses
     fetchUsers(); // NEW: Fetch users for agent names
@@ -2591,14 +2599,14 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     if (!autoRefresh) return; // Only auto-refresh if enabled
 
     const intervalId = setInterval(() => {
-      fetchLeads(true); // true indica che è un refresh automatico
+      fetchLeads(true, currentPage); // true indica che è un refresh automatico
     }, 30000); // 30 seconds
 
     // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
-  }, [selectedUnit, filters, autoRefresh]); // Re-create interval when filters or autoRefresh change
+  }, [selectedUnit, filters, autoRefresh, currentPage]); // Re-create interval when filters or autoRefresh change
 
-  const fetchLeads = async (isAutoRefresh = false) => {
+  const fetchLeads = async (isAutoRefresh = false, page = currentPage) => {
     try {
       if (!isAutoRefresh) {
         setLoading(true);
@@ -2613,8 +2621,18 @@ const LeadsManagement = ({ selectedUnit, units }) => {
         params.append('unit_id', selectedUnit);
       }
       
+      // Add pagination parameters
+      params.append('page', page);
+      params.append('page_size', pageSize);
+      
       const response = await axios.get(`${API}/leads?${params}`);
-      setLeads(response.data);
+      
+      // Handle paginated response
+      setLeads(response.data.leads || []);
+      setTotalLeads(response.data.total || 0);
+      setTotalPages(response.data.total_pages || 1);
+      setCurrentPage(response.data.page || 1);
+      
       setLastUpdated(new Date()); // Update timestamp after successful fetch
     } catch (error) {
       console.error("Error fetching leads:", error);
@@ -2632,8 +2650,15 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      fetchLeads(false, newPage);
+    }
+  };
+
   const handleManualRefresh = () => {
-    fetchLeads(false); // Manual refresh
+    fetchLeads(false, currentPage); // Manual refresh
   };
 
   const fetchCustomFields = async () => {
