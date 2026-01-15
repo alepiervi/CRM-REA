@@ -13205,7 +13205,9 @@ async def export_pivot_clienti_list(
             ws.cell(row_num, 14, servizi_map.get(cliente.get("servizio_id", ""), ""))
             ws.cell(row_num, 15, cliente.get("status", ""))
             ws.cell(row_num, 16, cliente.get("tipologia_contratto", ""))
-            ws.cell(row_num, 17, cliente.get("segmento", ""))
+            # Segmento: lookup name from ID
+            segmento_id = cliente.get("segmento", "")
+            ws.cell(row_num, 17, segmenti_map.get(segmento_id, segmento_id))  # Fallback to ID if not found
             ws.cell(row_num, 18, "Sì" if cliente.get("convergenza") else "No")
             ws.cell(row_num, 19, users_map.get(cliente.get("assigned_to", ""), ""))
             
