@@ -346,6 +346,7 @@ class Lead(BaseModel):
     marketing_consent: Optional[bool] = None  # None = non arrivato da Zapier, True/False = arrivato da Zapier
     assigned_agent_id: Optional[str] = None
     esito: Optional[str] = None  # Changed to string for dynamic values from lead_statuses
+    esito_at_assignment: Optional[str] = None  # NEW: Status when lead was assigned (to track if worked)
     note: Optional[str] = None
     custom_fields: Dict[str, Any] = {}
     documents: List[str] = []  # URLs to stored documents
