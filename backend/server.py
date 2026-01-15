@@ -13740,7 +13740,7 @@ async def delete_cliente(
     cliente_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Delete cliente completely from system"""
+    """Soft delete cliente - sposta nel cestino invece di eliminare definitivamente"""
     
     # Check if cliente exists
     cliente_doc = await db.clienti.find_one({"id": cliente_id})
@@ -13752,23 +13752,216 @@ async def delete_cliente(
     # Verify user can delete this cliente (checks status lock and permissions)
     if not await can_user_delete_cliente(current_user, cliente):
         raise HTTPException(status_code=403, detail="No permission to delete this cliente")
-        raise HTTPException(status_code=403, detail="No permission to delete this cliente")
+    
+    try:
+        # SOFT DELETE: Mark as deleted instead of removing
+        deleted_at = datetime.now(timezone.utc)
+        
+        await db.clienti.update_one(
+            {"id": cliente_id},
+            {
+                "$set": {
+                    "is_deleted": True,
+                    "deleted_at": deleted_at,
+                    "deleted_by": current_user.id,
+                    "deleted_by_username": current_user.username,
+                    "last_assigned_to": cliente_doc.get("assigned_to"),  # Save for restore
+                    "last_status": cliente_doc.get("status")  # Save original status
+                }
+            }
+        )
+        
+        # Log the deletion
+        await log_client_action(
+            cliente_id=cliente_id,
+            action=ClienteLogAction.STATUS_CHANGED,
+            description=f"Cliente spostato nel cestino da {current_user.username}",
+            user=current_user,
+            old_value="attivo",
+            new_value="cestino",
+            metadata={
+                "action_type": "soft_delete",
+                "deleted_at": deleted_at.isoformat(),
+                "deleted_by": current_user.id,
+                "deleted_by_username": current_user.username
+            }
+        )
+        
+        return {
+            "success": True, 
+            "message": f"Cliente {cliente.nome} {cliente.cognome} spostato nel cestino",
+            "can_restore": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Error soft deleting cliente: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione del cliente: {str(e)}")
+
+
+@api_router.get("/clienti-cestino")
+async def get_clienti_cestino(
+    current_user: User = Depends(get_current_user)
+):
+    """Get all soft-deleted clienti (trash bin) - Admin only"""
+    
+    # Only admin can access trash
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli amministratori possono accedere al cestino")
+    
+    try:
+        # Find all deleted clienti
+        deleted_clienti = await db.clienti.find(
+            {"is_deleted": True},
+            {"_id": 0}
+        ).sort("deleted_at", -1).to_list(None)
+        
+        # Enrich with sub_agenzia and commessa names
+        for cliente in deleted_clienti:
+            if cliente.get("sub_agenzia_id"):
+                sub_agenzia = await db.sub_agenzie.find_one({"id": cliente["sub_agenzia_id"]})
+                cliente["sub_agenzia_nome"] = sub_agenzia.get("nome") if sub_agenzia else ""
+            
+            if cliente.get("commessa_id"):
+                commessa = await db.commesse.find_one({"id": cliente["commessa_id"]})
+                cliente["commessa_nome"] = commessa.get("nome") if commessa else ""
+            
+            # Get deletion logs
+            logs = await db.cliente_logs.find(
+                {
+                    "cliente_id": cliente["id"],
+                    "metadata.action_type": {"$in": ["soft_delete", "restore"]}
+                },
+                {"_id": 0}
+            ).sort("timestamp", -1).to_list(10)
+            cliente["deletion_logs"] = logs
+        
+        return {
+            "success": True,
+            "clienti": deleted_clienti,
+            "total": len(deleted_clienti)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching deleted clienti: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero del cestino: {str(e)}")
+
+
+@api_router.post("/clienti-cestino/{cliente_id}/ripristina")
+async def ripristina_cliente(
+    cliente_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Restore a soft-deleted cliente - Admin only"""
+    
+    # Only admin can restore
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli amministratori possono ripristinare i clienti")
+    
+    # Check if cliente exists and is deleted
+    cliente_doc = await db.clienti.find_one({"id": cliente_id, "is_deleted": True})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente non trovato nel cestino")
+    
+    try:
+        # Get the last assigned user
+        last_assigned_to = cliente_doc.get("last_assigned_to")
+        last_status = cliente_doc.get("last_status", "da_lavorare")
+        
+        # Restore cliente
+        restored_at = datetime.now(timezone.utc)
+        
+        await db.clienti.update_one(
+            {"id": cliente_id},
+            {
+                "$set": {
+                    "is_deleted": False,
+                    "restored_at": restored_at,
+                    "restored_by": current_user.id,
+                    "restored_by_username": current_user.username,
+                    "assigned_to": last_assigned_to,  # Restore to last assigned user
+                    "status": last_status  # Restore original status
+                },
+                "$unset": {
+                    "deleted_at": "",
+                    "deleted_by": "",
+                    "deleted_by_username": ""
+                }
+            }
+        )
+        
+        # Log the restoration
+        await log_client_action(
+            cliente_id=cliente_id,
+            action=ClienteLogAction.STATUS_CHANGED,
+            description=f"Cliente ripristinato da {current_user.username}",
+            user=current_user,
+            old_value="cestino",
+            new_value="attivo",
+            metadata={
+                "action_type": "restore",
+                "restored_at": restored_at.isoformat(),
+                "restored_by": current_user.id,
+                "restored_by_username": current_user.username,
+                "restored_to_user": last_assigned_to
+            }
+        )
+        
+        # Get restored user name
+        restored_user_name = "nessuno"
+        if last_assigned_to:
+            user_doc = await db.users.find_one({"id": last_assigned_to})
+            if user_doc:
+                restored_user_name = user_doc.get("username", "sconosciuto")
+        
+        return {
+            "success": True,
+            "message": f"Cliente {cliente_doc.get('nome')} {cliente_doc.get('cognome')} ripristinato con successo",
+            "assigned_to": last_assigned_to,
+            "assigned_to_name": restored_user_name
+        }
+        
+    except Exception as e:
+        logger.error(f"Error restoring cliente: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nel ripristino del cliente: {str(e)}")
+
+
+@api_router.delete("/clienti-cestino/{cliente_id}/elimina-definitivo")
+async def elimina_definitivo_cliente(
+    cliente_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Permanently delete a cliente from trash - Admin only"""
+    
+    # Only admin can permanently delete
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli amministratori possono eliminare definitivamente")
+    
+    # Check if cliente exists and is in trash
+    cliente_doc = await db.clienti.find_one({"id": cliente_id, "is_deleted": True})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente non trovato nel cestino")
     
     try:
         # Delete associated documents
-        await db.documents.delete_many({"cliente_id": cliente_id})
+        await db.documents.delete_many({"entity_id": cliente_id})
         
-        # Delete cliente
+        # Delete logs
+        await db.cliente_logs.delete_many({"cliente_id": cliente_id})
+        
+        # Permanently delete cliente
         result = await db.clienti.delete_one({"id": cliente_id})
         
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Cliente not found")
         
-        return {"success": True, "message": f"Cliente {cliente.nome} {cliente.cognome} eliminato completamente dal sistema"}
+        return {
+            "success": True,
+            "message": f"Cliente {cliente_doc.get('nome')} {cliente_doc.get('cognome')} eliminato definitivamente"
+        }
         
     except Exception as e:
-        logger.error(f"Error deleting cliente: {e}")
-        raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione del cliente: {str(e)}")
+        logger.error(f"Error permanently deleting cliente: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore nell'eliminazione definitiva: {str(e)}")
 
 @api_router.delete("/lead/{lead_id}")
 async def delete_lead(
