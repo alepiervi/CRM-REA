@@ -3757,8 +3757,18 @@ whatsapp_service = WhatsAppService()
 # Initialize Lead Qualification Bot
 lead_qualification_bot = LeadQualificationBot()
 
+# Costante: numero massimo di lead non gestiti per agente
+MAX_UNWORKED_LEADS_PER_AGENT = 30
+
 async def assign_lead_to_agent(lead: Lead):
-    """Automatically assign lead to agent based on unit_id and province coverage"""
+    """
+    Assegna automaticamente il lead all'agente migliore basandosi su:
+    1. Unit e provincia del lead
+    2. Numero di lead NON GESTITI dell'agente (max 30)
+    3. Performance dell'agente (chi lavora meglio riceve più lead)
+    
+    Un lead è considerato "non gestito" se ha ancora lo status con cui è stato assegnato.
+    """
     
     # Check if the Unit has auto_assign_enabled
     if lead.unit_id:
@@ -3792,27 +3802,132 @@ async def assign_lead_to_agent(lead: Lead):
     
     logging.info(f"[ASSIGN] Found {len(agents)} eligible agents for lead {lead.id}")
     
-    # Simple round-robin assignment (can be improved with better logic)
-    # For now, assign to first available agent
-    selected_agent = agents[0]
+    # Calculate scores for each agent
+    agent_scores = []
+    current_esito = lead.esito or "Lead Interessato"  # Status at moment of assignment
     
-    # Update lead with assignment
+    for agent in agents:
+        agent_id = agent["id"]
+        agent_username = agent.get("username", "unknown")
+        
+        # Count UNWORKED leads (leads where esito = esito_at_assignment)
+        # A lead is "unworked" if its current status is the same as when it was assigned
+        unworked_leads_count = await db.leads.count_documents({
+            "assigned_agent_id": agent_id,
+            "$or": [
+                # Lead with esito_at_assignment field - compare current esito with assignment esito
+                {"$expr": {"$eq": ["$esito", "$esito_at_assignment"]}},
+                # Legacy: leads without esito_at_assignment - consider them unworked if esito is "Lead Interessato" or same as current
+                {
+                    "esito_at_assignment": {"$exists": False},
+                    "esito": {"$in": [current_esito, "Lead Interessato", None, ""]}
+                }
+            ]
+        })
+        
+        # Check if agent has reached max unworked leads
+        if unworked_leads_count >= MAX_UNWORKED_LEADS_PER_AGENT:
+            logging.info(f"[ASSIGN] Agent {agent_username} ({agent_id}) has {unworked_leads_count} unworked leads - BLOCKED (max {MAX_UNWORKED_LEADS_PER_AGENT})")
+            continue  # Skip this agent
+        
+        # Calculate performance metrics
+        # 1. Total leads worked (where status changed from assignment status)
+        total_worked = await db.leads.count_documents({
+            "assigned_agent_id": agent_id,
+            "esito_at_assignment": {"$exists": True},
+            "$expr": {"$ne": ["$esito", "$esito_at_assignment"]}
+        })
+        
+        # 2. Average handling time (lower is better)
+        agent_leads = await db.leads.find({
+            "assigned_agent_id": agent_id,
+            "tempo_gestione_minuti": {"$exists": True, "$ne": None, "$gt": 0}
+        }).to_list(length=100)
+        
+        avg_handling_time = 0
+        if agent_leads:
+            total_time = sum([l.get("tempo_gestione_minuti", 0) for l in agent_leads])
+            avg_handling_time = total_time / len(agent_leads)
+        
+        # 3. Conversion rate (leads closed successfully vs total assigned)
+        total_assigned = await db.leads.count_documents({"assigned_agent_id": agent_id})
+        successful_closures = await db.leads.count_documents({
+            "assigned_agent_id": agent_id,
+            "closed_at": {"$exists": True, "$ne": None}
+        })
+        
+        conversion_rate = (successful_closures / total_assigned * 100) if total_assigned > 0 else 0
+        
+        # Calculate overall score (HIGHER is better for this calculation)
+        # Formula: 
+        # - Base score from capacity available (more room = better)
+        # - Bonus for good conversion rate
+        # - Bonus for fast handling time
+        # - Penalty for many unworked leads
+        
+        capacity_available = MAX_UNWORKED_LEADS_PER_AGENT - unworked_leads_count
+        capacity_score = (capacity_available / MAX_UNWORKED_LEADS_PER_AGENT) * 40  # Max 40 points
+        
+        conversion_score = conversion_rate * 0.3  # Max ~30 points for 100% conversion
+        
+        # Handling time score (faster = better, normalize to 0-20 points)
+        # Assume 60 min is average, 0 min is perfect, 120+ min is bad
+        if avg_handling_time == 0:
+            time_score = 10  # Neutral if no data
+        elif avg_handling_time <= 30:
+            time_score = 20  # Excellent
+        elif avg_handling_time <= 60:
+            time_score = 15  # Good
+        elif avg_handling_time <= 120:
+            time_score = 10  # Average
+        else:
+            time_score = 5  # Slow
+        
+        total_score = capacity_score + conversion_score + time_score
+        
+        agent_scores.append({
+            "agent_id": agent_id,
+            "username": agent_username,
+            "score": total_score,
+            "unworked_leads": unworked_leads_count,
+            "capacity_available": capacity_available,
+            "total_worked": total_worked,
+            "conversion_rate": conversion_rate,
+            "avg_handling_time": avg_handling_time
+        })
+        
+        logging.info(f"[ASSIGN] Agent {agent_username}: score={total_score:.1f}, unworked={unworked_leads_count}, capacity={capacity_available}, conversion={conversion_rate:.1f}%, avg_time={avg_handling_time:.0f}min")
+    
+    if not agent_scores:
+        logging.warning(f"[ASSIGN] All agents are blocked (max leads reached). Lead {lead.id} will remain unassigned.")
+        return None
+    
+    # Sort by score (DESCENDING - highest score wins)
+    agent_scores.sort(key=lambda x: x["score"], reverse=True)
+    
+    selected_agent = agent_scores[0]
+    selected_agent_id = selected_agent["agent_id"]
+    
+    logging.info(f"[ASSIGN] Selected agent: {selected_agent['username']} (score={selected_agent['score']:.1f}, unworked={selected_agent['unworked_leads']}, capacity={selected_agent['capacity_available']})")
+    
+    # Update lead with assignment and save the status at assignment time
     await db.leads.update_one(
         {"id": lead.id},
         {
             "$set": {
-                "assigned_agent_id": selected_agent["id"],
-                "assigned_at": datetime.now(timezone.utc)
+                "assigned_agent_id": selected_agent_id,
+                "assigned_at": datetime.now(timezone.utc),
+                "esito_at_assignment": current_esito  # Save status at assignment time
             }
         }
     )
     
-    logging.info(f"[ASSIGN] Lead {lead.id} assigned to agent {selected_agent['id']} ({selected_agent.get('username')})")
+    logging.info(f"[ASSIGN] Lead {lead.id} assigned to agent {selected_agent_id} ({selected_agent['username']}) with esito_at_assignment='{current_esito}'")
     
     # Send email notification to agent (async task)
-    asyncio.create_task(notify_agent_new_lead(selected_agent["id"], lead.dict()))
+    asyncio.create_task(notify_agent_new_lead(selected_agent_id, lead.dict()))
     
-    return selected_agent["id"]
+    return selected_agent_id
 
 # Auth endpoints
 @api_router.post("/auth/login", response_model=Token)
