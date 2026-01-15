@@ -1348,6 +1348,13 @@ class ClientiPaginatedResponse(BaseModel):
     page_size: int
     total_pages: int
 
+class LeadsPaginatedResponse(BaseModel):
+    leads: List[Lead]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
 # Sistema di Audit Log per clienti
 class ClienteLogAction(str, Enum):
     CREATED = "created"
