@@ -12435,9 +12435,18 @@ async def export_clienti_excel(
             tipologia = cliente.get("tipologia_contratto", "")
             base_cliente["tipologia_contratto_display"] = tipologia.replace("_", " ").title() if tipologia else ""
             
-            # Map segmento to display name
-            segmento = cliente.get("segmento", "")
-            base_cliente["segmento_display"] = segmento.capitalize() if segmento else ""
+            # Map segmento ID to display name (lookup in database)
+            segmento_id = cliente.get("segmento", "")
+            if segmento_id:
+                # Try to find segmento by ID in the database
+                segmento_doc = await db.segmenti.find_one({"id": segmento_id})
+                if segmento_doc:
+                    base_cliente["segmento_display"] = segmento_doc.get("nome", segmento_id)
+                else:
+                    # Fallback: capitalize the value if not found (might be old data with string value)
+                    base_cliente["segmento_display"] = segmento_id.capitalize() if segmento_id else ""
+            else:
+                base_cliente["segmento_display"] = ""
             
             # Get offerta name (principale del cliente)
             if cliente.get("offerta_id"):
