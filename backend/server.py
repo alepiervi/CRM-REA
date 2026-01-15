@@ -4553,10 +4553,11 @@ async def create_lead_webhook_get(
             logging.info(f"[WEBHOOK GET] Started automatic qualification for lead {lead_obj.id}")
         except Exception as e:
             logging.error(f"[WEBHOOK GET] Error starting qualification for lead {lead_obj.id}: {e}")
-            await assign_lead_to_agent(lead_obj)
+            # NON assegnare qui - l'assegnazione avviene solo quando lo status cambia a "Lead Interessato"
+            logging.info(f"[WEBHOOK GET] Lead {lead_obj.id} remains unassigned until status changes to 'Lead Interessato'")
     else:
-        logging.info(f"[WEBHOOK GET] Immediate assignment for lead {lead_obj.id}")
-        await assign_lead_to_agent(lead_obj)
+        # NON assegnare qui - l'assegnazione avviene solo quando lo status cambia a "Lead Interessato"
+        logging.info(f"[WEBHOOK GET] Lead {lead_obj.id} created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
     
     # Return simple response (Cloudflare-friendly)
     return {
