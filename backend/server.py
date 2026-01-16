@@ -15201,6 +15201,10 @@ async def startup_event():
         else:
             logging.info("ℹ️ Default commesse already exist")
         
+        # Start lead reminder scheduler
+        asyncio.create_task(start_reminder_scheduler())
+        logging.info("✅ Lead reminder scheduler started")
+        
         logging.info("✅ Startup event completed successfully")
         
     except Exception as e:
