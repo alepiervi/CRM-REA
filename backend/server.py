@@ -6659,6 +6659,71 @@ async def start_reminder_scheduler():
         # Wait 1 hour before next check
         await asyncio.sleep(3600)  # 3600 seconds = 1 hour
 
+
+# Admin endpoint to manually trigger reminder check
+@api_router.post("/admin/send-lead-reminders")
+async def trigger_lead_reminders(current_user: User = Depends(get_current_user)):
+    """Manually trigger lead reminder check - Admin only"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli amministratori possono eseguire questa operazione")
+    
+    result = await check_and_send_lead_reminders()
+    return {
+        "success": True,
+        "message": "Controllo promemoria completato",
+        "result": result
+    }
+
+# Admin endpoint to test email sending
+@api_router.post("/admin/test-email")
+async def test_email_sending(
+    to_email: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Test email sending - Admin only"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli amministratori possono eseguire questa operazione")
+    
+    test_html = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>✅ Test Email CRM</h2>
+        <p>Questa è un'email di test inviata dal sistema CRM.</p>
+        <p>Se ricevi questa email, la configurazione SMTP è corretta!</p>
+        <hr>
+        <p style="color: #666; font-size: 12px;">
+            Inviato il: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}<br>
+            Da: {current_user.username}
+        </p>
+    </body>
+    </html>
+    """
+    
+    result = await send_email_notification(to_email, "✅ Test Email CRM - Configurazione OK", test_html)
+    
+    return {
+        "success": result,
+        "message": "Email di test inviata con successo" if result else "Errore nell'invio dell'email",
+        "to_email": to_email
+    }
+
+# Get notification history for a lead
+@api_router.get("/leads/{lead_id}/notifications")
+async def get_lead_notifications(
+    lead_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get notification history for a lead"""
+    notifications = await db.lead_notifications.find(
+        {"lead_id": lead_id},
+        {"_id": 0}
+    ).sort("sent_at", -1).to_list(50)
+    
+    return {
+        "success": True,
+        "notifications": notifications
+    }
+
 # Webhook endpoint for external integrations (Zapier)
 @api_router.post("/webhook/{unit_id}")
 async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
