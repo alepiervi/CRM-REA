@@ -6356,10 +6356,8 @@ async def notify_agent_new_lead(agent_id: str, lead_data: dict):
         agent_email = agent["email"]
         agent_name = agent.get("username", "Agente")
         
-        # Lead info
+        # Lead info (senza dati sensibili)
         lead_name = f"{lead_data.get('nome', '')} {lead_data.get('cognome', '')}".strip() or "N/A"
-        lead_phone = lead_data.get('telefono', 'N/A')
-        lead_email = lead_data.get('email', 'N/A')
         lead_provincia = lead_data.get('provincia', 'N/A')
         lead_campagna = lead_data.get('campagna', 'N/A')
         
@@ -6395,13 +6393,11 @@ async def notify_agent_new_lead(agent_id: str, lead_data: dict):
                     <div class="lead-info">
                         <h3>📋 Dettagli Lead</h3>
                         <div class="info-row"><span class="label">Nome:</span> {lead_name}</div>
-                        <div class="info-row"><span class="label">Telefono:</span> {lead_phone}</div>
-                        <div class="info-row"><span class="label">Email:</span> {lead_email}</div>
                         <div class="info-row"><span class="label">Provincia:</span> {lead_provincia}</div>
                         <div class="info-row"><span class="label">Campagna:</span> {lead_campagna}</div>
                     </div>
                     
-                    <p>⏰ <strong>Ricorda:</strong> Contatta il lead il prima possibile per massimizzare le possibilità di conversione!</p>
+                    <p>⏰ <strong>Ricorda:</strong> Accedi al CRM per visualizzare i dettagli completi e contattare il lead il prima possibile!</p>
                     
                     <center>
                         <a href="#" class="cta-button">Accedi al CRM</a>
