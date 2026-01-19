@@ -17457,6 +17457,256 @@ const ClientiCestinoManagement = () => {
   );
 };
 
+// Leads Cestino Management Component
+const LeadsCestinoManagement = () => {
+  const [deletedLeads, setDeletedLeads] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [restoring, setRestoring] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const { toast } = useToast();
+
+  const fetchDeletedLeads = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/leads-cestino`);
+      if (response.data.success) {
+        setDeletedLeads(response.data.leads || []);
+      }
+    } catch (error) {
+      console.error("Error fetching deleted leads:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare il cestino lead",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDeletedLeads();
+  }, []);
+
+  const handleRestore = async (leadId, leadName) => {
+    if (!window.confirm(`Sei sicuro di voler ripristinare "${leadName}"?`)) return;
+    
+    try {
+      setRestoring(leadId);
+      const response = await axios.post(`${API}/leads-cestino/${leadId}/ripristina`);
+      
+      if (response.data.success) {
+        toast({
+          title: "Lead Ripristinato",
+          description: `${leadName} è stato ripristinato e assegnato a ${response.data.assigned_to_name || 'nessuno'}`,
+        });
+        fetchDeletedLeads();
+      }
+    } catch (error) {
+      console.error("Error restoring lead:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nel ripristino del lead",
+        variant: "destructive"
+      });
+    } finally {
+      setRestoring(null);
+    }
+  };
+
+  const handlePermanentDelete = async (leadId, leadName) => {
+    if (!window.confirm(`ATTENZIONE: Stai per eliminare DEFINITIVAMENTE "${leadName}". Questa azione non può essere annullata. Continuare?`)) return;
+    
+    try {
+      setDeleting(leadId);
+      const response = await axios.delete(`${API}/leads-cestino/${leadId}/elimina-definitivo`);
+      
+      if (response.data.success) {
+        toast({
+          title: "Lead Eliminato",
+          description: `${leadName} è stato eliminato definitivamente`,
+        });
+        fetchDeletedLeads();
+      }
+    } catch (error) {
+      console.error("Error permanently deleting lead:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nell'eliminazione definitiva",
+        variant: "destructive"
+      });
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    try {
+      return new Date(dateStr).toLocaleString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg p-6 text-white shadow-lg">
+        <div className="flex items-center space-x-3">
+          <Trash2 className="w-8 h-8" />
+          <div>
+            <h2 className="text-2xl font-bold">Cestino Lead</h2>
+            <p className="text-purple-100">Gestisci i lead eliminati - Solo Amministratori</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Card */}
+      <Card className="border-l-4 border-l-purple-500">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Trash2 className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">Lead nel cestino</p>
+                <p className="text-2xl font-bold text-slate-800">{deletedLeads.length}</p>
+              </div>
+            </div>
+            <Button onClick={fetchDeletedLeads} variant="outline" size="sm">
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Aggiorna
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lista Lead Eliminati */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Archive className="w-5 h-5 text-slate-600" />
+            <span>Lead Eliminati</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            </div>
+          ) : deletedLeads.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <Trash2 className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+              <p className="text-lg">Il cestino è vuoto</p>
+              <p className="text-sm">I lead eliminati appariranno qui</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Lead</TableHead>
+                    <TableHead className="hidden md:table-cell">Unit</TableHead>
+                    <TableHead className="hidden md:table-cell">Campagna</TableHead>
+                    <TableHead>Eliminato da</TableHead>
+                    <TableHead className="hidden md:table-cell">Data Eliminazione</TableHead>
+                    <TableHead className="hidden md:table-cell">Ultimo Agente</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {deletedLeads.map((lead) => (
+                    <TableRow key={lead.id} className="hover:bg-slate-50">
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-slate-900">
+                            {lead.nome} {lead.cognome}
+                          </p>
+                          <p className="text-sm text-slate-500">{lead.telefono || lead.email || 'N/A'}</p>
+                          <p className="text-xs text-slate-400 md:hidden">{lead.unit_nome || 'N/A'}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <span className="text-sm">{lead.unit_nome || 'N/A'}</span>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <span className="text-sm">{lead.campagna || 'N/A'}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <User className="w-4 h-4 text-slate-400" />
+                          <span className="text-sm font-medium text-red-600">
+                            {lead.deleted_by_username || 'Sconosciuto'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <span className="text-sm text-slate-600">
+                          {formatDate(lead.deleted_at)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <span className="text-sm text-slate-600">
+                          {lead.last_agent_name || 'Non assegnato'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRestore(lead.id, `${lead.nome} ${lead.cognome}`)}
+                            disabled={restoring === lead.id}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            {restoring === lead.id ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <RotateCcw className="w-4 h-4 mr-1" />
+                                <span className="hidden sm:inline">Ripristina</span>
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handlePermanentDelete(lead.id, `${lead.nome} ${lead.cognome}`)}
+                            disabled={deleting === lead.id}
+                          >
+                            {deleting === lead.id ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                <span className="hidden sm:inline">Elimina</span>
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 // Clienti Management Component
 const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: commesseFromParent, subAgenzie: subAgenzieFromParent, servizi: serviziFromParent }) => {
   const [clienti, setClienti] = useState([]);
