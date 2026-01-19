@@ -7222,6 +7222,16 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
         await db["leads"].insert_one(lead_obj.dict())
         logging.info(f"Lead created via webhook: {lead_obj.id} for unit {unit_id}")
         
+        # If lead was assigned, update with esito_at_assignment and send email notification
+        if assigned_agent_id:
+            current_esito = lead_obj.esito or "Nuovo"
+            await db["leads"].update_one(
+                {"id": lead_obj.id},
+                {"$set": {"esito_at_assignment": current_esito}}
+            )
+            # Send email notification to assigned agent/referente
+            asyncio.create_task(notify_agent_new_lead(assigned_agent_id, lead_obj.dict()))
+        
         # STEP 3: Send WhatsApp welcome message (after agent assignment)
         whatsapp_sent = False
         if assigned_agent_id and unit.get("welcome_message"):
