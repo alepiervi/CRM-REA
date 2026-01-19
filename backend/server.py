@@ -4585,8 +4585,50 @@ async def create_lead(lead_data: LeadCreate):
             # NON assegnare qui - l'assegnazione avviene solo quando lo status cambia a "Lead Interessato"
             logging.info(f"Lead {lead_obj.id} remains unassigned until status changes to 'Lead Interessato'")
     else:
-        # NON assegnare qui - l'assegnazione avviene solo quando lo status cambia a "Lead Interessato"
-        logging.info(f"Skipping qualification for lead {lead_obj.id} - Lead created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
+        # Check if Unit has auto_assign disabled - assign directly to referente
+        if lead_obj.unit_id:
+            unit = await db.units.find_one({"id": lead_obj.unit_id})
+            if unit and not unit.get("auto_assign_enabled", True):
+                # Auto-assignment disabled - assign directly to the Unit's referente
+                logging.info(f"[CREATE-LEAD] Unit {lead_obj.unit_id} has auto_assign disabled. Looking for referente...")
+                
+                referente = await db.users.find_one({
+                    "unit_id": lead_obj.unit_id,
+                    "role": "referente",
+                    "is_active": True
+                })
+                
+                if referente:
+                    referente_id = referente["id"]
+                    referente_name = referente.get("username", "unknown")
+                    current_esito = lead_obj.esito or "Nuovo"
+                    
+                    # Update lead with referente assignment
+                    await db.leads.update_one(
+                        {"id": lead_obj.id},
+                        {
+                            "$set": {
+                                "assigned_agent_id": referente_id,
+                                "assigned_at": datetime.now(timezone.utc),
+                                "esito_at_assignment": current_esito
+                            }
+                        }
+                    )
+                    
+                    # Update local object for return
+                    lead_obj.assigned_agent_id = referente_id
+                    lead_obj.assigned_at = datetime.now(timezone.utc)
+                    
+                    logging.info(f"[CREATE-LEAD] Lead {lead_obj.id} assigned to referente {referente_name} ({referente_id}) for unit {unit.get('nome')} (auto_assign disabled)")
+                    
+                    # Send email notification to referente
+                    asyncio.create_task(notify_agent_new_lead(referente_id, lead_obj.dict()))
+                else:
+                    logging.warning(f"[CREATE-LEAD] No referente found for unit {lead_obj.unit_id}. Lead {lead_obj.id} will remain unassigned.")
+            else:
+                logging.info(f"Skipping auto-assignment for lead {lead_obj.id} - will be assigned when status changes to 'Lead Interessato'")
+        else:
+            logging.info(f"Skipping qualification for lead {lead_obj.id} - Lead created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
     
     return lead_obj
 
