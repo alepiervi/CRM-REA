@@ -1888,6 +1888,7 @@ const Dashboard = () => {
         { id: "sub-agenzie", label: "Unit & Sub Agenzie", icon: Store },
         { id: "clienti", label: "Clienti", icon: UserCheck },
         { id: "clienti-cestino", label: "Cestino Clienti", icon: Trash2 },
+        { id: "leads-cestino", label: "Cestino Lead", icon: Trash2 },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
     } else if (user.role === "referente") {
