@@ -7145,10 +7145,26 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
                     detail=f"Commessa {lead_data.commessa_id} not authorized for this unit"
                 )
         
-        # AUTO-ASSIGNMENT LOGIC: Find best agent for this lead
+        # AUTO-ASSIGNMENT LOGIC
         assigned_agent_id = None
         
-        if lead_data.provincia:
+        # Check if Unit has auto_assign disabled - assign directly to referente
+        if not unit.get("auto_assign_enabled", True):
+            logging.info(f"[WEBHOOK] Unit {unit_id} has auto_assign disabled. Looking for referente...")
+            
+            referente = await db.users.find_one({
+                "unit_id": unit_id,
+                "role": "referente",
+                "is_active": True
+            })
+            
+            if referente:
+                assigned_agent_id = referente["id"]
+                logging.info(f"[WEBHOOK] Lead will be assigned to referente {referente.get('username')} ({assigned_agent_id}) for unit {unit.get('nome')} (auto_assign disabled)")
+            else:
+                logging.warning(f"[WEBHOOK] No referente found for unit {unit_id}. Lead will remain unassigned.")
+        
+        elif lead_data.provincia:
             # Find agents authorized for this unit and provincia
             agents = await db["users"].find({
                 "role": UserRole.AGENTE,
