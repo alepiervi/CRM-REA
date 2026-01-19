@@ -5000,7 +5000,30 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
                 unit = await db.units.find_one({"id": unit_id})
                 if unit and not unit.get("auto_assign_enabled", True):
                     should_auto_assign = False
-                    logging.info(f"[AUTO-ASSIGN] Unit {unit_id} has auto_assign disabled. Lead {lead_id} will remain unassigned.")
+                    # Auto-assignment disabled - assign directly to the Unit's referente
+                    logging.info(f"[AUTO-ASSIGN] Unit {unit_id} has auto_assign disabled. Looking for referente...")
+                    
+                    referente = await db.users.find_one({
+                        "unit_id": unit_id,
+                        "role": "referente",
+                        "is_active": True
+                    })
+                    
+                    if referente:
+                        referente_id = referente["id"]
+                        referente_name = referente.get("username", "unknown")
+                        
+                        update_data["assigned_agent_id"] = referente_id
+                        update_data["assigned_at"] = datetime.now(timezone.utc)
+                        update_data["esito_at_assignment"] = new_esito
+                        
+                        logging.info(f"[AUTO-ASSIGN] Lead {lead_id} assigned to referente {referente_name} ({referente_id}) for unit {unit.get('nome')} (auto_assign disabled)")
+                        
+                        # Send email notification to referente
+                        lead_data = {**lead, **update_data}
+                        asyncio.create_task(notify_agent_new_lead(referente_id, lead_data))
+                    else:
+                        logging.warning(f"[AUTO-ASSIGN] No referente found for unit {unit_id}. Lead {lead_id} will remain unassigned.")
             
             if should_auto_assign:
                 # Create Lead object for assignment
