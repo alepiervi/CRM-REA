@@ -6504,13 +6504,12 @@ async def send_lead_reminder_email(agent_id: str, lead_data: dict, days_unworked
                     <div class="lead-info">
                         <h3>📋 Dettagli Lead</h3>
                         <div class="info-row"><span class="label">Nome:</span> {lead_name}</div>
-                        <div class="info-row"><span class="label">Telefono:</span> {lead_phone}</div>
                         <div class="info-row"><span class="label">Provincia:</span> {lead_provincia}</div>
                         <div class="info-row"><span class="label">Assegnato il:</span> {assigned_at_str}</div>
                         <div class="info-row"><span class="label">Giorni in attesa:</span> <strong style="color: {urgency_color}">{days_unworked}</strong></div>
                     </div>
                     
-                    <p>Per favore, aggiorna lo status del lead dopo averlo contattato.</p>
+                    <p>Per favore, accedi al CRM per visualizzare i dettagli completi e aggiorna lo status del lead dopo averlo contattato.</p>
                     
                     <center>
                         <a href="#" class="cta-button">Gestisci Lead</a>
