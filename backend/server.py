@@ -6444,10 +6444,9 @@ async def send_lead_reminder_email(agent_id: str, lead_data: dict, days_unworked
         agent_email = agent["email"]
         agent_name = agent.get("username", "Agente")
         
-        # Lead info
+        # Lead info (senza dati sensibili)
         lead_id = lead_data.get("id")
         lead_name = f"{lead_data.get('nome', '')} {lead_data.get('cognome', '')}".strip() or "N/A"
-        lead_phone = lead_data.get('telefono', 'N/A')
         lead_provincia = lead_data.get('provincia', 'N/A')
         assigned_at = lead_data.get('assigned_at')
         
