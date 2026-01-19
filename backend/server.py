@@ -6346,6 +6346,7 @@ async def send_email_notification(to_email: str, subject: str, body_html: str):
 
 async def notify_agent_new_lead(agent_id: str, lead_data: dict):
     """Send email notification to agent about new lead assignment"""
+    logging.info(f"[EMAIL] notify_agent_new_lead CALLED for agent_id={agent_id}, lead_id={lead_data.get('id')}")
     try:
         # Get agent info
         agent = await db.users.find_one({"id": agent_id})
