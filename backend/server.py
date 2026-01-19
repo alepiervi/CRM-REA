@@ -6417,7 +6417,7 @@ async def notify_agent_new_lead(agent_id: str, lead_data: dict):
         if result:
             # Log the notification
             await db.lead_notifications.insert_one({
-                "id": str(uuid4()),
+                "id": str(uuid.uuid4()),
                 "lead_id": lead_data.get("id"),
                 "agent_id": agent_id,
                 "type": "new_lead_assignment",
@@ -6531,7 +6531,7 @@ async def send_lead_reminder_email(agent_id: str, lead_data: dict, days_unworked
         if result:
             # Log the reminder
             await db.lead_notifications.insert_one({
-                "id": str(uuid4()),
+                "id": str(uuid.uuid4()),
                 "lead_id": lead_id,
                 "agent_id": agent_id,
                 "type": f"reminder_{days_unworked}_days",
@@ -6619,7 +6619,7 @@ async def send_lead_reminder_email(agent_id: str, lead_data: dict, days_unworked
                     
                     if referente_result:
                         await db.lead_notifications.insert_one({
-                            "id": str(uuid4()),
+                            "id": str(uuid.uuid4()),
                             "lead_id": lead_id,
                             "agent_id": referente_id,
                             "type": "reminder_7_days_referente",
