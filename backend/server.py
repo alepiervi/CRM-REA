@@ -3774,8 +3774,42 @@ async def assign_lead_to_agent(lead: Lead):
     if lead.unit_id:
         unit = await db.units.find_one({"id": lead.unit_id})
         if unit and not unit.get("auto_assign_enabled", True):
-            logging.info(f"[ASSIGN] Auto-assignment disabled for unit {lead.unit_id} ({unit.get('nome')}). Lead {lead.id} will remain unassigned.")
-            return None
+            # Auto-assignment disabled - assign directly to the Unit's referente
+            logging.info(f"[ASSIGN] Auto-assignment disabled for unit {lead.unit_id} ({unit.get('nome')}). Looking for referente...")
+            
+            # Find the referente assigned to this unit
+            referente = await db.users.find_one({
+                "unit_id": lead.unit_id,
+                "role": "referente",
+                "is_active": True
+            })
+            
+            if referente:
+                referente_id = referente["id"]
+                referente_name = referente.get("username", "unknown")
+                current_esito = lead.esito or "Lead Interessato"
+                
+                # Assign lead to referente
+                await db.leads.update_one(
+                    {"id": lead.id},
+                    {
+                        "$set": {
+                            "assigned_agent_id": referente_id,
+                            "assigned_at": datetime.now(timezone.utc),
+                            "esito_at_assignment": current_esito
+                        }
+                    }
+                )
+                
+                logging.info(f"[ASSIGN] Lead {lead.id} assigned to referente {referente_name} ({referente_id}) for unit {unit.get('nome')} (auto_assign disabled)")
+                
+                # Send email notification to referente
+                asyncio.create_task(notify_agent_new_lead(referente_id, lead.dict()))
+                
+                return referente_id
+            else:
+                logging.warning(f"[ASSIGN] No referente found for unit {lead.unit_id} ({unit.get('nome')}). Lead {lead.id} will remain unassigned.")
+                return None
     
     # Build query for agents
     query = {
