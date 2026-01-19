@@ -5009,10 +5009,10 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
 
 @api_router.delete("/leads/{lead_id}")
 async def delete_lead(lead_id: str, current_user: User = Depends(get_current_user)):
-    """Delete a lead"""
+    """Soft delete a lead - sposta nel cestino invece di eliminare definitivamente"""
     
     # Find the lead
-    lead = await db.leads.find_one({"id": lead_id})
+    lead = await db.leads.find_one({"id": lead_id, "$or": [{"is_deleted": False}, {"is_deleted": {"$exists": False}}]})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
@@ -5021,33 +5021,52 @@ async def delete_lead(lead_id: str, current_user: User = Depends(get_current_use
         raise HTTPException(status_code=403, detail="Only admin can delete leads")
     
     try:
-        # Check if lead has associated documents
-        documents_count = await db.documents.count_documents({"lead_id": lead_id, "is_active": True})
-        if documents_count > 0:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Cannot delete lead. {documents_count} documents are still associated with this lead"
-            )
+        # Soft delete - mark as deleted instead of removing
+        deleted_at = datetime.now(timezone.utc)
+        await db.leads.update_one(
+            {"id": lead_id},
+            {
+                "$set": {
+                    "is_deleted": True,
+                    "deleted_at": deleted_at,
+                    "deleted_by": current_user.id,
+                    "deleted_by_username": current_user.username,
+                    "last_assigned_agent_id": lead.get("assigned_agent_id"),  # Save for restore
+                    "last_esito": lead.get("esito")  # Save current status for restore
+                }
+            }
+        )
         
-        # Delete the lead
-        await db.leads.delete_one({"id": lead_id})
+        # Log the soft delete
+        await db.logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "entity_type": "lead",
+            "entity_id": lead_id,
+            "action": "soft_delete",
+            "description": f"Lead spostato nel cestino da {current_user.username}",
+            "metadata": {
+                "action_type": "soft_delete",
+                "old_value": lead.get("esito", "N/A"),
+                "new_value": "cestino",
+                "deleted_by": current_user.id,
+                "deleted_by_username": current_user.username
+            },
+            "user_id": current_user.id,
+            "user_name": current_user.username,
+            "created_at": deleted_at
+        })
         
         return {
             "success": True,
-            "message": "Lead deleted successfully",
+            "message": f"Lead {lead['nome']} {lead['cognome']} spostato nel cestino",
             "lead_id": lead_id,
-            "lead_info": {
-                "nome": lead["nome"],
-                "cognome": lead["cognome"],
-                "email": lead.get("email", ""),
-                "telefono": lead.get("telefono", "")
-            }
+            "can_restore": True
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        logging.error(f"Error deleting lead {lead_id}: {e}")
+        logging.error(f"Error soft deleting lead {lead_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete lead")
 
 
