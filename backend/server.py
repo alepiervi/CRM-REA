@@ -6469,6 +6469,7 @@ async def send_lead_reminder_email(agent_id: str, lead_data: dict, days_unworked
             urgency_emoji = "⏰"
             subject = f"⏰ Promemoria: Lead da gestire - {lead_name}"
         
+        # Email body per l'agente
         body_html = f"""
         <!DOCTYPE html>
         <html>
@@ -6524,6 +6525,7 @@ async def send_lead_reminder_email(agent_id: str, lead_data: dict, days_unworked
         </html>
         """
         
+        # Invia email all'agente
         result = await send_email_notification(agent_email, subject, body_html)
         
         if result:
@@ -6537,6 +6539,101 @@ async def send_lead_reminder_email(agent_id: str, lead_data: dict, days_unworked
                 "email": agent_email,
                 "success": True
             })
+        
+        # Per i 7 giorni, invia anche al Referente
+        if days_unworked >= 7:
+            referente_id = agent.get("referente_id")
+            if referente_id:
+                referente = await db.users.find_one({"id": referente_id})
+                if referente and referente.get("email"):
+                    referente_email = referente["email"]
+                    referente_name = referente.get("username", "Referente")
+                    
+                    # Email body per il Referente
+                    referente_subject = f"🚨 SEGNALAZIONE: Lead non gestito da {agent_name} - {days_unworked}+ giorni"
+                    
+                    referente_body_html = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="utf-8">
+                        <style>
+                            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                            .header {{ background: #7c3aed; color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
+                            .content {{ background: #f9f9f9; padding: 20px; border: 1px solid #ddd; }}
+                            .alert-box {{ background: #fee2e2; border: 2px solid #dc2626; padding: 15px; border-radius: 8px; margin: 15px 0; }}
+                            .agent-info {{ background: #fef3c7; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f59e0b; }}
+                            .lead-info {{ background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #dc2626; }}
+                            .lead-info h3 {{ margin: 0 0 10px 0; color: #dc2626; }}
+                            .info-row {{ margin: 8px 0; }}
+                            .label {{ font-weight: bold; color: #555; }}
+                            .footer {{ background: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 10px 10px; }}
+                            .cta-button {{ display: inline-block; background: #7c3aed; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; margin-top: 15px; }}
+                            .days-badge {{ display: inline-block; background: #dc2626; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>👁️ Segnalazione Referente</h1>
+                                <p>Lead in attesa da <span class="days-badge">{days_unworked}+ giorni</span></p>
+                            </div>
+                            <div class="content">
+                                <p>Ciao <strong>{referente_name}</strong>,</p>
+                                
+                                <div class="alert-box">
+                                    <strong>⚠️ ATTENZIONE:</strong> Un lead assegnato a un tuo agente non è stato gestito da oltre 7 giorni.
+                                </div>
+                                
+                                <div class="agent-info">
+                                    <h4 style="margin: 0 0 10px 0; color: #b45309;">👤 Agente Responsabile</h4>
+                                    <div class="info-row"><span class="label">Nome Agente:</span> <strong>{agent_name}</strong></div>
+                                    <div class="info-row"><span class="label">Email Agente:</span> {agent_email}</div>
+                                </div>
+                                
+                                <div class="lead-info">
+                                    <h3>📋 Dettagli Lead Non Gestito</h3>
+                                    <div class="info-row"><span class="label">Nome Lead:</span> {lead_name}</div>
+                                    <div class="info-row"><span class="label">Provincia:</span> {lead_provincia}</div>
+                                    <div class="info-row"><span class="label">Assegnato il:</span> {assigned_at_str}</div>
+                                    <div class="info-row"><span class="label">Giorni in attesa:</span> <strong style="color: #dc2626">{days_unworked}</strong></div>
+                                </div>
+                                
+                                <p>Ti consigliamo di verificare la situazione con l'agente e, se necessario, riassegnare il lead.</p>
+                                
+                                <center>
+                                    <a href="#" class="cta-button">Accedi al CRM</a>
+                                </center>
+                            </div>
+                            <div class="footer">
+                                <p>Questa è una notifica automatica dal sistema CRM.</p>
+                                <p>© {datetime.now().year} Nureal - Tutti i diritti riservati</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    
+                    referente_result = await send_email_notification(referente_email, referente_subject, referente_body_html)
+                    
+                    if referente_result:
+                        await db.lead_notifications.insert_one({
+                            "id": str(uuid4()),
+                            "lead_id": lead_id,
+                            "agent_id": referente_id,
+                            "type": "reminder_7_days_referente",
+                            "sent_at": datetime.now(timezone.utc),
+                            "email": referente_email,
+                            "success": True,
+                            "related_agent_id": agent_id,
+                            "related_agent_name": agent_name
+                        })
+                        logging.info(f"[EMAIL] Sent 7-day referente notification for lead {lead_id} to {referente_email}")
+                else:
+                    logging.warning(f"[EMAIL] Referente {referente_id} not found or has no email")
+            else:
+                logging.info(f"[EMAIL] Agent {agent_id} has no referente assigned")
         
         return result
         
