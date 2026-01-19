@@ -14,7 +14,7 @@ if (hostname === 'nureal.it' || hostname === 'www.nureal.it') {
   return 'https://mobil-analytics-1.emergent.host';
 }
 if (hostname.includes('preview.emergentagent.com')) {
-  return 'https://client-search-fix-3.preview.emergentagent.com';
+  return 'https://agentify-6.preview.emergentagent.com';
 }
 return 'http://localhost:8001';
 ```
@@ -46,7 +46,7 @@ production_domains = [
     "https://www.nureal.it",
     "https://mobil-analytics-1.emergent.host",
     "https://mobil-analytics-2.emergent.host",  # ✅ Added new deployment domain
-    "https://client-search-fix-3.preview.emergentagent.com",
+    "https://agentify-6.preview.emergentagent.com",
     "https://cloudfile-fix.emergent.host",
 ]
 ```

@@ -8,7 +8,7 @@ import requests
 import json
 
 def final_verification():
-    base_url = "https://client-search-fix-3.preview.emergentagent.com/api"
+    base_url = "https://agentify-6.preview.emergentagent.com/api"
     
     print("🔐 Final Verification - Authenticating as admin...")
     

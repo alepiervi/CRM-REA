@@ -41,7 +41,7 @@ Modifica il frontend per rilevare automaticamente l'ambiente:
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 
   (window.location.hostname === 'nureal.it' || window.location.hostname === 'www.nureal.it'
     ? 'https://mobil-analytics-1.emergent.host'
-    : 'https://client-search-fix-3.preview.emergentagent.com'
+    : 'https://agentify-6.preview.emergentagent.com'
   );
 
 const API = `${BACKEND_URL}/api`;
@@ -92,7 +92,7 @@ const getBackendURL = () => {
     return 'https://mobil-analytics-1.emergent.host';
   } else if (hostname.includes('preview.emergentagent.com')) {
     // Preview
-    return 'https://client-search-fix-3.preview.emergentagent.com';
+    return 'https://agentify-6.preview.emergentagent.com';
   } else {
     // Localhost o altro
     return 'http://localhost:8001';

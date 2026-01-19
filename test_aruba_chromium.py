@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 class ArubaChromiumTester:
-    def __init__(self, base_url="https://client-search-fix-3.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://agentify-6.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None

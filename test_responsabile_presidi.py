@@ -9,13 +9,13 @@ import sys
 
 def test_responsabile_presidi_assigned_to_filter():
     """Test veloce del filtro assigned_to per RESPONSABILE_PRESIDI"""
-    base_url = "https://client-search-fix-3.preview.emergentagent.com/api"
+    base_url = "https://agentify-6.preview.emergentagent.com/api"
     
     print("🚨 TEST VELOCE FILTRO ASSIGNED_TO PER RESPONSABILE_PRESIDI")
     print("🎯 OBIETTIVO: Capire perché il filtro assigned_to 'non funziona' - restituisce 0 risultati o non filtra?")
     print("")
     print("🎯 SETUP:")
-    print("   • Backend: https://client-search-fix-3.preview.emergentagent.com")
+    print("   • Backend: https://agentify-6.preview.emergentagent.com")
     print("   • Credenziali: ale8/admin123 (RESPONSABILE_PRESIDI)")
     print("")
     

@@ -12,7 +12,7 @@ from backend_test import CRMAPITester
 def main():
     """Run the Responsabile Store debug test"""
     print("🎯 RUNNING SPECIFIC TEST: Responsabile Store Clienti Debug")
-    print("🌐 Base URL: https://client-search-fix-3.preview.emergentagent.com/api")
+    print("🌐 Base URL: https://agentify-6.preview.emergentagent.com/api")
     print("=" * 80)
     
     tester = CRMAPITester()
