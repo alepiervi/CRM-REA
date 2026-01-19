@@ -8,6 +8,7 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 ### ✅ Completato in questa sessione
 - **Fix Email Notifica Lead**: Corretto errore `uuid4()` → `uuid.uuid4()` che bloccava le notifiche
 - Sistema email SMTP Aruba funzionante
+- **Cestino Lead**: Implementato soft delete, ripristino e eliminazione definitiva per i lead (solo Admin)
 
 ### ✅ Completato in sessioni precedenti
 - Display "Note Backoffice" nel modal cliente
