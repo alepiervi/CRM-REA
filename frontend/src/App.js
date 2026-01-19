@@ -1996,6 +1996,8 @@ const Dashboard = () => {
           }
         case "clienti-cestino":
           return user.role === "admin" ? <ClientiCestinoManagement /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono accedere al cestino clienti</div>;
+        case "leads-cestino":
+          return user.role === "admin" ? <LeadsCestinoManagement /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono accedere al cestino lead</div>;
         case "analytics":
           // Roles with access to full Analytics (Pivot + Sub Agenzie)
           if (
