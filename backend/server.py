@@ -6413,7 +6413,9 @@ async def notify_agent_new_lead(agent_id: str, lead_data: dict):
         </html>
         """
         
+        logging.info(f"[EMAIL] Attempting to send email to {agent_email} for lead {lead_data.get('id')}")
         result = await send_email_notification(agent_email, subject, body_html)
+        logging.info(f"[EMAIL] send_email_notification result: {result}")
         
         if result:
             # Log the notification
