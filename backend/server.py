@@ -4797,7 +4797,8 @@ async def get_leads(
     page_size: int = Query(50, ge=1, le=200),  # Pagination: items per page
     current_user: User = Depends(get_current_user)
 ):
-    query = {}
+    # Exclude deleted leads
+    query = {"$or": [{"is_deleted": False}, {"is_deleted": {"$exists": False}}]}
     
     # Role-based filtering
     if current_user.role == UserRole.AGENTE:
