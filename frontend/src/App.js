@@ -6476,6 +6476,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
     role: "",
     assignment_type: "", // "unit" o "sub_agenzia" - vuoto fino a selezione esplicita
     unit_id: selectedUnit && selectedUnit !== "all" ? selectedUnit : "",
+    unit_autorizzate: [], // NEW: Per Supervisor - multiple unit
     sub_agenzia_id: "",
     referente_id: "",
     provinces: [],
