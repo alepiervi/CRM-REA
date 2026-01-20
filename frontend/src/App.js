@@ -17715,6 +17715,272 @@ const LeadsCestinoManagement = () => {
   );
 };
 
+// Supervisor Analytics Component
+const SupervisorAnalytics = () => {
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const { toast } = useToast();
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+      let url = `${API}/analytics/supervisor/unit`;
+      const params = new URLSearchParams();
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      if (params.toString()) url += `?${params.toString()}`;
+      
+      const response = await axios.get(url);
+      setAnalytics(response.data);
+    } catch (error) {
+      console.error("Error fetching supervisor analytics:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Impossibile caricare le analytics",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  const handleExportLeads = async () => {
+    try {
+      setExporting(true);
+      let url = `${API}/leads/export`;
+      const params = new URLSearchParams();
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      if (params.toString()) url += `?${params.toString()}`;
+      
+      const response = await axios.get(url, { responseType: 'blob' });
+      
+      // Create download link
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `leads_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      toast({
+        title: "Export completato",
+        description: "Il file Excel è stato scaricato",
+      });
+    } catch (error) {
+      console.error("Error exporting leads:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Impossibile esportare i lead",
+        variant: "destructive"
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <TrendingUp className="w-8 h-8" />
+            <div>
+              <h2 className="text-2xl font-bold">Analytics Unit: {analytics?.unit?.nome || 'N/A'}</h2>
+              <p className="text-indigo-100">Panoramica performance agenti e referenti</p>
+            </div>
+          </div>
+          <Button 
+            onClick={handleExportLeads} 
+            disabled={exporting}
+            className="bg-white text-indigo-600 hover:bg-indigo-50"
+          >
+            {exporting ? (
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Esporta Lead Excel
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Data Da</label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Data A</label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <Button onClick={fetchAnalytics} variant="outline">
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Aggiorna
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Lead Totali</p>
+            <p className="text-2xl font-bold text-slate-800">{analytics?.stats?.total_leads || 0}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-green-500">
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Lead Contattati</p>
+            <p className="text-2xl font-bold text-slate-800">{analytics?.stats?.contacted_leads || 0}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-orange-500">
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Non Assegnati</p>
+            <p className="text-2xl font-bold text-slate-800">{analytics?.stats?.unassigned_leads || 0}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-purple-500">
+          <CardContent className="p-4">
+            <p className="text-sm text-slate-500">Tasso Contatto</p>
+            <p className="text-2xl font-bold text-slate-800">{analytics?.stats?.contact_rate || 0}%</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Referenti Table */}
+      {analytics?.referenti?.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Users className="w-5 h-5 text-purple-600" />
+              <span>Performance Referenti ({analytics.stats.total_referenti})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Referente</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead className="text-center">Agenti</TableHead>
+                    <TableHead className="text-center">Lead Totali</TableHead>
+                    <TableHead className="text-center">Contattati</TableHead>
+                    <TableHead className="text-center">Tasso</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {analytics.referenti.map((ref) => (
+                    <TableRow key={ref.id}>
+                      <TableCell className="font-medium">{ref.username}</TableCell>
+                      <TableCell className="text-sm text-slate-500">{ref.email}</TableCell>
+                      <TableCell className="text-center">{ref.agents_count}</TableCell>
+                      <TableCell className="text-center">{ref.total_leads}</TableCell>
+                      <TableCell className="text-center">{ref.contacted_leads}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={ref.contact_rate >= 70 ? "default" : ref.contact_rate >= 40 ? "secondary" : "destructive"}>
+                          {ref.contact_rate}%
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Agents Table */}
+      {analytics?.agents?.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <User className="w-5 h-5 text-blue-600" />
+              <span>Performance Agenti ({analytics.stats.total_agents})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Agente</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead className="text-center">Lead Totali</TableHead>
+                    <TableHead className="text-center">Contattati</TableHead>
+                    <TableHead className="text-center">Tasso Contatto</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {analytics.agents.map((agent) => (
+                    <TableRow key={agent.id}>
+                      <TableCell className="font-medium">{agent.username}</TableCell>
+                      <TableCell className="text-sm text-slate-500">{agent.email}</TableCell>
+                      <TableCell className="text-center">{agent.total_leads}</TableCell>
+                      <TableCell className="text-center">{agent.contacted_leads}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={agent.contact_rate >= 70 ? "default" : agent.contact_rate >= 40 ? "secondary" : "destructive"}>
+                          {agent.contact_rate}%
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty state */}
+      {(!analytics?.agents?.length && !analytics?.referenti?.length) && (
+        <Card>
+          <CardContent className="p-8 text-center text-slate-500">
+            <Users className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+            <p className="text-lg">Nessun agente o referente nella tua Unit</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
 // Clienti Management Component
 const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: commesseFromParent, subAgenzie: subAgenzieFromParent, servizi: serviziFromParent }) => {
   const [clienti, setClienti] = useState([]);
