@@ -6275,6 +6275,152 @@ async def get_agent_analytics(
         }
     }
 
+@api_router.get("/analytics/supervisor/unit")
+async def get_supervisor_unit_analytics(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get analytics for the Supervisor's Unit - includes all agents and referenti"""
+    # Permission check - only Supervisor and Admin
+    if current_user.role == UserRole.SUPERVISOR:
+        if not current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Supervisor non ha una Unit assegnata")
+        unit_id = current_user.unit_id
+    elif current_user.role == UserRole.ADMIN:
+        # Admin can use this endpoint but must provide unit_id in query
+        raise HTTPException(status_code=400, detail="Admin deve usare altri endpoint con unit_id specifico")
+    else:
+        raise HTTPException(status_code=403, detail="Solo Supervisor può accedere a questo endpoint")
+    
+    # Get Unit info
+    unit = await db.units.find_one({"id": unit_id})
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    # Get all agents and referenti in this Unit
+    users_in_unit = await db.users.find({
+        "unit_id": unit_id,
+        "role": {"$in": ["agente", "referente"]},
+        "is_active": True
+    }).to_list(length=None)
+    
+    agents = [u for u in users_in_unit if u.get("role") == "agente"]
+    referenti = [u for u in users_in_unit if u.get("role") == "referente"]
+    
+    # Build date filters
+    date_filter = {}
+    if date_from:
+        try:
+            date_from_obj = datetime.fromisoformat(date_from).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+            date_filter["$gte"] = date_from_obj
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD")
+    if date_to:
+        try:
+            date_to_obj = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+            date_filter["$lte"] = date_to_obj
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
+    
+    # Base query for leads in this unit
+    base_query = {"unit_id": unit_id}
+    if date_filter:
+        base_query["created_at"] = date_filter
+    
+    # Unit-level stats
+    total_leads = await db.leads.count_documents(base_query)
+    
+    # Contacted leads
+    contacted_query = {**base_query, "$and": [
+        {"esito": {"$exists": True}},
+        {"esito": {"$ne": None}},
+        {"esito": {"$ne": ""}},
+        {"esito": {"$ne": "Nuovo"}}
+    ]}
+    contacted_leads = await db.leads.count_documents(contacted_query)
+    
+    # Unassigned leads
+    unassigned_query = {**base_query, "$or": [
+        {"assigned_agent_id": None},
+        {"assigned_agent_id": {"$exists": False}}
+    ]}
+    unassigned_leads = await db.leads.count_documents(unassigned_query)
+    
+    # Per-agent stats
+    agent_stats = []
+    for agent in agents:
+        agent_query = {"assigned_agent_id": agent["id"]}
+        if date_filter:
+            agent_query["created_at"] = date_filter
+        
+        agent_total = await db.leads.count_documents(agent_query)
+        agent_contacted_query = {**agent_query, "$and": [
+            {"esito": {"$exists": True}},
+            {"esito": {"$ne": None}},
+            {"esito": {"$ne": ""}},
+            {"esito": {"$ne": "Nuovo"}}
+        ]}
+        agent_contacted = await db.leads.count_documents(agent_contacted_query)
+        
+        agent_stats.append({
+            "id": agent["id"],
+            "username": agent.get("username"),
+            "email": agent.get("email"),
+            "referente_id": agent.get("referente_id"),
+            "total_leads": agent_total,
+            "contacted_leads": agent_contacted,
+            "contact_rate": round((agent_contacted / agent_total * 100) if agent_total > 0 else 0, 2)
+        })
+    
+    # Per-referente stats
+    referente_stats = []
+    for referente in referenti:
+        # Get agents under this referente
+        ref_agents = [a for a in agents if a.get("referente_id") == referente["id"]]
+        ref_agent_ids = [a["id"] for a in ref_agents]
+        ref_agent_ids.append(referente["id"])  # Include referente's own leads
+        
+        ref_query = {"assigned_agent_id": {"$in": ref_agent_ids}}
+        if date_filter:
+            ref_query["created_at"] = date_filter
+        
+        ref_total = await db.leads.count_documents(ref_query)
+        ref_contacted_query = {**ref_query, "$and": [
+            {"esito": {"$exists": True}},
+            {"esito": {"$ne": None}},
+            {"esito": {"$ne": ""}},
+            {"esito": {"$ne": "Nuovo"}}
+        ]}
+        ref_contacted = await db.leads.count_documents(ref_contacted_query)
+        
+        referente_stats.append({
+            "id": referente["id"],
+            "username": referente.get("username"),
+            "email": referente.get("email"),
+            "agents_count": len(ref_agents),
+            "total_leads": ref_total,
+            "contacted_leads": ref_contacted,
+            "contact_rate": round((ref_contacted / ref_total * 100) if ref_total > 0 else 0, 2)
+        })
+    
+    return {
+        "unit": {
+            "id": unit["id"],
+            "nome": unit.get("nome")
+        },
+        "stats": {
+            "total_leads": total_leads,
+            "contacted_leads": contacted_leads,
+            "unassigned_leads": unassigned_leads,
+            "contact_rate": round((contacted_leads / total_leads * 100) if total_leads > 0 else 0, 2),
+            "total_agents": len(agents),
+            "total_referenti": len(referenti)
+        },
+        "agents": agent_stats,
+        "referenti": referente_stats
+    }
+
 @api_router.get("/analytics/referente/{referente_id}")
 async def get_referente_analytics(
     referente_id: str, 
