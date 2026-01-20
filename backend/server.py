@@ -6440,10 +6440,11 @@ async def get_referente_analytics(
     if current_user.role == UserRole.REFERENTE and current_user.id != referente_id:
         raise HTTPException(status_code=403, detail="Can only view your own analytics")
     elif current_user.role == UserRole.SUPERVISOR:
-        # Supervisor can view analytics for referenti in their Unit
+        # Supervisor can view analytics for referenti in their authorized Units
         referente = await db.users.find_one({"id": referente_id})
-        if not referente or referente.get("unit_id") != current_user.unit_id:
-            raise HTTPException(status_code=403, detail="Puoi vedere analytics solo dei referenti nella tua Unit")
+        supervisor_units = (current_user.unit_autorizzate or []) + ([current_user.unit_id] if current_user.unit_id else [])
+        if not referente or referente.get("unit_id") not in supervisor_units:
+            raise HTTPException(status_code=403, detail="Puoi vedere analytics solo dei referenti nelle tue Unit")
     elif current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
