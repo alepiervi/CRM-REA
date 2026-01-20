@@ -3233,8 +3233,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                       )}
                       <TableHead>Provincia</TableHead>
                       <TableHead>Campagna</TableHead>
-                      {/* Colonna Assegnato a - Solo per Admin e Referente */}
-                      {(user?.role === "admin" || user?.role === "referente") && (
+                      {/* Colonna Assegnato a - Per Admin, Referente e Supervisor */}
+                      {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor") && (
                         <TableHead>Assegnato a</TableHead>
                       )}
                       <TableHead>Stato</TableHead>
