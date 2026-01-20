@@ -4973,13 +4973,17 @@ async def get_leads(
             query["unit_id"] = {"$in": current_user.unit_autorizzate}
     
     elif current_user.role == UserRole.SUPERVISOR:
-        # Supervisor sees ALL leads in their Unit (regardless of assignment)
-        if current_user.unit_id:
+        # Supervisor sees ALL leads in their authorized Units (regardless of assignment)
+        if current_user.unit_autorizzate and len(current_user.unit_autorizzate) > 0:
+            query["unit_id"] = {"$in": current_user.unit_autorizzate}
+            logging.info(f"[LEADS] Supervisor {current_user.username} viewing leads for units {current_user.unit_autorizzate}")
+        elif current_user.unit_id:
+            # Fallback to single unit_id if unit_autorizzate is empty
             query["unit_id"] = current_user.unit_id
             logging.info(f"[LEADS] Supervisor {current_user.username} viewing leads for unit {current_user.unit_id}")
         else:
-            # If supervisor has no unit_id, show nothing
-            logging.warning(f"[LEADS] Supervisor {current_user.username} has no unit_id assigned")
+            # If supervisor has no units assigned, show nothing
+            logging.warning(f"[LEADS] Supervisor {current_user.username} has no units assigned")
             query["unit_id"] = "NO_UNIT_ASSIGNED"
             
     # Admin can see all leads (no role filter)
