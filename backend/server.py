@@ -6290,32 +6290,32 @@ async def get_supervisor_unit_analytics(
     date_to: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get analytics for the Supervisor's Unit - includes all agents and referenti"""
+    """Get analytics for the Supervisor's Units - includes all agents and referenti"""
     # Permission check - only Supervisor and Admin
     if current_user.role == UserRole.SUPERVISOR:
-        if not current_user.unit_id:
-            raise HTTPException(status_code=403, detail="Supervisor non ha una Unit assegnata")
-        unit_id = current_user.unit_id
+        supervisor_units = current_user.unit_autorizzate or []
+        if current_user.unit_id and current_user.unit_id not in supervisor_units:
+            supervisor_units.append(current_user.unit_id)
+        if not supervisor_units:
+            raise HTTPException(status_code=403, detail="Supervisor non ha Unit assegnate")
     elif current_user.role == UserRole.ADMIN:
-        # Admin can use this endpoint but must provide unit_id in query
         raise HTTPException(status_code=400, detail="Admin deve usare altri endpoint con unit_id specifico")
     else:
         raise HTTPException(status_code=403, detail="Solo Supervisor può accedere a questo endpoint")
     
-    # Get Unit info
-    unit = await db.units.find_one({"id": unit_id})
-    if not unit:
-        raise HTTPException(status_code=404, detail="Unit not found")
+    # Get all Units info
+    units_info = await db.units.find({"id": {"$in": supervisor_units}}).to_list(length=None)
+    unit_names = {u["id"]: u.get("nome", u["id"]) for u in units_info}
     
-    # Get all agents and referenti in this Unit
-    users_in_unit = await db.users.find({
-        "unit_id": unit_id,
+    # Get all agents and referenti in these Units
+    users_in_units = await db.users.find({
+        "unit_id": {"$in": supervisor_units},
         "role": {"$in": ["agente", "referente"]},
         "is_active": True
     }).to_list(length=None)
     
-    agents = [u for u in users_in_unit if u.get("role") == "agente"]
-    referenti = [u for u in users_in_unit if u.get("role") == "referente"]
+    agents = [u for u in users_in_units if u.get("role") == "agente"]
+    referenti = [u for u in users_in_units if u.get("role") == "referente"]
     
     # Build date filters
     date_filter = {}
