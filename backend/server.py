@@ -5083,6 +5083,48 @@ async def get_leads(
         total_pages=total_pages
     )
 
+@api_router.get("/leads/assignable-agents")
+async def get_assignable_agents(
+    unit_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get list of agents that can be assigned leads - for Admin and Supervisor"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.SUPERVISOR]:
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    
+    query = {
+        "role": {"$in": ["agente", "referente"]},
+        "is_active": True
+    }
+    
+    # Supervisor can only see agents in their authorized units
+    if current_user.role == UserRole.SUPERVISOR:
+        supervisor_units = (current_user.unit_autorizzate or []) + ([current_user.unit_id] if current_user.unit_id else [])
+        query["unit_id"] = {"$in": supervisor_units}
+    elif unit_id:
+        # Admin can filter by unit
+        query["unit_id"] = unit_id
+    
+    agents = await db.users.find(query, {"_id": 0, "password": 0}).to_list(length=500)
+    
+    # Get unit names for each agent
+    unit_ids = list(set([a.get("unit_id") for a in agents if a.get("unit_id")]))
+    units = await db.units.find({"id": {"$in": unit_ids}}).to_list(length=None)
+    unit_names = {u["id"]: u.get("nome", u["id"]) for u in units}
+    
+    result = []
+    for agent in agents:
+        result.append({
+            "id": agent["id"],
+            "username": agent.get("username"),
+            "email": agent.get("email"),
+            "role": agent.get("role"),
+            "unit_id": agent.get("unit_id"),
+            "unit_nome": unit_names.get(agent.get("unit_id"), "N/A")
+        })
+    
+    return {"agents": result, "total": len(result)}
+
 @api_router.put("/leads/{lead_id}", response_model=Lead)
 async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User = Depends(get_current_user)):
     # Find the lead
