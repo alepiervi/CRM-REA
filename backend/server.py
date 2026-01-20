@@ -4258,6 +4258,20 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
             "is_active": True,
             "$or": or_conditions
         }
+    elif current_user.role == UserRole.SUPERVISOR:
+        # Supervisor can see all users in their authorized units (agents, referenti, etc.)
+        supervisor_units = (current_user.unit_autorizzate or [])
+        if current_user.unit_id and current_user.unit_id not in supervisor_units:
+            supervisor_units.append(current_user.unit_id)
+        
+        if supervisor_units:
+            query = {
+                "is_active": True,
+                "unit_id": {"$in": supervisor_units}
+            }
+        else:
+            # No units assigned - can only see themselves
+            query["id"] = current_user.id
     else:
         # Other roles can only see themselves
         query["id"] = current_user.id
