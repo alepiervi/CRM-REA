@@ -5100,9 +5100,13 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
             if not agent or agent.get("referente_id") != current_user.id:
                 raise HTTPException(status_code=403, detail="Not enough permissions")
     elif current_user.role == UserRole.SUPERVISOR:
-        # Supervisor can update leads in their Unit
-        if lead.get("unit_id") != current_user.unit_id:
-            raise HTTPException(status_code=403, detail="Puoi modificare solo i lead della tua Unit")
+        # Supervisor can update leads in their authorized Units
+        lead_unit = lead.get("unit_id")
+        supervisor_units = current_user.unit_autorizzate or []
+        if current_user.unit_id:
+            supervisor_units = supervisor_units + [current_user.unit_id]
+        if lead_unit not in supervisor_units:
+            raise HTTPException(status_code=403, detail="Puoi modificare solo i lead delle tue Unit autorizzate")
     
     # Update lead
     update_data = lead_update.dict(exclude_unset=True)
