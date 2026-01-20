@@ -3266,8 +3266,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                           </div>
                         </TableCell>
                         <TableCell>{lead.campagna}</TableCell>
-                        {/* Cella Assegnato a - Solo per Admin e Referente */}
-                        {(user?.role === "admin" || user?.role === "referente") && (
+                        {/* Cella Assegnato a - Per Admin, Referente e Supervisor */}
+                        {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor") && (
                           <TableCell>
                             <div className="flex items-center space-x-1">
                               <Users className="w-3 h-3 text-slate-400" />
