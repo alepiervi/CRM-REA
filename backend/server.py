@@ -6332,8 +6332,8 @@ async def get_supervisor_unit_analytics(
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
     
-    # Base query for leads in this unit
-    base_query = {"unit_id": unit_id}
+    # Base query for leads in supervisor's units
+    base_query = {"unit_id": {"$in": supervisor_units}}
     if date_filter:
         base_query["created_at"] = date_filter
     
@@ -6377,6 +6377,8 @@ async def get_supervisor_unit_analytics(
             "username": agent.get("username"),
             "email": agent.get("email"),
             "referente_id": agent.get("referente_id"),
+            "unit_id": agent.get("unit_id"),
+            "unit_nome": unit_names.get(agent.get("unit_id"), "N/A"),
             "total_leads": agent_total,
             "contacted_leads": agent_contacted,
             "contact_rate": round((agent_contacted / agent_total * 100) if agent_total > 0 else 0, 2)
