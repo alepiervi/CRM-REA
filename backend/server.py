@@ -6409,6 +6409,8 @@ async def get_supervisor_unit_analytics(
             "id": referente["id"],
             "username": referente.get("username"),
             "email": referente.get("email"),
+            "unit_id": referente.get("unit_id"),
+            "unit_nome": unit_names.get(referente.get("unit_id"), "N/A"),
             "agents_count": len(ref_agents),
             "total_leads": ref_total,
             "contacted_leads": ref_contacted,
@@ -6416,17 +6418,15 @@ async def get_supervisor_unit_analytics(
         })
     
     return {
-        "unit": {
-            "id": unit["id"],
-            "nome": unit.get("nome")
-        },
+        "units": [{"id": u_id, "nome": u_name} for u_id, u_name in unit_names.items()],
         "stats": {
             "total_leads": total_leads,
             "contacted_leads": contacted_leads,
             "unassigned_leads": unassigned_leads,
             "contact_rate": round((contacted_leads / total_leads * 100) if total_leads > 0 else 0, 2),
             "total_agents": len(agents),
-            "total_referenti": len(referenti)
+            "total_referenti": len(referenti),
+            "total_units": len(supervisor_units)
         },
         "agents": agent_stats,
         "referenti": referente_stats
