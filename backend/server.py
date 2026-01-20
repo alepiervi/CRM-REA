@@ -6621,6 +6621,12 @@ async def export_leads_excel(
         agent_ids = [agent["id"] for agent in agents]
         agent_ids.append(current_user.id)
         query["assigned_agent_id"] = {"$in": agent_ids}
+    elif current_user.role == UserRole.SUPERVISOR:
+        # Supervisor can export ALL leads from their Unit
+        if current_user.unit_id:
+            query["unit_id"] = current_user.unit_id
+        else:
+            raise HTTPException(status_code=403, detail="Supervisor non ha una Unit assegnata")
     
     # Unit filtering
     if unit_id:
