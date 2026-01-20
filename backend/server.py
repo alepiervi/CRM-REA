@@ -5095,6 +5095,10 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
             agent = await db["users"].find_one({"id": lead["assigned_agent_id"]})
             if not agent or agent.get("referente_id") != current_user.id:
                 raise HTTPException(status_code=403, detail="Not enough permissions")
+    elif current_user.role == UserRole.SUPERVISOR:
+        # Supervisor can update leads in their Unit
+        if lead.get("unit_id") != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Puoi modificare solo i lead della tua Unit")
     
     # Update lead
     update_data = lead_update.dict(exclude_unset=True)
