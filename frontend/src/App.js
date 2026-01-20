@@ -3346,8 +3346,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                           {new Date(lead.created_at).toLocaleDateString("it-IT")}
                         </span>
                       </div>
-                      {/* Assegnato a - Solo per Admin e Referente */}
-                      {(user?.role === "admin" || user?.role === "referente") && (
+                      {/* Assegnato a - Per Admin, Referente e Supervisor */}
+                      {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor") && (
                         <div className="flex items-center space-x-2">
                           <Users className="w-3 h-3 text-slate-400" />
                           <span className={lead.assigned_agent_id ? "text-green-700 font-medium" : "text-slate-500"}>
