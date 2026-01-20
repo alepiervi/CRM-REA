@@ -17853,8 +17853,15 @@ const SupervisorAnalytics = () => {
           <div className="flex items-center space-x-3">
             <TrendingUp className="w-8 h-8" />
             <div>
-              <h2 className="text-2xl font-bold">Analytics Unit: {analytics?.unit?.nome || 'N/A'}</h2>
-              <p className="text-indigo-100">Panoramica performance agenti e referenti</p>
+              <h2 className="text-2xl font-bold">
+                Analytics {analytics?.units?.length > 1 ? `(${analytics?.units?.length} Unit)` : `Unit: ${analytics?.units?.[0]?.nome || 'N/A'}`}
+              </h2>
+              <p className="text-indigo-100">
+                {analytics?.units?.length > 1 
+                  ? analytics.units.map(u => u.nome).join(', ')
+                  : 'Panoramica performance agenti e referenti'
+                }
+              </p>
             </div>
           </div>
           <Button 
