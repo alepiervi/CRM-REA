@@ -6960,6 +6960,51 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
           </div>
 
+          {/* SUPERVISOR: Selezione Unit Multiple */}
+          {formData.role === "supervisor" && (
+            <div className="col-span-2">
+              <Label>Unit Autorizzate *</Label>
+              <p className="text-sm text-slate-500 mb-2">Seleziona le Unit che il Supervisor potrà gestire</p>
+              <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {units.map((unit) => (
+                    <div key={unit.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`supervisor-unit-${unit.id}`}
+                        checked={formData.unit_autorizzate && formData.unit_autorizzate.includes(unit.id)}
+                        onCheckedChange={(checked) => {
+                          const currentUnits = formData.unit_autorizzate || [];
+                          if (checked) {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              unit_autorizzate: [...currentUnits, unit.id],
+                              unit_id: currentUnits.length === 0 ? unit.id : prev.unit_id // Prima unit diventa unit_id principale
+                            }));
+                          } else {
+                            const newUnits = currentUnits.filter(id => id !== unit.id);
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              unit_autorizzate: newUnits,
+                              unit_id: newUnits.length > 0 ? newUnits[0] : "" // Aggiorna unit_id principale
+                            }));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`supervisor-unit-${unit.id}`} className="text-sm font-normal cursor-pointer">
+                        {unit.nome || unit.name}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {formData.unit_autorizzate && formData.unit_autorizzate.length > 0 && (
+                <p className="text-sm text-green-600 mt-2">
+                  ✓ {formData.unit_autorizzate.length} Unit selezionate
+                </p>
+              )}
+            </div>
+          )}
+
           {/* AGENTE e REFERENTE: Campo Unit → Servizi */}
           {(formData.role === "agente" || formData.role === "referente") && (
             <div>
