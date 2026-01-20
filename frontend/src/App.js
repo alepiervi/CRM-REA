@@ -3913,13 +3913,13 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 </div>
               </div>
 
-              {/* Assegnato a - Solo Admin e Referente */}
-              {(user?.role === "admin" || user?.role === "referente") && (
+              {/* Assegnato a - Admin, Referente e Supervisor */}
+              {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor") && (
                 <div>
                   <Label className="text-sm font-medium text-slate-600">Assegnato a</Label>
                   
-                  {/* Admin can reassign leads, others can only view */}
-                  {user?.role === "admin" && isEditingLead ? (
+                  {/* Admin and Supervisor can reassign leads, others can only view */}
+                  {(user?.role === "admin" || user?.role === "supervisor") && isEditingLead ? (
                     <div>
                       <Select 
                         value={leadEditData.assigned_agent_id || "unassigned"}
@@ -3935,8 +3935,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                           <SelectItem value="unassigned">Non assegnato</SelectItem>
                           {(() => {
                             const availableAgents = users.filter(u => {
-                              // Filter only agents
-                              if (u.role !== "agente") return false;
+                              // Filter only agents and referenti
+                              if (u.role !== "agente" && u.role !== "referente") return false;
                               
                               // If agent has no provinces defined, they cover all provinces
                               if (!u.provinces || u.provinces.length === 0) return true;
