@@ -6169,6 +6169,11 @@ async def get_agent_analytics(
         agent = await db.users.find_one({"id": agent_id})
         if not agent or agent["referente_id"] != current_user.id:
             raise HTTPException(status_code=403, detail="Can only view analytics for your agents")
+    elif current_user.role == UserRole.SUPERVISOR:
+        # Supervisor can view analytics for agents in their Unit
+        agent = await db.users.find_one({"id": agent_id})
+        if not agent or agent.get("unit_id") != current_user.unit_id:
+            raise HTTPException(status_code=403, detail="Puoi vedere analytics solo degli agenti nella tua Unit")
     elif current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
