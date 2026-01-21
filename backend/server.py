@@ -4602,7 +4602,68 @@ async def create_lead(lead_data: LeadCreate):
         # Default behavior on error: no qualification (immediate assignment)
         should_start_qualification = False
     
-    # Start qualification process only if commessa has AI enabled
+    # PRIORITY CHECK: First check if Unit has auto_assign disabled
+    # If disabled, assign directly to referente/agent REGARDLESS of AI qualification
+    if lead_obj.unit_id:
+        unit = await db.units.find_one({"id": lead_obj.unit_id})
+        if unit and not unit.get("auto_assign_enabled", True):
+            # Auto-assignment disabled - assign directly to referente or agent in this Unit
+            logging.info(f"[CREATE-LEAD] Unit {lead_obj.unit_id} has auto_assign disabled. Looking for referente or agent...")
+            
+            # First try to find a referente for this unit
+            assignee = await db.users.find_one({
+                "$or": [
+                    {"unit_id": lead_obj.unit_id},
+                    {"unit_autorizzate": lead_obj.unit_id}
+                ],
+                "role": "referente",
+                "is_active": True
+            })
+            
+            # If no referente found, try to find an agent
+            if not assignee:
+                assignee = await db.users.find_one({
+                    "$or": [
+                        {"unit_id": lead_obj.unit_id},
+                        {"unit_autorizzate": lead_obj.unit_id}
+                    ],
+                    "role": "agente",
+                    "is_active": True
+                })
+            
+            if assignee:
+                assignee_id = assignee["id"]
+                assignee_name = assignee.get("username", "unknown")
+                assignee_role = assignee.get("role", "unknown")
+                current_esito = lead_obj.esito or "Nuovo"
+                
+                # Update lead with assignment
+                await db.leads.update_one(
+                    {"id": lead_obj.id},
+                    {
+                        "$set": {
+                            "assigned_agent_id": assignee_id,
+                            "assigned_at": datetime.now(timezone.utc),
+                            "esito_at_assignment": current_esito
+                        }
+                    }
+                )
+                
+                # Update local object for return
+                lead_obj.assigned_agent_id = assignee_id
+                lead_obj.assigned_at = datetime.now(timezone.utc)
+                
+                logging.info(f"[CREATE-LEAD] Lead {lead_obj.id} assigned to {assignee_role} {assignee_name} ({assignee_id}) for unit {unit.get('nome')} (auto_assign disabled)")
+                
+                # Send email notification
+                asyncio.create_task(notify_agent_new_lead(assignee_id, lead_obj.dict()))
+            else:
+                logging.warning(f"[CREATE-LEAD] No referente or agent found for unit {lead_obj.unit_id}. Lead {lead_obj.id} will remain unassigned.")
+            
+            # Return early - skip qualification for units with auto_assign disabled
+            return lead_obj
+    
+    # For units WITH auto_assign enabled: Start qualification or leave unassigned
     if should_start_qualification:
         try:
             # Start qualification process
