@@ -4794,7 +4794,70 @@ async def create_lead_webhook_get(
         logging.error(f"[WEBHOOK GET] Error checking commessa AI settings for lead {lead_obj.id}: {e}")
         should_start_qualification = False
     
-    # Start qualification or immediate assignment
+    # PRIORITY CHECK: First check if Unit has auto_assign disabled
+    # If disabled, assign directly to referente/agent REGARDLESS of AI qualification
+    if final_unit_id:
+        unit = await db.units.find_one({"id": final_unit_id})
+        if unit and not unit.get("auto_assign_enabled", True):
+            # Auto-assignment disabled - assign directly to referente or agent in this Unit
+            logging.info(f"[WEBHOOK GET] Unit {final_unit_id} has auto_assign disabled. Looking for referente or agent...")
+            
+            # First try to find a referente for this unit
+            assignee = await db.users.find_one({
+                "$or": [
+                    {"unit_id": final_unit_id},
+                    {"unit_autorizzate": final_unit_id}
+                ],
+                "role": "referente",
+                "is_active": True
+            })
+            
+            # If no referente found, try to find an agent
+            if not assignee:
+                assignee = await db.users.find_one({
+                    "$or": [
+                        {"unit_id": final_unit_id},
+                        {"unit_autorizzate": final_unit_id}
+                    ],
+                    "role": "agente",
+                    "is_active": True
+                })
+            
+            if assignee:
+                assignee_id = assignee["id"]
+                assignee_name = assignee.get("username", "unknown")
+                assignee_role = assignee.get("role", "unknown")
+                current_esito = lead_obj.esito or "Nuovo"
+                
+                # Update lead with assignment
+                await db.leads.update_one(
+                    {"id": lead_obj.id},
+                    {
+                        "$set": {
+                            "assigned_agent_id": assignee_id,
+                            "assigned_at": datetime.now(timezone.utc),
+                            "esito_at_assignment": current_esito
+                        }
+                    }
+                )
+                
+                logging.info(f"[WEBHOOK GET] Lead {lead_obj.id} assigned to {assignee_role} {assignee_name} ({assignee_id}) for unit {unit.get('nome')} (auto_assign disabled)")
+                
+                # Send email notification
+                asyncio.create_task(notify_agent_new_lead(assignee_id, lead_obj.dict()))
+            else:
+                logging.warning(f"[WEBHOOK GET] No referente or agent found for unit {final_unit_id}. Lead {lead_obj.id} will remain unassigned.")
+            
+            # Return early - skip qualification for units with auto_assign disabled
+            return {
+                "success": True,
+                "message": "Lead created and assigned (auto_assign disabled)",
+                "lead_id": lead_obj.id,
+                "assigned_to": assignee_id if assignee else None,
+                "lead": lead_obj
+            }
+    
+    # For units WITH auto_assign enabled: Start qualification or leave unassigned
     if should_start_qualification:
         try:
             await lead_qualification_bot.start_qualification_process(lead_obj.id)
