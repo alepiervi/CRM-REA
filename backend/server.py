@@ -3775,41 +3775,56 @@ async def assign_lead_to_agent(lead: Lead):
     if lead.unit_id:
         unit = await db.units.find_one({"id": lead.unit_id})
         if unit and not unit.get("auto_assign_enabled", True):
-            # Auto-assignment disabled - assign directly to the Unit's referente
-            logging.info(f"[ASSIGN] Auto-assignment disabled for unit {lead.unit_id} ({unit.get('nome')}). Looking for referente...")
+            # Auto-assignment disabled - assign directly to referente or agent in this Unit
+            logging.info(f"[ASSIGN] Auto-assignment disabled for unit {lead.unit_id} ({unit.get('nome')}). Looking for referente or agent...")
             
-            # Find the referente assigned to this unit
-            referente = await db.users.find_one({
-                "unit_id": lead.unit_id,
+            # First try to find a referente for this unit
+            assignee = await db.users.find_one({
+                "$or": [
+                    {"unit_id": lead.unit_id},
+                    {"unit_autorizzate": lead.unit_id}
+                ],
                 "role": "referente",
                 "is_active": True
             })
             
-            if referente:
-                referente_id = referente["id"]
-                referente_name = referente.get("username", "unknown")
+            # If no referente found, try to find an agent
+            if not assignee:
+                assignee = await db.users.find_one({
+                    "$or": [
+                        {"unit_id": lead.unit_id},
+                        {"unit_autorizzate": lead.unit_id}
+                    ],
+                    "role": "agente",
+                    "is_active": True
+                })
+            
+            if assignee:
+                assignee_id = assignee["id"]
+                assignee_name = assignee.get("username", "unknown")
+                assignee_role = assignee.get("role", "unknown")
                 current_esito = lead.esito or "Lead Interessato"
                 
-                # Assign lead to referente
+                # Assign lead
                 await db.leads.update_one(
                     {"id": lead.id},
                     {
                         "$set": {
-                            "assigned_agent_id": referente_id,
+                            "assigned_agent_id": assignee_id,
                             "assigned_at": datetime.now(timezone.utc),
                             "esito_at_assignment": current_esito
                         }
                     }
                 )
                 
-                logging.info(f"[ASSIGN] Lead {lead.id} assigned to referente {referente_name} ({referente_id}) for unit {unit.get('nome')} (auto_assign disabled)")
+                logging.info(f"[ASSIGN] Lead {lead.id} assigned to {assignee_role} {assignee_name} ({assignee_id}) for unit {unit.get('nome')} (auto_assign disabled)")
                 
-                # Send email notification to referente
-                asyncio.create_task(notify_agent_new_lead(referente_id, lead.dict()))
+                # Send email notification
+                asyncio.create_task(notify_agent_new_lead(assignee_id, lead.dict()))
                 
-                return referente_id
+                return assignee_id
             else:
-                logging.warning(f"[ASSIGN] No referente found for unit {lead.unit_id} ({unit.get('nome')}). Lead {lead.id} will remain unassigned.")
+                logging.warning(f"[ASSIGN] No referente or agent found for unit {lead.unit_id} ({unit.get('nome')}). Lead {lead.id} will remain unassigned.")
                 return None
     
     # Build query for agents
