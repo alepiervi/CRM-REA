@@ -7547,21 +7547,37 @@ async def webhook_receive_lead(unit_id: str, lead_data: LeadCreate):
         # AUTO-ASSIGNMENT LOGIC
         assigned_agent_id = None
         
-        # Check if Unit has auto_assign disabled - assign directly to referente
+        # Check if Unit has auto_assign disabled - assign directly to referente or agent
         if not unit.get("auto_assign_enabled", True):
-            logging.info(f"[WEBHOOK] Unit {unit_id} has auto_assign disabled. Looking for referente...")
+            logging.info(f"[WEBHOOK] Unit {unit_id} has auto_assign disabled. Looking for referente or agent...")
             
-            referente = await db.users.find_one({
-                "unit_id": unit_id,
+            # First try to find a referente for this unit
+            assignee = await db.users.find_one({
+                "$or": [
+                    {"unit_id": unit_id},
+                    {"unit_autorizzate": unit_id}
+                ],
                 "role": "referente",
                 "is_active": True
             })
             
-            if referente:
-                assigned_agent_id = referente["id"]
-                logging.info(f"[WEBHOOK] Lead will be assigned to referente {referente.get('username')} ({assigned_agent_id}) for unit {unit.get('nome')} (auto_assign disabled)")
+            # If no referente found, try to find an agent
+            if not assignee:
+                assignee = await db.users.find_one({
+                    "$or": [
+                        {"unit_id": unit_id},
+                        {"unit_autorizzate": unit_id}
+                    ],
+                    "role": "agente",
+                    "is_active": True
+                })
+            
+            if assignee:
+                assigned_agent_id = assignee["id"]
+                assignee_role = assignee.get("role", "unknown")
+                logging.info(f"[WEBHOOK] Lead will be assigned to {assignee_role} {assignee.get('username')} ({assigned_agent_id}) for unit {unit.get('nome')} (auto_assign disabled)")
             else:
-                logging.warning(f"[WEBHOOK] No referente found for unit {unit_id}. Lead will remain unassigned.")
+                logging.warning(f"[WEBHOOK] No referente or agent found for unit {unit_id}. Lead will remain unassigned.")
         
         elif lead_data.provincia:
             # Find agents authorized for this unit and provincia
