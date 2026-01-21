@@ -4937,38 +4937,54 @@ async def create_lead_webhook_post(lead_data: LeadCreate):
         if unit_id:
             unit = await db.units.find_one({"id": unit_id})
             if unit and not unit.get("auto_assign_enabled", True):
-                # Auto-assignment disabled - assign directly to the Unit's referente
-                logging.info(f"[WEBHOOK POST] Unit {unit_id} has auto_assign disabled. Looking for referente...")
+                # Auto-assignment disabled - assign directly to referente or agent in this Unit
+                logging.info(f"[WEBHOOK POST] Unit {unit_id} has auto_assign disabled. Looking for referente or agent...")
                 
-                referente = await db.users.find_one({
-                    "unit_id": unit_id,
+                # First try to find a referente for this unit
+                assignee = await db.users.find_one({
+                    "$or": [
+                        {"unit_id": unit_id},
+                        {"unit_autorizzate": unit_id}
+                    ],
                     "role": "referente",
                     "is_active": True
                 })
                 
-                if referente:
-                    referente_id = referente["id"]
-                    referente_name = referente.get("username", "unknown")
+                # If no referente found, try to find an agent
+                if not assignee:
+                    assignee = await db.users.find_one({
+                        "$or": [
+                            {"unit_id": unit_id},
+                            {"unit_autorizzate": unit_id}
+                        ],
+                        "role": "agente",
+                        "is_active": True
+                    })
+                
+                if assignee:
+                    assignee_id = assignee["id"]
+                    assignee_name = assignee.get("username", "unknown")
+                    assignee_role = assignee.get("role", "unknown")
                     current_esito = lead_obj.esito or "Nuovo"
                     
-                    # Update lead with referente assignment
+                    # Update lead with assignment
                     await db.leads.update_one(
                         {"id": lead_obj.id},
                         {
                             "$set": {
-                                "assigned_agent_id": referente_id,
+                                "assigned_agent_id": assignee_id,
                                 "assigned_at": datetime.now(timezone.utc),
                                 "esito_at_assignment": current_esito
                             }
                         }
                     )
                     
-                    logging.info(f"[WEBHOOK POST] Lead {lead_obj.id} assigned to referente {referente_name} ({referente_id}) for unit {unit.get('nome')} (auto_assign disabled)")
+                    logging.info(f"[WEBHOOK POST] Lead {lead_obj.id} assigned to {assignee_role} {assignee_name} ({assignee_id}) for unit {unit.get('nome')} (auto_assign disabled)")
                     
-                    # Send email notification to referente
-                    asyncio.create_task(notify_agent_new_lead(referente_id, lead_obj.dict()))
+                    # Send email notification
+                    asyncio.create_task(notify_agent_new_lead(assignee_id, lead_obj.dict()))
                 else:
-                    logging.warning(f"[WEBHOOK POST] No referente found for unit {unit_id}. Lead {lead_obj.id} will remain unassigned.")
+                    logging.warning(f"[WEBHOOK POST] No referente or agent found for unit {unit_id}. Lead {lead_obj.id} will remain unassigned.")
             else:
                 logging.info(f"[WEBHOOK POST] Lead {lead_obj.id} created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
         else:
