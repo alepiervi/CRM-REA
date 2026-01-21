@@ -4868,11 +4868,6 @@ async def create_lead_webhook_get(
     else:
         # Unit has auto_assign enabled but no AI - lead remains unassigned until status changes
         logging.info(f"[WEBHOOK GET] Lead {lead_obj.id} created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
-                    logging.warning(f"[WEBHOOK GET] No referente found for unit {final_unit_id}. Lead {lead_obj.id} will remain unassigned.")
-            else:
-                logging.info(f"[WEBHOOK GET] Lead {lead_obj.id} created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
-        else:
-            logging.info(f"[WEBHOOK GET] Lead {lead_obj.id} created without unit_id - will be assigned when status changes to 'Lead Interessato'")
     
     # Return simple response (Cloudflare-friendly)
     return {
