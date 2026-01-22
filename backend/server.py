@@ -6755,10 +6755,22 @@ async def create_excel_report(leads_data, custom_fields_list, filename="leads_ex
     ws = wb.active
     ws.title = "Lead Report"
     
-    # Base Headers - ALL fields from database
+    # Carica i nomi delle commesse e unit per la traduzione ID -> Nome
+    commesse_dict = {}
+    units_dict = {}
+    try:
+        commesse_list = await db.commesse.find({}, {"_id": 0, "id": 1, "nome": 1}).to_list(length=None)
+        commesse_dict = {c["id"]: c.get("nome", c["id"]) for c in commesse_list}
+        
+        units_list = await db.units.find({}, {"_id": 0, "id": 1, "nome": 1}).to_list(length=None)
+        units_dict = {u["id"]: u.get("nome", u["id"]) for u in units_list}
+    except Exception as e:
+        logging.warning(f"Error loading commesse/units names for export: {e}")
+    
+    # Base Headers - ALL fields from database (con nomi leggibili)
     headers = [
         "Lead ID", "Nome", "Cognome", "Telefono", "Email", "Provincia", 
-        "Campagna", "Commessa ID", "Unit ID",
+        "Campagna", "Commessa", "Unit",
         "Tipologia Abitazione", "Indirizzo", "Regione", 
         "URL", "OTP", "Inserzione", "IP Address", "Contenitore",
         "Privacy Consent", "Marketing Consent", 
