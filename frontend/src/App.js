@@ -4581,6 +4581,9 @@ const LeadStatusManagement = () => {
       const params = new URLSearchParams();
       if (filterUnit && filterUnit !== "all") {
         params.append("unit_id", filterUnit);
+      } else {
+        // Quando "Tutti" è selezionato, mostra tutti gli status (globali + per unit)
+        params.append("show_all", "true");
       }
       const response = await axios.get(`${API}/lead-status?${params}`);
       setStatuses(response.data);
