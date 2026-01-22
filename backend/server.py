@@ -5839,13 +5839,17 @@ async def create_lead_status(
 @api_router.get("/lead-status", response_model=List[LeadStatusModel])
 async def get_lead_statuses(
     unit_id: Optional[str] = None,
+    show_all: bool = False,  # NEW: Se True, mostra tutti gli status (globali + per unit)
     current_user: User = Depends(get_current_user)
 ):
-    """Get lead statuses - filtered by unit"""
+    """Get lead statuses - filtered by unit or all"""
     try:
         query = {"is_active": True}
         
-        if unit_id:
+        if show_all:
+            # Mostra TUTTI gli status (globali e per qualsiasi unit) - per la gestione admin
+            pass  # Nessun filtro aggiuntivo
+        elif unit_id:
             # Get statuses for specific unit + global statuses (unit_id is None or doesn't exist)
             query["$or"] = [
                 {"unit_id": unit_id},
