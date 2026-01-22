@@ -5846,17 +5846,30 @@ async def get_lead_statuses(
         query = {"is_active": True}
         
         if unit_id:
-            # Get statuses for specific unit + global statuses
+            # Get statuses for specific unit + global statuses (unit_id is None or doesn't exist)
             query["$or"] = [
                 {"unit_id": unit_id},
-                {"unit_id": None}
+                {"unit_id": None},
+                {"unit_id": {"$exists": False}},
+                {"unit_id": ""}  # Also check for empty string
             ]
         else:
             # Get only global statuses if no unit specified
-            query["unit_id"] = None
+            query["$or"] = [
+                {"unit_id": None},
+                {"unit_id": {"$exists": False}},
+                {"unit_id": ""}
+            ]
         
         statuses = await db["lead_status"].find(query).sort("ordine", 1).to_list(length=None)
-        return [LeadStatusModel(**status) for status in statuses]
+        
+        # Ensure _id is excluded and handle None values
+        result = []
+        for status in statuses:
+            status_dict = {k: v for k, v in status.items() if k != "_id"}
+            result.append(LeadStatusModel(**status_dict))
+        
+        return result
         
     except Exception as e:
         logging.error(f"Error fetching lead statuses: {e}")
