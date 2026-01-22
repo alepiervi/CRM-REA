@@ -3891,7 +3891,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                           <SelectValue placeholder="Seleziona stato" />
                         </SelectTrigger>
                         <SelectContent>
-                          {leadStatuses.map(status => (
+                          {selectedLeadStatuses.map(status => (
                             <SelectItem key={status.id} value={status.nome}>
                               <div className="flex items-center gap-2">
                                 {status.colore && (
@@ -3901,6 +3901,9 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                                   />
                                 )}
                                 {status.nome}
+                                {status.unit_id && (
+                                  <span className="text-xs text-slate-400 ml-1">(Unit)</span>
+                                )}
                               </div>
                             </SelectItem>
                           ))}
