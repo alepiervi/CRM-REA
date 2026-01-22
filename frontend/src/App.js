@@ -2714,12 +2714,27 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   };
 
   // NEW: Open lead detail with agent name
-  const openLeadDetail = (lead) => {
+  const openLeadDetail = async (lead) => {
     const leadWithAgentName = {
       ...lead,
       assigned_agent_name: getAgentName(lead.assigned_agent_id)
     };
     setSelectedLead(leadWithAgentName);
+    
+    // Carica gli status specifici per la unit del lead
+    try {
+      const params = new URLSearchParams();
+      if (lead.unit_id) {
+        params.append('unit_id', lead.unit_id);
+      }
+      const response = await axios.get(`${API}/lead-status?${params}`);
+      setSelectedLeadStatuses(response.data);
+    } catch (error) {
+      console.error("Error fetching lead-specific statuses:", error);
+      // Fallback agli status generici
+      setSelectedLeadStatuses(leadStatuses);
+    }
+    
     setLeadEditData({
       // Campi che possono essere vuoti da Zapier e quindi modificabili
       nome: lead.nome || "",
