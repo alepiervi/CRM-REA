@@ -6812,10 +6812,19 @@ async def create_excel_report(leads_data, custom_fields_list, filename="leads_ex
         col += 1
         ws.cell(row=row, column=col, value=lead.get("campagna") or "")
         col += 1
-        ws.cell(row=row, column=col, value=lead.get("commessa_id") or "")
+        
+        # Commessa: mostra nome invece di ID
+        commessa_id = lead.get("commessa_id") or ""
+        commessa_nome = commesse_dict.get(commessa_id, commessa_id) if commessa_id else ""
+        ws.cell(row=row, column=col, value=commessa_nome)
         col += 1
-        ws.cell(row=row, column=col, value=lead.get("unit_id") or lead.get("gruppo") or "")
+        
+        # Unit: mostra nome invece di ID
+        unit_id = lead.get("unit_id") or lead.get("gruppo") or ""
+        unit_nome = units_dict.get(unit_id, unit_id) if unit_id else ""
+        ws.cell(row=row, column=col, value=unit_nome)
         col += 1
+        
         ws.cell(row=row, column=col, value=lead.get("tipologia_abitazione") or "")
         col += 1
         ws.cell(row=row, column=col, value=lead.get("indirizzo") or "")
