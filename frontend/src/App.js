@@ -3901,9 +3901,6 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                                   />
                                 )}
                                 {status.nome}
-                                {status.unit_id && (
-                                  <span className="text-xs text-slate-400 ml-1">(Unit)</span>
-                                )}
                               </div>
                             </SelectItem>
                           ))}
