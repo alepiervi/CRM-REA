@@ -5221,15 +5221,32 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
-    # Check permissions
-    if current_user.role == UserRole.AGENTE and lead.get("assigned_agent_id") != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+    # Check permissions for updating lead
+    if current_user.role == UserRole.AGENTE:
+        # Agente può modificare solo i lead assegnati a lui
+        if lead.get("assigned_agent_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Puoi modificare solo i lead assegnati a te")
     elif current_user.role == UserRole.REFERENTE:
-        # Referente can update leads of their agents
-        if lead.get("assigned_agent_id"):
+        # Referente può modificare:
+        # 1. Lead assegnati a lui stesso
+        # 2. Lead assegnati ai suoi agenti
+        # 3. Lead non assegnati nella sua unit
+        is_own_lead = lead.get("assigned_agent_id") == current_user.id
+        is_agent_lead = False
+        is_unit_lead = False
+        
+        if lead.get("assigned_agent_id") and not is_own_lead:
             agent = await db["users"].find_one({"id": lead["assigned_agent_id"]})
-            if not agent or agent.get("referente_id") != current_user.id:
-                raise HTTPException(status_code=403, detail="Not enough permissions")
+            is_agent_lead = agent and agent.get("referente_id") == current_user.id
+        
+        # Check if lead is in referente's unit
+        if current_user.unit_id and lead.get("unit_id") == current_user.unit_id:
+            is_unit_lead = True
+        elif current_user.unit_autorizzate and lead.get("unit_id") in current_user.unit_autorizzate:
+            is_unit_lead = True
+        
+        if not (is_own_lead or is_agent_lead or is_unit_lead):
+            raise HTTPException(status_code=403, detail="Non hai i permessi per modificare questo lead")
     elif current_user.role == UserRole.SUPERVISOR:
         # Supervisor can update leads in their authorized Units
         lead_unit = lead.get("unit_id")
@@ -5238,6 +5255,7 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
             supervisor_units = supervisor_units + [current_user.unit_id]
         if lead_unit not in supervisor_units:
             raise HTTPException(status_code=403, detail="Puoi modificare solo i lead delle tue Unit autorizzate")
+    # Admin può modificare tutto (nessun check aggiuntivo)
     
     # Update lead
     update_data = lead_update.dict(exclude_unset=True)
