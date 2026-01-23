@@ -5221,11 +5221,17 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
+    # Debug logging
+    logging.info(f"[UPDATE_LEAD] User: {current_user.username} (role: {current_user.role}, id: {current_user.id})")
+    logging.info(f"[UPDATE_LEAD] Lead: {lead_id}, assigned_to: {lead.get('assigned_agent_id')}, unit: {lead.get('unit_id')}")
+    
     # Check permissions for updating lead
     if current_user.role == UserRole.AGENTE:
         # Agente può modificare solo i lead assegnati a lui
         if lead.get("assigned_agent_id") != current_user.id:
+            logging.warning(f"[UPDATE_LEAD] DENIED - Agente {current_user.username} tried to update lead not assigned to them")
             raise HTTPException(status_code=403, detail="Puoi modificare solo i lead assegnati a te")
+        logging.info(f"[UPDATE_LEAD] ALLOWED - Agente {current_user.username} updating own lead")
     elif current_user.role == UserRole.REFERENTE:
         # Referente può modificare:
         # 1. Lead assegnati a lui stesso
@@ -5245,8 +5251,12 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
         elif current_user.unit_autorizzate and lead.get("unit_id") in current_user.unit_autorizzate:
             is_unit_lead = True
         
+        logging.info(f"[UPDATE_LEAD] Referente check: is_own={is_own_lead}, is_agent={is_agent_lead}, is_unit={is_unit_lead}")
+        
         if not (is_own_lead or is_agent_lead or is_unit_lead):
+            logging.warning(f"[UPDATE_LEAD] DENIED - Referente {current_user.username} has no permission")
             raise HTTPException(status_code=403, detail="Non hai i permessi per modificare questo lead")
+        logging.info(f"[UPDATE_LEAD] ALLOWED - Referente {current_user.username}")
     elif current_user.role == UserRole.SUPERVISOR:
         # Supervisor can update leads in their authorized Units
         lead_unit = lead.get("unit_id")
@@ -5254,8 +5264,11 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
         if current_user.unit_id:
             supervisor_units = supervisor_units + [current_user.unit_id]
         if lead_unit not in supervisor_units:
+            logging.warning(f"[UPDATE_LEAD] DENIED - Supervisor {current_user.username} unit mismatch")
             raise HTTPException(status_code=403, detail="Puoi modificare solo i lead delle tue Unit autorizzate")
-    # Admin può modificare tutto (nessun check aggiuntivo)
+        logging.info(f"[UPDATE_LEAD] ALLOWED - Supervisor {current_user.username}")
+    else:
+        logging.info(f"[UPDATE_LEAD] ALLOWED - Admin/other role {current_user.username}")
     
     # Update lead
     update_data = lead_update.dict(exclude_unset=True)
