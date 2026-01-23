@@ -5273,25 +5273,33 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     # Update lead
     update_data = lead_update.dict(exclude_unset=True)
     
-    # CRITICAL: Only Admin and Supervisor can reassign leads (change assigned_agent_id)
+    # CRITICAL: Only Admin and Supervisor can REASSIGN leads (change assigned_agent_id to a DIFFERENT value)
     if "assigned_agent_id" in update_data:
-        if current_user.role not in [UserRole.ADMIN, UserRole.SUPERVISOR]:
-            raise HTTPException(
-                status_code=403, 
-                detail="Solo Admin e Supervisor possono riassegnare i lead"
-            )
-        # If Supervisor, verify the new agent is in their authorized units
-        if current_user.role == UserRole.SUPERVISOR and update_data["assigned_agent_id"]:
-            new_agent = await db.users.find_one({"id": update_data["assigned_agent_id"]})
-            if new_agent:
-                supervisor_units = (current_user.unit_autorizzate or []) + ([current_user.unit_id] if current_user.unit_id else [])
-                if new_agent.get("unit_id") not in supervisor_units:
-                    raise HTTPException(
-                        status_code=403,
-                        detail="Puoi assegnare lead solo ad agenti delle tue Unit"
-                    )
-            # Update assigned_at when reassigning
-            update_data["assigned_at"] = datetime.now(timezone.utc)
+        current_assigned = lead.get("assigned_agent_id")
+        new_assigned = update_data["assigned_agent_id"]
+        
+        # Only check permissions if the value is actually changing
+        if new_assigned != current_assigned:
+            if current_user.role not in [UserRole.ADMIN, UserRole.SUPERVISOR]:
+                raise HTTPException(
+                    status_code=403, 
+                    detail="Solo Admin e Supervisor possono riassegnare i lead"
+                )
+            # If Supervisor, verify the new agent is in their authorized units
+            if current_user.role == UserRole.SUPERVISOR and new_assigned:
+                new_agent = await db.users.find_one({"id": new_assigned})
+                if new_agent:
+                    supervisor_units = (current_user.unit_autorizzate or []) + ([current_user.unit_id] if current_user.unit_id else [])
+                    if new_agent.get("unit_id") not in supervisor_units:
+                        raise HTTPException(
+                            status_code=403,
+                            detail="Puoi assegnare lead solo ad agenti delle tue Unit"
+                        )
+                # Update assigned_at when reassigning
+                update_data["assigned_at"] = datetime.now(timezone.utc)
+        else:
+            # Se il valore non è cambiato, rimuovilo dai dati da aggiornare
+            del update_data["assigned_agent_id"]
     
     # If esito is being set, update contacted_at
     if update_data.get("esito"):
