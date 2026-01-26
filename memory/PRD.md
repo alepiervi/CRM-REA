@@ -5,12 +5,19 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ## Current State (Dicembre 2025)
 
-### ✅ Completato in questa sessione
+### ✅ Completato in questa sessione (Fork attuale)
+- **Fix Pivot Analytics Segmenti**: Corretto bug che mostrava UUID invece dei nomi dei segmenti. La logica ora cerca nella collezione `db.segmenti` invece di cercare dentro `tipologie_contratto`
+- **Frontend Build**: Verificato che `yarn build` funziona correttamente (36 secondi, nessun errore)
+
+### ✅ Completato in sessioni precedenti
 - **Fix Email Notifica Lead**: Corretto errore `uuid4()` → `uuid.uuid4()` che bloccava le notifiche
 - Sistema email SMTP Aruba funzionante
 - **Cestino Lead**: Implementato soft delete, ripristino e eliminazione definitiva per i lead (solo Admin)
-
-### ✅ Completato in sessioni precedenti
+- **Ruolo Supervisor**: Nuovo ruolo con gestione multi-unità, analytics dedicati, export lead
+- **Assegnazione Lead Avanzata**: Assegnazione diretta al referente per unità con auto-assign disabilitato
+- **Stati Lead per Unità**: Supporto stati globali e specifici per unità
+- **Permessi Aggiornati**: Agenti/Referenti possono modificare stati lead; Store_assist/Promoter_presidi bloccati da eliminazione clienti
+- **Export Excel migliorato**: Mostra nomi invece di ID per Commessa, Unit, Segmento
 - Display "Note Backoffice" nel modal cliente
 - Responsività mobile per Clienti, Lead, Users, Commesse, Sub-Agency
 - Pulsanti "Chiudi" espliciti su tutti i modali
