@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://agentify-6.preview.emergentagent.com"
+    base_url = "https://lead-manager-56.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:

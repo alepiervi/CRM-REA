@@ -11,7 +11,7 @@ import sys
 # Get auth token
 print("🔐 Getting authentication token...")
 auth_response = requests.post(
-    "https://agentify-6.preview.emergentagent.com/api/auth/login",
+    "https://lead-manager-56.preview.emergentagent.com/api/auth/login",
     json={"username": "admin", "password": "admin123"},
     timeout=10
 )
@@ -22,7 +22,7 @@ if auth_response.status_code != 200:
 
 token = auth_response.json()["access_token"]
 headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-base_url = "https://agentify-6.preview.emergentagent.com/api"
+base_url = "https://lead-manager-56.preview.emergentagent.com/api"
 
 print("✅ Authentication successful")
 

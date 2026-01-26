@@ -9,7 +9,7 @@ import sys
 
 def test_trova_id_unit_agn():
     """Find the exact Unit AGN ID for Zapier webhook configuration"""
-    base_url = "https://agentify-6.preview.emergentagent.com/api"
+    base_url = "https://lead-manager-56.preview.emergentagent.com/api"
     
     print("🎯 TROVA ID CORRETTO UNIT AGN - ZAPIER WEBHOOK CONFIGURATION")
     print("🎯 OBIETTIVO: Trovare l'ID esatto della Unit 'AGN' per configurare il webhook Zapier")
@@ -179,7 +179,7 @@ def test_trova_id_unit_agn():
     
     if unit_agn:
         agn_id = unit_agn.get('id')
-        base_webhook_url = "https://agentify-6.preview.emergentagent.com/api/webhook"
+        base_webhook_url = "https://lead-manager-56.preview.emergentagent.com/api/webhook"
         webhook_url = f"{base_webhook_url}/{agn_id}"
         
         print(f"\n   🎯 URL WEBHOOK COMPLETO PRONTO PER ZAPIER:")
@@ -215,7 +215,7 @@ def test_trova_id_unit_agn():
     if unit_agn:
         agn_id = unit_agn.get('id')
         agn_is_active = unit_agn.get('is_active', False)
-        webhook_url = f"https://agentify-6.preview.emergentagent.com/api/webhook/{agn_id}"
+        webhook_url = f"https://lead-manager-56.preview.emergentagent.com/api/webhook/{agn_id}"
         
         print(f"\n   🎉 SUCCESS: ID Unit AGN trovato e webhook URL costruito!")
         print(f"   📋 INFORMAZIONI FINALI:")

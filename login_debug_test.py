@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_login_debug():
-    base_url = "https://agentify-6.preview.emergentagent.com/api"
+    base_url = "https://lead-manager-56.preview.emergentagent.com/api"
     
     print("🚨 FOCUSED LOGIN DEBUG TEST")
     print("=" * 50)
