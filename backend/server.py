@@ -14302,6 +14302,22 @@ async def get_pivot_analytics(
                 name = "Non specificato"
             enriched_assigned[name] = count
         
+        # Enrich segmento with names
+        enriched_segmento = {}
+        for seg_id, count in segmento_counts.items():
+            if seg_id and seg_id != "Non specificato":
+                # Try to find segmento by ID in all tipologie
+                segmento_name = seg_id  # Default to ID if not found
+                tipologie = await db.tipologie_contratto.find({}).to_list(length=None)
+                for tipologia in tipologie:
+                    for segmento in tipologia.get("segmenti", []):
+                        if segmento.get("id") == seg_id:
+                            segmento_name = segmento.get("tipo", seg_id)
+                            break
+                enriched_segmento[segmento_name] = count
+            else:
+                enriched_segmento["Non specificato"] = count
+        
         # Calculate percentages
         def calc_percentages(counts_dict):
             if total_clienti == 0:
