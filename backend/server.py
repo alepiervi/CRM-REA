@@ -14304,16 +14304,14 @@ async def get_pivot_analytics(
         
         # Enrich segmento with names
         enriched_segmento = {}
+        # Fetch all segmenti from dedicated collection
+        all_segmenti = await db.segmenti.find({}).to_list(length=None)
+        segmenti_map = {seg.get("id"): seg.get("tipo", seg.get("id")) for seg in all_segmenti}
+        
         for seg_id, count in segmento_counts.items():
             if seg_id and seg_id != "Non specificato":
-                # Try to find segmento by ID in all tipologie
-                segmento_name = seg_id  # Default to ID if not found
-                tipologie = await db.tipologie_contratto.find({}).to_list(length=None)
-                for tipologia in tipologie:
-                    for segmento in tipologia.get("segmenti", []):
-                        if segmento.get("id") == seg_id:
-                            segmento_name = segmento.get("tipo", seg_id)
-                            break
+                # Look up segmento name from the map
+                segmento_name = segmenti_map.get(seg_id, seg_id)
                 enriched_segmento[segmento_name] = count
             else:
                 enriched_segmento["Non specificato"] = count
