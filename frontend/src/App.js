@@ -9461,13 +9461,15 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
 
       // Fetch multiple analytics endpoints
       const [leadsRes, usersRes, commesseRes] = await Promise.all([
-        axios.get(`${API}/leads?${params}`),
+        axios.get(`${API}/leads?${params}&limit=10000`),
         axios.get(`${API}/users?${params}`),
         axios.get(`${API}/commesse`)
       ]);
 
-      const leads = leadsRes.data;
-      const users = usersRes.data;
+      // Handle paginated response - leads endpoint returns {leads: [], total: N, ...}
+      const leadsData = leadsRes.data;
+      const leads = Array.isArray(leadsData) ? leadsData : (leadsData.leads || []);
+      const users = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data.users || usersRes.data || []);
 
       // Process dashboard metrics
       const totalLeads = leads.length;
