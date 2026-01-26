@@ -14364,8 +14364,8 @@ async def get_pivot_analytics(
                     "percentages": calc_percentages(tipologia_counts)
                 },
                 "segmento": {
-                    "counts": segmento_counts,
-                    "percentages": calc_percentages(segmento_counts)
+                    "counts": enriched_segmento,
+                    "percentages": calc_percentages(enriched_segmento)
                 },
                 "offerta": {
                     "counts": enriched_offerta,
