@@ -1729,13 +1729,12 @@ async def can_user_delete_cliente(user: User, cliente: Cliente) -> bool:
     
     # For roles that don't use authorizations (like agente, etc.)
     # They can delete their own clients (unless locked)
-    # NOTE: STORE_ASSIST and PROMOTER_PRESIDI cannot delete clients
-    if user.role in [UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI]:
+    # NOTE: STORE_ASSIST, PROMOTER_PRESIDI and RESPONSABILE_PRESIDI cannot delete clients
+    if user.role in [UserRole.STORE_ASSIST, UserRole.PROMOTER_PRESIDI, UserRole.RESPONSABILE_PRESIDI]:
         return False  # These roles cannot delete clients at all
     
     if user.role in [UserRole.AGENTE, UserRole.OPERATORE, 
-                     UserRole.AGENTE_SPECIALIZZATO, UserRole.RESPONSABILE_STORE, 
-                     UserRole.RESPONSABILE_PRESIDI]:
+                     UserRole.AGENTE_SPECIALIZZATO, UserRole.RESPONSABILE_STORE]:
         return cliente.created_by == user.id
     
     # For BACKOFFICE_COMMESSA: can delete all clients in their authorized commesse
