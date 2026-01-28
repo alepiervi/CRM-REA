@@ -14305,7 +14305,10 @@ async def get_pivot_analytics(
         enriched_segmento = {}
         # Fetch all segmenti from dedicated collection
         all_segmenti = await db.segmenti.find({}).to_list(length=None)
+        # Map ID -> tipo (name)
         segmenti_map = {seg.get("id"): seg.get("tipo", seg.get("id")) for seg in all_segmenti}
+        # Also create a set of valid segment names for direct name matching
+        valid_segmento_names = set(seg.get("tipo", "").lower() for seg in all_segmenti if seg.get("tipo"))
         
         # Initialize all segments with 0 count (group by tipo name to avoid duplicates)
         unique_segmento_names = set(segmenti_map.values())
@@ -14314,9 +14317,21 @@ async def get_pivot_analytics(
         
         # Now add counts from actual clients
         for seg_id, count in segmento_counts.items():
-            if seg_id and seg_id != "Non specificato":
-                # Look up segmento name from the map
-                segmento_name = segmenti_map.get(seg_id, seg_id)
+            if seg_id and seg_id not in ["Non specificato", "", None, "None"]:
+                # First try to look up as UUID in the map
+                if seg_id in segmenti_map:
+                    segmento_name = segmenti_map[seg_id]
+                # If not found as UUID, check if it's already a valid segment name
+                elif seg_id.lower() in valid_segmento_names:
+                    # Normalize to proper case (find matching name)
+                    segmento_name = seg_id.lower()
+                    for name in unique_segmento_names:
+                        if name.lower() == seg_id.lower():
+                            segmento_name = name
+                            break
+                else:
+                    # Unknown segment, use as-is
+                    segmento_name = seg_id
                 # Add to existing count (in case multiple IDs map to same name)
                 enriched_segmento[segmento_name] = enriched_segmento.get(segmento_name, 0) + count
             else:
