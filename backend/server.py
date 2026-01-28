@@ -14301,19 +14301,26 @@ async def get_pivot_analytics(
                 name = "Non specificato"
             enriched_assigned[name] = count
         
-        # Enrich segmento with names
+        # Enrich segmento with names - INCLUDE ALL SEGMENTS IN THE SYSTEM
         enriched_segmento = {}
         # Fetch all segmenti from dedicated collection
         all_segmenti = await db.segmenti.find({}).to_list(length=None)
         segmenti_map = {seg.get("id"): seg.get("tipo", seg.get("id")) for seg in all_segmenti}
         
+        # Initialize all segments with 0 count (group by tipo name to avoid duplicates)
+        unique_segmento_names = set(segmenti_map.values())
+        for seg_name in unique_segmento_names:
+            enriched_segmento[seg_name] = 0
+        
+        # Now add counts from actual clients
         for seg_id, count in segmento_counts.items():
             if seg_id and seg_id != "Non specificato":
                 # Look up segmento name from the map
                 segmento_name = segmenti_map.get(seg_id, seg_id)
-                enriched_segmento[segmento_name] = count
+                # Add to existing count (in case multiple IDs map to same name)
+                enriched_segmento[segmento_name] = enriched_segmento.get(segmento_name, 0) + count
             else:
-                enriched_segmento["Non specificato"] = count
+                enriched_segmento["Non specificato"] = enriched_segmento.get("Non specificato", 0) + count
         
         # Calculate percentages
         def calc_percentages(counts_dict):
