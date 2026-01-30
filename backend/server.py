@@ -8120,10 +8120,8 @@ async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User 
             stats["unit_names"] = []
             stats["total_units"] = 0
             
-    else:  # Agent
+    else:  # Agent and other roles
         lead_query = {"assigned_agent_id": current_user.id}
-        if unit_filter:
-            lead_query.update(unit_filter)
             
         stats["my_leads"] = await db.leads.count_documents(lead_query)
         stats["leads_today"] = await db.leads.count_documents({
@@ -8132,12 +8130,12 @@ async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User 
         })
         stats["contacted_leads"] = await db.leads.count_documents({
             **lead_query,
-            "esito": {"$ne": None}
+            "esito": {"$nin": [None, "", "Nuovo"]}
         })
         
         if current_user.unit_id:
             unit_info = await db.units.find_one({"id": current_user.unit_id})
-            stats["unit_name"] = unit_info["name"] if unit_info else "Unknown Unit"
+            stats["unit_name"] = unit_info.get("nome", unit_info.get("name", "Unknown Unit")) if unit_info else "Unknown Unit"
     
     return stats
 
