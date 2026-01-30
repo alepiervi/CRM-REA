@@ -17795,6 +17795,240 @@ const LeadsCestinoManagement = () => {
   );
 };
 
+// Referente Analytics View Component - Shows only referente's agents and leads data
+const ReferenteAnalyticsView = () => {
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+      let url = `${API}/analytics/referente/${user.id}`;
+      const params = new URLSearchParams();
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      if (params.toString()) url += `?${params.toString()}`;
+      
+      const response = await axios.get(url);
+      setAnalytics(response.data);
+    } catch (error) {
+      console.error("Error fetching referente analytics:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Impossibile caricare le analytics",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <div className="p-8 text-center text-slate-600">
+        Nessun dato disponibile
+      </div>
+    );
+  }
+
+  const { referente, total_stats, agent_breakdown, outcomes } = analytics;
+
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg p-6 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <TrendingUp className="w-8 h-8" />
+            <div>
+              <h2 className="text-2xl font-bold">Analytics Team</h2>
+              <p className="text-blue-100">Statistiche dei tuoi agenti e lead</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="bg-white/20 border-white/30 text-white placeholder:text-white/70 w-40"
+              placeholder="Da"
+            />
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="bg-white/20 border-white/30 text-white placeholder:text-white/70 w-40"
+              placeholder="A"
+            />
+            <Button onClick={fetchAnalytics} variant="secondary" size="sm">
+              <RefreshCw className="w-4 h-4 mr-1" /> Aggiorna
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-600 font-medium">Totale Lead</p>
+                <p className="text-3xl font-bold text-blue-700">{total_stats?.total_leads || 0}</p>
+              </div>
+              <Phone className="w-10 h-10 text-blue-400" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-green-600 font-medium">Contattati</p>
+                <p className="text-3xl font-bold text-green-700">{total_stats?.contacted_leads || 0}</p>
+              </div>
+              <CheckCircle className="w-10 h-10 text-green-400" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-purple-600 font-medium">Agenti</p>
+                <p className="text-3xl font-bold text-purple-700">{agent_breakdown?.length || 0}</p>
+              </div>
+              <Users className="w-10 h-10 text-purple-400" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-orange-600 font-medium">Tasso Contatto</p>
+                <p className="text-3xl font-bold text-orange-700">
+                  {total_stats?.total_leads > 0 
+                    ? Math.round((total_stats?.contacted_leads / total_stats?.total_leads) * 100) 
+                    : 0}%
+                </p>
+              </div>
+              <TrendingUp className="w-10 h-10 text-orange-400" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Outcomes Breakdown */}
+      {outcomes && Object.keys(outcomes).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Esiti Lead
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {Object.entries(outcomes).map(([esito, count]) => (
+                <div key={esito} className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-slate-700">{count}</p>
+                  <p className="text-xs text-slate-500 truncate" title={esito}>{esito || 'Non impostato'}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Agents Performance Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Performance Agenti
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {agent_breakdown && agent_breakdown.length > 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Agente</TableHead>
+                    <TableHead className="text-center">Lead Totali</TableHead>
+                    <TableHead className="text-center">Contattati</TableHead>
+                    <TableHead className="text-center">Tasso Contatto</TableHead>
+                    <TableHead className="text-center">Esiti Positivi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {agent_breakdown.map((agent) => {
+                    const contactRate = agent.total_leads > 0 
+                      ? Math.round((agent.contacted_leads / agent.total_leads) * 100) 
+                      : 0;
+                    const positiveOutcomes = agent.outcomes 
+                      ? Object.entries(agent.outcomes)
+                          .filter(([esito]) => ['Interessato', 'Venduto', 'Completato', 'Appuntamento'].includes(esito))
+                          .reduce((sum, [, count]) => sum + count, 0)
+                      : 0;
+                    
+                    return (
+                      <TableRow key={agent.agent_id}>
+                        <TableCell className="font-medium">{agent.username}</TableCell>
+                        <TableCell className="text-center">{agent.total_leads}</TableCell>
+                        <TableCell className="text-center">{agent.contacted_leads}</TableCell>
+                        <TableCell className="text-center">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            contactRate >= 70 ? 'bg-green-100 text-green-700' :
+                            contactRate >= 40 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {contactRate}%
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            {positiveOutcomes}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-500">
+              <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>Nessun agente assegnato</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 // Supervisor Analytics Component
 const SupervisorAnalytics = () => {
   const [analytics, setAnalytics] = useState(null);
