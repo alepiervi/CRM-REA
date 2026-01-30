@@ -18767,13 +18767,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const handleSearchChange = (query) => {
     setSearchQuery(query);
     
-    // Clear existing timeout
-    if (window.clientiSearchTimeout) {
-      clearTimeout(window.clientiSearchTimeout);
+    // Clear existing timeout using ref
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
     
     // Debounce search - wait 600ms after user stops typing
-    window.clientiSearchTimeout = setTimeout(() => {
+    searchTimeoutRef.current = setTimeout(() => {
       setCurrentPage(1);
       // Pass the query directly to avoid React state timing issues
       fetchClientiDirect(query);
