@@ -6561,6 +6561,8 @@ async def get_supervisor_unit_analytics(
     
     # Per-agent stats
     agent_stats = []
+    all_outcomes = set()  # Collect all unique outcomes
+    
     for agent in agents:
         agent_query = {"assigned_agent_id": agent["id"]}
         if date_filter:
@@ -6575,6 +6577,21 @@ async def get_supervisor_unit_analytics(
         ]}
         agent_contacted = await db.leads.count_documents(agent_contacted_query)
         
+        # Get outcomes breakdown for this agent
+        agent_outcomes = {}
+        outcome_pipeline = [
+            {"$match": agent_query},
+            {"$group": {"_id": "$esito", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}}
+        ]
+        outcome_results = await db.leads.aggregate(outcome_pipeline).to_list(length=None)
+        for item in outcome_results:
+            esito = item["_id"] if item["_id"] else "Nuovo"
+            if esito == "" or esito is None:
+                esito = "Nuovo"
+            agent_outcomes[esito] = item["count"]
+            all_outcomes.add(esito)
+        
         agent_stats.append({
             "id": agent["id"],
             "username": agent.get("username"),
@@ -6584,8 +6601,15 @@ async def get_supervisor_unit_analytics(
             "unit_nome": unit_names.get(agent.get("unit_id"), "N/A"),
             "total_leads": agent_total,
             "contacted_leads": agent_contacted,
-            "contact_rate": round((agent_contacted / agent_total * 100) if agent_total > 0 else 0, 2)
+            "contact_rate": round((agent_contacted / agent_total * 100) if agent_total > 0 else 0, 2),
+            "outcomes": agent_outcomes
         })
+    
+    # Calculate total outcomes across all agents
+    total_outcomes = {}
+    for agent in agent_stats:
+        for esito, count in agent.get("outcomes", {}).items():
+            total_outcomes[esito] = total_outcomes.get(esito, 0) + count
     
     # Per-referente stats
     referente_stats = []
