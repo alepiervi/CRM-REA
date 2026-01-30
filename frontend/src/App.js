@@ -18611,6 +18611,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         variant: "destructive",
       });
     }
+    
+    // Cleanup search timeout on unmount
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
   }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy, clientiFilterServizi, clientiFilterSegmento, clientiFilterCommesse]);
 
   // Auto-refresh clienti every 30 seconds
