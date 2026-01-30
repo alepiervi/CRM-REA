@@ -18549,6 +18549,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchType, setSearchType] = useState('all');
+  const searchTimeoutRef = React.useRef(null); // Use ref instead of window variable
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false); // Mobile: collapsed by default
   const [dateFilter, setDateFilter] = useState({
     startDate: '',
