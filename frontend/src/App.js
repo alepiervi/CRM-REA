@@ -2012,10 +2012,13 @@ const Dashboard = () => {
         case "leads-cestino":
           return user.role === "admin" ? <LeadsCestinoManagement /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono accedere al cestino lead</div>;
         case "analytics":
+          // Referente: vede solo analytics dei propri agenti e lead
+          if (user.role === "referente") {
+            return <ReferenteAnalyticsView />;
+          }
           // Roles with access to full Analytics (Pivot + Sub Agenzie)
           if (
             user.role === "admin" || 
-            user.role === "referente" ||
             user.role === "responsabile_commessa" || 
             user.role === "backoffice_commessa" || 
             user.role === "responsabile_sub_agenzia" || 
