@@ -8029,16 +8029,10 @@ async def webhook_receive_lead_get(
 async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
     stats = {}
     
-    # Base query for unit filtering
-    unit_filter = {}
-    if unit_id:
-        unit_filter["gruppo"] = unit_id
-    elif current_user.role != UserRole.ADMIN and current_user.unit_id:
-        unit_filter["gruppo"] = current_user.unit_id
-    
     if current_user.role == UserRole.ADMIN:
         # Admin stats - optionally filtered by unit
         if unit_id:
+            unit_filter = {"unit_id": unit_id}
             stats["total_leads"] = await db.leads.count_documents(unit_filter)
             stats["leads_today"] = await db.leads.count_documents({
                 **unit_filter,
@@ -8046,7 +8040,7 @@ async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User 
             })
             stats["total_users"] = await db.users.count_documents({"unit_id": unit_id})
             unit_info = await db.units.find_one({"id": unit_id})
-            stats["unit_name"] = unit_info["name"] if unit_info else "Unknown Unit"
+            stats["unit_name"] = unit_info.get("nome", unit_info.get("name", "Unknown Unit")) if unit_info else "Unknown Unit"
         else:
             stats["total_leads"] = await db.leads.count_documents({})
             stats["total_users"] = await db.users.count_documents({})
