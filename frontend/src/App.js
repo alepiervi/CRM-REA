@@ -17938,19 +17938,19 @@ const ReferenteAnalyticsView = () => {
         </Card>
       </div>
 
-      {/* Outcomes Breakdown */}
+      {/* Outcomes Breakdown - Totali per Esito */}
       {outcomes && Object.keys(outcomes).length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5" />
-              Esiti Lead
+              Totale Esiti Lead
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {Object.entries(outcomes).map(([esito, count]) => (
-                <div key={esito} className="bg-slate-50 rounded-lg p-3 text-center">
+              {Object.entries(outcomes).sort((a, b) => b[1] - a[1]).map(([esito, count]) => (
+                <div key={esito} className="bg-slate-50 rounded-lg p-3 text-center border">
                   <p className="text-2xl font-bold text-slate-700">{count}</p>
                   <p className="text-xs text-slate-500 truncate" title={esito}>{esito || 'Non impostato'}</p>
                 </div>
@@ -17960,12 +17960,109 @@ const ReferenteAnalyticsView = () => {
         </Card>
       )}
 
-      {/* Agents Performance Table */}
+      {/* Pivot Table - Agenti x Esiti */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Pivot Agenti per Esito
+          </CardTitle>
+          <p className="text-sm text-slate-500">Dettaglio esiti per ogni agente</p>
+        </CardHeader>
+        <CardContent>
+          {agent_breakdown && agent_breakdown.length > 0 ? (
+            <div className="overflow-x-auto">
+              {(() => {
+                // Collect all unique esiti across all agents
+                const allEsiti = new Set();
+                agent_breakdown.forEach(agentData => {
+                  if (agentData.outcomes) {
+                    Object.keys(agentData.outcomes).forEach(e => allEsiti.add(e));
+                  }
+                });
+                const esitiArray = Array.from(allEsiti).sort();
+                
+                // Calculate totals per esito
+                const esitoTotals = {};
+                esitiArray.forEach(e => {
+                  esitoTotals[e] = agent_breakdown.reduce((sum, agentData) => 
+                    sum + (agentData.outcomes?.[e] || 0), 0);
+                });
+                
+                return (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50">
+                        <TableHead className="font-bold">Agente</TableHead>
+                        <TableHead className="text-center font-bold">Totale</TableHead>
+                        {esitiArray.map(esito => (
+                          <TableHead key={esito} className="text-center text-xs">
+                            {esito || 'N/A'}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {agent_breakdown.map((agentData, idx) => (
+                        <TableRow key={agentData.agent?.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                          <TableCell className="font-medium">
+                            {agentData.agent?.username || 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-center font-bold text-blue-600">
+                            {agentData.total_leads || 0}
+                          </TableCell>
+                          {esitiArray.map(esito => (
+                            <TableCell key={esito} className="text-center">
+                              {agentData.outcomes?.[esito] ? (
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  esito === 'Nuovo' ? 'bg-gray-100 text-gray-600' :
+                                  ['Interessato', 'Venduto', 'Completato', 'Appuntamento', 'Lead Interessato'].includes(esito) 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : ['Non Interessato', 'KO', 'Non Risponde'].includes(esito)
+                                    ? 'bg-red-100 text-red-600'
+                                    : 'bg-blue-100 text-blue-600'
+                                }`}>
+                                  {agentData.outcomes[esito]}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                      {/* Riga Totali */}
+                      <TableRow className="bg-slate-100 font-bold border-t-2">
+                        <TableCell className="font-bold">TOTALE</TableCell>
+                        <TableCell className="text-center font-bold text-blue-700">
+                          {agent_breakdown.reduce((sum, a) => sum + (a.total_leads || 0), 0)}
+                        </TableCell>
+                        {esitiArray.map(esito => (
+                          <TableCell key={esito} className="text-center font-bold">
+                            {esitoTotals[esito] || 0}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                );
+              })()}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-500">
+              <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>Nessun agente assegnato</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Agents Performance Summary */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Performance Agenti
+            Riepilogo Performance Agenti
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -17978,25 +18075,28 @@ const ReferenteAnalyticsView = () => {
                     <TableHead className="text-center">Lead Totali</TableHead>
                     <TableHead className="text-center">Contattati</TableHead>
                     <TableHead className="text-center">Tasso Contatto</TableHead>
-                    <TableHead className="text-center">Esiti Positivi</TableHead>
+                    <TableHead className="text-center">Qualità</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {agent_breakdown.map((agent) => {
-                    const contactRate = agent.total_leads > 0 
-                      ? Math.round((agent.contacted_leads / agent.total_leads) * 100) 
+                  {agent_breakdown.map((agentData, idx) => {
+                    const contactRate = agentData.total_leads > 0 
+                      ? Math.round((agentData.contacted_leads / agentData.total_leads) * 100) 
                       : 0;
-                    const positiveOutcomes = agent.outcomes 
-                      ? Object.entries(agent.outcomes)
-                          .filter(([esito]) => ['Interessato', 'Venduto', 'Completato', 'Appuntamento'].includes(esito))
+                    const positiveOutcomes = agentData.outcomes 
+                      ? Object.entries(agentData.outcomes)
+                          .filter(([esito]) => ['Interessato', 'Venduto', 'Completato', 'Appuntamento', 'Lead Interessato'].includes(esito))
                           .reduce((sum, [, count]) => sum + count, 0)
+                      : 0;
+                    const qualityRate = agentData.total_leads > 0 
+                      ? Math.round((positiveOutcomes / agentData.total_leads) * 100) 
                       : 0;
                     
                     return (
-                      <TableRow key={agent.agent_id}>
-                        <TableCell className="font-medium">{agent.username}</TableCell>
-                        <TableCell className="text-center">{agent.total_leads}</TableCell>
-                        <TableCell className="text-center">{agent.contacted_leads}</TableCell>
+                      <TableRow key={agentData.agent?.id || idx}>
+                        <TableCell className="font-medium">{agentData.agent?.username || 'N/A'}</TableCell>
+                        <TableCell className="text-center">{agentData.total_leads}</TableCell>
+                        <TableCell className="text-center">{agentData.contacted_leads}</TableCell>
                         <TableCell className="text-center">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             contactRate >= 70 ? 'bg-green-100 text-green-700' :
@@ -18007,8 +18107,12 @@ const ReferenteAnalyticsView = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                            {positiveOutcomes}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            qualityRate >= 30 ? 'bg-green-100 text-green-700' :
+                            qualityRate >= 15 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {positiveOutcomes} ({qualityRate}%)
                           </span>
                         </TableCell>
                       </TableRow>
