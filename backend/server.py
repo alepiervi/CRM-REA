@@ -6656,7 +6656,8 @@ async def get_supervisor_unit_analytics(
             "total_units": len(supervisor_units)
         },
         "agents": agent_stats,
-        "referenti": referente_stats
+        "referenti": referente_stats,
+        "outcomes": total_outcomes
     }
 
 @api_router.get("/analytics/referente/{referente_id}")
