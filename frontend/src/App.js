@@ -19148,12 +19148,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     }
   }, [selectedCommessa]);
 
-  // Re-apply search when allClienti changes
-  useEffect(() => {
-    if (searchQuery) {
-      filterClienti(searchQuery, searchType);
-    }
-  }, [allClienti]);
+  // NOTE: Removed problematic useEffect that was causing search instability
+  // The search is now handled directly by handleSearchChange with debounce
 
   return (
     <div className="space-y-4 md:space-y-6">
