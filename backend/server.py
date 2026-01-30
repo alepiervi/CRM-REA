@@ -8074,6 +8074,51 @@ async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User 
             unit_info = await db.units.find_one({"id": current_user.unit_id})
             stats["unit_name"] = unit_info["name"] if unit_info else "Unknown Unit"
             
+    elif current_user.role == UserRole.SUPERVISOR:
+        # Supervisor: vede stats di tutte le sue Unit autorizzate
+        supervisor_units = current_user.unit_autorizzate or []
+        if current_user.unit_id and current_user.unit_id not in supervisor_units:
+            supervisor_units.append(current_user.unit_id)
+        
+        if supervisor_units:
+            lead_query = {"unit_id": {"$in": supervisor_units}}
+            stats["total_leads"] = await db.leads.count_documents(lead_query)
+            stats["leads_today"] = await db.leads.count_documents({
+                **lead_query,
+                "created_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
+            })
+            # Unassigned leads
+            stats["unassigned_leads"] = await db.leads.count_documents({
+                **lead_query,
+                "$or": [
+                    {"assigned_agent_id": None},
+                    {"assigned_agent_id": {"$exists": False}}
+                ]
+            })
+            # Contacted leads
+            stats["contacted_leads"] = await db.leads.count_documents({
+                **lead_query,
+                "esito": {"$nin": [None, "", "Nuovo"]}
+            })
+            # Count agents in units
+            stats["total_agents"] = await db.users.count_documents({
+                "unit_id": {"$in": supervisor_units},
+                "role": "agente",
+                "is_active": True
+            })
+            # Unit names
+            units_info = await db.units.find({"id": {"$in": supervisor_units}}).to_list(length=None)
+            stats["unit_names"] = [u.get("nome", u.get("name", u["id"])) for u in units_info]
+            stats["total_units"] = len(supervisor_units)
+        else:
+            stats["total_leads"] = 0
+            stats["leads_today"] = 0
+            stats["unassigned_leads"] = 0
+            stats["contacted_leads"] = 0
+            stats["total_agents"] = 0
+            stats["unit_names"] = []
+            stats["total_units"] = 0
+            
     else:  # Agent
         lead_query = {"assigned_agent_id": current_user.id}
         if unit_filter:
