@@ -8050,12 +8050,14 @@ async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User 
             })
             
     elif current_user.role == UserRole.REFERENTE:
+        # Get all agents under this referente
         agents = await db.users.find({"referente_id": current_user.id}).to_list(length=None)
         agent_ids = [agent["id"] for agent in agents]
         
-        lead_query = {"assigned_agent_id": {"$in": agent_ids}}
-        if unit_filter:
-            lead_query.update(unit_filter)
+        # Include referente's own ID in case they also handle leads directly
+        all_ids = agent_ids + [current_user.id]
+        
+        lead_query = {"assigned_agent_id": {"$in": all_ids}}
             
         stats["my_agents"] = len(agent_ids)
         stats["total_leads"] = await db.leads.count_documents(lead_query)
@@ -8063,10 +8065,15 @@ async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User 
             **lead_query,
             "created_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
         })
+        # Contacted leads for referente's team
+        stats["contacted_leads"] = await db.leads.count_documents({
+            **lead_query,
+            "esito": {"$nin": [None, "", "Nuovo"]}
+        })
         
         if current_user.unit_id:
             unit_info = await db.units.find_one({"id": current_user.unit_id})
-            stats["unit_name"] = unit_info["name"] if unit_info else "Unknown Unit"
+            stats["unit_name"] = unit_info.get("nome", unit_info.get("name", "Unknown Unit")) if unit_info else "Unknown Unit"
             
     elif current_user.role == UserRole.SUPERVISOR:
         # Supervisor: vede stats di tutte le sue Unit autorizzate
