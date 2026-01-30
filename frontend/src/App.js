@@ -18392,6 +18392,120 @@ const SupervisorAnalytics = () => {
         </Card>
       )}
 
+      {/* Totale Esiti */}
+      {analytics?.outcomes && Object.keys(analytics.outcomes).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <BarChart3 className="w-5 h-5 text-green-600" />
+              <span>Totale Esiti Lead</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {Object.entries(analytics.outcomes).sort((a, b) => b[1] - a[1]).map(([esito, count]) => (
+                <div key={esito} className="bg-slate-50 rounded-lg p-3 text-center border">
+                  <p className="text-2xl font-bold text-slate-700">{count}</p>
+                  <p className="text-xs text-slate-500 truncate" title={esito}>{esito || 'Non impostato'}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pivot Table - Agenti x Esiti */}
+      {analytics?.agents?.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <BarChart3 className="w-5 h-5 text-indigo-600" />
+              <span>Pivot Agenti per Esito</span>
+            </CardTitle>
+            <p className="text-sm text-slate-500">Dettaglio esiti per ogni agente</p>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              {(() => {
+                // Collect all unique esiti across all agents
+                const allEsiti = new Set();
+                analytics.agents.forEach(agent => {
+                  if (agent.outcomes) {
+                    Object.keys(agent.outcomes).forEach(e => allEsiti.add(e));
+                  }
+                });
+                const esitiArray = Array.from(allEsiti).sort();
+                
+                // Calculate totals per esito
+                const esitoTotals = {};
+                esitiArray.forEach(e => {
+                  esitoTotals[e] = analytics.agents.reduce((sum, agent) => 
+                    sum + (agent.outcomes?.[e] || 0), 0);
+                });
+                
+                return (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50">
+                        <TableHead className="font-bold">Agente</TableHead>
+                        <TableHead className="text-center font-bold">Totale</TableHead>
+                        {esitiArray.map(esito => (
+                          <TableHead key={esito} className="text-center text-xs">
+                            {esito || 'N/A'}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {analytics.agents.map((agent, idx) => (
+                        <TableRow key={agent.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                          <TableCell className="font-medium">
+                            {agent.username || 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-center font-bold text-blue-600">
+                            {agent.total_leads || 0}
+                          </TableCell>
+                          {esitiArray.map(esito => (
+                            <TableCell key={esito} className="text-center">
+                              {agent.outcomes?.[esito] ? (
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  esito === 'Nuovo' ? 'bg-gray-100 text-gray-600' :
+                                  ['Interessato', 'Venduto', 'Completato', 'Appuntamento', 'Lead Interessato'].includes(esito) 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : ['Non Interessato', 'KO', 'Non Risponde'].includes(esito)
+                                    ? 'bg-red-100 text-red-600'
+                                    : 'bg-blue-100 text-blue-600'
+                                }`}>
+                                  {agent.outcomes[esito]}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                      {/* Riga Totali */}
+                      <TableRow className="bg-slate-100 font-bold border-t-2">
+                        <TableCell className="font-bold">TOTALE</TableCell>
+                        <TableCell className="text-center font-bold text-blue-700">
+                          {analytics.agents.reduce((sum, a) => sum + (a.total_leads || 0), 0)}
+                        </TableCell>
+                        {esitiArray.map(esito => (
+                          <TableCell key={esito} className="text-center font-bold">
+                            {esitoTotals[esito] || 0}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                );
+              })()}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Empty state */}
       {(!analytics?.agents?.length && !analytics?.referenti?.length) && (
         <Card>
