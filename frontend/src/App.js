@@ -2015,6 +2015,7 @@ const Dashboard = () => {
           // Roles with access to full Analytics (Pivot + Sub Agenzie)
           if (
             user.role === "admin" || 
+            user.role === "referente" ||
             user.role === "responsabile_commessa" || 
             user.role === "backoffice_commessa" || 
             user.role === "responsabile_sub_agenzia" || 
