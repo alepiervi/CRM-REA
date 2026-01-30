@@ -1901,7 +1901,6 @@ const Dashboard = () => {
     } else if (user.role === "referente") {
       items.push(
         { id: "leads", label: "Lead", icon: Phone },
-        { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
     } else if (user.role === "responsabile_commessa") {
