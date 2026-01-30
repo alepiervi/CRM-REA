@@ -931,6 +931,13 @@ const DashboardStats = ({ selectedUnit }) => {
         { title: "Lead Oggi", value: stats.leads_today || 0, icon: Calendar, color: "from-orange-500 to-orange-600" },
         { title: "Unit", value: stats.unit_name || "N/A", icon: Building2, color: "from-purple-500 to-purple-600", isText: true },
       ];
+    } else if (user.role === "supervisor") {
+      return [
+        { title: "Totale Lead", value: stats.total_leads || 0, icon: Phone, color: "from-blue-500 to-blue-600" },
+        { title: "Lead Oggi", value: stats.leads_today || 0, icon: Calendar, color: "from-green-500 to-green-600" },
+        { title: "Non Assegnati", value: stats.unassigned_leads || 0, icon: AlertCircle, color: "from-orange-500 to-orange-600" },
+        { title: "Agenti", value: stats.total_agents || 0, icon: Users, color: "from-purple-500 to-purple-600" },
+      ];
     } else {
       return [
         { title: "I Miei Lead", value: stats.my_leads || 0, icon: Phone, color: "from-blue-500 to-blue-600" },
