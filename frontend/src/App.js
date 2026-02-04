@@ -2712,6 +2712,23 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  // Fetch ALL lead status colors (for badge rendering regardless of selected unit)
+  const fetchAllLeadStatusColors = async () => {
+    try {
+      const response = await axios.get(`${API}/lead-status?show_all=true&include_used=true`);
+      const colorMap = {};
+      response.data.forEach(status => {
+        // Use the first color found for each status name
+        if (!colorMap[status.nome] && status.colore) {
+          colorMap[status.nome] = status.colore;
+        }
+      });
+      setAllLeadStatusColors(colorMap);
+    } catch (error) {
+      console.error("Error fetching all lead status colors:", error);
+    }
+  };
+
   // NEW: Fetch users for agent names
   const fetchUsers = async () => {
     try {
