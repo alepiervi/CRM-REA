@@ -5426,6 +5426,38 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     updated_lead = await db["leads"].find_one({"id": lead_id})
     return Lead(**updated_lead)
 
+@api_router.get("/leads/{lead_id}/history")
+async def get_lead_history(lead_id: str, current_user: User = Depends(get_current_user)):
+    """Get the change history for a lead - Admin only"""
+    
+    # Only admin can view lead history
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli Admin possono visualizzare lo storico dei lead")
+    
+    # Check if lead exists
+    lead = await db["leads"].find_one({"id": lead_id})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Fetch history entries sorted by timestamp (newest first)
+    history_entries = await db["lead_history"].find(
+        {"lead_id": lead_id}
+    ).sort("timestamp", -1).to_list(length=100)
+    
+    # Clean up _id from MongoDB
+    for entry in history_entries:
+        if "_id" in entry:
+            del entry["_id"]
+        # Convert datetime to ISO string
+        if isinstance(entry.get("timestamp"), datetime):
+            entry["timestamp"] = entry["timestamp"].isoformat()
+    
+    return {
+        "lead_id": lead_id,
+        "history": history_entries,
+        "total": len(history_entries)
+    }
+
 @api_router.delete("/leads/{lead_id}")
 async def delete_lead(lead_id: str, current_user: User = Depends(get_current_user)):
     """Soft delete a lead - sposta nel cestino invece di eliminare definitivamente"""
