@@ -4067,6 +4067,108 @@ const LeadsManagement = ({ selectedUnit, units }) => {
         </div>
       )}
 
+      {/* Lead History Modal - Admin Only */}
+      {showLeadHistoryModal && selectedLead && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <h2 className="text-xl font-semibold flex items-center">
+                  <History className="w-5 h-5 mr-2 text-blue-600" />
+                  Cronologia Lead
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {selectedLead.nome} {selectedLead.cognome} - Tutte le modifiche
+                </p>
+              </div>
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setShowLeadHistoryModal(false);
+                  setLeadHistory([]);
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <Clock className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
+                    <p className="text-gray-600">Caricamento cronologia...</p>
+                  </div>
+                </div>
+              ) : leadHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <History className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-600 mb-2">
+                    Nessuna modifica registrata
+                  </h3>
+                  <p className="text-gray-500">
+                    Non ci sono ancora log di modifiche per questo lead
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-medium text-gray-900">
+                      {leadHistory.length} modifiche trovate
+                    </h3>
+                    <Badge variant="outline">
+                      Ordinamento: più recenti
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {leadHistory.map((entry, index) => (
+                      <div key={entry.id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-blue-500" />
+                              <span className="font-medium text-gray-900">
+                                ✏️ Modifica
+                              </span>
+                              <Badge variant="secondary" className="text-xs">
+                                {entry.username}
+                              </Badge>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              {Object.entries(entry.changes || {}).map(([field, change]) => (
+                                <div key={field} className="text-sm text-gray-500 bg-gray-100 rounded p-2">
+                                  <span className="font-medium text-gray-700">{field}</span>
+                                  <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-1">
+                                    <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs">
+                                      Prima: {change.old !== null && change.old !== undefined ? String(change.old).substring(0, 100) : 'vuoto'}
+                                    </span>
+                                    <span className="hidden sm:inline text-gray-400">→</span>
+                                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">
+                                      Dopo: {change.new !== null && change.new !== undefined ? String(change.new).substring(0, 100) : 'vuoto'}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <div className="text-right text-xs text-gray-500 ml-4">
+                            <div>{new Date(entry.timestamp).toLocaleDateString('it-IT')}</div>
+                            <div>{new Date(entry.timestamp).toLocaleTimeString('it-IT')}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Lead Modal */}
       {showCreateModal && (
         <CreateLeadModal
