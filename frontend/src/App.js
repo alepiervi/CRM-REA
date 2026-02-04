@@ -2591,7 +2591,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const [showFilters, setShowFilters] = useState(false); // Mobile: filters collapsed
   const [leadHistory, setLeadHistory] = useState([]); // NEW: Lead change history (admin only)
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [showHistory, setShowHistory] = useState(false); // Toggle history section
+  const [showLeadHistoryModal, setShowLeadHistoryModal] = useState(false); // Modal storico lead
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
