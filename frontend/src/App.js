@@ -7493,8 +7493,8 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
           )}
 
-          {/* RESPONSABILE STORE, RESPONSABILE PRESIDI e AREA MANAGER: Multi Sub Agenzie → Multi Commesse → Servizi separati per commessa */}
-          {(formData.role === "responsabile_store" || formData.role === "responsabile_presidi" || formData.role === "area_manager") && (
+          {/* RESPONSABILE STORE, RESPONSABILE PRESIDI, PROMOTER PRESIDI e AREA MANAGER: Multi Sub Agenzie → Multi Commesse → Servizi separati per commessa */}
+          {(formData.role === "responsabile_store" || formData.role === "responsabile_presidi" || formData.role === "promoter_presidi" || formData.role === "area_manager") && (
             <>
               <div className="col-span-2">
                 <Label>Sub Agenzie Autorizzate *</Label>
