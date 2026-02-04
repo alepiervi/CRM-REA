@@ -2734,7 +2734,6 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       assigned_agent_name: getAgentName(lead.assigned_agent_id)
     };
     setSelectedLead(leadWithAgentName);
-    setShowHistory(false); // Reset history view
     setLeadHistory([]); // Clear previous history
     
     // Carica gli status specifici per la unit del lead
@@ -2794,14 +2793,6 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     } finally {
       setLoadingHistory(false);
     }
-  };
-
-  // Toggle history section (lazy load)
-  const toggleLeadHistory = () => {
-    if (!showHistory && leadHistory.length === 0 && selectedLead) {
-      fetchLeadHistory(selectedLead.id);
-    }
-    setShowHistory(!showHistory);
   };
 
   // NEW: Save lead edits
