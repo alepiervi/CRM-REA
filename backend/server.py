@@ -458,6 +458,17 @@ class LeadStatusUpdate(BaseModel):
     colore: Optional[str] = None
     is_active: Optional[bool] = None
 
+# Lead History/Audit Log Model
+class LeadHistoryEntry(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    lead_id: str
+    user_id: str
+    username: str
+    action: str  # "create", "update", "assign", "status_change", etc.
+    changes: Dict[str, Any] = {}  # {field: {old: value, new: value}}
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    ip_address: Optional[str] = None
+
 class CustomField(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
