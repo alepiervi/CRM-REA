@@ -3144,18 +3144,30 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 <BarChart3 className="w-3 h-3 md:w-4 md:h-4 text-purple-500" />
                 Stato
               </Label>
-              <select
-                className="w-full h-9 border border-slate-200 rounded-lg px-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
-                value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              >
-                <option value="">Tutti</option>
-                {leadStatuses.map((status) => (
-                  <option key={status.id} value={status.nome}>
-                    {status.nome}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  className="w-full h-9 border border-slate-200 rounded-lg px-2 pl-8 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white appearance-none"
+                  value={filters.status}
+                  onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                >
+                  <option value="">Tutti</option>
+                  {leadStatuses.map((status) => (
+                    <option key={status.id} value={status.nome}>
+                      {status.nome}
+                    </option>
+                  ))}
+                </select>
+                {/* Color indicator */}
+                <div 
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border border-slate-300"
+                  style={{ 
+                    backgroundColor: filters.status 
+                      ? (leadStatuses.find(s => s.nome === filters.status)?.colore || '#6b7280')
+                      : '#e5e7eb'
+                  }}
+                />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Agente */}
