@@ -4039,9 +4039,66 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                   )}
                 </div>
               )}
+
+              {/* Storico Modifiche - Solo Admin */}
+              {user.role === "admin" && (
+                <div className="mt-6 border-t pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={toggleLeadHistory}
+                    className="w-full flex items-center justify-between"
+                  >
+                    <span className="flex items-center">
+                      <History className="w-4 h-4 mr-2" />
+                      Storico Modifiche
+                    </span>
+                    {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </Button>
+                  
+                  {showHistory && (
+                    <div className="mt-4 space-y-3 max-h-64 overflow-y-auto">
+                      {loadingHistory ? (
+                        <div className="flex justify-center py-4">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : leadHistory.length > 0 ? (
+                        leadHistory.map((entry, idx) => (
+                          <div key={entry.id || idx} className="bg-slate-50 rounded-lg p-3 text-sm border">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-slate-700">{entry.username}</span>
+                              <span className="text-xs text-slate-500">
+                                {new Date(entry.timestamp).toLocaleString('it-IT')}
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              {Object.entries(entry.changes || {}).map(([field, change]) => (
+                                <div key={field} className="flex flex-wrap items-center gap-1 text-xs">
+                                  <span className="font-medium text-slate-600">{field}:</span>
+                                  <span className="bg-red-100 text-red-700 px-1 rounded line-through">
+                                    {change.old !== null && change.old !== undefined ? String(change.old).substring(0, 50) : 'vuoto'}
+                                  </span>
+                                  <span className="text-slate-400">→</span>
+                                  <span className="bg-green-100 text-green-700 px-1 rounded">
+                                    {change.new !== null && change.new !== undefined ? String(change.new).substring(0, 50) : 'vuoto'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-4 text-slate-500">
+                          <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <p>Nessuna modifica registrata</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button onClick={() => { setSelectedLead(null); setIsEditingLead(false); }} variant="outline">
+              <Button onClick={() => { setSelectedLead(null); setIsEditingLead(false); setShowHistory(false); }} variant="outline">
                 Chiudi
               </Button>
               {isEditingLead && (
