@@ -2585,7 +2585,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const [leadEditData, setLeadEditData] = useState({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [customFields, setCustomFields] = useState([]);
-  const [leadStatuses, setLeadStatuses] = useState([]); // NEW: Dynamic statuses
+  const [leadStatuses, setLeadStatuses] = useState([]); // NEW: Dynamic statuses (filtered by unit)
+  const [allLeadStatusColors, setAllLeadStatusColors] = useState({}); // Map: nome -> colore (tutti gli stati)
   const [selectedLeadStatuses, setSelectedLeadStatuses] = useState([]); // Status per il lead selezionato (basato sulla sua unit)
   const [users, setUsers] = useState([]); // NEW: Users for agent names
   const [showFilters, setShowFilters] = useState(false); // Mobile: filters collapsed
