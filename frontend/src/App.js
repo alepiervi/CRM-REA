@@ -2588,6 +2588,9 @@ const LeadsManagement = ({ selectedUnit, units }) => {
   const [selectedLeadStatuses, setSelectedLeadStatuses] = useState([]); // Status per il lead selezionato (basato sulla sua unit)
   const [users, setUsers] = useState([]); // NEW: Users for agent names
   const [showFilters, setShowFilters] = useState(false); // Mobile: filters collapsed
+  const [leadHistory, setLeadHistory] = useState([]); // NEW: Lead change history (admin only)
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(false); // Toggle history section
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
