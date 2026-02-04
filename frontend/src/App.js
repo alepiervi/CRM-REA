@@ -8505,8 +8505,8 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
             </>
           )}
 
-          {/* RESPONSABILE STORE, RESPONSABILE PRESIDI e AREA MANAGER: Multi Sub Agenzie → Multi Commesse → Servizi separati per commessa - EDIT */}
-          {(formData.role === "responsabile_store" || formData.role === "responsabile_presidi" || formData.role === "area_manager") && (
+          {/* RESPONSABILE STORE, RESPONSABILE PRESIDI, PROMOTER PRESIDI e AREA MANAGER: Multi Sub Agenzie → Multi Commesse → Servizi separati per commessa - EDIT */}
+          {(formData.role === "responsabile_store" || formData.role === "responsabile_presidi" || formData.role === "promoter_presidi" || formData.role === "area_manager") && (
             <>
               <div className="col-span-2">
                 <Label>Sub Agenzie Autorizzate *</Label>
