@@ -2703,6 +2703,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       if (selectedUnit && selectedUnit !== "all") {
         params.append('unit_id', selectedUnit);
       }
+      params.append('include_used', 'true'); // Include anche esiti usati nei lead ma non configurati
       const response = await axios.get(`${API}/lead-status?${params}`);
       setLeadStatuses(response.data);
     } catch (error) {
