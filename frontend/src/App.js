@@ -2733,6 +2733,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       assigned_agent_name: getAgentName(lead.assigned_agent_id)
     };
     setSelectedLead(leadWithAgentName);
+    setShowHistory(false); // Reset history view
+    setLeadHistory([]); // Clear previous history
     
     // Carica gli status specifici per la unit del lead
     try {
@@ -2771,6 +2773,34 @@ const LeadsManagement = ({ selectedUnit, units }) => {
       custom_fields: lead.custom_fields || {}  // Campi personalizzati
     });
     setIsEditingLead(false);
+  };
+
+  // Fetch lead history (Admin only)
+  const fetchLeadHistory = async (leadId) => {
+    if (user.role !== "admin") return;
+    
+    setLoadingHistory(true);
+    try {
+      const response = await axios.get(`${API}/leads/${leadId}/history`);
+      setLeadHistory(response.data.history || []);
+    } catch (error) {
+      console.error("Error fetching lead history:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile caricare lo storico del lead",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  // Toggle history section (lazy load)
+  const toggleLeadHistory = () => {
+    if (!showHistory && leadHistory.length === 0 && selectedLead) {
+      fetchLeadHistory(selectedLead.id);
+    }
+    setShowHistory(!showHistory);
   };
 
   // NEW: Save lead edits
