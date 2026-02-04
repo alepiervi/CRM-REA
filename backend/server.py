@@ -5397,6 +5397,32 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
         {"$set": update_data}
     )
     
+    # LOG: Save lead history entry for all changes
+    changes_log = {}
+    for field, new_value in update_data.items():
+        old_value = lead.get(field)
+        # Only log if value actually changed
+        if old_value != new_value:
+            # Convert datetime objects to ISO strings for storage
+            if isinstance(old_value, datetime):
+                old_value = old_value.isoformat()
+            if isinstance(new_value, datetime):
+                new_value = new_value.isoformat()
+            changes_log[field] = {"old": old_value, "new": new_value}
+    
+    if changes_log:
+        history_entry = {
+            "id": str(uuid.uuid4()),
+            "lead_id": lead_id,
+            "user_id": current_user.id,
+            "username": current_user.username,
+            "action": "update",
+            "changes": changes_log,
+            "timestamp": datetime.now(timezone.utc)
+        }
+        await db["lead_history"].insert_one(history_entry)
+        logging.info(f"[LEAD_HISTORY] Logged changes for lead {lead_id} by user {current_user.username}")
+    
     updated_lead = await db["leads"].find_one({"id": lead_id})
     return Lead(**updated_lead)
 
