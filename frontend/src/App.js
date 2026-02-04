@@ -2618,6 +2618,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     fetchLeads(false, 1);
     fetchCustomFields();
     fetchLeadStatuses(); // NEW: Fetch dynamic statuses
+    fetchAllLeadStatusColors(); // Fetch ALL status colors for badge rendering
     fetchUsers(); // NEW: Fetch users for agent names
   }, [selectedUnit, filters]);
 
