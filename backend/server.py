@@ -5951,6 +5951,7 @@ async def create_lead_status(
 async def get_lead_statuses(
     unit_id: Optional[str] = None,
     show_all: bool = False,  # NEW: Se True, mostra tutti gli status (globali + per unit)
+    include_used: bool = False,  # NEW: Se True, include anche esiti usati nei lead ma non configurati
     current_user: User = Depends(get_current_user)
 ):
     """Get lead statuses - filtered by unit or all"""
@@ -5980,9 +5981,34 @@ async def get_lead_statuses(
         
         # Ensure _id is excluded and handle None values
         result = []
+        configured_names = set()
         for status in statuses:
             status_dict = {k: v for k, v in status.items() if k != "_id"}
             result.append(LeadStatusModel(**status_dict))
+            configured_names.add(status.get("nome", ""))
+        
+        # NEW: Include esiti actually used in leads but not configured
+        if include_used:
+            # Get unique esiti from leads
+            pipeline = [
+                {"$match": {"is_deleted": {"$ne": True}}},
+                {"$group": {"_id": "$esito"}},
+                {"$match": {"_id": {"$ne": None, "$ne": ""}}}
+            ]
+            unique_esiti = await db["leads"].aggregate(pipeline).to_list(length=None)
+            
+            for item in unique_esiti:
+                esito_name = item["_id"]
+                if esito_name and esito_name not in configured_names:
+                    # Create a virtual status for this esito
+                    result.append(LeadStatusModel(
+                        id=f"auto_{esito_name}",
+                        nome=esito_name,
+                        ordine=999,
+                        colore="#6b7280",  # Gray color for unconfigured
+                        is_active=True,
+                        unit_id=None
+                    ))
         
         return result
         
