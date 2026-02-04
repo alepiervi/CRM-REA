@@ -8608,8 +8608,8 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
             </>
           )}
 
-          {/* STORE ASSISTANT e PROMOTER PRESIDI: Singola Sub Agenzia → Multi Commesse → Servizi separati per commessa - EDIT */}
-          {(formData.role === "store_assist" || formData.role === "promoter_presidi") && (
+          {/* STORE ASSISTANT: Singola Sub Agenzia → Multi Commesse → Servizi separati per commessa - EDIT */}
+          {(formData.role === "store_assist") && (
             <>
               <div>
                 <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
