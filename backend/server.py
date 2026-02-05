@@ -20312,8 +20312,8 @@ async def get_cascade_sub_agenzie(
                 
             sub_agenzie_docs = await db.sub_agenzie.find(query).to_list(length=None)
             
-        elif current_user.role in ["area_manager", "responsabile_presidi"]:
-            # Area Manager & Responsabile Presidi: see multiple assigned sub agenzie
+        elif current_user.role in ["area_manager", "responsabile_presidi", "promoter_presidi", "responsabile_store"]:
+            # Area Manager, Responsabile Presidi, Promoter Presidi, Responsabile Store: see multiple assigned sub agenzie
             user_sub_agenzie = getattr(current_user, 'sub_agenzie_autorizzate', [])
             if not user_sub_agenzie:
                 logging.info(f"📭 CASCADE: No sub_agenzie_autorizzate for {current_user.role}, returning empty")
@@ -20324,7 +20324,7 @@ async def get_cascade_sub_agenzie(
                 "id": {"$in": user_sub_agenzie},
                 "is_active": True
             }
-            # NO servizi_autorizzati filter for Area Manager & Responsabile Presidi
+            # NO servizi_autorizzati filter for these roles
             # They should see ALL their authorized sub agenzie regardless of services
             # The filtering will happen in subsequent cascade steps (commesse, servizi)
             
