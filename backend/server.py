@@ -20520,7 +20520,7 @@ async def get_servizi_by_sub_agenzia(
     commessa_id: Optional[str] = None,  # NEW: Optional commessa filter
     current_user: User = Depends(get_current_user)
 ):
-    """Get servizi autorizzati for a specific sub agenzia, optionally filtered by commessa"""
+    """Get servizi autorizzati for a specific sub agenzia, optionally filtered by commessa AND user authorization"""
     try:
         logging.info(f"🔍 CASCADE: Searching servizi for sub_agenzia ID: {sub_agenzia_id}, commessa_id: {commessa_id}")
         
@@ -20533,16 +20533,38 @@ async def get_servizi_by_sub_agenzia(
         logging.info(f"✅ CASCADE: Sub agenzia found: {sub_agenzia.get('nome')}")
         
         # Get servizi_autorizzati from sub_agenzia
-        servizi_autorizzati = sub_agenzia.get("servizi_autorizzati", [])
-        logging.info(f"🔒 CASCADE: Sub agenzia servizi_autorizzati: {servizi_autorizzati}")
+        sub_agenzia_servizi = sub_agenzia.get("servizi_autorizzati", [])
+        logging.info(f"🔒 CASCADE: Sub agenzia servizi_autorizzati: {sub_agenzia_servizi}")
         
-        if not servizi_autorizzati:
+        if not sub_agenzia_servizi:
             logging.info("📭 CASCADE: No servizi autorizzati for sub agenzia, returning empty")
             return []
         
+        # FILTER BY USER'S servizi_autorizzati (except for admin)
+        if current_user.role == "admin":
+            # Admin sees all servizi of the sub agenzia
+            servizi_ids_to_show = sub_agenzia_servizi
+            logging.info(f"👑 CASCADE: Admin user - showing all {len(servizi_ids_to_show)} servizi from sub agenzia")
+        else:
+            # Non-admin: intersect sub_agenzia servizi with user's servizi_autorizzati
+            user_servizi = current_user.servizi_autorizzati or []
+            logging.info(f"🔒 CASCADE: User {current_user.username} ({current_user.role}) servizi_autorizzati: {user_servizi}")
+            
+            if not user_servizi:
+                logging.info("📭 CASCADE: User has no servizi_autorizzati, returning empty")
+                return []
+            
+            # Intersection: servizi that are both in sub_agenzia AND user's authorized list
+            servizi_ids_to_show = list(set(sub_agenzia_servizi) & set(user_servizi))
+            logging.info(f"🔀 CASCADE: Intersection result: {len(servizi_ids_to_show)} servizi (sub_agenzia: {len(sub_agenzia_servizi)}, user: {len(user_servizi)})")
+            
+            if not servizi_ids_to_show:
+                logging.info("📭 CASCADE: No common servizi between sub_agenzia and user, returning empty")
+                return []
+        
         # Build query filter
         query_filter = {
-            "id": {"$in": servizi_autorizzati},
+            "id": {"$in": servizi_ids_to_show},
             "is_active": True
         }
         
@@ -20554,7 +20576,7 @@ async def get_servizi_by_sub_agenzia(
         # Find servizi that match all filters
         servizi_docs = await db.servizi.find(query_filter).to_list(length=None)
         
-        logging.info(f"📊 CASCADE: Found {len(servizi_docs)} authorized servizi (sub agenzia + commessa filter)")
+        logging.info(f"📊 CASCADE: Found {len(servizi_docs)} authorized servizi (sub agenzia + user + commessa filter)")
         
         # Convert to JSON serializable format
         servizi = []
