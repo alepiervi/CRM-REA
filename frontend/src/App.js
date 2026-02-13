@@ -7113,10 +7113,6 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                 console.log("🎯 Role selector onChange:", value);
                 setFormData({ ...formData, role: value });
                 console.log("🎯 FormData after role change:", { ...formData, role: value });
-                // Load all referenti when Super Referente is selected
-                if (value === 'super_referente' && fetchAllReferenti) {
-                  fetchAllReferenti();
-                }
               }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona ruolo" />
