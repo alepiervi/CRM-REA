@@ -6360,6 +6360,17 @@ const UsersManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  // Fetch ALL referenti (for Super Referente role)
+  const fetchAllReferenti = async () => {
+    try {
+      const response = await axios.get(`${API}/users`);
+      const allReferenti = response.data.filter(u => u.role === 'referente');
+      setReferenti(allReferenti);
+    } catch (error) {
+      console.error("Error fetching all referenti:", error);
+    }
+  };
+
   const fetchCommesse = async () => {
     try {
       console.log("🔄 Fetching commesse from backend...");
