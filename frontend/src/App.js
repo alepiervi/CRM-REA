@@ -7101,6 +7101,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                     <>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="supervisor">Supervisor</SelectItem>
+                      <SelectItem value="super_referente">Super Referente</SelectItem>
                       <SelectItem value="referente">Referente</SelectItem>
                       <SelectItem value="agente">Agente</SelectItem>
                       <SelectItem value="responsabile_commessa">Responsabile Commessa</SelectItem>
@@ -8159,6 +8160,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                     <>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="supervisor">Supervisor</SelectItem>
+                      <SelectItem value="super_referente">Super Referente</SelectItem>
                       <SelectItem value="referente">Referente</SelectItem>
                       <SelectItem value="agente">Agente</SelectItem>
                       <SelectItem value="responsabile_commessa">Responsabile Commessa</SelectItem>
