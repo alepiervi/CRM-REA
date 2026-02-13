@@ -3,11 +3,15 @@
 ## Original Problem Statement
 Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati con integrazione WhatsApp e notifiche email.
 
-## Current State (Dicembre 2025)
+## Current State (Febbraio 2026)
 
-### ✅ Completato in questa sessione (Fork attuale)
-- **Fix Pivot Analytics Segmenti**: Corretto bug che mostrava UUID invece dei nomi dei segmenti. La logica ora cerca nella collezione `db.segmenti` invece di cercare dentro `tipologie_contratto`
-- **Frontend Build**: Verificato che `yarn build` funziona correttamente (36 secondi, nessun errore)
+### ✅ Completato in questa sessione (13 Febbraio 2026)
+- **Verifica Notifiche Email Super Referente**: Confermato che la logica per le notifiche email ai Super Referenti per lead stagnanti (>7 giorni con stato "Lead Interessato") è completa e funzionante. Il sistema:
+  - Controlla ogni ora i lead non lavorati
+  - A 3+ giorni: notifica all'Agente
+  - A 7+ giorni: notifica all'Agente + Referente + Super Referente (se esiste)
+  - Endpoint admin manuale: `POST /api/admin/send-lead-reminders`
+- **Nota**: Le email non vengono inviate per problemi di blacklist IP su Aruba SMTP (problema infrastrutturale, non del codice)
 
 ### ✅ Completato in sessioni precedenti
 - **Fix Email Notifica Lead**: Corretto errore `uuid4()` → `uuid.uuid4()` che bloccava le notifiche
