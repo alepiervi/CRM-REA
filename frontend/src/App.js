@@ -6718,6 +6718,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
   });
   
   const [isLoading, setIsLoading] = useState(false);
+  const [referentiUnit, setReferentiUnit] = useState([]); // Referenti filtered by selected unit (for Super Referente)
   const [servizi, setServizi] = useState([]);
   const [serviziDisponibili, setServiziDisponibili] = useState([]); // NEW: Servizi per UNIT/SUB selezionata
   const [serviziPerCommessa, setServiziPerCommessa] = useState({}); // NEW: Servizi organizzati per commessa per responsabile_commessa
