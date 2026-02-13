@@ -173,6 +173,7 @@ PROVINCE_TO_CODE = {
 class UserRole(str, Enum):
     ADMIN = "admin"
     SUPERVISOR = "supervisor"  # NEW: Supervisor per Unit - gestisce lead della sua Unit
+    SUPER_REFERENTE = "super_referente"  # NEW: Vede multipli referenti e tutta la loro rete
     REFERENTE = "referente"
     AGENTE = "agente"
     # Nuovi ruoli specializzati per commesse e sub agenzie
