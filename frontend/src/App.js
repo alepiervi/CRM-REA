@@ -7241,46 +7241,86 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
           )}
 
-          {/* SUPER REFERENTE: Selezione Referenti Multiple */}
+          {/* SUPER REFERENTE: Prima Unit, poi Referenti di quella Unit */}
           {formData.role === "super_referente" && (
-            <div className="col-span-2">
-              <Label>Referenti Autorizzati *</Label>
-              <p className="text-sm text-slate-500 mb-2">Seleziona i Referenti che il Super Referente potrà gestire (vedrà anche tutti gli agenti associati)</p>
-              <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {referenti.filter(r => r.role === "referente").map((referente) => (
-                    <div key={referente.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`super-ref-${referente.id}`}
-                        checked={formData.referenti_autorizzati && formData.referenti_autorizzati.includes(referente.id)}
-                        onCheckedChange={(checked) => {
-                          const currentReferenti = formData.referenti_autorizzati || [];
-                          if (checked) {
-                            setFormData(prev => ({ 
-                              ...prev, 
-                              referenti_autorizzati: [...currentReferenti, referente.id]
-                            }));
-                          } else {
-                            setFormData(prev => ({ 
-                              ...prev, 
-                              referenti_autorizzati: currentReferenti.filter(id => id !== referente.id)
-                            }));
-                          }
-                        }}
-                      />
-                      <Label htmlFor={`super-ref-${referente.id}`} className="text-sm font-normal cursor-pointer">
-                        {referente.username} {referente.email ? `(${referente.email})` : ''}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
+            <>
+              <div>
+                <Label>Unit *</Label>
+                <Select 
+                  value={formData.unit_id} 
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, unit_id: value, referenti_autorizzati: [] }));
+                    // Fetch referenti for selected unit
+                    if (value) {
+                      axios.get(`${API}/users/referenti/${value}`).then(res => {
+                        setReferentiUnit(res.data);
+                      }).catch(err => {
+                        console.error("Error fetching referenti for unit:", err);
+                        setReferentiUnit([]);
+                      });
+                    } else {
+                      setReferentiUnit([]);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona Unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {units.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.nome || unit.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              {formData.referenti_autorizzati && formData.referenti_autorizzati.length > 0 && (
-                <p className="text-sm text-green-600 mt-2">
-                  ✓ {formData.referenti_autorizzati.length} Referenti selezionati
-                </p>
+
+              {formData.unit_id && (
+                <div className="col-span-2">
+                  <Label>Referenti Autorizzati *</Label>
+                  <p className="text-sm text-slate-500 mb-2">Seleziona i Referenti che il Super Referente potrà gestire (vedrà anche tutti gli agenti associati)</p>
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                    {referentiUnit.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {referentiUnit.map((referente) => (
+                          <div key={referente.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`super-ref-${referente.id}`}
+                              checked={formData.referenti_autorizzati && formData.referenti_autorizzati.includes(referente.id)}
+                              onCheckedChange={(checked) => {
+                                const currentReferenti = formData.referenti_autorizzati || [];
+                                if (checked) {
+                                  setFormData(prev => ({ 
+                                    ...prev, 
+                                    referenti_autorizzati: [...currentReferenti, referente.id]
+                                  }));
+                                } else {
+                                  setFormData(prev => ({ 
+                                    ...prev, 
+                                    referenti_autorizzati: currentReferenti.filter(id => id !== referente.id)
+                                  }));
+                                }
+                              }}
+                            />
+                            <Label htmlFor={`super-ref-${referente.id}`} className="text-sm font-normal cursor-pointer">
+                              {referente.username} {referente.email ? `(${referente.email})` : ''}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 text-center py-4">Nessun referente trovato per questa Unit</p>
+                    )}
+                  </div>
+                  {formData.referenti_autorizzati && formData.referenti_autorizzati.length > 0 && (
+                    <p className="text-sm text-green-600 mt-2">
+                      ✓ {formData.referenti_autorizzati.length} Referenti selezionati
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
+            </>
           )}
 
           {/* AGENTE e REFERENTE: Campo Unit → Servizi */}
