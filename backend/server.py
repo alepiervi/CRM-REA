@@ -237,6 +237,7 @@ class User(BaseModel):
     referente_id: Optional[str] = None  # For agents only
     provinces: List[str] = []  # For agents - provinces they cover
     unit_autorizzate: List[str] = []  # NEW: For agents - units they can receive leads from
+    referenti_autorizzati: List[str] = []  # NEW: For Super Referente - referenti they can manage
     # Nuovi campi per gestione autorizzazioni specializzate
     commesse_autorizzate: List[str] = []  # IDs commesse per responsabile/backoffice commessa
     servizi_autorizzati: List[str] = []   # IDs servizi specifici per la commessa
@@ -258,6 +259,7 @@ class UserCreate(BaseModel):
     referente_id: Optional[str] = None
     provinces: List[str] = []
     unit_autorizzate: List[str] = []  # NEW: Units agent can receive leads from
+    referenti_autorizzati: List[str] = []  # NEW: For Super Referente
     # Nuovi campi per autorizzazioni specializzate
     commesse_autorizzate: List[str] = []
     servizi_autorizzati: List[str] = []
