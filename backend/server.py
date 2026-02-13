@@ -4231,6 +4231,25 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
         # Admin can see all users, optionally filtered by unit
         if unit_id:
             query["unit_id"] = unit_id
+    elif current_user.role == UserRole.SUPER_REFERENTE:
+        # Super Referente can see their authorized referenti and all agents under those referenti
+        referenti_ids = current_user.referenti_autorizzati or []
+        if not referenti_ids:
+            query = {"id": current_user.id}  # Only themselves if no referenti assigned
+        else:
+            # Get all agents under these referenti
+            agents_under_referenti = await db.users.find({
+                "referente_id": {"$in": referenti_ids},
+                "is_active": True
+            }).to_list(length=None)
+            agent_ids = [a["id"] for a in agents_under_referenti]
+            
+            # Can see: themselves, their referenti, and agents under those referenti
+            all_ids = [current_user.id] + referenti_ids + agent_ids
+            query = {
+                "is_active": True,
+                "id": {"$in": all_ids}
+            }
     elif current_user.role == UserRole.REFERENTE:
         # Referente can see their agents in their unit
         query = {
