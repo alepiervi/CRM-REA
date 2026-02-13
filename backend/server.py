@@ -13465,7 +13465,7 @@ async def get_clienti(
         # Use separate field name to avoid conflict with main commessa_id parameter
         query["commessa_id"] = commessa_id_filter
     
-    # NEW: Search filter (name, email, phone, codice_fiscale)
+    # NEW: Search filter (name, email, phone, codice_fiscale, partita_iva)
     if search and search.strip():
         search_term = search.strip()
         search_regex = {"$regex": search_term, "$options": "i"}
@@ -13477,7 +13477,8 @@ async def get_clienti(
                 {"ragione_sociale": search_regex},
                 {"email": search_regex},
                 {"telefono": search_regex},
-                {"codice_fiscale": search_regex}
+                {"codice_fiscale": search_regex},
+                {"partita_iva": search_regex}
             ]
         }
         
