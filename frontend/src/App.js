@@ -7217,6 +7217,48 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
           )}
 
+          {/* SUPER REFERENTE: Selezione Referenti Multiple */}
+          {formData.role === "super_referente" && (
+            <div className="col-span-2">
+              <Label>Referenti Autorizzati *</Label>
+              <p className="text-sm text-slate-500 mb-2">Seleziona i Referenti che il Super Referente potrà gestire (vedrà anche tutti gli agenti associati)</p>
+              <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {userReferenti.filter(r => r.role === "referente").map((referente) => (
+                    <div key={referente.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`super-ref-${referente.id}`}
+                        checked={formData.referenti_autorizzati && formData.referenti_autorizzati.includes(referente.id)}
+                        onCheckedChange={(checked) => {
+                          const currentReferenti = formData.referenti_autorizzati || [];
+                          if (checked) {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              referenti_autorizzati: [...currentReferenti, referente.id]
+                            }));
+                          } else {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              referenti_autorizzati: currentReferenti.filter(id => id !== referente.id)
+                            }));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`super-ref-${referente.id}`} className="text-sm font-normal cursor-pointer">
+                        {referente.username} {referente.email ? `(${referente.email})` : ''}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {formData.referenti_autorizzati && formData.referenti_autorizzati.length > 0 && (
+                <p className="text-sm text-green-600 mt-2">
+                  ✓ {formData.referenti_autorizzati.length} Referenti selezionati
+                </p>
+              )}
+            </div>
+          )}
+
           {/* AGENTE e REFERENTE: Campo Unit → Servizi */}
           {(formData.role === "agente" || formData.role === "referente") && (
             <div>
