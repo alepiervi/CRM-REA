@@ -18364,6 +18364,382 @@ const ReferenteAnalyticsView = () => {
   );
 };
 
+// Super Referente Analytics View Component - Shows all referenti and their agents network
+const SuperReferenteAnalyticsView = () => {
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [selectedReferenteId, setSelectedReferenteId] = useState('');
+  const [referentiList, setReferentiList] = useState([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // Fetch list of authorized referenti
+  const fetchReferentiList = async () => {
+    try {
+      const response = await axios.get(`${API}/users`);
+      // Filter to only show referenti that are in referenti_autorizzati
+      const authorizedReferenti = user.referenti_autorizzati || [];
+      const referenti = response.data.filter(u => 
+        u.role === 'referente' && authorizedReferenti.includes(u.id)
+      );
+      setReferentiList(referenti);
+    } catch (error) {
+      console.error("Error fetching referenti list:", error);
+    }
+  };
+
+  // Fetch analytics for a specific referente or all
+  const fetchAnalytics = async (referenteId = null) => {
+    try {
+      setLoading(true);
+      
+      if (referenteId) {
+        // Fetch specific referente analytics
+        let url = `${API}/analytics/referente/${referenteId}`;
+        const params = new URLSearchParams();
+        if (dateFrom) params.append('date_from', dateFrom);
+        if (dateTo) params.append('date_to', dateTo);
+        if (params.toString()) url += `?${params.toString()}`;
+        
+        const response = await axios.get(url);
+        setAnalytics({ type: 'single', data: response.data });
+      } else {
+        // Fetch aggregated analytics for all authorized referenti
+        const authorizedReferenti = user.referenti_autorizzati || [];
+        if (authorizedReferenti.length === 0) {
+          setAnalytics({ type: 'empty', data: null });
+          return;
+        }
+        
+        // Fetch analytics for each referente
+        const allAnalytics = await Promise.all(
+          authorizedReferenti.map(async (refId) => {
+            try {
+              let url = `${API}/analytics/referente/${refId}`;
+              const params = new URLSearchParams();
+              if (dateFrom) params.append('date_from', dateFrom);
+              if (dateTo) params.append('date_to', dateTo);
+              if (params.toString()) url += `?${params.toString()}`;
+              
+              const response = await axios.get(url);
+              return response.data;
+            } catch (error) {
+              console.error(`Error fetching analytics for referente ${refId}:`, error);
+              return null;
+            }
+          })
+        );
+        
+        // Aggregate data
+        const validAnalytics = allAnalytics.filter(a => a !== null);
+        const aggregated = {
+          total_leads: 0,
+          contacted_leads: 0,
+          referenti: [],
+          all_agents: [],
+          outcomes: {}
+        };
+        
+        validAnalytics.forEach(refData => {
+          aggregated.total_leads += refData.total_stats?.total_leads || 0;
+          aggregated.contacted_leads += refData.total_stats?.contacted_leads || 0;
+          aggregated.referenti.push(refData.referente);
+          
+          // Add agents
+          if (refData.agent_breakdown) {
+            refData.agent_breakdown.forEach(agentData => {
+              aggregated.all_agents.push({
+                ...agentData,
+                referente_username: refData.referente?.username
+              });
+              
+              // Aggregate outcomes
+              if (agentData.outcomes) {
+                Object.entries(agentData.outcomes).forEach(([esito, count]) => {
+                  aggregated.outcomes[esito] = (aggregated.outcomes[esito] || 0) + count;
+                });
+              }
+            });
+          }
+        });
+        
+        setAnalytics({ type: 'aggregated', data: aggregated });
+      }
+    } catch (error) {
+      console.error("Error fetching super referente analytics:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Impossibile caricare le analytics",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReferentiList();
+    fetchAnalytics();
+  }, []);
+
+  useEffect(() => {
+    fetchAnalytics(selectedReferenteId || null);
+  }, [selectedReferenteId, dateFrom, dateTo]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <Users className="w-8 h-8" />
+            <div>
+              <h2 className="text-2xl font-bold">Analytics Rete</h2>
+              <p className="text-indigo-100">Statistiche dei tuoi Referenti e Agenti</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            <select
+              value={selectedReferenteId}
+              onChange={(e) => setSelectedReferenteId(e.target.value)}
+              className="bg-white/20 border-white/30 text-white rounded-md px-3 py-2 text-sm"
+            >
+              <option value="">Tutti i Referenti</option>
+              {referentiList.map(ref => (
+                <option key={ref.id} value={ref.id}>{ref.username}</option>
+              ))}
+            </select>
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="bg-white/20 border-white/30 text-white placeholder:text-white/70 w-40"
+            />
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="bg-white/20 border-white/30 text-white placeholder:text-white/70 w-40"
+            />
+            <Button onClick={() => fetchAnalytics(selectedReferenteId || null)} variant="secondary" size="sm">
+              <RefreshCw className="w-4 h-4 mr-1" /> Aggiorna
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-600 font-medium">Referenti</p>
+                <p className="text-3xl font-bold text-blue-700">
+                  {analytics?.type === 'aggregated' ? analytics.data?.referenti?.length || 0 : 1}
+                </p>
+              </div>
+              <Users className="w-10 h-10 text-blue-400" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-green-600 font-medium">Agenti Totali</p>
+                <p className="text-3xl font-bold text-green-700">
+                  {analytics?.type === 'aggregated' 
+                    ? analytics.data?.all_agents?.length || 0 
+                    : analytics?.data?.agent_breakdown?.length || 0}
+                </p>
+              </div>
+              <User className="w-10 h-10 text-green-400" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-purple-600 font-medium">Totale Lead</p>
+                <p className="text-3xl font-bold text-purple-700">
+                  {analytics?.type === 'aggregated' 
+                    ? analytics.data?.total_leads || 0 
+                    : analytics?.data?.total_stats?.total_leads || 0}
+                </p>
+              </div>
+              <Phone className="w-10 h-10 text-purple-400" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-orange-600 font-medium">Contattati</p>
+                <p className="text-3xl font-bold text-orange-700">
+                  {analytics?.type === 'aggregated' 
+                    ? analytics.data?.contacted_leads || 0 
+                    : analytics?.data?.total_stats?.contacted_leads || 0}
+                </p>
+              </div>
+              <CheckCircle className="w-10 h-10 text-orange-400" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Totale Esiti */}
+      {analytics?.data?.outcomes && Object.keys(analytics.data.outcomes).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Totale Esiti Lead
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {Object.entries(analytics.data.outcomes).sort((a, b) => b[1] - a[1]).map(([esito, count]) => (
+                <div key={esito} className="bg-slate-50 rounded-lg p-3 text-center border">
+                  <p className="text-2xl font-bold text-slate-700">{count}</p>
+                  <p className="text-xs text-slate-500 truncate" title={esito}>{esito || 'Non impostato'}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pivot Table - Agenti x Esiti */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Pivot Agenti per Esito
+          </CardTitle>
+          <p className="text-sm text-slate-500">Dettaglio esiti per ogni agente nella rete</p>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const agents = analytics?.type === 'aggregated' 
+              ? analytics.data?.all_agents || []
+              : analytics?.data?.agent_breakdown || [];
+            
+            if (agents.length === 0) {
+              return (
+                <div className="text-center py-8 text-slate-500">
+                  <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Nessun agente trovato</p>
+                </div>
+              );
+            }
+            
+            // Collect all unique esiti
+            const allEsiti = new Set();
+            agents.forEach(agentData => {
+              if (agentData.outcomes) {
+                Object.keys(agentData.outcomes).forEach(e => allEsiti.add(e));
+              }
+            });
+            const esitiArray = Array.from(allEsiti).sort();
+            
+            // Calculate totals
+            const esitoTotals = {};
+            esitiArray.forEach(e => {
+              esitoTotals[e] = agents.reduce((sum, agentData) => 
+                sum + (agentData.outcomes?.[e] || 0), 0);
+            });
+            
+            return (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50">
+                      <TableHead className="font-bold">Agente</TableHead>
+                      {analytics?.type === 'aggregated' && (
+                        <TableHead className="font-bold">Referente</TableHead>
+                      )}
+                      <TableHead className="text-center font-bold">Totale</TableHead>
+                      {esitiArray.map(esito => (
+                        <TableHead key={esito} className="text-center text-xs">
+                          {esito || 'N/A'}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {agents.map((agentData, idx) => (
+                      <TableRow key={agentData.agent?.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                        <TableCell className="font-medium">
+                          {agentData.agent?.username || agentData.username || 'N/A'}
+                        </TableCell>
+                        {analytics?.type === 'aggregated' && (
+                          <TableCell className="text-sm text-slate-500">
+                            {agentData.referente_username || 'N/A'}
+                          </TableCell>
+                        )}
+                        <TableCell className="text-center font-bold text-blue-600">
+                          {agentData.total_leads || 0}
+                        </TableCell>
+                        {esitiArray.map(esito => (
+                          <TableCell key={esito} className="text-center">
+                            {agentData.outcomes?.[esito] ? (
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                esito === 'Nuovo' ? 'bg-gray-100 text-gray-600' :
+                                ['Interessato', 'Venduto', 'Completato', 'Appuntamento', 'Lead Interessato'].includes(esito) 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : ['Non Interessato', 'KO', 'Non Risponde'].includes(esito)
+                                  ? 'bg-red-100 text-red-600'
+                                  : 'bg-blue-100 text-blue-600'
+                              }`}>
+                                {agentData.outcomes[esito]}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                    {/* Riga Totali */}
+                    <TableRow className="bg-slate-100 font-bold border-t-2">
+                      <TableCell className="font-bold">TOTALE</TableCell>
+                      {analytics?.type === 'aggregated' && <TableCell />}
+                      <TableCell className="text-center font-bold text-blue-700">
+                        {agents.reduce((sum, a) => sum + (a.total_leads || 0), 0)}
+                      </TableCell>
+                      {esitiArray.map(esito => (
+                        <TableCell key={esito} className="text-center font-bold">
+                          {esitoTotals[esito] || 0}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 // Supervisor Analytics Component
 const SupervisorAnalytics = () => {
   const [analytics, setAnalytics] = useState(null);
