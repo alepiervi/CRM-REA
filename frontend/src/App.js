@@ -2036,6 +2036,8 @@ const Dashboard = () => {
           return <div className="p-8 text-center text-slate-600">Non autorizzato ad accedere alla sezione Analytics</div>;
         case "supervisor-analytics":
           return user.role === "supervisor" ? <SupervisorAnalytics /> : <div className="p-8 text-center text-slate-600">Solo i Supervisor possono accedere a questa sezione</div>;
+        case "super-referente-analytics":
+          return user.role === "super_referente" ? <SuperReferenteAnalyticsView /> : <div className="p-8 text-center text-slate-600">Solo i Super Referente possono accedere a questa sezione</div>;
         default:
           return <DashboardStats selectedUnit={selectedUnit} />;
       }
