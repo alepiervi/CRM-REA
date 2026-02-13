@@ -6670,7 +6670,6 @@ const UsersManagement = ({ selectedUnit, units }) => {
           commesse={commesse}
           subAgenzie={subAgenzie}
           fetchServizi={fetchServizi}
-          fetchAllReferenti={fetchAllReferenti}
         />
       )}
 
