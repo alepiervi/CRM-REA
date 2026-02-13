@@ -8,7 +8,7 @@ import json
 import sys
 
 class ALE8FilterTester:
-    def __init__(self, base_url="https://lead-manager-56.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://referente-oversight.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
@@ -41,7 +41,7 @@ class ALE8FilterTester:
         """🚨 ANALISI DETTAGLIATA PROBLEMA FILTRO UTENTI PER ale8"""
         print("\n🚨 ANALISI DETTAGLIATA PROBLEMA FILTRO UTENTI PER ale8")
         print("🎯 SETUP:")
-        print("   • Backend: https://lead-manager-56.preview.emergentagent.com")
+        print("   • Backend: https://referente-oversight.preview.emergentagent.com")
         print("   • User: ale8/admin123")
         print("")
         print("🎯 PROBLEMA CRITICO:")

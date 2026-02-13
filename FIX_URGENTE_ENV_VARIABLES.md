@@ -32,14 +32,14 @@ Deployment su Emergent ha environment variables che SOVRASCRIVONO il codice:
 **REACT_APP_BACKEND_URL**:
 ```
 VECCHIO: https://mobil-analytics-1.emergent.host
-NUOVO:   https://lead-manager-56.preview.emergentagent.com
+NUOVO:   https://referente-oversight.preview.emergentagent.com
 ```
 
 #### Backend Variables:
 
 **CORS_ORIGINS**:
 ```
-VALORE: https://nureal.it,https://www.nureal.it,https://lead-manager-56.preview.emergentagent.com
+VALORE: https://nureal.it,https://www.nureal.it,https://referente-oversight.preview.emergentagent.com
 ```
 
 **DB_NAME**:
@@ -72,8 +72,8 @@ Cmd + Shift + R (Mac)
 
 **Console (F12) deve mostrare**:
 ```
-✅ Backend URL configured: https://lead-manager-56.preview.emergentagent.com
-✅ API endpoint: https://lead-manager-56.preview.emergentagent.com/api
+✅ Backend URL configured: https://referente-oversight.preview.emergentagent.com
+✅ API endpoint: https://referente-oversight.preview.emergentagent.com/api
 ```
 
 ## 📊 CONFIGURAZIONE CORRETTA COMPLETA
@@ -82,7 +82,7 @@ Cmd + Shift + R (Mac)
 
 ```bash
 # Deployment nureal.it
-REACT_APP_BACKEND_URL=https://lead-manager-56.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://referente-oversight.preview.emergentagent.com
 WDS_SOCKET_PORT=443
 ```
 
@@ -94,7 +94,7 @@ MONGO_URL=mongodb://localhost:27017
 DB_NAME=mobil-analytics-1-crm_database
 
 # CORS - CRITICO!
-CORS_ORIGINS=https://nureal.it,https://www.nureal.it,https://lead-manager-56.preview.emergentagent.com
+CORS_ORIGINS=https://nureal.it,https://www.nureal.it,https://referente-oversight.preview.emergentagent.com
 
 # Security
 SECRET_KEY=crm-secret-key-change-in-production
@@ -265,7 +265,7 @@ Se hai difficoltà a modificare le environment variables:
 **WORKAROUND IMMEDIATO** (mentre aspetti deploy):
 ```
 Usa preview environment:
-https://lead-manager-56.preview.emergentagent.com
+https://referente-oversight.preview.emergentagent.com
 Login: admin / admin123
 
 Questo funziona SUBITO!

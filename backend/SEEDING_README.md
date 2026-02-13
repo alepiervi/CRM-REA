@@ -41,7 +41,7 @@ python seed_database.py
 
 Dopo l'esecuzione dello script:
 
-1. Vai su: `https://lead-manager-56.preview.emergentagent.com`
+1. Vai su: `https://referente-oversight.preview.emergentagent.com`
 2. Accedi con:
    - **Username**: `admin`
    - **Password**: `admin123`

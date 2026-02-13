@@ -8,7 +8,7 @@ import sys
 import json
 
 class SubAgenziaFilterTester:
-    def __init__(self, base_url="https://lead-manager-56.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://referente-oversight.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
@@ -262,7 +262,7 @@ class SubAgenziaFilterTester:
 
 if __name__ == "__main__":
     print("🚀 Starting Sub Agenzia Filter Fix Testing...")
-    print(f"🌐 Base URL: https://lead-manager-56.preview.emergentagent.com/api")
+    print(f"🌐 Base URL: https://referente-oversight.preview.emergentagent.com/api")
     print("=" * 80)
     
     tester = SubAgenziaFilterTester()
