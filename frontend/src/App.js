@@ -6695,7 +6695,7 @@ const UsersManagement = ({ selectedUnit, units }) => {
 };
 
 // Enhanced Create User Modal Component with Referenti
-const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, selectedUnit, commesse, subAgenzie, fetchServizi, fetchAllReferenti }) => {
+const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, selectedUnit, commesse, subAgenzie, fetchServizi }) => {
   const { user: currentUser } = useAuth(); // Get current logged-in user
   
   const [formData, setFormData] = useState({
