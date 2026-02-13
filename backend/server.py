@@ -8238,6 +8238,41 @@ async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User 
         if current_user.unit_id:
             unit_info = await db.units.find_one({"id": current_user.unit_id})
             stats["unit_name"] = unit_info.get("nome", unit_info.get("name", "Unknown Unit")) if unit_info else "Unknown Unit"
+    
+    elif current_user.role == UserRole.SUPER_REFERENTE:
+        # Super Referente: vede stats di tutti i referenti autorizzati e loro agenti
+        referenti_ids = current_user.referenti_autorizzati or []
+        
+        if referenti_ids:
+            # Get all agents under these referenti
+            agents = await db.users.find({
+                "referente_id": {"$in": referenti_ids},
+                "is_active": True
+            }).to_list(length=None)
+            agent_ids = [agent["id"] for agent in agents]
+            
+            # All IDs: super referente + referenti + agents
+            all_ids = [current_user.id] + referenti_ids + agent_ids
+            
+            lead_query = {"assigned_agent_id": {"$in": all_ids}}
+            
+            stats["total_referenti"] = len(referenti_ids)
+            stats["total_agents"] = len(agent_ids)
+            stats["total_leads"] = await db.leads.count_documents(lead_query)
+            stats["leads_today"] = await db.leads.count_documents({
+                **lead_query,
+                "created_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
+            })
+            stats["contacted_leads"] = await db.leads.count_documents({
+                **lead_query,
+                "esito": {"$nin": [None, "", "Nuovo"]}
+            })
+        else:
+            stats["total_referenti"] = 0
+            stats["total_agents"] = 0
+            stats["total_leads"] = 0
+            stats["leads_today"] = 0
+            stats["contacted_leads"] = 0
             
     elif current_user.role == UserRole.SUPERVISOR:
         # Supervisor: vede stats di tutte le sue Unit autorizzate
