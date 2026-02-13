@@ -7232,7 +7232,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
               <p className="text-sm text-slate-500 mb-2">Seleziona i Referenti che il Super Referente potrà gestire (vedrà anche tutti gli agenti associati)</p>
               <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {userReferenti.filter(r => r.role === "referente").map((referente) => (
+                  {users.filter(r => r.role === "referente").map((referente) => (
                     <div key={referente.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={`super-ref-${referente.id}`}
