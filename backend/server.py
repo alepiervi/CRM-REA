@@ -5097,6 +5097,24 @@ async def get_leads(
         if current_user.unit_autorizzate:
             query["unit_id"] = {"$in": current_user.unit_autorizzate}
     
+    elif current_user.role == UserRole.SUPER_REFERENTE:
+        # Super Referente sees leads of ALL agents under their authorized referenti
+        referenti_ids = current_user.referenti_autorizzati or []
+        if not referenti_ids:
+            # No referenti assigned - see only own leads
+            query["assigned_agent_id"] = current_user.id
+        else:
+            # Get all agents under these referenti
+            agents = await db["users"].find({
+                "referente_id": {"$in": referenti_ids},
+                "is_active": True
+            }).to_list(length=None)
+            agent_ids = [agent["id"] for agent in agents]
+            # Include the referenti themselves and the super referente
+            all_ids = agent_ids + referenti_ids + [current_user.id]
+            query["assigned_agent_id"] = {"$in": all_ids}
+            logging.info(f"[LEADS] Super Referente {current_user.username} viewing leads for {len(all_ids)} users (referenti + agents)")
+    
     elif current_user.role == UserRole.SUPERVISOR:
         # Supervisor sees ALL leads in their authorized Units (regardless of assignment)
         if current_user.unit_autorizzate and len(current_user.unit_autorizzate) > 0:
