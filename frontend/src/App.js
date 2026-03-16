@@ -18563,7 +18563,7 @@ const SuperReferenteAnalyticsView = () => {
             <select
               value={selectedReferenteId}
               onChange={(e) => setSelectedReferenteId(e.target.value)}
-              className="bg-white/20 border-white/30 text-white rounded-md px-3 py-2 text-sm"
+              className="bg-white border border-slate-300 text-slate-800 rounded-md px-3 py-2 text-sm font-medium shadow-sm"
             >
               <option value="">Tutti i Referenti</option>
               {referentiList.map(ref => (
@@ -18574,13 +18574,13 @@ const SuperReferenteAnalyticsView = () => {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="bg-white/20 border-white/30 text-white placeholder:text-white/70 w-40"
+              className="bg-white border-slate-300 text-slate-800 w-40"
             />
             <Input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="bg-white/20 border-white/30 text-white placeholder:text-white/70 w-40"
+              className="bg-white border-slate-300 text-slate-800 w-40"
             />
             <Button onClick={() => fetchAnalytics(selectedReferenteId || null)} variant="secondary" size="sm">
               <RefreshCw className="w-4 h-4 mr-1" /> Aggiorna
