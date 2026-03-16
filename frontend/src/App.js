@@ -3330,8 +3330,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                       )}
                       <TableHead>Provincia</TableHead>
                       <TableHead>Campagna</TableHead>
-                      {/* Colonna Assegnato a - Per Admin, Referente e Supervisor */}
-                      {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor") && (
+                      {/* Colonna Assegnato a - Per Admin, Referente, Supervisor e Super Referente */}
+                      {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor" || user?.role === "super_referente") && (
                         <TableHead>Assegnato a</TableHead>
                       )}
                       <TableHead>Stato</TableHead>
@@ -3363,8 +3363,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                           </div>
                         </TableCell>
                         <TableCell>{lead.campagna}</TableCell>
-                        {/* Cella Assegnato a - Per Admin, Referente e Supervisor */}
-                        {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor") && (
+                        {/* Cella Assegnato a - Per Admin, Referente, Supervisor e Super Referente */}
+                        {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor" || user?.role === "super_referente") && (
                           <TableCell>
                             <div className="flex items-center space-x-1">
                               <Users className="w-3 h-3 text-slate-400" />
@@ -3443,8 +3443,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                           {new Date(lead.created_at).toLocaleDateString("it-IT")}
                         </span>
                       </div>
-                      {/* Assegnato a - Per Admin, Referente e Supervisor */}
-                      {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor") && (
+                      {/* Assegnato a - Per Admin, Referente, Supervisor e Super Referente */}
+                      {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor" || user?.role === "super_referente") && (
                         <div className="flex items-center space-x-2">
                           <Users className="w-3 h-3 text-slate-400" />
                           <span className={lead.assigned_agent_id ? "text-green-700 font-medium" : "text-slate-500"}>
@@ -4010,8 +4010,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 </div>
               </div>
 
-              {/* Assegnato a - Admin, Referente e Supervisor */}
-              {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor") && (
+              {/* Assegnato a - Admin, Referente, Supervisor e Super Referente */}
+              {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor" || user?.role === "super_referente") && (
                 <div>
                   <Label className="text-sm font-medium text-slate-600">Assegnato a</Label>
                   
@@ -5875,8 +5875,8 @@ const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
               </p>
             </div>
 
-            {/* Assegnato a - Solo per Admin e Referente */}
-            {(user?.role === "admin" || user?.role === "referente") && (
+            {/* Assegnato a - Per Admin, Referente, Supervisor e Super Referente */}
+            {(user?.role === "admin" || user?.role === "referente" || user?.role === "supervisor" || user?.role === "super_referente") && (
               <div>
                 <Label className="text-sm font-medium text-slate-600">Assegnato a</Label>
                 <div className="flex items-center space-x-2">
