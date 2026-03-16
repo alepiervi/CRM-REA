@@ -5099,21 +5099,36 @@ async def get_leads(
     
     elif current_user.role == UserRole.SUPER_REFERENTE:
         # Super Referente sees leads of ALL agents under their authorized referenti
+        # AND agents without referente but in the same unit
         referenti_ids = current_user.referenti_autorizzati or []
-        if not referenti_ids:
-            # No referenti assigned - see only own leads
-            query["assigned_agent_id"] = current_user.id
-        else:
-            # Get all agents under these referenti
-            agents = await db["users"].find({
-                "referente_id": {"$in": referenti_ids},
+        super_ref_unit_id = current_user.unit_id
+        
+        # Get all agents under authorized referenti
+        agents_with_referente = await db["users"].find({
+            "referente_id": {"$in": referenti_ids},
+            "is_active": True
+        }).to_list(length=None) if referenti_ids else []
+        
+        # Get all agents without referente but in the same unit
+        agents_without_referente = []
+        if super_ref_unit_id:
+            agents_without_referente = await db["users"].find({
+                "role": "agente",
+                "unit_id": super_ref_unit_id,
+                "$or": [
+                    {"referente_id": None},
+                    {"referente_id": ""},
+                    {"referente_id": {"$exists": False}}
+                ],
                 "is_active": True
             }).to_list(length=None)
-            agent_ids = [agent["id"] for agent in agents]
-            # Include the referenti themselves and the super referente
-            all_ids = agent_ids + referenti_ids + [current_user.id]
-            query["assigned_agent_id"] = {"$in": all_ids}
-            logging.info(f"[LEADS] Super Referente {current_user.username} viewing leads for {len(all_ids)} users (referenti + agents)")
+        
+        agent_ids = [agent["id"] for agent in agents_with_referente] + [agent["id"] for agent in agents_without_referente]
+        
+        # Include the referenti themselves and the super referente
+        all_ids = list(set(agent_ids + referenti_ids + [current_user.id]))
+        query["assigned_agent_id"] = {"$in": all_ids}
+        logging.info(f"[LEADS] Super Referente {current_user.username} viewing leads for {len(all_ids)} users (referenti + agents with referente + {len(agents_without_referente)} agents without referente)")
     
     elif current_user.role == UserRole.SUPERVISOR:
         # Supervisor sees ALL leads in their authorized Units (regardless of assignment)
@@ -5131,14 +5146,27 @@ async def get_leads(
             
     # Admin can see all leads (no role filter)
     
+    # Helper function to add $or condition without overwriting
+    def add_or_condition(q, or_cond):
+        """Add an $or condition to the query, combining with $and if needed"""
+        if "$or" in q:
+            # Already have an $or, need to use $and
+            existing_or = q.pop("$or")
+            if "$and" in q:
+                q["$and"].append({"$or": existing_or})
+                q["$and"].append({"$or": or_cond})
+            else:
+                q["$and"] = [{"$or": existing_or}, {"$or": or_cond}]
+        else:
+            q["$or"] = or_cond
+    
     # Unit filtering (override role-based if specified)
     if unit_id:
-        query["unit_id"] = unit_id
-        # Backward compatibility with old field name
-        query["$or"] = [
+        # Use $or for backward compatibility with old field name
+        add_or_condition(query, [
             {"unit_id": unit_id},
             {"gruppo": unit_id}
-        ]
+        ])
     
     # Apply additional filters
     if campagna:
@@ -5148,12 +5176,12 @@ async def get_leads(
     if status:
         # Special handling for "Nuovo" status - includes null/empty esito
         if status == "Nuovo":
-            query["$or"] = [
+            add_or_condition(query, [
                 {"esito": None},
                 {"esito": ""},
                 {"esito": "Nuovo"},
                 {"esito": {"$exists": False}}
-            ]
+            ])
         else:
             query["esito"] = status
     if date_from:
@@ -5168,24 +5196,24 @@ async def get_leads(
     if assigned_agent_id:
         if assigned_agent_id == "unassigned":
             # Show only unassigned leads
-            query["$or"] = [
+            add_or_condition(query, [
                 {"assigned_agent_id": None},
                 {"assigned_agent_id": {"$exists": False}}
-            ]
+            ])
         else:
-            # Override role-based filter if admin/referente specifies an agent
-            if current_user.role == UserRole.ADMIN or current_user.role == UserRole.REFERENTE:
+            # Override role-based filter if admin/referente/super_referente specifies an agent
+            if current_user.role in [UserRole.ADMIN, UserRole.REFERENTE, UserRole.SUPER_REFERENTE, UserRole.SUPERVISOR]:
                 query["assigned_agent_id"] = assigned_agent_id
     
     # NEW: Search by name or phone
     if search:
         search_regex = {"$regex": search, "$options": "i"}  # Case-insensitive
-        query["$or"] = [
+        add_or_condition(query, [
             {"nome": search_regex},
             {"cognome": search_regex},
             {"telefono": search_regex},
             {"email": search_regex}
-        ]
+        ])
     
     # Count total matching documents BEFORE pagination
     total = await db["leads"].count_documents(query)
