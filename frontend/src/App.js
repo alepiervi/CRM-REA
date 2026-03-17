@@ -4032,8 +4032,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                           <SelectItem value="unassigned">Non assegnato</SelectItem>
                           {(() => {
                             const availableAgents = users.filter(u => {
-                              // Filter only agents and referenti
-                              if (u.role !== "agente" && u.role !== "referente") return false;
+                              // Filter only agents (NOT referenti)
+                              if (u.role !== "agente") return false;
                               
                               // If agent has no provinces defined, they cover all provinces
                               if (!u.provinces || u.provinces.length === 0) return true;
@@ -4055,7 +4055,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                             
                             return availableAgents.map((agent) => (
                               <SelectItem key={agent.id} value={agent.id}>
-                                👤 {agent.username}
+                                {agent.username}
                               </SelectItem>
                             ));
                           })()}
