@@ -161,6 +161,45 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('it-IT', options);
 };
 
+// Helper function per normalizzare i nomi delle province (gestisce varianti come "Monza e Brianza" vs "Monza della Brianza")
+const normalizeProvinceName = (name) => {
+  if (!name) return '';
+  // Converti in minuscolo e rimuovi spazi extra
+  let normalized = name.toLowerCase().trim();
+  // Mappa delle varianti comuni
+  const provinceAliases = {
+    'monza della brianza': 'monza e brianza',
+    'monza e della brianza': 'monza e brianza',
+    'monza-brianza': 'monza e brianza',
+    'mb': 'monza e brianza',
+    'reggio nell\'emilia': 'reggio emilia',
+    'reggio nell emilia': 'reggio emilia',
+    'reggio-emilia': 'reggio emilia',
+    're': 'reggio emilia',
+    'forli-cesena': 'forlì-cesena',
+    'forli cesena': 'forlì-cesena',
+    'verbano cusio ossola': 'verbano-cusio-ossola',
+    'vco': 'verbano-cusio-ossola',
+    'pesaro urbino': 'pesaro e urbino',
+    'pesaro-urbino': 'pesaro e urbino',
+    'barletta andria trani': 'barletta-andria-trani',
+    'bat': 'barletta-andria-trani',
+    'sud sardegna': 'sud sardegna',
+    'massa carrara': 'massa-carrara',
+    'massa e carrara': 'massa-carrara',
+  };
+  return provinceAliases[normalized] || normalized;
+};
+
+// Helper function per verificare se una provincia corrisponde (con normalizzazione)
+const provinciaMatches = (agentProvinces, leadProvincia) => {
+  if (!agentProvinces || agentProvinces.length === 0) return true; // Agente copre tutte le province
+  if (!leadProvincia) return true; // Lead senza provincia, mostra tutti gli agenti
+  
+  const normalizedLeadProvincia = normalizeProvinceName(leadProvincia);
+  return agentProvinces.some(p => normalizeProvinceName(p) === normalizedLeadProvincia);
+};
+
 // Helper function per formattare gli status dei clienti
 const formatClienteStatus = (status) => {
   const statusMapping = {
@@ -4035,14 +4074,8 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                               // Filter only agents (NOT referenti)
                               if (u.role !== "agente") return false;
                               
-                              // If agent has no provinces defined, they cover all provinces
-                              if (!u.provinces || u.provinces.length === 0) return true;
-                              
-                              // If lead has no provincia, show all agents
-                              if (!selectedLead.provincia) return true;
-                              
-                              // Otherwise, check if agent covers this lead's provincia
-                              return u.provinces.includes(selectedLead.provincia);
+                              // Use provinciaMatches helper for flexible matching
+                              return provinciaMatches(u.provinces, selectedLead.provincia);
                             });
                             
                             if (availableAgents.length === 0) {

@@ -169,6 +169,44 @@ PROVINCE_TO_CODE = {
     "Vicenza": "VI", "Viterbo": "VT"
 }
 
+# Province aliases for flexible matching (handles variations like "Monza della Brianza" vs "Monza e Brianza")
+def normalize_province_name(name: str) -> str:
+    """Normalize province name to handle common variations"""
+    if not name:
+        return ''
+    normalized = name.lower().strip()
+    province_aliases = {
+        'monza della brianza': 'monza e brianza',
+        'monza e della brianza': 'monza e brianza',
+        'monza-brianza': 'monza e brianza',
+        'mb': 'monza e brianza',
+        'reggio nell\'emilia': 'reggio emilia',
+        'reggio nell emilia': 'reggio emilia',
+        'reggio-emilia': 'reggio emilia',
+        're': 'reggio emilia',
+        'forli-cesena': 'forlì-cesena',
+        'forli cesena': 'forlì-cesena',
+        'verbano cusio ossola': 'verbano-cusio-ossola',
+        'vco': 'verbano-cusio-ossola',
+        'pesaro urbino': 'pesaro e urbino',
+        'pesaro-urbino': 'pesaro e urbino',
+        'barletta andria trani': 'barletta-andria-trani',
+        'bat': 'barletta-andria-trani',
+        'massa carrara': 'massa-carrara',
+        'massa e carrara': 'massa-carrara',
+    }
+    return province_aliases.get(normalized, normalized)
+
+def provincia_matches(agent_provinces: list, lead_provincia: str) -> bool:
+    """Check if agent covers lead's province (with normalization)"""
+    if not agent_provinces:
+        return True  # Agent with no provinces covers all
+    if not lead_provincia:
+        return True  # Lead without province matches all agents
+    
+    normalized_lead = normalize_province_name(lead_provincia)
+    return any(normalize_province_name(p) == normalized_lead for p in agent_provinces)
+
 # Enums
 class UserRole(str, Enum):
     ADMIN = "admin"
@@ -3582,12 +3620,10 @@ Grazie e a presto!"""
                 
             agents = await db.users.find(query).to_list(length=None)
             
-            # Filter agents by province if specified
+            # Filter agents by province if specified (using normalization for flexible matching)
             suitable_agents = []
             for agent in agents:
-                if provincia and provincia in agent.get("provinces", []):
-                    suitable_agents.append(agent)
-                elif not agent.get("provinces"):  # Agent covers all provinces
+                if provincia_matches(agent.get("provinces", []), provincia):
                     suitable_agents.append(agent)
             
             # If no province match, use any agent from unit
@@ -3855,13 +3891,17 @@ async def assign_lead_to_agent(lead: Lead):
         query["unit_id"] = lead.unit_id
         logging.info(f"[ASSIGN] Looking for agents in unit_id: {lead.unit_id}")
     
-    # Filter by province if available
-    if lead.provincia:
-        query["provinces"] = {"$in": [lead.provincia]}
-        logging.info(f"[ASSIGN] Looking for agents covering province: {lead.provincia}")
+    # NOTE: Province filtering is done in Python after query to support name variations
+    # (e.g., "Monza della Brianza" vs "Monza e Brianza")
+    logging.info(f"[ASSIGN] Looking for agents covering province: {lead.provincia}")
     
     # Find agents matching criteria
     agents = await db.users.find(query).to_list(length=None)
+    
+    # Filter by province using normalization (handles name variations)
+    if lead.provincia:
+        agents = [a for a in agents if provincia_matches(a.get("provinces", []), lead.provincia)]
+        logging.info(f"[ASSIGN] After province filter: {len(agents)} agents cover province {lead.provincia}")
     
     if not agents:
         logging.warning(f"[ASSIGN] No agents found for lead {lead.id} with unit_id={lead.unit_id}, provincia={lead.provincia}")
