@@ -170,8 +170,13 @@ const normalizeProvinceName = (name) => {
   const provinceAliases = {
     'monza della brianza': 'monza e brianza',
     'monza e della brianza': 'monza e brianza',
+    'monza della brienza': 'monza e brianza',  // typo variant
+    'monza e brienza': 'monza e brianza',  // typo variant
     'monza-brianza': 'monza e brianza',
+    'monza brianza': 'monza e brianza',
     'mb': 'monza e brianza',
+    'provincia di monza e brianza': 'monza e brianza',
+    'provincia di monza e della brianza': 'monza e brianza',
     'reggio nell\'emilia': 'reggio emilia',
     'reggio nell emilia': 'reggio emilia',
     'reggio-emilia': 'reggio emilia',
@@ -188,7 +193,18 @@ const normalizeProvinceName = (name) => {
     'massa carrara': 'massa-carrara',
     'massa e carrara': 'massa-carrara',
   };
-  return provinceAliases[normalized] || normalized;
+  
+  // Check exact match first
+  if (provinceAliases[normalized]) {
+    return provinceAliases[normalized];
+  }
+  
+  // Check if contains "monza" - normalize all Monza variants
+  if (normalized.includes('monza')) {
+    return 'monza e brianza';
+  }
+  
+  return normalized;
 };
 
 // Helper function per verificare se una provincia corrisponde (con normalizzazione)

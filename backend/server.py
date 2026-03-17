@@ -178,8 +178,13 @@ def normalize_province_name(name: str) -> str:
     province_aliases = {
         'monza della brianza': 'monza e brianza',
         'monza e della brianza': 'monza e brianza',
+        'monza della brienza': 'monza e brianza',  # typo variant
+        'monza e brienza': 'monza e brianza',  # typo variant
         'monza-brianza': 'monza e brianza',
+        'monza brianza': 'monza e brianza',
         'mb': 'monza e brianza',
+        'provincia di monza e brianza': 'monza e brianza',
+        'provincia di monza e della brianza': 'monza e brianza',
         'reggio nell\'emilia': 'reggio emilia',
         'reggio nell emilia': 'reggio emilia',
         'reggio-emilia': 'reggio emilia',
@@ -195,7 +200,16 @@ def normalize_province_name(name: str) -> str:
         'massa carrara': 'massa-carrara',
         'massa e carrara': 'massa-carrara',
     }
-    return province_aliases.get(normalized, normalized)
+    
+    # Check exact match first
+    if normalized in province_aliases:
+        return province_aliases[normalized]
+    
+    # Check if contains "monza" - normalize all Monza variants
+    if 'monza' in normalized:
+        return 'monza e brianza'
+    
+    return normalized
 
 def provincia_matches(agent_provinces: list, lead_provincia: str) -> bool:
     """Check if agent covers lead's province (with normalization)"""
