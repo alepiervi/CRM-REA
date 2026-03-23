@@ -7273,6 +7273,13 @@ async def export_leads_excel(
             query["unit_id"] = {"$in": supervisor_units}
         else:
             raise HTTPException(status_code=403, detail="Supervisor non ha Unit assegnate")
+    elif current_user.role == UserRole.SUPER_REFERENTE:
+        # Super Referente can export ONLY leads from their Unit
+        if current_user.unit_id:
+            query["unit_id"] = current_user.unit_id
+            logging.info(f"[EXPORT] Super Referente {current_user.username} exporting leads for unit {current_user.unit_id}")
+        else:
+            raise HTTPException(status_code=403, detail="Super Referente non ha Unit assegnata")
     
     # Unit filtering
     if unit_id:
