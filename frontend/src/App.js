@@ -25772,6 +25772,12 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     return user.role === 'backoffice_commessa' || user.role === 'admin';
   };
   
+  // Helper function to check if user can edit note_backoffice field
+  const canEditNoteBackoffice = () => {
+    if (!user) return false;
+    return user.role === 'backoffice_commessa';
+  };
+  
   // Array delle tecnologie - stesso del form di creazione
   const TECNOLOGIE = [
     { value: 'fibra', label: 'FIBRA' },
@@ -27829,14 +27835,23 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                 </div>
                 <div>
                   <Label htmlFor="note_backoffice">Note Back Office</Label>
-                  <Textarea
-                    id="note_backoffice"
-                    value={formData.note_backoffice}
-                    onChange={(e) => handleChange('note_backoffice', e.target.value)}
-                    placeholder="Note interne del Back Office..."
-                    rows={3}
-                    className="border-orange-200 focus:border-orange-500"
-                  />
+                  {canEditNoteBackoffice() ? (
+                    <Textarea
+                      id="note_backoffice"
+                      value={formData.note_backoffice}
+                      onChange={(e) => handleChange('note_backoffice', e.target.value)}
+                      placeholder="Note interne del Back Office..."
+                      rows={3}
+                      className="border-orange-200 focus:border-orange-500"
+                    />
+                  ) : (
+                    <div className="mt-1 p-3 bg-slate-50 border border-slate-200 rounded-md min-h-[80px]">
+                      <p className="text-sm text-slate-600 whitespace-pre-wrap">
+                        {formData.note_backoffice || <span className="text-slate-400 italic">Nessuna nota Back Office</span>}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-2">Solo il Back Office Commessa può modificare questo campo</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
