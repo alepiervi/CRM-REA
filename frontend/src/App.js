@@ -23387,6 +23387,18 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       }
     }
     
+    // Validazione POD obbligatorio per "Energia"
+    if (isEnergiaFastweb()) {
+      if (!formData.codice_pod || formData.codice_pod.trim() === '') {
+        toast({
+          title: "Campo obbligatorio",
+          description: "Per i contratti Energia, il campo Codice POD è obbligatorio.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     // Helper per convertire le date in formato MongoDB compatibile
     const formatDateForBackend = (dateValue) => {
       if (!dateValue) return null;
@@ -24286,12 +24298,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               {/* POD, PDR e REMI sulla stessa riga */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="codice_pod">Codice POD</Label>
+                  <Label htmlFor="codice_pod">Codice POD <span className="text-red-500">*</span></Label>
                   <Input
                     id="codice_pod"
                     value={formData.codice_pod}
                     onChange={(e) => setFormData({...formData, codice_pod: e.target.value})}
+                    className={!formData.codice_pod ? "border-red-300" : ""}
                   />
+                  {!formData.codice_pod && (
+                    <p className="text-xs text-red-500 mt-1">POD obbligatorio per Energia</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="codice_pdr">Codice PDR</Label>
