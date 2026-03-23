@@ -4286,24 +4286,33 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
         if unit_id:
             query["unit_id"] = unit_id
     elif current_user.role == UserRole.SUPER_REFERENTE:
-        # Super Referente can see their authorized referenti and all agents under those referenti
+        # Super Referente sees ALL users in their Unit (agents, referenti, etc.)
+        super_ref_unit_id = current_user.unit_id
         referenti_ids = current_user.referenti_autorizzati or []
-        if not referenti_ids:
-            query = {"id": current_user.id}  # Only themselves if no referenti assigned
-        else:
-            # Get all agents under these referenti
+        
+        if super_ref_unit_id:
+            # Get ALL users from the same Unit
+            query = {
+                "is_active": True,
+                "$or": [
+                    {"id": current_user.id},  # Include themselves
+                    {"unit_id": super_ref_unit_id}  # All users in the same Unit
+                ]
+            }
+        elif referenti_ids:
+            # Fallback: if no unit_id, use referenti_autorizzati
             agents_under_referenti = await db.users.find({
                 "referente_id": {"$in": referenti_ids},
                 "is_active": True
             }).to_list(length=None)
             agent_ids = [a["id"] for a in agents_under_referenti]
-            
-            # Can see: themselves, their referenti, and agents under those referenti
             all_ids = [current_user.id] + referenti_ids + agent_ids
             query = {
                 "is_active": True,
                 "id": {"$in": all_ids}
             }
+        else:
+            query = {"id": current_user.id}  # Only themselves if no unit and no referenti
     elif current_user.role == UserRole.REFERENTE:
         # Referente can see their agents in their unit
         query = {
@@ -5152,37 +5161,29 @@ async def get_leads(
             query["unit_id"] = {"$in": current_user.unit_autorizzate}
     
     elif current_user.role == UserRole.SUPER_REFERENTE:
-        # Super Referente sees leads of ALL agents under their authorized referenti
-        # AND agents without referente but in the same unit
-        referenti_ids = current_user.referenti_autorizzati or []
+        # Super Referente sees ALL leads in their Unit
         super_ref_unit_id = current_user.unit_id
         
-        # Get all agents under authorized referenti
-        agents_with_referente = await db["users"].find({
-            "referente_id": {"$in": referenti_ids},
-            "is_active": True
-        }).to_list(length=None) if referenti_ids else []
-        
-        # Get all agents without referente but in the same unit
-        agents_without_referente = []
         if super_ref_unit_id:
-            agents_without_referente = await db["users"].find({
-                "role": "agente",
-                "unit_id": super_ref_unit_id,
-                "$or": [
-                    {"referente_id": None},
-                    {"referente_id": ""},
-                    {"referente_id": {"$exists": False}}
-                ],
-                "is_active": True
-            }).to_list(length=None)
-        
-        agent_ids = [agent["id"] for agent in agents_with_referente] + [agent["id"] for agent in agents_without_referente]
-        
-        # Include the referenti themselves and the super referente
-        all_ids = list(set(agent_ids + referenti_ids + [current_user.id]))
-        query["assigned_agent_id"] = {"$in": all_ids}
-        logging.info(f"[LEADS] Super Referente {current_user.username} viewing leads for {len(all_ids)} users (referenti + agents with referente + {len(agents_without_referente)} agents without referente)")
+            # Filter leads by Unit - see ALL leads in the Unit
+            query["unit_id"] = super_ref_unit_id
+            logging.info(f"[LEADS] Super Referente {current_user.username} viewing ALL leads in unit {super_ref_unit_id}")
+        else:
+            # Fallback: if no unit_id, use referenti_autorizzati logic
+            referenti_ids = current_user.referenti_autorizzati or []
+            if referenti_ids:
+                agents = await db["users"].find({
+                    "referente_id": {"$in": referenti_ids},
+                    "is_active": True
+                }).to_list(length=None)
+                agent_ids = [agent["id"] for agent in agents]
+                all_ids = list(set(agent_ids + referenti_ids + [current_user.id]))
+                query["assigned_agent_id"] = {"$in": all_ids}
+                logging.info(f"[LEADS] Super Referente {current_user.username} (no unit) viewing leads for {len(all_ids)} users")
+            else:
+                # No unit and no referenti - see only own leads
+                query["assigned_agent_id"] = current_user.id
+                logging.info(f"[LEADS] Super Referente {current_user.username} has no unit/referenti, showing only own leads")
     
     elif current_user.role == UserRole.SUPERVISOR:
         # Supervisor sees ALL leads in their authorized Units (regardless of assignment)
@@ -8429,24 +8430,24 @@ async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User 
             stats["unit_name"] = unit_info.get("nome", unit_info.get("name", "Unknown Unit")) if unit_info else "Unknown Unit"
     
     elif current_user.role == UserRole.SUPER_REFERENTE:
-        # Super Referente: vede stats di tutti i referenti autorizzati e loro agenti
-        referenti_ids = current_user.referenti_autorizzati or []
+        # Super Referente: vede stats di TUTTA la sua Unit
+        super_ref_unit_id = current_user.unit_id
         
-        if referenti_ids:
-            # Get all agents under these referenti
-            agents = await db.users.find({
-                "referente_id": {"$in": referenti_ids},
+        if super_ref_unit_id:
+            # Count all users in the Unit
+            all_users_in_unit = await db.users.find({
+                "unit_id": super_ref_unit_id,
                 "is_active": True
             }).to_list(length=None)
-            agent_ids = [agent["id"] for agent in agents]
             
-            # All IDs: super referente + referenti + agents
-            all_ids = [current_user.id] + referenti_ids + agent_ids
+            referenti_count = len([u for u in all_users_in_unit if u.get("role") == "referente"])
+            agents_count = len([u for u in all_users_in_unit if u.get("role") == "agente"])
             
-            lead_query = {"assigned_agent_id": {"$in": all_ids}}
+            # Lead query based on Unit
+            lead_query = {"unit_id": super_ref_unit_id}
             
-            stats["total_referenti"] = len(referenti_ids)
-            stats["total_agents"] = len(agent_ids)
+            stats["total_referenti"] = referenti_count
+            stats["total_agents"] = agents_count
             stats["total_leads"] = await db.leads.count_documents(lead_query)
             stats["leads_today"] = await db.leads.count_documents({
                 **lead_query,
@@ -8456,7 +8457,12 @@ async def get_dashboard_stats(unit_id: Optional[str] = None, current_user: User 
                 **lead_query,
                 "esito": {"$nin": [None, "", "Nuovo"]}
             })
+            
+            # Add unit name
+            unit_info = await db.units.find_one({"id": super_ref_unit_id})
+            stats["unit_name"] = unit_info.get("nome", unit_info.get("name", "Unknown Unit")) if unit_info else "Unknown Unit"
         else:
+            # Fallback if no unit_id
             stats["total_referenti"] = 0
             stats["total_agents"] = 0
             stats["total_leads"] = 0
