@@ -22702,6 +22702,25 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     return nome.includes('mobile');
   };
 
+  // Funzione per verificare se la tipologia contratto contiene "Ho Mobile"
+  const isHoMobile = () => {
+    const tipologiaId = selectedData.tipologia_contratto;
+    if (!tipologiaId) return false;
+    
+    const tipologia = cascadeTipologie.find(t => t.id === tipologiaId);
+    if (!tipologia) return false;
+    
+    const nome = tipologia.nome?.toLowerCase() || '';
+    console.log("📱 isHoMobile DEBUG:", {
+      tipologiaId,
+      tipologia_nome: tipologia.nome,
+      nome_lower: nome,
+      result: nome.includes('ho mobile')
+    });
+    
+    return nome.includes('ho mobile');
+  };
+
   // Funzione per verificare se la tipologia contratto contiene "Telepass"
   const isTelepass = () => {
     const tipologiaId = selectedData.tipologia_contratto;
@@ -23353,6 +23372,20 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     console.log("🎯 CASCADING SUBMIT TRIGGERED");
     console.log("Selected data:", selectedData);
     console.log("Form data:", formData);
+    
+    // Validazione ICCID obbligatorio per "Ho Mobile"
+    if (isHoMobile()) {
+      // Verifica che ci sia almeno un item mobile con ICCID compilato
+      const hasValidIccid = mobileItems.some(item => item.iccid && item.iccid.trim() !== '');
+      if (!hasValidIccid) {
+        toast({
+          title: "Campo obbligatorio",
+          description: "Per i contratti Ho Mobile, il campo ICCID è obbligatorio. Inserisci almeno un ICCID nella sezione Mobile.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
     
     // Helper per convertire le date in formato MongoDB compatibile
     const formatDateForBackend = (dateValue) => {
@@ -24365,12 +24398,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                         />
                       </div>
                       <div>
-                        <Label>ICCID</Label>
+                        <Label>ICCID {isHoMobile() && <span className="text-red-500">*</span>}</Label>
                         <Input
                           value={item.iccid}
                           onChange={(e) => updateMobileItem(index, 'iccid', e.target.value)}
                           placeholder="Codice ICCID"
+                          className={isHoMobile() && !item.iccid ? "border-red-300" : ""}
                         />
+                        {isHoMobile() && !item.iccid && (
+                          <p className="text-xs text-red-500 mt-1">ICCID obbligatorio per Ho Mobile</p>
+                        )}
                       </div>
                       <div>
                         <Label>Operatore</Label>
