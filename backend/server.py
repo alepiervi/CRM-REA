@@ -341,6 +341,7 @@ class UserUpdate(BaseModel):
     commesse_autorizzate: Optional[List[str]] = None
     servizi_autorizzati: Optional[List[str]] = None
     sub_agenzie_autorizzate: Optional[List[str]] = None
+    referenti_autorizzati: Optional[List[str]] = None  # NEW: For Super Referente
     can_view_analytics: Optional[bool] = None
     password_change_required: Optional[bool] = None
     password_last_changed: Optional[datetime] = None  # NEW: For tracking password expiry
