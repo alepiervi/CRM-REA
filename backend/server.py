@@ -6968,10 +6968,15 @@ async def get_referente_analytics(
     ]}
     contacted_leads = await db.leads.count_documents(contacted_query)
     
-    # Per-agent breakdown - respect date filters
+    # Per-agent breakdown - respect date filters AND unit filter for Super Referente
     agent_stats = []
     for agent in agents:
         agent_base_query = {"assigned_agent_id": agent["id"]}
+        
+        # Add unit filter for Super Referente
+        if "unit_id" in base_query:
+            agent_base_query["unit_id"] = base_query["unit_id"]
+        
         # Add same date filters as parent query
         if "created_at" in base_query:
             agent_base_query["created_at"] = base_query["created_at"]
