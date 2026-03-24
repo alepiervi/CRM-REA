@@ -18654,20 +18654,26 @@ const SuperReferenteAnalyticsView = () => {
           aggregated.contacted_leads += refData.total_stats?.contacted_leads || 0;
           aggregated.referenti.push(refData.referente);
           
-          // Add agents
+          // Aggregate outcomes from referente level (more accurate)
+          if (refData.outcomes) {
+            Object.entries(refData.outcomes).forEach(([esito, count]) => {
+              aggregated.outcomes[esito] = (aggregated.outcomes[esito] || 0) + count;
+            });
+          }
+          
+          // Add agents with normalized structure
           if (refData.agent_breakdown) {
             refData.agent_breakdown.forEach(agentData => {
               aggregated.all_agents.push({
-                ...agentData,
+                id: agentData.agent?.id || agentData.id,
+                username: agentData.agent?.username || agentData.username,
+                email: agentData.agent?.email || agentData.email,
+                total_leads: agentData.total_leads || 0,
+                contacted_leads: agentData.contacted_leads || 0,
+                contact_rate: agentData.contact_rate || 0,
+                outcomes: agentData.outcomes || {},
                 referente_username: refData.referente?.username
               });
-              
-              // Aggregate outcomes
-              if (agentData.outcomes) {
-                Object.entries(agentData.outcomes).forEach(([esito, count]) => {
-                  aggregated.outcomes[esito] = (aggregated.outcomes[esito] || 0) + count;
-                });
-              }
             });
           }
         });
@@ -18891,9 +18897,9 @@ const SuperReferenteAnalyticsView = () => {
                   </TableHeader>
                   <TableBody>
                     {agents.map((agentData, idx) => (
-                      <TableRow key={agentData.agent?.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                      <TableRow key={agentData.id || agentData.agent?.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                         <TableCell className="font-medium">
-                          {agentData.agent?.username || agentData.username || 'N/A'}
+                          {agentData.username || agentData.agent?.username || 'N/A'}
                         </TableCell>
                         {analytics?.type === 'aggregated' && (
                           <TableCell className="text-sm text-slate-500">
