@@ -6934,6 +6934,11 @@ async def get_referente_analytics(
     # Build base query with date filters
     base_query = {"assigned_agent_id": {"$in": agent_ids}}
     
+    # For Super Referente: also filter by their Unit
+    if current_user.role == UserRole.SUPER_REFERENTE and current_user.unit_id:
+        base_query["unit_id"] = current_user.unit_id
+        logging.info(f"[ANALYTICS] Super Referente {current_user.username} filtering analytics for unit {current_user.unit_id}")
+    
     # Add date filters if provided
     if date_from or date_to:
         date_filter = {}
