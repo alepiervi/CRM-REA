@@ -6328,7 +6328,7 @@ async def upload_document(
         
         # Document uploads are universally permitted - ALL authenticated users can upload
         # No access check needed for document upload
-        cliente_obj = Cliente(**entity)
+        # Note: We don't need to validate the full Cliente model for document upload
     
     try:
         # NEW: Smart Aruba Drive Integration with per-commessa configuration
