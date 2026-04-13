@@ -6496,7 +6496,7 @@ async def upload_document(
             "cloud_path": aruba_drive_path if storage_type == "nextcloud" else None,
             "aruba_drive_path": aruba_drive_path or f"/local/{entity_type}/{entity_id}/{unique_filename}",  # Legacy field
             "file_size": len(content),
-            "file_type": file.content_type,
+            "file_type": file.content_type or "application/octet-stream",
             "created_by": uploaded_by,
             "created_at": datetime.now(timezone.utc),
             "storage_type": storage_type,
@@ -6518,8 +6518,8 @@ async def upload_document(
                 new_value=file.filename,
                 metadata={
                     "document_id": document_data["id"],
-                    "file_size": file.size,
-                    "file_type": file.content_type,
+                    "file_size": len(content),
+                    "file_type": file.content_type or "application/octet-stream",
                     "aruba_drive_path": document_data["aruba_drive_path"]
                 }
             )
