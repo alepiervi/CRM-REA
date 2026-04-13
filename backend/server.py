@@ -6338,19 +6338,26 @@ async def upload_document(
         aruba_drive_path = None
         storage_type = None  # Will be set based on actual upload result
         
+        add_debug_log("📁 Getting Aruba Drive config...")
+        
         # Get commessa-specific Aruba Drive config for clients
         aruba_config = None
+        commessa = None
         if doc_type == DocumentType.CLIENTE:
-            commessa_id = entity.get("commessa_id")
+            commessa_id = entity.get("commessa_id") if entity else None
+            add_debug_log(f"📋 Commessa ID: {commessa_id}")
             if commessa_id:
                 commessa = await db.commesse.find_one({"id": commessa_id})
                 if commessa and commessa.get("aruba_drive_config", {}).get("enabled"):
                     aruba_config = commessa["aruba_drive_config"]
                     logging.info(f"📋 Using Aruba Drive config for commessa: {commessa.get('nome')}")
         
+        add_debug_log(f"📁 Aruba config found: {aruba_config is not None}")
+        
         # Generate filename with client information
-        original_filename = file.filename
-        file_extension = Path(original_filename).suffix
+        original_filename = file.filename or "documento"
+        file_extension = Path(original_filename).suffix or ".bin"
+        add_debug_log(f"📄 Original filename: {original_filename}, ext: {file_extension}")
         
         # Create enhanced filename with client data for better organization
         if doc_type == DocumentType.CLIENTE:
