@@ -6491,7 +6491,8 @@ async def upload_document(
             "id": str(uuid.uuid4()),
             "entity_type": entity_type,
             "entity_id": entity_id,
-            "filename": file.filename,
+            "filename": unique_filename,  # Use the enhanced filename with client name/phone
+            "original_filename": file.filename,  # Keep original for reference
             "file_path": str(file_path) if file_path else None,
             "cloud_path": aruba_drive_path if storage_type == "nextcloud" else None,
             "aruba_drive_path": aruba_drive_path or f"/local/{entity_type}/{entity_id}/{unique_filename}",  # Legacy field
@@ -6513,14 +6514,15 @@ async def upload_document(
             await log_client_action(
                 cliente_id=entity_id,
                 action=ClienteLogAction.DOCUMENT_UPLOADED,
-                description=f"Documento caricato: {file.filename}",
+                description=f"Documento caricato: {unique_filename}",
                 user=current_user,
-                new_value=file.filename,
+                new_value=unique_filename,
                 metadata={
                     "document_id": document_data["id"],
                     "file_size": len(content),
                     "file_type": file.content_type or "application/octet-stream",
-                    "aruba_drive_path": document_data["aruba_drive_path"]
+                    "aruba_drive_path": document_data["aruba_drive_path"],
+                    "original_filename": file.filename
                 }
             )
         
