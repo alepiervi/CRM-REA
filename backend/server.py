@@ -6357,6 +6357,24 @@ async def upload_document(
                     add_debug_log(f"❌ Error finding commessa: {str(e)}")
                     commessa = None
         
+        # Se non c'è config dalla commessa, cerca config globale in settings
+        if not aruba_config:
+            try:
+                global_settings = await db.settings.find_one({"key": "aruba_drive_global"})
+                if global_settings and global_settings.get("value", {}).get("enabled"):
+                    aruba_config = global_settings["value"]
+                    add_debug_log(f"📋 Using global Aruba Drive config")
+            except Exception as e:
+                add_debug_log(f"⚠️ Error checking global config: {str(e)}")
+        
+        # Se ancora non c'è config, forza errore - l'upload DEVE andare su Aruba
+        if not aruba_config or not aruba_config.get("enabled"):
+            add_debug_log("❌ Nessuna configurazione Aruba Drive trovata")
+            raise HTTPException(
+                status_code=400, 
+                detail="Errore: Aruba Drive non è configurato per questa commessa. Contattare l'amministratore per configurare l'integrazione Aruba Drive."
+            )
+        
         add_debug_log(f"📁 Aruba config found: {aruba_config is not None}")
         
         # Generate filename with client information
@@ -6475,33 +6493,21 @@ async def upload_document(
                 )
         
         # MODIFICATO: Se Aruba è configurato ma l'upload non è andato a buon fine, errore
-        if aruba_config and aruba_config.get('enabled') and not upload_success:
-            add_debug_log(f"❌ Aruba Drive configurato ma upload fallito - NON salvo localmente")
+        if not upload_success:
+            add_debug_log(f"❌ Aruba Drive upload fallito - NON salvo localmente")
             raise HTTPException(
                 status_code=503, 
                 detail="Errore: il server Aruba Drive non ha risposto correttamente. Il documento NON è stato salvato."
             )
         
-        # Local storage SOLO se Aruba NON è configurato
-        if not upload_success and not (aruba_config and aruba_config.get('enabled')):
-            documents_dir = Path("/app/documents")
-            documents_dir.mkdir(exist_ok=True)
-            file_path = documents_dir / unique_filename
-            
-            with open(file_path, "wb") as f:
-                f.write(content)
-                
-            storage_type = "local"
-            add_debug_log(f"💾 Saved to local storage: {file_path}")
-        else:
-            # Cloud upload successful - no local copy needed
-            file_path = None
-            add_debug_log(f"☁️ Cloud upload successful - no local copy")
+        # Cloud upload successful - no local copy needed
+        file_path = None
+        add_debug_log(f"☁️ Cloud upload successful - no local copy")
         
         # Ensure storage_type is always set (safety check)
         if storage_type is None:
-            storage_type = "local"
-            add_debug_log(f"⚠️ storage_type was None, defaulting to 'local'")
+            storage_type = "nextcloud"
+            add_debug_log(f"⚠️ storage_type was None, defaulting to 'nextcloud'")
         
         # Save document metadata
         document_data = {
