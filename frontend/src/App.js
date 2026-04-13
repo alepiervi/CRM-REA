@@ -12364,7 +12364,7 @@ const DocumentsManagement = ({
                     onChange={handleFileSelect}
                     className="hidden"
                     id="file-upload"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.mp3,.wav,.ogg,.m4a,.aac,.wma,.flac,audio/*"
                   />
                   <label
                     htmlFor="file-upload"

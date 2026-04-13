@@ -77,7 +77,16 @@ ARUBA_DRIVE_BASE_URL = os.environ.get("ARUBA_DRIVE_BASE_URL", "https://api.aruba
 # File Upload Configuration
 UPLOAD_DIR = "./uploads"
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-ALLOWED_FILE_TYPES = ["application/pdf"]
+ALLOWED_FILE_TYPES = [
+    "application/pdf",
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+    "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    # Audio formats
+    "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/m4a", 
+    "audio/aac", "audio/x-m4a", "audio/flac", "audio/x-flac",
+    "audio/webm", "audio/x-wav", "audio/vnd.wave"
+]
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -2386,21 +2395,17 @@ async def validate_uploaded_file(file) -> bool:
     if len(content) == 0:
         raise HTTPException(status_code=400, detail="Empty files are not allowed")
     
-    # Validate content type using python-magic (Temporaneamente disabilitato)
-    # try:
-    #     mime_type = magic.from_buffer(content, mime=True)
-    #     if mime_type not in ALLOWED_FILE_TYPES:
-    #         raise HTTPException(
-    #             status_code=400,
-    #             detail=f"File type {mime_type} not allowed. Supported types: {ALLOWED_FILE_TYPES}"
-    #         )
-    # except Exception as e:
-    #     logging.warning(f"Could not detect MIME type: {e}, checking file extension")
-        # Fallback to file extension check
-        if not file.filename.lower().endswith('.pdf'):
+    # Allowed file extensions
+    ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif', '.txt',
+                          '.mp3', '.wav', '.ogg', '.m4a', '.aac', '.wma', '.flac', '.webm']
+    
+    # Check file extension
+    if file.filename:
+        file_ext = os.path.splitext(file.filename.lower())[1]
+        if file_ext not in ALLOWED_EXTENSIONS:
             raise HTTPException(
                 status_code=400,
-                detail="Only PDF files are allowed"
+                detail=f"Tipo di file non supportato. Estensioni permesse: {', '.join(ALLOWED_EXTENSIONS)}"
             )
     
     return True
@@ -2426,12 +2431,15 @@ async def create_document_record(document_type: DocumentType, entity_id: str, fi
     file_size = len(content)
     await file.seek(0)  # Reset again
     
+    # Get file extension from original filename
+    file_extension = os.path.splitext(file.filename)[1] if file.filename else '.pdf'
+    
     document_data = {
         "document_type": document_type,
-        "filename": f"{uuid.uuid4()}.pdf",
-        "original_filename": file.filename or "document.pdf",
+        "filename": f"{uuid.uuid4()}{file_extension}",
+        "original_filename": file.filename or f"document{file_extension}",
         "file_size": file_size,
-        "content_type": getattr(file, 'content_type', "application/pdf"),
+        "content_type": getattr(file, 'content_type', "application/octet-stream"),
         "aruba_drive_file_id": aruba_response.get("file_id"),
         "aruba_drive_url": aruba_response.get("download_url"),
         "upload_status": "completed",
