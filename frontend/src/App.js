@@ -11791,6 +11791,7 @@ const DocumentsManagement = ({
           const response = await axios.post(`${API}/documents/upload`, formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             onUploadProgress: (progressEvent) => {
               const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -28218,6 +28219,7 @@ const ClientDocumentsModal = ({ isOpen, onClose, clientId, clientName }) => {
         const response = await axios.post(`${API}/documents/upload`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
           onUploadProgress: (progressEvent) => {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

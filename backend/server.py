@@ -6347,10 +6347,15 @@ async def upload_document(
             commessa_id = entity.get("commessa_id") if entity else None
             add_debug_log(f"📋 Commessa ID: {commessa_id}")
             if commessa_id:
-                commessa = await db.commesse.find_one({"id": commessa_id})
-                if commessa and commessa.get("aruba_drive_config", {}).get("enabled"):
-                    aruba_config = commessa["aruba_drive_config"]
-                    logging.info(f"📋 Using Aruba Drive config for commessa: {commessa.get('nome')}")
+                try:
+                    commessa = await db.commesse.find_one({"id": commessa_id})
+                    add_debug_log(f"📋 Commessa found: {commessa is not None}")
+                    if commessa and commessa.get("aruba_drive_config", {}).get("enabled"):
+                        aruba_config = commessa["aruba_drive_config"]
+                        logging.info(f"📋 Using Aruba Drive config for commessa: {commessa.get('nome')}")
+                except Exception as e:
+                    add_debug_log(f"❌ Error finding commessa: {str(e)}")
+                    commessa = None
         
         add_debug_log(f"📁 Aruba config found: {aruba_config is not None}")
         
