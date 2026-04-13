@@ -6323,14 +6323,17 @@ async def upload_document(
                 
     elif doc_type == DocumentType.CLIENTE:
         entity = await db.clienti.find_one({"id": entity_id})
+        add_debug_log(f"🔍 Cliente lookup: found={entity is not None}")
         if not entity:
             raise HTTPException(status_code=404, detail="Cliente not found")
         
         # Document uploads are universally permitted - ALL authenticated users can upload
         # No access check needed for document upload
         # Note: We don't need to validate the full Cliente model for document upload
+        add_debug_log(f"✅ Cliente found: {entity.get('nome', '')} {entity.get('cognome', '')}")
     
     try:
+        add_debug_log("🚀 Starting file processing...")
         # NEW: Smart Aruba Drive Integration with per-commessa configuration
         aruba_drive_path = None
         storage_type = None  # Will be set based on actual upload result
@@ -6408,8 +6411,10 @@ async def upload_document(
                 # Folder name (e.g., "Fastweb", "Telepass")
                 if aruba_config.get("root_folder_path"):
                     folder_name = aruba_config["root_folder_path"].strip('/')
-                else:
+                elif commessa:
                     folder_name = commessa.get('nome', 'Documenti')
+                else:
+                    folder_name = 'Documenti'
                 
                 logging.info(f"🌐 Nextcloud WebDAV upload")
                 logging.info(f"📁 Target folder: /{folder_name}/")
