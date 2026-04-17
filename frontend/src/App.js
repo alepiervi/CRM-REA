@@ -22582,6 +22582,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       cap: cliente.cap || '',
       indirizzo: cliente.indirizzo || '',
       indirizzo_attivazione: cliente.indirizzo_attivazione || '',
+      comune_attivazione: cliente.comune_attivazione || '',
       codice_fiscale: cliente.codice_fiscale || '',
       partita_iva: cliente.partita_iva || '',
       // Contatti
@@ -22648,6 +22649,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     cap: '',
     indirizzo: '',
     indirizzo_attivazione: '',
+    comune_attivazione: '',
     email: '',
     telefono: '', // Obbligatorio
     telefono2: '',
@@ -24241,6 +24243,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   data-testid="create-cliente-indirizzo-attivazione-input"
                 />
               </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="comune_attivazione">Comune di Installazione</Label>
+                <Input
+                  id="comune_attivazione"
+                  value={formData.comune_attivazione}
+                  onChange={(e) => setFormData({...formData, comune_attivazione: e.target.value})}
+                  placeholder="Comune dove verrà installato il servizio (se diverso dalla residenza)"
+                  data-testid="create-cliente-comune-attivazione-input"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -25631,10 +25643,21 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                   <p className="text-sm">{cliente.cap || 'Non specificato'}</p>
                 </div>
               </div>
-              {cliente.indirizzo_attivazione && (
-                <div className="mt-3 pt-3 border-t border-slate-200">
-                  <Label className="text-sm font-medium text-amber-700">Indirizzo Attivazione</Label>
-                  <p className="text-sm" data-testid="view-cliente-indirizzo-attivazione">{cliente.indirizzo_attivazione}</p>
+              {(cliente.indirizzo_attivazione || cliente.comune_attivazione) && (
+                <div className="mt-3 pt-3 border-t border-slate-200 space-y-2">
+                  <Label className="text-sm font-semibold text-amber-700">📍 Indirizzo Attivazione / Installazione</Label>
+                  {cliente.indirizzo_attivazione && (
+                    <div>
+                      <Label className="text-xs font-medium text-slate-600">Indirizzo</Label>
+                      <p className="text-sm" data-testid="view-cliente-indirizzo-attivazione">{cliente.indirizzo_attivazione}</p>
+                    </div>
+                  )}
+                  {cliente.comune_attivazione && (
+                    <div>
+                      <Label className="text-xs font-medium text-slate-600">Comune di Installazione</Label>
+                      <p className="text-sm" data-testid="view-cliente-comune-attivazione">{cliente.comune_attivazione}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -26090,6 +26113,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     comune_residenza: cliente?.comune_residenza || '',
     indirizzo: cliente?.indirizzo || '',
     indirizzo_attivazione: cliente?.indirizzo_attivazione || '',
+    comune_attivazione: cliente?.comune_attivazione || '',
     cap: cliente?.cap || '',
     
     // Campi aggiuntivi mancanti
@@ -26928,6 +26952,16 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     onChange={(e) => handleChange('indirizzo_attivazione', e.target.value)}
                     placeholder="Indirizzo per l'attivazione servizio (se diverso dalla residenza)"
                     data-testid="edit-cliente-indirizzo-attivazione-input"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="comune_attivazione">Comune di Installazione</Label>
+                  <Input
+                    id="comune_attivazione"
+                    value={formData.comune_attivazione || ''}
+                    onChange={(e) => handleChange('comune_attivazione', e.target.value)}
+                    placeholder="Comune dove verrà installato il servizio (se diverso dalla residenza)"
+                    data-testid="edit-cliente-comune-attivazione-input"
                   />
                 </div>
                 <div>

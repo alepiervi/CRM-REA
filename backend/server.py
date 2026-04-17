@@ -1167,6 +1167,7 @@ class Cliente(BaseModel):
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
     indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
+    comune_attivazione: Optional[str] = None  # NEW: Comune di installazione/attivazione
     email: str  # Obbligatorio
     telefono: str  # Obbligatorio
     telefono2: Optional[str] = None
@@ -1260,6 +1261,7 @@ class ClienteCreate(BaseModel):
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
     indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
+    comune_attivazione: Optional[str] = None  # NEW: Comune di installazione/attivazione
     email: str  # Obbligatorio
     telefono: str  # Obbligatorio
     telefono2: Optional[str] = None
@@ -1346,6 +1348,7 @@ class ClienteUpdate(BaseModel):
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
     indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
+    comune_attivazione: Optional[str] = None  # NEW: Comune di installazione/attivazione
     email: str  # Obbligatorio
     telefono: Optional[str] = None
     telefono2: Optional[str] = None
