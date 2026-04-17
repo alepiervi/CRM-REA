@@ -22540,11 +22540,9 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     return () => clearTimeout(timer);
   }, [copySearchTerm]);
   
-  // Copy client data to form (ANAGRAFICA BASE + Modalità di pagamento + Documento)
-  // Copies: nome, cognome, ragione_sociale, indirizzo, comune_residenza, provincia, cap,
-  //         modalita_pagamento, iban, intestatario_diverso, numero_carta, mese_carta, anno_carta,
-  //         tipo_documento, numero_documento, data_rilascio, luogo_rilascio, scadenza_documento
-  // Explicitly EXCLUDED: codice_fiscale, partita_iva, telefono, email, contract fields, note
+  // Copy client data to form (ANAGRAFICA COMPLETA + Contatti + Documento + Pagamento)
+  // Copies: all identity/contact/payment/document fields
+  // Explicitly EXCLUDED: contract-specific fields (ICCID, POD, tecnologia, ecc.), note, uploaded files
   const copyClientData = (cliente) => {
     console.log("📋 Copying client data:", cliente);
 
@@ -22553,34 +22551,42 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       formData.nome ||
       formData.cognome ||
       formData.ragione_sociale ||
+      formData.codice_fiscale ||
+      formData.partita_iva ||
+      formData.telefono ||
+      formData.email ||
       formData.indirizzo ||
-      formData.comune_residenza ||
-      formData.provincia ||
-      formData.cap ||
       formData.modalita_pagamento ||
       formData.iban ||
-      formData.intestatario_diverso ||
       formData.tipo_documento ||
       formData.numero_documento
     );
     if (hasData) {
       const ok = window.confirm(
-        "I campi già compilati (anagrafica base, modalità di pagamento, documento) verranno sovrascritti con i dati del cliente selezionato. Continuare?"
+        "I campi già compilati (anagrafica, contatti, modalità di pagamento, documento) verranno sovrascritti con i dati del cliente selezionato. Continuare?"
       );
       if (!ok) return;
     }
 
-    // Copy anagrafica base + payment + document fields
+    // Copy anagrafica completa + contatti + pagamento + documento
     setFormData(prev => ({
       ...prev,
-      // Anagrafica base
+      // Anagrafica
       ragione_sociale: cliente.ragione_sociale || '',
       cognome: cliente.cognome || '',
       nome: cliente.nome || '',
+      data_nascita: cliente.data_nascita || '',
+      luogo_nascita: cliente.luogo_nascita || '',
       comune_residenza: cliente.comune_residenza || '',
       provincia: cliente.provincia || '',
       cap: cliente.cap || '',
       indirizzo: cliente.indirizzo || '',
+      codice_fiscale: cliente.codice_fiscale || '',
+      partita_iva: cliente.partita_iva || '',
+      // Contatti
+      telefono: cliente.telefono || '',
+      telefono2: cliente.telefono2 || '',
+      email: cliente.email || '',
       // Modalità di pagamento
       modalita_pagamento: cliente.modalita_pagamento || '',
       iban: cliente.iban || '',
@@ -22603,7 +22609,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
 
     toast({
       title: "Dati copiati",
-      description: `Anagrafica base + modalità pagamento + documento di ${cliente.nome || ''} ${cliente.cognome || cliente.ragione_sociale || ''} copiati. Completa gli altri campi prima di salvare.`,
+      description: `Anagrafica completa, contatti, modalità pagamento e documento di ${cliente.nome || ''} ${cliente.cognome || cliente.ragione_sociale || ''} copiati.`,
     });
   };
   
@@ -23997,7 +24003,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               <div>
                 <h4 className="font-semibold text-amber-900">📋 Copia da anagrafica esistente</h4>
                 <p className="text-xs text-amber-800 mt-1">
-                  Precompila anagrafica base (nome, cognome, ragione sociale, indirizzo, comune, provincia, CAP), modalità di pagamento e documento d'identità partendo da un cliente già presente.
+                  Precompila anagrafica completa (nome, cognome, ragione sociale, CF, P.IVA, indirizzo), contatti (telefono, email), modalità di pagamento e documento d'identità partendo da un cliente già presente.
                 </p>
               </div>
               <Button
