@@ -22540,13 +22540,15 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     return () => clearTimeout(timer);
   }, [copySearchTerm]);
   
-  // Copy client data to form (ANAGRAFICA BASE only)
-  // Copies: nome, cognome, ragione_sociale, indirizzo, comune_residenza, provincia, cap
-  // Explicitly EXCLUDED: codice_fiscale, partita_iva, documenti, telefono, email, IBAN, contract fields, note
+  // Copy client data to form (ANAGRAFICA BASE + Modalità di pagamento + Documento)
+  // Copies: nome, cognome, ragione_sociale, indirizzo, comune_residenza, provincia, cap,
+  //         modalita_pagamento, iban, intestatario_diverso, numero_carta, mese_carta, anno_carta,
+  //         tipo_documento, numero_documento, data_rilascio, luogo_rilascio, scadenza_documento
+  // Explicitly EXCLUDED: codice_fiscale, partita_iva, telefono, email, contract fields, note
   const copyClientData = (cliente) => {
-    console.log("📋 Copying client base data:", cliente);
+    console.log("📋 Copying client data:", cliente);
 
-    // Confirm overwrite if user already typed something in anagrafica base fields
+    // Confirm overwrite if user already typed something in copy-target fields
     const hasData = !!(
       formData.nome ||
       formData.cognome ||
@@ -22554,18 +22556,24 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       formData.indirizzo ||
       formData.comune_residenza ||
       formData.provincia ||
-      formData.cap
+      formData.cap ||
+      formData.modalita_pagamento ||
+      formData.iban ||
+      formData.intestatario_diverso ||
+      formData.tipo_documento ||
+      formData.numero_documento
     );
     if (hasData) {
       const ok = window.confirm(
-        "I campi anagrafica base già compilati verranno sovrascritti con i dati del cliente selezionato. Continuare?"
+        "I campi già compilati (anagrafica base, modalità di pagamento, documento) verranno sovrascritti con i dati del cliente selezionato. Continuare?"
       );
       if (!ok) return;
     }
 
-    // Copy ONLY anagrafica base fields
+    // Copy anagrafica base + payment + document fields
     setFormData(prev => ({
       ...prev,
+      // Anagrafica base
       ragione_sociale: cliente.ragione_sociale || '',
       cognome: cliente.cognome || '',
       nome: cliente.nome || '',
@@ -22573,6 +22581,19 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       provincia: cliente.provincia || '',
       cap: cliente.cap || '',
       indirizzo: cliente.indirizzo || '',
+      // Modalità di pagamento
+      modalita_pagamento: cliente.modalita_pagamento || '',
+      iban: cliente.iban || '',
+      intestatario_diverso: cliente.intestatario_diverso || '',
+      numero_carta: cliente.numero_carta || '',
+      mese_carta: cliente.mese_carta || '',
+      anno_carta: cliente.anno_carta || '',
+      // Documento
+      tipo_documento: cliente.tipo_documento || '',
+      numero_documento: cliente.numero_documento || '',
+      data_rilascio: cliente.data_rilascio || '',
+      luogo_rilascio: cliente.luogo_rilascio || '',
+      scadenza_documento: cliente.scadenza_documento || '',
     }));
 
     // Close search and show success message
@@ -22581,8 +22602,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     setCopySearchResults([]);
 
     toast({
-      title: "Anagrafica base copiata",
-      description: `Dati base di ${cliente.nome || ''} ${cliente.cognome || cliente.ragione_sociale || ''} copiati. Completa gli altri campi prima di salvare.`,
+      title: "Dati copiati",
+      description: `Anagrafica base + modalità pagamento + documento di ${cliente.nome || ''} ${cliente.cognome || cliente.ragione_sociale || ''} copiati. Completa gli altri campi prima di salvare.`,
     });
   };
   
@@ -23976,7 +23997,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               <div>
                 <h4 className="font-semibold text-amber-900">📋 Copia da anagrafica esistente</h4>
                 <p className="text-xs text-amber-800 mt-1">
-                  Precompila i campi base (nome, cognome, ragione sociale, indirizzo, comune, provincia, CAP) da un cliente già presente.
+                  Precompila anagrafica base (nome, cognome, ragione sociale, indirizzo, comune, provincia, CAP), modalità di pagamento e documento d'identità partendo da un cliente già presente.
                 </p>
               </div>
               <Button
