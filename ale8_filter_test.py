@@ -11,7 +11,7 @@ import uuid
 import time
 
 class Ale8FilterTester:
-    def __init__(self, base_url="https://referente-oversight.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://referente-hub.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
@@ -67,7 +67,7 @@ class Ale8FilterTester:
         print("   2. Quando filtra, non funziona (non filtra i clienti)")
         print("")
         print("🎯 SETUP:")
-        print("   • Backend: https://referente-oversight.preview.emergentagent.com")
+        print("   • Backend: https://referente-hub.preview.emergentagent.com")
         print("   • User: ale8/admin123")
         print("")
         

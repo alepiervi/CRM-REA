@@ -1,195 +1,149 @@
 <analysis>**original_problem_statement:**
-The user's initial problem statement from the previous session was to fix bugs and add several features, including a Recycle Bin for leads, a Supervisor role, and advanced lead assignment logic.
+The user requested continuous development of a complete CRM system for managing clients, leads, agents, and automated workflows. Over this session, requests evolved to finalizing the Super Referente role's visibility and permissions, fixing several frontend UI bugs, implementing specific mandatory field validations based on contract types (ICCID for Ho Mobile, POD for Energia), fixing complex document upload issues to Aruba Drive (including adding audio file support and removing local fallback), and finally, adding a feature to copy existing client data when creating a new client. 
 
-During this session, the user made the following requests:
-1.  **Critical Bug Fix**: Resolve a potential frontend build issue.
-2.  **Analytics Fix**: In the Pivot Analytics, display segment names instead of IDs. This involved multiple iterations to handle data inconsistencies (some segments stored as names, others as UUIDs).
-3.  **Dashboard Bug**: Fix a frontend error () on the main dashboard caused by a change in the  endpoint response structure (from array to paginated object).
-4.  **Permission Update**: Expand the restriction on deleting clients to include the Responsabili presidi role.
-5.  **Analytics Bug**: Fix the Pivot Analytics to show a count for *all* system-defined segments, even those with zero associated clients.
-6.  **Dashboard Data Bug**: Fix dashboards for Supervisor, Referente, and Agente roles, as they were not showing updated data. This required adding specific logic for the Supervisor role and correcting filtering logic for Referente and Agente.
-7.  **Referente Analytics Access**: Grant Referente users access to the Analytics section.
-8.  **Referente Analytics View**: Create a custom, non-pivot analytics view specifically for the Referente role, showing only data for their assigned agents and leads. This included a detailed performance pivot table for their agents.
-9.  **Referente Menu Cleanup**: Remove the Qualificazione Lead section from the Referente user's navigation menu.
-10. **Supervisor Analytics Enhancement**: Add a breakdown of lead outcomes (esiti) per agent to the Supervisor's analytics view, similar to the Referente's view.
-11. **Client Search Bug**: Fix an instability issue in the client search bar, which was caused by a  loop and improper handling of debounce logic.
-12. **Lead History Log**: Implement a change history log for leads, visible only to Admins, showing who changed what and when. The UI was later requested to be a separate modal, similar to the client history.
-13. **Lead Status Filter**: Fix the lead status dropdown filter to show all possible statuses (including custom ones used by agents) and ensure the correct colors are displayed in the filter and the lead list/card views.
-14. **Promoter Presidi Multi-Assignment**: Allow Promoter Presidi users to be assigned to multiple Sub agenzie and fix UI duplications caused by this change.
-15. **Promoter Presidi Data Visibility**: Ensure Promoter Presidi users only see the services they are explicitly authorized for, not all services available to their assigned sub-agencies.
-16. **New Role: Super Referente**: Create a new Super Referente user role with the ability to manage multiple selected Referenti and view all associated agent/lead data and analytics.
-17. **Stale Lead Notifications**: Implement email notifications for the Super Referente when a lead assigned to an agent in their network remains in the Nuovo status for more than 7 days.
+PRODUCT REQUIREMENTS (New additions):
+- Super Referente can only see leads, agents, and analytics restricted to their assigned Unit and authorized Referenti.
+- Note Back Office field is exclusively editable by the  role.
+- ICCID is mandatory when contract type includes Ho Mobile.
+- Codice POD is mandatory when contract type includes Energia.
+- Document uploads must accept audio files (MP3, WAV, etc.), rename files to include Client Name + Phone, and STRICTLY upload to Aruba Drive (no local fallback; must fail if Aruba is unavailable).
+- New feature: Ability to copy data from an existing client to pre-fill the Create Client form.
 
 **User's preferred language**: Italian
+(INSTRUCT next agent: You MUST respond in Italian only)
 
 **what currently exists?**
-The application is a monolithic full-stack application with a React frontend () and a FastAPI backend (). The agent has successfully implemented a large number of features and bug fixes. The application now includes complex, layered roles (Admin, Supervisor, Super Referente, Referente, Agente, etc.) with granular permissions. Analytics dashboards and data visibility are tailored to each role. A new Super Referente role has been fully implemented, from the database schema to the backend logic and frontend UI, including a dedicated analytics view.
+A monolithic full-stack CRM application featuring a complex React frontend (, >28k lines) and a FastAPI backend (, >21k lines). It includes highly granular Role-Based Access Control (RBAC) with roles such as Admin, Supervisor, Super Referente, Referente, Agente, and Backoffice. It features complex aggregation for analytics, dynamic forms, file uploads to Aruba Drive/Nextcloud, and background email notification tasks.
 
 **Last working item**:
-The agent was implementing the user's request for the Super Referente to receive email notifications for stale leads.
-
-- **Last item agent was working**: Adding logic to the scheduled task  in . The new logic finds all Super Referenti, iterates through their authorized Referenti and associated Agents, and identifies leads that have been in the Nuovo status for over 7 days to send a notification.
+- **Last item agent was working**: Implementing the Copy existing client feature within the . The agent just began modifying  by adding new state variables (, , , ) to support searching and selecting an existing client to copy their data. The actual UI search bar, the fetch logic, and the form pre-population logic are yet to be implemented.
 - **Status**: IN PROGRESS
 - **Agent Testing Done**: N
-- **Which testing method agent to use?**: manual testing by python -c. This is a scheduled task that is difficult to trigger via a standard API call. The next agent should create a temporary script or use  to invoke the  function to test the logic and verify that the correct Super Referente is identified and the email payload is generated correctly.
+- **Which testing method agent to use?**: Frontend testing agent or screenshot tool. (Verify the search dropdown appears in the Create Client modal and that selecting a client correctly populates the form fields).
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Complete and test the Super Referente stale lead notification (P0)
-- **Issue 2**: Frontend build instability risk (P1)
+  - Issue 1: SMTP IP Blacklisted (Aruba block)
+     - Attempted fixes: Agent verified the code for the background email scheduler works perfectly. The 535 authentication/blacklist errors are due to the Preview Server IP () being on Aruba's DNSBL blacklist.
+     - Next debug checklist: Inform user again if they ask about emails not arriving. This requires the user to whitelist the IP with Aruba or switch to a provider like SendGrid/Mailgun.
+     - Why fix this issue and what will be achieved with the fix? Allows transactional emails (like stale lead notifications) to be delivered.
+     - Status: BLOCKED (Infrastructure issue, not code)
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Backend
+     - Blocked on other issue: None
 
-**Issues Detail**:
-- **Issue 1: Complete and test the Super Referente stale lead notification**
-  - **Attempted fixes**: The agent added the backend code in  to handle the notification logic for the new Super Referente role.
-  - **Next debug checklist**:
-    1.  The code has been written but not tested. Create a test script using  to manually invoke the  function from within the  directory.
-    2.  The script should import the necessary modules from  (like the function itself, the database connection, and models).
-    3.  Create mock data: ensure there is a Super Referente, an associated Referente, an Agent under that Referente, and a lead assigned to that agent created more than 7 days ago with status Nuovo.
-    4.  Execute the function and check the application logs () for the Sending stale lead email to Super Referente... message and to verify the email content is correct (includes agent and referente names).
-  - **Why fix this issue and what will be achieved with the fix?**: This is the final piece of the Super Referente feature request. Completing it will finalize the new role's functionality.
-  - **Status**: IN PROGRESS
-  - **Is recurring issue?**: N
-  - **Should Test frontend/backend/both after fix?**: backend
-  - **Blocked on other issue**: None
-
-- **Issue 2: Frontend build instability**
-  - **Attempted fixes**: The agent successfully ran yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. at the beginning of the session, which passed. However, throughout the session, multiple frontend runtime errors occurred (, , duplicate state declaration), which were fixed iteratively. The previous handoff summary also noted this as a recurring issue.
-  - **Next debug checklist**: The monolithic structure of  (>25,000 lines) is the root cause. While no immediate build error is present, any significant new feature carries a high risk of causing one. The next agent must be extremely cautious when modifying this file. A long-term fix requires refactoring.
-  - **Why fix this issue and what will be achieved with the fix?**: The frontend is fragile and hard to maintain. While not an immediate blocker, it slows down development and increases the risk of regressions. The long-term solution is refactoring.
-  - **Status**: NOT STARTED
-  - **Is recurring issue?**: Y
-  - **Should Test frontend/backend/both after fix?**: Frontend.
-  - **Blocked on other issue**: None
+  - Issue 2: Frontend/Backend Monolith Refactoring
+     - Attempted fixes: None. The files keep growing.
+     - Next debug checklist: Propose breaking down  and  into modular architectures.
+     - Why fix this issue and what will be achieved with the fix? Reduces instability, fixes parsing errors, and allows the platform to safely handle more context.
+     - Status: NOT STARTED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Both
+     - Blocked on other issue: None
 
 **In progress Task List**:
-- **Task 1: Finalize Super Referente Feature**
-  - **Where to resume**: The backend logic for email notifications is written but untested. The immediate next step is to test it as described in Issue 1. After that, a full regression test of the Super Referente role (UI for creation, lead visibility, analytics access, and dashboard stats) should be performed.
-  - **What will be achieved with this?**: Full completion of the new Super Referente role as requested by the user.
-  - **Status**: IN PROGRESS
-  - **Should Test frontend/backend/both after fix?**: Both
-  - **Blocked on something**: No
+  - Task 1: Copy Existing Client Data in 
+     - Where to resume: Continue modifying . Add the UI search input at the top of the Create Client modal. Implement the debounce search function to fetch existing clients. Implement the  function to overwrite  with the fetched client's data (taking care to exclude specific fields like uid=0(root) gid=0(root) groups=0(root), , or ).
+     - What will be achieved with this? Speeds up data entry for agents creating similar profiles.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix? Frontend
+     - Blocked on something: No
 
 **Upcoming and Future Tasks**
-- **Upcoming Tasks**:
-    - **P1**: Once the Super Referente feature is user-verified, the next agent should propose the critical refactoring task to break down  and  into smaller, manageable modules. This is essential for the long-term health and stability of the project.
-- **Future Tasks**:
-    - **P3**: Implement the preventivo (quote/estimate) editing feature. This is blocked pending user clarification.
+    Upcoming Tasks:
+    - P1: Implement the copy client functionality completely (Last Working Item).
+    - P2: Extensive manual/agent testing of the complete Super Referente role workflows, as many interconnected parts were modified.
+    
+    Future Tasks:
+    - P3: Implement the preventivo (quote/estimate) editing feature (Blocked: waiting for user clarification).
+    - P4: Massive Refactoring of  and  into smaller files (Routes, Controllers, Components).
 
 **Completed work in this session**
-- **Analytics & Dashboard Overhaul**:
-  - Fixed Pivot Analytics to show segment names, handling inconsistent data formats.
-  - Corrected dashboards for Admin, Supervisor, Referente, and Agente roles after a breaking change in an API response.
-  - Created a dedicated, custom analytics view for the Referente role, including agent performance tables.
-  - Enhanced the Supervisor analytics view to include a breakdown of lead outcomes per agent.
-- **Bug Fixes**:
-  - Resolved a critical frontend bug () on the main dashboard.
-  - Fixed a client search instability issue by refactoring debounce logic and removing a  loop.
-  - Fixed multiple frontend runtime errors related to the new Super Referente form.
-- **Feature Implementation & Enhancement**:
-  - **Lead History**: Implemented a detailed change log for leads, visible only to Admins in a dedicated modal.
-  - **Lead Status UI**: Improved the lead status filter to dynamically show all used statuses and display their assigned colors correctly across the UI.
-  - **New Role Super Referente**: Fully implemented the new role, including DB model changes, backend permissions for lead/analytics visibility, and frontend UI for user creation and a dedicated analytics dashboard.
-- **Permission & Role Updates**:
-  - Blocked the Responsabili presidi role from deleting clients.
-  - Enabled multi-sub-agency assignment for Promoter Presidi users and fixed related UI duplications and data visibility issues.
-  - Granted Referente role access to the (newly created) custom analytics section.
-  - Removed Qualificazione Lead from the Referente menu.
+- Verified Super Referente stale lead email (Code working, blocked by SMTP) (DONE)
+- Added Partita IVA to client search filter (DONE)
+- Allowed Agenti creation without a Referente (Orphaned agents) (DONE)
+- Refined Super Referente data visibility across leads, dashboard, analytics, and exports (Must see only assigned Unit and authorized Referenti network) (DONE)
+- Fixed missing  during Super Referente edits in Backend  model (DONE)
+- Fixed Super Referente edit modal UI to fetch and display Unit/Referenti (DONE)
+- Fixed Province normalization (Monza e Brianza matching variants) (DONE)
+- Restricted Note Back Office editing to  only (DONE)
+- Made ICCID mandatory for Ho Mobile and POD mandatory for Energia (DONE)
+- Added support for Audio file uploads (MP3, WAV, etc.) to Aruba Drive (DONE)
+- Fixed Document Upload 500 Errors (Removed faulty Pydantic validation that choked on , added missing  JWT header in frontend) (DONE)
+- Added auto-renaming of uploaded files to include  (DONE)
+- Removed local fallback for uploads: Forced Aruba Drive only (DONE)
 
 **Earlier issues found/mentioned but not fixed**
-- The preventivo (quote/estimate) modification feature remains unaddressed as it is blocked on user input.
+   Issue 1:
+   - Debug checklist: None specifically hanging, but keep an eye on  syntax/lint errors due to sheer file size during modifications. 
 
 **Known issue recurrence from previous fork**
-- **Frontend Instability**: The monolithic  file continues to be a source of problems. Although the production build (yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.) passed, several runtime errors occurred during development, reinforcing that the frontend is fragile and prone to breaking.
+  - Issue recurrence in previous fork: File size constraints causing context limits and occasional accidental overwrites during .
+  - Recurrence count: 3
+  - Status: IN PROGRESS
+  Note: Use very targeted  and avoid fetching the entire 28k line file into context unless necessary.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Complex RBAC**: The role system was further expanded with the  role, which required nested data lookups (Super Referente -> Referenti -> Agenti -> Leads).
-- **Scheduled Tasks**: Modified a background task () to include new business logic for the Super Referente role.
-- **Frontend State Management**: Refactored client search logic to use  for a stable debounce implementation, fixing a critical bug caused by  loops.
-- **Dynamic UI Components**: Created several new dynamic analytics components (, ) that fetch and render role-specific data.
-- **Data Aggregation (Backend)**: Implemented complex MongoDB aggregation pipelines to calculate statistics for the new analytics dashboards (e.g., grouping outcomes by agent for a supervisor's units).
+- React, FastAPI, MongoDB, Aruba Drive (Nextcloud WebDAV) integration, Complex RBAC (Role-Based Access Control) filtering down to the database query level.
 
 **key DB schema**
-- **users**:
-    -  field now includes .
-    -  field added to support the Super Referente role.
-    -  field is now used by  and other roles for multi-assignment.
-- **new collection **:
-    - Stores entries for every modification made to a lead.
-    - 
+  - users: 
+  - leads: 
+  - documenti: 
 
 **changes in tech stack**
-- No changes to the technology stack.
+  - No new technologies added.
 
-**All files of reference**
-- : Heavily modified across analytics, user management, lead management, and permissions logic to support all new features and roles. A new collection and multiple endpoints were added.
-- : Heavily modified with new components (, , Lead History Modal), new role-based conditional rendering logic, new state management for forms, and critical bug fixes in existing components.
+**All files of reference** 
+  - : Heavily edited for Super Referente visibility, province normalization, Aruba upload config, and Pydantic models.
+  - : Heavily edited for Modals (Create Client, Edit User), Analytics Views, and frontend file upload Axios requests.
 
-**Areas that need refactoring**:
-- ** & **: These files are critically oversized and are the root cause of recurring bugs and development friction. Breaking them into smaller, feature-based modules (e.g., separate React components in their own files, separate Python files for API routers) is the highest priority for future technical work.
+**Areas that need refactoring**: 
+- : 28k+ lines. 
+- : 21k+ lines. 
 
 **key api endpoints**
-- **New Endpoints**:
-  - : (Admin only) Retrieves the change history for a specific lead.
-- **Modified Endpoints**:
-  - : Now logs all changes to the  collection.
-  - : Permissions updated to handle the  role's complex visibility requirements.
-  - : Logic added to provide aggregated stats for the  role and fixed incorrect data for  and  roles.
-  - : Permissions updated to allow  to view analytics of their authorized referenti.
-  - : Backend logic enhanced to include a breakdown of outcomes per agent.
-  - : Backend logic enhanced with an  parameter to return all statuses in use, not just configured ones.
-  -  & : Permissions updated to correctly filter data for  and other roles with multi-assignment.
-  -  & : Logic now handles the  field for the  role.
+- : Uploads to Aruba Drive. Now strictly requires valid Aruba config and JWT token.
+- : New endpoint created specifically to fetch aggregated analytics for the Super Referente's network.
+-  & : Heavily modified filter logic utilizing  and unit/role checks.
 
-**Critical Info for New Agent**
-- **Monolithic Architecture is High-Risk**: The application is built on two massive files (, ). Be extremely careful when making changes, as regressions are very likely. The number of frontend bugs caught by the user post-implementation indicates that thorough self-testing is critical.
-- **Final Super Referente Task is Untested**: The last piece of work, the email notification for stale leads for the Super Referente, has been coded but not tested at all. This must be the first thing you verify.
-- **User Iterative Feedback**: The user provides feedback in small, iterative chunks. Expect to receive follow-up requests or bug reports shortly after implementing a feature.
+**Critical Info for New Agent** 
+- **Aruba Drive Uploads**: The fallback to local uploads was completely removed. If Aruba Drive is down or misconfigured for a client/commessa, the system *must* throw an error. 
+- **Email System**: The SMTP (Aruba) is actively rejecting the Emergent Preview Server's IP. Do not waste time debugging the backend email code.
+- **Province Normalization**: A custom normalizer function  exists in both frontend and backend to handle variants like Monza della Brianza vs Monza e Brianza.
 
-**documents and test reports created in this job**
--  was updated.
+**documents and test reports created in this job** 
+  -  updated with new features.
 
-**Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Implement stale lead email notifications for the Super Referente. (Status: **In Progress**)
-2.  **User**: Fix  declared twice in . (Status: **Completed**)
-3.  **User**: Super Referente should select a Unit first, then see the Referenti from that unit. (Status: **Completed**)
-4.  **User**: The form for Super Referente isn't showing the list of Referenti to select. (Status: **Completed**)
-5.  **User**: Fixed  error in . (Status: **Completed**)
-6.  **User**: Fixed  error in . (Status: **Completed**)
-7.  **User**: Create a new Super Referente role with specific multi-referente management capabilities. (Status: **Completed**)
-8.  **User**: For Promoter Presidi, filter services to show only those authorized for the user, not all services of the sub-agency. (Status: **Completed**)
-9.  **User**: Promoter Presidi users can't see their assigned sub-agencies when creating a new client. (Status: **Completed**)
-10. **User**: Fix duplicate UI fields in the user creation form for Promoter Presidi after enabling multi-sub-agency assignment. (Status: **Completed**)
+**Last 10 User Messages and any pending HUMAN messages** 
+ 1. (User) sto provando a caricare un file audio ma mi da errore -> (Agent) Found Pydantic error, removed  instantiation.
+ 2. (User) il sistema quando prende il documento o audio gli deve mettere il nome del cliente e il numero di telefono al file -> (Agent) Modified filename generation string logic.
+ 3. (User) continua a darmi errore -> (Agent) Tested locally, found frontend was missing  header on Axios POST. Fixed.
+ 4. (User) mi da ancora questo errore -> (Agent) Added more debug logs, found  object was  breaking . Fixed.
+ 5. (User) mi da ancora questo errore -> (Agent) Fixed missing Auth Headers in  in frontend.
+ 6. (User) il sistema sta caricando in local ma deve caricare sempre su aruba se non va su Aruba drive deve dare errore come era prima -> (Agent) Removed local fallback. Now forces Aruba config checks.
+ 7. (User) nella sezione clienti quando creo un anagrafica cliente devo avere la possibilità di copiare un anagrafica esistente e di poterla modificare -> (Agent) Started modifying  by adding state variables. **(PENDING COMPLETION)**
 
 **Project Health Check:**
-- **Broken**:
-  - The stale lead notification feature for the Super Referente is incomplete as it has not been tested.
-- **Mocked**:
-  - None.
+- Broken: Email notifications (blocked by SMTP Provider IP Blacklist).
+- Mocked: None
 
-**3rd Party Integrations**
-- **OpenAI**: Uses User API Key for AI assistants in workflows.
-- **whatsapp-web.js (Node.js)**: Functional WhatsApp integration.
-- **Zapier**: Integrated via custom webhooks for lead creation.
-- **Aruba SMTP**: Integrated for sending transactional emails.
+**3rd Party Integrations** 
+	• Aruba Drive (Nextcloud WebDAV) - Used for document storage. Requires User Config.
+    • Aruba SMTP - Requires User credentials. Currently blocking Preview Server IP.
+    • whatsapp-web.js - Requires QR connection.
 
 **Testing status**
-- **Testing agent used after significant changes**: NO
-- **Troubleshoot agent used after agent stuck in loop**: NO
-- **Test files created**: None.
-- **Known regressions**: None currently known, but the risk is high due to the monolithic architecture. The frontend, in particular, has proven to be fragile with multiple runtime errors discovered by the user during this session.
+  - Testing agent used after significant changes: NO
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: []
+  - Known regressions: None detected, but constant risk due to monolithic file sizes.
 
 **Credentials to test flow:**
-- **Admin**:  / 
-- **Aruba SMTP**:
-  - Email: 
-  - Password: 
-  - Sender Name: 
+- Admin:  / 
 
 **What agent forgot to execute**
-- The agent wrote the code for the stale lead notification for the Super Referente but did not perform any testing to validate it. This is a critical final step that was missed.
-- The agent did not thoroughly test the frontend changes for the Super Referente user creation form, leading to a series of runtime errors (, ,  re-declared) that the user had to report. This indicates a need for more robust self-testing before handing off to the user.</analysis>
+- The agent started the Copy existing client task by adding the state variables in  but finished the output turn without completing the UI search logic and state-updating logic for the copy action.</analysis>

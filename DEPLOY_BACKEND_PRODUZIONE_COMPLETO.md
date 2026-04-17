@@ -37,7 +37,7 @@ const getBackendURL = () => {
   
   // Preview → Backend preview (può andare in standby)
   if (hostname.includes('preview.emergentagent.com')) {
-    return 'https://referente-oversight.preview.emergentagent.com';
+    return 'https://referente-hub.preview.emergentagent.com';
   }
   
   // Development
@@ -342,7 +342,7 @@ post-deploy: python3 -m playwright install chromium
 
 **Console mostra**:
 ```
-🔧 Backend URL: https://referente-oversight.preview.emergentagent.com
+🔧 Backend URL: https://referente-hub.preview.emergentagent.com
 ```
 
 **Causa**: Frontend non deployato con nuovo codice

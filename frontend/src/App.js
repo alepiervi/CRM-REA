@@ -22412,6 +22412,7 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
 };
 
 const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, selectedCommessa, user }) => {
+  const { toast } = useToast();
   
   // ENUM MAPPING FUNCTIONS - Convert UUID or display values to backend enum format
   const mapTipologiaContratto = (uuidOrDisplayValue) => {
@@ -22501,6 +22502,89 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const [cascadeSegmenti, setCascadeSegmenti] = useState([]);
   const [cascadeOfferte, setCascadeOfferte] = useState([]);
   const [cascadeSubOfferte, setCascadeSubOfferte] = useState([]);  // NEW: Sub-offerte
+  
+  // NEW: Copy from existing client functionality
+  const [showCopySearch, setShowCopySearch] = useState(false);
+  const [copySearchTerm, setCopySearchTerm] = useState('');
+  const [copySearchResults, setCopySearchResults] = useState([]);
+  const [isSearchingClients, setIsSearchingClients] = useState(false);
+  
+  // Search for clients to copy from
+  const searchClientsForCopy = async (searchTerm) => {
+    if (!searchTerm || searchTerm.length < 2) {
+      setCopySearchResults([]);
+      return;
+    }
+    
+    setIsSearchingClients(true);
+    try {
+      const response = await axios.get(`${API}/clienti`, {
+        params: { search: searchTerm, page_size: 10 }
+      });
+      setCopySearchResults(response.data.clienti || []);
+    } catch (error) {
+      console.error("Error searching clients:", error);
+      setCopySearchResults([]);
+    } finally {
+      setIsSearchingClients(false);
+    }
+  };
+  
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (copySearchTerm) {
+        searchClientsForCopy(copySearchTerm);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [copySearchTerm]);
+  
+  // Copy client data to form (ANAGRAFICA BASE only)
+  // Copies: nome, cognome, ragione_sociale, indirizzo, comune_residenza, provincia, cap
+  // Explicitly EXCLUDED: codice_fiscale, partita_iva, documenti, telefono, email, IBAN, contract fields, note
+  const copyClientData = (cliente) => {
+    console.log("📋 Copying client base data:", cliente);
+
+    // Confirm overwrite if user already typed something in anagrafica base fields
+    const hasData = !!(
+      formData.nome ||
+      formData.cognome ||
+      formData.ragione_sociale ||
+      formData.indirizzo ||
+      formData.comune_residenza ||
+      formData.provincia ||
+      formData.cap
+    );
+    if (hasData) {
+      const ok = window.confirm(
+        "I campi anagrafica base già compilati verranno sovrascritti con i dati del cliente selezionato. Continuare?"
+      );
+      if (!ok) return;
+    }
+
+    // Copy ONLY anagrafica base fields
+    setFormData(prev => ({
+      ...prev,
+      ragione_sociale: cliente.ragione_sociale || '',
+      cognome: cliente.cognome || '',
+      nome: cliente.nome || '',
+      comune_residenza: cliente.comune_residenza || '',
+      provincia: cliente.provincia || '',
+      cap: cliente.cap || '',
+      indirizzo: cliente.indirizzo || '',
+    }));
+
+    // Close search and show success message
+    setShowCopySearch(false);
+    setCopySearchTerm('');
+    setCopySearchResults([]);
+
+    toast({
+      title: "Anagrafica base copiata",
+      description: `Dati base di ${cliente.nome || ''} ${cliente.cognome || cliente.ragione_sociale || ''} copiati. Completa gli altri campi prima di salvare.`,
+    });
+  };
   
   // DEBUG: Log when cascade data changes
   useEffect(() => {
@@ -23885,6 +23969,95 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                 )}
               </div>
             </div>
+
+          {/* COPY FROM EXISTING CLIENT (anagrafica base) */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6" data-testid="copy-client-section">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h4 className="font-semibold text-amber-900">📋 Copia da anagrafica esistente</h4>
+                <p className="text-xs text-amber-800 mt-1">
+                  Precompila i campi base (nome, cognome, ragione sociale, indirizzo, comune, provincia, CAP) da un cliente già presente.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCopySearch(v => !v)}
+                className="border-amber-300 text-amber-900 hover:bg-amber-100"
+                data-testid="toggle-copy-client-search-btn"
+              >
+                {showCopySearch ? 'Chiudi ricerca' : 'Cerca cliente da copiare'}
+              </Button>
+            </div>
+
+            {showCopySearch && (
+              <div className="mt-3" data-testid="copy-client-search-panel">
+                <Input
+                  type="text"
+                  placeholder="Cerca per nome, cognome, codice fiscale, P.IVA, telefono, email..."
+                  value={copySearchTerm}
+                  onChange={(e) => setCopySearchTerm(e.target.value)}
+                  className="w-full"
+                  data-testid="copy-client-search-input"
+                  autoFocus
+                />
+
+                {isSearchingClients && (
+                  <div className="mt-2 text-sm text-amber-800" data-testid="copy-client-searching">
+                    Ricerca in corso...
+                  </div>
+                )}
+
+                {!isSearchingClients && copySearchTerm.length >= 2 && copySearchResults.length === 0 && (
+                  <div className="mt-2 text-sm text-gray-600" data-testid="copy-client-no-results">
+                    Nessun cliente trovato per "{copySearchTerm}".
+                  </div>
+                )}
+
+                {copySearchTerm.length > 0 && copySearchTerm.length < 2 && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    Digita almeno 2 caratteri per avviare la ricerca.
+                  </div>
+                )}
+
+                {copySearchResults.length > 0 && (
+                  <div
+                    className="mt-2 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg divide-y"
+                    data-testid="copy-client-results-list"
+                  >
+                    {copySearchResults.map((cliente) => (
+                      <button
+                        type="button"
+                        key={cliente.id}
+                        onClick={() => copyClientData(cliente)}
+                        className="w-full text-left px-3 py-2 hover:bg-amber-50 focus:bg-amber-100 focus:outline-none"
+                        data-testid={`copy-client-result-${cliente.id}`}
+                      >
+                        <div className="font-medium text-gray-900">
+                          {cliente.ragione_sociale
+                            ? cliente.ragione_sociale
+                            : `${cliente.nome || ''} ${cliente.cognome || ''}`.trim() || '—'}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {[cliente.codice_fiscale, cliente.partita_iva, cliente.telefono, cliente.email]
+                            .filter(Boolean)
+                            .join(' • ')}
+                        </div>
+                        {(cliente.indirizzo || cliente.comune_residenza || cliente.provincia) && (
+                          <div className="text-xs text-gray-500">
+                            {[cliente.indirizzo, cliente.comune_residenza, cliente.provincia, cliente.cap]
+                              .filter(Boolean)
+                              .join(', ')}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* AREA MANAGER: Campo Sub Agenzia all'inizio */}
           {user?.role === 'area_manager' && (
