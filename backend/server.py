@@ -1166,6 +1166,7 @@ class Cliente(BaseModel):
     provincia: Optional[str] = None  # Sigla provincia
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
+    indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
     email: str  # Obbligatorio
     telefono: str  # Obbligatorio
     telefono2: Optional[str] = None
@@ -1258,6 +1259,7 @@ class ClienteCreate(BaseModel):
     provincia: Optional[str] = None  # Sigla provincia
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
+    indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
     email: str  # Obbligatorio
     telefono: str  # Obbligatorio
     telefono2: Optional[str] = None
@@ -1343,6 +1345,7 @@ class ClienteUpdate(BaseModel):
     provincia: Optional[str] = None
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
+    indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
     email: str  # Obbligatorio
     telefono: Optional[str] = None
     telefono2: Optional[str] = None

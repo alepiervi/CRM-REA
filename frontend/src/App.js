@@ -22581,6 +22581,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       provincia: cliente.provincia || '',
       cap: cliente.cap || '',
       indirizzo: cliente.indirizzo || '',
+      indirizzo_attivazione: cliente.indirizzo_attivazione || '',
       codice_fiscale: cliente.codice_fiscale || '',
       partita_iva: cliente.partita_iva || '',
       // Contatti
@@ -22646,6 +22647,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     provincia: '', // Sigla provincia
     cap: '',
     indirizzo: '',
+    indirizzo_attivazione: '',
     email: '',
     telefono: '', // Obbligatorio
     telefono2: '',
@@ -24229,6 +24231,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   onChange={(e) => setFormData({...formData, indirizzo: e.target.value})}
                 />
               </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="indirizzo_attivazione">Indirizzo Attivazione</Label>
+                <Input
+                  id="indirizzo_attivazione"
+                  value={formData.indirizzo_attivazione}
+                  onChange={(e) => setFormData({...formData, indirizzo_attivazione: e.target.value})}
+                  placeholder="Indirizzo per l'attivazione servizio (se diverso dalla residenza)"
+                  data-testid="create-cliente-indirizzo-attivazione-input"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -24243,7 +24255,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                 />
               </div>
               <div>
-                <Label htmlFor="telefono">Telefono *</Label>
+                <Label htmlFor="telefono">Cellulare *</Label>
                 <Input
                   id="telefono"
                   value={formData.telefono}
@@ -26085,6 +26097,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     provincia: cliente?.provincia || '',
     comune_residenza: cliente?.comune_residenza || '',
     indirizzo: cliente?.indirizzo || '',
+    indirizzo_attivazione: cliente?.indirizzo_attivazione || '',
     cap: cliente?.cap || '',
     
     // Campi aggiuntivi mancanti
@@ -26834,7 +26847,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="telefono">Telefono</Label>
+                  <Label htmlFor="telefono">Cellulare</Label>
                   <Input
                     id="telefono"
                     value={formData.telefono}
@@ -26913,6 +26926,16 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     value={formData.indirizzo}
                     onChange={(e) => handleChange('indirizzo', e.target.value)}
                     placeholder="Via/Piazza, numero civico"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="indirizzo_attivazione">Indirizzo Attivazione</Label>
+                  <Input
+                    id="indirizzo_attivazione"
+                    value={formData.indirizzo_attivazione || ''}
+                    onChange={(e) => handleChange('indirizzo_attivazione', e.target.value)}
+                    placeholder="Indirizzo per l'attivazione servizio (se diverso dalla residenza)"
+                    data-testid="edit-cliente-indirizzo-attivazione-input"
                   />
                 </div>
                 <div>
