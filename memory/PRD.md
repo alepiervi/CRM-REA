@@ -5,7 +5,18 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ## Current State (Febbraio 2026)
 
-### ✅ Completato in questa sessione (13 Febbraio 2026)
+### ✅ Completato in questa sessione (17 Febbraio 2026)
+- **Copia Anagrafica Esistente nel Modale Crea Cliente**: Implementata la funzionalità di pre-compilazione del form cliente partendo da un cliente esistente.
+  - UI: box ambra "Copia da anagrafica esistente" all'inizio della scheda cliente (dopo completamento filiera cascading)
+  - Ricerca debounced (300ms) con minimo 2 caratteri su `GET /api/clienti?search=X&page_size=10`
+  - Copia SOLO anagrafica base: `nome`, `cognome`, `ragione_sociale`, `indirizzo`, `comune_residenza`, `provincia`, `cap`
+  - ESCLUSI: codice_fiscale, partita_iva, telefono, email, documenti, IBAN, campi contratto, note
+  - `window.confirm` prima della sovrascrittura se campi già compilati
+  - File modificato: `/app/frontend/src/App.js` (CreateClienteModal, ~linee 22505-22600 e ~23968-24070)
+  - Test: testing agent v3 frontend — 100% passed (tutti gli step validati: login, cascading, ricerca, copia, esclusioni, conferma sovrascrittura, toast)
+  - Fix collaterale: `response.data.items` → `response.data.clienti` per allineamento con ClientiPaginatedResponse del backend
+
+### ✅ Completato in sessioni precedenti (13 Febbraio 2026)
 - **Verifica Notifiche Email Super Referente**: Confermato che la logica per le notifiche email ai Super Referenti per lead stagnanti (>7 giorni con stato "Lead Interessato") è completa e funzionante. Il sistema:
   - Controlla ogni ora i lead non lavorati
   - A 3+ giorni: notifica all'Agente
