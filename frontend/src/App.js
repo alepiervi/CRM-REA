@@ -39,6 +39,7 @@ import { Toaster } from "./components/ui/toaster";
 import ClienteCustomFieldsManager from "./components/ClienteCustomFieldsManager";
 import {
   useClienteCustomFields,
+  useClienteStatusOptions,
   CustomFieldsSection,
   CustomFieldsViewSection,
   validateRequiredCustomFields,
@@ -26113,6 +26114,11 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     cliente?.commessa_id,
     cliente?.tipologia_contratto_id
   );
+  // NEW: Combined standard + custom statuses
+  const { options: statusOptions } = useClienteStatusOptions(
+    cliente?.commessa_id,
+    cliente?.tipologia_contratto_id
+  );
   
   // Helper function to check if user can assign clients
   const canAssignClients = () => {
@@ -28186,20 +28192,11 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     <SelectValue placeholder="Seleziona status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="inserito">Inserito</SelectItem>
-                    <SelectItem value="ko">KO</SelectItem>
-                    <SelectItem value="infoline">Infoline</SelectItem>
-                    <SelectItem value="inviata_consumer">Inviata Consumer</SelectItem>
-                    <SelectItem value="problematiche_inserimento">Problematiche Inserimento</SelectItem>
-                    <SelectItem value="attesa_documenti_clienti">Attesa Documenti Clienti</SelectItem>
-                    <SelectItem value="non_acquisibile_richiesta_escalation">Non Acquisibile Richiesta Escalation</SelectItem>
-                    <SelectItem value="in_gestione_struttura_consulente">In Gestione Struttura/Consulente</SelectItem>
-                    <SelectItem value="non_risponde">Non Risponde</SelectItem>
-                    <SelectItem value="passata_al_bo">Passata al BO</SelectItem>
-                    <SelectItem value="da_inserire">Da Inserire</SelectItem>
-                    <SelectItem value="inserito_sotto_altro_canale">Inserito Sotto Altro Canale</SelectItem>
-                    <SelectItem value="proveniente_da_altro_canale">Proveniente da Altro Canale</SelectItem>
-                    <SelectItem value="scontrinare">Scontrinare</SelectItem>
+                    {statusOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value} data-testid={`status-option-${opt.value}`}>
+                        {opt.icon ? `${opt.icon} ` : ''}{opt.name}{!opt.is_standard && ' ⭐'}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

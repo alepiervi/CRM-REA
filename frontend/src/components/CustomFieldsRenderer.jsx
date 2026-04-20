@@ -14,6 +14,31 @@ const authHeaders = () => {
 };
 
 /**
+ * Fetches combined standard + custom status options for a given (commessa_id, tipologia_contratto_id).
+ */
+export function useClienteStatusOptions(commessaId, tipologiaId) {
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    const params = {};
+    if (commessaId) params.commessa_id = commessaId;
+    if (tipologiaId) params.tipologia_contratto_id = tipologiaId;
+    axios
+      .get(`${API}/cliente-status-options`, { params, headers: authHeaders() })
+      .then((res) => setOptions(Array.isArray(res.data) ? res.data : []))
+      .catch((err) => {
+        console.error("Error loading status options:", err);
+        setOptions([]);
+      })
+      .finally(() => setLoading(false));
+  }, [commessaId, tipologiaId]);
+
+  return { options, loading };
+}
+
+/**
  * Fetches BOTH custom fields and custom sections for a given (commessa_id, tipologia_contratto_id).
  */
 export function useClienteCustomFields(commessaId, tipologiaId) {

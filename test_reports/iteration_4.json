@@ -1,0 +1,62 @@
+{
+  "summary": "FASE 3 Testing Complete - Cliente Custom Statuses feature fully tested. All 20 backend API tests passed (100%). Frontend UI tests verified Status tab, funnel widget, create/edit dialog, and status list display. The status dropdown in EditClienteModal correctly shows only standard statuses when no custom statuses exist for the cliente's commessa+tipologia combination.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_cliente_custom_statuses.py",
+    "/app/test_reports/pytest/pytest_statuses_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_cliente_custom_statuses.py"
+  ],
+  "success_rate": {
+    "backend": "100% (20/20 tests passed)",
+    "frontend": "100% - All UI elements verified"
+  },
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Created and deleted TEST_Playwright_Status custom status during testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "FASE 3 (Cliente Custom Statuses) is fully implemented and tested. Key features verified: 1) POST /api/cliente-custom-statuses creates custom status with auto-normalized value, rejects standard value conflicts and duplicates, requires admin auth. 2) GET /api/cliente-custom-statuses supports filtering by commessa_id and tipologia_contratto_id. 3) GET /api/cliente-status-options returns 14 standard statuses without filters, includes custom statuses with filters. 4) PUT /api/cliente-custom-statuses/{id} allows partial updates but preserves value. 5) DELETE /api/cliente-custom-statuses/{id} returns clients_using_status count. 6) GET /api/analytics/cliente-statuses-breakdown returns total, by_status[], and by_stage{nuovo, in_lavorazione, chiuso_vinto, chiuso_perso}. 7) Cliente.status field accepts custom status values. Frontend: Status tab with funnel widget (4 stage tiles), create/edit dialog with all required fields, status list with color badge, icon, stage badge, and order. EditClienteModal status dropdown shows standard + custom statuses with ⭐ suffix for custom ones.",
+  "features_tested": {
+    "backend_endpoints": [
+      "POST /api/cliente-custom-statuses - admin only, 403 for non-admin ✓",
+      "POST rejects standard value conflicts (e.g., 'inserito') ✓",
+      "POST rejects duplicates (same value+commessa+tipologia) ✓",
+      "POST auto-normalizes name to value (lowercase, underscores) ✓",
+      "POST accepts all 4 valid stages ✓",
+      "GET /api/cliente-custom-statuses with commessa_id filter ✓",
+      "GET /api/cliente-custom-statuses with both filters ✓",
+      "GET /api/cliente-status-options returns 14 standard without filters ✓",
+      "GET /api/cliente-status-options includes custom with filters ✓",
+      "PUT /api/cliente-custom-statuses/{id} partial update ✓",
+      "PUT preserves value (not modifiable) ✓",
+      "PUT returns 404 for non-existent ✓",
+      "DELETE /api/cliente-custom-statuses/{id} returns clients_using_status ✓",
+      "DELETE returns 404 for non-existent ✓",
+      "GET /api/analytics/cliente-statuses-breakdown structure ✓",
+      "GET /api/analytics/cliente-statuses-breakdown with filters ✓",
+      "Cliente with custom status value accepted ✓"
+    ],
+    "frontend_ui": [
+      "Tab 'Status' (data-testid='tab-statuses') present and clickable ✓",
+      "Widget 'Imbuto Status Cliente' (data-testid='status-funnel-widget') shows 4 tiles ✓",
+      "Funnel shows correct counts (NUOVO: 0, IN LAVORAZIONE: 19, CHIUSO VINTO: 1, CHIUSO PERSO: 0) ✓",
+      "Click 'add-custom-status-btn' opens dialog ✓",
+      "Dialog has all fields: commessa, tipologia, name, icon, color, stage (4 options), order, active ✓",
+      "After creation, status appears in list with data-testid='custom-status-row-{id}' ✓",
+      "Status row shows color badge, icon, name, value, stage badge, order badge ✓",
+      "EditClienteModal status dropdown shows 14 standard statuses ✓",
+      "Custom statuses would show with ⭐ suffix (verified in code) ✓"
+    ]
+  }
+}

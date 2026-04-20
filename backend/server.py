@@ -626,6 +626,52 @@ class ClienteCustomSectionUpdate(BaseModel):
     active: Optional[bool] = None
 
 
+# ============================================================
+# CLIENTE CUSTOM STATUSES (Fase 3) - Per (Commessa + Tipologia Contratto)
+# Analytics-friendly: each status has a "stage" for funnel analytics.
+# ============================================================
+class StatusStage(str, Enum):
+    NUOVO = "nuovo"
+    IN_LAVORAZIONE = "in_lavorazione"
+    CHIUSO_VINTO = "chiuso_vinto"
+    CHIUSO_PERSO = "chiuso_perso"
+
+
+class ClienteCustomStatus(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    commessa_id: str
+    tipologia_contratto_id: str
+    name: str  # Display name (e.g. "Richiamo domani")
+    value: str  # Machine/stored value (normalized, e.g. "richiamo_domani")
+    color: str = "#6366f1"  # Hex color (default indigo-500)
+    icon: Optional[str] = None  # Optional emoji
+    stage: StatusStage = StatusStage.IN_LAVORAZIONE
+    order: int = 0
+    active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: Optional[str] = None
+
+
+class ClienteCustomStatusCreate(BaseModel):
+    commessa_id: str
+    tipologia_contratto_id: str
+    name: str
+    color: str = "#6366f1"
+    icon: Optional[str] = None
+    stage: StatusStage = StatusStage.IN_LAVORAZIONE
+    order: int = 0
+
+
+class ClienteCustomStatusUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
+    icon: Optional[str] = None
+    stage: Optional[StatusStage] = None
+    order: Optional[int] = None
+    active: Optional[bool] = None
+
+
 class Container(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -1306,7 +1352,7 @@ class Cliente(BaseModel):
     segmento_nome: Optional[str] = None  # ENRICHED: Human-readable segmento name for display
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     sub_offerta_id: Optional[str] = None  # NEW: Sotto-offerta ID (per offerte Vodafone con sotto-offerte)
-    status: ClienteStatus = ClienteStatus.DA_INSERIRE
+    status: str = ClienteStatus.DA_INSERIRE.value  # Can be a ClienteStatus enum value OR a custom status value
     dati_aggiuntivi: Dict[str, Any] = {}
     created_by: str
     assigned_to: Optional[str] = None
@@ -1484,7 +1530,7 @@ class ClienteUpdate(BaseModel):
     segmento: Optional[str] = None  # Dynamic field - accepts any user-created segmento
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     sub_offerta_id: Optional[str] = None  # NEW: Sotto-offerta ID
-    status: Optional[ClienteStatus] = None
+    status: Optional[str] = None  # Can be a ClienteStatus enum value OR a custom status value
     note: Optional[str] = None
     dati_aggiuntivi: Optional[Dict[str, Any]] = None
     assigned_to: Optional[str] = None
@@ -6553,6 +6599,256 @@ async def delete_cliente_custom_section(
     
     await db.cliente_custom_sections.delete_one({"id": section_id})
     return {"message": "Cliente custom section deleted, fields moved to default", "id": section_id}
+
+
+# ============================================================
+# CLIENTE CUSTOM STATUSES - CRUD (Fase 3)
+# ============================================================
+
+STANDARD_CLIENTE_STATUSES = [
+    {"value": s.value, "name": s.value.replace("_", " ").title(), "is_standard": True, "stage": "in_lavorazione"}
+    for s in ClienteStatus
+]
+# Manual stage override for standard statuses (for analytics funnel)
+_STANDARD_STAGES = {
+    "da_inserire": "nuovo",
+    "inserito": "chiuso_vinto",
+    "ko": "chiuso_perso",
+    "infoline": "in_lavorazione",
+    "inviata_consumer": "in_lavorazione",
+    "problematiche_inserimento": "in_lavorazione",
+    "attesa_documenti_clienti": "in_lavorazione",
+    "non_acquisibile_richiesta_escalation": "in_lavorazione",
+    "in_gestione_struttura_consulente": "in_lavorazione",
+    "non_risponde": "in_lavorazione",
+    "passata_al_bo": "in_lavorazione",
+    "inserito_sotto_altro_canale": "chiuso_vinto",
+    "proveniente_da_altro_canale": "in_lavorazione",
+    "scontrinare": "in_lavorazione",
+}
+for _s in STANDARD_CLIENTE_STATUSES:
+    _s["stage"] = _STANDARD_STAGES.get(_s["value"], "in_lavorazione")
+
+
+def _normalize_status_value(name: str) -> str:
+    v = re.sub(r'[^a-z0-9_]', '_', name.lower().strip())
+    return re.sub(r'_+', '_', v).strip('_')
+
+
+@api_router.get("/cliente-custom-statuses", response_model=List[ClienteCustomStatus])
+async def get_cliente_custom_statuses(
+    commessa_id: Optional[str] = None,
+    tipologia_contratto_id: Optional[str] = None,
+    active_only: bool = True,
+    current_user: User = Depends(get_current_user)
+):
+    """Get cliente custom statuses filtered by (commessa_id, tipologia_contratto_id)"""
+    query = {}
+    if commessa_id:
+        query["commessa_id"] = commessa_id
+    if tipologia_contratto_id:
+        query["tipologia_contratto_id"] = tipologia_contratto_id
+    if active_only:
+        query["active"] = True
+    items = await db.cliente_custom_statuses.find(query, {"_id": 0}).sort("order", 1).to_list(length=None)
+    return [ClienteCustomStatus(**x) for x in items]
+
+
+@api_router.get("/cliente-status-options")
+async def get_cliente_status_options(
+    commessa_id: Optional[str] = None,
+    tipologia_contratto_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Returns combined list of standard + custom statuses for a given (commessa_id + tipologia_contratto_id).
+    Used by frontend to populate status dropdowns.
+    """
+    # Always include standard
+    options = [
+        {"value": s["value"], "name": s["name"], "color": None, "icon": None, "stage": s["stage"], "is_standard": True}
+        for s in STANDARD_CLIENTE_STATUSES
+    ]
+    # Add custom statuses for (commessa + tipologia) if both provided
+    if commessa_id and tipologia_contratto_id:
+        custom = await db.cliente_custom_statuses.find(
+            {"commessa_id": commessa_id, "tipologia_contratto_id": tipologia_contratto_id, "active": True},
+            {"_id": 0}
+        ).sort("order", 1).to_list(length=None)
+        for c in custom:
+            options.append({
+                "value": c["value"],
+                "name": c["name"],
+                "color": c.get("color"),
+                "icon": c.get("icon"),
+                "stage": c.get("stage", "in_lavorazione"),
+                "is_standard": False,
+            })
+    return options
+
+
+@api_router.post("/cliente-custom-statuses", response_model=ClienteCustomStatus)
+async def create_cliente_custom_status(
+    data: ClienteCustomStatusCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new custom status for a specific (commessa + tipologia_contratto)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can create cliente custom statuses")
+    
+    # Compute normalized value from name
+    normalized_value = _normalize_status_value(data.name)
+    if not normalized_value:
+        raise HTTPException(status_code=400, detail="Nome status non valido")
+    
+    # Prevent conflict with standard enum values
+    if normalized_value in {s.value for s in ClienteStatus}:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Il valore '{normalized_value}' è riservato a uno status standard. Usa un nome differente."
+        )
+    
+    # Uniqueness per (commessa + tipologia + value)
+    existing = await db.cliente_custom_statuses.find_one({
+        "commessa_id": data.commessa_id,
+        "tipologia_contratto_id": data.tipologia_contratto_id,
+        "value": normalized_value
+    })
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Uno status '{data.name}' esiste già per questa combinazione commessa+tipologia"
+        )
+    
+    obj = ClienteCustomStatus(
+        **data.dict(),
+        value=normalized_value,
+        created_by=current_user.id
+    )
+    await db.cliente_custom_statuses.insert_one(obj.dict())
+    return obj
+
+
+@api_router.put("/cliente-custom-statuses/{status_id}", response_model=ClienteCustomStatus)
+async def update_cliente_custom_status(
+    status_id: str,
+    update_data: ClienteCustomStatusUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update an existing custom status (name/color/icon/stage/order/active). The `value` is NOT editable to preserve historical references."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can update cliente custom statuses")
+    
+    existing = await db.cliente_custom_statuses.find_one({"id": status_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Cliente custom status not found")
+    
+    update_dict = {k: v for k, v in update_data.dict(exclude_unset=True).items() if v is not None}
+    update_dict["updated_at"] = datetime.now(timezone.utc)
+    
+    await db.cliente_custom_statuses.update_one({"id": status_id}, {"$set": update_dict})
+    updated = await db.cliente_custom_statuses.find_one({"id": status_id}, {"_id": 0})
+    return ClienteCustomStatus(**updated)
+
+
+@api_router.delete("/cliente-custom-statuses/{status_id}")
+async def delete_cliente_custom_status(
+    status_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a custom status. Clients currently using this status will keep it (historical data), but it won't appear in dropdowns anymore."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete cliente custom statuses")
+    
+    existing = await db.cliente_custom_statuses.find_one({"id": status_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Cliente custom status not found")
+    
+    # Count clients using this status (informational)
+    clienti_count = await db.clienti.count_documents({"status": existing["value"]})
+    
+    await db.cliente_custom_statuses.delete_one({"id": status_id})
+    return {
+        "message": "Cliente custom status deleted",
+        "id": status_id,
+        "clients_using_status": clienti_count,
+        "note": "Gli eventuali clienti con questo status manterranno il valore storico"
+    }
+
+
+@api_router.get("/analytics/cliente-statuses-breakdown")
+async def get_cliente_statuses_breakdown(
+    commessa_id: Optional[str] = None,
+    tipologia_contratto_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Aggregates clienti by status (standard + custom) with stage mapping for funnel analytics.
+    Returns: { total, by_status: [...], by_stage: { nuovo, in_lavorazione, chiuso_vinto, chiuso_perso } }
+    """
+    query = {"is_active": {"$ne": False}}
+    if commessa_id:
+        query["commessa_id"] = commessa_id
+    if tipologia_contratto_id:
+        query["tipologia_contratto_id"] = tipologia_contratto_id
+    
+    # Aggregation pipeline
+    pipeline = [
+        {"$match": query},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    raw = await db.clienti.aggregate(pipeline).to_list(length=None)
+    
+    # Build status map (standard + custom)
+    status_map = {s["value"]: {**s} for s in STANDARD_CLIENTE_STATUSES}
+    custom_query = {}
+    if commessa_id:
+        custom_query["commessa_id"] = commessa_id
+    if tipologia_contratto_id:
+        custom_query["tipologia_contratto_id"] = tipologia_contratto_id
+    customs = await db.cliente_custom_statuses.find(custom_query, {"_id": 0}).to_list(length=None)
+    for c in customs:
+        status_map[c["value"]] = {
+            "value": c["value"],
+            "name": c["name"],
+            "stage": c.get("stage", "in_lavorazione"),
+            "is_standard": False,
+            "color": c.get("color"),
+        }
+    
+    by_status = []
+    by_stage = {"nuovo": 0, "in_lavorazione": 0, "chiuso_vinto": 0, "chiuso_perso": 0}
+    total = 0
+    for entry in raw:
+        status_val = entry["_id"]
+        cnt = entry["count"]
+        total += cnt
+        meta = status_map.get(status_val, {
+            "value": status_val,
+            "name": status_val or "Sconosciuto",
+            "stage": "in_lavorazione",
+            "is_standard": False,
+            "color": None,
+        })
+        by_status.append({
+            "value": status_val,
+            "name": meta.get("name"),
+            "stage": meta.get("stage", "in_lavorazione"),
+            "is_standard": meta.get("is_standard", False),
+            "color": meta.get("color"),
+            "count": cnt,
+        })
+        stage = meta.get("stage", "in_lavorazione")
+        if stage in by_stage:
+            by_stage[stage] += cnt
+    
+    return {
+        "total": total,
+        "by_status": by_status,
+        "by_stage": by_stage,
+        "filters": {"commessa_id": commessa_id, "tipologia_contratto_id": tipologia_contratto_id}
+    }
 
 
 # Document management endpoints

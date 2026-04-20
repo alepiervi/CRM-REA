@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Checkbox } from "./ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useToast } from "../hooks/use-toast";
-import { Trash2, Edit2, Plus, Database, LayoutGrid } from "lucide-react";
+import { Trash2, Edit2, Plus, Database, LayoutGrid, Flag } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -49,6 +49,24 @@ const emptySectionForm = {
   active: true,
 };
 
+const STATUS_STAGES = [
+  { value: "nuovo", label: "Nuovo", color: "bg-blue-100 text-blue-800" },
+  { value: "in_lavorazione", label: "In Lavorazione", color: "bg-amber-100 text-amber-800" },
+  { value: "chiuso_vinto", label: "Chiuso Vinto", color: "bg-green-100 text-green-800" },
+  { value: "chiuso_perso", label: "Chiuso Perso", color: "bg-red-100 text-red-800" },
+];
+
+const emptyStatusForm = {
+  commessa_id: "",
+  tipologia_contratto_id: "",
+  name: "",
+  color: "#6366f1",
+  icon: "",
+  stage: "in_lavorazione",
+  order: 0,
+  active: true,
+};
+
 const authHeaders = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -76,6 +94,12 @@ export default function ClienteCustomFieldsManager() {
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [sectionForm, setSectionForm] = useState(emptySectionForm);
 
+  // Status dialog state
+  const [statuses, setStatuses] = useState([]);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [editingStatusId, setEditingStatusId] = useState(null);
+  const [statusForm, setStatusForm] = useState(emptyStatusForm);
+  const [statusBreakdown, setStatusBreakdown] = useState(null);
   useEffect(() => {
     (async () => {
       try {
@@ -93,7 +117,21 @@ export default function ClienteCustomFieldsManager() {
 
   useEffect(() => {
     loadData();
+    loadStatusBreakdown();
   }, [filterCommessa, filterTipologia]);
+
+  const loadStatusBreakdown = async () => {
+    try {
+      const params = {};
+      if (filterCommessa) params.commessa_id = filterCommessa;
+      if (filterTipologia) params.tipologia_contratto_id = filterTipologia;
+      const res = await axios.get(`${API}/analytics/cliente-statuses-breakdown`, { params, headers: authHeaders() });
+      setStatusBreakdown(res.data || null);
+    } catch (err) {
+      console.error("Error loading status breakdown:", err);
+      setStatusBreakdown(null);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -101,12 +139,14 @@ export default function ClienteCustomFieldsManager() {
       const params = { active_only: false };
       if (filterCommessa) params.commessa_id = filterCommessa;
       if (filterTipologia) params.tipologia_contratto_id = filterTipologia;
-      const [fRes, sRes] = await Promise.all([
+      const [fRes, sRes, stRes] = await Promise.all([
         axios.get(`${API}/cliente-custom-fields`, { params, headers: authHeaders() }),
         axios.get(`${API}/cliente-custom-sections`, { params, headers: authHeaders() }),
+        axios.get(`${API}/cliente-custom-statuses`, { params, headers: authHeaders() }),
       ]);
       setFields(Array.isArray(fRes.data) ? fRes.data : []);
       setSections(Array.isArray(sRes.data) ? sRes.data : []);
+      setStatuses(Array.isArray(stRes.data) ? stRes.data : []);
     } catch (err) {
       console.error("Error loading data:", err);
       toast({ title: "Errore", description: "Impossibile caricare dati", variant: "destructive" });
@@ -258,6 +298,69 @@ export default function ClienteCustomFieldsManager() {
     }
   };
 
+  // ---------- STATUS HANDLERS ----------
+  const openCreateStatusDialog = () => {
+    setEditingStatusId(null);
+    setStatusForm({ ...emptyStatusForm, commessa_id: filterCommessa, tipologia_contratto_id: filterTipologia });
+    setStatusDialogOpen(true);
+  };
+
+  const openEditStatusDialog = (st) => {
+    setEditingStatusId(st.id);
+    setStatusForm({
+      commessa_id: st.commessa_id,
+      tipologia_contratto_id: st.tipologia_contratto_id,
+      name: st.name,
+      color: st.color || "#6366f1",
+      icon: st.icon || "",
+      stage: st.stage,
+      order: st.order,
+      active: st.active,
+    });
+    setStatusDialogOpen(true);
+  };
+
+  const handleSaveStatus = async () => {
+    if (!statusForm.commessa_id || !statusForm.tipologia_contratto_id || !statusForm.name) {
+      toast({ title: "Campi obbligatori", description: "Commessa, Tipologia e Nome sono obbligatori", variant: "destructive" });
+      return;
+    }
+    try {
+      if (editingStatusId) {
+        const updatePayload = {
+          name: statusForm.name,
+          color: statusForm.color,
+          icon: statusForm.icon || null,
+          stage: statusForm.stage,
+          order: statusForm.order,
+          active: statusForm.active,
+        };
+        await axios.put(`${API}/cliente-custom-statuses/${editingStatusId}`, updatePayload, { headers: authHeaders() });
+        toast({ title: "Status aggiornato" });
+      } else {
+        await axios.post(`${API}/cliente-custom-statuses`, statusForm, { headers: authHeaders() });
+        toast({ title: "Status creato" });
+      }
+      setStatusDialogOpen(false);
+      loadData();
+    } catch (err) {
+      const msg = err?.response?.data?.detail || "Errore salvataggio";
+      toast({ title: "Errore", description: msg, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteStatus = async (st) => {
+    if (!window.confirm(`Eliminare lo status "${st.name}"? Gli eventuali clienti con questo status manterranno il valore storico.`)) return;
+    try {
+      const res = await axios.delete(`${API}/cliente-custom-statuses/${st.id}`, { headers: authHeaders() });
+      const used = res?.data?.clients_using_status || 0;
+      toast({ title: "Status eliminato", description: used > 0 ? `${used} clienti mantengono il valore storico` : undefined });
+      loadData();
+    } catch (err) {
+      toast({ title: "Errore", description: "Eliminazione fallita", variant: "destructive" });
+    }
+  };
+
   // ---------- HELPERS ----------
   const getCommessaName = (id) => commesse.find((c) => c.id === id)?.nome || id;
   const getTipologiaName = (id) => tipologie.find((t) => t.value === id)?.label || id;
@@ -312,6 +415,7 @@ export default function ClienteCustomFieldsManager() {
         <TabsList>
           <TabsTrigger value="fields" data-testid="tab-fields"><Database className="w-4 h-4 mr-2" />Campi ({fields.length})</TabsTrigger>
           <TabsTrigger value="sections" data-testid="tab-sections"><LayoutGrid className="w-4 h-4 mr-2" />Sezioni ({sections.length})</TabsTrigger>
+          <TabsTrigger value="statuses" data-testid="tab-statuses"><Flag className="w-4 h-4 mr-2" />Status ({statuses.length})</TabsTrigger>
         </TabsList>
 
         {/* --- FIELDS TAB --- */}
@@ -407,6 +511,98 @@ export default function ClienteCustomFieldsManager() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* --- STATUSES TAB --- */}
+        <TabsContent value="statuses">
+          {/* Funnel Analytics Widget */}
+          {statusBreakdown && statusBreakdown.total > 0 && (
+            <Card className="mb-4" data-testid="status-funnel-widget">
+              <CardHeader>
+                <CardTitle className="text-lg">📊 Imbuto Status Cliente ({statusBreakdown.total} clienti)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {STATUS_STAGES.map((stage) => {
+                    const count = statusBreakdown.by_stage[stage.value] || 0;
+                    const pct = statusBreakdown.total > 0 ? Math.round((count / statusBreakdown.total) * 100) : 0;
+                    return (
+                      <div key={stage.value} className={`p-3 rounded-lg border ${stage.color.replace('text-', 'border-').replace('bg-', 'border-')}`} data-testid={`stage-tile-${stage.value}`}>
+                        <div className="text-xs font-semibold text-slate-600 uppercase tracking-wider">{stage.label}</div>
+                        <div className="text-2xl font-bold mt-1 text-slate-900">{count}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{pct}% del totale</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {statusBreakdown.by_status.length > 0 && (
+                  <details className="mt-4">
+                    <summary className="text-sm text-slate-600 cursor-pointer hover:text-slate-900">Dettaglio per singolo status</summary>
+                    <div className="mt-2 space-y-1">
+                      {statusBreakdown.by_status.map((s) => (
+                        <div key={s.value} className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
+                          <div className="flex items-center gap-2">
+                            {s.color && <span className="w-3 h-3 rounded-full border" style={{ backgroundColor: s.color }} />}
+                            <span>{s.name}</span>
+                            {!s.is_standard && <Badge className="bg-emerald-100 text-emerald-800 text-xs">Custom</Badge>}
+                            <Badge variant="outline" className="text-xs">{STATUS_STAGES.find(x => x.value === s.stage)?.label || s.stage}</Badge>
+                          </div>
+                          <span className="font-semibold">{s.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Status personalizzati</CardTitle>
+              <Button onClick={openCreateStatusDialog} className="bg-emerald-600 hover:bg-emerald-700" data-testid="add-custom-status-btn">
+                <Plus className="w-4 h-4 mr-2" /> Nuovo Status
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {!loading && statuses.length === 0 && (
+                <div className="text-center py-12 text-slate-500">
+                  <Flag className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <p>Nessuno status personalizzato definito.</p>
+                  <p className="text-sm mt-1">Aggiungi status aggiuntivi oltre a quelli standard. Verranno mappati in Analytics per stage di imbuto.</p>
+                </div>
+              )}
+              {statuses.length > 0 && (
+                <div className="space-y-2">
+                  {statuses.map((st) => {
+                    const stageMeta = STATUS_STAGES.find(s => s.value === st.stage) || STATUS_STAGES[1];
+                    return (
+                      <div key={st.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50" data-testid={`custom-status-row-${st.id}`}>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="w-4 h-4 rounded-full border border-slate-300" style={{ backgroundColor: st.color }} />
+                            {st.icon && <span className="text-lg">{st.icon}</span>}
+                            <span className="font-semibold text-slate-900">{st.name}</span>
+                            <code className="text-xs bg-slate-100 px-2 py-0.5 rounded">{st.value}</code>
+                            <Badge className={stageMeta.color}>Stage: {stageMeta.label}</Badge>
+                            <Badge variant="outline">#{st.order}</Badge>
+                            {!st.active && <Badge className="bg-slate-200 text-slate-600">Disattivato</Badge>}
+                          </div>
+                          <div className="text-xs text-slate-500 mt-1">
+                            {getCommessaName(st.commessa_id)} → {getTipologiaName(st.tipologia_contratto_id)}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => openEditStatusDialog(st)} data-testid={`edit-status-${st.id}`}><Edit2 className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50" onClick={() => handleDeleteStatus(st)} data-testid={`delete-status-${st.id}`}><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
 
       {/* --- FIELD DIALOG --- */}
@@ -540,6 +736,71 @@ export default function ClienteCustomFieldsManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* --- STATUS DIALOG --- */}
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{editingStatusId ? "Modifica status" : "Nuovo status personalizzato"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Commessa *</Label>
+                <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-50" value={statusForm.commessa_id} onChange={(e) => setStatusForm({ ...statusForm, commessa_id: e.target.value })} disabled={!!editingStatusId} data-testid="status-commessa-select">
+                  <option value="">Seleziona commessa...</option>
+                  {commesse.map((c) => (<option key={c.id} value={c.id}>{c.nome}</option>))}
+                </select>
+              </div>
+              <div>
+                <Label>Tipologia Contratto *</Label>
+                <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-50" value={statusForm.tipologia_contratto_id} onChange={(e) => setStatusForm({ ...statusForm, tipologia_contratto_id: e.target.value })} disabled={!!editingStatusId} data-testid="status-tipologia-select">
+                  <option value="">Seleziona tipologia...</option>
+                  {tipologie.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <Label>Nome status *</Label>
+              <Input value={statusForm.name} onChange={(e) => setStatusForm({ ...statusForm, name: e.target.value })} placeholder="Es: Richiamo Domani" data-testid="status-name-input" />
+              <p className="text-xs text-slate-500 mt-1">Il valore tecnico (chiave) verrà generato automaticamente normalizzando il nome.</p>
+            </div>
+            <div className="grid grid-cols-[100px_100px_1fr] gap-3">
+              <div>
+                <Label>Icona</Label>
+                <Input value={statusForm.icon} onChange={(e) => setStatusForm({ ...statusForm, icon: e.target.value })} placeholder="⏰" data-testid="status-icon-input" />
+              </div>
+              <div>
+                <Label>Colore</Label>
+                <Input type="color" value={statusForm.color} onChange={(e) => setStatusForm({ ...statusForm, color: e.target.value })} className="h-10" data-testid="status-color-input" />
+              </div>
+              <div>
+                <Label>Stage (per Analytics) *</Label>
+                <select className="w-full p-2 border border-gray-300 rounded-lg bg-white" value={statusForm.stage} onChange={(e) => setStatusForm({ ...statusForm, stage: e.target.value })} data-testid="status-stage-select">
+                  {STATUS_STAGES.map((s) => (<option key={s.value} value={s.value}>{s.label}</option>))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 items-end">
+              <div>
+                <Label>Ordinamento</Label>
+                <Input type="number" value={statusForm.order} onChange={(e) => setStatusForm({ ...statusForm, order: parseInt(e.target.value) || 0 })} />
+              </div>
+              <div className="flex items-center gap-2 pb-2">
+                <Checkbox id="status-active" checked={statusForm.active} onCheckedChange={(v) => setStatusForm({ ...statusForm, active: !!v })} />
+                <Label htmlFor="status-active" className="cursor-pointer">Attivo</Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Annulla</Button>
+            <Button onClick={handleSaveStatus} className="bg-emerald-600 hover:bg-emerald-700" data-testid="save-status-btn">
+              {editingStatusId ? "Salva modifiche" : "Crea status"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
