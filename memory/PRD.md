@@ -7,6 +7,11 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (20 Aprile 2026)
 
+- **Campi Personalizzati Clienti — FASE 3 (Status Personalizzati con mappatura Analytics)**
+  - **Backend**: nuovo enum `StatusStage` (nuovo / in_lavorazione / chiuso_vinto / chiuso_perso). Modello `ClienteCustomStatus` con (name, value auto-normalizzato, color, icon, stage, order, active). CRUD su `/api/cliente-custom-statuses` (admin only). `Cliente.status` convertito da `ClienteStatus` enum a `str` per accettare valori custom. Endpoint `/api/cliente-status-options?commessa_id=X&tipologia_contratto_id=Y` ritorna lista combinata (14 standard + custom). Endpoint `/api/analytics/cliente-statuses-breakdown` aggrega clienti per status e per stage (funnel).
+  - **Frontend**: terzo Tab "Status" in `ClienteCustomFieldsManager.jsx` con Dialog create/edit (icon/color/stage), lista status con badge colore+stage. Widget "Imbuto Status Cliente" mostra 4 tiles per stage con % del totale + dettaglio per singolo status. `EditClienteModal` usa nuovo hook `useClienteStatusOptions` per popolare dropdown status dinamicamente (standard + custom per commessa+tipologia del cliente, con `⭐` sui custom).
+  - **Test**: testing agent v3 — **100% backend** (20/20), **100% frontend**. Nessun issue.
+
 - **Campi Personalizzati Clienti — FASE 2 (Sezioni personalizzabili)**
   - **Backend**: modelli `ClienteCustomSection` / `ClienteCustomSectionCreate` / `ClienteCustomSectionUpdate` + CRUD admin su `/api/cliente-custom-sections`. Campo `section_id` opzionale aggiunto a `ClienteCustomField`. Quando una sezione viene eliminata, i campi assegnati vengono automaticamente spostati al gruppo default (section_id impostato a null). Fix PUT endpoint per permettere `section_id=null` (usa `exclude_unset`).
   - **Frontend admin** (`ClienteCustomFieldsManager.jsx` riscritto con Tabs):
