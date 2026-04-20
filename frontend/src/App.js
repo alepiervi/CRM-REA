@@ -36,6 +36,13 @@ import { Checkbox } from "./components/ui/checkbox";
 import { Switch } from "./components/ui/switch";
 import { useToast } from "./hooks/use-toast";
 import { Toaster } from "./components/ui/toaster";
+import ClienteCustomFieldsManager from "./components/ClienteCustomFieldsManager";
+import {
+  useClienteCustomFields,
+  CustomFieldsSection,
+  CustomFieldsViewSection,
+  validateRequiredCustomFields,
+} from "./components/CustomFieldsRenderer";
 
 // Lucide icons
 import { 
@@ -1950,6 +1957,7 @@ const Dashboard = () => {
         { id: "commesse", label: "Commesse", icon: Building },
         { id: "sub-agenzie", label: "Unit & Sub Agenzie", icon: Store },
         { id: "clienti", label: "Clienti", icon: UserCheck },
+        { id: "clienti-custom-fields", label: "Campi Clienti", icon: Database },
         { id: "clienti-cestino", label: "Cestino Clienti", icon: Trash2 },
         { id: "leads-cestino", label: "Cestino Lead", icon: Trash2 },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
@@ -2070,6 +2078,8 @@ const Dashboard = () => {
           }
         case "clienti-cestino":
           return user.role === "admin" ? <ClientiCestinoManagement /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono accedere al cestino clienti</div>;
+        case "clienti-custom-fields":
+          return user.role === "admin" ? <ClienteCustomFieldsManager /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono gestire i campi personalizzati</div>;
         case "leads-cestino":
           return user.role === "admin" ? <LeadsCestinoManagement /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono accedere al cestino lead</div>;
         case "analytics":
@@ -22414,6 +22424,12 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
 const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, selectedCommessa, user }) => {
   const { toast } = useToast();
   
+  // NEW: Custom fields hook state
+  const [customFieldValues, setCustomFieldValues] = useState({});
+  const [selectedCommessaForCF, setSelectedCommessaForCF] = useState('');
+  const [selectedTipologiaForCF, setSelectedTipologiaForCF] = useState('');
+  const { fields: customFields } = useClienteCustomFields(selectedCommessaForCF, selectedTipologiaForCF);
+  
   // ENUM MAPPING FUNCTIONS - Convert UUID or display values to backend enum format
   const mapTipologiaContratto = (uuidOrDisplayValue) => {
     // First, check if it's a UUID - if so, convert to display name using cascadeTipologie
@@ -22631,8 +22647,15 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       setCascadeSegmenti([]);
       setCascadeOfferte([]);
       setCascadeSubOfferte([]);
+      setCustomFieldValues({});
     }
   }, [isOpen]);
+
+  // NEW: Sync custom-fields commessa/tipologia with selectedData
+  useEffect(() => {
+    setSelectedCommessaForCF(selectedData.commessa_id || '');
+    setSelectedTipologiaForCF(selectedData.tipologia_contratto || '');
+  }, [selectedData.commessa_id, selectedData.tipologia_contratto]);
 
   // CLIENT FORM DATA (shown after offerta selection)
   const [formData, setFormData] = useState({
@@ -23521,6 +23544,17 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       }
     }
     
+    // Validazione campi personalizzati obbligatori
+    const missingCustomFields = validateRequiredCustomFields(customFields, customFieldValues);
+    if (missingCustomFields.length > 0) {
+      toast({
+        title: "Campi personalizzati obbligatori",
+        description: `Compila: ${missingCustomFields.join(', ')}`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Helper per convertire le date in formato MongoDB compatibile
     const formatDateForBackend = (dateValue) => {
       if (!dateValue) return null;
@@ -23599,6 +23633,9 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       // Notes
       note: formData.note || '',
       note_backoffice: formData.note_backoffice || '',
+      
+      // Custom fields (dati_aggiuntivi) - per (commessa + tipologia)
+      dati_aggiuntivi: customFieldValues || {},
       
       // Cascading selection data - Area Manager uses form selection
       sub_agenzia_id: user?.role === 'area_manager' ? formData.sub_agenzia_id : selectedData.sub_agenzia_id,
@@ -24827,6 +24864,13 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               />
             </div>
           </div>
+
+          {/* SEZIONE CAMPI PERSONALIZZATI (dinamici per commessa + tipologia) */}
+          <CustomFieldsSection
+            fields={customFields}
+            values={customFieldValues}
+            onChangeField={(name, value) => setCustomFieldValues(prev => ({ ...prev, [name]: value }))}
+          />
             
           <DialogFooter className="mt-6">
             <Button 
@@ -25408,6 +25452,12 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
   const [servizioInfo, setServizioInfo] = useState(null);  // NEW: Servizio info
   const [assignedUserInfo, setAssignedUserInfo] = useState(null);  // NEW: Assigned user info
   const [simUsersInfo, setSimUsersInfo] = useState({});  // NEW: Cache for SIM assigned users
+  
+  // NEW: Custom fields for View
+  const { fields: customFields } = useClienteCustomFields(
+    cliente?.commessa_id,
+    cliente?.tipologia_contratto_id
+  );
   
   if (!cliente) return null;
   
@@ -26033,6 +26083,14 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           </Card>
         )}
 
+        {/* Campi Personalizzati - dinamici in base a (commessa + tipologia) */}
+        <div className="mt-4">
+          <CustomFieldsViewSection
+            fields={customFields}
+            values={cliente?.dati_aggiuntivi || {}}
+          />
+        </div>
+
         <DialogFooter className="mt-6 sticky bottom-0 bg-white pt-4 border-t md:border-t-0 md:pt-0 md:static">
           <Button onClick={onClose} className="w-full md:w-auto">Chiudi</Button>
         </DialogFooter>
@@ -26045,6 +26103,14 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
 // Edit Cliente Modal Component  
 const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
   const { user } = useAuth();
+  const { toast: editToast } = useToast();
+  
+  // NEW: Custom fields for Edit
+  const [customFieldValues, setCustomFieldValues] = useState(cliente?.dati_aggiuntivi || {});
+  const { fields: customFields } = useClienteCustomFields(
+    cliente?.commessa_id,
+    cliente?.tipologia_contratto_id
+  );
   
   // Helper function to check if user can assign clients
   const canAssignClients = () => {
@@ -26773,6 +26839,17 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Validazione campi personalizzati obbligatori
+    const missingCustomFields = validateRequiredCustomFields(customFields, customFieldValues);
+    if (missingCustomFields.length > 0) {
+      editToast({
+        title: "Campi personalizzati obbligatori",
+        description: `Compila: ${missingCustomFields.join(', ')}`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Mappa i campi frontend ai nomi backend
     const backendData = {
       ...formData,
@@ -26780,7 +26857,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
       // FIX: Convert empty strings to null for enum fields
       tipo_documento: formData.tipo_documento || null,
       tecnologia: formData.tecnologia || null,
-      modalita_pagamento: formData.modalita_pagamento || null
+      modalita_pagamento: formData.modalita_pagamento || null,
+      // NEW: Include custom fields values
+      dati_aggiuntivi: customFieldValues || {}
     };
     
     // Rimuovi i campi frontend che non devono essere inviati al backend
@@ -28165,6 +28244,13 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
               </div>
             </CardContent>
           </Card>
+
+          {/* SEZIONE CAMPI PERSONALIZZATI (dinamici per commessa + tipologia) */}
+          <CustomFieldsSection
+            fields={customFields}
+            values={customFieldValues}
+            onChangeField={(name, value) => setCustomFieldValues(prev => ({ ...prev, [name]: value }))}
+          />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

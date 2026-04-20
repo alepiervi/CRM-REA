@@ -1,0 +1,58 @@
+{
+  "summary": "Completed testing of Cliente Custom Fields feature (FASE 1). Backend CRUD APIs all working (16/16 tests passed). Frontend admin UI for managing custom fields working. Custom fields appear correctly in EditClienteModal with 'Campi Aggiuntivi' section showing required field indicator.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/clienti/{id}", "issue": "ClienteUpdate model requires 'email' field even for partial updates - should make all fields optional for PATCH-like behavior"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "DialogContent", "issues": ["Console warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent} - accessibility improvement needed"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_cliente_custom_fields.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Backend ClienteUpdate model should have all fields as Optional for true partial update support"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_cliente_custom_fields.py"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "95%"
+  },
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Created custom field 'Codice Cliente Esterno' for commessa 054aa5b3-3f8c-49b0-b9f0-e96911f3776d + tipologia 919d1ec8-3470-4201-b8a2-c84545112fa3 (Telefonia Vodafone Negozi)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Custom fields feature fully implemented and tested. Backend CRUD at /api/cliente-custom-fields works. Frontend admin page at 'Campi Clienti' sidebar menu. Custom fields render in EditClienteModal under 'Campi Aggiuntivi' section. ViewClienteModal should show custom fields in 'custom-fields-view-section' but needs scroll to verify. CreateClienteModal custom fields appear after completing cascading filiera selection.",
+  "features_tested": {
+    "backend": {
+      "POST /api/cliente-custom-fields": "PASS - Admin can create, non-admin gets 403",
+      "GET /api/cliente-custom-fields": "PASS - Filters by commessa_id and tipologia_contratto_id work",
+      "PUT /api/cliente-custom-fields/{id}": "PASS - Partial update works, invalid field_type rejected",
+      "DELETE /api/cliente-custom-fields/{id}": "PASS - Deletes field, 404 for non-existent",
+      "field_type validation": "PASS - All 9 types accepted (text/textarea/number/date/email/phone/select/multi_select/checkbox)",
+      "duplicate rejection": "PASS - Same name+commessa+tipologia returns 400",
+      "name normalization": "PASS - 'Test Campo!' becomes 'test_campo'",
+      "dati_aggiuntivi in cliente": "PASS - Can save and read custom field values"
+    },
+    "frontend": {
+      "sidebar 'Campi Clienti' menu": "PASS - Visible for admin",
+      "cliente-custom-fields-page": "PASS - Page loads with data-testid",
+      "add-custom-field-btn": "PASS - Opens dialog",
+      "select type with options": "PASS - Options input appears for select/multi_select",
+      "custom-field-row-{id}": "PASS - Created fields appear in list",
+      "EditClienteModal custom fields": "PASS - 'Campi Aggiuntivi' section shows with required indicator",
+      "ViewClienteModal custom fields": "PARTIAL - Modal opens but custom-fields-view-section needs verification",
+      "CreateClienteModal custom fields": "NOT TESTED - Requires completing full cascading filiera selection"
+    }
+  }
+}

@@ -16,6 +16,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from enum import Enum
 import smtplib
+import re
 # Email imports temporarily disabled
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -547,6 +548,49 @@ class CustomFieldCreate(BaseModel):
     field_type: str
     options: List[str] = []
     required: bool = False
+
+
+# ============================================================
+# CLIENTE CUSTOM FIELDS (Fase 1) - Per (Commessa + Tipologia Contratto)
+# ============================================================
+class ClienteCustomField(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    commessa_id: str  # Required: which commessa this field applies to
+    tipologia_contratto_id: str  # Required: which tipologia_contratto (UUID)
+    name: str  # Machine-readable name (e.g. "codice_cliente_esterno")
+    label: str  # Display label (e.g. "Codice Cliente Esterno")
+    field_type: str  # text, number, date, select, multi_select, checkbox, textarea, email, phone
+    options: List[str] = []  # For select/multi_select
+    placeholder: Optional[str] = None
+    required: bool = False
+    order: int = 0  # For display ordering
+    active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: Optional[str] = None
+
+
+class ClienteCustomFieldCreate(BaseModel):
+    commessa_id: str
+    tipologia_contratto_id: str
+    name: str
+    label: str
+    field_type: str
+    options: List[str] = []
+    placeholder: Optional[str] = None
+    required: bool = False
+    order: int = 0
+
+
+class ClienteCustomFieldUpdate(BaseModel):
+    label: Optional[str] = None
+    field_type: Optional[str] = None
+    options: Optional[List[str]] = None
+    placeholder: Optional[str] = None
+    required: Optional[bool] = None
+    order: Optional[int] = None
+    active: Optional[bool] = None
+
 
 class Container(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -6265,6 +6309,117 @@ async def delete_custom_field(field_id: str, current_user: User = Depends(get_cu
     
     await db.custom_fields.delete_one({"id": field_id})
     return {"message": "Custom field deleted successfully"}
+
+
+# ============================================================
+# CLIENTE CUSTOM FIELDS - CRUD (Fase 1)
+# ============================================================
+
+@api_router.get("/cliente-custom-fields", response_model=List[ClienteCustomField])
+async def get_cliente_custom_fields(
+    commessa_id: Optional[str] = None,
+    tipologia_contratto_id: Optional[str] = None,
+    active_only: bool = True,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all cliente custom fields, optionally filtered by (commessa_id, tipologia_contratto_id)"""
+    query = {}
+    if commessa_id:
+        query["commessa_id"] = commessa_id
+    if tipologia_contratto_id:
+        query["tipologia_contratto_id"] = tipologia_contratto_id
+    if active_only:
+        query["active"] = True
+    fields = await db.cliente_custom_fields.find(query, {"_id": 0}).sort("order", 1).to_list(length=None)
+    return [ClienteCustomField(**f) for f in fields]
+
+
+@api_router.post("/cliente-custom-fields", response_model=ClienteCustomField)
+async def create_cliente_custom_field(
+    field_data: ClienteCustomFieldCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new cliente custom field for a specific (commessa + tipologia_contratto)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can create cliente custom fields")
+    
+    # Validate field_type
+    valid_types = {"text", "number", "date", "select", "multi_select", "checkbox", "textarea", "email", "phone"}
+    if field_data.field_type not in valid_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid field_type. Must be one of: {', '.join(sorted(valid_types))}"
+        )
+    
+    # Check uniqueness of (commessa + tipologia + name)
+    existing = await db.cliente_custom_fields.find_one({
+        "commessa_id": field_data.commessa_id,
+        "tipologia_contratto_id": field_data.tipologia_contratto_id,
+        "name": field_data.name
+    })
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Un campo '{field_data.name}' esiste già per questa combinazione commessa+tipologia"
+        )
+    
+    # Normalize name: lowercase + replace spaces/special chars with underscores
+    normalized_name = re.sub(r'[^a-z0-9_]', '_', field_data.name.lower().strip())
+    field_data.name = re.sub(r'_+', '_', normalized_name).strip('_')
+    
+    field_obj = ClienteCustomField(
+        **field_data.dict(),
+        created_by=current_user.id
+    )
+    await db.cliente_custom_fields.insert_one(field_obj.dict())
+    return field_obj
+
+
+@api_router.put("/cliente-custom-fields/{field_id}", response_model=ClienteCustomField)
+async def update_cliente_custom_field(
+    field_id: str,
+    update_data: ClienteCustomFieldUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update an existing cliente custom field"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can update cliente custom fields")
+    
+    existing = await db.cliente_custom_fields.find_one({"id": field_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Cliente custom field not found")
+    
+    update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
+    if "field_type" in update_dict:
+        valid_types = {"text", "number", "date", "select", "multi_select", "checkbox", "textarea", "email", "phone"}
+        if update_dict["field_type"] not in valid_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid field_type. Must be one of: {', '.join(sorted(valid_types))}"
+            )
+    update_dict["updated_at"] = datetime.now(timezone.utc)
+    
+    await db.cliente_custom_fields.update_one({"id": field_id}, {"$set": update_dict})
+    updated = await db.cliente_custom_fields.find_one({"id": field_id}, {"_id": 0})
+    return ClienteCustomField(**updated)
+
+
+@api_router.delete("/cliente-custom-fields/{field_id}")
+async def delete_cliente_custom_field(
+    field_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a cliente custom field (hard delete from config, does NOT delete values stored in clienti)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete cliente custom fields")
+    
+    field = await db.cliente_custom_fields.find_one({"id": field_id}, {"_id": 0})
+    if not field:
+        raise HTTPException(status_code=404, detail="Cliente custom field not found")
+    
+    await db.cliente_custom_fields.delete_one({"id": field_id})
+    return {"message": "Cliente custom field deleted", "id": field_id}
+
 
 # Document management endpoints
 # Global variable to store last upload attempt details for debugging
