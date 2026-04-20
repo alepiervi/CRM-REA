@@ -115,6 +115,86 @@ export default function ClienteCustomFieldsManager() {
     })();
   }, []);
 
+  // Fetch tipologie specifiche per una commessa (reutilizzabile per ogni contesto)
+  const fetchTipologieForCommessa = async (commessaId) => {
+    if (!commessaId) return [];
+    try {
+      const res = await axios.get(`${API}/tipologie-contratto`, {
+        params: { commessa_id: commessaId },
+        headers: authHeaders()
+      });
+      return Array.isArray(res.data) ? res.data : [];
+    } catch (err) {
+      console.error("Error fetching tipologie for commessa:", err);
+      return [];
+    }
+  };
+
+  // Tipologie dinamiche per ogni contesto
+  const [filterTipologieList, setFilterTipologieList] = useState([]);
+  const [fieldTipologieList, setFieldTipologieList] = useState([]);
+  const [sectionTipologieList, setSectionTipologieList] = useState([]);
+  const [statusTipologieList, setStatusTipologieList] = useState([]);
+
+  // Filter: al cambio di filterCommessa → ricarica tipologie + reset selezione
+  useEffect(() => {
+    if (filterCommessa) {
+      fetchTipologieForCommessa(filterCommessa).then((list) => {
+        setFilterTipologieList(list);
+        // reset tipologia se non più compatibile
+        if (filterTipologia && !list.find((t) => t.value === filterTipologia)) {
+          setFilterTipologia("");
+        }
+      });
+    } else {
+      setFilterTipologieList([]);
+      setFilterTipologia("");
+    }
+  }, [filterCommessa]);
+
+  // Field dialog: al cambio di fieldForm.commessa_id → ricarica tipologie
+  useEffect(() => {
+    if (fieldForm.commessa_id) {
+      fetchTipologieForCommessa(fieldForm.commessa_id).then((list) => {
+        setFieldTipologieList(list);
+        // In create mode, se la tipologia selezionata non appartiene alla nuova commessa → reset
+        if (!editingFieldId && fieldForm.tipologia_contratto_id && !list.find(t => t.value === fieldForm.tipologia_contratto_id)) {
+          setFieldForm(f => ({ ...f, tipologia_contratto_id: "", section_id: "" }));
+        }
+      });
+    } else {
+      setFieldTipologieList([]);
+    }
+  }, [fieldForm.commessa_id]);
+
+  // Section dialog
+  useEffect(() => {
+    if (sectionForm.commessa_id) {
+      fetchTipologieForCommessa(sectionForm.commessa_id).then((list) => {
+        setSectionTipologieList(list);
+        if (!editingSectionId && sectionForm.tipologia_contratto_id && !list.find(t => t.value === sectionForm.tipologia_contratto_id)) {
+          setSectionForm(f => ({ ...f, tipologia_contratto_id: "" }));
+        }
+      });
+    } else {
+      setSectionTipologieList([]);
+    }
+  }, [sectionForm.commessa_id]);
+
+  // Status dialog
+  useEffect(() => {
+    if (statusForm.commessa_id) {
+      fetchTipologieForCommessa(statusForm.commessa_id).then((list) => {
+        setStatusTipologieList(list);
+        if (!editingStatusId && statusForm.tipologia_contratto_id && !list.find(t => t.value === statusForm.tipologia_contratto_id)) {
+          setStatusForm(f => ({ ...f, tipologia_contratto_id: "" }));
+        }
+      });
+    } else {
+      setStatusTipologieList([]);
+    }
+  }, [statusForm.commessa_id]);
+
   useEffect(() => {
     loadData();
     loadStatusBreakdown();
@@ -402,9 +482,9 @@ export default function ClienteCustomFieldsManager() {
             </div>
             <div>
               <Label>Tipologia Contratto</Label>
-              <select className="w-full p-2 border border-gray-300 rounded-lg bg-white" value={filterTipologia} onChange={(e) => setFilterTipologia(e.target.value)} data-testid="filter-tipologia">
-                <option value="">Tutte le tipologie</option>
-                {tipologie.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
+              <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-50" value={filterTipologia} onChange={(e) => setFilterTipologia(e.target.value)} disabled={!filterCommessa} data-testid="filter-tipologia">
+                <option value="">{filterCommessa ? "Tutte le tipologie della commessa" : "Seleziona prima una commessa"}</option>
+                {filterTipologieList.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
               </select>
             </div>
           </div>
@@ -622,9 +702,9 @@ export default function ClienteCustomFieldsManager() {
               </div>
               <div>
                 <Label>Tipologia Contratto *</Label>
-                <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-50" value={fieldForm.tipologia_contratto_id} onChange={(e) => setFieldForm({ ...fieldForm, tipologia_contratto_id: e.target.value, section_id: "" })} disabled={!!editingFieldId} data-testid="field-tipologia-select">
-                  <option value="">Seleziona tipologia...</option>
-                  {tipologie.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
+                <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-50" value={fieldForm.tipologia_contratto_id} onChange={(e) => setFieldForm({ ...fieldForm, tipologia_contratto_id: e.target.value, section_id: "" })} disabled={!!editingFieldId || !fieldForm.commessa_id} data-testid="field-tipologia-select">
+                  <option value="">{fieldForm.commessa_id ? "Seleziona tipologia..." : "Seleziona prima una commessa"}</option>
+                  {fieldTipologieList.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
                 </select>
               </div>
             </div>
@@ -701,9 +781,9 @@ export default function ClienteCustomFieldsManager() {
               </div>
               <div>
                 <Label>Tipologia Contratto *</Label>
-                <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-50" value={sectionForm.tipologia_contratto_id} onChange={(e) => setSectionForm({ ...sectionForm, tipologia_contratto_id: e.target.value })} disabled={!!editingSectionId} data-testid="section-tipologia-select">
-                  <option value="">Seleziona tipologia...</option>
-                  {tipologie.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
+                <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-50" value={sectionForm.tipologia_contratto_id} onChange={(e) => setSectionForm({ ...sectionForm, tipologia_contratto_id: e.target.value })} disabled={!!editingSectionId || !sectionForm.commessa_id} data-testid="section-tipologia-select">
+                  <option value="">{sectionForm.commessa_id ? "Seleziona tipologia..." : "Seleziona prima una commessa"}</option>
+                  {sectionTipologieList.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
                 </select>
               </div>
             </div>
@@ -754,9 +834,9 @@ export default function ClienteCustomFieldsManager() {
               </div>
               <div>
                 <Label>Tipologia Contratto *</Label>
-                <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-50" value={statusForm.tipologia_contratto_id} onChange={(e) => setStatusForm({ ...statusForm, tipologia_contratto_id: e.target.value })} disabled={!!editingStatusId} data-testid="status-tipologia-select">
-                  <option value="">Seleziona tipologia...</option>
-                  {tipologie.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
+                <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-50" value={statusForm.tipologia_contratto_id} onChange={(e) => setStatusForm({ ...statusForm, tipologia_contratto_id: e.target.value })} disabled={!!editingStatusId || !statusForm.commessa_id} data-testid="status-tipologia-select">
+                  <option value="">{statusForm.commessa_id ? "Seleziona tipologia..." : "Seleziona prima una commessa"}</option>
+                  {statusTipologieList.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
                 </select>
               </div>
             </div>

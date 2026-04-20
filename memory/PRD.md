@@ -7,6 +7,12 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (20 Aprile 2026)
 
+- **Filtro Tipologie per Commessa nei 3 Dialog e Filtro principale**
+  - Prima: i dropdown tipologia mostravano tutte le 39 tipologie indipendentemente dalla commessa scelta.
+  - Ora: in **Filtro principale**, **Dialog Nuovo Campo**, **Dialog Nuova Sezione**, **Dialog Nuovo Status** — dopo aver selezionato la commessa, il dropdown tipologia mostra solo le tipologie associate a quella commessa (tramite `GET /api/tipologie-contratto?commessa_id=X`).
+  - In modalità create: se si cambia la commessa dopo aver selezionato una tipologia non compatibile, la tipologia viene resettata automaticamente.
+  - File: `/app/frontend/src/components/ClienteCustomFieldsManager.jsx` (nuovo helper `fetchTipologieForCommessa` + 4 state list + 4 useEffect)
+
 - **Campi Personalizzati Clienti — FASE 3 (Status Personalizzati con mappatura Analytics)**
   - **Backend**: nuovo enum `StatusStage` (nuovo / in_lavorazione / chiuso_vinto / chiuso_perso). Modello `ClienteCustomStatus` con (name, value auto-normalizzato, color, icon, stage, order, active). CRUD su `/api/cliente-custom-statuses` (admin only). `Cliente.status` convertito da `ClienteStatus` enum a `str` per accettare valori custom. Endpoint `/api/cliente-status-options?commessa_id=X&tipologia_contratto_id=Y` ritorna lista combinata (14 standard + custom). Endpoint `/api/analytics/cliente-statuses-breakdown` aggrega clienti per status e per stage (funnel).
   - **Frontend**: terzo Tab "Status" in `ClienteCustomFieldsManager.jsx` con Dialog create/edit (icon/color/stage), lista status con badge colore+stage. Widget "Imbuto Status Cliente" mostra 4 tiles per stage con % del totale + dettaglio per singolo status. `EditClienteModal` usa nuovo hook `useClienteStatusOptions` per popolare dropdown status dinamicamente (standard + custom per commessa+tipologia del cliente, con `⭐` sui custom).
