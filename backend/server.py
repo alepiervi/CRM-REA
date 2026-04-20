@@ -557,6 +557,7 @@ class ClienteCustomField(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     commessa_id: str  # Required: which commessa this field applies to
     tipologia_contratto_id: str  # Required: which tipologia_contratto (UUID)
+    section_id: Optional[str] = None  # FASE 2: link to ClienteCustomSection (null = default group)
     name: str  # Machine-readable name (e.g. "codice_cliente_esterno")
     label: str  # Display label (e.g. "Codice Cliente Esterno")
     field_type: str  # text, number, date, select, multi_select, checkbox, textarea, email, phone
@@ -573,6 +574,7 @@ class ClienteCustomField(BaseModel):
 class ClienteCustomFieldCreate(BaseModel):
     commessa_id: str
     tipologia_contratto_id: str
+    section_id: Optional[str] = None  # FASE 2
     name: str
     label: str
     field_type: str
@@ -588,6 +590,38 @@ class ClienteCustomFieldUpdate(BaseModel):
     options: Optional[List[str]] = None
     placeholder: Optional[str] = None
     required: Optional[bool] = None
+    order: Optional[int] = None
+    active: Optional[bool] = None
+    section_id: Optional[str] = None  # FASE 2: Nullable — allows moving field to a section
+
+
+# ============================================================
+# CLIENTE CUSTOM SECTIONS (Fase 2) - Per (Commessa + Tipologia Contratto)
+# ============================================================
+class ClienteCustomSection(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    commessa_id: str
+    tipologia_contratto_id: str
+    name: str  # Display name (e.g. "Dati contratto avanzati")
+    icon: Optional[str] = "📋"  # Emoji or icon string
+    order: int = 0
+    active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: Optional[str] = None
+
+
+class ClienteCustomSectionCreate(BaseModel):
+    commessa_id: str
+    tipologia_contratto_id: str
+    name: str
+    icon: Optional[str] = "📋"
+    order: int = 0
+
+
+class ClienteCustomSectionUpdate(BaseModel):
+    name: Optional[str] = None
+    icon: Optional[str] = None
     order: Optional[int] = None
     active: Optional[bool] = None
 
@@ -6419,6 +6453,103 @@ async def delete_cliente_custom_field(
     
     await db.cliente_custom_fields.delete_one({"id": field_id})
     return {"message": "Cliente custom field deleted", "id": field_id}
+
+
+# ============================================================
+# CLIENTE CUSTOM SECTIONS - CRUD (Fase 2)
+# ============================================================
+
+@api_router.get("/cliente-custom-sections", response_model=List[ClienteCustomSection])
+async def get_cliente_custom_sections(
+    commessa_id: Optional[str] = None,
+    tipologia_contratto_id: Optional[str] = None,
+    active_only: bool = True,
+    current_user: User = Depends(get_current_user)
+):
+    """Get cliente custom sections, optionally filtered by (commessa_id, tipologia_contratto_id)"""
+    query = {}
+    if commessa_id:
+        query["commessa_id"] = commessa_id
+    if tipologia_contratto_id:
+        query["tipologia_contratto_id"] = tipologia_contratto_id
+    if active_only:
+        query["active"] = True
+    sections = await db.cliente_custom_sections.find(query, {"_id": 0}).sort("order", 1).to_list(length=None)
+    return [ClienteCustomSection(**s) for s in sections]
+
+
+@api_router.post("/cliente-custom-sections", response_model=ClienteCustomSection)
+async def create_cliente_custom_section(
+    section_data: ClienteCustomSectionCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new cliente custom section for a specific (commessa + tipologia_contratto)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can create cliente custom sections")
+    
+    # Check uniqueness of (commessa + tipologia + name)
+    existing = await db.cliente_custom_sections.find_one({
+        "commessa_id": section_data.commessa_id,
+        "tipologia_contratto_id": section_data.tipologia_contratto_id,
+        "name": section_data.name
+    })
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Una sezione '{section_data.name}' esiste già per questa combinazione commessa+tipologia"
+        )
+    
+    section_obj = ClienteCustomSection(
+        **section_data.dict(),
+        created_by=current_user.id
+    )
+    await db.cliente_custom_sections.insert_one(section_obj.dict())
+    return section_obj
+
+
+@api_router.put("/cliente-custom-sections/{section_id}", response_model=ClienteCustomSection)
+async def update_cliente_custom_section(
+    section_id: str,
+    update_data: ClienteCustomSectionUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update an existing cliente custom section"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can update cliente custom sections")
+    
+    existing = await db.cliente_custom_sections.find_one({"id": section_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Cliente custom section not found")
+    
+    update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
+    update_dict["updated_at"] = datetime.now(timezone.utc)
+    
+    await db.cliente_custom_sections.update_one({"id": section_id}, {"$set": update_dict})
+    updated = await db.cliente_custom_sections.find_one({"id": section_id}, {"_id": 0})
+    return ClienteCustomSection(**updated)
+
+
+@api_router.delete("/cliente-custom-sections/{section_id}")
+async def delete_cliente_custom_section(
+    section_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a cliente custom section. Fields assigned to this section are moved to default (section_id=null)."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can delete cliente custom sections")
+    
+    section = await db.cliente_custom_sections.find_one({"id": section_id}, {"_id": 0})
+    if not section:
+        raise HTTPException(status_code=404, detail="Cliente custom section not found")
+    
+    # Unassign fields from this section (don't delete the fields)
+    await db.cliente_custom_fields.update_many(
+        {"section_id": section_id},
+        {"$set": {"section_id": None}}
+    )
+    
+    await db.cliente_custom_sections.delete_one({"id": section_id})
+    return {"message": "Cliente custom section deleted, fields moved to default", "id": section_id}
 
 
 # Document management endpoints

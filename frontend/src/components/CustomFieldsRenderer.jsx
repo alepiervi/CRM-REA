@@ -14,32 +14,38 @@ const authHeaders = () => {
 };
 
 /**
- * Hook to fetch custom fields for a given (commessa_id, tipologia_contratto_id)
+ * Fetches BOTH custom fields and custom sections for a given (commessa_id, tipologia_contratto_id).
  */
 export function useClienteCustomFields(commessaId, tipologiaId) {
   const [fields, setFields] = useState([]);
+  const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!commessaId || !tipologiaId) {
       setFields([]);
+      setSections([]);
       return;
     }
     setLoading(true);
-    axios
-      .get(`${API}/cliente-custom-fields`, {
-        params: { commessa_id: commessaId, tipologia_contratto_id: tipologiaId, active_only: true },
-        headers: authHeaders(),
+    const params = { commessa_id: commessaId, tipologia_contratto_id: tipologiaId, active_only: true };
+    Promise.all([
+      axios.get(`${API}/cliente-custom-fields`, { params, headers: authHeaders() }),
+      axios.get(`${API}/cliente-custom-sections`, { params, headers: authHeaders() }),
+    ])
+      .then(([fRes, sRes]) => {
+        setFields(Array.isArray(fRes.data) ? fRes.data : []);
+        setSections(Array.isArray(sRes.data) ? sRes.data : []);
       })
-      .then((res) => setFields(Array.isArray(res.data) ? res.data : []))
       .catch((err) => {
-        console.error("Error loading custom fields:", err);
+        console.error("Error loading custom fields/sections:", err);
         setFields([]);
+        setSections([]);
       })
       .finally(() => setLoading(false));
   }, [commessaId, tipologiaId]);
 
-  return { fields, loading };
+  return { fields, sections, loading };
 }
 
 /**
@@ -52,7 +58,6 @@ export function CustomFieldInput({ field, value, onChange, disabled = false }) {
     disabled,
     "data-testid": `custom-field-input-${field.name}`,
   };
-
   switch (field.field_type) {
     case "textarea":
       return <Textarea {...commonProps} value={value || ""} onChange={(e) => onChange(e.target.value)} rows={3} />;
@@ -66,16 +71,9 @@ export function CustomFieldInput({ field, value, onChange, disabled = false }) {
       return <Input {...commonProps} type="tel" value={value || ""} onChange={(e) => onChange(e.target.value)} />;
     case "select":
       return (
-        <select
-          {...commonProps}
-          className="w-full p-2 border border-gray-300 rounded-lg bg-white"
-          value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
-        >
+        <select {...commonProps} className="w-full p-2 border border-gray-300 rounded-lg bg-white" value={value || ""} onChange={(e) => onChange(e.target.value)}>
           <option value="">Seleziona...</option>
-          {(field.options || []).map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
+          {(field.options || []).map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
         </select>
       );
     case "multi_select": {
@@ -102,16 +100,8 @@ export function CustomFieldInput({ field, value, onChange, disabled = false }) {
     case "checkbox":
       return (
         <div className="flex items-center gap-2">
-          <Checkbox
-            id={`cf-${field.id}`}
-            checked={!!value}
-            onCheckedChange={(v) => onChange(!!v)}
-            disabled={disabled}
-            data-testid={`custom-field-input-${field.name}`}
-          />
-          <Label htmlFor={`cf-${field.id}`} className="cursor-pointer text-sm">
-            {field.label}
-          </Label>
+          <Checkbox id={`cf-${field.id}`} checked={!!value} onCheckedChange={(v) => onChange(!!v)} disabled={disabled} data-testid={`custom-field-input-${field.name}`} />
+          <Label htmlFor={`cf-${field.id}`} className="cursor-pointer text-sm">{field.label}</Label>
         </div>
       );
     case "text":
@@ -121,66 +111,102 @@ export function CustomFieldInput({ field, value, onChange, disabled = false }) {
 }
 
 /**
- * Renders a full section of custom fields in a grid.
- * `values` is an object { [field.name]: value }.
- * `onChangeField(name, value)` is called when a field value changes.
+ * Groups fields by section (and a "default" group for fields without section_id).
+ * Returns an array of { section, fields } ordered by section.order then default last.
  */
-export function CustomFieldsSection({ fields, values, onChangeField, disabled = false, title = "Campi Aggiuntivi" }) {
+function groupFieldsBySection(fields, sections) {
+  const sectionMap = new Map();
+  sections.forEach((s) => sectionMap.set(s.id, { section: s, fields: [] }));
+  const defaultGroup = { section: null, fields: [] };
+
+  fields.forEach((f) => {
+    if (f.section_id && sectionMap.has(f.section_id)) {
+      sectionMap.get(f.section_id).fields.push(f);
+    } else {
+      defaultGroup.fields.push(f);
+    }
+  });
+
+  const groups = Array.from(sectionMap.values()).filter((g) => g.fields.length > 0);
+  groups.sort((a, b) => (a.section?.order ?? 0) - (b.section?.order ?? 0));
+  if (defaultGroup.fields.length > 0) groups.push(defaultGroup);
+  return groups;
+}
+
+/**
+ * Renders all custom fields grouped by section.
+ * Props: fields (array), sections (array), values (object), onChangeField(name, value).
+ */
+export function CustomFieldsSection({ fields, sections = [], values, onChangeField, disabled = false }) {
   if (!fields || fields.length === 0) return null;
+  const groups = groupFieldsBySection(fields, sections);
 
   return (
-    <div className="bg-indigo-50/50 border border-indigo-200 rounded-lg p-4 space-y-4" data-testid="custom-fields-section">
-      <h4 className="font-semibold text-indigo-900 flex items-center gap-2">
-        📝 {title}
-        <span className="text-xs font-normal text-indigo-700">({fields.length} campo/i)</span>
-      </h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {fields.map((f) => (
-          <div key={f.id} className={f.field_type === "textarea" ? "md:col-span-2" : ""}>
-            {f.field_type !== "checkbox" && (
-              <Label htmlFor={`cf-${f.id}`}>
-                {f.label}
-                {f.required && <span className="text-red-500 ml-1">*</span>}
-              </Label>
-            )}
-            <CustomFieldInput
-              field={f}
-              value={values?.[f.name]}
-              onChange={(v) => onChangeField(f.name, v)}
-              disabled={disabled}
-            />
+    <div className="space-y-4" data-testid="custom-fields-section">
+      {groups.map((group, gIdx) => {
+        const title = group.section ? `${group.section.icon || "📋"} ${group.section.name}` : "📝 Campi Aggiuntivi";
+        const colorClass = group.section ? "bg-indigo-50/70 border-indigo-300" : "bg-amber-50/70 border-amber-300";
+        return (
+          <div key={group.section?.id || `default-${gIdx}`} className={`border rounded-lg p-4 space-y-4 ${colorClass}`} data-testid={group.section ? `custom-section-${group.section.id}` : "custom-section-default"}>
+            <h4 className="font-semibold text-slate-900 flex items-center gap-2">
+              {title}
+              <span className="text-xs font-normal text-slate-600">({group.fields.length} campo/i)</span>
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {group.fields.map((f) => (
+                <div key={f.id} className={f.field_type === "textarea" ? "md:col-span-2" : ""}>
+                  {f.field_type !== "checkbox" && (
+                    <Label htmlFor={`cf-${f.id}`}>
+                      {f.label}
+                      {f.required && <span className="text-red-500 ml-1">*</span>}
+                    </Label>
+                  )}
+                  <CustomFieldInput field={f} value={values?.[f.name]} onChange={(v) => onChangeField(f.name, v)} disabled={disabled} />
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }
 
 /**
- * Renders read-only values for the View modal.
+ * Renders readonly fields grouped by section for View modal.
  */
-export function CustomFieldsViewSection({ fields, values, title = "Campi Aggiuntivi" }) {
+export function CustomFieldsViewSection({ fields, sections = [], values }) {
   if (!fields || fields.length === 0) return null;
+  const groups = groupFieldsBySection(fields, sections);
+
   return (
-    <div className="bg-indigo-50/50 border border-indigo-200 rounded-lg p-4 space-y-3" data-testid="custom-fields-view-section">
-      <h4 className="font-semibold text-indigo-900">📝 {title}</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {fields.map((f) => {
-          const v = values?.[f.name];
-          let display = "Non specificato";
-          if (v !== undefined && v !== null && v !== "") {
-            if (f.field_type === "checkbox") display = v ? "Sì" : "No";
-            else if (f.field_type === "multi_select" && Array.isArray(v)) display = v.length ? v.join(", ") : "Non specificato";
-            else display = String(v);
-          }
-          return (
-            <div key={f.id}>
-              <Label className="text-sm font-medium text-slate-600">{f.label}</Label>
-              <p className="text-sm" data-testid={`custom-field-view-${f.name}`}>{display}</p>
+    <div className="space-y-4" data-testid="custom-fields-view-section">
+      {groups.map((group, gIdx) => {
+        const title = group.section ? `${group.section.icon || "📋"} ${group.section.name}` : "📝 Campi Aggiuntivi";
+        const colorClass = group.section ? "bg-indigo-50/70 border-indigo-300" : "bg-amber-50/70 border-amber-300";
+        return (
+          <div key={group.section?.id || `default-${gIdx}`} className={`border rounded-lg p-4 space-y-3 ${colorClass}`}>
+            <h4 className="font-semibold text-slate-900">{title}</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {group.fields.map((f) => {
+                const v = values?.[f.name];
+                let display = "Non specificato";
+                if (v !== undefined && v !== null && v !== "") {
+                  if (f.field_type === "checkbox") display = v ? "Sì" : "No";
+                  else if (f.field_type === "multi_select" && Array.isArray(v)) display = v.length ? v.join(", ") : "Non specificato";
+                  else display = String(v);
+                }
+                return (
+                  <div key={f.id}>
+                    <Label className="text-sm font-medium text-slate-600">{f.label}</Label>
+                    <p className="text-sm" data-testid={`custom-field-view-${f.name}`}>{display}</p>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -193,15 +219,8 @@ export function validateRequiredCustomFields(fields, values) {
   (fields || []).forEach((f) => {
     if (!f.required) return;
     const v = values?.[f.name];
-    if (
-      v === undefined ||
-      v === null ||
-      v === "" ||
-      (Array.isArray(v) && v.length === 0) ||
-      (f.field_type === "checkbox" && v === false)
-    ) {
-      if (f.field_type !== "checkbox") missing.push(f.label);
-      else missing.push(f.label);
+    if (v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0) || (f.field_type === "checkbox" && v === false)) {
+      missing.push(f.label);
     }
   });
   return missing;

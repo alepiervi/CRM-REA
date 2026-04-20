@@ -1,0 +1,66 @@
+{
+  "summary": "FASE 2 (Sezioni Personalizzate Clienti) testing completed. Backend: 13/13 tests passed (100%). Frontend: All UI elements working correctly - Tabs (Campi/Sezioni), section CRUD, field-section assignment. One minor backend limitation identified: section_id cannot be set to null via PUT (filtered out).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "PUT /api/cliente-custom-fields/{id}",
+        "issue": "Cannot set section_id to null via PUT - backend filters out None values in update_dict (line 6426). Fields can only be moved between sections, not removed from sections via API. DELETE section endpoint correctly handles this by setting section_id to null.",
+        "priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "DialogContent",
+        "issues": ["Console warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent} - accessibility improvement needed (same as FASE 1)"]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_cliente_custom_sections.py",
+    "/app/backend/tests/test_cliente_custom_fields.py",
+    "/app/test_reports/pytest/pytest_sections_results.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: Fix backend PUT /api/cliente-custom-fields to allow setting section_id to null (modify line 6426 to handle section_id specially)"
+  ],
+  "critical_code_review_comments": [
+    "Backend update logic at line 6426 filters out None values, preventing section_id from being set to null. Consider using exclude_unset=True or special handling for nullable fields."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_cliente_custom_sections.py"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Created and cleaned up TEST_Sezione_Playwright section during frontend testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "FASE 2 (Custom Sections) fully implemented and tested. Backend CRUD at /api/cliente-custom-sections works. Frontend admin page has Tabs (Campi/Sezioni). Section creation dialog has data-testid attributes: section-commessa-select, section-tipologia-select, section-name-input, section-icon-input, save-section-btn. Section rows have data-testid='custom-section-row-{id}'. DELETE section correctly sets section_id to null on associated fields.",
+  "features_tested": {
+    "backend": {
+      "POST /api/cliente-custom-sections": "PASS - Admin can create, non-admin gets 401/403",
+      "GET /api/cliente-custom-sections": "PASS - Filters by commessa_id and tipologia_contratto_id work",
+      "PUT /api/cliente-custom-sections/{id}": "PASS - Partial update (name/icon/order/active) works",
+      "DELETE /api/cliente-custom-sections/{id}": "PASS - Deletes section, sets section_id to null on associated fields",
+      "duplicate rejection": "PASS - Same name+commessa+tipologia returns 400",
+      "ClienteCustomField with section_id": "PASS - POST/PUT accepts section_id, field correctly assigned to section",
+      "section_id update between sections": "PASS - Can move field from one section to another"
+    },
+    "frontend": {
+      "tab-fields": "PASS - data-testid='tab-fields' present and clickable",
+      "tab-sections": "PASS - data-testid='tab-sections' present and clickable",
+      "add-custom-section-btn": "PASS - Opens section creation dialog",
+      "section dialog fields": "PASS - All fields present (commessa, tipologia, name, icon)",
+      "section creation": "PASS - Section created and appears in list with data-testid='custom-section-row-{id}'",
+      "field section badge": "PASS - Fields show '📁 {section name}' or '📁 — (Campi Aggiuntivi)' badge",
+      "field-section-select in field dialog": "PASS - data-testid='field-section-select' present, shows available sections"
+    }
+  }
+}

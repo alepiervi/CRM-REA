@@ -22428,7 +22428,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
   const [customFieldValues, setCustomFieldValues] = useState({});
   const [selectedCommessaForCF, setSelectedCommessaForCF] = useState('');
   const [selectedTipologiaForCF, setSelectedTipologiaForCF] = useState('');
-  const { fields: customFields } = useClienteCustomFields(selectedCommessaForCF, selectedTipologiaForCF);
+  const { fields: customFields, sections: customSections } = useClienteCustomFields(selectedCommessaForCF, selectedTipologiaForCF);
   
   // ENUM MAPPING FUNCTIONS - Convert UUID or display values to backend enum format
   const mapTipologiaContratto = (uuidOrDisplayValue) => {
@@ -24868,6 +24868,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
           {/* SEZIONE CAMPI PERSONALIZZATI (dinamici per commessa + tipologia) */}
           <CustomFieldsSection
             fields={customFields}
+            sections={customSections}
             values={customFieldValues}
             onChangeField={(name, value) => setCustomFieldValues(prev => ({ ...prev, [name]: value }))}
           />
@@ -25454,7 +25455,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
   const [simUsersInfo, setSimUsersInfo] = useState({});  // NEW: Cache for SIM assigned users
   
   // NEW: Custom fields for View
-  const { fields: customFields } = useClienteCustomFields(
+  const { fields: customFields, sections: customSections } = useClienteCustomFields(
     cliente?.commessa_id,
     cliente?.tipologia_contratto_id
   );
@@ -26087,6 +26088,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
         <div className="mt-4">
           <CustomFieldsViewSection
             fields={customFields}
+            sections={customSections}
             values={cliente?.dati_aggiuntivi || {}}
           />
         </div>
@@ -26107,7 +26109,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   
   // NEW: Custom fields for Edit
   const [customFieldValues, setCustomFieldValues] = useState(cliente?.dati_aggiuntivi || {});
-  const { fields: customFields } = useClienteCustomFields(
+  const { fields: customFields, sections: customSections } = useClienteCustomFields(
     cliente?.commessa_id,
     cliente?.tipologia_contratto_id
   );
@@ -28248,6 +28250,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           {/* SEZIONE CAMPI PERSONALIZZATI (dinamici per commessa + tipologia) */}
           <CustomFieldsSection
             fields={customFields}
+            sections={customSections}
             values={customFieldValues}
             onChangeField={(name, value) => setCustomFieldValues(prev => ({ ...prev, [name]: value }))}
           />
