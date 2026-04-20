@@ -5,6 +5,24 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ## Current State (Febbraio 2026)
 
+### ✅ Completato in questa sessione (20 Aprile 2026)
+
+- **Campi Personalizzati Clienti — FASE 1 (configurabili per Commessa + Tipologia Contratto)**
+  - **Backend**: modelli `ClienteCustomField` / `ClienteCustomFieldCreate` / `ClienteCustomFieldUpdate` (`/app/backend/server.py` linee 556-600) + CRUD admin-only su `/api/cliente-custom-fields` (linee ~6313-6423). Validazione 9 field_type (text, textarea, number, date, email, phone, select, multi_select, checkbox). Duplicati (name+commessa+tipologia) respinti. Nome normalizzato (lowercase + replace non-alphanum con `_`).
+  - **Frontend**: nuova pagina admin in sidebar "Campi Clienti" → componente `/app/frontend/src/components/ClienteCustomFieldsManager.jsx` (CRUD UI con filtri, dialog create/edit, delete con conferma)
+  - **Rendering dinamico**: hook `useClienteCustomFields(commessa, tipologia)` + componenti `CustomFieldsSection` (form) e `CustomFieldsViewSection` (readonly) in `/app/frontend/src/components/CustomFieldsRenderer.jsx`
+  - **Integrazione nei modali** Cliente (`/app/frontend/src/App.js`):
+    - **CreateClienteModal**: sezione "Campi Aggiuntivi" dinamica, salvataggio in `dati_aggiuntivi`, validazione campi obbligatori
+    - **EditClienteModal**: stessa sezione, valori precompilati, salvataggio e validazione
+    - **ViewClienteModal**: sezione readonly
+  - **Test**: testing agent v3 — Backend 100% (16/16), Frontend 95% (admin UI + Edit verificati, Create non testabile via automazione per la complessità del cascading)
+
+- **Riorganizzazione View Cliente (Anagrafica + Indirizzo + Contatti)** — fix campi errati (`provincia_residenza` → `provincia`, `numero_civico`/`comune`/`cellulare` inesistenti → rimossi/sostituiti), nuove sezioni logiche
+- **Nuovo campo "Comune di Installazione" (`comune_attivazione`)** — aggiunto a modelli backend + Create/Edit/View Cliente, raggruppato con "Indirizzo Attivazione" in sub-block ambra
+- **Nuovo campo "Indirizzo Attivazione" (`indirizzo_attivazione`)** — aggiunto a modelli backend + Create/Edit/View Cliente
+- **Label "Telefono" rinominato in "Cellulare"** nei modali Create/Edit/View (campo DB `telefono` invariato)
+- **Copia anagrafica esistente**: estesa a tutti i campi (anagrafica completa + contatti + pagamento + documento). Mantenuti esclusi: contract-specific fields, note, file upload.
+
 ### ✅ Completato in questa sessione (17 Febbraio 2026)
 - **Copia Anagrafica Esistente nel Modale Crea Cliente**: Implementata la funzionalità di pre-compilazione del form cliente partendo da un cliente esistente.
   - UI: box ambra "Copia da anagrafica esistente" all'inizio della scheda cliente (dopo completamento filiera cascading)
