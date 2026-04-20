@@ -25844,8 +25844,8 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           </Card>
         </div>
 
-        {/* Sezione Telefonia Fissa - Condizionale */}
-        {isTelefoniaFastweb() && (
+        {/* Sezione Telefonia Fissa - mostrata se commessa è Telefonia o se ci sono dati telefonia */}
+        {(isTelefoniaFastweb() || cliente.tecnologia || cliente.codice_migrazione || cliente.gestore || cliente.numero_portabilita || cliente.convergenza) && (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
@@ -25862,6 +25862,10 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                 <div>
                   <Label className="text-sm font-medium text-slate-600">Codice Migrazione</Label>
                   <p className="text-sm">{cliente.codice_migrazione || 'Non specificato'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Numero Portabilità</Label>
+                  <p className="text-sm">{cliente.numero_portabilita || 'Non specificato'}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-slate-600">Gestore</Label>
@@ -25947,8 +25951,8 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           </Card>
         )}
 
-        {/* Sezione Energia - Condizionale */}
-        {isEnergiaFastweb() && !isTelepass() && (
+        {/* Sezione Energia - mostrata se commessa è Energia Fastweb o se ci sono dati energia */}
+        {((isEnergiaFastweb() && !isTelepass()) || cliente.codice_pod || cliente.energia_tipologia || cliente.energia_consumo_annuo || cliente.energia_potenza_contatore || cliente.energia_potenza_impegnata) && !isTelepass() && (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
@@ -25957,16 +25961,54 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div>
-                <Label className="text-sm font-medium text-slate-600">Codice POD</Label>
-                <p className="text-sm font-mono">{cliente.codice_pod || 'Non specificato'}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Tipologia</Label>
+                  <p className="text-sm">{cliente.energia_tipologia || 'Non specificato'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Codice POD</Label>
+                  <p className="text-sm font-mono">{cliente.codice_pod || 'Non specificato'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Consumo Annuo</Label>
+                  <p className="text-sm">{cliente.energia_consumo_annuo || 'Non specificato'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Potenza Contatore</Label>
+                  <p className="text-sm">{cliente.energia_potenza_contatore || 'Non specificato'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Potenza Impegnata</Label>
+                  <p className="text-sm">{cliente.energia_potenza_impegnata || 'Non specificato'}</p>
+                </div>
               </div>
+              {/* Vecchio intestatario - solo se popolato (Switch con voltura) */}
+              {(cliente.energia_vecchio_intestatario_nome || cliente.energia_vecchio_intestatario_cognome || cliente.energia_vecchio_intestatario_cf) && (
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-2">Vecchio Intestatario (Switch con voltura)</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-slate-600">Nome</Label>
+                      <p className="text-sm">{cliente.energia_vecchio_intestatario_nome || 'Non specificato'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-slate-600">Cognome</Label>
+                      <p className="text-sm">{cliente.energia_vecchio_intestatario_cognome || 'Non specificato'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-slate-600">Codice Fiscale</Label>
+                      <p className="text-sm font-mono">{cliente.energia_vecchio_intestatario_cf || 'Non specificato'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
 
-        {/* Sezione Telepass - Condizionale */}
-        {isTelepass() && (
+        {/* Sezione Telepass - mostrata se commessa è Telepass o se OBU è compilato */}
+        {(isTelepass() || cliente.obu) && (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
