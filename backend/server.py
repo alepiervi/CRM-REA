@@ -1248,6 +1248,7 @@ class EnergiaTipologia(str, Enum):
     SWITCH = "Switch"
     SWITCH_CON_VOLTURA = "Switch con voltura"
     SUBENTRO = "Subentro"
+    NUOVO_ALLACCIO = "Nuovo Allaccio"
 
 # Sigle Province Italiane per dropdown
 PROVINCE_ITALIANE = [

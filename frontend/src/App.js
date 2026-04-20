@@ -19713,14 +19713,29 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       console.log("✅ CLIENTE CREATION COMPLETED SUCCESSFULLY");
     } catch (error) {
       console.error("❌ ERROR CREATING CLIENTE:", error);
-      console.error("❌ Error Details:", {
+      const details = error.response?.data;
+      console.error("❌ Error Details (FULL):", JSON.stringify({
         message: error.message,
         status: error.response?.status,
-        data: error.response?.data
-      });
+        data: details
+      }, null, 2));
+      // Extract human-readable validation errors
+      let errorDescription = "Errore nella creazione del cliente";
+      if (details?.detail) {
+        if (typeof details.detail === 'string') {
+          errorDescription = details.detail;
+        } else if (Array.isArray(details.detail)) {
+          errorDescription = details.detail.map(e => {
+            const field = Array.isArray(e.loc) ? e.loc.slice(1).join('.') : '';
+            return `${field}: ${e.msg}`;
+          }).join(' | ');
+        } else {
+          errorDescription = JSON.stringify(details.detail);
+        }
+      }
       toast({
-        title: "Errore", 
-        description: "Errore nella creazione del cliente",
+        title: "Errore validazione",
+        description: errorDescription.substring(0, 400),
         variant: "destructive",
       });
     }
