@@ -7,7 +7,20 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (20 Aprile 2026)
 
-- **Campi Personalizzati Clienti — FASE 1 (configurabili per Commessa + Tipologia Contratto)**
+- **Campi Personalizzati Clienti — FASE 2 (Sezioni personalizzabili)**
+  - **Backend**: modelli `ClienteCustomSection` / `ClienteCustomSectionCreate` / `ClienteCustomSectionUpdate` + CRUD admin su `/api/cliente-custom-sections`. Campo `section_id` opzionale aggiunto a `ClienteCustomField`. Quando una sezione viene eliminata, i campi assegnati vengono automaticamente spostati al gruppo default (section_id impostato a null). Fix PUT endpoint per permettere `section_id=null` (usa `exclude_unset`).
+  - **Frontend admin** (`ClienteCustomFieldsManager.jsx` riscritto con Tabs):
+    - Tab "Campi" e Tab "Sezioni" affiancate
+    - Dialog create/edit sezione con campi: nome, icona (emoji), ordine, attiva
+    - Dialog create/edit campo ora include dropdown "Sezione di destinazione" (filtrato per commessa+tipologia)
+    - Campi nella lista mostrano badge "📁 {nome sezione}"
+  - **Rendering nei 3 modali Cliente** (`CustomFieldsRenderer.jsx`):
+    - `useClienteCustomFields` ora ritorna anche `sections`
+    - `groupFieldsBySection()` raggruppa i campi per sezione in ordine di `order`
+    - Ogni gruppo renderizza con header "{icon} {name}" (indigo) o "📝 Campi Aggiuntivi" (amber) per il gruppo default
+  - **Test**: testing agent v3 — Backend 100% (13/13), Frontend 100%. Fix applicato per issue minor su PUT+section_id=null.
+
+  - **Campi Personalizzati Clienti — FASE 1 (configurabili per Commessa + Tipologia Contratto)**
   - **Backend**: modelli `ClienteCustomField` / `ClienteCustomFieldCreate` / `ClienteCustomFieldUpdate` (`/app/backend/server.py` linee 556-600) + CRUD admin-only su `/api/cliente-custom-fields` (linee ~6313-6423). Validazione 9 field_type (text, textarea, number, date, email, phone, select, multi_select, checkbox). Duplicati (name+commessa+tipologia) respinti. Nome normalizzato (lowercase + replace non-alphanum con `_`).
   - **Frontend**: nuova pagina admin in sidebar "Campi Clienti" → componente `/app/frontend/src/components/ClienteCustomFieldsManager.jsx` (CRUD UI con filtri, dialog create/edit, delete con conferma)
   - **Rendering dinamico**: hook `useClienteCustomFields(commessa, tipologia)` + componenti `CustomFieldsSection` (form) e `CustomFieldsViewSection` (readonly) in `/app/frontend/src/components/CustomFieldsRenderer.jsx`

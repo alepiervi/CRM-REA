@@ -6423,7 +6423,10 @@ async def update_cliente_custom_field(
     if not existing:
         raise HTTPException(status_code=404, detail="Cliente custom field not found")
     
-    update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
+    # Use exclude_unset to distinguish between "not provided" and "provided as null"
+    # Special case: section_id CAN be set to null (to move field out of a section to default group)
+    raw_update = update_data.dict(exclude_unset=True)
+    update_dict = {k: v for k, v in raw_update.items() if v is not None or k == "section_id"}
     if "field_type" in update_dict:
         valid_types = {"text", "number", "date", "select", "multi_select", "checkbox", "textarea", "email", "phone"}
         if update_dict["field_type"] not in valid_types:
