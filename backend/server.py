@@ -14296,8 +14296,30 @@ async def get_clienti(
         total_pages=total_pages
     )
 
-async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
-    """Create Excel file with clienti data - ALL fields included, one row per SIM"""
+async def create_clienti_excel_report(clienti_data, filename="clienti_export", custom_fields=None):
+    """Create Excel file with clienti data - ALL fields included (standard + custom), one row per SIM.
+    
+    Args:
+        clienti_data: list of cliente dicts (may contain 'dati_aggiuntivi' key)
+        filename: output filename
+        custom_fields: optional list of dicts with 'name' and 'label' keys. If None, the function
+                       auto-fetches all active custom fields from the `cliente_custom_fields` collection.
+    """
+    # Auto-fetch custom fields if not provided
+    if custom_fields is None:
+        try:
+            raw = await db.cliente_custom_fields.find({"active": True}, {"_id": 0}).to_list(length=None)
+            # De-duplicate by name (same logical field may exist across commessa/tipologia combos — use the first label seen)
+            seen = {}
+            for f in raw:
+                nm = f.get("name")
+                if nm and nm not in seen:
+                    seen[nm] = f.get("label") or nm
+            custom_fields = [{"name": k, "label": v} for k, v in sorted(seen.items(), key=lambda x: x[1].lower())]
+        except Exception as e:
+            logging.warning(f"Could not fetch custom_fields for export: {e}")
+            custom_fields = []
+    
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Clienti Report"
@@ -14334,6 +14356,10 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
         # System Fields
         "Status", "Utente Creatore", "Data Creazione", "Note", "Note Back Office"
     ]
+    
+    # Append custom field columns (dynamic, from cliente_custom_fields)
+    for cf in (custom_fields or []):
+        headers.append(f"[Custom] {cf['label']}")
     
     # Header styling
     header_font = Font(bold=True, color="FFFFFF")
@@ -14491,6 +14517,17 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export"):
         
         ws.cell(row=row_idx, column=col, value=cliente.get("note", "")); col += 1
         ws.cell(row=row_idx, column=col, value=cliente.get("note_backoffice", "") or cliente.get("note_back_office", "")); col += 1
+        
+        # Custom fields values (from dati_aggiuntivi)
+        dati_agg = cliente.get("dati_aggiuntivi") or {}
+        for cf in (custom_fields or []):
+            v = dati_agg.get(cf["name"], "")
+            # Format lists (multi_select) as comma-separated
+            if isinstance(v, list):
+                v = ", ".join(str(x) for x in v)
+            elif isinstance(v, bool):
+                v = "Sì" if v else "No"
+            ws.cell(row=row_idx, column=col, value=v if v is not None else ""); col += 1
     
     # Auto-adjust column widths
     for column in ws.columns:
@@ -15869,6 +15906,22 @@ async def export_pivot_clienti_list(
             "Segmento", "Convergenza", "Assegnato a", "Data Creazione", "Note"
         ]
         
+        # Fetch active custom fields for dynamic columns
+        try:
+            raw_cf = await db.cliente_custom_fields.find({"active": True}, {"_id": 0}).to_list(length=None)
+            seen_cf = {}
+            for f in raw_cf:
+                nm = f.get("name")
+                if nm and nm not in seen_cf:
+                    seen_cf[nm] = f.get("label") or nm
+            export_custom_fields = [{"name": k, "label": v} for k, v in sorted(seen_cf.items(), key=lambda x: x[1].lower())]
+        except Exception as _cf_err:
+            logging.warning(f"Could not fetch custom fields for pivot export: {_cf_err}")
+            export_custom_fields = []
+        
+        for cf in export_custom_fields:
+            headers.append(f"[Custom] {cf['label']}")
+        
         header_font = Font(bold=True, color="FFFFFF")
         header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
         
@@ -15911,6 +15964,18 @@ async def export_pivot_clienti_list(
                 ws.cell(row_num, 20, "")
             
             ws.cell(row_num, 21, cliente.get("note", ""))
+            
+            # Custom fields columns
+            cf_col = 22
+            dati_agg = cliente.get("dati_aggiuntivi") or {}
+            for cf in export_custom_fields:
+                v = dati_agg.get(cf["name"], "")
+                if isinstance(v, list):
+                    v = ", ".join(str(x) for x in v)
+                elif isinstance(v, bool):
+                    v = "Sì" if v else "No"
+                ws.cell(row_num, cf_col, v if v is not None else "")
+                cf_col += 1
         
         # Auto-fit columns
         for col in ws.columns:

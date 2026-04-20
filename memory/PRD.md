@@ -7,6 +7,13 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (20 Aprile 2026)
 
+- **Custom Fields inclusi nell'Export Excel Clienti**
+  - Sia `GET /api/clienti/export/excel` sia `GET /api/analytics/pivot/export-clienti` ora aggiungono automaticamente colonne dinamiche `[Custom] {label}` per ogni custom field attivo definito in `cliente_custom_fields`
+  - Dedup per `name` (se lo stesso logical field è stato creato per più combinazioni commessa+tipologia, appare una sola colonna con la label della prima trovata)
+  - Formattazione: `list` → join con virgola, `bool` → "Sì/No"
+  - Test: campo custom "Tipologia d'uso" → 62 colonne totali nell'export, ultima colonna correttamente popolata con valore salvato in `cliente.dati_aggiuntivi`
+  - File: `/app/backend/server.py` (funzione `create_clienti_excel_report` + endpoint pivot)
+
 - **Pulizia campi sezione Energia Clienti**
   - POD non più obbligatorio (rimossa validazione in handleSubmit, tolto `*` e messaggio rosso)
   - Aggiunta opzione **"Nuovo Allaccio"** nel dropdown Tipologia Energia (Create + Edit modal)
