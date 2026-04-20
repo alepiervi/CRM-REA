@@ -7,6 +7,12 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (20 Aprile 2026)
 
+- **Pulizia campi sezione Energia Clienti**
+  - POD non più obbligatorio (rimossa validazione in handleSubmit, tolto `*` e messaggio rosso)
+  - Aggiunta opzione **"Nuovo Allaccio"** nel dropdown Tipologia Energia (Create + Edit modal)
+  - Rimossi campi **Codice PDR** e **REMI** dal form (Create + Edit) — backend models invariati per preservare dati storici
+  - File: `/app/frontend/src/App.js` (CreateClienteModal + EditClienteModal)
+
 - **Filtro Tipologie per Commessa nei 3 Dialog e Filtro principale**
   - Prima: i dropdown tipologia mostravano tutte le 39 tipologie indipendentemente dalla commessa scelta.
   - Ora: in **Filtro principale**, **Dialog Nuovo Campo**, **Dialog Nuova Sezione**, **Dialog Nuovo Status** — dopo aver selezionato la commessa, il dropdown tipologia mostra solo le tipologie associate a quella commessa (tramite `GET /api/tipologie-contratto?commessa_id=X`).

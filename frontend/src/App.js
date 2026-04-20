@@ -22702,10 +22702,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     // Campi specifici Energia Fastweb
     codice_pod: '',
     energia_tipologia: '',
-    codice_pdr: '',
     energia_consumo_annuo: '',
     energia_potenza_contatore: '',
-    energia_remi: '',
     energia_potenza_impegnata: '',
     energia_vecchio_intestatario_nome: '',
     energia_vecchio_intestatario_cognome: '',
@@ -23533,17 +23531,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       }
     }
     
-    // Validazione POD obbligatorio per "Energia"
-    if (isEnergiaFastweb()) {
-      if (!formData.codice_pod || formData.codice_pod.trim() === '') {
-        toast({
-          title: "Campo obbligatorio",
-          description: "Per i contratti Energia, il campo Codice POD è obbligatorio.",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
+    // POD non è più obbligatorio per Energia (richiesta utente)
     
     // Validazione campi personalizzati obbligatori
     const missingCustomFields = validateRequiredCustomFields(customFields, customFieldValues);
@@ -23611,10 +23599,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       // Energia Fastweb conditional fields
       codice_pod: formData.codice_pod || '',
       energia_tipologia: formData.energia_tipologia || null,
-      codice_pdr: formData.codice_pdr || '',
       energia_consumo_annuo: formData.energia_consumo_annuo || '',
       energia_potenza_contatore: formData.energia_potenza_contatore || '',
-      energia_remi: formData.energia_remi || '',
       energia_potenza_impegnata: formData.energia_potenza_impegnata || '',
       energia_vecchio_intestatario_nome: formData.energia_vecchio_intestatario_nome || '',
       energia_vecchio_intestatario_cognome: formData.energia_vecchio_intestatario_cognome || '',
@@ -23705,8 +23691,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       luogo_rilascio: '', scadenza_documento: '',
       tecnologia: '', codice_migrazione: '', gestore: '', numero_portabilita: '', convergenza: false,
       convergenza_items: [], 
-      codice_pod: '', energia_tipologia: '', codice_pdr: '', energia_consumo_annuo: '',
-      energia_potenza_contatore: '', energia_remi: '', energia_potenza_impegnata: '',
+      codice_pod: '', energia_tipologia: '', energia_consumo_annuo: '',
+      energia_potenza_contatore: '', energia_potenza_impegnata: '',
       energia_vecchio_intestatario_nome: '', energia_vecchio_intestatario_cognome: '', energia_vecchio_intestatario_cf: '',
       obu: '',
       modalita_pagamento: '', iban: '', intestatario_diverso: '', 
@@ -24561,37 +24547,18 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   <option value="Switch">Switch</option>
                   <option value="Switch con voltura">Switch con voltura</option>
                   <option value="Subentro">Subentro</option>
+                  <option value="Nuovo Allaccio">Nuovo Allaccio</option>
                 </select>
               </div>
 
-              {/* POD, PDR e REMI sulla stessa riga */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* POD */}
+              <div>
                 <div>
-                  <Label htmlFor="codice_pod">Codice POD <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="codice_pod">Codice POD</Label>
                   <Input
                     id="codice_pod"
                     value={formData.codice_pod}
                     onChange={(e) => setFormData({...formData, codice_pod: e.target.value})}
-                    className={!formData.codice_pod ? "border-red-300" : ""}
-                  />
-                  {!formData.codice_pod && (
-                    <p className="text-xs text-red-500 mt-1">POD obbligatorio per Energia</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="codice_pdr">Codice PDR</Label>
-                  <Input
-                    id="codice_pdr"
-                    value={formData.codice_pdr}
-                    onChange={(e) => setFormData({...formData, codice_pdr: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="energia_remi">REMI</Label>
-                  <Input
-                    id="energia_remi"
-                    value={formData.energia_remi}
-                    onChange={(e) => setFormData({...formData, energia_remi: e.target.value})}
                   />
                 </div>
               </div>
@@ -26219,10 +26186,8 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     // Campi Energia Fastweb
     codice_pod: cliente?.codice_pod || '',
     energia_tipologia: cliente?.energia_tipologia || '',
-    codice_pdr: cliente?.codice_pdr || '',
     energia_consumo_annuo: cliente?.energia_consumo_annuo || '',
     energia_potenza_contatore: cliente?.energia_potenza_contatore || '',
-    energia_remi: cliente?.energia_remi || '',
     energia_potenza_impegnata: cliente?.energia_potenza_impegnata || '',
     energia_vecchio_intestatario_nome: cliente?.energia_vecchio_intestatario_nome || '',
     energia_vecchio_intestatario_cognome: cliente?.energia_vecchio_intestatario_cognome || '',
@@ -27773,33 +27738,18 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     <option value="Switch">Switch</option>
                     <option value="Switch con voltura">Switch con voltura</option>
                     <option value="Subentro">Subentro</option>
+                    <option value="Nuovo Allaccio">Nuovo Allaccio</option>
                   </select>
                 </div>
 
-                {/* POD, PDR e REMI sulla stessa riga */}
-                <div className="grid grid-cols-3 gap-4">
+                {/* POD */}
+                <div>
                   <div>
                     <Label htmlFor="codice_pod">Codice POD</Label>
                     <Input
                       id="codice_pod"
                       value={formData.codice_pod}
                       onChange={(e) => handleChange('codice_pod', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="codice_pdr">Codice PDR</Label>
-                    <Input
-                      id="codice_pdr"
-                      value={formData.codice_pdr}
-                      onChange={(e) => handleChange('codice_pdr', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="energia_remi">REMI</Label>
-                    <Input
-                      id="energia_remi"
-                      value={formData.energia_remi}
-                      onChange={(e) => handleChange('energia_remi', e.target.value)}
                     />
                   </div>
                 </div>
