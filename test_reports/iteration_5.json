@@ -1,0 +1,49 @@
+{
+  "summary": "Testing della riorganizzazione dei campi indirizzo in due blocchi separati (Residenza/Attivazione). Tutti i test backend (3/3) e frontend passano. CreateClienteModal, EditClienteModal e ViewClienteModal mostrano correttamente i due blocchi con tutti e 4 i campi ciascuno. Tutti i data-testid richiesti sono presenti. PUT /api/clienti con i nuovi campi provincia_attivazione e cap_attivazione ritorna 200, nessun errore 422 Pydantic.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_cliente_indirizzo_attivazione.py",
+    "/app/test_reports/pytest/pytest_indirizzo_attivazione.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "File /app/frontend/src/App.js è enorme (>27000 righe). Consiglio di splittare in moduli (CreateClienteModal, EditClienteModal, ViewClienteModal in file separati) per manutenibilità.",
+    "Nel modello Cliente, ClienteCreate e ClienteUpdate backend si ripetono quasi identicamente 3 volte (~200 righe ciascuno). Considerare refactoring con classe base o utilizzo di partial types."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_cliente_indirizzo_attivazione.py"
+  ],
+  "success_rate": {
+    "backend": "100% (3/3 tests passed)",
+    "frontend": "100% - Tutti i data-testid verificati, salvataggio OK senza 422"
+  },
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Creati e cancellati 3 clienti TEST_Attiv_* durante i test. Modificato 1 cliente esistente (Alessandro Piervincenzi prova) aggiungendo indirizzo_attivazione='Via Roma 1', comune_attivazione='Milano', provincia_attivazione='MI', cap_attivazione='20100'.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Riorganizzazione campi indirizzo completata e validata. Struttura finale: 1) CreateClienteModal: blocco 'Indirizzo Residenza' (indirizzo, comune_residenza, provincia, cap) + blocco 'Indirizzo Attivazione' (indirizzo_attivazione, comune_attivazione, provincia_attivazione, cap_attivazione). 2) EditClienteModal: stessa struttura con tutti 8 i data-testid. 3) ViewClienteModal: mostra blocco '📍 Indirizzo Attivazione / Installazione' con tutti e 4 i campi quando valorizzati. Backend Cliente, ClienteCreate, ClienteUpdate accettano tutti 4 campi attivazione. NOTA: Create Cliente passa attraverso un wizard a 6 step (Sub Agenzia → Commessa → Servizio → Tipologia → Segmento → Offerta) prima di mostrare il form vero e proprio.",
+  "features_tested": {
+    "backend_endpoints": [
+      "POST /api/clienti con tutti i 4 campi attivazione → 200 e persistenza verificata via GET ✓",
+      "PUT /api/clienti/{id} con provincia_attivazione + cap_attivazione → 200 (nessun 422) ✓",
+      "POST /api/clienti senza campi attivazione (optional) → 200 ✓"
+    ],
+    "frontend_ui": [
+      "CreateClienteModal: blocco 'Indirizzo Residenza' + 'Indirizzo Attivazione' visibili ✓",
+      "CreateClienteModal: 4 testid create-cliente-*-attivazione-* presenti ✓",
+      "EditClienteModal: blocco 'Indirizzo Residenza' + 'Indirizzo Attivazione' visibili ✓",
+      "EditClienteModal: tutti 8 i testid presenti (4 residenza + 4 attivazione) ✓",
+      "EditClienteModal: fill + save → PUT /api/clienti ritorna 200, toast 'Cliente aggiornato con successo' ✓",
+      "ViewClienteModal: blocco '📍 Indirizzo Attivazione / Installazione' visibile ✓",
+      "ViewClienteModal: 4 testid view-cliente-*-attivazione presenti con valori Via Roma 1/Milano/MI/20100 ✓"
+    ]
+  }
+}

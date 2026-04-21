@@ -1,149 +1,143 @@
 <analysis>**original_problem_statement:**
-The user requested continuous development of a complete CRM system for managing clients, leads, agents, and automated workflows. Over this session, requests evolved to finalizing the Super Referente role's visibility and permissions, fixing several frontend UI bugs, implementing specific mandatory field validations based on contract types (ICCID for Ho Mobile, POD for Energia), fixing complex document upload issues to Aruba Drive (including adding audio file support and removing local fallback), and finally, adding a feature to copy existing client data when creating a new client. 
+The user requested continuous development of a complete CRM system. Throughout this session, the user requested a major feature: the ability to add Custom Fields, Custom Sections, and Custom Statuses dynamically based on  and . Additional requests included modifying the Energia section (making POD optional, adding Nuovo Allaccio, removing PDR/REMI, adding Fornitore Attuale), ensuring all custom fields are included in the Excel export, and filtering  options by the selected . Finally, the user requested reorganizing the Address fields into two distinct blocks: Residenza (Indirizzo, Comune, Provincia, CAP) and Attivazione (Indirizzo, Comune, Provincia, CAP).
 
-PRODUCT REQUIREMENTS (New additions):
-- Super Referente can only see leads, agents, and analytics restricted to their assigned Unit and authorized Referenti.
-- Note Back Office field is exclusively editable by the  role.
-- ICCID is mandatory when contract type includes Ho Mobile.
-- Codice POD is mandatory when contract type includes Energia.
-- Document uploads must accept audio files (MP3, WAV, etc.), rename files to include Client Name + Phone, and STRICTLY upload to Aruba Drive (no local fallback; must fail if Aruba is unavailable).
-- New feature: Ability to copy data from an existing client to pre-fill the Create Client form.
+PRODUCT REQUIREMENTS:
+- Custom fields, sections, and statuses dynamic mapping for Clienti.
+- Complete Excel Export with dynamically generated custom columns.
+- Address section reorganization into complete Residenza and Attivazione blocks (Address, City, Province, ZIP).
 
 **User's preferred language**: Italian
-(INSTRUCT next agent: You MUST respond in Italian only)
+(INSTRUCT next agent: You MUST automatically detect the user's primary language from their messages inside the <trajectory> tag and INSTRUCT next agent to respond in the user's preferred language only. The user speaks Italian, so you MUST respond in Italian).
 
-**what currently exists?**
-A monolithic full-stack CRM application featuring a complex React frontend (, >28k lines) and a FastAPI backend (, >21k lines). It includes highly granular Role-Based Access Control (RBAC) with roles such as Admin, Supervisor, Super Referente, Referente, Agente, and Backoffice. It features complex aggregation for analytics, dynamic forms, file uploads to Aruba Drive/Nextcloud, and background email notification tasks.
+**what currently exists?** 
+A monolithic full-stack CRM application featuring a complex React frontend (, >29k lines) and a FastAPI backend (, >21k lines). It now includes dynamic Custom Fields, Sections, and Statuses managers for Client profiles.
 
 **Last working item**:
-- **Last item agent was working**: Implementing the Copy existing client feature within the . The agent just began modifying  by adding new state variables (, , , ) to support searching and selecting an existing client to copy their data. The actual UI search bar, the fetch logic, and the form pre-population logic are yet to be implemented.
+- **Last item agent was working**: Reorganizing the Address fields in  for , , and . The backend models , , and  were already updated to include  and .  has been updated. The agent was currently finding the correct lines to update  UI and then needs to update .
 - **Status**: IN PROGRESS
 - **Agent Testing Done**: N
-- **Which testing method agent to use?**: Frontend testing agent or screenshot tool. (Verify the search dropdown appears in the Create Client modal and that selecting a client correctly populates the form fields).
+- **Which testing method agent to use?**: Frontend testing agent or screenshot tool.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: SMTP IP Blacklisted (Aruba block)
-     - Attempted fixes: Agent verified the code for the background email scheduler works perfectly. The 535 authentication/blacklist errors are due to the Preview Server IP () being on Aruba's DNSBL blacklist.
-     - Next debug checklist: Inform user again if they ask about emails not arriving. This requires the user to whitelist the IP with Aruba or switch to a provider like SendGrid/Mailgun.
-     - Why fix this issue and what will be achieved with the fix? Allows transactional emails (like stale lead notifications) to be delivered.
-     - Status: BLOCKED (Infrastructure issue, not code)
+  Issue 1: Complete the Address Fields Reorganization
+     - Attempted fixes: Backend models updated.  updated. The agent was looking at  lines  to inject the new fields.
+     - Next debug checklist: 
+       1. In , add the UI fields for  and  (probably matching the layout of residenza).
+       2. In , update the rendering to show the full Attivazione block (Indirizzo, Comune, Provincia, CAP) only if at least one of these fields is populated.
+     - Why fix this issue and what will be achieved with the fix? Completes the user's direct request to separate physical residence from service activation address.
+     - Status: IN PROGRESS
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Frontend
+     - Blocked on other issue: None
+
+  Issue 2: SMTP IP Blacklisted (Aruba block)
+     - Attempted fixes: Verified code works. It's an infrastructure block by Aruba against the preview server IP.
+     - Next debug checklist: Inform user if they complain about emails.
+     - Why fix this issue and what will be achieved with the fix? Allow transactional emails to work.
+     - Status: BLOCKED
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? Backend
      - Blocked on other issue: None
 
-  - Issue 2: Frontend/Backend Monolith Refactoring
-     - Attempted fixes: None. The files keep growing.
-     - Next debug checklist: Propose breaking down  and  into modular architectures.
-     - Why fix this issue and what will be achieved with the fix? Reduces instability, fixes parsing errors, and allows the platform to safely handle more context.
-     - Status: NOT STARTED
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: None
-
 **In progress Task List**:
-  - Task 1: Copy Existing Client Data in 
-     - Where to resume: Continue modifying . Add the UI search input at the top of the Create Client modal. Implement the debounce search function to fetch existing clients. Implement the  function to overwrite  with the fetched client's data (taking care to exclude specific fields like uid=0(root) gid=0(root) groups=0(root), , or ).
-     - What will be achieved with this? Speeds up data entry for agents creating similar profiles.
+  Task 1: Complete Address fields UI in Modals
+     - Where to resume:  in  (around line 27260) to add  and . Then update .
+     - What will be achieved with this? Feature completion.
      - Status: IN PROGRESS
      - Should Test frontend/backend/both after fix? Frontend
      - Blocked on something: No
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - P1: Implement the copy client functionality completely (Last Working Item).
-    - P2: Extensive manual/agent testing of the complete Super Referente role workflows, as many interconnected parts were modified.
+    - P1: Complete the Address fields UI update (Last Working Item).
+    - P2: Implement Duplica configurazione feature in  (allow admin to copy fields/sections/statuses from one Commessa+Tipologia to another).
     
     Future Tasks:
-    - P3: Implement the preventivo (quote/estimate) editing feature (Blocked: waiting for user clarification).
-    - P4: Massive Refactoring of  and  into smaller files (Routes, Controllers, Components).
+    - P3: Hide/show STANDARD sections conditionally based on specific Commessa combinations.
+    - P4: Massive Refactoring of  and  into smaller files (Routes, Controllers, Components) to resolve context window issues.
 
 **Completed work in this session**
-- Verified Super Referente stale lead email (Code working, blocked by SMTP) (DONE)
-- Added Partita IVA to client search filter (DONE)
-- Allowed Agenti creation without a Referente (Orphaned agents) (DONE)
-- Refined Super Referente data visibility across leads, dashboard, analytics, and exports (Must see only assigned Unit and authorized Referenti network) (DONE)
-- Fixed missing  during Super Referente edits in Backend  model (DONE)
-- Fixed Super Referente edit modal UI to fetch and display Unit/Referenti (DONE)
-- Fixed Province normalization (Monza e Brianza matching variants) (DONE)
-- Restricted Note Back Office editing to  only (DONE)
-- Made ICCID mandatory for Ho Mobile and POD mandatory for Energia (DONE)
-- Added support for Audio file uploads (MP3, WAV, etc.) to Aruba Drive (DONE)
-- Fixed Document Upload 500 Errors (Removed faulty Pydantic validation that choked on , added missing  JWT header in frontend) (DONE)
-- Added auto-renaming of uploaded files to include  (DONE)
-- Removed local fallback for uploads: Forced Aruba Drive only (DONE)
+- Phase 1: Client Custom Fields (Backend CRUD + Admin UI) (DONE)
+- Phase 2: Client Custom Sections (Tabs, Grouping in Renderer) (DONE)
+- Phase 3: Client Custom Statuses + Analytics Funnel Mapping (DONE)
+- Filtered  options based on selected  in all management dialogs (DONE)
+- Made  non-mandatory, added  to Enum, removed  and  from UI (DONE)
+- Fixed Pydantic 422 error on Cliente creation caused by missing  in backend Enum (DONE)
+- Included all custom fields dynamically in the Excel Export ( and pivot) (DONE)
+- Relaxed visibility rules in  to show populated fields even if the Commessa doesn't strictly match the segment (DONE)
+- Added  field to Energia section (backend + frontend) (DONE)
 
 **Earlier issues found/mentioned but not fixed**
-   Issue 1:
-   - Debug checklist: None specifically hanging, but keep an eye on  syntax/lint errors due to sheer file size during modifications. 
+   None specifically hanging. 
 
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: File size constraints causing context limits and occasional accidental overwrites during .
-  - Recurrence count: 3
+  - Issue recurrence in previous fork: File size constraints causing context limits and accidental string replacement failures.
+  - Recurrence count: 5+
   - Status: IN PROGRESS
-  Note: Use very targeted  and avoid fetching the entire 28k line file into context unless necessary.
+  Note:  is massive (>29k lines).  frequently fails if  is not extremely precise or if multiple identical strings exist. Always use  to run  to find exact lines before replacing.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- React, FastAPI, MongoDB, Aruba Drive (Nextcloud WebDAV) integration, Complex RBAC (Role-Based Access Control) filtering down to the database query level.
+- React, FastAPI, MongoDB, Dynamic UI Rendering (Custom Fields/Sections), Excel Export via .
 
 **key DB schema**
-  - users: 
-  - leads: 
-  - documenti: 
+  - : 
+  - : 
+  - : 
+  - : Added , , , , .
 
 **changes in tech stack**
-  - No new technologies added.
+  - No changes.
 
 **All files of reference** 
-  - : Heavily edited for Super Referente visibility, province normalization, Aruba upload config, and Pydantic models.
-  - : Heavily edited for Modals (Create Client, Edit User), Analytics Views, and frontend file upload Axios requests.
+  - : Heavily edited for new DB models, Custom fields endpoints, and Excel Export.
+  - : Edited for UI modals and fetching dynamic fields.
+  - : New file created for Admin Settings.
+  - : New file created to inject custom fields into forms.
 
 **Areas that need refactoring**: 
-- : 28k+ lines. 
-- : 21k+ lines. 
+-  (>29k lines).
+-  (>21k lines).
 
 **key api endpoints**
-- : Uploads to Aruba Drive. Now strictly requires valid Aruba config and JWT token.
-- : New endpoint created specifically to fetch aggregated analytics for the Super Referente's network.
--  & : Heavily modified filter logic utilizing  and unit/role checks.
+- , , 
+- 
 
 **Critical Info for New Agent** 
-- **Aruba Drive Uploads**: The fallback to local uploads was completely removed. If Aruba Drive is down or misconfigured for a client/commessa, the system *must* throw an error. 
-- **Email System**: The SMTP (Aruba) is actively rejecting the Emergent Preview Server's IP. Do not waste time debugging the backend email code.
-- **Province Normalization**: A custom normalizer function  exists in both frontend and backend to handle variants like Monza della Brianza vs Monza e Brianza.
+- **Pydantic Enums**: If you add an option to a frontend dropdown (like ), you MUST update the corresponding  in  (e.g., ), otherwise Pydantic throws a 422 error on save.
+- **App.js editing**: Because of the file size, always  for line numbers before using  to ensure you are modifying the correct modal (, , ).
 
 **documents and test reports created in this job** 
-  -  updated with new features.
+  -  updated with Custom Fields Phase 1, 2, 3 details.
+  - , , , .
 
 **Last 10 User Messages and any pending HUMAN messages** 
- 1. (User) sto provando a caricare un file audio ma mi da errore -> (Agent) Found Pydantic error, removed  instantiation.
- 2. (User) il sistema quando prende il documento o audio gli deve mettere il nome del cliente e il numero di telefono al file -> (Agent) Modified filename generation string logic.
- 3. (User) continua a darmi errore -> (Agent) Tested locally, found frontend was missing  header on Axios POST. Fixed.
- 4. (User) mi da ancora questo errore -> (Agent) Added more debug logs, found  object was  breaking . Fixed.
- 5. (User) mi da ancora questo errore -> (Agent) Fixed missing Auth Headers in  in frontend.
- 6. (User) il sistema sta caricando in local ma deve caricare sempre su aruba se non va su Aruba drive deve dare errore come era prima -> (Agent) Removed local fallback. Now forces Aruba config checks.
- 7. (User) nella sezione clienti quando creo un anagrafica cliente devo avere la possibilità di copiare un anagrafica esistente e di poterla modificare -> (Agent) Started modifying  by adding state variables. **(PENDING COMPLETION)**
+ 1. (User) il campo POD non deve essere obbligatorio. inserire altro stato  Nuovo Allaccio e togli i campi codice PRDR e REMI. -> (Agent) Modified UI and Payload.
+ 2. (User) tutti i campi che verranno creati dovranno comparire del file Excel -> (Agent) Modified  to append custom fields dynamically.
+ 3. (User) mi da questo errore 422 -> (Agent) Found that  was missing from  Enum in backend. Fixed.
+ 4. (User) nella view devo vedere tutti quanti i campi che vengono usati -> (Agent) Relaxed conditional rendering in  so populated sections always show.
+ 5. (User) nella sezione energia ci deve essere un campo Fornitore Attuale -> (Agent) Added  to backend and frontend.
+ 6. (User) sistemare la parte indirizzo in questo modo: Residenza (Indirizzo, Comune, Provincia, CAP) e Attivazione (Indirizzo, Comune, Provincia, CAP). Nella view mostrare attivazione se compilati. -> (Agent) Added  and  to backend. Updated . **(PENDING COMPLETION: Needs EditClienteModal and ViewClienteModal updates)**.
 
 **Project Health Check:**
 - Broken: Email notifications (blocked by SMTP Provider IP Blacklist).
 - Mocked: None
 
 **3rd Party Integrations** 
-	• Aruba Drive (Nextcloud WebDAV) - Used for document storage. Requires User Config.
-    • Aruba SMTP - Requires User credentials. Currently blocking Preview Server IP.
-    • whatsapp-web.js - Requires QR connection.
+    • Aruba Drive (Nextcloud WebDAV)
+    • Aruba SMTP (Failing)
 
 **Testing status**
-  - Testing agent used after significant changes: NO
+  - Testing agent used after significant changes: YES (Iterations 1 to 4 utilized successfully).
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: []
-  - Known regressions: None detected, but constant risk due to monolithic file sizes.
+  - Test files created: None
+  - Known regressions: None
 
 **Credentials to test flow:**
 - Admin:  / 
 
 **What agent forgot to execute**
-- The agent started the Copy existing client task by adding the state variables in  but finished the output turn without completing the UI search logic and state-updating logic for the copy action.</analysis>
+- The agent was in the middle of adding  and  to the  UI and still needs to update .</analysis>

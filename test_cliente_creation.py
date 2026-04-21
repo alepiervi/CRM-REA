@@ -2,7 +2,7 @@
 import requests
 import json
 
-BACKEND_URL = "https://referente-hub.preview.emergentagent.com"
+BACKEND_URL = "https://commessa-crm-hub.preview.emergentagent.com"
 
 # Login as admin
 login_response = requests.post(

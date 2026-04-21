@@ -106,7 +106,7 @@ sudo supervisorctl status backend
 # Output: backend RUNNING
 
 # Test endpoint debug accessibile
-curl https://referente-hub.preview.emergentagent.com/api/documents/upload-debug
+curl https://commessa-crm-hub.preview.emergentagent.com/api/documents/upload-debug
 # Output: {"timestamp": null, "success": false, ...}
 ```
 
@@ -117,7 +117,7 @@ curl https://referente-hub.preview.emergentagent.com/api/documents/upload-debug
 3. Carica documento PDF
 4. Controlla endpoint debug:
    ```
-   https://referente-hub.preview.emergentagent.com/api/documents/upload-debug
+   https://commessa-crm-hub.preview.emergentagent.com/api/documents/upload-debug
    ```
 5. Cerca log:
    ```json

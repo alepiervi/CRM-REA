@@ -12,7 +12,7 @@ import uuid
 import time
 
 class StoreAssistantTester:
-    def __init__(self, base_url="https://referente-hub.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://commessa-crm-hub.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None
@@ -372,7 +372,7 @@ class StoreAssistantTester:
 def main():
     """Main function"""
     print("🚀 Starting Store Assistant Tipologie Filter Fix Test...")
-    print(f"🌐 Base URL: https://referente-hub.preview.emergentagent.com/api")
+    print(f"🌐 Base URL: https://commessa-crm-hub.preview.emergentagent.com/api")
     print("=" * 80)
     
     tester = StoreAssistantTester()

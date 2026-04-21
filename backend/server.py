@@ -1293,6 +1293,8 @@ class Cliente(BaseModel):
     indirizzo: Optional[str] = None
     indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
     comune_attivazione: Optional[str] = None  # NEW: Comune di installazione/attivazione
+    provincia_attivazione: Optional[str] = None  # NEW: Provincia di attivazione
+    cap_attivazione: Optional[str] = None  # NEW: CAP di attivazione
     email: str  # Obbligatorio
     telefono: str  # Obbligatorio
     telefono2: Optional[str] = None
@@ -1388,6 +1390,8 @@ class ClienteCreate(BaseModel):
     indirizzo: Optional[str] = None
     indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
     comune_attivazione: Optional[str] = None  # NEW: Comune di installazione/attivazione
+    provincia_attivazione: Optional[str] = None  # NEW: Provincia di attivazione
+    cap_attivazione: Optional[str] = None  # NEW: CAP di attivazione
     email: str  # Obbligatorio
     telefono: str  # Obbligatorio
     telefono2: Optional[str] = None
@@ -1476,6 +1480,8 @@ class ClienteUpdate(BaseModel):
     indirizzo: Optional[str] = None
     indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
     comune_attivazione: Optional[str] = None  # NEW: Comune di installazione/attivazione
+    provincia_attivazione: Optional[str] = None  # NEW: Provincia di attivazione
+    cap_attivazione: Optional[str] = None  # NEW: CAP di attivazione
     email: str  # Obbligatorio
     telefono: Optional[str] = None
     telefono2: Optional[str] = None
@@ -9598,7 +9604,7 @@ async def configure_whatsapp(
             "session_id": session_id,
             "is_connected": False,
             "connection_status": "qr_pending",  # waiting for QR scan
-            "webhook_url": f"{os.environ.get('WEBHOOK_BASE_URL', 'https://referente-hub.preview.emergentagent.com')}/api/whatsapp/webhook",
+            "webhook_url": f"{os.environ.get('WEBHOOK_BASE_URL', 'https://commessa-crm-hub.preview.emergentagent.com')}/api/whatsapp/webhook",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
         }
@@ -17022,7 +17028,7 @@ else:
         "https://k8s-error-resolved.emergent.host",  # NEW: Production backend domain
         "https://mobil-analytics-1.emergent.host",
         "https://mobil-analytics-2.emergent.host",  # New deployment domain
-        "https://referente-hub.preview.emergentagent.com",
+        "https://commessa-crm-hub.preview.emergentagent.com",
         "https://cloudfile-fix.emergent.host",  # Emergent native deployment domain
     ]
     

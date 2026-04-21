@@ -159,6 +159,18 @@ const getBackendURL = () => {
 const BACKEND_URL = getBackendURL();
 const API = `${BACKEND_URL}/api`;
 
+// Costanti globali per i dropdown - accessibili da tutti i componenti
+const PROVINCE_ITALIANE = [
+  "AG", "AL", "AN", "AO", "AR", "AP", "AT", "AV", "BA", "BT", "BL", "BN", "BG", "BI", "BO", "BZ",
+  "BS", "BR", "CA", "CL", "CB", "CI", "CE", "CT", "CZ", "CH", "CO", "CS", "CR", "KR", "CN",
+  "EN", "FM", "FE", "FI", "FG", "FC", "FR", "GE", "GO", "GR", "IM", "IS", "SP", "AQ", "LT",
+  "LE", "LC", "LI", "LO", "LU", "MC", "MN", "MS", "MT", "VS", "ME", "MI", "MO", "MB", "NA",
+  "NO", "NU", "OG", "OT", "OR", "PD", "PA", "PR", "PV", "PG", "PU", "PE", "PC", "PI", "PT",
+  "PN", "PZ", "PO", "RG", "RA", "RC", "RE", "RI", "RN", "RM", "RO", "SA", "SS", "SV", "SI",
+  "SR", "SO", "TA", "TE", "TR", "TO", "TP", "TN", "TV", "TS", "UD", "VA", "VE", "VB", "VC",
+  "VR", "VV", "VI", "VT"
+];
+
 // Log configuration for debugging
 console.log('📡 Backend URL configured:', BACKEND_URL);
 console.log('📡 API endpoint:', API);
@@ -22615,6 +22627,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       indirizzo: cliente.indirizzo || '',
       indirizzo_attivazione: cliente.indirizzo_attivazione || '',
       comune_attivazione: cliente.comune_attivazione || '',
+      provincia_attivazione: cliente.provincia_attivazione || '',
+      cap_attivazione: cliente.cap_attivazione || '',
       codice_fiscale: cliente.codice_fiscale || '',
       partita_iva: cliente.partita_iva || '',
       // Contatti
@@ -22689,6 +22703,8 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     indirizzo: '',
     indirizzo_attivazione: '',
     comune_attivazione: '',
+    provincia_attivazione: '',
+    cap_attivazione: '',
     email: '',
     telefono: '', // Obbligatorio
     telefono2: '',
@@ -24216,7 +24232,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="data_nascita">Nato/a</Label>
                 <Input
@@ -24234,66 +24250,101 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   onChange={(e) => setFormData({...formData, luogo_nascita: e.target.value})}
                 />
               </div>
-              <div>
-                <Label htmlFor="comune_residenza">Comune Residenza</Label>
-                <Input
-                  id="comune_residenza"
-                  value={formData.comune_residenza}
-                  onChange={(e) => setFormData({...formData, comune_residenza: e.target.value})}
-                />
+            </div>
+
+            {/* SEZIONE INDIRIZZO RESIDENZA */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <h4 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">🏠 Indirizzo Residenza</h4>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="indirizzo">Indirizzo Residenza</Label>
+                  <Input
+                    id="indirizzo"
+                    value={formData.indirizzo}
+                    onChange={(e) => setFormData({...formData, indirizzo: e.target.value})}
+                    placeholder="Via/Piazza, numero civico"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="comune_residenza">Comune Residenza</Label>
+                  <Input
+                    id="comune_residenza"
+                    value={formData.comune_residenza}
+                    onChange={(e) => setFormData({...formData, comune_residenza: e.target.value})}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="provincia">Provincia</Label>
+                    <select
+                      id="provincia"
+                      value={formData.provincia}
+                      onChange={(e) => setFormData({...formData, provincia: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="">Prov.</option>
+                      {PROVINCE_ITALIANE.map(prov => (
+                        <option key={prov} value={prov}>{prov}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="cap">CAP</Label>
+                    <Input id="cap" value={formData.cap} onChange={(e) => setFormData({...formData, cap: e.target.value})} />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="provincia">Provincia</Label>
-                <select
-                  id="provincia"
-                  value={formData.provincia}
-                  onChange={(e) => setFormData({...formData, provincia: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                >
-                  <option value="">Seleziona Provincia...</option>
-                  {PROVINCE_ITALIANE.map(prov => (
-                    <option key={prov} value={prov}>{prov}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="cap">Cap</Label>
-                <Input
-                  id="cap"
-                  value={formData.cap}
-                  onChange={(e) => setFormData({...formData, cap: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="indirizzo">Indirizzo</Label>
-                <Input
-                  id="indirizzo"
-                  value={formData.indirizzo}
-                  onChange={(e) => setFormData({...formData, indirizzo: e.target.value})}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="indirizzo_attivazione">Indirizzo Attivazione</Label>
-                <Input
-                  id="indirizzo_attivazione"
-                  value={formData.indirizzo_attivazione}
-                  onChange={(e) => setFormData({...formData, indirizzo_attivazione: e.target.value})}
-                  placeholder="Indirizzo per l'attivazione servizio (se diverso dalla residenza)"
-                  data-testid="create-cliente-indirizzo-attivazione-input"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="comune_attivazione">Comune di Installazione</Label>
-                <Input
-                  id="comune_attivazione"
-                  value={formData.comune_attivazione}
-                  onChange={(e) => setFormData({...formData, comune_attivazione: e.target.value})}
-                  placeholder="Comune dove verrà installato il servizio (se diverso dalla residenza)"
-                  data-testid="create-cliente-comune-attivazione-input"
-                />
+            {/* SEZIONE INDIRIZZO ATTIVAZIONE */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">📍 Indirizzo Attivazione (se diverso dalla residenza)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="indirizzo_attivazione">Indirizzo Attivazione</Label>
+                  <Input
+                    id="indirizzo_attivazione"
+                    value={formData.indirizzo_attivazione}
+                    onChange={(e) => setFormData({...formData, indirizzo_attivazione: e.target.value})}
+                    placeholder="Via/Piazza per l'attivazione"
+                    data-testid="create-cliente-indirizzo-attivazione-input"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="comune_attivazione">Comune Attivazione</Label>
+                  <Input
+                    id="comune_attivazione"
+                    value={formData.comune_attivazione}
+                    onChange={(e) => setFormData({...formData, comune_attivazione: e.target.value})}
+                    data-testid="create-cliente-comune-attivazione-input"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="provincia_attivazione">Prov. Att.</Label>
+                    <select
+                      id="provincia_attivazione"
+                      value={formData.provincia_attivazione}
+                      onChange={(e) => setFormData({...formData, provincia_attivazione: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white"
+                      data-testid="create-cliente-provincia-attivazione-select"
+                    >
+                      <option value="">Prov.</option>
+                      {PROVINCE_ITALIANE.map(prov => (
+                        <option key={prov} value={prov}>{prov}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="cap_attivazione">CAP Att.</Label>
+                    <Input
+                      id="cap_attivazione"
+                      value={formData.cap_attivazione}
+                      onChange={(e) => setFormData({...formData, cap_attivazione: e.target.value})}
+                      data-testid="create-cliente-cap-attivazione-input"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -25692,7 +25743,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                   <p className="text-sm">{cliente.cap || 'Non specificato'}</p>
                 </div>
               </div>
-              {(cliente.indirizzo_attivazione || cliente.comune_attivazione) && (
+              {(cliente.indirizzo_attivazione || cliente.comune_attivazione || cliente.provincia_attivazione || cliente.cap_attivazione) && (
                 <div className="mt-3 pt-3 border-t border-slate-200 space-y-2">
                   <Label className="text-sm font-semibold text-amber-700">📍 Indirizzo Attivazione / Installazione</Label>
                   {cliente.indirizzo_attivazione && (
@@ -25703,10 +25754,24 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                   )}
                   {cliente.comune_attivazione && (
                     <div>
-                      <Label className="text-xs font-medium text-slate-600">Comune di Installazione</Label>
+                      <Label className="text-xs font-medium text-slate-600">Comune</Label>
                       <p className="text-sm" data-testid="view-cliente-comune-attivazione">{cliente.comune_attivazione}</p>
                     </div>
                   )}
+                  <div className="grid grid-cols-2 gap-3">
+                    {cliente.provincia_attivazione && (
+                      <div>
+                        <Label className="text-xs font-medium text-slate-600">Provincia</Label>
+                        <p className="text-sm" data-testid="view-cliente-provincia-attivazione">{cliente.provincia_attivazione}</p>
+                      </div>
+                    )}
+                    {cliente.cap_attivazione && (
+                      <div>
+                        <Label className="text-xs font-medium text-slate-600">CAP</Label>
+                        <p className="text-sm" data-testid="view-cliente-cap-attivazione">{cliente.cap_attivazione}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -26231,6 +26296,8 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     indirizzo: cliente?.indirizzo || '',
     indirizzo_attivazione: cliente?.indirizzo_attivazione || '',
     comune_attivazione: cliente?.comune_attivazione || '',
+    provincia_attivazione: cliente?.provincia_attivazione || '',
+    cap_attivazione: cliente?.cap_attivazione || '',
     cap: cliente?.cap || '',
     
     // Campi aggiuntivi mancanti
@@ -27060,53 +27127,127 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           {/* Indirizzo */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">🏠 Indirizzo</CardTitle>
+              <CardTitle className="text-lg">🏠 Indirizzi</CardTitle>
             </CardHeader>
+            <CardContent className="space-y-4">
+              {/* SEZIONE INDIRIZZO RESIDENZA */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <h4 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">🏠 Indirizzo Residenza</h4>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="indirizzo">Indirizzo Residenza</Label>
+                    <Input
+                      id="indirizzo"
+                      value={formData.indirizzo || ''}
+                      onChange={(e) => handleChange('indirizzo', e.target.value)}
+                      placeholder="Via/Piazza, numero civico"
+                      data-testid="edit-cliente-indirizzo-input"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="comune_residenza">Comune Residenza</Label>
+                    <Input
+                      id="comune_residenza"
+                      value={formData.comune_residenza || ''}
+                      onChange={(e) => handleChange('comune_residenza', e.target.value)}
+                      placeholder="Inserisci comune"
+                      data-testid="edit-cliente-comune-residenza-input"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="provincia">Provincia</Label>
+                      <select
+                        id="provincia"
+                        value={formData.provincia || ''}
+                        onChange={(e) => handleChange('provincia', e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                        data-testid="edit-cliente-provincia-select"
+                      >
+                        <option value="">Prov.</option>
+                        {PROVINCE_ITALIANE.map(prov => (
+                          <option key={prov} value={prov}>{prov}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="cap">CAP</Label>
+                      <Input
+                        id="cap"
+                        value={formData.cap || ''}
+                        onChange={(e) => handleChange('cap', e.target.value)}
+                        placeholder="00000"
+                        data-testid="edit-cliente-cap-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEZIONE INDIRIZZO ATTIVAZIONE */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">📍 Indirizzo Attivazione (se diverso dalla residenza)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="indirizzo_attivazione">Indirizzo Attivazione</Label>
+                    <Input
+                      id="indirizzo_attivazione"
+                      value={formData.indirizzo_attivazione || ''}
+                      onChange={(e) => handleChange('indirizzo_attivazione', e.target.value)}
+                      placeholder="Via/Piazza per l'attivazione"
+                      data-testid="edit-cliente-indirizzo-attivazione-input"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="comune_attivazione">Comune Attivazione</Label>
+                    <Input
+                      id="comune_attivazione"
+                      value={formData.comune_attivazione || ''}
+                      onChange={(e) => handleChange('comune_attivazione', e.target.value)}
+                      data-testid="edit-cliente-comune-attivazione-input"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="provincia_attivazione">Prov. Att.</Label>
+                      <select
+                        id="provincia_attivazione"
+                        value={formData.provincia_attivazione || ''}
+                        onChange={(e) => handleChange('provincia_attivazione', e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white"
+                        data-testid="edit-cliente-provincia-attivazione-select"
+                      >
+                        <option value="">Prov.</option>
+                        {PROVINCE_ITALIANE.map(prov => (
+                          <option key={prov} value={prov}>{prov}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="cap_attivazione">CAP Att.</Label>
+                      <Input
+                        id="cap_attivazione"
+                        value={formData.cap_attivazione || ''}
+                        onChange={(e) => handleChange('cap_attivazione', e.target.value)}
+                        placeholder="00000"
+                        data-testid="edit-cliente-cap-attivazione-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* LEGACY_PROVINCE_BLOCK_REMOVED */}
+          <Card style={{display: 'none'}}>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label htmlFor="indirizzo">Indirizzo</Label>
-                  <Input
-                    id="indirizzo"
-                    value={formData.indirizzo}
-                    onChange={(e) => handleChange('indirizzo', e.target.value)}
-                    placeholder="Via/Piazza, numero civico"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="indirizzo_attivazione">Indirizzo Attivazione</Label>
-                  <Input
-                    id="indirizzo_attivazione"
-                    value={formData.indirizzo_attivazione || ''}
-                    onChange={(e) => handleChange('indirizzo_attivazione', e.target.value)}
-                    placeholder="Indirizzo per l'attivazione servizio (se diverso dalla residenza)"
-                    data-testid="edit-cliente-indirizzo-attivazione-input"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="comune_attivazione">Comune di Installazione</Label>
-                  <Input
-                    id="comune_attivazione"
-                    value={formData.comune_attivazione || ''}
-                    onChange={(e) => handleChange('comune_attivazione', e.target.value)}
-                    placeholder="Comune dove verrà installato il servizio (se diverso dalla residenza)"
-                    data-testid="edit-cliente-comune-attivazione-input"
-                  />
-                </div>
                 <div>
-                  <Label htmlFor="comune_residenza">Comune di Residenza</Label>
-                  <Input
-                    id="comune_residenza"
-                    value={formData.comune_residenza}
-                    onChange={(e) => handleChange('comune_residenza', e.target.value)}
-                    placeholder="Inserisci comune"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="provincia">Provincia</Label>
+                  <Label htmlFor="provincia_legacy">Provincia</Label>
                   <select
-                    id="provincia"
-                    value={formData.provincia}
+                    id="provincia_legacy"
+                    value={formData.provincia || ''}
                     onChange={(e) => handleChange('provincia', e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
@@ -27219,15 +27360,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     <option value="VI">VI - Vicenza</option>
                     <option value="VT">VT - Viterbo</option>
                   </select>
-                </div>
-                <div>
-                  <Label htmlFor="cap">CAP</Label>
-                  <Input
-                    id="cap"
-                    value={formData.cap}
-                    onChange={(e) => handleChange('cap', e.target.value)}
-                    placeholder="00000"
-                  />
                 </div>
               </div>
             </CardContent>

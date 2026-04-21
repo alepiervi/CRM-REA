@@ -7,7 +7,7 @@ import requests
 import json
 
 def check_routes():
-    base_url = "https://referente-hub.preview.emergentagent.com"
+    base_url = "https://commessa-crm-hub.preview.emergentagent.com"
     
     # Try to get OpenAPI schema to see available routes
     try:
