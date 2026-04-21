@@ -5,7 +5,18 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ## Current State (Febbraio 2026)
 
-### ✅ Completato in questa sessione (20 Aprile 2026)
+### ✅ Completato in questa sessione (21 Febbraio 2026)
+
+- **Riorganizzazione campi Indirizzo Cliente in due blocchi distinti**
+  - Bloc 1 "Indirizzo Residenza": indirizzo, comune_residenza, provincia, cap
+  - Bloc 2 "Indirizzo Attivazione": indirizzo_attivazione, comune_attivazione, provincia_attivazione, cap_attivazione
+  - `CreateClienteModal`, `EditClienteModal` e `ViewClienteModal` ora mostrano la stessa struttura con UI coerente (residenza in grigio slate, attivazione in amber)
+  - `ViewClienteModal`: blocco "📍 Indirizzo Attivazione / Installazione" visibile solo se almeno uno dei 4 campi attivazione è compilato, mostra tutti e 4 i campi valorizzati
+  - Backend: `Cliente`, `ClienteCreate`, `ClienteUpdate` aggiornati con `provincia_attivazione` e `cap_attivazione` (Optional[str])
+  - `PROVINCE_ITALIANE` spostato a livello modulo in App.js per accessibilità da tutti i componenti
+  - Testing: iteration_5.json — backend 3/3 ✓, frontend 100% ✓ (8 data-testid verificati, salvataggio PUT 200)
+
+### ✅ Completato in precedenti sessioni (20 Aprile 2026)
 
 - **Custom Fields inclusi nell'Export Excel Clienti**
   - Sia `GET /api/clienti/export/excel` sia `GET /api/analytics/pivot/export-clienti` ora aggiungono automaticamente colonne dinamiche `[Custom] {label}` per ogni custom field attivo definito in `cliente_custom_fields`
