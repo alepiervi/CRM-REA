@@ -24897,6 +24897,14 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
             )}
           </div>
 
+          {/* SEZIONE CAMPI PERSONALIZZATI (dinamici per commessa + tipologia) */}
+          <CustomFieldsSection
+            fields={customFields}
+            sections={customSections}
+            values={customFieldValues}
+            onChangeField={(name, value) => setCustomFieldValues(prev => ({ ...prev, [name]: value }))}
+          />
+
           {/* SEZIONE NOTE */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">📝 Note</h3>
@@ -24913,14 +24921,6 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
               />
             </div>
           </div>
-
-          {/* SEZIONE CAMPI PERSONALIZZATI (dinamici per commessa + tipologia) */}
-          <CustomFieldsSection
-            fields={customFields}
-            sections={customSections}
-            values={customFieldValues}
-            onChangeField={(name, value) => setCustomFieldValues(prev => ({ ...prev, [name]: value }))}
-          />
             
           <DialogFooter className="mt-6">
             <Button 
@@ -26163,6 +26163,15 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           </CardContent>
         </Card>
 
+        {/* Campi Personalizzati - dinamici in base a (commessa + tipologia) */}
+        <div className="mt-4">
+          <CustomFieldsViewSection
+            fields={customFields}
+            sections={customSections}
+            values={cliente?.dati_aggiuntivi || {}}
+          />
+        </div>
+
         {/* Note */}
         {cliente.note && (
           <Card className="mt-4">
@@ -26192,15 +26201,6 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
             </CardContent>
           </Card>
         )}
-
-        {/* Campi Personalizzati - dinamici in base a (commessa + tipologia) */}
-        <div className="mt-4">
-          <CustomFieldsViewSection
-            fields={customFields}
-            sections={customSections}
-            values={cliente?.dati_aggiuntivi || {}}
-          />
-        </div>
 
         <DialogFooter className="mt-6 sticky bottom-0 bg-white pt-4 border-t md:border-t-0 md:pt-0 md:static">
           <Button onClick={onClose} className="w-full md:w-auto">Chiudi</Button>
@@ -28373,6 +28373,14 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             </CardContent>
           </Card>
 
+          {/* SEZIONE CAMPI PERSONALIZZATI (dinamici per commessa + tipologia) */}
+          <CustomFieldsSection
+            fields={customFields}
+            sections={customSections}
+            values={customFieldValues}
+            onChangeField={(name, value) => setCustomFieldValues(prev => ({ ...prev, [name]: value }))}
+          />
+
           {/* Note */}
           <Card>
             <CardHeader>
@@ -28413,14 +28421,6 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
               </div>
             </CardContent>
           </Card>
-
-          {/* SEZIONE CAMPI PERSONALIZZATI (dinamici per commessa + tipologia) */}
-          <CustomFieldsSection
-            fields={customFields}
-            sections={customSections}
-            values={customFieldValues}
-            onChangeField={(name, value) => setCustomFieldValues(prev => ({ ...prev, [name]: value }))}
-          />
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
