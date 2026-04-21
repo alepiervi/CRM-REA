@@ -1323,6 +1323,7 @@ class Cliente(BaseModel):
     energia_potenza_contatore: Optional[str] = None
     energia_remi: Optional[str] = None
     energia_potenza_impegnata: Optional[str] = None
+    energia_fornitore_attuale: Optional[str] = None  # NEW: Fornitore attuale (per switch)
     # Campi condizionali per "Switch con voltura"
     energia_vecchio_intestatario_nome: Optional[str] = None
     energia_vecchio_intestatario_cognome: Optional[str] = None
@@ -1417,6 +1418,7 @@ class ClienteCreate(BaseModel):
     energia_potenza_contatore: Optional[str] = None
     energia_remi: Optional[str] = None
     energia_potenza_impegnata: Optional[str] = None
+    energia_fornitore_attuale: Optional[str] = None  # NEW: Fornitore attuale (per switch)
     # Campi condizionali per "Switch con voltura"
     energia_vecchio_intestatario_nome: Optional[str] = None
     energia_vecchio_intestatario_cognome: Optional[str] = None
@@ -14345,7 +14347,7 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         # Telefonia Fastweb
         "Tecnologia", "Codice Migrazione", "Gestore", "Convergenza",
         # Energia Fastweb
-        "Codice POD",
+        "Tipologia Energia", "Codice POD", "Consumo Annuo", "Potenza Contatore", "Potenza Impegnata", "Fornitore Attuale",
         # Telepass
         "OBU",
         # Modalità Pagamento
@@ -14471,7 +14473,12 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         ws.cell(row=row_idx, column=col, value="Sì" if cliente.get("convergenza") else "No"); col += 1
         
         # Energia Fastweb
+        ws.cell(row=row_idx, column=col, value=cliente.get("energia_tipologia", "")); col += 1
         ws.cell(row=row_idx, column=col, value=cliente.get("codice_pod", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("energia_consumo_annuo", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("energia_potenza_contatore", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("energia_potenza_impegnata", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("energia_fornitore_attuale", "")); col += 1
         
         # Telepass
         ws.cell(row=row_idx, column=col, value=cliente.get("obu", "")); col += 1

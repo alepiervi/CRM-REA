@@ -22720,6 +22720,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     energia_consumo_annuo: '',
     energia_potenza_contatore: '',
     energia_potenza_impegnata: '',
+    energia_fornitore_attuale: '',
     energia_vecchio_intestatario_nome: '',
     energia_vecchio_intestatario_cognome: '',
     energia_vecchio_intestatario_cf: '',
@@ -23617,6 +23618,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       energia_consumo_annuo: formData.energia_consumo_annuo || '',
       energia_potenza_contatore: formData.energia_potenza_contatore || '',
       energia_potenza_impegnata: formData.energia_potenza_impegnata || '',
+      energia_fornitore_attuale: formData.energia_fornitore_attuale || '',
       energia_vecchio_intestatario_nome: formData.energia_vecchio_intestatario_nome || '',
       energia_vecchio_intestatario_cognome: formData.energia_vecchio_intestatario_cognome || '',
       energia_vecchio_intestatario_cf: formData.energia_vecchio_intestatario_cf || '',
@@ -23708,6 +23710,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       convergenza_items: [], 
       codice_pod: '', energia_tipologia: '', energia_consumo_annuo: '',
       energia_potenza_contatore: '', energia_potenza_impegnata: '',
+      energia_fornitore_attuale: '',
       energia_vecchio_intestatario_nome: '', energia_vecchio_intestatario_cognome: '', energia_vecchio_intestatario_cf: '',
       obu: '',
       modalita_pagamento: '', iban: '', intestatario_diverso: '', 
@@ -24598,13 +24601,25 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="energia_potenza_impegnata">Potenza Impegnata</Label>
-                <Input
-                  id="energia_potenza_impegnata"
-                  value={formData.energia_potenza_impegnata}
-                  onChange={(e) => setFormData({...formData, energia_potenza_impegnata: e.target.value})}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="energia_potenza_impegnata">Potenza Impegnata</Label>
+                  <Input
+                    id="energia_potenza_impegnata"
+                    value={formData.energia_potenza_impegnata}
+                    onChange={(e) => setFormData({...formData, energia_potenza_impegnata: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="energia_fornitore_attuale">Fornitore Attuale</Label>
+                  <Input
+                    id="energia_fornitore_attuale"
+                    value={formData.energia_fornitore_attuale}
+                    onChange={(e) => setFormData({...formData, energia_fornitore_attuale: e.target.value})}
+                    placeholder="Es: Enel, Eni, A2A, Iren..."
+                    data-testid="create-cliente-fornitore-attuale-input"
+                  />
+                </div>
               </div>
 
               {/* Campi condizionali per "Switch con voltura" */}
@@ -25952,7 +25967,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
         )}
 
         {/* Sezione Energia - mostrata se commessa è Energia Fastweb o se ci sono dati energia */}
-        {((isEnergiaFastweb() && !isTelepass()) || cliente.codice_pod || cliente.energia_tipologia || cliente.energia_consumo_annuo || cliente.energia_potenza_contatore || cliente.energia_potenza_impegnata) && !isTelepass() && (
+        {((isEnergiaFastweb() && !isTelepass()) || cliente.codice_pod || cliente.energia_tipologia || cliente.energia_consumo_annuo || cliente.energia_potenza_contatore || cliente.energia_potenza_impegnata || cliente.energia_fornitore_attuale) && !isTelepass() && (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
@@ -25981,6 +25996,10 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                 <div>
                   <Label className="text-sm font-medium text-slate-600">Potenza Impegnata</Label>
                   <p className="text-sm">{cliente.energia_potenza_impegnata || 'Non specificato'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Fornitore Attuale</Label>
+                  <p className="text-sm" data-testid="view-cliente-fornitore-attuale">{cliente.energia_fornitore_attuale || 'Non specificato'}</p>
                 </div>
               </div>
               {/* Vecchio intestatario - solo se popolato (Switch con voltura) */}
@@ -26246,6 +26265,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
     energia_consumo_annuo: cliente?.energia_consumo_annuo || '',
     energia_potenza_contatore: cliente?.energia_potenza_contatore || '',
     energia_potenza_impegnata: cliente?.energia_potenza_impegnata || '',
+    energia_fornitore_attuale: cliente?.energia_fornitore_attuale || '',
     energia_vecchio_intestatario_nome: cliente?.energia_vecchio_intestatario_nome || '',
     energia_vecchio_intestatario_cognome: cliente?.energia_vecchio_intestatario_cognome || '',
     energia_vecchio_intestatario_cf: cliente?.energia_vecchio_intestatario_cf || '',
@@ -27837,6 +27857,17 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                     id="energia_potenza_impegnata"
                     value={formData.energia_potenza_impegnata}
                     onChange={(e) => handleChange('energia_potenza_impegnata', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="energia_fornitore_attuale">Fornitore Attuale</Label>
+                  <Input
+                    id="energia_fornitore_attuale"
+                    value={formData.energia_fornitore_attuale || ''}
+                    onChange={(e) => handleChange('energia_fornitore_attuale', e.target.value)}
+                    placeholder="Es: Enel, Eni, A2A, Iren..."
+                    data-testid="edit-cliente-fornitore-attuale-input"
                   />
                 </div>
 
