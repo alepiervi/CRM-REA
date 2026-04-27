@@ -49,6 +49,7 @@ import {
   ClienteLockedScreen,
   useActiveClienteLocks,
 } from "./components/ClienteLock";
+import { ClienteNotesHistory } from "./components/ClienteNotesHistory";
 
 // Lucide icons
 import { 
@@ -26225,35 +26226,35 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           />
         </div>
 
-        {/* Note */}
-        {cliente.note && (
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
-                Note
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{cliente.note}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Note Back Office */}
-        {cliente.note_backoffice && (
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
-                Note Backoffice
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{cliente.note_backoffice}</p>
-            </CardContent>
-          </Card>
-        )}
+        {/* Storico Note - immutabile, read-only in view */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <FileText className="w-4 h-4 mr-2" />
+              Storico Note
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <ClienteNotesHistory
+                clienteId={cliente?.id}
+                tipo="cliente"
+                title="Note Cliente"
+                accentColor="blue"
+                readOnly={true}
+                emptyMessage="Nessuna nota cliente presente."
+              />
+              <ClienteNotesHistory
+                clienteId={cliente?.id}
+                tipo="backoffice"
+                title="Note Back Office"
+                accentColor="orange"
+                readOnly={true}
+                emptyMessage="Nessuna nota back office presente."
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         <DialogFooter className="mt-6 sticky bottom-0 bg-white pt-4 border-t md:border-t-0 md:pt-0 md:static">
           <Button onClick={onClose} className="w-full md:w-auto">Chiudi</Button>
@@ -28462,43 +28463,29 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             onChangeField={(name, value) => setCustomFieldValues(prev => ({ ...prev, [name]: value }))}
           />
 
-          {/* Note */}
+          {/* Note - Storico immutabile */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">📝 Note</CardTitle>
+              <CardTitle className="text-lg">📝 Storico Note</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="note">Note Cliente</Label>
-                  <Textarea
-                    id="note"
-                    value={formData.note}
-                    onChange={(e) => handleChange('note', e.target.value)}
-                    placeholder="Note aggiuntive del cliente..."
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="note_backoffice">Note Back Office</Label>
-                  {canEditNoteBackoffice() ? (
-                    <Textarea
-                      id="note_backoffice"
-                      value={formData.note_backoffice}
-                      onChange={(e) => handleChange('note_backoffice', e.target.value)}
-                      placeholder="Note interne del Back Office..."
-                      rows={3}
-                      className="border-orange-200 focus:border-orange-500"
-                    />
-                  ) : (
-                    <div className="mt-1 p-3 bg-slate-50 border border-slate-200 rounded-md min-h-[80px]">
-                      <p className="text-sm text-slate-600 whitespace-pre-wrap">
-                        {formData.note_backoffice || <span className="text-slate-400 italic">Nessuna nota Back Office</span>}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-2">Solo il Back Office Commessa può modificare questo campo</p>
-                    </div>
-                  )}
-                </div>
+                <ClienteNotesHistory
+                  clienteId={cliente?.id}
+                  tipo="cliente"
+                  title="Note Cliente"
+                  accentColor="blue"
+                  canAdd={true}
+                  emptyMessage="Nessuna nota cliente presente. Aggiungi la prima qui sopra."
+                />
+                <ClienteNotesHistory
+                  clienteId={cliente?.id}
+                  tipo="backoffice"
+                  title="Note Back Office"
+                  accentColor="orange"
+                  canAdd={canEditNoteBackoffice()}
+                  emptyMessage="Nessuna nota back office presente."
+                />
               </div>
             </CardContent>
           </Card>

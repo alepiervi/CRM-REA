@@ -1,0 +1,41 @@
+{
+  "summary": "Tested immutable cliente notes history feature (storico note). Backend: 13/13 pytest passed (POST cliente/backoffice ok, 403 for non-admin on backoffice, 400 empty/invalid tipo, 404 cliente inesistente, GET sorted desc + filter tipo, immutability PUT/DELETE 405/404, regression PUT cliente). Frontend: EditClienteModal shows Storico Note card with Note Cliente (blu) + Note Back Office (arancio), add cliente note flow works (textarea clears, new note prepends with admin + 27/04/2026 15:08 it-IT), button disabled when empty, ViewClienteModal correctly read-only (no input, no add btn). CRITICAL UI BUG: per admin la textarea/bottone Note Back Office è disabilitata (placeholder 'Non hai i permessi...') mentre lo spec richiede che admin + backoffice_commessa possano aggiungere note BO.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "EditClienteModal - canEditNoteBackoffice()",
+        "issue": "Admin non può aggiungere Note Back Office dalla UI. La funzione canEditNoteBackoffice() in /app/frontend/src/App.js:26305-26308 ritorna true SOLO per 'backoffice_commessa', escludendo 'admin'. Risultato: per admin la textarea ha disabled=true e placeholder 'Non hai i permessi per aggiungere note Back Office', e il bottone 'Aggiungi nota' è disabilitato. Il backend invece accetta correttamente admin (verificato con pytest test_admin_post_note_backoffice_ok PASSED). Spec esplicita: 'Note Back Office solo admin + backoffice_commessa possono aggiungere'.",
+        "selector": "[data-testid='notes-input-backoffice'], [data-testid='notes-add-btn-backoffice']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_cliente_note_history.py",
+    "/app/test_reports/pytest/test_cliente_note_history.xml"
+  ],
+  "action_items": [
+    "FIX in /app/frontend/src/App.js riga 26305-26308: cambiare canEditNoteBackoffice() in: `return user.role === 'backoffice_commessa' || user.role === 'admin';` per allinearlo al backend e allo spec (admin + backoffice_commessa possono aggiungere Note BO)."
+  ],
+  "critical_code_review_comments": [
+    "Mismatch FE/BE sui permessi Note Back Office: backend in server.py:16862 controlla `current_user.role not in (UserRole.ADMIN, UserRole.BACKOFFICE_COMMESSA)` (corretto), ma frontend canEditNoteBackoffice() esclude admin. Da allineare.",
+    "ClienteNotesHistory.jsx: il toLocaleString it-IT funziona bene, ma manca dipendenza esplicita da cambio token/utente: se l'utente fa logout/login senza unmount, lo storico potrebbe mostrare dati con auth precedente. Edge-case minore.",
+    "Endpoint GET /api/clienti/{id}/note-history accetta tipo case-sensitive (lower()): ok ma non documentato, valori non in ('cliente','backoffice') vengono silenziosamente ignorati restituendo TUTTE le note (no validation error). Consigliato: 400 per tipo invalido sul GET."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_cliente_note_history.py (nuovo, 13 test pytest)"
+  ],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "85% (5/6 - solo bug permessi BO admin)"},
+  "test_credentials": "admin/admin123 + creato TEST_note_agente_001/testpass123 (role agente_specializzato) per validare 403 su backoffice",
+  "seed_data_creation": "User TEST_note_agente_001 (agente_specializzato) creato in DB tramite POST /api/users durante test. Note di test su cliente a02cc1a1 aggiunte (3 cliente + 2 backoffice complessivamente).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend storico note completamente funzionante e immutabile. UI EditClienteModal e ViewClienteModal funzionanti tranne il fix necessario su canEditNoteBackoffice() per includere admin. Dopo il fix: ritestare che admin veda textarea Note BO abilitata (non disabled, placeholder 'Scrivi una nuova nota back office...') e possa cliccare 'Aggiungi nota' con successo (POST 200). Il file /app/backend/tests/test_cliente_note_history.py serve come regression suite.",
+  "rca_of_the_issue": "Bug: canEditNoteBackoffice() in App.js esclude admin perché la condizione è `user.role === 'backoffice_commessa'` (singola uguaglianza). Probabile copy-paste o oversight: nelle altre helper (canEditRestrictedFields) admin è incluso. Reproduce: login admin → Clienti → Modifica cliente → scrolla a 'Storico Note' → 'Note Back Office' (arancio) → textarea disabled con placeholder 'Non hai i permessi...'. Mitigation: aggiungere `|| user.role === 'admin'` alla return del helper."
+}

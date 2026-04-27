@@ -16815,6 +16815,92 @@ async def list_cliente_locks(current_user: User = Depends(get_current_user)):
 
 
 
+# ============================================================
+# CLIENTE NOTES HISTORY (Storico note immutabile)
+# ============================================================
+# Ogni entry è append-only: no edit, no delete. Mostra timestamp + autore.
+
+class ClienteNoteEntry(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    cliente_id: str
+    tipo: str  # "cliente" | "backoffice"
+    content: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by_id: str
+    created_by_username: str
+
+
+class ClienteNoteEntryCreate(BaseModel):
+    tipo: str  # "cliente" | "backoffice"
+    content: str
+
+
+@api_router.post("/clienti/{cliente_id}/note-history", response_model=ClienteNoteEntry)
+async def add_cliente_note_history(
+    cliente_id: str,
+    payload: ClienteNoteEntryCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Append a new immutable note entry to the cliente notes history."""
+    # Validate cliente exists and user has access
+    cliente_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    cliente_obj = Cliente(**cliente_doc)
+    if not await can_user_access_cliente(current_user, cliente_obj):
+        raise HTTPException(status_code=403, detail="Accesso negato al cliente")
+
+    tipo = (payload.tipo or "").strip().lower()
+    if tipo not in ("cliente", "backoffice"):
+        raise HTTPException(status_code=400, detail="tipo must be 'cliente' or 'backoffice'")
+
+    content = (payload.content or "").strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="La nota non può essere vuota")
+
+    # Per note_backoffice, solo admin + backoffice_commessa possono aggiungere
+    if tipo == "backoffice" and current_user.role not in (UserRole.ADMIN, UserRole.BACKOFFICE_COMMESSA):
+        raise HTTPException(
+            status_code=403,
+            detail="Solo Admin e Back Office Commessa possono aggiungere note Back Office"
+        )
+
+    entry = ClienteNoteEntry(
+        cliente_id=cliente_id,
+        tipo=tipo,
+        content=content,
+        created_by_id=current_user.id,
+        created_by_username=current_user.username,
+    )
+    await db.cliente_note_history.insert_one(entry.dict())
+    return entry
+
+
+@api_router.get("/clienti/{cliente_id}/note-history", response_model=List[ClienteNoteEntry])
+async def get_cliente_note_history(
+    cliente_id: str,
+    tipo: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Return all note history entries for a cliente, newest first.
+    Optional filter by tipo ('cliente' or 'backoffice')."""
+    cliente_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    cliente_obj = Cliente(**cliente_doc)
+    if not await can_user_access_cliente(current_user, cliente_obj):
+        raise HTTPException(status_code=403, detail="Accesso negato al cliente")
+
+    query: dict = {"cliente_id": cliente_id}
+    if tipo and tipo.lower() in ("cliente", "backoffice"):
+        query["tipo"] = tipo.lower()
+
+    entries = await db.cliente_note_history.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=None)
+    return [ClienteNoteEntry(**e) for e in entries]
+
+
+
+
 
 
 @api_router.get("/clienti-cestino")
