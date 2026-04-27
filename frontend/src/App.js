@@ -44,6 +44,11 @@ import {
   CustomFieldsViewSection,
   validateRequiredCustomFields,
 } from "./components/CustomFieldsRenderer";
+import {
+  useClienteLock,
+  ClienteLockedScreen,
+  useActiveClienteLocks,
+} from "./components/ClienteLock";
 
 // Lucide icons
 import { 
@@ -19382,6 +19387,9 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [autoRefresh, setAutoRefresh] = useState(true); // NEW: Auto-refresh toggle
   const [lastUpdated, setLastUpdated] = useState(null); // NEW: Last refresh timestamp
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // LOCK: fetch active cliente locks and refresh every 30s for badges
+  const { locksByClienteId: activeClienteLocks } = useActiveClienteLocks();
   const [showImportModal, setShowImportModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -20502,6 +20510,15 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                       <div className="flex items-center space-x-2">
                         <FileUser className="w-4 h-4 text-green-600" />
                         <span>{cliente.nome} {cliente.cognome}</span>
+                        {activeClienteLocks[cliente.id] && (
+                          <span
+                            title={`🔒 In lavorazione da ${activeClienteLocks[cliente.id].username}`}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300 rounded-full"
+                            data-testid={`cliente-lock-badge-${cliente.id}`}
+                          >
+                            🔒 {activeClienteLocks[cliente.id].username}
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     {/* Azioni */}
@@ -25497,6 +25514,7 @@ const AppWithAuth = () => (
 
 // View Cliente Modal Component
 const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) => {
+  const { user } = useAuth();
   const [offertaInfo, setOffertaInfo] = useState(null);
   const [subOffertaInfo, setSubOffertaInfo] = useState(null);  // NEW: Sub-offerta info
   const [servizioInfo, setServizioInfo] = useState(null);  // NEW: Servizio info
@@ -25508,6 +25526,13 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
     cliente?.commessa_id,
     cliente?.tipologia_contratto_id
   );
+
+  // LOCK: acquire lock on mount (blocks other users from opening)
+  const {
+    loading: lockLoading,
+    lockStatus,
+    forceRelease: forceReleaseLock,
+  } = useClienteLock(cliente?.id, !!cliente?.id);
   
   if (!cliente) return null;
   
@@ -25642,6 +25667,27 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
     const tipologia = cliente.tipologia_contratto?.toLowerCase() || '';
     return tipologia.includes('telepass') || cliente.obu;
   };
+
+  // If locked by another user, show the locked screen instead of the full anagrafica
+  if (lockStatus && lockStatus.owned_by_me === false) {
+    return (
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="max-w-lg w-[95vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <span className="truncate">Anagrafica: {cliente.nome} {cliente.cognome}</span>
+            </DialogTitle>
+          </DialogHeader>
+          <ClienteLockedScreen
+            lockStatus={lockStatus}
+            isAdmin={user?.role === 'admin'}
+            onForceRelease={forceReleaseLock}
+            onClose={onClose}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -26226,6 +26272,12 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   const { options: statusOptions } = useClienteStatusOptions(
     cliente?.commessa_id,
     cliente?.tipologia_contratto_id
+  );
+
+  // LOCK: acquire lock on mount (blocks other users from editing)
+  const { lockStatus, forceRelease: forceReleaseLock } = useClienteLock(
+    cliente?.id,
+    !!cliente?.id
   );
   
   // Helper function to check if user can assign clients
@@ -26997,6 +27049,28 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
   // Debug: Verifica che il componente arrivi al render finale
   console.log("🎯 EditClienteModal: RENDERING COMPLETE - All functions defined, ready to render JSX");
+
+  // If locked by another user, show the locked screen instead of the edit form
+  if (lockStatus && lockStatus.owned_by_me === false) {
+    return (
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="max-w-lg w-[95vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Edit className="w-5 h-5 text-blue-600" />
+              <span className="truncate">Modifica: {cliente?.nome} {cliente?.cognome}</span>
+            </DialogTitle>
+          </DialogHeader>
+          <ClienteLockedScreen
+            lockStatus={lockStatus}
+            isAdmin={user?.role === 'admin'}
+            onForceRelease={forceReleaseLock}
+            onClose={onClose}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={true} onOpenChange={onClose}>

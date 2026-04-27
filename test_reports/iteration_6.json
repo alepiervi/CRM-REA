@@ -1,0 +1,36 @@
+{
+  "summary": "Testato sistema Lock Anagrafica Cliente end-to-end. 14/14 test pytest backend passati (acquire/release/heartbeat/force-release/status/list/404). Frontend multi-user (admin + lock_tester in due browser context) verificato: ViewClienteModal acquisisce lock (POST 200), secondo utente vede badge '🔒 admin' nella lista e ClienteLockedScreen con bottone 'Forza sblocco (Admin)' quando clicca sulla stessa scheda (POST 409). Regressione: owner NON bloccato dal proprio modal.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/clienti/{id}/lock (refresh)", "issue": "Su refresh per owner il campo locked_at perde tzinfo (Mongo round-trip: '2026-04-27T13:43:07.204000' vs '2026-04-27T13:43:07.204436+00:00'). Valore sostanzialmente preservato (entro ms). Non blocca funzionalità."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Propagazione badge lock nella lista Clienti", "issue": "useActiveClienteLocks polla ogni 30s. Se l'utente è gia sulla pagina Clienti mentre un altro acquisisce il lock, il badge compare con max 30s di ritardo (accettabile ma migliorabile). La navigazione Dashboard→Clienti forza refresh immediato.", "affected_selectors": ["cliente-lock-badge-{id}"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_cliente_lock.py", "/app/test_reports/pytest/test_cliente_lock.xml"],
+  "action_items": [
+    "(Opzionale) Ridurre intervallo polling di useActiveClienteLocks da 30s a 10s oppure integrare WebSocket per propagazione badge real-time",
+    "(Opzionale) Normalizzare locked_at ritornato dal backend per preservare sempre tzinfo e microsecondi (usare .isoformat() con UTC su tutti i path di lettura)"
+  ],
+  "critical_code_review_comments": [
+    "release_cliente_lock: documentazione dice 'Only the owner' ma il codice permette anche a qualsiasi admin di rilasciare via DELETE. Comportamento coerente con force-release, ma confondente per non-admin owner: ok, nessuna azione.",
+    "ClienteLock.jsx usa localStorage.getItem('token') direttamente invece dell'interceptor axios globale: duplicazione minima ma consistente col resto del file."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_cliente_lock.py (nuovo, 14 test case pytest)",
+    "DB users.lock_tester: unset password_change_required/first_login/must_change_password/force_password_change=false per permettere login UI nei test"
+  ],
+  "success_rate": {"backend": "100% (14/14)", "frontend": "100% per i flussi testati"},
+  "test_credentials": "admin/admin123 e lock_tester/test12345 (il flag password_change_required=False è stato rimosso dal DB per testing UI)",
+  "seed_data_creation": "Nessun cliente creato - usato cliente esistente a02cc1a1-d3f5-4660-b6ed-c72dd6064a17 (Alessandro Piervincenzi prova)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Il sistema lock è completamente funzionante. L'utente lock_tester è configurato senza password_change_required=true in DB. Badge '🔒 username' appare nella lista Clienti di altri utenti. Per test UI con 2 context browser, usare `await page.context.browser.new_context()` e navigare Dashboard→Clienti per forzare re-fetch di /api/cliente-locks (polling nativo ogni 30s).",
+  "rca_of_the_issue": "Non ci sono bug bloccanti. Unici caveat: (1) locked_at format drift su Mongo round-trip (cosmetico, <1ms); (2) polling 30s causa ritardo visivo del badge per utenti già sulla pagina. Entrambi sono non-blocker."
+}
