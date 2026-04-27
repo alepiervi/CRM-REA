@@ -7,6 +7,13 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **Miglioramento auto-refresh Sistema Lock**
+  - Polling badge 🔒 ridotto da 30s → **10s**
+  - Refresh automatico anche su **tab focus** e **visibility change** (quando l'utente torna sulla tab)
+  - Refresh lock **agganciato** al refresh della lista clienti: ogni `fetchClienti()` e ogni auto-refresh 30s della lista ora aggiorna anche i badge
+  - Su chiusura di ViewClienteModal o EditClienteModal, il parent richiama `refreshClienteLocks()` dopo 800ms per propagare immediatamente il rilascio del lock ad altri tab
+  - File: `/app/frontend/src/components/ClienteLock.jsx` + `/app/frontend/src/App.js`
+
 - **Bug fix: Filtro Segmento (Privati/Business) non mostrava tutti i clienti**
   - **Root cause**: il campo `segmento` nei clienti è salvato in modi misti — sia come stringa tipo (`"privato"`/`"business"`) sia come UUID del segmento (tabella `segmenti`). Il filtro backend faceva match esatto, escludendo i clienti con UUID dalla stessa categoria
   - **Fix** (`/app/backend/server.py`): nuova funzione `_expand_segmento_filter_values()` che espande il filtro includendo anche tutti gli UUID dei segmenti con quel tipo. Applicata in 4 endpoint:

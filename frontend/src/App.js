@@ -19388,8 +19388,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [lastUpdated, setLastUpdated] = useState(null); // NEW: Last refresh timestamp
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // LOCK: fetch active cliente locks and refresh every 30s for badges
-  const { locksByClienteId: activeClienteLocks } = useActiveClienteLocks();
+  // LOCK: fetch active cliente locks and refresh every 10s for badges + window focus
+  const { locksByClienteId: activeClienteLocks, refresh: refreshClienteLocks } = useActiveClienteLocks();
   const [showImportModal, setShowImportModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -19479,6 +19479,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
     const intervalId = setInterval(() => {
       fetchClienti(true); // true indica che è un refresh automatico
+      refreshClienteLocks(); // 🔒 aggiorna anche i badge lock
     }, 30000); // 30 seconds
 
     // Cleanup interval on component unmount
@@ -19540,6 +19541,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       } else {
         setIsRefreshing(true);
       }
+      // 🔒 Mantieni sincronizzato anche lo stato dei lock col refresh lista
+      refreshClienteLocks();
       const params = new URLSearchParams();
       
       // Pagination params
@@ -20825,6 +20828,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           onClose={() => {
             setShowViewModal(false);
             setSelectedCliente(null);
+            // 🔒 Rilascio lock in corso lato server: refreshiamo dopo breve delay per aggiornare badge
+            setTimeout(() => refreshClienteLocks(), 800);
           }}
           commesse={commesse}
           subAgenzie={subAgenzie}
@@ -20839,6 +20844,8 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           onClose={() => {
             setShowEditModal(false);
             setSelectedCliente(null);
+            // 🔒 Rilascio lock in corso lato server: refreshiamo dopo breve delay per aggiornare badge
+            setTimeout(() => refreshClienteLocks(), 800);
           }}
           onSubmit={(updateData) => updateCliente(selectedCliente.id, updateData)}
           commesse={commesse}

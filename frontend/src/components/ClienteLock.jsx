@@ -238,8 +238,18 @@ export const useActiveClienteLocks = () => {
 
   useEffect(() => {
     fetchLocks();
-    const id = setInterval(fetchLocks, 30000);
-    return () => clearInterval(id);
+    const id = setInterval(fetchLocks, 10000); // polling ogni 10s
+    const onFocus = () => fetchLocks();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") fetchLocks();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [fetchLocks]);
 
   return { locksByClienteId, refresh: fetchLocks };
