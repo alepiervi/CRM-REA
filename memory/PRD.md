@@ -7,6 +7,16 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **Bug fix: Filtro Segmento (Privati/Business) non mostrava tutti i clienti**
+  - **Root cause**: il campo `segmento` nei clienti è salvato in modi misti — sia come stringa tipo (`"privato"`/`"business"`) sia come UUID del segmento (tabella `segmenti`). Il filtro backend faceva match esatto, escludendo i clienti con UUID dalla stessa categoria
+  - **Fix** (`/app/backend/server.py`): nuova funzione `_expand_segmento_filter_values()` che espande il filtro includendo anche tutti gli UUID dei segmenti con quel tipo. Applicata in 4 endpoint:
+    - `GET /api/clienti` (linea ~14238)
+    - `GET /api/clienti/export/excel` (linea ~15062)
+    - `GET /api/analytics/pivot/...` (linea ~15369)
+    - `GET /api/analytics/pivot/export-clienti` (linea ~15865)
+  - **Impatto validato**: filtro `segmento=privato` ora ritorna 18 clienti (13 "privato" + 5 UUID corrispondenti) contro i 13 precedenti
+  - Test regressione: `/app/backend/tests/test_segmento_filter_regression.py` (3/3 passati)
+
 - **Sistema Lock Anagrafica Cliente (🔒 Lucchetto)**
   - Quando un utente apre una scheda cliente (View o Edit), il sistema acquisisce un lock esclusivo. Altri utenti non possono né visualizzare né modificare la scheda finché non viene rilasciata o scade automaticamente.
   - Timeout: **10 minuti** di inattività (heartbeat dal frontend ogni 4 min mentre il modal è aperto)

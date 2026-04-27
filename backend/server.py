@@ -13785,6 +13785,41 @@ def detect_client_changes(old_client: Cliente, update_data: dict) -> List[Dict[s
     
     return changes
 
+
+async def _expand_segmento_filter_values(values: list[str]) -> list[str]:
+    """Given a list of segmento filter values (tipo like 'privato'/'business' or UUIDs),
+    return the expanded list that ALSO includes all UUIDs of segmenti having that tipo.
+
+    Fix for legacy data: clienti.segmento is stored sometimes as the tipo string
+    ('privato'/'business') and sometimes as the segmento UUID. Filtering by exact
+    value misses the other representation.
+    """
+    if not values:
+        return values
+    expanded: set[str] = set()
+    tipo_values: set[str] = set()
+    for v in values:
+        if v is None:
+            continue
+        v = str(v).strip()
+        if not v:
+            continue
+        expanded.add(v)
+        # If value is a known "tipo" string, also add all UUIDs of segmenti with that tipo
+        if v.lower() in ("privato", "business"):
+            tipo_values.add(v.lower())
+    if tipo_values:
+        segmenti_cursor = db.segmenti.find(
+            {"tipo": {"$in": list(tipo_values)}}, {"_id": 0, "id": 1}
+        )
+        async for s in segmenti_cursor:
+            sid = s.get("id")
+            if sid:
+                expanded.add(sid)
+    return list(expanded)
+
+
+
 # Gestione Clienti
 @api_router.post("/clienti", response_model=Cliente)
 async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depends(get_current_user)):
@@ -14235,7 +14270,8 @@ async def get_clienti(
         query["servizio_id"] = servizio_id
     
     if segmento and segmento != "all":
-        query["segmento"] = segmento
+        expanded_segmenti = await _expand_segmento_filter_values([segmento])
+        query["segmento"] = {"$in": expanded_segmenti} if len(expanded_segmenti) > 1 else segmento
     
     if commessa_id_filter and commessa_id_filter != "all":
         # Use separate field name to avoid conflict with main commessa_id parameter
@@ -15059,7 +15095,8 @@ async def export_clienti_excel(
         if servizio_id:
             query["servizio_id"] = servizio_id
         if segmento:
-            query["segmento"] = segmento
+            expanded_segmenti = await _expand_segmento_filter_values([segmento])
+            query["segmento"] = {"$in": expanded_segmenti} if len(expanded_segmenti) > 1 else segmento
         if commessa_id_filter:
             query["commessa_id"] = commessa_id_filter
         
@@ -15366,7 +15403,8 @@ async def get_pivot_analytics(
         
         if segmento_values:
             segmenti = [s.strip() for s in segmento_values.split(",")]
-            query["segmento"] = {"$in": segmenti}
+            expanded_segmenti = await _expand_segmento_filter_values(segmenti)
+            query["segmento"] = {"$in": expanded_segmenti}
         
         if offerta_ids:
             ids = [id.strip() for id in offerta_ids.split(",")]
@@ -15862,7 +15900,8 @@ async def export_pivot_clienti_list(
         if segmento_values:
             segmento_list = [s.strip() for s in segmento_values.split(',') if s.strip()]
             if segmento_list:
-                query["segmento"] = {"$in": segmento_list}
+                expanded_segmenti = await _expand_segmento_filter_values(segmento_list)
+                query["segmento"] = {"$in": expanded_segmenti}
         
         if offerta_ids:
             offerta_list = [o.strip() for o in offerta_ids.split(',') if o.strip()]
