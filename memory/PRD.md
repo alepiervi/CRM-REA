@@ -5,8 +5,21 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ## Current State (Febbraio 2026)
 
-### ✅ Completato in questa sessione (21 Febbraio 2026)
+### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **Sistema Lock Anagrafica Cliente (🔒 Lucchetto)**
+  - Quando un utente apre una scheda cliente (View o Edit), il sistema acquisisce un lock esclusivo. Altri utenti non possono né visualizzare né modificare la scheda finché non viene rilasciata o scade automaticamente.
+  - Timeout: **10 minuti** di inattività (heartbeat dal frontend ogni 4 min mentre il modal è aperto)
+  - Rilascio automatico: su chiusura modal, tab close (via `fetch keepalive` DELETE), scadenza backend
+  - **Backend** (`/app/backend/server.py` linee 16568-16780): 6 endpoint `POST/DELETE/GET /api/clienti/{id}/lock`, `POST .../lock/heartbeat`, `POST .../lock/force-release` (admin-only), `GET /api/cliente-locks`. Collezione `cliente_locks`. Constante `CLIENTE_LOCK_TIMEOUT_MINUTES = 10`.
+  - **Frontend** (`/app/frontend/src/components/ClienteLock.jsx`): hook `useClienteLock(clienteId)`, componente `ClienteLockedScreen` con info utente + bottone admin "Forza sblocco", hook `useActiveClienteLocks` per badge 🔒 nella lista Clienti (polling 30s)
+  - Integrazione in `ViewClienteModal` e `EditClienteModal`: early-return con `ClienteLockedScreen` se lock detenuto da altro utente
+  - Admin può forzare il rilascio di qualsiasi lock (override manuale)
+  - Testing (iteration_6.json): backend 14/14 ✓, frontend 100% ✓ — validato con admin + lock_tester in due context browser differenti
+
+### ✅ Completato in precedenti sessioni (21 Feb 2026)
+
+- **Sezioni Custom sempre prima della sezione Note** in CreateClienteModal, EditClienteModal e ViewClienteModal
 - **Riorganizzazione campi Indirizzo Cliente in due blocchi distinti**
   - Bloc 1 "Indirizzo Residenza": indirizzo, comune_residenza, provincia, cap
   - Bloc 2 "Indirizzo Attivazione": indirizzo_attivazione, comune_attivazione, provincia_attivazione, cap_attivazione
