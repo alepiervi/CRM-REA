@@ -13596,46 +13596,6 @@ async def update_sub_agenzia(
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Sub Agenzia not found")
-    
-    # 🔄 AUTO-PROPAGATION: quando cambiano commesse/servizi della sub agenzia,
-    # propaghiamo automaticamente a tutti gli utenti legati (backoffice_sub_agenzia
-    # e responsabile_sub_agenzia). Usiamo union (aggiungiamo, non sovrascriviamo)
-    # così eventuali permessi manuali aggiuntivi restano intatti.
-    commesse_to_propagate = sub_agenzia_update.commesse_autorizzate
-    servizi_to_propagate = sub_agenzia_update.servizi_autorizzati
-    if commesse_to_propagate is not None or servizi_to_propagate is not None:
-        propagation_roles = [
-            UserRole.BACKOFFICE_SUB_AGENZIA,
-            UserRole.RESPONSABILE_SUB_AGENZIA,
-        ]
-        user_query = {
-            "role": {"$in": propagation_roles},
-            "$or": [
-                {"sub_agenzia_id": sub_agenzia_id},
-                {"sub_agenzie_autorizzate": sub_agenzia_id},
-            ],
-        }
-        target_users = await db.users.find(user_query, {"_id": 0}).to_list(length=None)
-        propagated_count = 0
-        for u in target_users:
-            user_update_doc: dict = {}
-            if commesse_to_propagate is not None:
-                current_commesse = set(u.get("commesse_autorizzate", []) or [])
-                merged_commesse = list(current_commesse | set(commesse_to_propagate))
-                if set(merged_commesse) != current_commesse:
-                    user_update_doc["commesse_autorizzate"] = merged_commesse
-            if servizi_to_propagate is not None:
-                current_servizi = set(u.get("servizi_autorizzati", []) or [])
-                merged_servizi = list(current_servizi | set(servizi_to_propagate))
-                if set(merged_servizi) != current_servizi:
-                    user_update_doc["servizi_autorizzati"] = merged_servizi
-            if user_update_doc:
-                await db.users.update_one({"id": u["id"]}, {"$set": user_update_doc})
-                propagated_count += 1
-        logging.info(
-            f"🔄 SUB-AGENZIA {sub_agenzia_id} propagated to {propagated_count}/{len(target_users)} users "
-            f"(commesse={len(commesse_to_propagate or [])}, servizi={len(servizi_to_propagate or [])})"
-        )
 
     sub_agenzia_doc = await db.sub_agenzie.find_one({"id": sub_agenzia_id})
     return SubAgenzia(**sub_agenzia_doc)
@@ -13676,56 +13636,6 @@ async def delete_sub_agenzia(
         raise HTTPException(status_code=404, detail="Sub Agenzia not found")
     
     return {"success": True, "message": f"Sub Agenzia '{sub_agenzia['nome']}' eliminata con successo"}
-
-
-@api_router.post("/admin/resync-sub-agenzia-users")
-async def resync_sub_agenzia_users(current_user: User = Depends(get_current_user)):
-    """Admin utility: propagate commesse/servizi from each sub_agenzia to its linked users.
-    Uses union (adds only, doesn't remove existing permissions).
-    Returns how many users were updated."""
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Admin access required")
-
-    propagation_roles = [UserRole.BACKOFFICE_SUB_AGENZIA, UserRole.RESPONSABILE_SUB_AGENZIA]
-    sub_agenzie = await db.sub_agenzie.find({}, {"_id": 0}).to_list(length=None)
-    total_updated = 0
-    details = []
-    for sa in sub_agenzie:
-        sa_id = sa.get("id")
-        if not sa_id:
-            continue
-        sa_commesse = list(sa.get("commesse_autorizzate", []) or [])
-        sa_servizi = list(sa.get("servizi_autorizzati", []) or [])
-        if not sa_commesse and not sa_servizi:
-            continue
-        users = await db.users.find(
-            {
-                "role": {"$in": propagation_roles},
-                "$or": [
-                    {"sub_agenzia_id": sa_id},
-                    {"sub_agenzie_autorizzate": sa_id},
-                ],
-            },
-            {"_id": 0},
-        ).to_list(length=None)
-        updated_for_sa = 0
-        for u in users:
-            current_c = set(u.get("commesse_autorizzate", []) or [])
-            current_s = set(u.get("servizi_autorizzati", []) or [])
-            merged_c = current_c | set(sa_commesse)
-            merged_s = current_s | set(sa_servizi)
-            upd = {}
-            if merged_c != current_c:
-                upd["commesse_autorizzate"] = list(merged_c)
-            if merged_s != current_s:
-                upd["servizi_autorizzati"] = list(merged_s)
-            if upd:
-                await db.users.update_one({"id": u["id"]}, {"$set": upd})
-                updated_for_sa += 1
-        total_updated += updated_for_sa
-        if updated_for_sa:
-            details.append({"sub_agenzia_id": sa_id, "sub_agenzia_nome": sa.get("nome"), "users_updated": updated_for_sa})
-    return {"success": True, "total_users_updated": total_updated, "details": details}
 
 
 
