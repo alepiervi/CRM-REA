@@ -7,6 +7,17 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **Storico Note Cliente immutabile** 📝
+  - Nuova feature: storico append-only delle note Cliente e Back Office direttamente nella scheda cliente
+  - Ogni nota mostra: 📅 data/ora (formattata it-IT) + 👤 username dell'autore. No edit, no delete (nemmeno admin)
+  - UI: input textarea + pulsante "Aggiungi nota" dedicato (per ogni tipo cliente/backoffice), lista storico sotto ordinata newest-first
+  - ViewClienteModal: storico read-only (no input, no pulsante)
+  - Permessi: note Back Office solo `admin` + `backoffice_commessa` (enforced sia backend che frontend)
+  - **Backend** (`/app/backend/server.py` ~linea 16817-16900): modelli `ClienteNoteEntry`/`ClienteNoteEntryCreate`, endpoint `POST /api/clienti/{id}/note-history` e `GET /api/clienti/{id}/note-history?tipo=...`. Collezione mongo: `cliente_note_history`
+  - **Frontend**: nuovo componente `/app/frontend/src/components/ClienteNotesHistory.jsx`, integrato in Edit e View Cliente Modal
+  - **Fix**: `canEditNoteBackoffice()` in App.js ora include anche admin (prima escluso per bug)
+  - Testing (iteration_7.json): backend 13/13 ✓, frontend 100% dopo fix ✓
+
 - **Miglioramento auto-refresh Sistema Lock**
   - Polling badge 🔒 ridotto da 30s → **10s**
   - Refresh automatico anche su **tab focus** e **visibility change** (quando l'utente torna sulla tab)

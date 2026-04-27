@@ -26304,7 +26304,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
   // Helper function to check if user can edit note_backoffice field
   const canEditNoteBackoffice = () => {
     if (!user) return false;
-    return user.role === 'backoffice_commessa';
+    return user.role === 'backoffice_commessa' || user.role === 'admin';
   };
   
   // Array delle tecnologie - stesso del form di creazione
