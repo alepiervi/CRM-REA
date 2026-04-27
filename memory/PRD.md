@@ -7,6 +7,14 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **Auto-propagazione Servizi/Commesse Sub Agenzia → Utenti** 🔄
+  - **Problema**: quando admin aggiungeva un servizio a una Sub Agenzia, gli utenti `backoffice_sub_agenzia` e `responsabile_sub_agenzia` collegati non lo ricevevano automaticamente. L'intersezione `sub_agenzia.servizi_autorizzati ∩ user.servizi_autorizzati` usata dall'endpoint `/cascade/servizi-by-sub-agenzia` falliva → l'utente NON vedeva il servizio nel wizard di creazione cliente
+  - **Fix**: `PUT /api/sub-agenzie/{id}` ora propaga automaticamente (union, non replace) i nuovi `commesse_autorizzate` e `servizi_autorizzati` a tutti gli utenti con `sub_agenzia_id == sid` o `sid ∈ sub_agenzie_autorizzate`, filtrando per ruolo `backoffice_sub_agenzia` / `responsabile_sub_agenzia`
+  - **Utility admin one-time**: nuovo endpoint `POST /api/admin/resync-sub-agenzia-users` per backfill dei dati esistenti
+  - **Eseguito il backfill**: 10 utenti sincronizzati (8 su F2F, 2 su Presidio-Maximo)
+  - **Verifica on-the-fly**: aggiunto servizio "NEGOZI" a F2F → tutti gli 8 utenti BO l'hanno ricevuto istantaneamente
+  - File modificato: `/app/backend/server.py` (linea ~13568 PUT sub-agenzie + linea ~13680 resync endpoint)
+
 - **Storico Note Cliente immutabile** 📝
   - Nuova feature: storico append-only delle note Cliente e Back Office direttamente nella scheda cliente
   - Ogni nota mostra: 📅 data/ora (formattata it-IT) + 👤 username dell'autore. No edit, no delete (nemmeno admin)
