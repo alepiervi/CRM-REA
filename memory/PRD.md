@@ -14,7 +14,15 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
     2. Tutti i valori distinti di `status` realmente usati sui clienti via `GET /api/clienti/filter-options.status_values`
   - Render dropdown: status standard + sezione "── Status Custom / Storici ──" con i valori non duplicati
   - File: `/app/frontend/src/App.js` linee ~19410 (fetch) + ~20336 (render dropdown)
-  - Backend `query["status"] = status` accetta già qualsiasi stringa, nessun bug lato server
+
+- **🔍 Filtro Segmenti nei Clienti: ora completo**
+  - Prima: backend `clienti/filter-options` aveva `segmenti_values = ["privato", "business"]` HARDCODED. Segmenti user-created e storici non apparivano
+  - Fix backend: ora unisce 3 sorgenti
+    1. Hardcoded base `["privato", "business"]`
+    2. Valori distinti di `segmento` realmente usati sui clienti (aggregate)
+    3. `tipo` e `nome` di tutti i record in `db.segmenti`
+  - Dedup canonicalizzato per evitare duplicati maiuscolo/minuscolo
+  - File: `/app/backend/server.py` linea ~15188 + ~15376
 
 - **🔓 Note Cliente: visibili e modificabili da TUTTI gli utenti associati al cliente**
   - Prima: ruoli operativi (Agente, Operatore, Store Assist, ecc.) potevano vedere/aggiungere note solo ai clienti che AVEVANO CREATO loro stessi (`cliente.created_by == user.id`)

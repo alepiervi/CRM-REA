@@ -15185,8 +15185,34 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         common_status = ["nuovo", "attivo", "inattivo", "sospeso", "completato"]
         status_values = list(set(status_from_clients + common_status))
         
-        # Get ALL segmenti available
-        segmenti_values = ["privato", "business"]
+        # Get ALL segmenti available - merge da hardcoded, DB collection e valori effettivi sui clienti
+        # FIX: prima era solo ["privato", "business"] hardcoded, ora include anche i custom user-created
+        segmenti_pipeline = [{"$match": base_query}] if base_query else []
+        segmenti_pipeline += [
+            {"$group": {"_id": "$segmento"}},
+            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$sort": {"_id": 1}}
+        ]
+        segmenti_from_clients_result = await db.clienti.aggregate(segmenti_pipeline).to_list(length=None)
+        segmenti_from_clients = [item["_id"] for item in segmenti_from_clients_result if item.get("_id")]
+
+        # Add segmenti dalla collection (sia tipo che nome)
+        segmenti_db = await db.segmenti.find({}, {"_id": 0}).to_list(length=None)
+        segmenti_set = set(["privato", "business"])  # base values
+        segmenti_set.update(segmenti_from_clients)
+        for s in segmenti_db:
+            tipo = s.get("tipo")
+            nome = s.get("nome")
+            if tipo:
+                segmenti_set.add(tipo)
+            if nome:
+                segmenti_set.add(nome)
+
+        # Filter out empty + UUIDs (mantieni solo nomi/tipi leggibili)
+        segmenti_values = sorted([
+            v for v in segmenti_set
+            if v and (len(str(v)) < 30 or " " in str(v))  # esclude UUID lunghi
+        ])
         
         # Get sub agenzie from ACTUAL clients - shows only sub agenzie in the client list
         print(f"🔄 Loading sub agenzie for filter-options from actual clients")
@@ -15348,10 +15374,14 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
                 {"value": status, "label": map_status_display(status)} 
                 for status in sorted([s for s in status_values if s is not None])
             ],
-            "segmenti": [
-                {"value": seg, "label": map_segmento_display(seg)} 
-                for seg in sorted(segmenti_values)
-            ],
+            "segmenti": (lambda: [
+                {"value": seg, "label": map_segmento_display(seg)}
+                for seg in sorted({
+                    # Dedup canonicalizzato: lowercase preferito ma keep custom names as-is
+                    s.lower() if s and s.lower() in ("privato", "business") else s
+                    for s in segmenti_values if s
+                })
+            ])(),
             "sub_agenzie": [
                 {"value": sub["id"], "label": sub["nome"]} 
                 for sub in sorted(sub_agenzie, key=lambda x: x.get("nome", "") or "")
