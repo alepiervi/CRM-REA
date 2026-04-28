@@ -50,6 +50,7 @@ import {
   useActiveClienteLocks,
 } from "./components/ClienteLock";
 import { ClienteNotesHistory } from "./components/ClienteNotesHistory";
+import { PermissionsAudit } from "./components/PermissionsAudit";
 
 // Lucide icons
 import { 
@@ -117,6 +118,7 @@ import {
   Building,
   Store,
   ShieldCheck,
+  ShieldAlert,
   Users2,
   Briefcase,
   Settings2,
@@ -1968,6 +1970,7 @@ const Dashboard = () => {
         { id: "lead-status", label: "Gestione Status Lead", icon: Settings },
         { id: "custom-fields", label: "Campi Personalizzati Lead", icon: Database },
         { id: "users", label: "Utenti", icon: Users },
+        { id: "permissions-audit", label: "Audit Permessi", icon: ShieldAlert },
         { id: "workflow-builder", label: "Workflow Builder", icon: Workflow },
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
         { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
@@ -2052,6 +2055,8 @@ const Dashboard = () => {
         // Sezione "Documenti" rimossa dalla sidebar - ora gestita all'interno della sezione Clienti
         case "users":
           return (user.role === "admin" || user.role === "responsabile_commessa") ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+        case "permissions-audit":
+          return user.role === "admin" ? <PermissionsAudit /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono accedere all'audit permessi</div>;
         case "workflow-builder":
           return user.role === "admin" ? <WorkflowBuilderManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "ai-config":

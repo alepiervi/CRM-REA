@@ -13728,6 +13728,217 @@ async def delete_sub_agenzia(
 
 
 
+# ============================================================
+# PERMISSIONS AUDIT (Admin Report)
+# ============================================================
+# Restituisce un report delle incoerenze nei permessi utenti, in particolare per
+# i ruoli backoffice_sub_agenzia e responsabile_sub_agenzia, che sono i più sensibili
+# all'allineamento tra commesse_autorizzate e servizi_autorizzati.
+
+@api_router.get("/admin/permissions-audit")
+async def permissions_audit(
+    role: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Admin-only report of permission inconsistencies on users.
+    Returns 4 categories of issues:
+      1. services_without_parent_commessa: l'utente ha un servizio ma non la sua commessa
+      2. orphaned_commesse: l'utente ha una commessa senza alcun servizio (solo BO/Resp Sub Agenzia)
+      3. services_not_in_sub_agenzia: l'utente ha servizi non autorizzati nella sua Sub Agenzia
+      4. commesse_not_in_sub_agenzia: l'utente ha commesse non autorizzate nella sua Sub Agenzia
+
+    Optional filter by role.
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    # Build user query
+    user_query: dict = {"is_active": True}
+    if role:
+        user_query["role"] = role
+    else:
+        user_query["role"] = {
+            "$in": [
+                UserRole.BACKOFFICE_SUB_AGENZIA,
+                UserRole.RESPONSABILE_SUB_AGENZIA,
+                UserRole.AREA_MANAGER,
+            ]
+        }
+
+    users = await db.users.find(user_query, {"_id": 0}).to_list(length=None)
+
+    # Preload all commesse and servizi for name resolution
+    all_commesse = await db.commesse.find({}, {"_id": 0, "id": 1, "nome": 1}).to_list(length=None)
+    commessa_name = {c["id"]: c.get("nome", "") for c in all_commesse}
+
+    all_servizi = await db.servizi.find({}, {"_id": 0, "id": 1, "nome": 1, "commessa_id": 1, "is_active": 1}).to_list(length=None)
+    servizio_by_id = {s["id"]: s for s in all_servizi}
+
+    # Preload sub_agenzie
+    all_sub_agenzie = await db.sub_agenzie.find({}, {"_id": 0}).to_list(length=None)
+    subag_by_id = {sa["id"]: sa for sa in all_sub_agenzie}
+
+    services_without_parent: list = []
+    orphaned_commesse: list = []
+    services_not_in_subag: list = []
+    commesse_not_in_subag: list = []
+
+    for u in users:
+        u_commesse = set(u.get("commesse_autorizzate", []) or [])
+        u_servizi = set(u.get("servizi_autorizzati", []) or [])
+
+        # 1. services without parent commessa
+        for srv_id in u_servizi:
+            srv = servizio_by_id.get(srv_id)
+            if not srv:
+                continue
+            parent = srv.get("commessa_id")
+            if parent and parent not in u_commesse:
+                services_without_parent.append({
+                    "user_id": u["id"],
+                    "username": u["username"],
+                    "role": u.get("role"),
+                    "servizio_id": srv_id,
+                    "servizio_nome": srv.get("nome"),
+                    "missing_commessa_id": parent,
+                    "missing_commessa_nome": commessa_name.get(parent, "?"),
+                })
+
+        # 2. orphaned commesse (only for BO/Resp Sub Agenzia)
+        if u.get("role") in (UserRole.BACKOFFICE_SUB_AGENZIA, UserRole.RESPONSABILE_SUB_AGENZIA):
+            commesse_with_services = {servizio_by_id.get(s, {}).get("commessa_id") for s in u_servizi}
+            for c_id in u_commesse:
+                if c_id not in commesse_with_services:
+                    orphaned_commesse.append({
+                        "user_id": u["id"],
+                        "username": u["username"],
+                        "role": u.get("role"),
+                        "commessa_id": c_id,
+                        "commessa_nome": commessa_name.get(c_id, "?"),
+                    })
+
+        # 3 & 4. services/commesse not in user's sub_agenzia
+        sub_ag_ids = []
+        if u.get("sub_agenzia_id"):
+            sub_ag_ids.append(u["sub_agenzia_id"])
+        sub_ag_ids.extend(u.get("sub_agenzie_autorizzate", []) or [])
+        sub_ag_ids = list(set(filter(None, sub_ag_ids)))
+
+        if sub_ag_ids:
+            allowed_servizi_in_subag = set()
+            allowed_commesse_in_subag = set()
+            sub_ag_names = []
+            for sid in sub_ag_ids:
+                sa = subag_by_id.get(sid)
+                if sa:
+                    allowed_servizi_in_subag.update(sa.get("servizi_autorizzati", []) or [])
+                    allowed_commesse_in_subag.update(sa.get("commesse_autorizzate", []) or [])
+                    sub_ag_names.append(sa.get("nome", ""))
+            extra_servizi = u_servizi - allowed_servizi_in_subag
+            extra_commesse = u_commesse - allowed_commesse_in_subag
+            for srv_id in extra_servizi:
+                srv = servizio_by_id.get(srv_id, {})
+                services_not_in_subag.append({
+                    "user_id": u["id"],
+                    "username": u["username"],
+                    "role": u.get("role"),
+                    "sub_agenzie": sub_ag_names,
+                    "servizio_id": srv_id,
+                    "servizio_nome": srv.get("nome", "?"),
+                })
+            for c_id in extra_commesse:
+                commesse_not_in_subag.append({
+                    "user_id": u["id"],
+                    "username": u["username"],
+                    "role": u.get("role"),
+                    "sub_agenzie": sub_ag_names,
+                    "commessa_id": c_id,
+                    "commessa_nome": commessa_name.get(c_id, "?"),
+                })
+
+    total_issues = (
+        len(services_without_parent)
+        + len(orphaned_commesse)
+        + len(services_not_in_subag)
+        + len(commesse_not_in_subag)
+    )
+
+    return {
+        "users_checked": len(users),
+        "total_issues": total_issues,
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "categories": {
+            "services_without_parent_commessa": services_without_parent,
+            "orphaned_commesse": orphaned_commesse,
+            "services_not_in_sub_agenzia": services_not_in_subag,
+            "commesse_not_in_sub_agenzia": commesse_not_in_subag,
+        },
+    }
+
+
+@api_router.post("/admin/permissions-audit/auto-fix/{user_id}")
+async def permissions_audit_auto_fix(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Admin-only: auto-fix consistency issues for a single user.
+    - Adds parent commesse for any servizio_autorizzato that doesn't have its parent commessa.
+    - For backoffice_sub_agenzia / responsabile_sub_agenzia: removes orphaned commesse (no service).
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    u_servizi = list(user_doc.get("servizi_autorizzati", []) or [])
+    u_commesse = set(user_doc.get("commesse_autorizzate", []) or [])
+    role = user_doc.get("role")
+
+    actions = {"added_commesse": [], "removed_commesse": []}
+
+    if u_servizi:
+        srvs = await db.servizi.find(
+            {"id": {"$in": u_servizi}}, {"_id": 0, "id": 1, "commessa_id": 1}
+        ).to_list(length=None)
+        parent = {s.get("commessa_id") for s in srvs if s.get("commessa_id")}
+        missing = parent - u_commesse
+        if missing:
+            u_commesse |= missing
+            actions["added_commesse"] = list(missing)
+
+        if role in (UserRole.BACKOFFICE_SUB_AGENZIA, UserRole.RESPONSABILE_SUB_AGENZIA):
+            cleaned = u_commesse & parent
+            removed = u_commesse - cleaned
+            if removed:
+                u_commesse = cleaned
+                actions["removed_commesse"] = list(removed)
+    elif role in (UserRole.BACKOFFICE_SUB_AGENZIA, UserRole.RESPONSABILE_SUB_AGENZIA):
+        # No services → all commesse are orphaned (for these roles)
+        if u_commesse:
+            actions["removed_commesse"] = list(u_commesse)
+            u_commesse = set()
+
+    if actions["added_commesse"] or actions["removed_commesse"]:
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {"commesse_autorizzate": list(u_commesse)}}
+        )
+
+    return {
+        "success": True,
+        "user_id": user_id,
+        "username": user_doc.get("username"),
+        "actions": actions,
+        "no_changes": not (actions["added_commesse"] or actions["removed_commesse"]),
+    }
+
+
+
+
+
 @api_router.post("/admin/cleanup-orphaned-references")
 async def cleanup_orphaned_references(current_user: User = Depends(get_current_user)):
     """Admin utility to clean up orphaned commesse references in sub agenzie"""

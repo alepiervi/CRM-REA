@@ -7,6 +7,17 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **🛡️ Sezione Audit Permessi (Admin)**
+  - Nuova voce sidebar **"Audit Permessi"** per role admin con icona `ShieldAlert`
+  - Backend `GET /api/admin/permissions-audit` (admin-only) restituisce 4 categorie di incoerenze:
+    1. **Servizi senza commessa parent** — fixable
+    2. **Commesse orfane** (BO/Resp Sub Agenzia con commessa senza alcun servizio) — fixable
+    3. **Servizi non autorizzati nella Sub Agenzia** — solo segnalazione
+    4. **Commesse non autorizzate nella Sub Agenzia** — solo segnalazione
+  - Backend `POST /api/admin/permissions-audit/auto-fix/{user_id}` per fix automatico delle prime 2 categorie
+  - Frontend `/app/frontend/src/components/PermissionsAudit.jsx`: summary cards (utenti analizzati, incoerenze totali, ultimo controllo), categorie collassabili con tabella + bottoni "Fix" per riga e "Auto-fix tutti" per categoria
+  - Test reale: trovate **34 incoerenze** su 17 utenti (4 senza parent, 16 servizi extra, 14 commesse extra). Nessuna commessa orfana
+
 - **🐛 Bug fix: Servizio autorizzato non visibile nel wizard creazione cliente**
   - **Root cause**: il frontend `EditUserModal` quando admin abilita un servizio (`handleServizioAutorizzatoChange`) aggiunge SOLO il servizio in `servizi_autorizzati` ma **non la commessa parent** in `commesse_autorizzate`. Risultato: il backend `/cascade/servizi-by-sub-agenzia` filtra prima per commessa autorizzata e il servizio non viene mai mostrato all'utente
   - **Fix backend** (`PUT /api/users/{id}`): se il payload aggiorna `servizi_autorizzati`, il backend deduce le commesse parent dei servizi e le aggiunge automaticamente in `commesse_autorizzate` (union, mai rimuove). Garantisce coerenza dati indipendentemente dal client
