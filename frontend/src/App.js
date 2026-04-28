@@ -23691,7 +23691,10 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       sub_agenzia_id: user?.role === 'area_manager' ? formData.sub_agenzia_id : selectedData.sub_agenzia_id,
       commessa_id: selectedData.commessa_id,
       servizio_id: selectedData.servizio_id,
-      tipologia_contratto: mapTipologiaContratto(selectedData.tipologia_contratto),
+      // FIX: salva il nome tipologia esattamente come definita nella tipologia
+      // user-created (es. "ENERGIA"), non più mappato a enum legacy "energia_fastweb"
+      tipologia_contratto: cascadeTipologie?.find(t => t.id === selectedData.tipologia_contratto)?.nome
+        || selectedData.tipologia_contratto,
       tipologia_contratto_id: selectedData.tipologia_contratto,  // ADDED: Save UUID for filtering
       segmento: mapSegmento(selectedData.segmento),
       offerta_id: selectedData.offerta_id,

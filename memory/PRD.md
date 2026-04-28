@@ -7,6 +7,13 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **🐛 Bug fix: Tipologia contratto sbagliata salvata sui clienti**
+  - **Sintomo**: salvando un cliente con commessa "AGN ENERGIA" + servizio "TLS AGN ENERGIA" + tipologia "ENERGIA", il sistema salvava `tipologia_contratto = 'energia_fastweb'` (legacy enum di Fastweb) invece di "ENERGIA"
+  - **Root cause**: la funzione `mapTipologiaContratto` in `App.js` (linea ~22492) faceva un mapping case-insensitive verso un dizionario hardcoded di enum legacy (`'Energia' → 'energia_fastweb'`, etc.). Da quando le tipologie sono dinamiche/user-created questo mapping è obsoleto e produce dati sbagliati
+  - **Fix frontend**: il submit cliente ora salva direttamente il nome tipologia user-created (`cascadeTipologie?.find(t => t.id === selectedData.tipologia_contratto)?.nome`), senza il mapping legacy
+  - **Backfill dati**: 21 clienti corretti — es. "Alessandro Piervincenzi prova" passato da `'energia_fastweb'` a `'ENERGIA'`
+  - File: `/app/frontend/src/App.js` linea ~23694
+
 - **🛡️ Sezione Audit Permessi (Admin)**
   - Nuova voce sidebar **"Audit Permessi"** per role admin con icona `ShieldAlert`
   - Backend `GET /api/admin/permissions-audit` (admin-only) restituisce 4 categorie di incoerenze:
