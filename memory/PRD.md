@@ -7,6 +7,18 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **🔓 Note Cliente: visibili e modificabili da TUTTI gli utenti associati al cliente**
+  - Prima: ruoli operativi (Agente, Operatore, Store Assist, ecc.) potevano vedere/aggiungere note solo ai clienti che AVEVANO CREATO loro stessi (`cliente.created_by == user.id`)
+  - Nuova funzione `can_user_access_cliente_notes()` più permissiva: utente può vedere/aggiungere note se è
+    - Admin, OPPURE
+    - Creatore o assegnatario del cliente, OPPURE
+    - Nella stessa Sub Agenzia (diretta o autorizzata) del cliente, OPPURE
+    - Ha la commessa del cliente nelle proprie autorizzazioni
+  - Endpoint aggiornati: `POST /api/clienti/{id}/note-history` e `GET /api/clienti/{id}/note-history`
+  - **Note Back Office** continuano a richiedere admin + backoffice_commessa per scrivere (regola invariata)
+  - File: `/app/backend/server.py` linea ~1933 (nuova funzione) + linee ~17152, ~17192 (endpoint note)
+  - Test: `ale3` (BO sub agenzia non creatore) → ora accede alle note di un cliente nella sua sub agenzia ✅
+
 - **📋 Cronologia Cliente: ora mostra NOMI invece di ID**
   - **Sintomo**: la cronologia (`/api/clienti/{id}/logs`) registrava i cambiamenti con gli ID delle entità (es. `Sub Agenzia modificato da '7c70d4b5-...' a '9b0b8890-...'`) invece dei nomi
   - **Fix backend**: `detect_client_changes()` (in `server.py`) ora è async e risolve gli ID nei nomi tramite lookup MongoDB per: `sub_agenzia_id`, `commessa_id`, `servizio_id`, `tipologia_contratto_id`, `segmento` (UUID), `assigned_to` (user)

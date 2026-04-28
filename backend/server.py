@@ -1930,6 +1930,40 @@ async def can_user_access_cliente(user: User, cliente: Cliente) -> bool:
     return auth_obj.sub_agenzia_id == cliente.sub_agenzia_id
 
 
+async def can_user_access_cliente_notes(user: User, cliente: Cliente) -> bool:
+    """Verifica più permissiva di can_user_access_cliente: usata per la visualizzazione/aggiunta
+    di note cliente. Un utente può vedere/aggiungere note se è in qualsiasi modo associato al
+    cliente (creatore, assegnatario, stessa sub agenzia, autorizzazione commessa).
+    """
+    if user.role == UserRole.ADMIN:
+        return True
+    # Creatore o assegnatario sempre autorizzati
+    if cliente.created_by == user.id or cliente.assigned_to == user.id:
+        return True
+    # Stessa sub agenzia (diretta o autorizzata)
+    user_sub_ids = set()
+    if getattr(user, "sub_agenzia_id", None):
+        user_sub_ids.add(user.sub_agenzia_id)
+    user_sub_ids.update(getattr(user, "sub_agenzie_autorizzate", None) or [])
+    if cliente.sub_agenzia_id and cliente.sub_agenzia_id in user_sub_ids:
+        return True
+    # Commessa autorizzata
+    user_com_ids = set(getattr(user, "commesse_autorizzate", None) or [])
+    if cliente.commessa_id and cliente.commessa_id in user_com_ids:
+        return True
+    # Fallback: legacy authorization table
+    if cliente.commessa_id:
+        auth = await db.user_commessa_authorizations.find_one({
+            "user_id": user.id,
+            "commessa_id": cliente.commessa_id,
+            "is_active": True,
+        })
+        if auth:
+            return True
+    # Fallback finale: usa la regola di accesso base (per compatibilità)
+    return await can_user_access_cliente(user, cliente)
+
+
 async def can_user_delete_cliente(user: User, cliente: Cliente) -> bool:
     """Check if user can delete a specific cliente"""
     
@@ -17195,7 +17229,7 @@ async def add_cliente_note_history(
     if not cliente_doc:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
     cliente_obj = Cliente(**cliente_doc)
-    if not await can_user_access_cliente(current_user, cliente_obj):
+    if not await can_user_access_cliente_notes(current_user, cliente_obj):
         raise HTTPException(status_code=403, detail="Accesso negato al cliente")
 
     tipo = (payload.tipo or "").strip().lower()
@@ -17236,7 +17270,7 @@ async def get_cliente_note_history(
     if not cliente_doc:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
     cliente_obj = Cliente(**cliente_doc)
-    if not await can_user_access_cliente(current_user, cliente_obj):
+    if not await can_user_access_cliente_notes(current_user, cliente_obj):
         raise HTTPException(status_code=403, detail="Accesso negato al cliente")
 
     query: dict = {"cliente_id": cliente_id}
