@@ -4726,6 +4726,34 @@ async def update_user(user_id: str, user_update: UserUpdate, current_user: User 
                     f"per coerenza con i servizi autorizzati"
                 )
 
+    # 🧹 Coerenza inversa: solo per backoffice_sub_agenzia / responsabile_sub_agenzia,
+    # se vengono aggiornati i servizi_autorizzati, rimuoviamo dalle commesse_autorizzate
+    # quelle che non hanno più alcun servizio associato all'utente.
+    # Richiesta utente: "quando gli tolgo i servizi associati all'utente deve togliere anche la commessa".
+    target_role = update_data.get("role") or user.get("role")
+    if (
+        "servizi_autorizzati" in update_data
+        and target_role in (UserRole.BACKOFFICE_SUB_AGENZIA, UserRole.RESPONSABILE_SUB_AGENZIA)
+    ):
+        final_servizi = update_data.get("servizi_autorizzati", []) or []
+        final_commesse = list(
+            update_data.get("commesse_autorizzate")
+            if "commesse_autorizzate" in update_data
+            else (user.get("commesse_autorizzate", []) or [])
+        )
+        if final_commesse:
+            srvs = await db.servizi.find(
+                {"id": {"$in": final_servizi}}, {"_id": 0, "id": 1, "commessa_id": 1}
+            ).to_list(length=None) if final_servizi else []
+            parent_commesse = {s.get("commessa_id") for s in srvs if s.get("commessa_id")}
+            cleaned_commesse = [c for c in final_commesse if c in parent_commesse]
+            removed = set(final_commesse) - set(cleaned_commesse)
+            if removed:
+                update_data["commesse_autorizzate"] = cleaned_commesse
+                logging.info(
+                    f"🧹 USER {user_id}: rimosse commesse senza servizi associati {removed}"
+                )
+
     # Update user
     await db.users.update_one(
         {"id": user_id},
