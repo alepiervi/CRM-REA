@@ -4418,7 +4418,44 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
         user_dict["commesse_autorizzate"] = list(all_commesse)
         user_dict["servizi_autorizzati"] = list(all_servizi)
         print(f"🌍 AREA MANAGER AUTO-POPULATION: {user_data.username} - Sub Agenzie: {len(user_dict['sub_agenzie_autorizzate'])}, Commesse: {len(user_dict['commesse_autorizzate'])}, Servizi: {len(user_dict['servizi_autorizzati'])}")
-    
+
+    # 🔧 Coerenza commesse↔servizi (creazione utente):
+    # 1. Se l'admin assegna servizi, le commesse parent vengono aggiunte automaticamente
+    # 2. Per backoffice_sub_agenzia / responsabile_sub_agenzia, se non c'è alcun servizio
+    #    di una commessa, la commessa viene rimossa
+    srv_ids_init = list(user_dict.get("servizi_autorizzati", []) or [])
+    if srv_ids_init:
+        srvs_init = await db.servizi.find(
+            {"id": {"$in": srv_ids_init}}, {"_id": 0, "id": 1, "commessa_id": 1}
+        ).to_list(length=None)
+        parent_commesse_init = {s.get("commessa_id") for s in srvs_init if s.get("commessa_id")}
+        if parent_commesse_init:
+            existing_commesse_init = set(user_dict.get("commesse_autorizzate", []) or [])
+            merged_commesse_init = list(existing_commesse_init | parent_commesse_init)
+            if set(merged_commesse_init) != existing_commesse_init:
+                user_dict["commesse_autorizzate"] = merged_commesse_init
+                print(
+                    f"🔧 CREATE USER {user_data.username}: aggiunte commesse parent "
+                    f"{parent_commesse_init - existing_commesse_init}"
+                )
+
+    if user_data.role in (UserRole.BACKOFFICE_SUB_AGENZIA, UserRole.RESPONSABILE_SUB_AGENZIA):
+        final_servizi_init = list(user_dict.get("servizi_autorizzati", []) or [])
+        final_commesse_init = list(user_dict.get("commesse_autorizzate", []) or [])
+        if final_commesse_init:
+            srvs_for_clean = await db.servizi.find(
+                {"id": {"$in": final_servizi_init}}, {"_id": 0, "id": 1, "commessa_id": 1}
+            ).to_list(length=None) if final_servizi_init else []
+            parent_set = {s.get("commessa_id") for s in srvs_for_clean if s.get("commessa_id")}
+            cleaned = [c for c in final_commesse_init if c in parent_set]
+            removed_init = set(final_commesse_init) - set(cleaned)
+            if removed_init:
+                user_dict["commesse_autorizzate"] = cleaned
+                print(
+                    f"🧹 CREATE USER {user_data.username}: rimosse commesse senza servizi "
+                    f"{removed_init}"
+                )
+
     # Create User object and save to database
     user_obj = User(**user_dict)
     await db.users.insert_one(user_obj.dict())
