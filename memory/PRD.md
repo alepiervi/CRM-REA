@@ -7,6 +7,12 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **🐛 Bug fix: Servizio autorizzato non visibile nel wizard creazione cliente**
+  - **Root cause**: il frontend `EditUserModal` quando admin abilita un servizio (`handleServizioAutorizzatoChange`) aggiunge SOLO il servizio in `servizi_autorizzati` ma **non la commessa parent** in `commesse_autorizzate`. Risultato: il backend `/cascade/servizi-by-sub-agenzia` filtra prima per commessa autorizzata e il servizio non viene mai mostrato all'utente
+  - **Fix backend** (`PUT /api/users/{id}`): se il payload aggiorna `servizi_autorizzati`, il backend deduce le commesse parent dei servizi e le aggiunge automaticamente in `commesse_autorizzate` (union, mai rimuove). Garantisce coerenza dati indipendentemente dal client
+  - **One-time backfill**: 3 utenti corretti — `te` (aggiunta Vodafone), `ale3`/`ale4` (aggiunta Telepass) — ora i loro servizi autorizzati sono coerenti con le commesse
+  - File: `/app/backend/server.py` linee ~4704-4728 (in `update_user`)
+
 - **🔙 Rollback Auto-propagazione Servizi Sub Agenzia → Utenti**
   - Scelta utente: gli utenti devono essere **sempre autorizzati manualmente** da admin, no auto-propagazione
   - Rimossa propagazione automatica da `PUT /api/sub-agenzie/{id}`

@@ -4702,6 +4702,30 @@ async def update_user(user_id: str, user_update: UserUpdate, current_user: User 
             update_data["commesse_autorizzate"] = []
             update_data["servizi_autorizzati"] = []
     
+    # 🔧 Coerenza: se vengono aggiornati servizi_autorizzati, garantiamo che le
+    # commesse parent dei servizi siano presenti in commesse_autorizzate.
+    # Senza questo, il frontend di creazione cliente non mostra mai il servizio
+    # perché filtra prima per commessa autorizzata.
+    if "servizi_autorizzati" in update_data and update_data["servizi_autorizzati"]:
+        srv_ids = update_data["servizi_autorizzati"]
+        srvs = await db.servizi.find(
+            {"id": {"$in": srv_ids}}, {"_id": 0, "id": 1, "commessa_id": 1}
+        ).to_list(length=None)
+        parent_commesse = {s.get("commessa_id") for s in srvs if s.get("commessa_id")}
+        if parent_commesse:
+            existing_commesse = set(
+                update_data.get("commesse_autorizzate")
+                if "commesse_autorizzate" in update_data
+                else (user.get("commesse_autorizzate", []) or [])
+            )
+            merged_commesse = list(existing_commesse | parent_commesse)
+            if set(merged_commesse) != existing_commesse:
+                update_data["commesse_autorizzate"] = merged_commesse
+                logging.info(
+                    f"🔧 USER {user_id}: aggiunte commesse parent {parent_commesse - existing_commesse} "
+                    f"per coerenza con i servizi autorizzati"
+                )
+
     # Update user
     await db.users.update_one(
         {"id": user_id},
