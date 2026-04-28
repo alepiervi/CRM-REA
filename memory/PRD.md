@@ -7,6 +7,15 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **🔍 Filtro Status nei Clienti: ora mostra TUTTI gli status (standard + custom + storici)**
+  - Prima: dropdown filtro Status mostrava solo l'array hardcoded `STATUS_CLIENTI` (15 valori). Status custom creati da admin o salvati in passato non apparivano
+  - Fix frontend (`ClientiManagement`): ora fetcha
+    1. Tutti i custom status attivi da `GET /api/cliente-custom-statuses?active_only=true` (across all commesse/tipologie)
+    2. Tutti i valori distinti di `status` realmente usati sui clienti via `GET /api/clienti/filter-options.status_values`
+  - Render dropdown: status standard + sezione "── Status Custom / Storici ──" con i valori non duplicati
+  - File: `/app/frontend/src/App.js` linee ~19410 (fetch) + ~20336 (render dropdown)
+  - Backend `query["status"] = status` accetta già qualsiasi stringa, nessun bug lato server
+
 - **🔓 Note Cliente: visibili e modificabili da TUTTI gli utenti associati al cliente**
   - Prima: ruoli operativi (Agente, Operatore, Store Assist, ecc.) potevano vedere/aggiungere note solo ai clienti che AVEVANO CREATO loro stessi (`cliente.created_by == user.id`)
   - Nuova funzione `can_user_access_cliente_notes()` più permissiva: utente può vedere/aggiungere note se è

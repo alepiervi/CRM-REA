@@ -19396,6 +19396,36 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
   // LOCK: fetch active cliente locks and refresh every 10s for badges + window focus
   const { locksByClienteId: activeClienteLocks, refresh: refreshClienteLocks } = useActiveClienteLocks();
+
+  // Fetch all custom statuses (across commesse/tipologie) for the advanced filter dropdown
+  const [allCustomStatuses, setAllCustomStatuses] = useState([]);
+  // Fetch distinct status values currently used on clienti, so we never miss a status
+  const [distinctStatusValues, setDistinctStatusValues] = useState([]);
+  useEffect(() => {
+    const fetchAllCustomStatuses = async () => {
+      try {
+        const res = await axios.get(`${API}/cliente-custom-statuses?active_only=true`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        setAllCustomStatuses(Array.isArray(res.data) ? res.data : []);
+      } catch (_) {
+        setAllCustomStatuses([]);
+      }
+    };
+    const fetchDistinctStatuses = async () => {
+      try {
+        const res = await axios.get(`${API}/clienti/filter-options`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        const opts = res.data?.status_values || res.data?.statuses || res.data?.status || [];
+        setDistinctStatusValues(Array.isArray(opts) ? opts : []);
+      } catch (_) {
+        setDistinctStatusValues([]);
+      }
+    };
+    fetchAllCustomStatuses();
+    fetchDistinctStatuses();
+  }, []);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -20318,10 +20348,34 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
               <SelectContent>
                 <SelectItem value="all">Tutti gli Status</SelectItem>
                 {STATUS_CLIENTI.map((status) => (
-                  <SelectItem key={status.value} value={status.value}>
+                  <SelectItem key={`std-${status.value}`} value={status.value}>
                     {status.label}
                   </SelectItem>
                 ))}
+                {(() => {
+                  const seenValues = new Set(STATUS_CLIENTI.map((s) => s.value));
+                  const customItems = (allCustomStatuses || [])
+                    .filter((cs) => cs && cs.value && !seenValues.has(cs.value))
+                    .map((cs) => ({ value: cs.value, label: cs.name || cs.value, source: "custom" }));
+                  customItems.forEach((it) => seenValues.add(it.value));
+                  const distinctItems = (distinctStatusValues || [])
+                    .filter((it) => it && it.value && !seenValues.has(it.value))
+                    .map((it) => ({ value: it.value, label: it.label || it.value, source: "distinct" }));
+                  const extra = [...customItems, ...distinctItems];
+                  if (extra.length === 0) return null;
+                  return (
+                    <>
+                      <SelectItem value="__divider_custom__" disabled>
+                        ── Status Custom / Storici ──
+                      </SelectItem>
+                      {extra.map((it) => (
+                        <SelectItem key={`extra-${it.source}-${it.value}`} value={it.value}>
+                          {it.label}
+                        </SelectItem>
+                      ))}
+                    </>
+                  );
+                })()}
               </SelectContent>
             </Select>
           </div>
