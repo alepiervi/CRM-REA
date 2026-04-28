@@ -23696,7 +23696,10 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       tipologia_contratto: cascadeTipologie?.find(t => t.id === selectedData.tipologia_contratto)?.nome
         || selectedData.tipologia_contratto,
       tipologia_contratto_id: selectedData.tipologia_contratto,  // ADDED: Save UUID for filtering
-      segmento: mapSegmento(selectedData.segmento),
+      // FIX: salva il segmento come nome esatto definito nel segmento user-created
+      // (es. "Privato", "Business" o custom), non più mappato a enum legacy lowercase.
+      segmento: cascadeSegmenti?.find(s => s.id === selectedData.segmento)?.nome
+        || selectedData.segmento,
       offerta_id: selectedData.offerta_id,
       sub_offerta_id: selectedData.sub_offerta_id || null,  // NEW: Sub-offerta ID
       

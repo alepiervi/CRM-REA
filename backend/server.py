@@ -14090,11 +14090,11 @@ def detect_client_changes(old_client: Cliente, update_data: dict) -> List[Dict[s
 
 async def _expand_segmento_filter_values(values: list[str]) -> list[str]:
     """Given a list of segmento filter values (tipo like 'privato'/'business' or UUIDs),
-    return the expanded list that ALSO includes all UUIDs of segmenti having that tipo.
+    return the expanded list that ALSO includes all UUIDs of segmenti having that tipo
+    AND the case variants of tipo strings (privato/Privato/PRIVATO).
 
     Fix for legacy data: clienti.segmento is stored sometimes as the tipo string
-    ('privato'/'business') and sometimes as the segmento UUID. Filtering by exact
-    value misses the other representation.
+    in different casings ('privato'/'Privato'/'PRIVATO') and sometimes as the segmento UUID.
     """
     if not values:
         return values
@@ -14108,16 +14108,25 @@ async def _expand_segmento_filter_values(values: list[str]) -> list[str]:
             continue
         expanded.add(v)
         # If value is a known "tipo" string, also add all UUIDs of segmenti with that tipo
+        # AND the case variants (lowercase, capitalized, uppercase)
         if v.lower() in ("privato", "business"):
-            tipo_values.add(v.lower())
+            tipo_lower = v.lower()
+            tipo_values.add(tipo_lower)
+            expanded.add(tipo_lower)
+            expanded.add(tipo_lower.capitalize())
+            expanded.add(tipo_lower.upper())
     if tipo_values:
         segmenti_cursor = db.segmenti.find(
-            {"tipo": {"$in": list(tipo_values)}}, {"_id": 0, "id": 1}
+            {"tipo": {"$in": list(tipo_values)}}, {"_id": 0, "id": 1, "nome": 1}
         )
         async for s in segmenti_cursor:
             sid = s.get("id")
             if sid:
                 expanded.add(sid)
+            # Anche il nome del segmento, perché ora il frontend salva il nome
+            sname = s.get("nome")
+            if sname:
+                expanded.add(sname)
     return list(expanded)
 
 

@@ -14,6 +14,12 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
   - **Backfill dati**: 21 clienti corretti — es. "Alessandro Piervincenzi prova" passato da `'energia_fastweb'` a `'ENERGIA'`
   - File: `/app/frontend/src/App.js` linea ~23694
 
+- **🐛 Bug fix: Stesso problema applicato anche al SEGMENTO**
+  - `mapSegmento` faceva mapping legacy (`'Privato' → 'privato'`). Sostituito con `cascadeSegmenti.find(s=>s.id===...).nome` per salvare il nome utente-creato direttamente
+  - **Backend filter expansion** aggiornato per essere case-insensitive su `privato`/`Privato`/`PRIVATO` e per includere anche i NOMI dei segmenti, oltre a UUID e tipo
+  - **Backfill**: 6 clienti normalizzati (segmento UUID → nome es. "Privato")
+  - Test regressione: `/app/backend/tests/test_segmento_filter_regression.py` 3/3 passati
+
 - **🛡️ Sezione Audit Permessi (Admin)**
   - Nuova voce sidebar **"Audit Permessi"** per role admin con icona `ShieldAlert`
   - Backend `GET /api/admin/permissions-audit` (admin-only) restituisce 4 categorie di incoerenze:
