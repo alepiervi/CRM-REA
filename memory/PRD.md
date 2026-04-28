@@ -7,6 +7,13 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **📋 Cronologia Cliente: ora mostra NOMI invece di ID**
+  - **Sintomo**: la cronologia (`/api/clienti/{id}/logs`) registrava i cambiamenti con gli ID delle entità (es. `Sub Agenzia modificato da '7c70d4b5-...' a '9b0b8890-...'`) invece dei nomi
+  - **Fix backend**: `detect_client_changes()` (in `server.py`) ora è async e risolve gli ID nei nomi tramite lookup MongoDB per: `sub_agenzia_id`, `commessa_id`, `servizio_id`, `tipologia_contratto_id`, `segmento` (UUID), `assigned_to` (user)
+  - **Esempio output post-fix**: `Sub Agenzia modificato da 'Presidio - Maximo' a 'F2F'`, `Segmento modificato da 'Privato' a 'Business'`
+  - Le voci storiche pre-fix conservano gli ID (immutabili); tutte le modifiche future mostreranno i nomi
+  - File: `/app/backend/server.py` linea ~14043 (function `detect_client_changes`) + linea ~16535 (call site con `await`)
+
 - **🔓 Backoffice Commessa può ora cambiare la Sub Agenzia del Cliente**
   - In EditClienteModal il campo "Sub Agenzia" era sempre read-only. Ora è un `<select>` editabile per ruoli `admin`, `responsabile_commessa`, `backoffice_commessa`
   - Le opzioni sono filtrate per mostrare solo le Sub Agenzie autorizzate sulla commessa del cliente

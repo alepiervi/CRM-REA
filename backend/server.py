@@ -14040,8 +14040,10 @@ def get_user_ip(request) -> Optional[str]:
     client_host = getattr(request, 'client', None)
     return getattr(client_host, 'host', None) if client_host else None
 
-def detect_client_changes(old_client: Cliente, update_data: dict) -> List[Dict[str, str]]:
-    """Rileva i cambiamenti nei dati del cliente e genera descrizioni leggibili"""
+async def detect_client_changes(old_client: Cliente, update_data: dict) -> List[Dict[str, str]]:
+    """Rileva i cambiamenti nei dati del cliente e genera descrizioni leggibili.
+    Risolve gli ID delle entità (Sub Agenzia, Commessa, Servizio, Segmento, Utente)
+    nei loro nomi per una migliore leggibilità nella cronologia."""
     changes = []
     
     # Mappa dei campi con nomi user-friendly
@@ -14060,12 +14062,45 @@ def detect_client_changes(old_client: Cliente, update_data: dict) -> List[Dict[s
         "sub_agenzia_id": "Sub Agenzia",
         "servizio_id": "Servizio",
         "tipologia_contratto": "Tipologia Contratto",
+        "tipologia_contratto_id": "Tipologia Contratto",
         "segmento": "Segmento",
         "status": "Status",
         "note": "Note",
-        "assigned_to": "Assegnato a"
+        "assigned_to": "Assegnato a",
     }
-    
+
+    # Helper interno per risolvere id → nome leggibile
+    async def _resolve_value(field: str, value: str) -> str:
+        if not value:
+            return ""
+        v = str(value)
+        try:
+            if field == "sub_agenzia_id":
+                doc = await db.sub_agenzie.find_one({"id": v}, {"_id": 0, "nome": 1})
+                return doc.get("nome") if doc and doc.get("nome") else v
+            if field == "commessa_id":
+                doc = await db.commesse.find_one({"id": v}, {"_id": 0, "nome": 1})
+                return doc.get("nome") if doc and doc.get("nome") else v
+            if field == "servizio_id":
+                doc = await db.servizi.find_one({"id": v}, {"_id": 0, "nome": 1})
+                return doc.get("nome") if doc and doc.get("nome") else v
+            if field == "tipologia_contratto_id":
+                doc = await db.tipologie_contratto.find_one({"id": v}, {"_id": 0, "nome": 1})
+                return doc.get("nome") if doc and doc.get("nome") else v
+            if field == "segmento":
+                # Può essere UUID, tipo lowercase, o già nome leggibile
+                if len(v) > 20:  # probabile UUID
+                    doc = await db.segmenti.find_one({"id": v}, {"_id": 0, "nome": 1})
+                    return doc.get("nome") if doc and doc.get("nome") else v
+                # Se è una stringa breve, usala direttamente con prima lettera maiuscola
+                return v[0].upper() + v[1:] if v else v
+            if field == "assigned_to":
+                doc = await db.users.find_one({"id": v}, {"_id": 0, "username": 1})
+                return doc.get("username") if doc and doc.get("username") else v
+        except Exception:
+            return v
+        return v
+
     for field, new_value in update_data.items():
         if field in ["updated_at", "dati_aggiuntivi"]:  # Skip meta fields
             continue
@@ -14078,12 +14113,15 @@ def detect_client_changes(old_client: Cliente, update_data: dict) -> List[Dict[s
         
         if old_str != new_str:
             field_display = field_names.get(field, field.title())
+            # Risolvi i valori in nomi leggibili (per i campi mappati)
+            old_display = await _resolve_value(field, old_str) if old_str else ""
+            new_display = await _resolve_value(field, new_str) if new_str else ""
             changes.append({
                 "field": field,
                 "field_display": field_display,
-                "old_value": old_str,
-                "new_value": new_str,
-                "description": f"{field_display} modificato da '{old_str}' a '{new_str}'"
+                "old_value": old_display,
+                "new_value": new_display,
+                "description": f"{field_display} modificato da '{old_display}' a '{new_display}'"
             })
     
     return changes
@@ -16494,7 +16532,7 @@ async def update_cliente(
         update_data["updated_at"] = datetime.now(timezone.utc)
         
         # 📝 LOG: Rileva i cambiamenti prima dell'aggiornamento
-        changes = detect_client_changes(cliente, update_data)
+        changes = await detect_client_changes(cliente, update_data)
         
         result = await db.clienti.update_one(
             {"id": cliente_id},
