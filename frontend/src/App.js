@@ -27473,9 +27473,26 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Sub Agenzia</Label>
-                  <p className="text-sm p-2 bg-gray-50 border rounded">
-                    {subAgenzie.find(sa => sa.id === cliente?.sub_agenzia_id)?.nome || 'Non disponibile'}
-                  </p>
+                  {user && ['admin', 'responsabile_commessa', 'backoffice_commessa'].includes(user.role) ? (
+                    <select
+                      value={formData.sub_agenzia_id || cliente?.sub_agenzia_id || ''}
+                      onChange={(e) => handleChange('sub_agenzia_id', e.target.value)}
+                      className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      data-testid="edit-cliente-sub-agenzia-select"
+                    >
+                      <option value="">Seleziona Sub Agenzia</option>
+                      {Array.isArray(subAgenzie) && subAgenzie
+                        .filter(sa => !cliente?.commessa_id || (sa.commesse_autorizzate || []).includes(cliente.commessa_id))
+                        .map(sa => (
+                          <option key={sa.id} value={sa.id}>{sa.nome}</option>
+                        ))
+                      }
+                    </select>
+                  ) : (
+                    <p className="text-sm p-2 bg-gray-50 border rounded">
+                      {subAgenzie.find(sa => sa.id === cliente?.sub_agenzia_id)?.nome || 'Non disponibile'}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Servizio</Label>

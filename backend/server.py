@@ -1533,6 +1533,7 @@ class ClienteUpdate(BaseModel):
     note_backoffice: Optional[str] = None
     
     # Campi sistema esistenti
+    sub_agenzia_id: Optional[str] = None  # ADDED: per consentire spostamento cliente tra sub agenzie (admin / responsabile_commessa / backoffice_commessa)
     servizio_id: Optional[str] = None
     tipologia_contratto: Optional[str] = None  # Dynamic field - accepts any user-created tipologia
     tipologia_contratto_id: Optional[str] = None  # ADDED: UUID for filtering offerte
@@ -16471,25 +16472,23 @@ async def update_cliente(
             logging.warning(f"Invalid email format provided: {update_dict.get('email')}, setting to None")
             update_dict['email'] = None
         
-        # Handle tipologia_contratto - convert UUID to string value if needed
-        # IMPORTANT: This field is dynamic and accepts ANY value from database
-        # NEVER modify or convert the tipologia value unless it's a UUID that needs lookup
+        # Handle tipologia_contratto - convert UUID to nome user-created if needed
+        # IMPORTANT: questo campo è dinamico e accetta QUALSIASI nome user-created.
+        # NON normalizzare più a lowercase/underscore (era un bug legacy che produceva
+        # 'energia_fastweb' invece di 'ENERGIA').
         if update_dict.get('tipologia_contratto'):
             tipologia_value = update_dict['tipologia_contratto']
-            # If it looks like a UUID (length > 20), try to convert it to string value
-            if len(str(tipologia_value)) > 20:  # UUID is longer than string values
-                # Try to find matching tipologia contratto in database
+            # If it looks like a UUID (length > 20), try to convert it to the actual nome
+            if len(str(tipologia_value)) > 20:
                 tipologia_doc = await db.tipologie_contratto.find_one({"id": str(tipologia_value)})
-                if tipologia_doc:
-                    # Convert UUID to the normalized string value (nome lowercase with underscores)
-                    tipologia_name = tipologia_doc.get("nome", "").lower().replace(" ", "_")
-                    update_dict['tipologia_contratto'] = tipologia_name
-                    logging.info(f"Converted tipologia UUID {tipologia_value} to value: {tipologia_name}")
+                if tipologia_doc and tipologia_doc.get("nome"):
+                    update_dict['tipologia_contratto'] = tipologia_doc["nome"]
+                    # Save UUID anche su tipologia_contratto_id se non già presente
+                    if not update_dict.get('tipologia_contratto_id'):
+                        update_dict['tipologia_contratto_id'] = str(tipologia_value)
+                    logging.info(f"Converted tipologia UUID {tipologia_value} → nome: {tipologia_doc['nome']}")
                 else:
-                    # If UUID not found, keep original value to avoid data loss
-                    logging.warning(f"Tipologia UUID {tipologia_value} not found in database, keeping original value")
-            # If it's already a string value (mobile_fastweb, energia_fastweb, etc.), 
-            # keep it as is - NEVER modify or convert existing string values
+                    logging.warning(f"Tipologia UUID {tipologia_value} not found in DB, keeping original value")
         
         update_data = {k: v for k, v in update_dict.items() if v is not None}
         update_data["updated_at"] = datetime.now(timezone.utc)

@@ -7,6 +7,13 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
+- **🔓 Backoffice Commessa può ora cambiare la Sub Agenzia del Cliente**
+  - In EditClienteModal il campo "Sub Agenzia" era sempre read-only. Ora è un `<select>` editabile per ruoli `admin`, `responsabile_commessa`, `backoffice_commessa`
+  - Le opzioni sono filtrate per mostrare solo le Sub Agenzie autorizzate sulla commessa del cliente
+  - Backend `ClienteUpdate` aggiunto campo `sub_agenzia_id: Optional[str]` per consentire l'update via PUT
+  - **Bonus fix**: il PUT cliente normalizzava la `tipologia_contratto` a lowercase con underscore (legacy, era il bug originale di `'energia_fastweb'`). Ora preserva il nome user-created come definito (es. "ENERGIA"). Aggiornato anche `tipologia_contratto_id` automaticamente quando si converte dall'UUID
+  - Test verificato via curl: PUT `sub_agenzia_id` da F2F → MAXIMO funziona ✅
+
 - **🐛 Bug fix: Tipologia contratto sbagliata salvata sui clienti**
   - **Sintomo**: salvando un cliente con commessa "AGN ENERGIA" + servizio "TLS AGN ENERGIA" + tipologia "ENERGIA", il sistema salvava `tipologia_contratto = 'energia_fastweb'` (legacy enum di Fastweb) invece di "ENERGIA"
   - **Root cause**: la funzione `mapTipologiaContratto` in `App.js` (linea ~22492) faceva un mapping case-insensitive verso un dizionario hardcoded di enum legacy (`'Energia' → 'energia_fastweb'`, etc.). Da quando le tipologie sono dinamiche/user-created questo mapping è obsoleto e produce dati sbagliati
