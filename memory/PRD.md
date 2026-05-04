@@ -7,6 +7,17 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (4 Maggio 2026 — Sezione Post Vendita end-to-end)
 
+- **📊 KPI Cards Post Vendita (funnel cliccabile)**
+  - Nuovo endpoint `GET /api/post-vendita/clienti/stats?commessa_id=X` aggrega via `$group` per stage (lavorazione / attivato / ko / no_stage) + total. Rispetta ACL backoffice_commessa
+  - Aggiunto query param `stage` a `GET /api/post-vendita/clienti` (overrides include_closed): filtra esattamente per uno stage
+  - Frontend: 4 KPI cards in alto nella tab "Clienti Post-Vendita":
+    - 🟡 In Lavorazione (default) — somma lavorazione + senza stage
+    - 🟢 Attivati
+    - 🔴 KO
+    - 📋 Tutti
+  - Click sulla card applica i filtri e mostra solo i clienti di quello stage. Card attiva evidenziata con `ring-2 + shadow`
+  - Test reale: stats `{lavorazione:8, attivato:0, ko:1, no_stage:11, total:20}` per commessa AGN ENERGIA
+
 - **🧹 Lista Post Vendita "snella": esclude di default i clienti chiusi (Attivati / KO)**
   - Il GET `/api/post-vendita/clienti` filtra di default solo i clienti con `post_vendita_stage` ∈ {null, 'lavorazione'} — quelli con esito 🟢 attivato o 🔴 ko vengono nascosti dalla lista operativa
   - Nuovo query param `include_closed=true` per visualizzarli (toggle frontend "Mostra anche chiusi")

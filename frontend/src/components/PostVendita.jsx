@@ -125,16 +125,41 @@ const TabButton = ({ children, active, onClick, testid }) => (
   </button>
 );
 
+const KpiCard = ({ label, value, accent = "slate", emoji, active, onClick, testid }) => {
+  const palette = {
+    amber:   { bg: "bg-amber-50",   border: "border-amber-200",   text: "text-amber-800",   ring: "ring-amber-400"   },
+    emerald: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-800", ring: "ring-emerald-400" },
+    red:     { bg: "bg-red-50",     border: "border-red-200",     text: "text-red-800",     ring: "ring-red-400"     },
+    indigo:  { bg: "bg-indigo-50",  border: "border-indigo-200",  text: "text-indigo-800",  ring: "ring-indigo-400"  },
+    slate:   { bg: "bg-slate-50",   border: "border-slate-200",   text: "text-slate-800",   ring: "ring-slate-400"   },
+  }[accent];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid={testid}
+      className={`text-left p-4 rounded-lg border ${palette.bg} ${palette.border} hover:shadow-md transition-all ${active ? `ring-2 ${palette.ring} shadow-sm` : ""}`}
+    >
+      <div className={`text-xs uppercase tracking-wide ${palette.text} flex items-center gap-1.5 opacity-80`}>
+        <span>{emoji}</span> {label}
+      </div>
+      <div className={`text-3xl font-bold mt-1 ${palette.text}`}>{value}</div>
+    </button>
+  );
+};
+
 // =====================================================
 // CLIENTI TAB
 // =====================================================
 const ClientiTab = ({ commessaId }) => {
   const [statusConfig, setStatusConfig] = useState([]);
   const [data, setData] = useState({ clienti: [], total: 0 });
+  const [stats, setStats] = useState({ lavorazione: 0, attivato: 0, ko: 0, no_stage: 0, total: 0 });
   const [filters, setFilters] = useState({
     post_vendita_status: "",
     codice_account_filter: "",
     search: "",
+    stage: "",  // empty = default behavior (uses include_closed); "lavorazione"|"attivato"|"ko" = explicit
     include_closed: false,
   });
   const [page, setPage] = useState(1);
@@ -150,16 +175,19 @@ const ClientiTab = ({ commessaId }) => {
         page,
         page_size: PAGE_SIZE,
         include_closed: filters.include_closed,
+        ...(filters.stage && { stage: filters.stage }),
         ...(filters.post_vendita_status && { post_vendita_status: filters.post_vendita_status }),
         ...(filters.codice_account_filter && { codice_account_filter: filters.codice_account_filter }),
         ...(filters.search && { search: filters.search }),
       };
-      const [resCli, resCfg] = await Promise.all([
+      const [resCli, resCfg, resStats] = await Promise.all([
         axios.get(`${API}/post-vendita/clienti`, { params, headers: authHeaders() }),
         axios.get(`${API}/post-vendita/status-config`, { params: { commessa_id: commessaId }, headers: authHeaders() }),
+        axios.get(`${API}/post-vendita/clienti/stats`, { params: { commessa_id: commessaId }, headers: authHeaders() }),
       ]);
       setData(resCli.data);
       setStatusConfig(resCfg.data || []);
+      setStats(resStats.data || { lavorazione: 0, attivato: 0, ko: 0, no_stage: 0, total: 0 });
     } catch (e) {
       console.error("fetch post-vendita clienti", e);
     } finally {
@@ -197,6 +225,50 @@ const ClientiTab = ({ commessaId }) => {
 
   return (
     <div className="space-y-4">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiCard
+          label="In Lavorazione"
+          value={stats.lavorazione + stats.no_stage}
+          stage="lavorazione"
+          active={filters.stage === "lavorazione" || (!filters.stage && !filters.include_closed)}
+          accent="amber"
+          emoji="🟡"
+          onClick={() => { setFilters({ ...filters, stage: "lavorazione", include_closed: false }); setPage(1); }}
+          testid="pv-kpi-lavorazione"
+        />
+        <KpiCard
+          label="Attivati"
+          value={stats.attivato}
+          stage="attivato"
+          active={filters.stage === "attivato"}
+          accent="emerald"
+          emoji="🟢"
+          onClick={() => { setFilters({ ...filters, stage: "attivato", include_closed: true }); setPage(1); }}
+          testid="pv-kpi-attivato"
+        />
+        <KpiCard
+          label="KO"
+          value={stats.ko}
+          stage="ko"
+          active={filters.stage === "ko"}
+          accent="red"
+          emoji="🔴"
+          onClick={() => { setFilters({ ...filters, stage: "ko", include_closed: true }); setPage(1); }}
+          testid="pv-kpi-ko"
+        />
+        <KpiCard
+          label="Tutti"
+          value={stats.total}
+          stage=""
+          active={!filters.stage && filters.include_closed}
+          accent="indigo"
+          emoji="📋"
+          onClick={() => { setFilters({ ...filters, stage: "", include_closed: true }); setPage(1); }}
+          testid="pv-kpi-tutti"
+        />
+      </div>
+
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap bg-slate-50 border border-slate-200 rounded-lg p-3">
         <div className="relative flex-1 min-w-[240px]">

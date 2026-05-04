@@ -22933,10 +22933,45 @@ async def pass_cliente_to_post_vendita(
     return {"success": True, "post_vendita_status": final_pv_status}
 
 
+@api_router.get("/post-vendita/clienti/stats")
+async def post_vendita_stats(
+    commessa_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """KPI counters per stage for the commessa (lavorazione / attivato / ko / no_stage)."""
+    _require_post_vendita_role(current_user)
+    base = {"passed_to_post_vendita": True, "is_active": {"$ne": False}}
+    if current_user.role == UserRole.BACKOFFICE_COMMESSA:
+        allowed = list(current_user.commesse_autorizzate or [])
+        if not allowed:
+            return {"lavorazione": 0, "attivato": 0, "ko": 0, "no_stage": 0, "total": 0}
+        if commessa_id:
+            if commessa_id not in allowed:
+                raise HTTPException(status_code=403, detail="Commessa non autorizzata")
+            base["commessa_id"] = commessa_id
+        else:
+            base["commessa_id"] = {"$in": allowed}
+    elif commessa_id:
+        base["commessa_id"] = commessa_id
+
+    pipeline = [
+        {"$match": base},
+        {"$group": {"_id": {"$ifNull": ["$post_vendita_stage", "no_stage"]}, "count": {"$sum": 1}}},
+    ]
+    res = await db.clienti.aggregate(pipeline).to_list(length=None)
+    out = {"lavorazione": 0, "attivato": 0, "ko": 0, "no_stage": 0}
+    for r in res:
+        key = r["_id"] if r["_id"] in out else "no_stage"
+        out[key] = out.get(key, 0) + r["count"]
+    out["total"] = sum(out.values())
+    return out
+
+
 @api_router.get("/post-vendita/clienti")
 async def list_post_vendita_clienti(
     commessa_id: Optional[str] = None,
     post_vendita_status: Optional[str] = None,
+    stage: Optional[str] = None,  # "lavorazione" | "attivato" | "ko" — overrides include_closed
     codice_account_filter: Optional[str] = None,  # "present" or "missing"
     search: Optional[str] = None,
     include_closed: bool = False,  # If True, also include attivato/ko (chiusi). Default: only "lavorazione".
@@ -22946,9 +22981,12 @@ async def list_post_vendita_clienti(
 ):
     _require_post_vendita_role(current_user)
     query = {"passed_to_post_vendita": True, "is_active": {"$ne": False}}
-    # Default behaviour: exclude clienti chiusi (stage attivato / ko) per mantenere lista snella.
-    # L'esito finale resta sempre tracciato sull'anagrafica + storia.
-    if not include_closed:
+    # Stage explicit filter takes precedence over include_closed default
+    if stage:
+        query["post_vendita_stage"] = stage
+    elif not include_closed:
+        # Default behaviour: exclude clienti chiusi (stage attivato / ko) per mantenere lista snella.
+        # L'esito finale resta sempre tracciato sull'anagrafica + storia.
         query["$and"] = [
             {"$or": [
                 {"post_vendita_stage": {"$exists": False}},
