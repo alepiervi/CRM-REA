@@ -22853,8 +22853,8 @@ async def bulk_import_analyze(
     if not headers:
         raise HTTPException(status_code=400, detail="File vuoto o formato invalido")
 
-    # Load all clienti of commessa into memory (passed_to_post_vendita=True)
-    cli_query = {"commessa_id": commessa_id, "passed_to_post_vendita": True, "is_active": {"$ne": False}}
+    # Load all clienti of commessa into memory (any state - import will mark them as passed_to_post_vendita)
+    cli_query = {"commessa_id": commessa_id, "is_active": {"$ne": False}}
     clienti_all = await db.clienti.find(
         cli_query,
         {"_id": 0, "id": 1, "nome": 1, "cognome": 1, "email": 1, "telefono": 1,
@@ -22927,11 +22927,42 @@ async def bulk_import_execute(
       }
     """
     _require_post_vendita_role(current_user)
-    new_status = payload.get("new_status")
+    new_status = (payload.get("new_status") or "").strip()
+    commessa_id = payload.get("commessa_id")
     if not new_status:
         raise HTTPException(status_code=400, detail="new_status required")
+    if not commessa_id:
+        raise HTTPException(status_code=400, detail="commessa_id required")
     auto_matched = payload.get("auto_matched") or []
     manual_matched = payload.get("manual_matched") or []
+
+    # Auto-create the post_vendita_status_config if it doesn't exist for this commessa (user choice)
+    status_value_normalized = re.sub(r"[^a-z0-9_]+", "_", new_status.lower()).strip("_") or "status"
+    existing_cfg = await db.post_vendita_status_config.find_one({
+        "commessa_id": commessa_id,
+        "value": status_value_normalized,
+        "is_active": True,
+    })
+    status_auto_created = False
+    if not existing_cfg:
+        # Determine next order
+        last = await db.post_vendita_status_config.find(
+            {"commessa_id": commessa_id, "is_active": True}, {"_id": 0, "order": 1}
+        ).sort("order", -1).limit(1).to_list(length=1)
+        next_order = (last[0]["order"] + 1) if last else 0
+        new_cfg = PostVenditaStatusConfig(
+            commessa_id=commessa_id,
+            value=status_value_normalized,
+            label=new_status,
+            color="#6b7280",
+            order=next_order,
+            is_default=False,
+            is_active=True,
+        )
+        await db.post_vendita_status_config.insert_one(new_cfg.dict())
+        status_auto_created = True
+    # Use the normalized value going forward to keep storage consistent
+    status_to_set = status_value_normalized
 
     import_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
@@ -22948,8 +22979,9 @@ async def bulk_import_execute(
             res = await db.clienti.update_one(
                 {"id": cid},
                 {"$set": {
-                    "post_vendita_status": new_status,
+                    "post_vendita_status": status_to_set,
                     "post_vendita_status_updated_at": now,
+                    "passed_to_post_vendita": True,
                 }}
             )
             if res.matched_count:
@@ -22957,19 +22989,18 @@ async def bulk_import_execute(
         except Exception as e:
             errors.append({"cliente_id": cid, "error": str(e)})
 
-    # Manual-matched: set codice_account + status
+    # Manual-matched: per user choice, ONLY update status (do NOT touch codice_account)
     for item in manual_matched:
         cid = item.get("cliente_id")
-        code = item.get("codice_account")
-        if not cid or not code:
+        if not cid:
             continue
         try:
             res = await db.clienti.update_one(
                 {"id": cid},
                 {"$set": {
-                    "codice_account": code,
-                    "post_vendita_status": new_status,
+                    "post_vendita_status": status_to_set,
                     "post_vendita_status_updated_at": now,
+                    "passed_to_post_vendita": True,
                 }}
             )
             if res.matched_count:
@@ -22984,7 +23015,9 @@ async def bulk_import_execute(
         "uploaded_by_id": current_user.id,
         "uploaded_by_username": current_user.username,
         "commessa_id": payload.get("commessa_id"),
-        "new_status": new_status,
+        "new_status": status_to_set,
+        "new_status_label": new_status,
+        "status_auto_created": status_auto_created,
         "auto_matched_count": updated_auto,
         "manual_matched_count": updated_manual,
         "errors": errors,
@@ -22996,6 +23029,8 @@ async def bulk_import_execute(
         "import_id": import_id,
         "auto_matched": updated_auto,
         "manual_matched": updated_manual,
+        "status_auto_created": status_auto_created,
+        "status_value": status_to_set,
         "errors": errors,
     }
 

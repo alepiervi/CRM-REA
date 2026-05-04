@@ -1,0 +1,43 @@
+{
+  "summary": "Full backend + frontend testing of Post Vendita module. All 15 pytest backend tests PASS (status-config CRUD, pass-to-PV, list+filters+search, patch status, bulk-import analyze/execute with auto-create status in config, manual-match does NOT touch codice_account, imports history, RBAC unauth). Frontend: admin login -> 'Post Vendita' sidebar -> page loads with 4 tabs (Clienti/Import/Config/Storico), commessa selector populated with 8 commesse, Clienti tab renders table + filters, Config tab add dialog + create works, Import wizard Step1->Step2 analyze works (execute button appears), History tab loads.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/clienti + PUT /api/clienti/{id}",
+        "issue": "ClienteCreate Pydantic model (line 1384) does NOT include 'codice_account' field, so POST silently drops it. Only ClienteUpdate (line 1553) accepts it but PUT requires many 'missing' fields (email, etc.) so it's not convenient. Result: there is NO working public API path to populate Cliente.codice_account. Since the new bulk-import manual-match flow was CHANGED to NOT update codice_account (per user choice), there is effectively no way to set codice_account on a cliente via the API today. In the test I had to fall back to direct MongoDB write (pymongo) to validate the auto-match path. Users will experience an empty 'auto_matched' list forever unless a separate import flow creates codice_account."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_post_vendita.py",
+    "/app/test_reports/pytest/pytest_post_vendita.xml"
+  ],
+  "action_items": [
+    "Add 'codice_account: Optional[str] = None' to ClienteCreate model (server.py line 1384) so POST /api/clienti persists codice_account when provided. Without this, the auto-match in bulk-import will never find a cliente (the whole analyze step returns empty auto_matched).",
+    "Alternatively, add a dedicated endpoint PATCH /api/clienti/{id}/codice-account or expose it via a partial-update PATCH, so the business flow 'assign codice_account to cliente' is possible without a full PUT payload.",
+    "(Optional) Reduce required fields on ClienteUpdate so PUT works for partial updates (currently requires email etc., which breaks typical PATCH use cases)."
+  ],
+  "critical_code_review_comments": [
+    "server.py ~22500 lines - far above the 700-line threshold; modularization strongly recommended.",
+    "POST /api/post-vendita/bulk-import/execute uses plain 'dict' for payload instead of a Pydantic model - no validation of 'auto_matched'/'manual_matched' structure.",
+    "PATCH /api/post-vendita/clienti/{id}/status also uses raw dict - consider Pydantic model with explicit field.",
+    "Authorization on pass-to-post-vendita relies on can_user_access_cliente but doesn't restrict to admin/backoffice_commessa. This may allow a regular agent to push clients to PV - confirm intended.",
+    "list_post_vendita_clienti applies commessa_id filter but does NOT enforce per-commessa ACL for backoffice_commessa (a backoffice_commessa of commessa A could list clienti of commessa B by passing a different id). Consider restricting via user's allowed_commessa_ids."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_post_vendita.py (new)"
+  ],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "100% of critical flows"},
+  "test_credentials": "admin / admin123 (from /app/memory/test_credentials.md). Did not test backoffice_commessa role specifically (sidebar visibility only validated for admin role in this iteration).",
+  "seed_data_creation": "Test created clienti via /api/clienti + direct mongodb patch to set codice_account (workaround for missing POST field). Leftover test clienti with 'TESTPV'/'PVTester' or 'NoCode'/'PVManual' prefixes exist.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "If main agent adds codice_account to ClienteCreate, remove the pymongo fallback in backend/tests/test_post_vendita.py fixture 'test_cliente' and rerun. Frontend sidebar visibility for backoffice_commessa role was NOT tested (no such user in DB); create one if retesting. Config tab admin-only was structurally verified (only shown when user.role==admin in PostVendita.jsx line 91-96); no runtime test done with a non-admin login.",
+  "rca of the issue": "ClienteCreate model omits codice_account, so even though the Cliente model and bulk-import logic assume the field can exist on a cliente, there's no way to populate it through normal API usage. This breaks the auto-match primary use case of the bulk import. Fix: add Optional[str] codice_account field to ClienteCreate, and also consider a dedicated PATCH endpoint so ops users can set codice_account without submitting a full Cliente payload."
+}

@@ -51,6 +51,7 @@ import {
 } from "./components/ClienteLock";
 import { ClienteNotesHistory } from "./components/ClienteNotesHistory";
 import { PermissionsAudit } from "./components/PermissionsAudit";
+import { PostVendita } from "./components/PostVendita";
 
 // Lucide icons
 import { 
@@ -119,6 +120,7 @@ import {
   Store,
   ShieldCheck,
   ShieldAlert,
+  Package,
   Users2,
   Briefcase,
   Settings2,
@@ -1980,6 +1982,7 @@ const Dashboard = () => {
         { id: "sub-agenzie", label: "Unit & Sub Agenzie", icon: Store },
         { id: "clienti", label: "Clienti", icon: UserCheck },
         { id: "clienti-custom-fields", label: "Campi Clienti", icon: Database },
+        { id: "post-vendita", label: "Post Vendita", icon: Package },
         { id: "clienti-cestino", label: "Cestino Clienti", icon: Trash2 },
         { id: "leads-cestino", label: "Cestino Lead", icon: Trash2 },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
@@ -1998,6 +2001,7 @@ const Dashboard = () => {
     } else if (user.role === "backoffice_commessa") {
       items.push(
         { id: "clienti", label: "Clienti", icon: UserCheck },
+        { id: "post-vendita", label: "Post Vendita", icon: Package },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
     } else if (user.role === "responsabile_sub_agenzia" || user.role === "backoffice_sub_agenzia") {
@@ -2104,6 +2108,8 @@ const Dashboard = () => {
           return user.role === "admin" ? <ClientiCestinoManagement /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono accedere al cestino clienti</div>;
         case "clienti-custom-fields":
           return user.role === "admin" ? <ClienteCustomFieldsManager /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono gestire i campi personalizzati</div>;
+        case "post-vendita":
+          return (user.role === "admin" || user.role === "backoffice_commessa") ? <PostVendita user={user} /> : <div className="p-8 text-center text-slate-600">Sezione Post Vendita riservata a Admin e Backoffice Commessa</div>;
         case "leads-cestino":
           return user.role === "admin" ? <LeadsCestinoManagement /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono accedere al cestino lead</div>;
         case "analytics":
