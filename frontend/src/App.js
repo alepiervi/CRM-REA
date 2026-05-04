@@ -52,6 +52,7 @@ import {
 import { ClienteNotesHistory } from "./components/ClienteNotesHistory";
 import { PermissionsAudit } from "./components/PermissionsAudit";
 import { PostVendita } from "./components/PostVendita";
+import { PassToPostVenditaButton } from "./components/PassToPostVenditaButton";
 
 // Lucide icons
 import { 
@@ -26328,7 +26329,10 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
         </Card>
 
         <DialogFooter className="mt-6 sticky bottom-0 bg-white pt-4 border-t md:border-t-0 md:pt-0 md:static">
-          <Button onClick={onClose} className="w-full md:w-auto">Chiudi</Button>
+          <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:justify-between">
+            <PassToPostVenditaButton cliente={cliente} userRole={user?.role} />
+            <Button onClick={onClose} className="w-full md:w-auto">Chiudi</Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -28579,12 +28583,17 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
           </Card>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Annulla
-            </Button>
-            <Button type="submit">
-              Salva Modifiche
-            </Button>
+            <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:justify-between">
+              <PassToPostVenditaButton cliente={cliente} userRole={user?.role} />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Annulla
+                </Button>
+                <Button type="submit">
+                  Salva Modifiche
+                </Button>
+              </div>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
