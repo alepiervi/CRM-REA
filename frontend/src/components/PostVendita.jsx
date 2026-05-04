@@ -135,6 +135,7 @@ const ClientiTab = ({ commessaId }) => {
     post_vendita_status: "",
     codice_account_filter: "",
     search: "",
+    include_closed: false,
   });
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -148,6 +149,7 @@ const ClientiTab = ({ commessaId }) => {
         commessa_id: commessaId,
         page,
         page_size: PAGE_SIZE,
+        include_closed: filters.include_closed,
         ...(filters.post_vendita_status && { post_vendita_status: filters.post_vendita_status }),
         ...(filters.codice_account_filter && { codice_account_filter: filters.codice_account_filter }),
         ...(filters.search && { search: filters.search }),
@@ -229,6 +231,15 @@ const ClientiTab = ({ commessaId }) => {
           <option value="present">Con Codice Account</option>
           <option value="missing">Senza Codice Account</option>
         </select>
+        <label className="flex items-center gap-2 text-sm text-slate-700 px-2 py-1 rounded-lg hover:bg-white cursor-pointer" data-testid="pv-clienti-include-closed-label">
+          <input
+            type="checkbox"
+            checked={filters.include_closed}
+            onChange={(e) => { setFilters({ ...filters, include_closed: e.target.checked }); setPage(1); }}
+            data-testid="pv-clienti-include-closed"
+          />
+          <span className="select-none">Mostra anche chiusi (🟢 Attivati / 🔴 KO)</span>
+        </label>
         <button
           onClick={fetchData}
           className="flex items-center gap-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm"
@@ -240,10 +251,15 @@ const ClientiTab = ({ commessaId }) => {
       </div>
 
       {/* Stats */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap">
         <div className="text-sm text-slate-600" data-testid="pv-clienti-count">
-          <span className="font-semibold">{data.total}</span> clienti in post-vendita
+          <span className="font-semibold">{data.total}</span> clienti{filters.include_closed ? " in post-vendita" : " in lavorazione"}
         </div>
+        {!filters.include_closed && (
+          <div className="text-xs text-slate-500 italic">
+            ℹ️ I clienti con esito 🟢 Attivato o 🔴 KO sono nascosti per default. Lo storico resta sull'anagrafica del cliente.
+          </div>
+        )}
       </div>
 
       {/* Table */}

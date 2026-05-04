@@ -7,6 +7,13 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (4 Maggio 2026 — Sezione Post Vendita end-to-end)
 
+- **🧹 Lista Post Vendita "snella": esclude di default i clienti chiusi (Attivati / KO)**
+  - Il GET `/api/post-vendita/clienti` filtra di default solo i clienti con `post_vendita_stage` ∈ {null, 'lavorazione'} — quelli con esito 🟢 attivato o 🔴 ko vengono nascosti dalla lista operativa
+  - Nuovo query param `include_closed=true` per visualizzarli (toggle frontend "Mostra anche chiusi")
+  - L'esito finale resta sempre tracciato sull'anagrafica (status + dot) e nello storico immutabile (`cliente_post_vendita_history`) — nessuna perdita di informazione
+  - Frontend: aggiunta checkbox "Mostra anche chiusi (🟢 Attivati / 🔴 KO)" + hint informativo sopra la tabella
+  - Test reale: 17 clienti default (6 lavorazione + 11 senza stage) vs 18 con include_closed=true (include 1 KO) ✅
+
 - **📜 Sezione "Evoluzione Post Vendita" su scheda Cliente + Excel export PV**
   - **Nuova collezione MongoDB** `cliente_post_vendita_history`: storico immutabile di OGNI cambio status PV (con `previous_status/label/stage` + autore + data)
   - **Helper `_apply_pv_stage_to_cliente` consolidato** come unica fonte di verità: snapshot previous → mutazione completa → entry storia (atomico per chiamata). Tutti i 3 callers (pass-to, PATCH, bulk-import) ora delegano al helper, niente più duplicazione di update_one

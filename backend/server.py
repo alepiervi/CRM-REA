@@ -22939,12 +22939,23 @@ async def list_post_vendita_clienti(
     post_vendita_status: Optional[str] = None,
     codice_account_filter: Optional[str] = None,  # "present" or "missing"
     search: Optional[str] = None,
+    include_closed: bool = False,  # If True, also include attivato/ko (chiusi). Default: only "lavorazione".
     page: int = 1,
     page_size: int = 50,
     current_user: User = Depends(get_current_user)
 ):
     _require_post_vendita_role(current_user)
     query = {"passed_to_post_vendita": True, "is_active": {"$ne": False}}
+    # Default behaviour: exclude clienti chiusi (stage attivato / ko) per mantenere lista snella.
+    # L'esito finale resta sempre tracciato sull'anagrafica + storia.
+    if not include_closed:
+        query["$and"] = [
+            {"$or": [
+                {"post_vendita_stage": {"$exists": False}},
+                {"post_vendita_stage": None},
+                {"post_vendita_stage": "lavorazione"},
+            ]}
+        ]
     # Restrict backoffice_commessa to only their authorized commesse
     if current_user.role == UserRole.BACKOFFICE_COMMESSA:
         allowed = list(current_user.commesse_autorizzate or [])
