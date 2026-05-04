@@ -53,6 +53,7 @@ import { ClienteNotesHistory } from "./components/ClienteNotesHistory";
 import { PermissionsAudit } from "./components/PermissionsAudit";
 import { PostVendita } from "./components/PostVendita";
 import { PassToPostVenditaButton } from "./components/PassToPostVenditaButton";
+import { PostVenditaStatusDot } from "./components/PostVenditaStatusDot";
 
 // Lucide icons
 import { 
@@ -20538,9 +20539,12 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     </TableCell>
                     {/* Stato */}
                     <TableCell>
-                      <Badge variant={getClienteStatusVariant(cliente.status)}>
-                        {formatClienteStatus(cliente.status)}
-                      </Badge>
+                      <span className="inline-flex items-center">
+                        <Badge variant={getClienteStatusVariant(cliente.status)}>
+                          {formatClienteStatus(cliente.status)}
+                        </Badge>
+                        <PostVenditaStatusDot cliente={cliente} />
+                      </span>
                     </TableCell>
                     {/* Tipologia Contratto */}
                     <TableCell>
@@ -20660,12 +20664,15 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     </div>
                     <p className="text-sm text-slate-500 font-mono">ID: {cliente.cliente_id}</p>
                   </div>
-                  <Badge 
-                    variant={getClienteStatusVariant(cliente.status)}
-                    className="text-xs"
-                  >
-                    {formatClienteStatus(cliente.status)}
-                  </Badge>
+                  <span className="inline-flex items-center">
+                    <Badge 
+                      variant={getClienteStatusVariant(cliente.status)}
+                      className="text-xs"
+                    >
+                      {formatClienteStatus(cliente.status)}
+                    </Badge>
+                    <PostVenditaStatusDot cliente={cliente} />
+                  </span>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-2 mb-3 text-sm">
@@ -26022,9 +26029,12 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
               )}
               <div>
                 <Label className="text-sm font-medium text-slate-600">Status</Label>
-                <Badge variant={getClienteStatusVariant(cliente.status)}>
-                  {formatClienteStatus(cliente.status)}
-                </Badge>
+                <span className="inline-flex items-center">
+                  <Badge variant={getClienteStatusVariant(cliente.status)}>
+                    {formatClienteStatus(cliente.status)}
+                  </Badge>
+                  <PostVenditaStatusDot cliente={cliente} size="md" />
+                </span>
               </div>
               
               {/* NEW: Assigned User */}
@@ -28527,22 +28537,25 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             <CardContent>
               <div>
                 <Label>Status {(user.role !== "admin" && user.role !== "responsabile_commessa" && user.role !== "backoffice_commessa") && <span className="text-xs text-gray-500">(Solo Admin/Responsabile/Backoffice Commessa può modificare)</span>}</Label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value) => handleChange('status', value)}
-                  disabled={user.role !== "admin" && user.role !== "responsabile_commessa" && user.role !== "backoffice_commessa"}
-                >
-                  <SelectTrigger className={(user.role !== "admin" && user.role !== "responsabile_commessa" && user.role !== "backoffice_commessa") ? "opacity-60 cursor-not-allowed" : ""}>
-                    <SelectValue placeholder="Seleziona status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} data-testid={`status-option-${opt.value}`}>
-                        {opt.icon ? `${opt.icon} ` : ''}{opt.name}{!opt.is_standard && ' ⭐'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <Select 
+                    value={formData.status} 
+                    onValueChange={(value) => handleChange('status', value)}
+                    disabled={user.role !== "admin" && user.role !== "responsabile_commessa" && user.role !== "backoffice_commessa"}
+                  >
+                    <SelectTrigger className={(user.role !== "admin" && user.role !== "responsabile_commessa" && user.role !== "backoffice_commessa") ? "opacity-60 cursor-not-allowed flex-1" : "flex-1"}>
+                      <SelectValue placeholder="Seleziona status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} data-testid={`status-option-${opt.value}`}>
+                          {opt.icon ? `${opt.icon} ` : ''}{opt.name}{!opt.is_standard && ' ⭐'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <PostVenditaStatusDot cliente={cliente} size="md" />
+                </div>
               </div>
             </CardContent>
           </Card>

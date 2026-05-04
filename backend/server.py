@@ -1360,6 +1360,7 @@ class Cliente(BaseModel):
     # ===== POST VENDITA FIELDS =====
     passed_to_post_vendita: bool = False  # Flag: cliente is visible in Post Vendita section
     post_vendita_status: Optional[str] = None  # Workflow status (configurabile per commessa)
+    post_vendita_status_label: Optional[str] = None  # Etichetta umana dello status PV (cache per UI)
     post_vendita_status_updated_at: Optional[datetime] = None
     post_vendita_stage: Optional[str] = None  # 'lavorazione' | 'attivato' | 'ko' (derivato dallo status PV)
     codice_account: Optional[str] = None  # Codice account assegnato dal sistema esterno (compilato via import)
@@ -22655,20 +22656,24 @@ class PostVenditaStatusConfigUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
-# Mapping stage -> valore da impostare sull'anagrafica cliente (campo `status`)
+# Mapping stage -> valore da impostare sull'anagrafica cliente (campo `status`).
+# 'lavorazione' è VOLUTAMENTE assente: in lavorazione lo status anagrafica NON cambia,
+# la scheda cliente mostra solo un pallino giallo accanto allo status corrente.
 _PV_STAGE_TO_CLIENTE_STATUS = {
     "ko": "ko",
     "attivato": "attivato",
-    "lavorazione": "in_lavorazione",
 }
 
 VALID_PV_STAGES = {"lavorazione", "attivato", "ko"}
 
 
 async def _apply_pv_stage_to_cliente(cliente_id: str, pv_status_value: str, commessa_id: Optional[str] = None):
-    """Look up the stage of the given post-vendita status (within the cliente's commessa)
-    and propagate the corresponding cliente.status (and a quick-flag) on the anagrafica.
-    Idempotent and safe to call from any PV update path."""
+    """Lookup the stage of the given post-vendita status and:
+      - Always store `post_vendita_stage` and `post_vendita_status_label` on the cliente
+        so the frontend can render the colored dot + tooltip with the human label.
+      - For stage 'attivato' / 'ko' also rewrite cliente.status (final outcome).
+      - For stage 'lavorazione' DO NOT touch cliente.status (only the dot signals it).
+    """
     if not pv_status_value:
         return
     q = {"value": pv_status_value, "is_active": True}
@@ -22678,15 +22683,17 @@ async def _apply_pv_stage_to_cliente(cliente_id: str, pv_status_value: str, comm
     if not cfg:
         return
     stage = (cfg.get("stage") or "lavorazione").lower()
+    label = cfg.get("label") or pv_status_value
+    set_doc = {
+        "post_vendita_stage": stage,
+        "post_vendita_status_label": label,
+    }
     new_cliente_status = _PV_STAGE_TO_CLIENTE_STATUS.get(stage)
-    if not new_cliente_status:
-        return
+    if new_cliente_status:
+        set_doc["status"] = new_cliente_status
     await db.clienti.update_one(
         {"id": cliente_id},
-        {"$set": {
-            "status": new_cliente_status,
-            "post_vendita_stage": stage,
-        }}
+        {"$set": set_doc}
     )
 
 
