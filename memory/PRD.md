@@ -5,6 +5,32 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ## Current State (Febbraio 2026)
 
+### ✅ Completato in questa sessione (4 Maggio 2026 — Sezione Post Vendita end-to-end)
+
+- **🆕 Sezione Post Vendita (Admin + Backoffice Commessa)**
+  - **Sidebar**: voce "Post Vendita" (icona `Package`) visibile solo a `admin` e `backoffice_commessa`
+  - **Frontend** (`/app/frontend/src/components/PostVendita.jsx`): pagina con 4 tab
+    - **Clienti Post-Vendita**: lista paginata clienti `passed_to_post_vendita=True`, filtri per status PV, presenza/assenza `codice_account`, search testuale; cambio status inline (dropdown con colore dello status)
+    - **Import Massivo**: wizard 3-step
+      1. Upload CSV/XLSX + scelta colonna `Codice Account` (auto-rilevata per CSV) + nuovo status
+      2. Anteprima match: separato auto-matched (per `codice_account`) vs unmatched (con dropdown manuale "Abbina a cliente" mostrando candidati suggeriti + tutti i clienti della commessa)
+      3. Risultato: contatori auto/manuali/errori, badge "nuovo status auto-creato"
+    - **Configurazione Status** (admin only): CRUD status PV per commessa con label/value/colore/ordine/`is_default`
+    - **Storico Import**: tabella ultimi 50 import con utente, status applicato, contatori
+  - **Backend**: 9 endpoint sotto `/api/post-vendita/*` + `/api/clienti/{id}/pass-to-post-vendita` + `/api/clienti/{id}/codice-account`
+  - **Modelli**: `PostVenditaStatusConfig`, collezioni `post_vendita_status_config`, `post_vendita_imports`. Cliente: aggiunti `passed_to_post_vendita`, `post_vendita_status`, `post_vendita_status_updated_at`, `codice_account`
+  - **Logica match**:
+    - Auto-match: per ogni riga del file, lookup `cliente.codice_account == row[CodiceAccount]` (clienti della commessa, indipendentemente dallo stato PV)
+    - Manual match: utente sceglie cliente da abbinare. **SOLO post_vendita_status viene aggiornato** (codice_account NON viene toccato — scelta utente)
+  - **Auto-creazione status**: se il valore in `new_status` non è già in `post_vendita_status_config` per la commessa, viene creato automaticamente (label = input utente, value normalizzato lowercase+underscore, colore default `#6b7280`, `is_default=False`)
+  - **Marcatura passed_to_post_vendita**: bulk import imposta `passed_to_post_vendita=True` su ogni cliente aggiornato (auto + manual)
+  - **ACL backoffice_commessa**:
+    - `_require_post_vendita_role`: blocca ruoli != admin/backoffice_commessa (HTTP 403)
+    - `_check_post_vendita_commessa_access`: backoffice_commessa può importare/listare SOLO le commesse in `commesse_autorizzate` (GET list filtrato auto, analyze/execute → 403 su commessa non autorizzata)
+    - CREATE/PUT/DELETE status-config: admin only
+  - **Bug fix collaterale**: `ClienteCreate` non includeva `codice_account` (silently dropped on POST). Ora aggiunto. Inoltre nuovo endpoint `PATCH /api/clienti/{id}/codice-account` per setting incrementale senza payload completo
+  - **Testing** (iteration_8.json): backend 15/15 ✓, frontend 100% (admin login → tutti i 4 tab caricano, wizard funziona Step1→Step2)
+
 ### ✅ Completato in questa sessione (27 Feb 2026)
 
 - **🔍 Filtro Status nei Clienti: ora mostra TUTTI gli status (standard + custom + storici)**

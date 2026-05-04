@@ -1385,6 +1385,7 @@ class ClienteCreate(BaseModel):
     # Campi base sempre presenti
     numero_ordine: Optional[str] = None
     account: Optional[str] = None
+    codice_account: Optional[str] = None  # Codice account assegnato dal sistema esterno (compilato via import)
     ragione_sociale: Optional[str] = None  # Solo se Business
     cognome: str  # Obbligatorio
     nome: str  # Obbligatorio
@@ -22655,6 +22656,14 @@ def _require_post_vendita_role(current_user: User):
         raise HTTPException(status_code=403, detail="Accesso Post Vendita riservato ad admin e backoffice commessa")
 
 
+def _check_post_vendita_commessa_access(current_user: User, commessa_id: str):
+    """Backoffice commessa can only operate on their authorized commesse."""
+    if current_user.role == UserRole.BACKOFFICE_COMMESSA:
+        allowed = list(current_user.commesse_autorizzate or [])
+        if commessa_id not in allowed:
+            raise HTTPException(status_code=403, detail="Commessa non autorizzata")
+
+
 @api_router.get("/post-vendita/status-config")
 async def get_post_vendita_status_config(
     commessa_id: Optional[str] = None,
@@ -22707,6 +22716,31 @@ async def delete_post_vendita_status_config(
     return {"success": True}
 
 
+@api_router.patch("/clienti/{cliente_id}/codice-account")
+async def patch_cliente_codice_account(
+    cliente_id: str,
+    payload: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Set the cliente codice_account without submitting a full Cliente payload.
+    Used for ops/post-vendita flows where the codice_account is assigned later."""
+    code = (payload or {}).get("codice_account", "")
+    if code is None:
+        code = ""
+    code = str(code).strip()
+    cliente_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    cliente = Cliente(**cliente_doc)
+    if not await can_user_access_cliente(current_user, cliente):
+        raise HTTPException(status_code=403, detail="Accesso negato")
+    await db.clienti.update_one(
+        {"id": cliente_id},
+        {"$set": {"codice_account": code or None}}
+    )
+    return {"success": True, "codice_account": code or None}
+
+
 @api_router.post("/clienti/{cliente_id}/pass-to-post-vendita")
 async def pass_cliente_to_post_vendita(
     cliente_id: str,
@@ -22752,7 +22786,18 @@ async def list_post_vendita_clienti(
 ):
     _require_post_vendita_role(current_user)
     query = {"passed_to_post_vendita": True, "is_active": {"$ne": False}}
-    if commessa_id:
+    # Restrict backoffice_commessa to only their authorized commesse
+    if current_user.role == UserRole.BACKOFFICE_COMMESSA:
+        allowed = list(current_user.commesse_autorizzate or [])
+        if not allowed:
+            return {"clienti": [], "total": 0, "page": page, "page_size": page_size}
+        if commessa_id:
+            if commessa_id not in allowed:
+                raise HTTPException(status_code=403, detail="Commessa non autorizzata")
+            query["commessa_id"] = commessa_id
+        else:
+            query["commessa_id"] = {"$in": allowed}
+    elif commessa_id:
         query["commessa_id"] = commessa_id
     if post_vendita_status:
         query["post_vendita_status"] = post_vendita_status
@@ -22844,6 +22889,7 @@ async def bulk_import_analyze(
     - Unmatched rows returned for manual matching against clienti without codice_account on that commessa
     """
     _require_post_vendita_role(current_user)
+    _check_post_vendita_commessa_access(current_user, commessa_id)
     try:
         match_cols = json.loads(match_columns or "[]")
     except Exception:
@@ -22933,6 +22979,7 @@ async def bulk_import_execute(
         raise HTTPException(status_code=400, detail="new_status required")
     if not commessa_id:
         raise HTTPException(status_code=400, detail="commessa_id required")
+    _check_post_vendita_commessa_access(current_user, commessa_id)
     auto_matched = payload.get("auto_matched") or []
     manual_matched = payload.get("manual_matched") or []
 
