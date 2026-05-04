@@ -9,7 +9,7 @@ import json
 
 class AgenteFilterSimulation:
     def __init__(self):
-        self.base_url = "https://commessa-crm-hub.preview.emergentagent.com/api"
+        self.base_url = "https://bulk-upload-clients.preview.emergentagent.com/api"
         self.token = None
         
     def login_admin(self):

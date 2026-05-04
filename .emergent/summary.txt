@@ -1,37 +1,27 @@
 <analysis>**original_problem_statement:**
-The user requested continuous development of a complete CRM system. Throughout this session, the user requested a major feature: the ability to add Custom Fields, Custom Sections, and Custom Statuses dynamically based on  and . Additional requests included modifying the Energia section (making POD optional, adding Nuovo Allaccio, removing PDR/REMI, adding Fornitore Attuale), ensuring all custom fields are included in the Excel export, and filtering  options by the selected . Finally, the user requested reorganizing the Address fields into two distinct blocks: Residenza (Indirizzo, Comune, Provincia, CAP) and Attivazione (Indirizzo, Comune, Provincia, CAP).
+The user requested continuous development of a complete CRM system. Throughout this session, the user requested several major features and bug fixes: finalizing the Address fields (Residenza/Attivazione) UI, moving Custom Sections above Notes, implementing a pessimistic lock for Clienti records, adding an immutable Notes History per client, fixing filter bugs (Segmenti, Status, Tipologia Contratto), handling Sub Agenzia service/commesse authorization propagations, and adding an Admin Permissions Audit section. The most recent request is to build a new Post Vendita (After-Sales) section for Admin and Backoffice Commessa, allowing for massive CSV/Excel uploads to match clients by codice account and update their post-sales status.
 
 PRODUCT REQUIREMENTS:
-- Custom fields, sections, and statuses dynamic mapping for Clienti.
-- Complete Excel Export with dynamically generated custom columns.
-- Address section reorganization into complete Residenza and Attivazione blocks (Address, City, Province, ZIP).
+- Post Vendita section with massive CSV/Excel upload to match clients and update .
+- Match logic: automatically match rows to clients using  (codice account). If  is empty, allow user manual mapping to a specific client to update both  and status.
+- Pessimistic locking (Lucchetto) to prevent concurrent edits on Clienti records.
+- Immutable Cliente Notes history.
 
 **User's preferred language**: Italian
 (INSTRUCT next agent: You MUST automatically detect the user's primary language from their messages inside the <trajectory> tag and INSTRUCT next agent to respond in the user's preferred language only. The user speaks Italian, so you MUST respond in Italian).
 
 **what currently exists?** 
-A monolithic full-stack CRM application featuring a complex React frontend (, >29k lines) and a FastAPI backend (, >21k lines). It now includes dynamic Custom Fields, Sections, and Statuses managers for Client profiles.
+A monolithic full-stack CRM application featuring a complex React frontend (, >29k lines) and a FastAPI backend (, >22k lines). It includes dynamic Custom Fields, Sections, Statuses, user authorization tracking, pessimistic locking, and the foundational backend for the new Post Vendita system.
 
 **Last working item**:
-- **Last item agent was working**: Reorganizing the Address fields in  for , , and . The backend models , , and  were already updated to include  and .  has been updated. The agent was currently finding the correct lines to update  UI and then needs to update .
+- **Last item agent was working**: Implementing the Post Vendita (After-Sales) feature. The agent modified the backend  model to include , , and . The agent also created the foundational API endpoints for  and  in  and successfully tested them via curl. 
 - **Status**: IN PROGRESS
-- **Agent Testing Done**: N
-- **Which testing method agent to use?**: Frontend testing agent or screenshot tool.
+- **Agent Testing Done**: Y (Backend endpoints tested via curl)
+- **Which testing method agent to use?**:  for the complete feature (Backend + Frontend).
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: Complete the Address Fields Reorganization
-     - Attempted fixes: Backend models updated.  updated. The agent was looking at  lines  to inject the new fields.
-     - Next debug checklist: 
-       1. In , add the UI fields for  and  (probably matching the layout of residenza).
-       2. In , update the rendering to show the full Attivazione block (Indirizzo, Comune, Provincia, CAP) only if at least one of these fields is populated.
-     - Why fix this issue and what will be achieved with the fix? Completes the user's direct request to separate physical residence from service activation address.
-     - Status: IN PROGRESS
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on other issue: None
-
-  Issue 2: SMTP IP Blacklisted (Aruba block)
+  Issue 1: SMTP IP Blacklisted (Aruba block)
      - Attempted fixes: Verified code works. It's an infrastructure block by Aruba against the preview server IP.
      - Next debug checklist: Inform user if they complain about emails.
      - Why fix this issue and what will be achieved with the fix? Allow transactional emails to work.
@@ -41,86 +31,97 @@ A monolithic full-stack CRM application featuring a complex React frontend (, >2
      - Blocked on other issue: None
 
 **In progress Task List**:
-  Task 1: Complete Address fields UI in Modals
-     - Where to resume:  in  (around line 27260) to add  and . Then update .
-     - What will be achieved with this? Feature completion.
+  Task 1: Complete Post Vendita Feature (Bulk Import and Frontend UI)
+     - Where to resume: Create the frontend components for the Post Vendita section (Routing, Sidebar link for Admin/BO Commessa, Client Table, and the Bulk Import Wizard). In , implement the actual logic for .
+     - What will be achieved with this? Fulfills the user's latest major requirement to handle after-sales statuses via massive file uploads and automatic/manual matching based on Codice Account.
      - Status: IN PROGRESS
-     - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on something: No
+     - Should Test frontend/backend/both after fix? Both (use )
+     - Blocked on something: No.
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - P1: Complete the Address fields UI update (Last Working Item).
-    - P2: Implement Duplica configurazione feature in  (allow admin to copy fields/sections/statuses from one Commessa+Tipologia to another).
+    - P1: Post Vendita Bulk Import matching logic: Auto-match by . If a client has an empty , provide a UI to manually associate the row to a client, subsequently updating both the  and the .
     
     Future Tasks:
+    - P2: Implement Duplica configurazione feature in .
     - P3: Hide/show STANDARD sections conditionally based on specific Commessa combinations.
     - P4: Massive Refactoring of  and  into smaller files (Routes, Controllers, Components) to resolve context window issues.
 
 **Completed work in this session**
-- Phase 1: Client Custom Fields (Backend CRUD + Admin UI) (DONE)
-- Phase 2: Client Custom Sections (Tabs, Grouping in Renderer) (DONE)
-- Phase 3: Client Custom Statuses + Analytics Funnel Mapping (DONE)
-- Filtered  options based on selected  in all management dialogs (DONE)
-- Made  non-mandatory, added  to Enum, removed  and  from UI (DONE)
-- Fixed Pydantic 422 error on Cliente creation caused by missing  in backend Enum (DONE)
-- Included all custom fields dynamically in the Excel Export ( and pivot) (DONE)
-- Relaxed visibility rules in  to show populated fields even if the Commessa doesn't strictly match the segment (DONE)
-- Added  field to Energia section (backend + frontend) (DONE)
+- Completed Address fields UI (Residenza/Attivazione) in Modals (DONE)
+- Reordered Custom Sections to appear before Notes in Modals (DONE)
+- Pessimistic Locking (Lucchetto) for Clienti with auto-refresh and 10min timeout (DONE)
+- Immutable Cliente Notes History () (DONE)
+- User Authorizations: Parent Commessa is now auto-added/removed when adding/removing a Servizio for Backoffice users (DONE)
+- Admin Permissions Audit Section () (DONE)
+- Tipologia Contratto and Segmento fields mapped correctly bypassing legacy hardcoded lists (DONE)
+- Backoffice Commessa can now change Sub Agenzia inside EditClienteModal (DONE)
+- Cliente Action Logs now show Entity Names instead of UUIDs (DONE)
+- Cliente Notes visibility opened to all associated users (DONE)
+- Advanced Filters (Status, Tipologie, Segmenti, ecc.) now fetch values dynamically from DB instead of hardcoded enums (DONE)
 
 **Earlier issues found/mentioned but not fixed**
-   None specifically hanging. 
+None specifically hanging.
 
 **Known issue recurrence from previous fork**
   - Issue recurrence in previous fork: File size constraints causing context limits and accidental string replacement failures.
   - Recurrence count: 5+
   - Status: IN PROGRESS
-  Note:  is massive (>29k lines).  frequently fails if  is not extremely precise or if multiple identical strings exist. Always use  to run  to find exact lines before replacing.
+  Note:  is massive (>29k lines).  frequently fails if  is not extremely precise. Always use  to run  or  to find exact lines before replacing.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- React, FastAPI, MongoDB, Dynamic UI Rendering (Custom Fields/Sections), Excel Export via .
+- React, FastAPI, MongoDB, Pessimistic Locking, Dynamic UI Rendering.
 
 **key DB schema**
   - : 
   - : 
-  - : 
-  - : Added , , , , .
+  -  (New): 
+  - : Added , , .
 
 **changes in tech stack**
   - No changes.
 
 **All files of reference** 
-  - : Heavily edited for new DB models, Custom fields endpoints, and Excel Export.
-  - : Edited for UI modals and fetching dynamic fields.
-  - : New file created for Admin Settings.
-  - : New file created to inject custom fields into forms.
+  - : Edited heavily for locks, note history, authorization updates, and new post-vendita endpoints.
+  - : Edited for Locks, Note History, Filter bug fixes, and new Admin Audit route.
+  - : New component for pessimistic locking logic.
+  - : New component for immutable notes.
+  - : New component for tracking misaligned permissions.
+  - : New regression test file.
 
 **Areas that need refactoring**: 
 -  (>29k lines).
--  (>21k lines).
+-  (>22k lines).
 
 **key api endpoints**
-- , , 
 - 
+- 
+- 
+- 
+-  (New)
 
 **Critical Info for New Agent** 
-- **Pydantic Enums**: If you add an option to a frontend dropdown (like ), you MUST update the corresponding  in  (e.g., ), otherwise Pydantic throws a 422 error on save.
-- **App.js editing**: Because of the file size, always  for line numbers before using  to ensure you are modifying the correct modal (, , ).
+- **User Authorizations**: Be extremely careful when dealing with  and . They are tightly coupled. Do not alter their sync logic without thorough testing.
+- **Pydantic Validation**:  uses strictly matched schemas. When making updates from frontend modals, ensure all required fields are correctly passed or declared .
+- **Enums vs Dynamic Fields**: The system has transitioned heavily from hardcoded enums to dynamic DB-driven fields (e.g., , , ). Do not rely on hardcoded mappings.
 
 **documents and test reports created in this job** 
-  -  updated with Custom Fields Phase 1, 2, 3 details.
-  - , , , .
+  -  
+  -  (Updated with test user creds)
+  - , , 
 
 **Last 10 User Messages and any pending HUMAN messages** 
- 1. (User) il campo POD non deve essere obbligatorio. inserire altro stato  Nuovo Allaccio e togli i campi codice PRDR e REMI. -> (Agent) Modified UI and Payload.
- 2. (User) tutti i campi che verranno creati dovranno comparire del file Excel -> (Agent) Modified  to append custom fields dynamically.
- 3. (User) mi da questo errore 422 -> (Agent) Found that  was missing from  Enum in backend. Fixed.
- 4. (User) nella view devo vedere tutti quanti i campi che vengono usati -> (Agent) Relaxed conditional rendering in  so populated sections always show.
- 5. (User) nella sezione energia ci deve essere un campo Fornitore Attuale -> (Agent) Added  to backend and frontend.
- 6. (User) sistemare la parte indirizzo in questo modo: Residenza (Indirizzo, Comune, Provincia, CAP) e Attivazione (Indirizzo, Comune, Provincia, CAP). Nella view mostrare attivazione se compilati. -> (Agent) Added  and  to backend. Updated . **(PENDING COMPLETION: Needs EditClienteModal and ViewClienteModal updates)**.
+ 1. (User) nella scheda del cliente che ho salvato il backoffice commessa deve avere la possibilità di cambiare la Sub agenzia -> (Agent) Fixed  backend and  frontend.
+ 2. (User) nella cronologia cliente... non mi deve scrivere ID della Sub Agenzia ma mi deve scrivere il nome della sub agenzia stessa cosa anche per i segmenti -> (Agent) Fixed backend  to resolve names.
+ 3. (User) il campo note cliente deve essere visibile a tutti gli utenti che sono associati a quel cliente... -> (Agent) Relaxed visibility logic in backend.
+ 4. (User) nei filtri avanzati nella sezione clienti non fa vedere tutti quanti gli status anche quelli aggiunti manualmente -> (Agent) Changed filter-options to aggregate dynamic DB statuses.
+ 5. (User) applica lo stesso fix su tutti i filtri per far si che funzioni tutto benissimo -> (Agent) Fixed Tipologia Contratto and Segmento filter dropdowns to show dynamic DB options.
+ 6. (User) mi serve una sezione per il post vendita dei clienti che dovranno usare solamente utenti admin e i backoffice commessa... -> (Agent) Proposed architecture for Post Vendita (After-Sales).
+ 7. (Agent) Asked 6 clarifying questions regarding bulk import logic.
+ 8. (User) Responded to questions: 1. c, 2. a, 3. auto-match if codice account is present, otherwise manual user match, 4. a, 6. Admin and BO commessa only. -> (Agent) Modified backend models and started  endpoints. **(PENDING COMPLETION: Missing frontend components and bulk-import matching logic)**
 
 **Project Health Check:**
 - Broken: Email notifications (blocked by SMTP Provider IP Blacklist).
@@ -131,13 +132,14 @@ A monolithic full-stack CRM application featuring a complex React frontend (, >2
     • Aruba SMTP (Failing)
 
 **Testing status**
-  - Testing agent used after significant changes: YES (Iterations 1 to 4 utilized successfully).
+  - Testing agent used after significant changes: YES (Iterations 5, 6, 7).
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None
+  - Test files created: 
   - Known regressions: None
 
 **Credentials to test flow:**
+- Read  for full test accounts.
 - Admin:  / 
 
 **What agent forgot to execute**
-- The agent was in the middle of adding  and  to the  UI and still needs to update .</analysis>
+- The agent started the backend infrastructure for the Post Vendita section but hasn't written any of the frontend components (Sidebar routing, PostVendita page, Import Modal) or the actual  matching logic in . This is the immediate priority.</analysis>

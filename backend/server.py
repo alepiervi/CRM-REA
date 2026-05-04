@@ -1357,6 +1357,12 @@ class Cliente(BaseModel):
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     sub_offerta_id: Optional[str] = None  # NEW: Sotto-offerta ID (per offerte Vodafone con sotto-offerte)
     status: str = ClienteStatus.DA_INSERIRE.value  # Can be a ClienteStatus enum value OR a custom status value
+    # ===== POST VENDITA FIELDS =====
+    passed_to_post_vendita: bool = False  # Flag: cliente is visible in Post Vendita section
+    post_vendita_status: Optional[str] = None  # Workflow status (configurabile per commessa)
+    post_vendita_status_updated_at: Optional[datetime] = None
+    codice_account: Optional[str] = None  # Codice account assegnato dal sistema esterno (compilato via import)
+    # ===============================
     dati_aggiuntivi: Dict[str, Any] = {}
     created_by: str
     assigned_to: Optional[str] = None
@@ -1541,6 +1547,11 @@ class ClienteUpdate(BaseModel):
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     sub_offerta_id: Optional[str] = None  # NEW: Sotto-offerta ID
     status: Optional[str] = None  # Can be a ClienteStatus enum value OR a custom status value
+    # ===== POST VENDITA FIELDS =====
+    passed_to_post_vendita: Optional[bool] = None
+    post_vendita_status: Optional[str] = None
+    codice_account: Optional[str] = None
+    # ===============================
     note: Optional[str] = None
     dati_aggiuntivi: Optional[Dict[str, Any]] = None
     assigned_to: Optional[str] = None
@@ -9728,7 +9739,7 @@ async def configure_whatsapp(
             "session_id": session_id,
             "is_connected": False,
             "connection_status": "qr_pending",  # waiting for QR scan
-            "webhook_url": f"{os.environ.get('WEBHOOK_BASE_URL', 'https://commessa-crm-hub.preview.emergentagent.com')}/api/whatsapp/webhook",
+            "webhook_url": f"{os.environ.get('WEBHOOK_BASE_URL', 'https://bulk-upload-clients.preview.emergentagent.com')}/api/whatsapp/webhook",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
         }
@@ -17776,7 +17787,7 @@ else:
         "https://k8s-error-resolved.emergent.host",  # NEW: Production backend domain
         "https://mobil-analytics-1.emergent.host",
         "https://mobil-analytics-2.emergent.host",  # New deployment domain
-        "https://commessa-crm-hub.preview.emergentagent.com",
+        "https://bulk-upload-clients.preview.emergentagent.com",
         "https://cloudfile-fix.emergent.host",  # Emergent native deployment domain
     ]
     
@@ -22599,6 +22610,406 @@ async def health_check():
         "database": db_status,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
+
+
+# ============================================================
+# POST VENDITA MODULE
+# ============================================================
+# Accessibile solo ad admin + backoffice_commessa.
+# - Clienti vengono marcati passed_to_post_vendita=True manualmente
+# - Ogni commessa ha il suo workflow di status configurabile
+# - Bulk import CSV/Excel per aggiornare status + codice_account di massa
+
+class PostVenditaStatusConfig(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    commessa_id: str
+    value: str  # es. "da_lavorare"
+    label: str  # es. "Da Lavorare"
+    color: Optional[str] = "#6b7280"
+    order: int = 0
+    is_default: bool = False
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class PostVenditaStatusConfigCreate(BaseModel):
+    commessa_id: str
+    value: str
+    label: str
+    color: Optional[str] = "#6b7280"
+    order: int = 0
+    is_default: bool = False
+
+
+class PostVenditaStatusConfigUpdate(BaseModel):
+    value: Optional[str] = None
+    label: Optional[str] = None
+    color: Optional[str] = None
+    order: Optional[int] = None
+    is_default: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+
+def _require_post_vendita_role(current_user: User):
+    if current_user.role not in (UserRole.ADMIN, UserRole.BACKOFFICE_COMMESSA):
+        raise HTTPException(status_code=403, detail="Accesso Post Vendita riservato ad admin e backoffice commessa")
+
+
+@api_router.get("/post-vendita/status-config")
+async def get_post_vendita_status_config(
+    commessa_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    _require_post_vendita_role(current_user)
+    q = {"is_active": True}
+    if commessa_id:
+        q["commessa_id"] = commessa_id
+    docs = await db.post_vendita_status_config.find(q, {"_id": 0}).sort("order", 1).to_list(length=None)
+    return docs
+
+
+@api_router.post("/post-vendita/status-config", response_model=PostVenditaStatusConfig)
+async def create_post_vendita_status_config(
+    payload: PostVenditaStatusConfigCreate,
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin può creare status config")
+    entry = PostVenditaStatusConfig(**payload.dict())
+    await db.post_vendita_status_config.insert_one(entry.dict())
+    return entry
+
+
+@api_router.put("/post-vendita/status-config/{config_id}", response_model=PostVenditaStatusConfig)
+async def update_post_vendita_status_config(
+    config_id: str,
+    payload: PostVenditaStatusConfigUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    update_data = {k: v for k, v in payload.dict().items() if v is not None}
+    await db.post_vendita_status_config.update_one({"id": config_id}, {"$set": update_data})
+    doc = await db.post_vendita_status_config.find_one({"id": config_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Config not found")
+    return PostVenditaStatusConfig(**doc)
+
+
+@api_router.delete("/post-vendita/status-config/{config_id}")
+async def delete_post_vendita_status_config(
+    config_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    await db.post_vendita_status_config.update_one({"id": config_id}, {"$set": {"is_active": False}})
+    return {"success": True}
+
+
+@api_router.post("/clienti/{cliente_id}/pass-to-post-vendita")
+async def pass_cliente_to_post_vendita(
+    cliente_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Mark a cliente as passed to post-vendita. Available to creator, assigned user,
+    admin, backoffice_commessa."""
+    cliente_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    cliente = Cliente(**cliente_doc)
+    if not await can_user_access_cliente(current_user, cliente):
+        raise HTTPException(status_code=403, detail="Accesso negato")
+    # Determine default PV status from commessa config
+    default_status = None
+    if cliente.commessa_id:
+        default_cfg = await db.post_vendita_status_config.find_one(
+            {"commessa_id": cliente.commessa_id, "is_default": True, "is_active": True},
+            {"_id": 0}
+        )
+        if default_cfg:
+            default_status = default_cfg.get("value")
+    update_doc = {
+        "passed_to_post_vendita": True,
+        "post_vendita_status_updated_at": datetime.now(timezone.utc),
+    }
+    # Do not overwrite an existing PV status
+    if default_status and not cliente.post_vendita_status:
+        update_doc["post_vendita_status"] = default_status
+    await db.clienti.update_one({"id": cliente_id}, {"$set": update_doc})
+    return {"success": True, "post_vendita_status": update_doc.get("post_vendita_status") or cliente.post_vendita_status}
+
+
+@api_router.get("/post-vendita/clienti")
+async def list_post_vendita_clienti(
+    commessa_id: Optional[str] = None,
+    post_vendita_status: Optional[str] = None,
+    codice_account_filter: Optional[str] = None,  # "present" or "missing"
+    search: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    _require_post_vendita_role(current_user)
+    query = {"passed_to_post_vendita": True, "is_active": {"$ne": False}}
+    if commessa_id:
+        query["commessa_id"] = commessa_id
+    if post_vendita_status:
+        query["post_vendita_status"] = post_vendita_status
+    if codice_account_filter == "present":
+        query["codice_account"] = {"$nin": [None, ""]}
+    elif codice_account_filter == "missing":
+        query["$or"] = [{"codice_account": None}, {"codice_account": ""}, {"codice_account": {"$exists": False}}]
+    if search:
+        # Case-insensitive search on nome/cognome/email/telefono/codice_fiscale
+        regex = {"$regex": re.escape(search), "$options": "i"}
+        query["$or"] = [
+            {"nome": regex}, {"cognome": regex}, {"email": regex},
+            {"telefono": regex}, {"codice_fiscale": regex}, {"codice_account": regex},
+        ]
+    total = await db.clienti.count_documents(query)
+    skip = max(0, (page - 1) * page_size)
+    cursor = db.clienti.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(page_size)
+    items = await cursor.to_list(length=page_size)
+    return {"clienti": items, "total": total, "page": page, "page_size": page_size}
+
+
+@api_router.patch("/post-vendita/clienti/{cliente_id}/status")
+async def patch_post_vendita_status(
+    cliente_id: str,
+    payload: dict,
+    current_user: User = Depends(get_current_user)
+):
+    _require_post_vendita_role(current_user)
+    new_status = (payload or {}).get("post_vendita_status")
+    if not new_status:
+        raise HTTPException(status_code=400, detail="post_vendita_status required")
+    result = await db.clienti.update_one(
+        {"id": cliente_id},
+        {"$set": {
+            "post_vendita_status": new_status,
+            "post_vendita_status_updated_at": datetime.now(timezone.utc),
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    return {"success": True}
+
+
+# ============= BULK IMPORT =============
+import csv as _csv
+from io import BytesIO, StringIO
+
+async def _parse_import_file(file: UploadFile) -> tuple[list[str], list[dict]]:
+    """Parse uploaded CSV or XLSX file. Returns (headers, rows)."""
+    filename = (file.filename or "").lower()
+    content = await file.read()
+    if filename.endswith(".csv"):
+        text = content.decode("utf-8-sig", errors="replace")
+        reader = _csv.DictReader(StringIO(text))
+        rows = list(reader)
+        headers = reader.fieldnames or []
+    elif filename.endswith(".xlsx") or filename.endswith(".xls"):
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(BytesIO(content), read_only=True, data_only=True)
+            ws = wb.active
+            all_rows = list(ws.iter_rows(values_only=True))
+            if not all_rows:
+                return [], []
+            headers = [str(h) if h is not None else f"col_{i}" for i, h in enumerate(all_rows[0])]
+            rows = []
+            for r in all_rows[1:]:
+                if all(c is None or c == "" for c in r):
+                    continue
+                rows.append({headers[i]: (str(r[i]) if r[i] is not None else "") for i in range(min(len(headers), len(r)))})
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Errore parsing xlsx: {e}")
+    else:
+        raise HTTPException(status_code=400, detail="Formato non supportato. Usa .csv o .xlsx")
+    return headers, rows
+
+
+@api_router.post("/post-vendita/bulk-import/analyze")
+async def bulk_import_analyze(
+    file: UploadFile = File(...),
+    commessa_id: str = Form(...),
+    codice_account_column: str = Form(...),
+    new_status: str = Form(...),
+    match_columns: str = Form("[]"),  # JSON array of {file_col: str, cliente_field: str}
+    current_user: User = Depends(get_current_user)
+):
+    """Step 1: Analyze the file and return match preview.
+    - Auto-match rows whose `codice_account_column` matches an existing cliente.codice_account
+    - Unmatched rows returned for manual matching against clienti without codice_account on that commessa
+    """
+    _require_post_vendita_role(current_user)
+    try:
+        match_cols = json.loads(match_columns or "[]")
+    except Exception:
+        match_cols = []
+
+    headers, rows = await _parse_import_file(file)
+    if not headers:
+        raise HTTPException(status_code=400, detail="File vuoto o formato invalido")
+
+    # Load all clienti of commessa into memory (passed_to_post_vendita=True)
+    cli_query = {"commessa_id": commessa_id, "passed_to_post_vendita": True, "is_active": {"$ne": False}}
+    clienti_all = await db.clienti.find(
+        cli_query,
+        {"_id": 0, "id": 1, "nome": 1, "cognome": 1, "email": 1, "telefono": 1,
+         "codice_fiscale": 1, "partita_iva": 1, "codice_account": 1}
+    ).to_list(length=None)
+
+    code_to_cliente = {c.get("codice_account"): c for c in clienti_all if c.get("codice_account")}
+    clienti_without_code = [c for c in clienti_all if not c.get("codice_account")]
+
+    auto_matched = []
+    unmatched = []
+    for idx, row in enumerate(rows):
+        code_value = (row.get(codice_account_column) or "").strip()
+        if not code_value:
+            unmatched.append({"row_index": idx, "row": row, "reason": "codice_account vuoto nel file"})
+            continue
+        cli = code_to_cliente.get(code_value)
+        if cli:
+            auto_matched.append({
+                "row_index": idx,
+                "row": row,
+                "cliente_id": cli["id"],
+                "cliente_label": f"{cli.get('cognome','')} {cli.get('nome','')} ({code_value})",
+                "codice_account": code_value,
+            })
+        else:
+            # Try to find candidate match by match_cols heuristic
+            candidates = []
+            for mc in match_cols:
+                fcol = mc.get("file_col")
+                cfield = mc.get("cliente_field")
+                fvalue = (row.get(fcol) or "").strip().lower() if fcol else ""
+                if not fvalue or not cfield:
+                    continue
+                for cwc in clienti_without_code:
+                    cval = (cwc.get(cfield) or "").strip().lower()
+                    if cval and cval == fvalue:
+                        candidates.append({
+                            "cliente_id": cwc["id"],
+                            "cliente_label": f"{cwc.get('cognome','')} {cwc.get('nome','')}",
+                            "matched_field": cfield,
+                        })
+            unmatched.append({
+                "row_index": idx,
+                "row": row,
+                "code_to_set": code_value,
+                "candidates": candidates,
+            })
+
+    return {
+        "total_rows": len(rows),
+        "auto_matched": auto_matched,
+        "unmatched": unmatched,
+        "clienti_without_code_count": len(clienti_without_code),
+    }
+
+
+@api_router.post("/post-vendita/bulk-import/execute")
+async def bulk_import_execute(
+    payload: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Step 2: Execute the import.
+    Payload:
+      {
+        commessa_id: str,
+        new_status: str,
+        auto_matched: [{cliente_id, codice_account}],
+        manual_matched: [{cliente_id, codice_account}],
+      }
+    """
+    _require_post_vendita_role(current_user)
+    new_status = payload.get("new_status")
+    if not new_status:
+        raise HTTPException(status_code=400, detail="new_status required")
+    auto_matched = payload.get("auto_matched") or []
+    manual_matched = payload.get("manual_matched") or []
+
+    import_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    updated_auto = 0
+    updated_manual = 0
+    errors = []
+
+    # Auto-matched: only update status
+    for item in auto_matched:
+        cid = item.get("cliente_id")
+        if not cid:
+            continue
+        try:
+            res = await db.clienti.update_one(
+                {"id": cid},
+                {"$set": {
+                    "post_vendita_status": new_status,
+                    "post_vendita_status_updated_at": now,
+                }}
+            )
+            if res.matched_count:
+                updated_auto += 1
+        except Exception as e:
+            errors.append({"cliente_id": cid, "error": str(e)})
+
+    # Manual-matched: set codice_account + status
+    for item in manual_matched:
+        cid = item.get("cliente_id")
+        code = item.get("codice_account")
+        if not cid or not code:
+            continue
+        try:
+            res = await db.clienti.update_one(
+                {"id": cid},
+                {"$set": {
+                    "codice_account": code,
+                    "post_vendita_status": new_status,
+                    "post_vendita_status_updated_at": now,
+                }}
+            )
+            if res.matched_count:
+                updated_manual += 1
+        except Exception as e:
+            errors.append({"cliente_id": cid, "error": str(e)})
+
+    # Log import
+    import_record = {
+        "id": import_id,
+        "uploaded_at": now,
+        "uploaded_by_id": current_user.id,
+        "uploaded_by_username": current_user.username,
+        "commessa_id": payload.get("commessa_id"),
+        "new_status": new_status,
+        "auto_matched_count": updated_auto,
+        "manual_matched_count": updated_manual,
+        "errors": errors,
+    }
+    await db.post_vendita_imports.insert_one(import_record)
+
+    return {
+        "success": True,
+        "import_id": import_id,
+        "auto_matched": updated_auto,
+        "manual_matched": updated_manual,
+        "errors": errors,
+    }
+
+
+@api_router.get("/post-vendita/imports")
+async def list_post_vendita_imports(
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    _require_post_vendita_role(current_user)
+    docs = await db.post_vendita_imports.find({}, {"_id": 0}).sort("uploaded_at", -1).limit(limit).to_list(length=limit)
+    return {"imports": docs, "count": len(docs)}
+
+
 
 # Include the router in the main app (MUST be after all endpoints are defined)
 app.include_router(api_router)

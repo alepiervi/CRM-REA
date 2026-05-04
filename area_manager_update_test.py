@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 class AreaManagerUpdateTester:
-    def __init__(self, base_url="https://commessa-crm-hub.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://bulk-upload-clients.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_data = None

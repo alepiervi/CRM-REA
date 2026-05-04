@@ -37,7 +37,7 @@ const getBackendURL = () => {
   
   // Preview → Backend preview (può andare in standby)
   if (hostname.includes('preview.emergentagent.com')) {
-    return 'https://commessa-crm-hub.preview.emergentagent.com';
+    return 'https://bulk-upload-clients.preview.emergentagent.com';
   }
   
   // Development
@@ -342,7 +342,7 @@ post-deploy: python3 -m playwright install chromium
 
 **Console mostra**:
 ```
-🔧 Backend URL: https://commessa-crm-hub.preview.emergentagent.com
+🔧 Backend URL: https://bulk-upload-clients.preview.emergentagent.com
 ```
 
 **Causa**: Frontend non deployato con nuovo codice

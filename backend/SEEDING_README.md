@@ -41,7 +41,7 @@ python seed_database.py
 
 Dopo l'esecuzione dello script:
 
-1. Vai su: `https://commessa-crm-hub.preview.emergentagent.com`
+1. Vai su: `https://bulk-upload-clients.preview.emergentagent.com`
 2. Accedi con:
    - **Username**: `admin`
    - **Password**: `admin123`
