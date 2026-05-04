@@ -7,6 +7,16 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (4 Maggio 2026 — Sezione Post Vendita end-to-end)
 
+- **🆕 Stage degli Status Post Vendita + propagazione automatica all'anagrafica cliente**
+  - Ogni `PostVenditaStatusConfig` ha ora un campo `stage` (3 valori): `lavorazione` (🟡), `attivato` (🟢), `ko` (🔴) — validato lato backend
+  - Quando un cliente cambia `post_vendita_status` (via pass-to-PV, PATCH status, bulk-import auto+manual), il backend imposta automaticamente:
+    - `cliente.status` = `attivato` / `ko` / `in_lavorazione` (in base allo stage del nuovo status PV)
+    - `cliente.post_vendita_stage` = stage corrente
+  - Quando admin **modifica lo stage** di uno status già esistente, il backend **propaga retroattivamente** a tutti i clienti che usano quello status (`PUT /api/post-vendita/status-config/{id}` con `{stage: ...}`)
+  - **Frontend**: nel dialog "Aggiungi/Modifica Status" è presente un selettore Tipo (Stage) con 3 opzioni emoji-coded; tabella config mostra colonna "Tipo" con `StageBadge` colorato. La status anagrafica diventa quindi visibile su tutta la scheda cliente — tutti gli utenti con accesso al cliente vedono lo stato aggiornato
+  - **Test verificato via curl**: cliente passa attraverso lavorazione → attivato → ko, `cliente.status` segue lo stage; cambio stage in config aggiorna immediatamente tutti i clienti collegati
+  - File: `/app/backend/server.py` (modelli `PostVenditaStatusConfig*`, helper `_apply_pv_stage_to_cliente`, integrato in 4 endpoint PV) + `/app/frontend/src/components/PostVendita.jsx` (`StageBadge`, dialog stage selector)
+
 - **🆕 Sezione Post Vendita (Admin + Backoffice Commessa)**
   - **Sidebar**: voce "Post Vendita" (icona `Package`) visibile solo a `admin` e `backoffice_commessa`
   - **Frontend** (`/app/frontend/src/components/PostVendita.jsx`): pagina con 4 tab

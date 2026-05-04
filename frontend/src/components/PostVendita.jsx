@@ -410,6 +410,7 @@ const StatusConfigTab = ({ commessaId }) => {
               <th className="px-3 py-2 text-left">Ordine</th>
               <th className="px-3 py-2 text-left">Colore</th>
               <th className="px-3 py-2 text-left">Etichetta</th>
+              <th className="px-3 py-2 text-left">Tipo (Stage)</th>
               <th className="px-3 py-2 text-left">Value</th>
               <th className="px-3 py-2 text-left">Default</th>
               <th className="px-3 py-2 text-right">Azioni</th>
@@ -417,7 +418,7 @@ const StatusConfigTab = ({ commessaId }) => {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {items.length === 0 ? (
-              <tr><td colSpan={6} className="px-3 py-8 text-center text-slate-400">{loading ? "Caricamento..." : "Nessuno status configurato. Aggiungi il primo."}</td></tr>
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-slate-400">{loading ? "Caricamento..." : "Nessuno status configurato. Aggiungi il primo."}</td></tr>
             ) : items.map((s) => (
               <tr key={s.id} className="hover:bg-slate-50" data-testid={`pv-config-row-${s.value}`}>
                 <td className="px-3 py-2">{s.order}</td>
@@ -425,6 +426,7 @@ const StatusConfigTab = ({ commessaId }) => {
                   <span className="inline-block w-6 h-6 rounded border border-slate-200" style={{ background: s.color || "#6b7280" }} />
                 </td>
                 <td className="px-3 py-2 font-medium">{s.label}</td>
+                <td className="px-3 py-2"><StageBadge stage={s.stage || "lavorazione"} /></td>
                 <td className="px-3 py-2 font-mono text-xs">{s.value}</td>
                 <td className="px-3 py-2">{s.is_default ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : ""}</td>
                 <td className="px-3 py-2 text-right">
@@ -448,6 +450,21 @@ const StatusConfigTab = ({ commessaId }) => {
   );
 };
 
+const StageBadge = ({ stage }) => {
+  const map = {
+    attivato: { label: "Attivato", cls: "bg-emerald-100 text-emerald-700 border-emerald-200", emoji: "🟢" },
+    ko: { label: "KO", cls: "bg-red-100 text-red-700 border-red-200", emoji: "🔴" },
+    lavorazione: { label: "Lavorazione", cls: "bg-amber-100 text-amber-700 border-amber-200", emoji: "🟡" },
+  };
+  const cfg = map[stage] || map.lavorazione;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${cfg.cls}`}>
+      <span>{cfg.emoji}</span>
+      {cfg.label}
+    </span>
+  );
+};
+
 const StatusConfigDialog = ({ initial, onClose, onSave }) => {
   const [form, setForm] = useState({
     id: initial.id,
@@ -455,6 +472,7 @@ const StatusConfigDialog = ({ initial, onClose, onSave }) => {
     value: initial.value || "",
     label: initial.label || "",
     color: initial.color || "#6b7280",
+    stage: initial.stage || "lavorazione",
     order: initial.order ?? 0,
     is_default: initial.is_default || false,
   });
@@ -484,6 +502,22 @@ const StatusConfigDialog = ({ initial, onClose, onSave }) => {
               placeholder="es. Da Lavorare"
               data-testid="pv-config-label-input"
             />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-700">Tipo (Stage) *</label>
+            <select
+              value={form.stage}
+              onChange={(e) => setForm({ ...form, stage: e.target.value })}
+              className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              data-testid="pv-config-stage-input"
+            >
+              <option value="lavorazione">🟡 Lavorazione</option>
+              <option value="attivato">🟢 Attivato</option>
+              <option value="ko">🔴 KO</option>
+            </select>
+            <p className="text-xs text-slate-500 mt-1">
+              Determina come si aggiorna automaticamente lo <strong>status anagrafica</strong> del cliente quando si trova in questo stato del workflow.
+            </p>
           </div>
           <div>
             <label className="text-sm font-medium text-slate-700">Value (interno)</label>

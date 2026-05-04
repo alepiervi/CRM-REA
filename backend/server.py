@@ -1361,6 +1361,7 @@ class Cliente(BaseModel):
     passed_to_post_vendita: bool = False  # Flag: cliente is visible in Post Vendita section
     post_vendita_status: Optional[str] = None  # Workflow status (configurabile per commessa)
     post_vendita_status_updated_at: Optional[datetime] = None
+    post_vendita_stage: Optional[str] = None  # 'lavorazione' | 'attivato' | 'ko' (derivato dallo status PV)
     codice_account: Optional[str] = None  # Codice account assegnato dal sistema esterno (compilato via import)
     # ===============================
     dati_aggiuntivi: Dict[str, Any] = {}
@@ -22627,6 +22628,7 @@ class PostVenditaStatusConfig(BaseModel):
     value: str  # es. "da_lavorare"
     label: str  # es. "Da Lavorare"
     color: Optional[str] = "#6b7280"
+    stage: str = "lavorazione"  # 'lavorazione' | 'attivato' | 'ko' — propagato sulla anagrafica cliente.status
     order: int = 0
     is_default: bool = False
     is_active: bool = True
@@ -22638,6 +22640,7 @@ class PostVenditaStatusConfigCreate(BaseModel):
     value: str
     label: str
     color: Optional[str] = "#6b7280"
+    stage: str = "lavorazione"
     order: int = 0
     is_default: bool = False
 
@@ -22646,9 +22649,45 @@ class PostVenditaStatusConfigUpdate(BaseModel):
     value: Optional[str] = None
     label: Optional[str] = None
     color: Optional[str] = None
+    stage: Optional[str] = None
     order: Optional[int] = None
     is_default: Optional[bool] = None
     is_active: Optional[bool] = None
+
+
+# Mapping stage -> valore da impostare sull'anagrafica cliente (campo `status`)
+_PV_STAGE_TO_CLIENTE_STATUS = {
+    "ko": "ko",
+    "attivato": "attivato",
+    "lavorazione": "in_lavorazione",
+}
+
+VALID_PV_STAGES = {"lavorazione", "attivato", "ko"}
+
+
+async def _apply_pv_stage_to_cliente(cliente_id: str, pv_status_value: str, commessa_id: Optional[str] = None):
+    """Look up the stage of the given post-vendita status (within the cliente's commessa)
+    and propagate the corresponding cliente.status (and a quick-flag) on the anagrafica.
+    Idempotent and safe to call from any PV update path."""
+    if not pv_status_value:
+        return
+    q = {"value": pv_status_value, "is_active": True}
+    if commessa_id:
+        q["commessa_id"] = commessa_id
+    cfg = await db.post_vendita_status_config.find_one(q, {"_id": 0, "stage": 1, "label": 1})
+    if not cfg:
+        return
+    stage = (cfg.get("stage") or "lavorazione").lower()
+    new_cliente_status = _PV_STAGE_TO_CLIENTE_STATUS.get(stage)
+    if not new_cliente_status:
+        return
+    await db.clienti.update_one(
+        {"id": cliente_id},
+        {"$set": {
+            "status": new_cliente_status,
+            "post_vendita_stage": stage,
+        }}
+    )
 
 
 def _require_post_vendita_role(current_user: User):
@@ -22684,7 +22723,12 @@ async def create_post_vendita_status_config(
 ):
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Solo admin può creare status config")
-    entry = PostVenditaStatusConfig(**payload.dict())
+    data = payload.dict()
+    stage = (data.get("stage") or "lavorazione").lower()
+    if stage not in VALID_PV_STAGES:
+        raise HTTPException(status_code=400, detail=f"stage deve essere uno di: {sorted(VALID_PV_STAGES)}")
+    data["stage"] = stage
+    entry = PostVenditaStatusConfig(**data)
     await db.post_vendita_status_config.insert_one(entry.dict())
     return entry
 
@@ -22698,10 +22742,26 @@ async def update_post_vendita_status_config(
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Solo admin")
     update_data = {k: v for k, v in payload.dict().items() if v is not None}
+    if "stage" in update_data:
+        stage = (update_data["stage"] or "lavorazione").lower()
+        if stage not in VALID_PV_STAGES:
+            raise HTTPException(status_code=400, detail=f"stage deve essere uno di: {sorted(VALID_PV_STAGES)}")
+        update_data["stage"] = stage
     await db.post_vendita_status_config.update_one({"id": config_id}, {"$set": update_data})
     doc = await db.post_vendita_status_config.find_one({"id": config_id}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Config not found")
+    # If stage changed, propagate to all clienti currently using this status value
+    if "stage" in update_data:
+        current_value = doc.get("value")
+        commessa_id = doc.get("commessa_id")
+        if current_value and commessa_id:
+            cli_cursor = db.clienti.find(
+                {"post_vendita_status": current_value, "commessa_id": commessa_id, "is_active": {"$ne": False}},
+                {"_id": 0, "id": 1}
+            )
+            async for c in cli_cursor:
+                await _apply_pv_stage_to_cliente(c["id"], current_value, commessa_id)
     return PostVenditaStatusConfig(**doc)
 
 
@@ -22771,7 +22831,11 @@ async def pass_cliente_to_post_vendita(
     if default_status and not cliente.post_vendita_status:
         update_doc["post_vendita_status"] = default_status
     await db.clienti.update_one({"id": cliente_id}, {"$set": update_doc})
-    return {"success": True, "post_vendita_status": update_doc.get("post_vendita_status") or cliente.post_vendita_status}
+    # Propagate stage to anagrafica cliente.status
+    final_pv_status = update_doc.get("post_vendita_status") or cliente.post_vendita_status
+    if final_pv_status:
+        await _apply_pv_stage_to_cliente(cliente_id, final_pv_status, cliente.commessa_id)
+    return {"success": True, "post_vendita_status": final_pv_status}
 
 
 @api_router.get("/post-vendita/clienti")
@@ -22829,6 +22893,9 @@ async def patch_post_vendita_status(
     new_status = (payload or {}).get("post_vendita_status")
     if not new_status:
         raise HTTPException(status_code=400, detail="post_vendita_status required")
+    cli_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0, "commessa_id": 1})
+    if not cli_doc:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
     result = await db.clienti.update_one(
         {"id": cliente_id},
         {"$set": {
@@ -22838,6 +22905,8 @@ async def patch_post_vendita_status(
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
+    # Propagate stage to anagrafica
+    await _apply_pv_stage_to_cliente(cliente_id, new_status, cli_doc.get("commessa_id"))
     return {"success": True}
 
 
@@ -23033,6 +23102,7 @@ async def bulk_import_execute(
             )
             if res.matched_count:
                 updated_auto += 1
+                await _apply_pv_stage_to_cliente(cid, status_to_set, commessa_id)
         except Exception as e:
             errors.append({"cliente_id": cid, "error": str(e)})
 
@@ -23052,6 +23122,7 @@ async def bulk_import_execute(
             )
             if res.matched_count:
                 updated_manual += 1
+                await _apply_pv_stage_to_cliente(cid, status_to_set, commessa_id)
         except Exception as e:
             errors.append({"cliente_id": cid, "error": str(e)})
 
