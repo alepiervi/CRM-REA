@@ -54,6 +54,7 @@ import { PermissionsAudit } from "./components/PermissionsAudit";
 import { PostVendita } from "./components/PostVendita";
 import { PassToPostVenditaButton } from "./components/PassToPostVenditaButton";
 import { PostVenditaStatusDot } from "./components/PostVenditaStatusDot";
+import { ClientePostVenditaSection } from "./components/ClientePostVenditaSection";
 
 // Lucide icons
 import { 
@@ -26308,6 +26309,11 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           />
         </div>
 
+        {/* Sezione Post Vendita - evoluzione visibile a tutti gli utenti con accesso al cliente */}
+        <div className="mt-4">
+          <ClientePostVenditaSection clienteId={cliente?.id} clienteSnapshot={cliente} />
+        </div>
+
         {/* Storico Note - immutabile, read-only in view */}
         <Card className="mt-4">
           <CardHeader>
@@ -28567,6 +28573,9 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
             values={customFieldValues}
             onChangeField={(name, value) => setCustomFieldValues(prev => ({ ...prev, [name]: value }))}
           />
+
+          {/* Sezione Post Vendita - evoluzione visibile a tutti gli utenti con accesso al cliente */}
+          <ClientePostVenditaSection clienteId={cliente?.id} clienteSnapshot={cliente} />
 
           {/* Note - Storico immutabile */}
           <Card>

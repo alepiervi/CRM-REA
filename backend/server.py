@@ -14797,7 +14797,9 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         "Tipo SIM", "Numero SIM", "Numero Cellulare SIM", "ICCID SIM", "Operatore SIM",
         "Telefono da Portare", "Titolare Diverso", "Offerta SIM", "Utente Assegnato SIM",
         # System Fields
-        "Status", "Utente Creatore", "Data Creazione", "Note", "Note Back Office"
+        "Status", "Utente Creatore", "Data Creazione", "Note", "Note Back Office",
+        # Post Vendita
+        "Post Vendita - In Workflow", "Post Vendita - Stato", "Post Vendita - Esito (Stage)", "Post Vendita - Ultimo Aggiornamento", "Codice Account"
     ]
     
     # Append custom field columns (dynamic, from cliente_custom_fields)
@@ -14965,6 +14967,23 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         
         ws.cell(row=row_idx, column=col, value=cliente.get("note", "")); col += 1
         ws.cell(row=row_idx, column=col, value=cliente.get("note_backoffice", "") or cliente.get("note_back_office", "")); col += 1
+        
+        # Post Vendita
+        ws.cell(row=row_idx, column=col, value="Sì" if cliente.get("passed_to_post_vendita") else "No"); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("post_vendita_status_label") or cliente.get("post_vendita_status") or ""); col += 1
+        _pv_stage = cliente.get("post_vendita_stage") or ""
+        _pv_stage_label = {"attivato": "🟢 Attivato", "ko": "🔴 KO", "lavorazione": "🟡 In Lavorazione"}.get(_pv_stage, "")
+        ws.cell(row=row_idx, column=col, value=_pv_stage_label); col += 1
+        _pv_ts = cliente.get("post_vendita_status_updated_at")
+        if _pv_ts:
+            if isinstance(_pv_ts, str):
+                ws.cell(row=row_idx, column=col, value=_pv_ts)
+            else:
+                ws.cell(row=row_idx, column=col, value=_pv_ts.strftime("%d/%m/%Y %H:%M"))
+        else:
+            ws.cell(row=row_idx, column=col, value="")
+        col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("codice_account", "") or ""); col += 1
         
         # Custom fields values (from dati_aggiuntivi)
         dati_agg = cliente.get("dati_aggiuntivi") or {}
@@ -22667,26 +22686,43 @@ _PV_STAGE_TO_CLIENTE_STATUS = {
 VALID_PV_STAGES = {"lavorazione", "attivato", "ko"}
 
 
-async def _apply_pv_stage_to_cliente(cliente_id: str, pv_status_value: str, commessa_id: Optional[str] = None):
-    """Lookup the stage of the given post-vendita status and:
-      - Always store `post_vendita_stage` and `post_vendita_status_label` on the cliente
-        so the frontend can render the colored dot + tooltip with the human label.
-      - For stage 'attivato' / 'ko' also rewrite cliente.status (final outcome).
-      - For stage 'lavorazione' DO NOT touch cliente.status (only the dot signals it).
+async def _apply_pv_stage_to_cliente(cliente_id: str, pv_status_value: str, commessa_id: Optional[str] = None, actor: Optional[User] = None):
+    """Single source of truth to switch a cliente's post-vendita status.
+    Performs:
+      1. Read previous PV state (status, label, stage) BEFORE any mutation.
+      2. Persist new status + label + stage + updated_at + passed_to_post_vendita=True.
+      3. For stage 'attivato' / 'ko' rewrite cliente.status (final outcome). For 'lavorazione' the
+         anagrafica status is left untouched (only the dot signals it).
+      4. Append an immutable history entry in `cliente_post_vendita_history`.
+    Idempotent on stage/label, but always logs the audit when the status value changes.
     """
     if not pv_status_value:
         return
     q = {"value": pv_status_value, "is_active": True}
     if commessa_id:
         q["commessa_id"] = commessa_id
-    cfg = await db.post_vendita_status_config.find_one(q, {"_id": 0, "stage": 1, "label": 1})
+    cfg = await db.post_vendita_status_config.find_one(q, {"_id": 0, "stage": 1, "label": 1, "color": 1})
     if not cfg:
         return
     stage = (cfg.get("stage") or "lavorazione").lower()
     label = cfg.get("label") or pv_status_value
+    color = cfg.get("color") or None
+
+    # Snapshot previous state
+    prev = await db.clienti.find_one(
+        {"id": cliente_id},
+        {"_id": 0, "post_vendita_status": 1, "post_vendita_stage": 1, "post_vendita_status_label": 1}
+    ) or {}
+    prev_status = prev.get("post_vendita_status")
+    prev_label = prev.get("post_vendita_status_label")
+    prev_stage = prev.get("post_vendita_stage")
+
     set_doc = {
-        "post_vendita_stage": stage,
+        "post_vendita_status": pv_status_value,
         "post_vendita_status_label": label,
+        "post_vendita_stage": stage,
+        "post_vendita_status_updated_at": datetime.now(timezone.utc),
+        "passed_to_post_vendita": True,
     }
     new_cliente_status = _PV_STAGE_TO_CLIENTE_STATUS.get(stage)
     if new_cliente_status:
@@ -22695,6 +22731,25 @@ async def _apply_pv_stage_to_cliente(cliente_id: str, pv_status_value: str, comm
         {"id": cliente_id},
         {"$set": set_doc}
     )
+
+    # Append history when the PV status value, stage or label actually changed
+    changed = (prev_status != pv_status_value) or (prev_stage != stage) or (prev_label != label)
+    if changed:
+        history_entry = {
+            "id": str(uuid.uuid4()),
+            "cliente_id": cliente_id,
+            "post_vendita_status": pv_status_value,
+            "post_vendita_status_label": label,
+            "post_vendita_stage": stage,
+            "color": color,
+            "previous_status": prev_status,
+            "previous_label": prev_label,
+            "previous_stage": prev_stage,
+            "created_at": datetime.now(timezone.utc),
+            "created_by_id": actor.id if actor else None,
+            "created_by_username": actor.username if actor else "system",
+        }
+        await db.cliente_post_vendita_history.insert_one(history_entry)
 
 
 def _require_post_vendita_role(current_user: User):
@@ -22768,7 +22823,7 @@ async def update_post_vendita_status_config(
                 {"_id": 0, "id": 1}
             )
             async for c in cli_cursor:
-                await _apply_pv_stage_to_cliente(c["id"], current_value, commessa_id)
+                await _apply_pv_stage_to_cliente(c["id"], current_value, commessa_id, actor=current_user)
     return PostVenditaStatusConfig(**doc)
 
 
@@ -22781,6 +22836,38 @@ async def delete_post_vendita_status_config(
         raise HTTPException(status_code=403, detail="Solo admin")
     await db.post_vendita_status_config.update_one({"id": config_id}, {"$set": {"is_active": False}})
     return {"success": True}
+
+
+@api_router.get("/clienti/{cliente_id}/post-vendita-history")
+async def get_post_vendita_history(
+    cliente_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Return the immutable history of post-vendita status changes for a cliente.
+    Visible to ANY user with access to the cliente (admin, BO Commessa, creator,
+    same sub-agenzia, or commessa-authorized).
+    """
+    cliente_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    cliente = Cliente(**cliente_doc)
+    if not await can_user_access_cliente_notes(current_user, cliente):
+        raise HTTPException(status_code=403, detail="Accesso negato")
+    docs = await db.cliente_post_vendita_history.find(
+        {"cliente_id": cliente_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(length=None)
+    return {
+        "cliente_id": cliente_id,
+        "current": {
+            "post_vendita_status": cliente_doc.get("post_vendita_status"),
+            "post_vendita_status_label": cliente_doc.get("post_vendita_status_label"),
+            "post_vendita_stage": cliente_doc.get("post_vendita_stage"),
+            "passed_to_post_vendita": bool(cliente_doc.get("passed_to_post_vendita")),
+            "post_vendita_status_updated_at": cliente_doc.get("post_vendita_status_updated_at"),
+        },
+        "history": docs,
+        "count": len(docs),
+    }
 
 
 @api_router.patch("/clienti/{cliente_id}/codice-account")
@@ -22830,18 +22917,19 @@ async def pass_cliente_to_post_vendita(
         )
         if default_cfg:
             default_status = default_cfg.get("value")
-    update_doc = {
-        "passed_to_post_vendita": True,
-        "post_vendita_status_updated_at": datetime.now(timezone.utc),
-    }
-    # Do not overwrite an existing PV status
-    if default_status and not cliente.post_vendita_status:
-        update_doc["post_vendita_status"] = default_status
-    await db.clienti.update_one({"id": cliente_id}, {"$set": update_doc})
-    # Propagate stage to anagrafica cliente.status
-    final_pv_status = update_doc.get("post_vendita_status") or cliente.post_vendita_status
+    final_pv_status = cliente.post_vendita_status or default_status
     if final_pv_status:
-        await _apply_pv_stage_to_cliente(cliente_id, final_pv_status, cliente.commessa_id)
+        # Helper performs the full mutation + history entry
+        await _apply_pv_stage_to_cliente(cliente_id, final_pv_status, cliente.commessa_id, actor=current_user)
+    else:
+        # No default status configured: just mark as passed_to_post_vendita
+        await db.clienti.update_one(
+            {"id": cliente_id},
+            {"$set": {
+                "passed_to_post_vendita": True,
+                "post_vendita_status_updated_at": datetime.now(timezone.utc),
+            }}
+        )
     return {"success": True, "post_vendita_status": final_pv_status}
 
 
@@ -22903,17 +22991,8 @@ async def patch_post_vendita_status(
     cli_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0, "commessa_id": 1})
     if not cli_doc:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
-    result = await db.clienti.update_one(
-        {"id": cliente_id},
-        {"$set": {
-            "post_vendita_status": new_status,
-            "post_vendita_status_updated_at": datetime.now(timezone.utc),
-        }}
-    )
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Cliente non trovato")
-    # Propagate stage to anagrafica
-    await _apply_pv_stage_to_cliente(cliente_id, new_status, cli_doc.get("commessa_id"))
+    # The helper performs the update + history append atomically per call
+    await _apply_pv_stage_to_cliente(cliente_id, new_status, cli_doc.get("commessa_id"), actor=current_user)
     return {"success": True}
 
 
@@ -23093,23 +23172,16 @@ async def bulk_import_execute(
     updated_manual = 0
     errors = []
 
-    # Auto-matched: only update status
+    # Auto-matched: status update via the helper (atomic + audit history)
     for item in auto_matched:
         cid = item.get("cliente_id")
         if not cid:
             continue
         try:
-            res = await db.clienti.update_one(
-                {"id": cid},
-                {"$set": {
-                    "post_vendita_status": status_to_set,
-                    "post_vendita_status_updated_at": now,
-                    "passed_to_post_vendita": True,
-                }}
-            )
-            if res.matched_count:
+            exists = await db.clienti.count_documents({"id": cid})
+            if exists:
+                await _apply_pv_stage_to_cliente(cid, status_to_set, commessa_id, actor=current_user)
                 updated_auto += 1
-                await _apply_pv_stage_to_cliente(cid, status_to_set, commessa_id)
         except Exception as e:
             errors.append({"cliente_id": cid, "error": str(e)})
 
@@ -23119,17 +23191,10 @@ async def bulk_import_execute(
         if not cid:
             continue
         try:
-            res = await db.clienti.update_one(
-                {"id": cid},
-                {"$set": {
-                    "post_vendita_status": status_to_set,
-                    "post_vendita_status_updated_at": now,
-                    "passed_to_post_vendita": True,
-                }}
-            )
-            if res.matched_count:
+            exists = await db.clienti.count_documents({"id": cid})
+            if exists:
+                await _apply_pv_stage_to_cliente(cid, status_to_set, commessa_id, actor=current_user)
                 updated_manual += 1
-                await _apply_pv_stage_to_cliente(cid, status_to_set, commessa_id)
         except Exception as e:
             errors.append({"cliente_id": cid, "error": str(e)})
 

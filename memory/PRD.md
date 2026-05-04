@@ -7,6 +7,23 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (4 Maggio 2026 — Sezione Post Vendita end-to-end)
 
+- **📜 Sezione "Evoluzione Post Vendita" su scheda Cliente + Excel export PV**
+  - **Nuova collezione MongoDB** `cliente_post_vendita_history`: storico immutabile di OGNI cambio status PV (con `previous_status/label/stage` + autore + data)
+  - **Helper `_apply_pv_stage_to_cliente` consolidato** come unica fonte di verità: snapshot previous → mutazione completa → entry storia (atomico per chiamata). Tutti i 3 callers (pass-to, PATCH, bulk-import) ora delegano al helper, niente più duplicazione di update_one
+  - **Nuovo endpoint** `GET /api/clienti/{id}/post-vendita-history` accessibile a TUTTI gli utenti con accesso alla scheda cliente (via `can_user_access_cliente_notes`, non solo admin/BO Commessa)
+  - **Frontend `/app/frontend/src/components/ClientePostVenditaSection.jsx`**: card indaco con
+    - Stato attuale: badge stage colorato (🟡/🟢/🔴) + label umano
+    - Timeline cronologica (newest-first) con linea verticale, pallini stage, transizioni `prev → new`, autore e data
+    - Messaggio "Cliente non ancora in Post Vendita" se `passed_to_post_vendita=false`
+  - **Integrato in 2 punti**: `ViewClienteModal` (sotto i Custom Fields, prima delle Note) e `EditClienteModal` (stesso layout)
+  - **Excel Export Clienti** (`GET /api/clienti/export/excel`): aggiunte 5 colonne dopo "Note Back Office":
+    1. `Post Vendita - In Workflow` (Sì/No)
+    2. `Post Vendita - Stato` (label umano)
+    3. `Post Vendita - Esito (Stage)` (🟢 Attivato / 🔴 KO / 🟡 In Lavorazione)
+    4. `Post Vendita - Ultimo Aggiornamento` (data formattata)
+    5. `Codice Account`
+  - **Test**: history endpoint validato con catena lav → att → ko (3 entries con previous corretto), Excel export 200 OK con 5 colonne PV popolate, 15/15 pytest backend
+
 - **🆕 Stage degli Status Post Vendita + propagazione automatica all'anagrafica cliente**
   - Ogni `PostVenditaStatusConfig` ha ora un campo `stage` (3 valori): `lavorazione` (🟡), `attivato` (🟢), `ko` (🔴) — validato lato backend
   - Quando un cliente cambia `post_vendita_status` (via pass-to-PV, PATCH status, bulk-import auto+manual), il backend imposta automaticamente:
