@@ -34,6 +34,8 @@ export const PostVendita = ({ user }) => {
   const [activeSubTab, setActiveSubTab] = useState("clienti");
   const [commesse, setCommesse] = useState([]);
   const [selectedCommessa, setSelectedCommessa] = useState("");
+  const [servizi, setServizi] = useState([]);  // tutti i servizi della commessa selezionata
+  const [selectedServizio, setSelectedServizio] = useState("");  // "" = tutti
 
   useEffect(() => {
     const loadCommesse = async () => {
@@ -49,6 +51,36 @@ export const PostVendita = ({ user }) => {
     loadCommesse();
   }, []);
 
+  // Carica i servizi disponibili per la commessa selezionata.
+  // Backoffice_commessa con servizi_autorizzati: la lista è filtrata dal backend tramite /servizi
+  // (ritorna solo i servizi autorizzati per l'utente).
+  useEffect(() => {
+    if (!selectedCommessa) {
+      setServizi([]);
+      setSelectedServizio("");
+      return;
+    }
+    const loadServizi = async () => {
+      try {
+        const res = await axios.get(`${API}/servizi`, {
+          params: { commessa_id: selectedCommessa },
+          headers: authHeaders(),
+        });
+        const list = Array.isArray(res.data) ? res.data : res.data?.servizi || [];
+        setServizi(list);
+        // Reset selezione se il servizio precedente non è più nella lista
+        if (selectedServizio && !list.find((s) => s.id === selectedServizio)) {
+          setSelectedServizio("");
+        }
+      } catch (e) {
+        console.error("loadServizi", e);
+        setServizi([]);
+      }
+    };
+    loadServizi();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCommessa]);
+
   const isAdmin = user?.role === "admin";
 
   return (
@@ -63,7 +95,7 @@ export const PostVendita = ({ user }) => {
             Gestione del workflow post-vendita: status configurabili per commessa e import massivi.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <label className="text-sm text-slate-600">Commessa:</label>
           <select
             value={selectedCommessa}
@@ -73,6 +105,19 @@ export const PostVendita = ({ user }) => {
           >
             {commesse.map((c) => (
               <option key={c.id} value={c.id}>{c.nome}</option>
+            ))}
+          </select>
+          <label className="text-sm text-slate-600 ml-2">Servizio:</label>
+          <select
+            value={selectedServizio}
+            onChange={(e) => setSelectedServizio(e.target.value)}
+            className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+            data-testid="post-vendita-servizio-select"
+            disabled={servizi.length === 0}
+          >
+            <option value="">{servizi.length === 0 ? "Nessun servizio" : "Tutti i servizi"}</option>
+            {servizi.map((s) => (
+              <option key={s.id} value={s.id}>{s.nome}</option>
             ))}
           </select>
         </div>
@@ -102,7 +147,7 @@ export const PostVendita = ({ user }) => {
 
       {/* Content */}
       <div>
-        {activeSubTab === "clienti" && <ClientiTab commessaId={selectedCommessa} />}
+        {activeSubTab === "clienti" && <ClientiTab commessaId={selectedCommessa} servizioId={selectedServizio} />}
         {activeSubTab === "import" && <BulkImportTab commessaId={selectedCommessa} commesse={commesse} />}
         {activeSubTab === "config" && isAdmin && <StatusConfigTab commessaId={selectedCommessa} />}
         {activeSubTab === "history" && <ImportHistoryTab />}
@@ -151,7 +196,7 @@ const KpiCard = ({ label, value, accent = "slate", emoji, active, onClick, testi
 // =====================================================
 // CLIENTI TAB
 // =====================================================
-const ClientiTab = ({ commessaId }) => {
+const ClientiTab = ({ commessaId, servizioId }) => {
   const [statusConfig, setStatusConfig] = useState([]);
   const [data, setData] = useState({ clienti: [], total: 0 });
   const [stats, setStats] = useState({ lavorazione: 0, attivato: 0, ko: 0, no_stage: 0, total: 0 });
@@ -175,15 +220,20 @@ const ClientiTab = ({ commessaId }) => {
         page,
         page_size: PAGE_SIZE,
         include_closed: filters.include_closed,
+        ...(servizioId && { servizio_id: servizioId }),
         ...(filters.stage && { stage: filters.stage }),
         ...(filters.post_vendita_status && { post_vendita_status: filters.post_vendita_status }),
         ...(filters.codice_account_filter && { codice_account_filter: filters.codice_account_filter }),
         ...(filters.search && { search: filters.search }),
       };
+      const statsParams = {
+        commessa_id: commessaId,
+        ...(servizioId && { servizio_id: servizioId }),
+      };
       const [resCli, resCfg, resStats] = await Promise.all([
         axios.get(`${API}/post-vendita/clienti`, { params, headers: authHeaders() }),
         axios.get(`${API}/post-vendita/status-config`, { params: { commessa_id: commessaId }, headers: authHeaders() }),
-        axios.get(`${API}/post-vendita/clienti/stats`, { params: { commessa_id: commessaId }, headers: authHeaders() }),
+        axios.get(`${API}/post-vendita/clienti/stats`, { params: statsParams, headers: authHeaders() }),
       ]);
       setData(resCli.data);
       setStatusConfig(resCfg.data || []);
@@ -193,7 +243,7 @@ const ClientiTab = ({ commessaId }) => {
     } finally {
       setLoading(false);
     }
-  }, [commessaId, page, filters]);
+  }, [commessaId, servizioId, page, filters]);
 
   useEffect(() => {
     fetchData();

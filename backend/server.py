@@ -22827,12 +22827,16 @@ def _require_post_vendita_role(current_user: User):
         raise HTTPException(status_code=403, detail="Accesso Post Vendita riservato ad admin e backoffice commessa")
 
 
-def _check_post_vendita_commessa_access(current_user: User, commessa_id: str):
-    """Backoffice commessa can only operate on their authorized commesse."""
+def _check_post_vendita_commessa_access(current_user: User, commessa_id: str, servizio_id: Optional[str] = None):
+    """Backoffice commessa can only operate on their authorized commesse AND, if servizi_autorizzati is set,
+    on those specific servizi within the commessa. If servizi_autorizzati is empty, full commessa access."""
     if current_user.role == UserRole.BACKOFFICE_COMMESSA:
-        allowed = list(current_user.commesse_autorizzate or [])
-        if commessa_id not in allowed:
+        allowed_comm = list(current_user.commesse_autorizzate or [])
+        if commessa_id not in allowed_comm:
             raise HTTPException(status_code=403, detail="Commessa non autorizzata")
+        allowed_serv = list(current_user.servizi_autorizzati or [])
+        if servizio_id and allowed_serv and servizio_id not in allowed_serv:
+            raise HTTPException(status_code=403, detail="Servizio non autorizzato per questo utente")
 
 
 @api_router.get("/post-vendita/status-config")
@@ -23006,23 +23010,35 @@ async def pass_cliente_to_post_vendita(
 @api_router.get("/post-vendita/clienti/stats")
 async def post_vendita_stats(
     commessa_id: Optional[str] = None,
+    servizio_id: Optional[str] = None,  # Filtro esplicito per servizio (admin); per backoffice_commessa applicato sempre se servizi_autorizzati
     current_user: User = Depends(get_current_user)
 ):
-    """KPI counters per stage for the commessa (lavorazione / attivato / ko / no_stage)."""
+    """KPI counters per stage per (commessa, servizio) (lavorazione / attivato / ko / no_stage)."""
     _require_post_vendita_role(current_user)
     base = {"passed_to_post_vendita": True, "is_active": {"$ne": False}}
     if current_user.role == UserRole.BACKOFFICE_COMMESSA:
-        allowed = list(current_user.commesse_autorizzate or [])
-        if not allowed:
+        allowed_comm = list(current_user.commesse_autorizzate or [])
+        if not allowed_comm:
             return {"lavorazione": 0, "attivato": 0, "ko": 0, "no_stage": 0, "total": 0}
         if commessa_id:
-            if commessa_id not in allowed:
+            if commessa_id not in allowed_comm:
                 raise HTTPException(status_code=403, detail="Commessa non autorizzata")
             base["commessa_id"] = commessa_id
         else:
-            base["commessa_id"] = {"$in": allowed}
-    elif commessa_id:
-        base["commessa_id"] = commessa_id
+            base["commessa_id"] = {"$in": allowed_comm}
+        # Auto-restrict to authorized servizi when servizi_autorizzati is configured
+        allowed_serv = list(current_user.servizi_autorizzati or [])
+        if servizio_id:
+            if allowed_serv and servizio_id not in allowed_serv:
+                raise HTTPException(status_code=403, detail="Servizio non autorizzato")
+            base["servizio_id"] = servizio_id
+        elif allowed_serv:
+            base["servizio_id"] = {"$in": allowed_serv}
+    else:
+        if commessa_id:
+            base["commessa_id"] = commessa_id
+        if servizio_id:
+            base["servizio_id"] = servizio_id
 
     pipeline = [
         {"$match": base},
@@ -23040,6 +23056,7 @@ async def post_vendita_stats(
 @api_router.get("/post-vendita/clienti")
 async def list_post_vendita_clienti(
     commessa_id: Optional[str] = None,
+    servizio_id: Optional[str] = None,  # Filtro esplicito per servizio (admin); per backoffice_commessa applicato sempre se servizi_autorizzati
     post_vendita_status: Optional[str] = None,
     stage: Optional[str] = None,  # "lavorazione" | "attivato" | "ko" — overrides include_closed
     codice_account_filter: Optional[str] = None,  # "present" or "missing"
@@ -23064,19 +23081,30 @@ async def list_post_vendita_clienti(
                 {"post_vendita_stage": "lavorazione"},
             ]}
         ]
-    # Restrict backoffice_commessa to only their authorized commesse
+    # Restrict backoffice_commessa to only their authorized commesse + servizi
     if current_user.role == UserRole.BACKOFFICE_COMMESSA:
-        allowed = list(current_user.commesse_autorizzate or [])
-        if not allowed:
+        allowed_comm = list(current_user.commesse_autorizzate or [])
+        if not allowed_comm:
             return {"clienti": [], "total": 0, "page": page, "page_size": page_size}
         if commessa_id:
-            if commessa_id not in allowed:
+            if commessa_id not in allowed_comm:
                 raise HTTPException(status_code=403, detail="Commessa non autorizzata")
             query["commessa_id"] = commessa_id
         else:
-            query["commessa_id"] = {"$in": allowed}
-    elif commessa_id:
-        query["commessa_id"] = commessa_id
+            query["commessa_id"] = {"$in": allowed_comm}
+        # Auto-restrict to authorized servizi when servizi_autorizzati is configured
+        allowed_serv = list(current_user.servizi_autorizzati or [])
+        if servizio_id:
+            if allowed_serv and servizio_id not in allowed_serv:
+                raise HTTPException(status_code=403, detail="Servizio non autorizzato")
+            query["servizio_id"] = servizio_id
+        elif allowed_serv:
+            query["servizio_id"] = {"$in": allowed_serv}
+    else:
+        if commessa_id:
+            query["commessa_id"] = commessa_id
+        if servizio_id:
+            query["servizio_id"] = servizio_id
     if post_vendita_status:
         query["post_vendita_status"] = post_vendita_status
     if codice_account_filter == "present":
@@ -23115,9 +23143,11 @@ async def patch_post_vendita_status(
     new_status = (payload or {}).get("post_vendita_status")
     if not new_status:
         raise HTTPException(status_code=400, detail="post_vendita_status required")
-    cli_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0, "commessa_id": 1})
+    cli_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0, "commessa_id": 1, "servizio_id": 1})
     if not cli_doc:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
+    # ACL: backoffice_commessa restricted to authorized commessa + servizi
+    _check_post_vendita_commessa_access(current_user, cli_doc.get("commessa_id"), cli_doc.get("servizio_id"))
     # The helper performs the update + history append atomically per call
     await _apply_pv_stage_to_cliente(cliente_id, new_status, cli_doc.get("commessa_id"), actor=current_user)
     return {"success": True}
@@ -23172,6 +23202,8 @@ async def bulk_import_analyze(
     """
     _require_post_vendita_role(current_user)
     _check_post_vendita_commessa_access(current_user, commessa_id)
+    # NOTE: bulk-import opera al livello commessa. Per backoffice_commessa con servizi_autorizzati,
+    # le righe verranno filtrate sui clienti accessibili (servizi autorizzati) durante l'analyze.
     try:
         match_cols = json.loads(match_columns or "[]")
     except Exception:
@@ -23183,6 +23215,11 @@ async def bulk_import_analyze(
 
     # Load all clienti of commessa into memory (any state - import will mark them as passed_to_post_vendita)
     cli_query = {"commessa_id": commessa_id, "is_active": {"$ne": False}}
+    # Backoffice commessa con servizi_autorizzati: restringe il match ai propri servizi
+    if current_user.role == UserRole.BACKOFFICE_COMMESSA:
+        allowed_serv = list(current_user.servizi_autorizzati or [])
+        if allowed_serv:
+            cli_query["servizio_id"] = {"$in": allowed_serv}
     clienti_all = await db.clienti.find(
         cli_query,
         {"_id": 0, "id": 1, "nome": 1, "cognome": 1, "email": 1, "telefono": 1,
