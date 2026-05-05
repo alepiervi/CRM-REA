@@ -14798,6 +14798,10 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         "Telefono da Portare", "Titolare Diverso", "Offerta SIM", "Utente Assegnato SIM",
         # System Fields
         "Status", "Utente Creatore", "Data Creazione", "Note", "Note Back Office",
+        # Ultime note dallo storico (immutabile) per ogni tipologia
+        "Ultima Nota Cliente", "Ultima Nota Cliente - Autore", "Ultima Nota Cliente - Data",
+        "Ultima Nota Back Office", "Ultima Nota Back Office - Autore", "Ultima Nota Back Office - Data",
+        "Ultima Nota Post Vendita", "Ultima Nota Post Vendita - Autore", "Ultima Nota Post Vendita - Data",
         # Post Vendita
         "Post Vendita - In Workflow", "Post Vendita - Stato", "Post Vendita - Esito (Stage)", "Post Vendita - Ultimo Aggiornamento", "Codice Account"
     ]
@@ -14816,6 +14820,40 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         cell.font = header_font
         cell.fill = header_fill
         cell.alignment = header_alignment
+
+    # Pre-load the LATEST note per (cliente_id, tipo) from the immutable history
+    # so each row in the export shows the most recent cliente / backoffice / post_vendita note
+    cliente_ids_for_notes = [c.get("id") for c in clienti_data if c.get("id")]
+    latest_notes_map: Dict[str, Dict[str, dict]] = {}
+    if cliente_ids_for_notes:
+        notes_pipeline = [
+            {"$match": {"cliente_id": {"$in": cliente_ids_for_notes}, "tipo": {"$in": ["cliente", "backoffice", "post_vendita"]}}},
+            {"$sort": {"created_at": -1}},
+            {"$group": {
+                "_id": {"cliente_id": "$cliente_id", "tipo": "$tipo"},
+                "content": {"$first": "$content"},
+                "created_at": {"$first": "$created_at"},
+                "created_by_username": {"$first": "$created_by_username"},
+            }},
+        ]
+        async for entry in db.cliente_note_history.aggregate(notes_pipeline):
+            cid = entry["_id"]["cliente_id"]
+            tipo = entry["_id"]["tipo"]
+            latest_notes_map.setdefault(cid, {})[tipo] = {
+                "content": entry.get("content", ""),
+                "created_at": entry.get("created_at"),
+                "created_by_username": entry.get("created_by_username", ""),
+            }
+
+    def _fmt_dt(v):
+        if not v:
+            return ""
+        if isinstance(v, str):
+            return v
+        try:
+            return v.strftime("%d/%m/%Y %H:%M")
+        except Exception:
+            return str(v)
     
     # Data rows - ALL FIELDS
     for row_idx, cliente in enumerate(clienti_data, 2):
@@ -14967,6 +15005,14 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         
         ws.cell(row=row_idx, column=col, value=cliente.get("note", "")); col += 1
         ws.cell(row=row_idx, column=col, value=cliente.get("note_backoffice", "") or cliente.get("note_back_office", "")); col += 1
+        
+        # Ultime note dallo storico immutabile
+        _cnotes = latest_notes_map.get(cliente.get("id"), {})
+        for _tipo in ("cliente", "backoffice", "post_vendita"):
+            _entry = _cnotes.get(_tipo) or {}
+            ws.cell(row=row_idx, column=col, value=_entry.get("content", "")); col += 1
+            ws.cell(row=row_idx, column=col, value=_entry.get("created_by_username", "")); col += 1
+            ws.cell(row=row_idx, column=col, value=_fmt_dt(_entry.get("created_at"))); col += 1
         
         # Post Vendita
         ws.cell(row=row_idx, column=col, value="Sì" if cliente.get("passed_to_post_vendita") else "No"); col += 1
