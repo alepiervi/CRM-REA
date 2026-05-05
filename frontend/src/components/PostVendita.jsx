@@ -356,7 +356,19 @@ const ClientiTab = ({ commessaId }) => {
                   </td>
                 </tr>
               ) : data.clienti.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50" data-testid={`pv-cliente-row-${c.id}`}>
+                <tr
+                  key={c.id}
+                  className="hover:bg-indigo-50 cursor-pointer transition-colors"
+                  data-testid={`pv-cliente-row-${c.id}`}
+                  onClick={(e) => {
+                    // Avoid triggering when clicking the inline status select
+                    if (e.target.closest("select")) return;
+                    sessionStorage.setItem("pvOpenClienteId", c.id);
+                    sessionStorage.setItem("pvOpenFromPV", "1");
+                    window.dispatchEvent(new CustomEvent("app:open-cliente-from-pv"));
+                  }}
+                  title="Clicca per aprire la scheda completa del cliente"
+                >
                   <td className="px-3 py-2">
                     <div className="font-medium text-slate-800">{c.cognome} {c.nome}</div>
                     {c.ragione_sociale && <div className="text-xs text-slate-500">{c.ragione_sociale}</div>}

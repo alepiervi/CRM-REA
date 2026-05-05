@@ -17268,7 +17268,7 @@ async def list_cliente_locks(current_user: User = Depends(get_current_user)):
 class ClienteNoteEntry(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     cliente_id: str
-    tipo: str  # "cliente" | "backoffice"
+    tipo: str  # "cliente" | "backoffice" | "post_vendita"
     content: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_by_id: str
@@ -17276,7 +17276,7 @@ class ClienteNoteEntry(BaseModel):
 
 
 class ClienteNoteEntryCreate(BaseModel):
-    tipo: str  # "cliente" | "backoffice"
+    tipo: str  # "cliente" | "backoffice" | "post_vendita"
     content: str
 
 
@@ -17296,8 +17296,8 @@ async def add_cliente_note_history(
         raise HTTPException(status_code=403, detail="Accesso negato al cliente")
 
     tipo = (payload.tipo or "").strip().lower()
-    if tipo not in ("cliente", "backoffice"):
-        raise HTTPException(status_code=400, detail="tipo must be 'cliente' or 'backoffice'")
+    if tipo not in ("cliente", "backoffice", "post_vendita"):
+        raise HTTPException(status_code=400, detail="tipo must be 'cliente', 'backoffice' or 'post_vendita'")
 
     content = (payload.content or "").strip()
     if not content:
@@ -17308,6 +17308,13 @@ async def add_cliente_note_history(
         raise HTTPException(
             status_code=403,
             detail="Solo Admin e Back Office Commessa possono aggiungere note Back Office"
+        )
+
+    # Note Post Vendita: solo admin + backoffice_commessa (stessi ruoli autorizzati al post-vendita)
+    if tipo == "post_vendita" and current_user.role not in (UserRole.ADMIN, UserRole.BACKOFFICE_COMMESSA):
+        raise HTTPException(
+            status_code=403,
+            detail="Solo Admin e Back Office Commessa possono aggiungere note Post Vendita"
         )
 
     entry = ClienteNoteEntry(
@@ -17328,7 +17335,11 @@ async def get_cliente_note_history(
     current_user: User = Depends(get_current_user)
 ):
     """Return all note history entries for a cliente, newest first.
-    Optional filter by tipo ('cliente' or 'backoffice')."""
+    Optional filter by tipo ('cliente' | 'backoffice' | 'post_vendita').
+
+    Le note 'post_vendita' sono visibili SOLO ad admin e backoffice_commessa,
+    e sono escluse dalla scheda cliente normale (devono essere richieste esplicitamente).
+    """
     cliente_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0})
     if not cliente_doc:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
@@ -17337,8 +17348,21 @@ async def get_cliente_note_history(
         raise HTTPException(status_code=403, detail="Accesso negato al cliente")
 
     query: dict = {"cliente_id": cliente_id}
-    if tipo and tipo.lower() in ("cliente", "backoffice"):
-        query["tipo"] = tipo.lower()
+    if tipo and tipo.lower() in ("cliente", "backoffice", "post_vendita"):
+        tipo_lower = tipo.lower()
+        # Gating: post_vendita notes visible only to admin + backoffice_commessa
+        if tipo_lower == "post_vendita" and current_user.role not in (UserRole.ADMIN, UserRole.BACKOFFICE_COMMESSA):
+            raise HTTPException(status_code=403, detail="Accesso negato alle note Post Vendita")
+        query["tipo"] = tipo_lower
+    else:
+        # No explicit tipo filter: hide post_vendita notes from the generic note stream
+        # unless the caller has PV role (they'll see them in the PV tab anyway).
+        if current_user.role not in (UserRole.ADMIN, UserRole.BACKOFFICE_COMMESSA):
+            query["tipo"] = {"$ne": "post_vendita"}
+        else:
+            # Even admin should NOT see PV notes on the generic cliente view by default.
+            # They can pass tipo='post_vendita' explicitly to retrieve them.
+            query["tipo"] = {"$ne": "post_vendita"}
 
     entries = await db.cliente_note_history.find(query, {"_id": 0}).sort("created_at", -1).to_list(length=None)
     return [ClienteNoteEntry(**e) for e in entries]

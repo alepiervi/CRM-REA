@@ -7,6 +7,17 @@ Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati
 
 ### ✅ Completato in questa sessione (4 Maggio 2026 — Sezione Post Vendita end-to-end)
 
+- **📝 Note Post Vendita + apertura scheda completa dal tab PV**
+  - **Cliccando una riga nella tab "Clienti Post-Vendita"** si apre la scheda completa del cliente (stesso `EditClienteModal` usato nel tab Clienti). Le modifiche fatte da qui si salvano sulla scheda originale del cliente (unico modello, unica API)
+  - **Nuova tipologia di note**: `"post_vendita"` supportata da `POST/GET /api/clienti/{id}/note-history?tipo=post_vendita`
+  - **Regole di visibilità rigorose** (backend):
+    - CREATE: solo `admin` e `backoffice_commessa` possono aggiungere note PV (403 per altri ruoli)
+    - GET senza `tipo` filter: le note `post_vendita` sono **escluse anche per admin** dalla lista generica → la scheda cliente normale non mostra mai note PV
+    - GET con `tipo=post_vendita`: solo admin e BO commessa autorizzati
+  - **EditClienteModal**: nuova prop `fromPostVendita`. Quando `true` (passata solo quando si arriva dal tab PV) mostra una sezione extra "Note Post Vendita" con storico immutabile e input di aggiunta (tema indigo). Nel flusso normale `fromPostVendita=false` → la sezione NON appare
+  - **Meccanismo di apertura**: sessionStorage(`pvOpenClienteId`+`pvOpenFromPV`) + `CustomEvent('app:open-cliente-from-pv')` → Dashboard naviga al tab Clienti → ClientiManagement intercetta, fetcha il cliente e apre EditClienteModal con `fromPostVendita=true`
+  - **Test reale**: nota PV creata, GET filter default esclude PV note (admin incluso), GET tipo=post_vendita le mostra. 97/97 pytest passing
+
 - **📊 KPI Cards Post Vendita (funnel cliccabile)**
   - Nuovo endpoint `GET /api/post-vendita/clienti/stats?commessa_id=X` aggrega via `$group` per stage (lavorazione / attivato / ko / no_stage) + total. Rispetta ACL backoffice_commessa
   - Aggiunto query param `stage` a `GET /api/post-vendita/clienti` (overrides include_closed): filtra esattamente per uno stage

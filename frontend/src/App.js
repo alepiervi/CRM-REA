@@ -1458,6 +1458,17 @@ const Dashboard = () => {
     console.log(`✅ NAVIGATION DEBUG: setActiveTab(${tabId}) called, new activeTab should be:`, tabId);
   };
 
+  // Listener per aprire la scheda cliente dal Post Vendita: naviga al tab Clienti
+  // ClientiManagement poi leggerà sessionStorage('pvOpenClienteId') per aprire il modale
+  useEffect(() => {
+    const handler = () => {
+      setActiveTab("clienti");
+      setIsMobileMenuOpen(false);
+    };
+    window.addEventListener("app:open-cliente-from-pv", handler);
+    return () => window.removeEventListener("app:open-cliente-from-pv", handler);
+  }, []);
+
   useEffect(() => {
     fetchUnits();
     fetchCommesse();
@@ -19441,6 +19452,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState(null);
+  const [fromPostVendita, setFromPostVendita] = useState(false);  // true quando il modale Edit è aperto dal tab Post Vendita
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [selectedClientName, setSelectedClientName] = useState('');
   const [clienteHistory, setClienteHistory] = useState([]);
@@ -19530,6 +19542,30 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
   }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy, clientiFilterServizi, clientiFilterSegmento, clientiFilterCommesse, autoRefresh]);
+
+  // Apre la scheda cliente quando si arriva dal tab Post Vendita (sessionStorage intent)
+  useEffect(() => {
+    const pvClienteId = sessionStorage.getItem("pvOpenClienteId");
+    const pvFlag = sessionStorage.getItem("pvOpenFromPV");
+    if (!pvClienteId) return;
+    sessionStorage.removeItem("pvOpenClienteId");
+    sessionStorage.removeItem("pvOpenFromPV");
+    (async () => {
+      try {
+        const res = await axios.get(`${API}/clienti/${pvClienteId}`);
+        setSelectedCliente(res.data);
+        setFromPostVendita(pvFlag === "1");
+        setShowEditModal(true);
+      } catch (e) {
+        toast({
+          title: "Errore",
+          description: "Impossibile aprire la scheda cliente dal Post Vendita",
+          variant: "destructive",
+        });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchCommesse = async () => {
     try {
@@ -20916,9 +20952,11 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       {showEditModal && selectedCliente && (
         <EditClienteModal 
           cliente={selectedCliente}
+          fromPostVendita={fromPostVendita}
           onClose={() => {
             setShowEditModal(false);
             setSelectedCliente(null);
+            setFromPostVendita(false);
             // 🔒 Rilascio lock in corso lato server: refreshiamo dopo breve delay per aggiornare badge
             setTimeout(() => refreshClienteLocks(), 800);
           }}
@@ -26357,7 +26395,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
 // Duplicate ImportClientiModal removed - using the full version above
 
 // Edit Cliente Modal Component  
-const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) => {
+const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fromPostVendita = false }) => {
   const { user } = useAuth();
   const { toast: editToast } = useToast();
   
@@ -28576,6 +28614,19 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie }) 
 
           {/* Sezione Post Vendita - evoluzione visibile a tutti gli utenti con accesso al cliente */}
           <ClientePostVenditaSection clienteId={cliente?.id} clienteSnapshot={cliente} />
+
+          {/* Note Post Vendita - SOLO quando il modale è aperto dal tab Post Vendita.
+              Visibile solo ad admin/backoffice_commessa, storico immutabile. NON appare nella scheda cliente normale. */}
+          {fromPostVendita && cliente?.id && (user?.role === "admin" || user?.role === "backoffice_commessa") && (
+            <ClienteNotesHistory
+              clienteId={cliente.id}
+              tipo="post_vendita"
+              title="Note Post Vendita"
+              canAdd={true}
+              accentColor="indigo"
+              emptyMessage="Nessuna nota post vendita ancora presente."
+            />
+          )}
 
           {/* Note - Storico immutabile */}
           <Card>

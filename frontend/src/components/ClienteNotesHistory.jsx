@@ -104,6 +104,12 @@ export const ClienteNotesHistory = ({
       btn: "bg-orange-600 hover:bg-orange-700",
       header: "text-orange-900",
     },
+    indigo: {
+      border: "border-indigo-200",
+      bg: "bg-indigo-50",
+      btn: "bg-indigo-600 hover:bg-indigo-700",
+      header: "text-indigo-900",
+    },
   };
   const c = colorClasses[accentColor] || colorClasses.blue;
 
