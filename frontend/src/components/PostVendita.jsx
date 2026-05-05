@@ -199,6 +199,13 @@ const ClientiTab = ({ commessaId }) => {
     fetchData();
   }, [fetchData]);
 
+  // Refresh la lista quando il modale Post Vendita salva una modifica al cliente
+  useEffect(() => {
+    const handler = () => fetchData();
+    window.addEventListener("app:pv-cliente-updated", handler);
+    return () => window.removeEventListener("app:pv-cliente-updated", handler);
+  }, [fetchData]);
+
   const handleStatusChange = async (clienteId, newStatus) => {
     try {
       await axios.patch(
@@ -363,9 +370,7 @@ const ClientiTab = ({ commessaId }) => {
                   onClick={(e) => {
                     // Avoid triggering when clicking the inline status select
                     if (e.target.closest("select")) return;
-                    sessionStorage.setItem("pvOpenClienteId", c.id);
-                    sessionStorage.setItem("pvOpenFromPV", "1");
-                    window.dispatchEvent(new CustomEvent("app:open-cliente-from-pv"));
+                    window.dispatchEvent(new CustomEvent("app:open-cliente-from-pv", { detail: { clienteId: c.id } }));
                   }}
                   title="Clicca per aprire la scheda completa del cliente"
                 >

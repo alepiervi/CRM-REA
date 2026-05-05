@@ -1460,14 +1460,41 @@ const Dashboard = () => {
 
   // Listener per aprire la scheda cliente dal Post Vendita: naviga al tab Clienti
   // ClientiManagement poi leggerà sessionStorage('pvOpenClienteId') per aprire il modale
+  // Stato modale Cliente aperto dal Post Vendita: rimane all'interno del tab PV (NON naviga al tab Clienti)
+  const [pvOpenedCliente, setPvOpenedCliente] = useState(null);
+
   useEffect(() => {
-    const handler = () => {
-      setActiveTab("clienti");
-      setIsMobileMenuOpen(false);
+    const handler = async (e) => {
+      const clienteId = e?.detail?.clienteId || sessionStorage.getItem("pvOpenClienteId");
+      sessionStorage.removeItem("pvOpenClienteId");
+      sessionStorage.removeItem("pvOpenFromPV");
+      if (!clienteId) return;
+      try {
+        const res = await axios.get(`${API}/clienti/${clienteId}`);
+        setPvOpenedCliente(res.data);
+      } catch (err) {
+        console.error("Failed to open cliente from PV", err);
+      }
     };
     window.addEventListener("app:open-cliente-from-pv", handler);
     return () => window.removeEventListener("app:open-cliente-from-pv", handler);
   }, []);
+
+  const handlePvUpdateCliente = async (updateData) => {
+    if (!pvOpenedCliente?.id) return;
+    try {
+      const res = await axios.put(`${API}/clienti/${pvOpenedCliente.id}`, updateData);
+      // Dispatch refresh event for PV list
+      window.dispatchEvent(new CustomEvent("app:pv-cliente-updated", { detail: { clienteId: pvOpenedCliente.id } }));
+      toast({ title: "Salvato", description: "Modifiche cliente salvate" });
+      setPvOpenedCliente(null);
+      return res.data;
+    } catch (err) {
+      const msg = err?.response?.data?.detail || "Errore salvataggio cliente";
+      toast({ title: "Errore", description: msg, variant: "destructive" });
+      throw err;
+    }
+  };
 
   useEffect(() => {
     fetchUnits();
@@ -2686,6 +2713,18 @@ const Dashboard = () => {
           {renderTabContent()}
         </main>
       </div>
+
+      {/* PV Edit Modal: cliente aperto dal Post Vendita — rimane visibile sopra al tab PV senza navigare via */}
+      {pvOpenedCliente && (
+        <EditClienteModal
+          cliente={pvOpenedCliente}
+          fromPostVendita={true}
+          onClose={() => setPvOpenedCliente(null)}
+          onSubmit={handlePvUpdateCliente}
+          commesse={commesse}
+          subAgenzie={subAgenzie}
+        />
+      )}
     </div>
   );
 };
@@ -19452,7 +19491,6 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState(null);
-  const [fromPostVendita, setFromPostVendita] = useState(false);  // true quando il modale Edit è aperto dal tab Post Vendita
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [selectedClientName, setSelectedClientName] = useState('');
   const [clienteHistory, setClienteHistory] = useState([]);
@@ -19542,30 +19580,6 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
   }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy, clientiFilterServizi, clientiFilterSegmento, clientiFilterCommesse, autoRefresh]);
-
-  // Apre la scheda cliente quando si arriva dal tab Post Vendita (sessionStorage intent)
-  useEffect(() => {
-    const pvClienteId = sessionStorage.getItem("pvOpenClienteId");
-    const pvFlag = sessionStorage.getItem("pvOpenFromPV");
-    if (!pvClienteId) return;
-    sessionStorage.removeItem("pvOpenClienteId");
-    sessionStorage.removeItem("pvOpenFromPV");
-    (async () => {
-      try {
-        const res = await axios.get(`${API}/clienti/${pvClienteId}`);
-        setSelectedCliente(res.data);
-        setFromPostVendita(pvFlag === "1");
-        setShowEditModal(true);
-      } catch (e) {
-        toast({
-          title: "Errore",
-          description: "Impossibile aprire la scheda cliente dal Post Vendita",
-          variant: "destructive",
-        });
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const fetchCommesse = async () => {
     try {
@@ -20952,11 +20966,9 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       {showEditModal && selectedCliente && (
         <EditClienteModal 
           cliente={selectedCliente}
-          fromPostVendita={fromPostVendita}
           onClose={() => {
             setShowEditModal(false);
             setSelectedCliente(null);
-            setFromPostVendita(false);
             // 🔒 Rilascio lock in corso lato server: refreshiamo dopo breve delay per aggiornare badge
             setTimeout(() => refreshClienteLocks(), 800);
           }}
