@@ -23010,12 +23010,13 @@ async def pass_cliente_to_post_vendita(
 @api_router.get("/post-vendita/clienti/stats")
 async def post_vendita_stats(
     commessa_id: Optional[str] = None,
-    servizio_id: Optional[str] = None,  # Filtro esplicito per servizio (admin); per backoffice_commessa applicato sempre se servizi_autorizzati
+    servizio_id: Optional[List[str]] = Query(None),  # multi-select
     current_user: User = Depends(get_current_user)
 ):
     """KPI counters per stage per (commessa, servizio) (lavorazione / attivato / ko / no_stage)."""
     _require_post_vendita_role(current_user)
     base = {"passed_to_post_vendita": True, "is_active": {"$ne": False}}
+    requested_servizi = [s for s in (servizio_id or []) if s]
     if current_user.role == UserRole.BACKOFFICE_COMMESSA:
         allowed_comm = list(current_user.commesse_autorizzate or [])
         if not allowed_comm:
@@ -23028,17 +23029,17 @@ async def post_vendita_stats(
             base["commessa_id"] = {"$in": allowed_comm}
         # Auto-restrict to authorized servizi when servizi_autorizzati is configured
         allowed_serv = list(current_user.servizi_autorizzati or [])
-        if servizio_id:
-            if allowed_serv and servizio_id not in allowed_serv:
-                raise HTTPException(status_code=403, detail="Servizio non autorizzato")
-            base["servizio_id"] = servizio_id
+        if requested_servizi:
+            if allowed_serv and any(s not in allowed_serv for s in requested_servizi):
+                raise HTTPException(status_code=403, detail="Uno o più servizi non autorizzati")
+            base["servizio_id"] = {"$in": requested_servizi}
         elif allowed_serv:
             base["servizio_id"] = {"$in": allowed_serv}
     else:
         if commessa_id:
             base["commessa_id"] = commessa_id
-        if servizio_id:
-            base["servizio_id"] = servizio_id
+        if requested_servizi:
+            base["servizio_id"] = {"$in": requested_servizi}
 
     pipeline = [
         {"$match": base},
@@ -23056,7 +23057,7 @@ async def post_vendita_stats(
 @api_router.get("/post-vendita/clienti")
 async def list_post_vendita_clienti(
     commessa_id: Optional[str] = None,
-    servizio_id: Optional[str] = None,  # Filtro esplicito per servizio (admin); per backoffice_commessa applicato sempre se servizi_autorizzati
+    servizio_id: Optional[List[str]] = Query(None),  # multi-select: ?servizio_id=A&servizio_id=B
     post_vendita_status: Optional[str] = None,
     stage: Optional[str] = None,  # "lavorazione" | "attivato" | "ko" — overrides include_closed
     codice_account_filter: Optional[str] = None,  # "present" or "missing"
@@ -23068,6 +23069,7 @@ async def list_post_vendita_clienti(
 ):
     _require_post_vendita_role(current_user)
     query = {"passed_to_post_vendita": True, "is_active": {"$ne": False}}
+    requested_servizi = [s for s in (servizio_id or []) if s]
     # Stage explicit filter takes precedence over include_closed default
     if stage:
         query["post_vendita_stage"] = stage
@@ -23094,17 +23096,18 @@ async def list_post_vendita_clienti(
             query["commessa_id"] = {"$in": allowed_comm}
         # Auto-restrict to authorized servizi when servizi_autorizzati is configured
         allowed_serv = list(current_user.servizi_autorizzati or [])
-        if servizio_id:
-            if allowed_serv and servizio_id not in allowed_serv:
-                raise HTTPException(status_code=403, detail="Servizio non autorizzato")
-            query["servizio_id"] = servizio_id
+        effective_servizi = requested_servizi
+        if effective_servizi:
+            if allowed_serv and any(s not in allowed_serv for s in effective_servizi):
+                raise HTTPException(status_code=403, detail="Uno o più servizi non autorizzati")
+            query["servizio_id"] = {"$in": effective_servizi}
         elif allowed_serv:
             query["servizio_id"] = {"$in": allowed_serv}
     else:
         if commessa_id:
             query["commessa_id"] = commessa_id
-        if servizio_id:
-            query["servizio_id"] = servizio_id
+        if requested_servizi:
+            query["servizio_id"] = {"$in": requested_servizi}
     if post_vendita_status:
         query["post_vendita_status"] = post_vendita_status
     if codice_account_filter == "present":

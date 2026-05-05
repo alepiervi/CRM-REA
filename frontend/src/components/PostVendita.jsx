@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   X,
   History,
+  Check,
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -35,7 +36,7 @@ export const PostVendita = ({ user }) => {
   const [commesse, setCommesse] = useState([]);
   const [selectedCommessa, setSelectedCommessa] = useState("");
   const [servizi, setServizi] = useState([]);  // tutti i servizi della commessa selezionata
-  const [selectedServizio, setSelectedServizio] = useState("");  // "" = tutti
+  const [selectedServiziIds, setSelectedServiziIds] = useState([]);  // [] = tutti
 
   useEffect(() => {
     const loadCommesse = async () => {
@@ -57,7 +58,7 @@ export const PostVendita = ({ user }) => {
   useEffect(() => {
     if (!selectedCommessa) {
       setServizi([]);
-      setSelectedServizio("");
+      setSelectedServiziIds([]);
       return;
     }
     const loadServizi = async () => {
@@ -68,18 +69,20 @@ export const PostVendita = ({ user }) => {
         });
         const list = Array.isArray(res.data) ? res.data : res.data?.servizi || [];
         setServizi(list);
-        // Reset selezione se il servizio precedente non è più nella lista
-        if (selectedServizio && !list.find((s) => s.id === selectedServizio)) {
-          setSelectedServizio("");
-        }
+        // Reset selezione su quelli ancora presenti nella lista
+        setSelectedServiziIds((prev) => prev.filter((sid) => list.find((s) => s.id === sid)));
       } catch (e) {
         console.error("loadServizi", e);
         setServizi([]);
       }
     };
     loadServizi();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCommessa]);
+
+  const toggleServizio = (id) => {
+    setSelectedServiziIds((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
+  };
+  const clearServizi = () => setSelectedServiziIds([]);
 
   const isAdmin = user?.role === "admin";
 
@@ -107,19 +110,12 @@ export const PostVendita = ({ user }) => {
               <option key={c.id} value={c.id}>{c.nome}</option>
             ))}
           </select>
-          <label className="text-sm text-slate-600 ml-2">Servizio:</label>
-          <select
-            value={selectedServizio}
-            onChange={(e) => setSelectedServizio(e.target.value)}
-            className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
-            data-testid="post-vendita-servizio-select"
-            disabled={servizi.length === 0}
-          >
-            <option value="">{servizi.length === 0 ? "Nessun servizio" : "Tutti i servizi"}</option>
-            {servizi.map((s) => (
-              <option key={s.id} value={s.id}>{s.nome}</option>
-            ))}
-          </select>
+          <ServiziMultiSelect
+            servizi={servizi}
+            selected={selectedServiziIds}
+            onToggle={toggleServizio}
+            onClear={clearServizi}
+          />
         </div>
       </div>
 
@@ -147,11 +143,97 @@ export const PostVendita = ({ user }) => {
 
       {/* Content */}
       <div>
-        {activeSubTab === "clienti" && <ClientiTab commessaId={selectedCommessa} servizioId={selectedServizio} />}
+        {activeSubTab === "clienti" && <ClientiTab commessaId={selectedCommessa} servizioIds={selectedServiziIds} />}
         {activeSubTab === "import" && <BulkImportTab commessaId={selectedCommessa} commesse={commesse} />}
         {activeSubTab === "config" && isAdmin && <StatusConfigTab commessaId={selectedCommessa} />}
         {activeSubTab === "history" && <ImportHistoryTab />}
       </div>
+    </div>
+  );
+};
+
+const ServiziMultiSelect = ({ servizi, selected, onToggle, onClear }) => {
+  const [open, setOpen] = useState(false);
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const onDoc = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const totalServizi = servizi.length;
+  const selectedCount = selected.length;
+  const buttonLabel =
+    totalServizi === 0 ? "Nessun servizio"
+    : selectedCount === 0 ? "Tutti i servizi"
+    : selectedCount === 1 ? (servizi.find((s) => s.id === selected[0])?.nome || "1 servizio")
+    : `${selectedCount} servizi`;
+
+  return (
+    <div className="relative" ref={ref}>
+      <label className="text-sm text-slate-600 mr-2">Servizio:</label>
+      <button
+        type="button"
+        onClick={() => totalServizi && setOpen((o) => !o)}
+        disabled={totalServizi === 0}
+        className={`px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white inline-flex items-center gap-2 min-w-[180px] justify-between disabled:opacity-50 hover:border-slate-400 ${selectedCount > 0 ? "ring-1 ring-indigo-300" : ""}`}
+        data-testid="post-vendita-servizio-multi"
+      >
+        <span className="truncate">{buttonLabel}</span>
+        <ChevronRight className={`w-4 h-4 transition-transform ${open ? "rotate-90" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-50 mt-1 w-64 max-h-72 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg p-1.5" data-testid="post-vendita-servizio-dropdown">
+          <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 mb-1">
+            <span className="text-xs text-slate-500 uppercase tracking-wide">Filtra per servizio</span>
+            {selectedCount > 0 && (
+              <button
+                type="button"
+                onClick={onClear}
+                className="text-xs text-indigo-600 hover:text-indigo-800"
+                data-testid="post-vendita-servizio-clear"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+          {servizi.map((s) => {
+            const isOn = selected.includes(s.id);
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => onToggle(s.id)}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm text-left ${isOn ? "bg-indigo-50 text-indigo-800" : "hover:bg-slate-50 text-slate-700"}`}
+                data-testid={`post-vendita-servizio-opt-${s.id}`}
+              >
+                <span className={`w-4 h-4 inline-flex items-center justify-center rounded border ${isOn ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-300"}`}>
+                  {isOn && <Check className="w-3 h-3" />}
+                </span>
+                <span className="truncate">{s.nome}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {selectedCount > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {selected.map((sid) => {
+            const s = servizi.find((x) => x.id === sid);
+            if (!s) return null;
+            return (
+              <span key={sid} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-xs">
+                {s.nome}
+                <button onClick={() => onToggle(sid)} className="hover:text-indigo-900" data-testid={`post-vendita-servizio-chip-remove-${sid}`}>
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
@@ -196,7 +278,7 @@ const KpiCard = ({ label, value, accent = "slate", emoji, active, onClick, testi
 // =====================================================
 // CLIENTI TAB
 // =====================================================
-const ClientiTab = ({ commessaId, servizioId }) => {
+const ClientiTab = ({ commessaId, servizioIds = [] }) => {
   const [statusConfig, setStatusConfig] = useState([]);
   const [data, setData] = useState({ clienti: [], total: 0 });
   const [stats, setStats] = useState({ lavorazione: 0, attivato: 0, ko: 0, no_stage: 0, total: 0 });
@@ -211,29 +293,32 @@ const ClientiTab = ({ commessaId, servizioId }) => {
   const [loading, setLoading] = useState(false);
   const PAGE_SIZE = 50;
 
+  // Stable key per servizioIds to feed useCallback deps without re-firing on identity-only changes
+  const servizioIdsKey = (servizioIds || []).slice().sort().join(",");
+
   const fetchData = useCallback(async () => {
     if (!commessaId) return;
     setLoading(true);
     try {
-      const params = {
-        commessa_id: commessaId,
-        page,
-        page_size: PAGE_SIZE,
-        include_closed: filters.include_closed,
-        ...(servizioId && { servizio_id: servizioId }),
-        ...(filters.stage && { stage: filters.stage }),
-        ...(filters.post_vendita_status && { post_vendita_status: filters.post_vendita_status }),
-        ...(filters.codice_account_filter && { codice_account_filter: filters.codice_account_filter }),
-        ...(filters.search && { search: filters.search }),
-      };
-      const statsParams = {
-        commessa_id: commessaId,
-        ...(servizioId && { servizio_id: servizioId }),
-      };
+      const params = new URLSearchParams();
+      params.append("commessa_id", commessaId);
+      params.append("page", String(page));
+      params.append("page_size", String(PAGE_SIZE));
+      params.append("include_closed", String(filters.include_closed));
+      (servizioIds || []).forEach((sid) => params.append("servizio_id", sid));
+      if (filters.stage) params.append("stage", filters.stage);
+      if (filters.post_vendita_status) params.append("post_vendita_status", filters.post_vendita_status);
+      if (filters.codice_account_filter) params.append("codice_account_filter", filters.codice_account_filter);
+      if (filters.search) params.append("search", filters.search);
+
+      const statsParams = new URLSearchParams();
+      statsParams.append("commessa_id", commessaId);
+      (servizioIds || []).forEach((sid) => statsParams.append("servizio_id", sid));
+
       const [resCli, resCfg, resStats] = await Promise.all([
-        axios.get(`${API}/post-vendita/clienti`, { params, headers: authHeaders() }),
+        axios.get(`${API}/post-vendita/clienti?${params.toString()}`, { headers: authHeaders() }),
         axios.get(`${API}/post-vendita/status-config`, { params: { commessa_id: commessaId }, headers: authHeaders() }),
-        axios.get(`${API}/post-vendita/clienti/stats`, { params: statsParams, headers: authHeaders() }),
+        axios.get(`${API}/post-vendita/clienti/stats?${statsParams.toString()}`, { headers: authHeaders() }),
       ]);
       setData(resCli.data);
       setStatusConfig(resCfg.data || []);
@@ -243,7 +328,8 @@ const ClientiTab = ({ commessaId, servizioId }) => {
     } finally {
       setLoading(false);
     }
-  }, [commessaId, servizioId, page, filters]);
+    // servizioIdsKey is sufficient to detect changes; servizioIds itself is referenced via closure
+  }, [commessaId, servizioIdsKey, page, filters]); // eslint-disable-line
 
   useEffect(() => {
     fetchData();
