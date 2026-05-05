@@ -342,8 +342,8 @@ const ClientiTab = ({ commessaId }) => {
               <tr>
                 <th className="px-3 py-2 text-left font-medium">Cliente</th>
                 <th className="px-3 py-2 text-left font-medium">Codice Account</th>
-                <th className="px-3 py-2 text-left font-medium">Email</th>
-                <th className="px-3 py-2 text-left font-medium">Telefono</th>
+                <th className="px-3 py-2 text-left font-medium">CF / P.IVA</th>
+                <th className="px-3 py-2 text-left font-medium">Offerta Attivata</th>
                 <th className="px-3 py-2 text-left font-medium">Status PV</th>
                 <th className="px-3 py-2 text-left font-medium">Aggiornato</th>
               </tr>
@@ -380,8 +380,22 @@ const ClientiTab = ({ commessaId }) => {
                       <span className="text-amber-600 text-xs italic">Mancante</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-slate-600">{c.email || "—"}</td>
-                  <td className="px-3 py-2 text-slate-600">{c.telefono || "—"}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-slate-600">
+                    {c.partita_iva ? (
+                      <span title="Partita IVA">{c.partita_iva}</span>
+                    ) : c.codice_fiscale ? (
+                      <span title="Codice Fiscale">{c.codice_fiscale}</span>
+                    ) : (
+                      <span className="text-slate-300">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-slate-700">
+                    {c.offerta_name ? (
+                      <span className="inline-block max-w-[200px] truncate" title={c.offerta_name}>{c.offerta_name}</span>
+                    ) : (
+                      <span className="text-slate-300">—</span>
+                    )}
+                  </td>
                   <td className="px-3 py-2">
                     <select
                       value={c.post_vendita_status || ""}

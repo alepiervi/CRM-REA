@@ -23048,6 +23048,14 @@ async def list_post_vendita_clienti(
     skip = max(0, (page - 1) * page_size)
     cursor = db.clienti.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(page_size)
     items = await cursor.to_list(length=page_size)
+    # Enrich with offerta_name (from offerte collection)
+    offerta_ids = list({c.get("offerta_id") for c in items if c.get("offerta_id")})
+    offerte_map = {}
+    if offerta_ids:
+        async for o in db.offerte.find({"id": {"$in": offerta_ids}}, {"_id": 0, "id": 1, "nome": 1}):
+            offerte_map[o["id"]] = o.get("nome") or ""
+    for c in items:
+        c["offerta_name"] = offerte_map.get(c.get("offerta_id"), "") if c.get("offerta_id") else ""
     return {"clienti": items, "total": total, "page": page, "page_size": page_size}
 
 
