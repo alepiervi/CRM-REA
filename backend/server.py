@@ -22912,6 +22912,87 @@ async def delete_post_vendita_status_config(
     return {"success": True}
 
 
+@api_router.post("/admin/migrate-legacy-notes")
+async def migrate_legacy_notes_to_history(
+    force: bool = False,
+    current_user: User = Depends(get_current_user)
+):
+    """One-shot migration: copia il contenuto di `cliente.note` e `cliente.note_backoffice`
+    (campi inline legacy) come entry immutabili in `cliente_note_history` (tipo='cliente'/'backoffice').
+    
+    - Idempotente: salta i clienti già migrati (segnati con `legacy_migrated_at`).
+    - `force=True`: ri-esegue per i clienti senza entry storiche di quel tipo.
+    Solo admin.
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    
+    migrated_cli = 0
+    migrated_bo = 0
+    skipped = 0
+    now = datetime.now(timezone.utc)
+    cursor = db.clienti.find(
+        {"is_deleted": {"$ne": True}},
+        {"_id": 0, "id": 1, "note": 1, "note_backoffice": 1, "note_back_office": 1, "created_at": 1, "created_by": 1, "legacy_migrated_at": 1}
+    )
+    async for c in cursor:
+        cid = c.get("id")
+        if not cid:
+            continue
+        if c.get("legacy_migrated_at") and not force:
+            skipped += 1
+            continue
+        creator_doc = None
+        if c.get("created_by"):
+            creator_doc = await db.users.find_one({"id": c["created_by"]}, {"_id": 0, "username": 1})
+        creator_username = creator_doc.get("username") if creator_doc else "(legacy)"
+        creator_id = c.get("created_by") or "legacy"
+        created_at = c.get("created_at") or now
+
+        # Migra note "cliente" se presente e non già nello storico (tipo='cliente')
+        note_content = (c.get("note") or "").strip()
+        if note_content:
+            existing = await db.cliente_note_history.find_one({"cliente_id": cid, "tipo": "cliente", "legacy_migrated": True})
+            if not existing:
+                await db.cliente_note_history.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "cliente_id": cid,
+                    "tipo": "cliente",
+                    "content": note_content,
+                    "created_at": created_at,
+                    "created_by_id": creator_id,
+                    "created_by_username": creator_username,
+                    "legacy_migrated": True,
+                })
+                migrated_cli += 1
+
+        # Migra note "backoffice" se presente
+        bo_content = (c.get("note_backoffice") or c.get("note_back_office") or "").strip()
+        if bo_content:
+            existing_bo = await db.cliente_note_history.find_one({"cliente_id": cid, "tipo": "backoffice", "legacy_migrated": True})
+            if not existing_bo:
+                await db.cliente_note_history.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "cliente_id": cid,
+                    "tipo": "backoffice",
+                    "content": bo_content,
+                    "created_at": created_at,
+                    "created_by_id": creator_id,
+                    "created_by_username": creator_username,
+                    "legacy_migrated": True,
+                })
+                migrated_bo += 1
+
+        await db.clienti.update_one({"id": cid}, {"$set": {"legacy_migrated_at": now}})
+
+    return {
+        "success": True,
+        "migrated_cliente_notes": migrated_cli,
+        "migrated_backoffice_notes": migrated_bo,
+        "skipped_already_migrated": skipped,
+    }
+
+
 @api_router.get("/clienti/{cliente_id}/post-vendita-history")
 async def get_post_vendita_history(
     cliente_id: str,
@@ -23015,7 +23096,7 @@ async def post_vendita_stats(
 ):
     """KPI counters per stage per (commessa, servizio) (lavorazione / attivato / ko / no_stage)."""
     _require_post_vendita_role(current_user)
-    base = {"passed_to_post_vendita": True, "is_active": {"$ne": False}}
+    base = {"passed_to_post_vendita": True, "is_active": {"$ne": False}, "is_deleted": {"$ne": True}}
     requested_servizi = [s for s in (servizio_id or []) if s]
     if current_user.role == UserRole.BACKOFFICE_COMMESSA:
         allowed_comm = list(current_user.commesse_autorizzate or [])
@@ -23068,7 +23149,7 @@ async def list_post_vendita_clienti(
     current_user: User = Depends(get_current_user)
 ):
     _require_post_vendita_role(current_user)
-    query = {"passed_to_post_vendita": True, "is_active": {"$ne": False}}
+    query = {"passed_to_post_vendita": True, "is_active": {"$ne": False}, "is_deleted": {"$ne": True}}
     requested_servizi = [s for s in (servizio_id or []) if s]
     # Stage explicit filter takes precedence over include_closed default
     if stage:
