@@ -14319,20 +14319,61 @@ async def create_cliente(cliente_data: ClienteCreate, current_user: User = Depen
 @api_router.get("/clienti", response_model=ClientiPaginatedResponse)
 async def get_clienti(
     commessa_id: Optional[str] = None,
-    sub_agenzia_id: Optional[str] = None,
-    status: Optional[str] = None,
-    tipologia_contratto: Optional[str] = None,
-    created_by: Optional[str] = None,  # DEPRECATED: Use assigned_to instead
-    assigned_to: Optional[str] = None,  # NEW: Filter by assigned user (not creator)
-    servizio_id: Optional[str] = None,  # NEW: Servizi filter
-    segmento: Optional[str] = None,     # NEW: Segmento filter  
-    commessa_id_filter: Optional[str] = None,  # NEW: Commesse filter (separate from main commessa_id)
+    sub_agenzia_id: Optional[List[str]] = Query(None),  # Multi: ?sub_agenzia_id=A&sub_agenzia_id=B
+    sub_agenzia_id_exclude: Optional[List[str]] = Query(None),
+    status: Optional[List[str]] = Query(None),
+    status_exclude: Optional[List[str]] = Query(None),
+    tipologia_contratto: Optional[List[str]] = Query(None),
+    tipologia_contratto_exclude: Optional[List[str]] = Query(None),
+    created_by: Optional[List[str]] = Query(None),  # DEPRECATED: Use assigned_to instead
+    created_by_exclude: Optional[List[str]] = Query(None),
+    assigned_to: Optional[List[str]] = Query(None),  # NEW: Filter by assigned user (not creator)
+    assigned_to_exclude: Optional[List[str]] = Query(None),
+    servizio_id: Optional[List[str]] = Query(None),  # Multi
+    servizio_id_exclude: Optional[List[str]] = Query(None),
+    segmento: Optional[List[str]] = Query(None),     # Multi
+    segmento_exclude: Optional[List[str]] = Query(None),
+    commessa_id_filter: Optional[List[str]] = Query(None),  # Multi (separate from main commessa_id)
+    commessa_id_filter_exclude: Optional[List[str]] = Query(None),
     search: Optional[str] = None,  # NEW: Search by name, email, phone, codice_fiscale
     page: int = 1,  # NEW: Page number (1-based)
     page_size: int = 50,  # NEW: Items per page
     current_user: User = Depends(get_current_user)
 ):
-    """Get clienti accessible to current user based on role"""
+    """Get clienti accessible to current user based on role.
+    
+    Filter parameters supporting INCLUDE (multi-value via repeated query param) and EXCLUDE
+    (parallel `<name>_exclude` arrays). Backward-compatible: clients sending a single value
+    still work because FastAPI accepts both `?status=A` and `?status=A&status=B`.
+
+    Logic:
+      - Within a single filter: OR (any of selected values)
+      - Across different filters: AND (all conditions must match)
+      - Exclusion uses `$nin` with `$exists: True` so clienti with NULL in that field are NOT excluded
+        only when the value is non-null and IN the exclude list (per user spec)
+    """
+    # Helpers per gestire i parametri (accettano None, [], oppure liste)
+    def _clean(v: Optional[List[str]]) -> List[str]:
+        if not v:
+            return []
+        return [x for x in v if x and x != "all"]
+
+    f_sub_agenzia = _clean(sub_agenzia_id)
+    f_sub_agenzia_ex = _clean(sub_agenzia_id_exclude)
+    f_status = _clean(status)
+    f_status_ex = _clean(status_exclude)
+    f_tipologia = _clean(tipologia_contratto)
+    f_tipologia_ex = _clean(tipologia_contratto_exclude)
+    f_created_by = _clean(created_by)
+    f_created_by_ex = _clean(created_by_exclude)
+    f_assigned_to = _clean(assigned_to)
+    f_assigned_to_ex = _clean(assigned_to_exclude)
+    f_servizio = _clean(servizio_id)
+    f_servizio_ex = _clean(servizio_id_exclude)
+    f_segmento = _clean(segmento)
+    f_segmento_ex = _clean(segmento_exclude)
+    f_commessa_filter = _clean(commessa_id_filter)
+    f_commessa_filter_ex = _clean(commessa_id_filter_exclude)
     query = {}
     
     # IMPORTANT: Exclude soft-deleted clients from normal listing
@@ -14622,58 +14663,132 @@ async def get_clienti(
             # Per admin o altri ruoli senza filtro commessa preimpostato
             query["commessa_id"] = commessa_id
     
-    if sub_agenzia_id:
-        # Se sub_agenzia_id è specificata, aggiungiamola al filtro (se autorizzata)
-        if "sub_agenzia_id" in query:
-            if query["sub_agenzia_id"] != sub_agenzia_id:
-                raise HTTPException(status_code=403, detail="Access denied to this sub agenzia")
+    # ===== APPLICAZIONE FILTRI MULTI-VALORE + ESCLUSIONI =====
+    # NOTE: I controlli RBAC sopra (responsabile_commessa, backoffice_sub_agenzia, ecc.)
+    # potrebbero aver già impostato chiavi su `query` (es. servizio_id, sub_agenzia_id).
+    # Qui aggiungiamo i filtri richiesti dall'utente, intersecandoli con quelli esistenti.
+
+    def _add_in_filter(field: str, values: List[str]):
+        """Aggiunge un filtro $in al campo, intersecando con il vincolo già presente (se c'è)."""
+        if not values:
+            return
+        # Se RBAC ha già forzato uno scope, il nuovo filtro deve essere un sotto-insieme
+        existing = query.get(field)
+        if isinstance(existing, dict) and "$in" in existing:
+            allowed = set(existing["$in"]) & set(values)
+            if not allowed:
+                # nessun valore comune → non far rispondere clienti
+                query[field] = {"$in": [], "$exists": True}
+            else:
+                query[field] = {"$in": list(allowed)}
+        elif isinstance(existing, str):
+            # Lo scope RBAC era un valore singolo: deve essere tra i valori richiesti
+            if existing in values:
+                pass  # ok, il singolo valore è coerente
+            else:
+                query[field] = {"$in": []}  # nessun match
         else:
-            # Per admin o altri ruoli
-            query["sub_agenzia_id"] = sub_agenzia_id
-    
-    if status:
-        query["status"] = status
-    
-    # Additional filter parameters
-    if tipologia_contratto:
-        query["tipologia_contratto"] = tipologia_contratto
-    
+            query[field] = {"$in": values} if len(values) > 1 else values[0]
+
+    def _add_nin_filter(field: str, values: List[str]):
+        """Aggiunge esclusione: campo presente E NON IN values (clienti con campo NULL non vengono toccati)."""
+        if not values:
+            return
+        # $nin esclude solo i valori specifici. La spec utente dice: esclusione mostra solo clienti
+        # con campo valorizzato e diverso → richiediamo $exists True + $nin
+        condition = {"$exists": True, "$nin": values, "$ne": None}
+        # Se c'è già un vincolo sul campo, lo combiniamo con $and
+        existing = query.get(field)
+        if existing is None:
+            query[field] = condition
+        else:
+            # Combina via $and a livello query
+            query.setdefault("$and", []).append({field: condition})
+            # Manteniamo l'esistente sul campo (rimosso solo se è ridondante)
+
+    # commessa_id (singolo): rimane single-select per il drilldown principale
+    if commessa_id:
+        if "commessa_id" in query:
+            existing = query["commessa_id"]
+            if isinstance(existing, dict) and "$in" in existing:
+                if commessa_id not in existing["$in"]:
+                    raise HTTPException(status_code=403, detail="Access denied to this commessa")
+                query["commessa_id"] = commessa_id
+            elif isinstance(existing, str) and existing != commessa_id:
+                raise HTTPException(status_code=403, detail="Access denied to this commessa")
+        else:
+            query["commessa_id"] = commessa_id
+
+    # sub_agenzia_id (multi)
+    _add_in_filter("sub_agenzia_id", f_sub_agenzia)
+    _add_nin_filter("sub_agenzia_id", f_sub_agenzia_ex)
+
+    # status
+    _add_in_filter("status", f_status)
+    _add_nin_filter("status", f_status_ex)
+
+    # tipologia_contratto
+    _add_in_filter("tipologia_contratto", f_tipologia)
+    _add_nin_filter("tipologia_contratto", f_tipologia_ex)
+
     # NEW: Filter by user (assigned_to OR created_by) to match UI display
     # UI shows assigned_to if exists, otherwise created_by, so filter must search both
-    # IMPORTANT: We need to add this filter even if there's already a $or or $and clause
-    if assigned_to or created_by:
-        user_id_to_filter = assigned_to or created_by
-        
-        # Create filter that matches EITHER assigned_to OR created_by
+    if f_assigned_to or f_created_by:
+        # Combine include sets
+        user_ids_include = list(set(f_assigned_to + f_created_by))
         user_filter = {
             "$or": [
-                {"assigned_to": user_id_to_filter},
-                {"created_by": user_id_to_filter}
+                {"assigned_to": {"$in": user_ids_include}},
+                {"created_by": {"$in": user_ids_include}},
             ]
         }
-        
         if "$and" in query:
-            # Already have $and, add the user filter to it
             query["$and"].append(user_filter)
-        elif "$or" in query:
-            # Have $or, wrap everything in $and and add user filter
-            existing_or = query.pop("$or")
-            query["$and"] = [{"$or": existing_or}, user_filter]
         else:
-            # Simple case - no complex clauses, add $or directly
-            query.update(user_filter)
-    
-    # NEW: Additional filter parameters
-    if servizio_id and servizio_id != "all":
-        query["servizio_id"] = servizio_id
-    
-    if segmento and segmento != "all":
-        expanded_segmenti = await _expand_segmento_filter_values([segmento])
-        query["segmento"] = {"$in": expanded_segmenti} if len(expanded_segmenti) > 1 else segmento
-    
-    if commessa_id_filter and commessa_id_filter != "all":
-        # Use separate field name to avoid conflict with main commessa_id parameter
-        query["commessa_id"] = commessa_id_filter
+            query.setdefault("$and", []).append(user_filter)
+
+    # User EXCLUDE: cliente che NON ha né assigned_to né created_by tra gli esclusi
+    if f_assigned_to_ex or f_created_by_ex:
+        user_ids_exclude = list(set(f_assigned_to_ex + f_created_by_ex))
+        # cliente escluso se assigned_to ∈ excl OR (assigned_to null AND created_by ∈ excl)
+        # → mantieni cliente se assigned_to ∉ excl AND (created_by ∉ excl o assigned_to esiste)
+        # Più semplice: nessuno dei due deve avere un valore nell'exclude list
+        user_excl_filter = {
+            "$nor": [
+                {"assigned_to": {"$in": user_ids_exclude}},
+                {"created_by": {"$in": user_ids_exclude}},
+            ]
+        }
+        query.setdefault("$and", []).append(user_excl_filter)
+
+    # servizio_id
+    _add_in_filter("servizio_id", f_servizio)
+    _add_nin_filter("servizio_id", f_servizio_ex)
+
+    # segmento (con expansion compatibility)
+    if f_segmento:
+        expanded_segmenti = await _expand_segmento_filter_values(f_segmento)
+        _add_in_filter("segmento", expanded_segmenti)
+    if f_segmento_ex:
+        expanded_segmenti_ex = await _expand_segmento_filter_values(f_segmento_ex)
+        _add_nin_filter("segmento", expanded_segmenti_ex)
+
+    # commessa_id_filter (separato dal commessa_id RBAC)
+    if f_commessa_filter:
+        # se commessa_id RBAC è già stato impostato, intersechiamo
+        existing_comm = query.get("commessa_id")
+        if isinstance(existing_comm, str):
+            if existing_comm in f_commessa_filter:
+                pass
+            else:
+                query["commessa_id"] = {"$in": []}  # nessun match
+        elif isinstance(existing_comm, dict) and "$in" in existing_comm:
+            inter = list(set(existing_comm["$in"]) & set(f_commessa_filter))
+            query["commessa_id"] = {"$in": inter} if inter else {"$in": []}
+        else:
+            query["commessa_id"] = {"$in": f_commessa_filter} if len(f_commessa_filter) > 1 else f_commessa_filter[0]
+    if f_commessa_filter_ex:
+        _add_nin_filter("commessa_id", f_commessa_filter_ex)
     
     # NEW: Search filter (name, email, phone, codice_fiscale, partita_iva)
     if search and search.strip():

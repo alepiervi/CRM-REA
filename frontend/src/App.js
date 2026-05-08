@@ -55,6 +55,7 @@ import { PostVendita } from "./components/PostVendita";
 import { PassToPostVenditaButton } from "./components/PassToPostVenditaButton";
 import { PostVenditaStatusDot } from "./components/PostVenditaStatusDot";
 import { ClientePostVenditaSection } from "./components/ClientePostVenditaSection";
+import { MultiSelectFilter } from "./components/MultiSelectFilter";
 
 // Lucide icons
 import { 
@@ -19505,14 +19506,14 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
     enabled: false
   });
   // New filter states
-  const [clientiFilterStatus, setClientiFilterStatus] = useState('all');
-  const [clientiFilterTipologia, setClientiFilterTipologia] = useState('all');
-  const [clientiFilterSubAgenzia, setClientiFilterSubAgenzia] = useState('all');
-  const [clientiFilterCreatedBy, setClientiFilterCreatedBy] = useState('all');
+  const [clientiFilterStatus, setClientiFilterStatus] = useState({ included: [], excluded: [] });
+  const [clientiFilterTipologia, setClientiFilterTipologia] = useState({ included: [], excluded: [] });
+  const [clientiFilterSubAgenzia, setClientiFilterSubAgenzia] = useState({ included: [], excluded: [] });
+  const [clientiFilterCreatedBy, setClientiFilterCreatedBy] = useState({ included: [], excluded: [] });
   // NEW: Additional filter states
-  const [clientiFilterServizi, setClientiFilterServizi] = useState('all');
-  const [clientiFilterSegmento, setClientiFilterSegmento] = useState('all');
-  const [clientiFilterCommesse, setClientiFilterCommesse] = useState('all');
+  const [clientiFilterServizi, setClientiFilterServizi] = useState({ included: [], excluded: [] });
+  const [clientiFilterSegmento, setClientiFilterSegmento] = useState({ included: [], excluded: [] });
+  const [clientiFilterCommesse, setClientiFilterCommesse] = useState({ included: [], excluded: [] });
   const [users, setUsers] = useState([]);
   // Dynamic filter options
   const [filterOptions, setFilterOptions] = useState({
@@ -19647,29 +19648,18 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       if (selectedCommessaLocal && selectedCommessaLocal !== 'all') {
         params.append('commessa_id', selectedCommessaLocal);
       }
-      if (clientiFilterSubAgenzia && clientiFilterSubAgenzia !== 'all') {
-        params.append('sub_agenzia_id', clientiFilterSubAgenzia);
-      }
-      if (clientiFilterStatus && clientiFilterStatus !== 'all') {
-        params.append('status', clientiFilterStatus);
-      }
-      if (clientiFilterTipologia && clientiFilterTipologia !== 'all') {
-        params.append('tipologia_contratto', clientiFilterTipologia);
-      }
-      if (clientiFilterCreatedBy && clientiFilterCreatedBy !== 'all') {
-        // Filter by assigned user (not creator) - assigned_to field
-        params.append('assigned_to', clientiFilterCreatedBy);
-      }
-      // NEW: Additional filters
-      if (clientiFilterServizi && clientiFilterServizi !== 'all') {
-        params.append('servizio_id', clientiFilterServizi);
-      }
-      if (clientiFilterSegmento && clientiFilterSegmento !== 'all') {
-        params.append('segmento', clientiFilterSegmento);
-      }
-      if (clientiFilterCommesse && clientiFilterCommesse !== 'all') {
-        params.append('commessa_id_filter', clientiFilterCommesse);
-      }
+      // Helper to append multi-value + exclusion filters
+      const appendMulti = (paramName, filter) => {
+        (filter?.included || []).forEach((v) => params.append(paramName, v));
+        (filter?.excluded || []).forEach((v) => params.append(`${paramName}_exclude`, v));
+      };
+      appendMulti('sub_agenzia_id', clientiFilterSubAgenzia);
+      appendMulti('status', clientiFilterStatus);
+      appendMulti('tipologia_contratto', clientiFilterTipologia);
+      appendMulti('assigned_to', clientiFilterCreatedBy);
+      appendMulti('servizio_id', clientiFilterServizi);
+      appendMulti('segmento', clientiFilterSegmento);
+      appendMulti('commessa_id_filter', clientiFilterCommesse);
       // Use passed searchValue if provided, otherwise use state
       const effectiveSearch = searchValue !== null ? searchValue : searchQuery;
       if (effectiveSearch && effectiveSearch.trim()) {
@@ -19750,27 +19740,17 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       if (selectedCommessaLocal && selectedCommessaLocal !== 'all') {
         params.append('commessa_id', selectedCommessaLocal);
       }
-      if (clientiFilterSubAgenzia && clientiFilterSubAgenzia !== 'all') {
-        params.append('sub_agenzia_id', clientiFilterSubAgenzia);
-      }
-      if (clientiFilterStatus && clientiFilterStatus !== 'all') {
-        params.append('status', clientiFilterStatus);
-      }
-      if (clientiFilterTipologia && clientiFilterTipologia !== 'all') {
-        params.append('tipologia_contratto', clientiFilterTipologia);
-      }
-      if (clientiFilterCreatedBy && clientiFilterCreatedBy !== 'all') {
-        params.append('assigned_to', clientiFilterCreatedBy);
-      }
-      if (clientiFilterServizi && clientiFilterServizi !== 'all') {
-        params.append('servizio_id', clientiFilterServizi);
-      }
-      if (clientiFilterSegmento && clientiFilterSegmento !== 'all') {
-        params.append('segmento', clientiFilterSegmento);
-      }
-      if (clientiFilterCommesse && clientiFilterCommesse !== 'all') {
-        params.append('commessa_id_filter', clientiFilterCommesse);
-      }
+      const appendMulti2 = (paramName, filter) => {
+        (filter?.included || []).forEach((v) => params.append(paramName, v));
+        (filter?.excluded || []).forEach((v) => params.append(`${paramName}_exclude`, v));
+      };
+      appendMulti2('sub_agenzia_id', clientiFilterSubAgenzia);
+      appendMulti2('status', clientiFilterStatus);
+      appendMulti2('tipologia_contratto', clientiFilterTipologia);
+      appendMulti2('assigned_to', clientiFilterCreatedBy);
+      appendMulti2('servizio_id', clientiFilterServizi);
+      appendMulti2('segmento', clientiFilterSegmento);
+      appendMulti2('commessa_id_filter', clientiFilterCommesse);
       
       // Only add search if not empty
       if (searchValue && searchValue.trim()) {
@@ -20029,31 +20009,18 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       // Build query parameters for backend filtering
       const params = new URLSearchParams();
       
-      // Apply ALL current filters to backend request for accurate export
-      if (clientiFilterSubAgenzia && clientiFilterSubAgenzia !== 'all') {
-        params.append('sub_agenzia_id', clientiFilterSubAgenzia);
-      }
-      if (clientiFilterTipologia && clientiFilterTipologia !== 'all') {
-        params.append('tipologia_contratto', clientiFilterTipologia);
-      }
-      if (clientiFilterStatus && clientiFilterStatus !== 'all') {
-        params.append('status', clientiFilterStatus);
-      }
-      if (clientiFilterCreatedBy && clientiFilterCreatedBy !== 'all') {
-        // Filter by assigned user (not creator) - assigned_to field
-        params.append('assigned_to', clientiFilterCreatedBy);
-      }
-      
-      // NEW: Add missing filters for complete export filtering
-      if (clientiFilterServizi && clientiFilterServizi !== 'all') {
-        params.append('servizio_id', clientiFilterServizi);
-      }
-      if (clientiFilterSegmento && clientiFilterSegmento !== 'all') {
-        params.append('segmento', clientiFilterSegmento);
-      }
-      if (clientiFilterCommesse && clientiFilterCommesse !== 'all') {
-        params.append('commessa_id_filter', clientiFilterCommesse);
-      }
+      // Apply ALL current filters to backend request for accurate export (multi + exclude)
+      const appendMultiX = (paramName, filter) => {
+        (filter?.included || []).forEach((v) => params.append(paramName, v));
+        (filter?.excluded || []).forEach((v) => params.append(`${paramName}_exclude`, v));
+      };
+      appendMultiX('sub_agenzia_id', clientiFilterSubAgenzia);
+      appendMultiX('tipologia_contratto', clientiFilterTipologia);
+      appendMultiX('status', clientiFilterStatus);
+      appendMultiX('assigned_to', clientiFilterCreatedBy);
+      appendMultiX('servizio_id', clientiFilterServizi);
+      appendMultiX('segmento', clientiFilterSegmento);
+      appendMultiX('commessa_id_filter', clientiFilterCommesse);
       
       // NEW: Add search query and search type for name/CF/etc filtering
       if (searchQuery && searchQuery.trim() !== '') {
@@ -20362,154 +20329,94 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         <div className={`${showAdvancedFilters ? 'block mt-4 max-h-[50vh] overflow-y-auto' : 'hidden'} md:block md:max-h-none md:overflow-visible`}>
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-2 md:gap-4">
           {/* Sub Agenzia Filter */}
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Sub Agenzia</label>
-            <Select value={clientiFilterSubAgenzia} onValueChange={setClientiFilterSubAgenzia}>
-              <SelectTrigger className="w-full h-9 text-sm">
-                <SelectValue placeholder="Tutte" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutte le Sub Agenzie</SelectItem>
-                {filterOptions.sub_agenzie.map((sub) => (
-                  <SelectItem key={sub.value} value={sub.value}>
-                    {sub.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <MultiSelectFilter
+            label="Sub Agenzia"
+            options={(filterOptions.sub_agenzie || []).map((s) => ({ value: s.value, label: s.label }))}
+            included={clientiFilterSubAgenzia.included}
+            excluded={clientiFilterSubAgenzia.excluded}
+            onChange={setClientiFilterSubAgenzia}
+            placeholder="Tutte le Sub Agenzie"
+            testid="filter-subagenzia"
+          />
 
           {/* Tipologia Contratto Filter */}
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Tipologia</label>
-            <Select value={clientiFilterTipologia} onValueChange={setClientiFilterTipologia}>
-              <SelectTrigger className="w-full h-9 text-sm">
-                <SelectValue placeholder="Tutte" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutte le Tipologie</SelectItem>
-                {filterOptions.tipologie_contratto.map((tip) => (
-                  <SelectItem key={tip.value} value={tip.value}>
-                    {tip.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <MultiSelectFilter
+            label="Tipologia"
+            options={(filterOptions.tipologie_contratto || []).map((t) => ({ value: t.value, label: t.label }))}
+            included={clientiFilterTipologia.included}
+            excluded={clientiFilterTipologia.excluded}
+            onChange={setClientiFilterTipologia}
+            placeholder="Tutte le Tipologie"
+            testid="filter-tipologia"
+          />
 
           {/* Status Filter */}
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Status</label>
-            <Select value={clientiFilterStatus} onValueChange={setClientiFilterStatus}>
-              <SelectTrigger className="w-full h-9 text-sm">
-                <SelectValue placeholder="Tutti" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti gli Status</SelectItem>
-                {STATUS_CLIENTI.map((status) => (
-                  <SelectItem key={`std-${status.value}`} value={status.value}>
-                    {status.label}
-                  </SelectItem>
-                ))}
-                {(() => {
-                  const seenValues = new Set(STATUS_CLIENTI.map((s) => s.value));
-                  const customItems = (allCustomStatuses || [])
-                    .filter((cs) => cs && cs.value && !seenValues.has(cs.value))
-                    .map((cs) => ({ value: cs.value, label: cs.name || cs.value, source: "custom" }));
-                  customItems.forEach((it) => seenValues.add(it.value));
-                  const distinctItems = (distinctStatusValues || [])
-                    .filter((it) => it && it.value && !seenValues.has(it.value))
-                    .map((it) => ({ value: it.value, label: it.label || it.value, source: "distinct" }));
-                  const extra = [...customItems, ...distinctItems];
-                  if (extra.length === 0) return null;
-                  return (
-                    <>
-                      <SelectItem value="__divider_custom__" disabled>
-                        ── Status Custom / Storici ──
-                      </SelectItem>
-                      {extra.map((it) => (
-                        <SelectItem key={`extra-${it.source}-${it.value}`} value={it.value}>
-                          {it.label}
-                        </SelectItem>
-                      ))}
-                    </>
-                  );
-                })()}
-              </SelectContent>
-            </Select>
-          </div>
+          <MultiSelectFilter
+            label="Status"
+            options={(() => {
+              const out = [];
+              const seen = new Set();
+              for (const st of (STATUS_CLIENTI || [])) {
+                if (st?.value && !seen.has(st.value)) { out.push({ value: st.value, label: st.label }); seen.add(st.value); }
+              }
+              for (const cs of (allCustomStatuses || [])) {
+                if (cs?.value && !seen.has(cs.value)) { out.push({ value: cs.value, label: cs.name || cs.value }); seen.add(cs.value); }
+              }
+              for (const it of (distinctStatusValues || [])) {
+                if (it?.value && !seen.has(it.value)) { out.push({ value: it.value, label: it.label || it.value }); seen.add(it.value); }
+              }
+              return out;
+            })()}
+            included={clientiFilterStatus.included}
+            excluded={clientiFilterStatus.excluded}
+            onChange={setClientiFilterStatus}
+            placeholder="Tutti gli Status"
+            testid="filter-status"
+          />
 
-          {/* Created By Filter */}
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Assegnato</label>
-            <Select value={clientiFilterCreatedBy} onValueChange={setClientiFilterCreatedBy}>
-              <SelectTrigger className="w-full h-9 text-sm">
-                <SelectValue placeholder="Tutti" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti gli Utenti</SelectItem>
-                {filterOptions.users.map((user) => (
-                  <SelectItem key={user.value} value={user.value}>
-                    {user.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Created By / Assigned Filter */}
+          <MultiSelectFilter
+            label="Assegnato"
+            options={(filterOptions.users || []).map((u) => ({ value: u.value, label: u.label }))}
+            included={clientiFilterCreatedBy.included}
+            excluded={clientiFilterCreatedBy.excluded}
+            onChange={setClientiFilterCreatedBy}
+            placeholder="Tutti gli Utenti"
+            testid="filter-assigned"
+          />
 
-          {/* NEW: Servizi Filter */}
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Servizi</label>
-            <Select value={clientiFilterServizi} onValueChange={setClientiFilterServizi}>
-              <SelectTrigger className="w-full h-9 text-sm">
-                <SelectValue placeholder="Tutti" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti i Servizi</SelectItem>
-                {filterOptions.servizi.map((servizio) => (
-                  <SelectItem key={servizio.value} value={servizio.value}>
-                    {servizio.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Servizi Filter */}
+          <MultiSelectFilter
+            label="Servizi"
+            options={(filterOptions.servizi || []).map((s) => ({ value: s.value, label: s.label }))}
+            included={clientiFilterServizi.included}
+            excluded={clientiFilterServizi.excluded}
+            onChange={setClientiFilterServizi}
+            placeholder="Tutti i Servizi"
+            testid="filter-servizi"
+          />
 
-          {/* NEW: Segmento Filter */}
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Segmento</label>
-            <Select value={clientiFilterSegmento} onValueChange={setClientiFilterSegmento}>
-              <SelectTrigger className="w-full h-9 text-sm">
-                <SelectValue placeholder="Tutti" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti i Segmenti</SelectItem>
-                {filterOptions.segmenti.map((segmento) => (
-                  <SelectItem key={segmento.value} value={segmento.value}>
-                    {segmento.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Segmento Filter */}
+          <MultiSelectFilter
+            label="Segmento"
+            options={(filterOptions.segmenti || []).map((s) => ({ value: s.value, label: s.label }))}
+            included={clientiFilterSegmento.included}
+            excluded={clientiFilterSegmento.excluded}
+            onChange={setClientiFilterSegmento}
+            placeholder="Tutti i Segmenti"
+            testid="filter-segmento"
+          />
 
-          {/* NEW: Commesse Filter */}
-          <div>
-            <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Commesse</label>
-            <Select value={clientiFilterCommesse} onValueChange={setClientiFilterCommesse}>
-              <SelectTrigger className="w-full h-9 text-sm">
-                <SelectValue placeholder="Tutte" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutte le Commesse</SelectItem>
-                {filterOptions.commesse.map((commessa) => (
-                  <SelectItem key={commessa.value} value={commessa.value}>
-                    {commessa.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Commesse Filter */}
+          <MultiSelectFilter
+            label="Commesse"
+            options={(filterOptions.commesse || []).map((c) => ({ value: c.value, label: c.label }))}
+            included={clientiFilterCommesse.included}
+            excluded={clientiFilterCommesse.excluded}
+            onChange={setClientiFilterCommesse}
+            placeholder="Tutte le Commesse"
+            testid="filter-commesse"
+          />
         </div>
 
         {/* Clear All Filters Button - Inside collapsible section */}
@@ -20518,13 +20425,13 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             variant="outline"
             size="sm"
             onClick={() => {
-              setClientiFilterSubAgenzia('all');
-              setClientiFilterTipologia('all');
-              setClientiFilterStatus('all');
-              setClientiFilterCreatedBy('all');
-              setClientiFilterServizi('all');
-              setClientiFilterSegmento('all');
-              setClientiFilterCommesse('all');
+              setClientiFilterSubAgenzia({ included: [], excluded: [] });
+              setClientiFilterTipologia({ included: [], excluded: [] });
+              setClientiFilterStatus({ included: [], excluded: [] });
+              setClientiFilterCreatedBy({ included: [], excluded: [] });
+              setClientiFilterServizi({ included: [], excluded: [] });
+              setClientiFilterSegmento({ included: [], excluded: [] });
+              setClientiFilterCommesse({ included: [], excluded: [] });
             }}
           >
             <X className="w-4 h-4 mr-2" />
