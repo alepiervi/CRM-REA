@@ -18369,6 +18369,84 @@ async def startup_event():
     """
     try:
         logging.info("🚀 Running startup event...")
+
+        # ---- One-shot migration: legacy inline notes → cliente_note_history ----
+        # Idempotent via marker doc in `system_migrations`.
+        try:
+            marker = await db.system_migrations.find_one({"id": "legacy_notes_v1"})
+            if not marker:
+                logging.info("🔄 Running legacy notes migration (one-shot)...")
+                migrated_cli = 0
+                migrated_bo = 0
+                now_iso = datetime.now(timezone.utc)
+                cursor = db.clienti.find(
+                    {"is_deleted": {"$ne": True}},
+                    {"_id": 0, "id": 1, "note": 1, "note_backoffice": 1, "note_back_office": 1,
+                     "created_at": 1, "created_by": 1, "legacy_migrated_at": 1}
+                )
+                async for c in cursor:
+                    cid = c.get("id")
+                    if not cid:
+                        continue
+                    if c.get("legacy_migrated_at"):
+                        continue
+                    creator_doc = None
+                    if c.get("created_by"):
+                        creator_doc = await db.users.find_one({"id": c["created_by"]}, {"_id": 0, "username": 1})
+                    creator_username = creator_doc.get("username") if creator_doc else "(legacy)"
+                    creator_id = c.get("created_by") or "legacy"
+                    created_at = c.get("created_at") or now_iso
+
+                    note_content = (c.get("note") or "").strip()
+                    if note_content:
+                        existing = await db.cliente_note_history.find_one(
+                            {"cliente_id": cid, "tipo": "cliente", "legacy_migrated": True}
+                        )
+                        if not existing:
+                            await db.cliente_note_history.insert_one({
+                                "id": str(uuid.uuid4()),
+                                "cliente_id": cid,
+                                "tipo": "cliente",
+                                "content": note_content,
+                                "created_at": created_at,
+                                "created_by_id": creator_id,
+                                "created_by_username": creator_username,
+                                "legacy_migrated": True,
+                            })
+                            migrated_cli += 1
+
+                    bo_content = (c.get("note_backoffice") or c.get("note_back_office") or "").strip()
+                    if bo_content:
+                        existing_bo = await db.cliente_note_history.find_one(
+                            {"cliente_id": cid, "tipo": "backoffice", "legacy_migrated": True}
+                        )
+                        if not existing_bo:
+                            await db.cliente_note_history.insert_one({
+                                "id": str(uuid.uuid4()),
+                                "cliente_id": cid,
+                                "tipo": "backoffice",
+                                "content": bo_content,
+                                "created_at": created_at,
+                                "created_by_id": creator_id,
+                                "created_by_username": creator_username,
+                                "legacy_migrated": True,
+                            })
+                            migrated_bo += 1
+
+                    await db.clienti.update_one({"id": cid}, {"$set": {"legacy_migrated_at": now_iso}})
+
+                await db.system_migrations.insert_one({
+                    "id": "legacy_notes_v1",
+                    "completed_at": now_iso,
+                    "migrated_cliente_notes": migrated_cli,
+                    "migrated_backoffice_notes": migrated_bo,
+                })
+                logging.info(f"✅ Legacy notes migration complete: {migrated_cli} cliente + {migrated_bo} backoffice")
+            else:
+                logging.info("ℹ️ Legacy notes migration already applied (marker found)")
+        except Exception as mig_err:
+            logging.error(f"⚠️ Legacy notes migration failed (non-fatal): {mig_err}")
+        # ---- End migration ----
         
         # Create default admin user if not exists
         admin_user = await db.users.find_one({"username": "admin"})
