@@ -23281,6 +23281,60 @@ async def pass_cliente_to_post_vendita(
     return {"success": True, "post_vendita_status": final_pv_status}
 
 
+@api_router.delete("/post-vendita/clienti/{cliente_id}")
+async def remove_cliente_from_post_vendita(
+    cliente_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Rimuove un cliente SOLO dalla sezione Post Vendita (resetta passed_to_post_vendita e
+    i campi PV) mantenendo l'anagrafica cliente intatta. Dopo questa operazione il pulsante
+    'Passa al Post Vendita' torna cliccabile sulla scheda cliente.
+
+    Lo storico in `cliente_post_vendita_history` viene preservato per audit. Aggiunge una
+    entry 'removed' nello storico per tracciabilità.
+    """
+    _require_post_vendita_role(current_user)
+    cliente_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    cliente = Cliente(**cliente_doc)
+    # Re-check commessa/servizio access for backoffice_commessa
+    _check_post_vendita_commessa_access(current_user, cliente.commessa_id or "", getattr(cliente, "servizio_id", None))
+
+    prev_status = cliente_doc.get("post_vendita_status")
+    prev_label = cliente_doc.get("post_vendita_status_label")
+    prev_stage = cliente_doc.get("post_vendita_stage")
+
+    # Reset PV fields on cliente. Keep the cliente anagrafica untouched (status, etc.).
+    await db.clienti.update_one(
+        {"id": cliente_id},
+        {"$set": {
+            "passed_to_post_vendita": False,
+            "post_vendita_status": None,
+            "post_vendita_status_label": None,
+            "post_vendita_stage": None,
+            "post_vendita_status_updated_at": datetime.now(timezone.utc),
+        }}
+    )
+
+    # Audit history entry (immutable trail)
+    await db.cliente_post_vendita_history.insert_one({
+        "id": str(uuid.uuid4()),
+        "cliente_id": cliente_id,
+        "post_vendita_status": None,
+        "post_vendita_status_label": "Rimosso da Post Vendita",
+        "post_vendita_stage": "removed",
+        "color": None,
+        "previous_status": prev_status,
+        "previous_label": prev_label,
+        "previous_stage": prev_stage,
+        "created_at": datetime.now(timezone.utc),
+        "created_by_id": current_user.id,
+        "created_by_username": current_user.username,
+    })
+    return {"success": True, "removed_from_post_vendita": True}
+
+
 @api_router.get("/post-vendita/clienti/stats")
 async def post_vendita_stats(
     commessa_id: Optional[str] = None,
