@@ -355,6 +355,18 @@ const ClientiTab = ({ commessaId, servizioIds = [] }) => {
     }
   };
 
+  const handleDeleteCliente = async (cliente, e) => {
+    e?.stopPropagation();
+    const label = `${cliente.cognome || ""} ${cliente.nome || ""}`.trim() || cliente.ragione_sociale || "(senza nome)";
+    if (!window.confirm(`Sei sicuro di voler cancellare il cliente "${label}"?\n\nIl cliente verrà spostato nel cestino e scomparirà dalla lista Post Vendita.`)) return;
+    try {
+      await axios.delete(`${API}/clienti/${cliente.id}`, { headers: authHeaders() });
+      fetchData();
+    } catch (err) {
+      alert(err?.response?.data?.detail || "Errore cancellazione cliente");
+    }
+  };
+
   const statusLabel = (val) => {
     const cfg = statusConfig.find((s) => s.value === val);
     return cfg?.label || val || "—";
@@ -489,12 +501,13 @@ const ClientiTab = ({ commessaId, servizioIds = [] }) => {
                 <th className="px-3 py-2 text-left font-medium">Offerta Attivata</th>
                 <th className="px-3 py-2 text-left font-medium">Status PV</th>
                 <th className="px-3 py-2 text-left font-medium">Aggiornato</th>
+                <th className="px-3 py-2 text-right font-medium">Azioni</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {data.clienti.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-12 text-center text-slate-400">
+                  <td colSpan={7} className="px-3 py-12 text-center text-slate-400">
                     {loading ? "Caricamento..." : "Nessun cliente in post-vendita per i filtri selezionati."}
                   </td>
                 </tr>
@@ -556,6 +569,16 @@ const ClientiTab = ({ commessaId, servizioIds = [] }) => {
                   </td>
                   <td className="px-3 py-2 text-xs text-slate-500">
                     {c.post_vendita_status_updated_at ? new Date(c.post_vendita_status_updated_at).toLocaleString("it-IT") : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      onClick={(e) => handleDeleteCliente(c, e)}
+                      className="inline-flex items-center justify-center p-1.5 rounded-md text-red-600 hover:bg-red-50 hover:text-red-800 transition-colors"
+                      title="Elimina cliente (sposta nel cestino)"
+                      data-testid={`pv-cliente-delete-${c.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </td>
                 </tr>
               ))}
