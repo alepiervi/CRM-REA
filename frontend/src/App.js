@@ -20257,7 +20257,51 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           
           {/* Second Row: Date inputs (only when enabled) */}
           {dateFilter.enabled && (
-            <div className="flex flex-col sm:flex-row gap-2">
+            <>
+              {/* Date shortcuts row */}
+              <div className="flex flex-wrap items-center gap-2" data-testid="clienti-date-shortcuts">
+                <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Scorciatoie:</span>
+                {(() => {
+                  const toISO = (d) => d.toISOString().split('T')[0];
+                  const today = new Date();
+                  const todayISO = toISO(today);
+                  const last7Start = new Date(today); last7Start.setDate(today.getDate() - 6);
+                  const last7ISO = toISO(last7Start);
+                  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+                  const monthStartISO = toISO(monthStart);
+                  const last30Start = new Date(today); last30Start.setDate(today.getDate() - 29);
+                  const last30ISO = toISO(last30Start);
+                  const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+
+                  const presets = [
+                    { id: 'today', label: 'Oggi', from: todayISO, to: todayISO },
+                    { id: '7d', label: 'Ultimi 7 giorni', from: last7ISO, to: todayISO },
+                    { id: '30d', label: 'Ultimi 30 giorni', from: last30ISO, to: todayISO },
+                    { id: 'month', label: 'Mese corrente', from: monthStartISO, to: todayISO },
+                    { id: 'last_month', label: 'Mese scorso', from: toISO(lastMonthStart), to: toISO(lastMonthEnd) },
+                  ];
+                  const apply = (p) => setDateFilter(prev => ({ ...prev, startDate: p.from, endDate: p.to }));
+                  const isActive = (p) => dateFilter.startDate === p.from && dateFilter.endDate === p.to;
+                  return presets.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => apply(p)}
+                      data-testid={`clienti-date-preset-${p.id}`}
+                      className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                        isActive(p)
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                          : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400 hover:text-blue-700'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ));
+                })()}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex items-center space-x-2 flex-1">
                 <label className="text-sm text-gray-600 w-8">Dal:</label>
                 <input
@@ -20298,13 +20342,14 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                 Azzera
               </Button>
             </div>
+            </>
           )}
 
           {dateFilter.enabled && (dateFilter.startDate || dateFilter.endDate) && (
             <div className="text-sm text-gray-600">
               <span className="font-medium">Filtrati: </span>
               <span className="text-blue-600 font-semibold">
-                {getFilteredClients().length} di {totalClienti}
+                {totalClienti}
               </span>
             </div>
           )}
