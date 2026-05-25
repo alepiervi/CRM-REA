@@ -14442,17 +14442,40 @@ async def get_clienti(
         print(f"🏢 BACKOFFICE_COMMESSA ACCESS: User {current_user.username}")
         if hasattr(current_user, 'commesse_autorizzate') and current_user.commesse_autorizzate:
             query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
-            # Filter by authorized services
+            # Filter by authorized services (include null/missing for backward compatibility:
+            # clienti without servizio_id assigned must still be visible to BO della commessa)
             if current_user.servizi_autorizzati:
-                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+                servizio_filter = {
+                    "$or": [
+                        {"servizio_id": {"$in": current_user.servizi_autorizzati}},
+                        {"servizio_id": None},
+                        {"servizio_id": {"$exists": False}},
+                    ]
+                }
+                existing_or = query.pop("$or", None)
+                if existing_or:
+                    query["$and"] = [{"$or": existing_or}, servizio_filter]
+                else:
+                    query.setdefault("$and", []).append(servizio_filter)
         else:
             # Fallback: usa get_user_accessible_commesse
             accessible_commesse = await get_user_accessible_commesse(current_user)
             if accessible_commesse:
                 query["commessa_id"] = {"$in": accessible_commesse}
-                # Filter by authorized services
+                # Filter by authorized services (include null/missing per la stessa motivazione sopra)
                 if current_user.servizi_autorizzati:
-                    query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+                    servizio_filter = {
+                        "$or": [
+                            {"servizio_id": {"$in": current_user.servizi_autorizzati}},
+                            {"servizio_id": None},
+                            {"servizio_id": {"$exists": False}},
+                        ]
+                    }
+                    existing_or = query.pop("$or", None)
+                    if existing_or:
+                        query["$and"] = [{"$or": existing_or}, servizio_filter]
+                    else:
+                        query.setdefault("$and", []).append(servizio_filter)
             else:
                 print("⚠️ No accessible commesse found for backoffice_commessa")
                 return []
@@ -15690,13 +15713,20 @@ async def export_clienti_excel(
         if current_user.role == UserRole.ADMIN:
             pass  # Admin can see all
         elif current_user.role in [UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
-            # Filter by authorized commesse AND servizi
+            # Filter by authorized commesse AND servizi (servizi: include null/missing per
+            # consentire la visibilità dei clienti senza servizio_id assegnato esplicitamente)
             if current_user.commesse_autorizzate:
                 query["commessa_id"] = {"$in": current_user.commesse_autorizzate}
             else:
                 query["_id"] = {"$exists": False}
             if current_user.servizi_autorizzati:
-                query["servizio_id"] = {"$in": current_user.servizi_autorizzati}
+                query.setdefault("$and", []).append({
+                    "$or": [
+                        {"servizio_id": {"$in": current_user.servizi_autorizzati}},
+                        {"servizio_id": None},
+                        {"servizio_id": {"$exists": False}},
+                    ]
+                })
         elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
             # Filter by sub_agenzia, commesse AND servizi autorizzati
             if current_user.sub_agenzia_id:
