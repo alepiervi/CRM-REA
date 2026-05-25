@@ -14336,6 +14336,8 @@ async def get_clienti(
     commessa_id_filter: Optional[List[str]] = Query(None),  # Multi (separate from main commessa_id)
     commessa_id_filter_exclude: Optional[List[str]] = Query(None),
     search: Optional[str] = None,  # NEW: Search by name, email, phone, codice_fiscale
+    date_from: Optional[str] = None,  # NEW: Date range filter (YYYY-MM-DD, start of day UTC)
+    date_to: Optional[str] = None,    # NEW: Date range filter (YYYY-MM-DD, end of day UTC)
     page: int = 1,  # NEW: Page number (1-based)
     page_size: int = 50,  # NEW: Items per page
     current_user: User = Depends(get_current_user)
@@ -14813,6 +14815,31 @@ async def get_clienti(
         else:
             query = search_conditions
     
+    # NEW: Date range filter on cliente.created_at (server-side, so pagination is consistent)
+    if date_from or date_to:
+        date_filter = {}
+        if date_from:
+            try:
+                date_filter["$gte"] = datetime.fromisoformat(date_from).replace(
+                    hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc
+                )
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Formato date_from non valido. Usa YYYY-MM-DD")
+        if date_to:
+            try:
+                date_filter["$lte"] = datetime.fromisoformat(date_to).replace(
+                    hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc
+                )
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Formato date_to non valido. Usa YYYY-MM-DD")
+        if date_filter:
+            # Coexist with previous filters via $and to avoid overwriting other constraints
+            existing = query.get("created_at")
+            if existing:
+                query.setdefault("$and", []).append({"created_at": date_filter})
+            else:
+                query["created_at"] = date_filter
+
     print(f"🔍 FINAL QUERY for {current_user.role}: {query}")
     
     # Count total matching documents BEFORE pagination
@@ -15603,24 +15630,58 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
 
 @api_router.get("/clienti/export/excel")
 async def export_clienti_excel(
-    sub_agenzia_id: Optional[str] = Query(None),
-    tipologia_contratto: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
-    created_by: Optional[str] = Query(None),  # DEPRECATED: Use assigned_to instead
-    assigned_to: Optional[str] = Query(None),  # NEW: Filter by assigned user (not creator)
-    servizio_id: Optional[str] = Query(None),  # NEW: Servizio filter
-    segmento: Optional[str] = Query(None),  # NEW: Segmento filter
-    commessa_id_filter: Optional[str] = Query(None),  # NEW: Commessa filter
+    sub_agenzia_id: Optional[List[str]] = Query(None),
+    sub_agenzia_id_exclude: Optional[List[str]] = Query(None),
+    tipologia_contratto: Optional[List[str]] = Query(None),
+    tipologia_contratto_exclude: Optional[List[str]] = Query(None),
+    status: Optional[List[str]] = Query(None),
+    status_exclude: Optional[List[str]] = Query(None),
+    created_by: Optional[List[str]] = Query(None),  # DEPRECATED: Use assigned_to instead
+    created_by_exclude: Optional[List[str]] = Query(None),
+    assigned_to: Optional[List[str]] = Query(None),  # NEW: Filter by assigned user (not creator)
+    assigned_to_exclude: Optional[List[str]] = Query(None),
+    servizio_id: Optional[List[str]] = Query(None),  # NEW: Servizio filter
+    servizio_id_exclude: Optional[List[str]] = Query(None),
+    segmento: Optional[List[str]] = Query(None),  # NEW: Segmento filter
+    segmento_exclude: Optional[List[str]] = Query(None),
+    commessa_id_filter: Optional[List[str]] = Query(None),  # NEW: Commessa filter
+    commessa_id_filter_exclude: Optional[List[str]] = Query(None),
     search: Optional[str] = Query(None),  # NEW: Search query
     search_type: Optional[str] = Query(None, regex="^(all|id|cognome|codice_fiscale|partita_iva|telefono|email)$"),  # NEW: Search type
     date_from: Optional[str] = Query(None),  # NEW: Date range filter (start)
     date_to: Optional[str] = Query(None),  # NEW: Date range filter (end)
     current_user: User = Depends(get_current_user)
 ):
-    """Export clienti to Excel with enhanced filters and expanded SIM rows"""
+    """Export clienti to Excel with enhanced filters and expanded SIM rows.
+
+    All filters mirror the listing endpoint (`GET /api/clienti`): multi-value via repeated
+    query params (e.g. `?status=A&status=B`) and exclusion via `<name>_exclude`.
+    """
     try:
         from datetime import datetime, timezone
-        
+
+        def _clean_list(v):
+            if not v:
+                return []
+            return [x for x in v if x and x != "all"]
+
+        f_sub_agenzia = _clean_list(sub_agenzia_id)
+        f_sub_agenzia_ex = _clean_list(sub_agenzia_id_exclude)
+        f_tipologia = _clean_list(tipologia_contratto)
+        f_tipologia_ex = _clean_list(tipologia_contratto_exclude)
+        f_status = _clean_list(status)
+        f_status_ex = _clean_list(status_exclude)
+        f_assigned_to = _clean_list(assigned_to)
+        f_assigned_to_ex = _clean_list(assigned_to_exclude)
+        f_created_by = _clean_list(created_by)
+        f_created_by_ex = _clean_list(created_by_exclude)
+        f_servizio = _clean_list(servizio_id)
+        f_servizio_ex = _clean_list(servizio_id_exclude)
+        f_segmento = _clean_list(segmento)
+        f_segmento_ex = _clean_list(segmento_exclude)
+        f_commessa_filter = _clean_list(commessa_id_filter)
+        f_commessa_filter_ex = _clean_list(commessa_id_filter_exclude)
+
         # Build query based on user role and filters (reuse logic from main endpoint)
         query = {}
         
@@ -15683,30 +15744,68 @@ async def export_clienti_excel(
         else:
             query["_id"] = {"$exists": False}
         
-        # Apply additional filters
-        if sub_agenzia_id:
-            query["sub_agenzia_id"] = sub_agenzia_id
-        if tipologia_contratto:
-            query["tipologia_contratto"] = tipologia_contratto
-        if status:
-            query["status"] = status
-        
-        # NEW: Filter by assigned user (not creator)
-        # This supports the "Utente Creatore" filter which should filter by assigned user
-        if assigned_to:
-            query["assigned_to"] = assigned_to
-        elif created_by:
-            # Backward compatibility: if old parameter is used, filter by assigned_to
-            query["assigned_to"] = created_by
-        
-        # NEW: Add servizio, segmento, and commessa filters
-        if servizio_id:
-            query["servizio_id"] = servizio_id
-        if segmento:
-            expanded_segmenti = await _expand_segmento_filter_values([segmento])
-            query["segmento"] = {"$in": expanded_segmenti} if len(expanded_segmenti) > 1 else segmento
-        if commessa_id_filter:
-            query["commessa_id"] = commessa_id_filter
+        # Apply additional filters (multi-select with include/exclude semantics matching listing endpoint)
+        def _add_in(field: str, values: List[str]):
+            if not values:
+                return
+            existing = query.get(field)
+            if isinstance(existing, dict) and "$in" in existing:
+                inter = list(set(existing["$in"]) & set(values))
+                query[field] = {"$in": inter} if inter else {"$in": []}
+            elif isinstance(existing, str):
+                if existing not in values:
+                    query[field] = {"$in": []}
+            else:
+                query[field] = {"$in": values} if len(values) > 1 else values[0]
+
+        def _add_nin(field: str, values: List[str]):
+            if not values:
+                return
+            cond = {"$exists": True, "$nin": values, "$ne": None}
+            if query.get(field) is None:
+                query[field] = cond
+            else:
+                query.setdefault("$and", []).append({field: cond})
+
+        _add_in("sub_agenzia_id", f_sub_agenzia)
+        _add_nin("sub_agenzia_id", f_sub_agenzia_ex)
+        _add_in("tipologia_contratto", f_tipologia)
+        _add_nin("tipologia_contratto", f_tipologia_ex)
+        _add_in("status", f_status)
+        _add_nin("status", f_status_ex)
+
+        # Assigned_to / created_by: UI mostra assigned_to OR fallback created_by, quindi filtriamo per entrambi
+        user_ids_include = list(set(f_assigned_to + f_created_by))
+        if user_ids_include:
+            user_filter = {
+                "$or": [
+                    {"assigned_to": {"$in": user_ids_include}},
+                    {"created_by": {"$in": user_ids_include}},
+                ]
+            }
+            query.setdefault("$and", []).append(user_filter)
+        user_ids_exclude = list(set(f_assigned_to_ex + f_created_by_ex))
+        if user_ids_exclude:
+            user_excl_filter = {
+                "$nor": [
+                    {"assigned_to": {"$in": user_ids_exclude}},
+                    {"created_by": {"$in": user_ids_exclude}},
+                ]
+            }
+            query.setdefault("$and", []).append(user_excl_filter)
+
+        _add_in("servizio_id", f_servizio)
+        _add_nin("servizio_id", f_servizio_ex)
+
+        if f_segmento:
+            expanded = await _expand_segmento_filter_values(f_segmento)
+            _add_in("segmento", expanded)
+        if f_segmento_ex:
+            expanded_ex = await _expand_segmento_filter_values(f_segmento_ex)
+            _add_nin("segmento", expanded_ex)
+
+        _add_in("commessa_id", f_commessa_filter)
+        _add_nin("commessa_id", f_commessa_filter_ex)
         
         # NEW: Add search filter for nome, cognome, CF, etc.
         if search and search.strip():

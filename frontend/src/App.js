@@ -19529,18 +19529,9 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Get filtered clients (combining search and date filters)
+  // Get filtered clients (search & date filter ora gestiti server-side)
   const getFilteredClients = () => {
-    let filtered = clienti;
-    
-    // Search is done server-side, no need to filter here
-    
-    // Apply date filter if enabled (client-side only)
-    if (dateFilter.enabled) {
-      filtered = filterClientsByDate(filtered);
-    }
-    
-    return filtered;
+    return clienti;
   };
 
   useEffect(() => {
@@ -19567,7 +19558,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy, clientiFilterServizi, clientiFilterSegmento, clientiFilterCommesse]);
+  }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy, clientiFilterServizi, clientiFilterSegmento, clientiFilterCommesse, dateFilter]);
 
   // Auto-refresh clienti every 30 seconds
   useEffect(() => {
@@ -19580,7 +19571,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
 
     // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
-  }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy, clientiFilterServizi, clientiFilterSegmento, clientiFilterCommesse, autoRefresh]);
+  }, [selectedUnit, selectedCommessaLocal, clientiFilterSubAgenzia, clientiFilterStatus, clientiFilterTipologia, clientiFilterCreatedBy, clientiFilterServizi, clientiFilterSegmento, clientiFilterCommesse, dateFilter, autoRefresh]);
 
   const fetchCommesse = async () => {
     try {
@@ -19660,6 +19651,11 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       appendMulti('servizio_id', clientiFilterServizi);
       appendMulti('segmento', clientiFilterSegmento);
       appendMulti('commessa_id_filter', clientiFilterCommesse);
+      // Date range filter (server-side, deve filtrare l'intero dataset non solo la pagina corrente)
+      if (dateFilter?.enabled) {
+        if (dateFilter.startDate) params.append('date_from', dateFilter.startDate);
+        if (dateFilter.endDate) params.append('date_to', dateFilter.endDate);
+      }
       // Use passed searchValue if provided, otherwise use state
       const effectiveSearch = searchValue !== null ? searchValue : searchQuery;
       if (effectiveSearch && effectiveSearch.trim()) {
@@ -19751,7 +19747,11 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
       appendMulti2('servizio_id', clientiFilterServizi);
       appendMulti2('segmento', clientiFilterSegmento);
       appendMulti2('commessa_id_filter', clientiFilterCommesse);
-      
+      if (dateFilter?.enabled) {
+        if (dateFilter.startDate) params.append('date_from', dateFilter.startDate);
+        if (dateFilter.endDate) params.append('date_to', dateFilter.endDate);
+      }
+
       // Only add search if not empty
       if (searchValue && searchValue.trim()) {
         params.append('search', searchValue.trim());
