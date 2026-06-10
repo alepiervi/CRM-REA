@@ -5045,6 +5045,12 @@ async def create_lead(lead_data: LeadCreate):
             else:
                 logging.warning(f"[CREATE-LEAD] No referente or agent found for unit {lead_obj.unit_id}. Lead {lead_obj.id} will remain unassigned.")
             
+            # Trigger Spoki welcome message (fire-and-forget)
+            try:
+                asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
+            except Exception as _se:
+                logging.warning(f"[SPOKI] welcome trigger failed: {_se}")
+
             # Return early - skip qualification for units with auto_assign disabled
             return lead_obj
     
@@ -5063,7 +5069,13 @@ async def create_lead(lead_data: LeadCreate):
     else:
         # Unit has auto_assign enabled but no AI - lead remains unassigned until status changes
         logging.info(f"Lead {lead_obj.id} created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
-    
+
+    # Trigger Spoki welcome message (fire-and-forget) — vale per tutti i flussi che cadono qui
+    try:
+        asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
+    except Exception as _se:
+        logging.warning(f"[SPOKI] welcome trigger failed: {_se}")
+
     return lead_obj
 
 @api_router.get("/webhook/lead")
@@ -5257,6 +5269,12 @@ async def create_lead_webhook_get(
         # Unit has auto_assign enabled but no AI - lead remains unassigned until status changes
         logging.info(f"[WEBHOOK GET] Lead {lead_obj.id} created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
     
+    # Trigger Spoki welcome message (fire-and-forget)
+    try:
+        asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
+    except Exception as _se:
+        logging.warning(f"[SPOKI] welcome trigger failed: {_se}")
+
     # Return simple response (Cloudflare-friendly)
     return {
         "status": "ok",
@@ -5401,6 +5419,12 @@ async def create_lead_webhook_post(lead_data: LeadCreate):
         else:
             logging.info(f"[WEBHOOK POST] Lead {lead_obj.id} created without unit_id - will be assigned when status changes to 'Lead Interessato'")
     
+    # Trigger Spoki welcome message (fire-and-forget)
+    try:
+        asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
+    except Exception as _se:
+        logging.warning(f"[SPOKI] welcome trigger failed: {_se}")
+
     return {
         "success": True,
         "message": "Lead created successfully",
@@ -23861,6 +23885,20 @@ async def list_post_vendita_imports(
 
 
 # Include the router in the main app (MUST be after all endpoints are defined)
+# --- Spoki / Chatbot / Calendar routes (modulari) ---
+try:
+    from spoki_routes import build_spoki_routers
+    _spoki_router, _calendar_router = build_spoki_routers(db, get_current_user, UserRole)
+    api_router.include_router(_spoki_router)
+    api_router.include_router(_calendar_router)
+    # Esposto a livello globale per i trigger sui lead
+    spoki_send_welcome_for_lead = _spoki_router.send_welcome_for_lead
+    logging.info("✅ Spoki/Chatbot/Calendar routes mounted")
+except Exception as _spoki_err:
+    logging.exception(f"⚠️ Spoki routes mount failed (non-fatal): {_spoki_err}")
+    async def spoki_send_welcome_for_lead(lead):  # fallback no-op
+        return None
+
 app.include_router(api_router)
 
 @app.on_event("shutdown")

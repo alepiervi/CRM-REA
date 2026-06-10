@@ -56,6 +56,9 @@ import { PassToPostVenditaButton } from "./components/PassToPostVenditaButton";
 import { PostVenditaStatusDot } from "./components/PostVenditaStatusDot";
 import { ClientePostVenditaSection } from "./components/ClientePostVenditaSection";
 import { MultiSelectFilter } from "./components/MultiSelectFilter";
+import { SpokiAdminConfig } from "./components/spoki/SpokiAdminConfig";
+import { AppointmentsCalendar } from "./components/spoki/AppointmentsCalendar";
+import { LeadConversationsTab } from "./components/spoki/LeadConversationsTab";
 
 // Lucide icons
 import { 
@@ -2018,6 +2021,8 @@ const Dashboard = () => {
         { id: "workflow-builder", label: "Workflow Builder", icon: Workflow },
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
         { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+        { id: "spoki-config", label: "WhatsApp Spoki", icon: MessageCircle },
+        { id: "calendar", label: "Calendario Appuntamenti", icon: Calendar },
         { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "call-center", label: "Call Center", icon: PhoneCall },
         { id: "commesse", label: "Commesse", icon: Building },
@@ -2070,6 +2075,7 @@ const Dashboard = () => {
       // Super Referente: vede lead di tutti i referenti/agenti autorizzati, analytics rete
       items.push(
         { id: "leads", label: "Lead", icon: Phone },
+        { id: "calendar", label: "Calendario Appuntamenti", icon: Calendar },
         { id: "super-referente-analytics", label: "Analytics Rete", icon: TrendingUp }
       );
     } else if (user.role === "agente_specializzato" || user.role === "operatore" || user.role === "responsabile_store" || user.role === "responsabile_presidi" || user.role === "store_assist" || user.role === "promoter_presidi") {
@@ -2109,6 +2115,10 @@ const Dashboard = () => {
           return user.role === "admin" ? <AIConfigurationManagement /> : <div>Non autorizzato</div>;
         case "whatsapp":
           return user.role === "admin" ? <WhatsAppManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
+        case "spoki-config":
+          return user.role === "admin" ? <SpokiAdminConfig units={units} /> : <div>Non autorizzato</div>;
+        case "calendar":
+          return (user.role === "admin" || user.role === "super_referente") ? <AppointmentsCalendar units={units} /> : <div className="p-8 text-center text-slate-600">Non autorizzato</div>;
         case "lead-qualification":
           return (user.role === "admin" || user.role === "referente") ? <LeadQualificationManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "call-center":
@@ -5966,6 +5976,18 @@ const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
           </DialogDescription>
         </DialogHeader>
 
+        <Tabs defaultValue="anagrafica" className="w-full">
+          <TabsList>
+            <TabsTrigger value="anagrafica" data-testid="lead-tab-anagrafica">Anagrafica</TabsTrigger>
+            <TabsTrigger value="whatsapp" data-testid="lead-tab-whatsapp">
+              <MessageCircle className="w-4 h-4 mr-1" /> Conversazione WhatsApp
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="whatsapp" className="mt-3">
+            <LeadConversationsTab leadId={lead.id} />
+          </TabsContent>
+          <TabsContent value="anagrafica" className="mt-3">
+
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
@@ -6126,6 +6148,8 @@ const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
             Salva Modifiche
           </Button>
         </DialogFooter>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
