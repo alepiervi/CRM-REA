@@ -1,350 +1,70 @@
-# CRM Nureal - Product Requirements Document
+# Nureal CRM — PRD
 
-## Original Problem Statement
-Sistema CRM completo per gestione clienti, lead, agenti e workflow automatizzati con integrazione WhatsApp e notifiche email.
+## Problem Statement
+Costruire un CRM commerciale completo per gestione lead, clienti, post-vendita, agenti, commesse, sub-agenzie, calendario e automazioni WhatsApp via Spoki + Chatbot OpenAI.
 
-## Current State (Febbraio 2026)
+## Linguaggio utente
+**Italiano** (rispondere sempre in italiano).
 
-### ✅ Completato in questa sessione (4 Maggio 2026 — Sezione Post Vendita end-to-end)
+## Stack
+- Backend FastAPI (server.py monolitico + moduli spoki_*) + MongoDB
+- Frontend React (App.js monolitico + componenti dedicati) + xyflow per workflow canvas
+- Integrazioni: Spoki WhatsApp (X-Spoki-Api-Key), OpenAI gpt-4o-mini via Emergent LLM key, Aruba SMTP
 
-- **📝 Note Post Vendita + apertura scheda completa dal tab PV**
-  - **Cliccando una riga nella tab "Clienti Post-Vendita"** si apre la scheda completa del cliente (stesso `EditClienteModal` usato nel tab Clienti). Le modifiche fatte da qui si salvano sulla scheda originale del cliente (unico modello, unica API)
-  - **Nuova tipologia di note**: `"post_vendita"` supportata da `POST/GET /api/clienti/{id}/note-history?tipo=post_vendita`
-  - **Regole di visibilità rigorose** (backend):
-    - CREATE: solo `admin` e `backoffice_commessa` possono aggiungere note PV (403 per altri ruoli)
-    - GET senza `tipo` filter: le note `post_vendita` sono **escluse anche per admin** dalla lista generica → la scheda cliente normale non mostra mai note PV
-    - GET con `tipo=post_vendita`: solo admin e BO commessa autorizzati
-  - **EditClienteModal**: nuova prop `fromPostVendita`. Quando `true` (passata solo quando si arriva dal tab PV) mostra una sezione extra "Note Post Vendita" con storico immutabile e input di aggiunta (tema indigo). Nel flusso normale `fromPostVendita=false` → la sezione NON appare
-  - **Meccanismo di apertura**: sessionStorage(`pvOpenClienteId`+`pvOpenFromPV`) + `CustomEvent('app:open-cliente-from-pv')` → Dashboard naviga al tab Clienti → ClientiManagement intercetta, fetcha il cliente e apre EditClienteModal con `fromPostVendita=true`
-  - **Test reale**: nota PV creata, GET filter default esclude PV note (admin incluso), GET tipo=post_vendita le mostra. 97/97 pytest passing
+## Componenti chiave
+- **Lead** management (creazione webhook GET/POST/standard, qualificazione bot)
+- **Clienti** con custom fields, pessimistic locking, Post Vendita, multi-select filtri
+- **Spoki** integration (per Unit: numero + template + chatbot prompt)
+- **Chatbot OpenAI** (gpt-4o-mini): risposte JSON strutturate, memoria multi-turno, slot proposal
+- **Calendario Appuntamenti** per Unit con working_hours + slot finder
+- **Workflow Builder V2**: visual canvas con nodi Spoki/Chatbot/Calendar/Wait-for-reply
 
-- **📊 KPI Cards Post Vendita (funnel cliccabile)**
-  - Nuovo endpoint `GET /api/post-vendita/clienti/stats?commessa_id=X` aggrega via `$group` per stage (lavorazione / attivato / ko / no_stage) + total. Rispetta ACL backoffice_commessa
-  - Aggiunto query param `stage` a `GET /api/post-vendita/clienti` (overrides include_closed): filtra esattamente per uno stage
-  - Frontend: 4 KPI cards in alto nella tab "Clienti Post-Vendita":
-    - 🟡 In Lavorazione (default) — somma lavorazione + senza stage
-    - 🟢 Attivati
-    - 🔴 KO
-    - 📋 Tutti
-  - Click sulla card applica i filtri e mostra solo i clienti di quello stage. Card attiva evidenziata con `ring-2 + shadow`
-  - Test reale: stats `{lavorazione:8, attivato:0, ko:1, no_stage:11, total:20}` per commessa AGN ENERGIA
+## Implementato (CHANGELOG)
 
-- **🧹 Lista Post Vendita "snella": esclude di default i clienti chiusi (Attivati / KO)**
-  - Il GET `/api/post-vendita/clienti` filtra di default solo i clienti con `post_vendita_stage` ∈ {null, 'lavorazione'} — quelli con esito 🟢 attivato o 🔴 ko vengono nascosti dalla lista operativa
-  - Nuovo query param `include_closed=true` per visualizzarli (toggle frontend "Mostra anche chiusi")
-  - L'esito finale resta sempre tracciato sull'anagrafica (status + dot) e nello storico immutabile (`cliente_post_vendita_history`) — nessuna perdita di informazione
-  - Frontend: aggiunta checkbox "Mostra anche chiusi (🟢 Attivati / 🔴 KO)" + hint informativo sopra la tabella
-  - Test reale: 17 clienti default (6 lavorazione + 11 senza stage) vs 18 con include_closed=true (include 1 KO) ✅
+### Dec 2025 - Feb 2026
+- Modulo Post Vendita completo + Lean list + KPI funnel
+- Multi-select filtri Include/Exclude globali su /api/clienti
+- Excel export con multi-value e include/exclude
+- Migrazione automatica legacy notes su startup
+- Filtro data Clienti server-side + scorciatoie (Oggi/7gg/30gg/Mese)
+- Fix Backoffice Commessa: clienti con servizio_id=None ora visibili in listing e export
+- Rimozione cliente da Post Vendita (non cancellazione)
 
-- **📜 Sezione "Evoluzione Post Vendita" su scheda Cliente + Excel export PV**
-  - **Nuova collezione MongoDB** `cliente_post_vendita_history`: storico immutabile di OGNI cambio status PV (con `previous_status/label/stage` + autore + data)
-  - **Helper `_apply_pv_stage_to_cliente` consolidato** come unica fonte di verità: snapshot previous → mutazione completa → entry storia (atomico per chiamata). Tutti i 3 callers (pass-to, PATCH, bulk-import) ora delegano al helper, niente più duplicazione di update_one
-  - **Nuovo endpoint** `GET /api/clienti/{id}/post-vendita-history` accessibile a TUTTI gli utenti con accesso alla scheda cliente (via `can_user_access_cliente_notes`, non solo admin/BO Commessa)
-  - **Frontend `/app/frontend/src/components/ClientePostVenditaSection.jsx`**: card indaco con
-    - Stato attuale: badge stage colorato (🟡/🟢/🔴) + label umano
-    - Timeline cronologica (newest-first) con linea verticale, pallini stage, transizioni `prev → new`, autore e data
-    - Messaggio "Cliente non ancora in Post Vendita" se `passed_to_post_vendita=false`
-  - **Integrato in 2 punti**: `ViewClienteModal` (sotto i Custom Fields, prima delle Note) e `EditClienteModal` (stesso layout)
-  - **Excel Export Clienti** (`GET /api/clienti/export/excel`): aggiunte 5 colonne dopo "Note Back Office":
-    1. `Post Vendita - In Workflow` (Sì/No)
-    2. `Post Vendita - Stato` (label umano)
-    3. `Post Vendita - Esito (Stage)` (🟢 Attivato / 🔴 KO / 🟡 In Lavorazione)
-    4. `Post Vendita - Ultimo Aggiornamento` (data formattata)
-    5. `Codice Account`
-  - **Test**: history endpoint validato con catena lav → att → ko (3 entries con previous corretto), Excel export 200 OK con 5 colonne PV popolate, 15/15 pytest backend
+### Feb 2026 — FASE A Spoki/Chatbot/Calendar/Workflow
+- `spoki_module.py`: SpokiService (X-Spoki-Api-Key, send template/session, webhook signature) + modelli
+- `spoki_chatbot.py`: gpt-4o-mini con output JSON + slot finder (working_hours, slot_duration, blackout)
+- `spoki_routes.py`: 14 endpoint `/api/spoki/*` e `/api/calendar/*`
+- Workflow Executor V2 (`workflow_executor.py`): edge-driven, branching, suspendable (wait_for_reply), persistent state in `workflow_executions_v2`, timeout loop background ogni 60s
+- Nuovi node types catalogo:
+  - Actions: send_spoki_template, send_spoki_message, run_chatbot, create_appointment
+  - Conditions: working_hours
+  - Delays: wait_for_reply (timeout + reply branches)
+- Hook lead creation in 3 punti → trigger workflows V2 + welcome Spoki
+- Spoki webhook → resume_on_reply su workflow_executions_v2 in attesa
+- Frontend nuovi componenti: SpokiAdminConfig, AppointmentsCalendar, LeadConversationsTab
+- Sidebar admin: "WhatsApp Spoki" + "Calendario Appuntamenti"
+- Sidebar super_referente: "Calendario Appuntamenti"
+- LeadDetailModal: tab "Conversazione WhatsApp"
 
-- **🆕 Stage degli Status Post Vendita + propagazione automatica all'anagrafica cliente**
-  - Ogni `PostVenditaStatusConfig` ha ora un campo `stage` (3 valori): `lavorazione` (🟡), `attivato` (🟢), `ko` (🔴) — validato lato backend
-  - Quando un cliente cambia `post_vendita_status` (via pass-to-PV, PATCH status, bulk-import auto+manual), il backend imposta automaticamente:
-    - `cliente.status` = `attivato` / `ko` / `in_lavorazione` (in base allo stage del nuovo status PV)
-    - `cliente.post_vendita_stage` = stage corrente
-  - Quando admin **modifica lo stage** di uno status già esistente, il backend **propaga retroattivamente** a tutti i clienti che usano quello status (`PUT /api/post-vendita/status-config/{id}` con `{stage: ...}`)
-  - **Frontend**: nel dialog "Aggiungi/Modifica Status" è presente un selettore Tipo (Stage) con 3 opzioni emoji-coded; tabella config mostra colonna "Tipo" con `StageBadge` colorato. La status anagrafica diventa quindi visibile su tutta la scheda cliente — tutti gli utenti con accesso al cliente vedono lo stato aggiornato
-  - **Test verificato via curl**: cliente passa attraverso lavorazione → attivato → ko, `cliente.status` segue lo stage; cambio stage in config aggiorna immediatamente tutti i clienti collegati
-  - File: `/app/backend/server.py` (modelli `PostVenditaStatusConfig*`, helper `_apply_pv_stage_to_cliente`, integrato in 4 endpoint PV) + `/app/frontend/src/components/PostVendita.jsx` (`StageBadge`, dialog stage selector)
+## Bloccanti esterni
+- **Spoki API key** restituisce 401 — utente sta verificando attivazione nel pannello Spoki Partner
+- **Aruba SMTP**: IP del preview blacklistato — solo infrastrutturale
 
-- **🆕 Sezione Post Vendita (Admin + Backoffice Commessa)**
-  - **Sidebar**: voce "Post Vendita" (icona `Package`) visibile solo a `admin` e `backoffice_commessa`
-  - **Frontend** (`/app/frontend/src/components/PostVendita.jsx`): pagina con 4 tab
-    - **Clienti Post-Vendita**: lista paginata clienti `passed_to_post_vendita=True`, filtri per status PV, presenza/assenza `codice_account`, search testuale; cambio status inline (dropdown con colore dello status)
-    - **Import Massivo**: wizard 3-step
-      1. Upload CSV/XLSX + scelta colonna `Codice Account` (auto-rilevata per CSV) + nuovo status
-      2. Anteprima match: separato auto-matched (per `codice_account`) vs unmatched (con dropdown manuale "Abbina a cliente" mostrando candidati suggeriti + tutti i clienti della commessa)
-      3. Risultato: contatori auto/manuali/errori, badge "nuovo status auto-creato"
-    - **Configurazione Status** (admin only): CRUD status PV per commessa con label/value/colore/ordine/`is_default`
-    - **Storico Import**: tabella ultimi 50 import con utente, status applicato, contatori
-  - **Backend**: 9 endpoint sotto `/api/post-vendita/*` + `/api/clienti/{id}/pass-to-post-vendita` + `/api/clienti/{id}/codice-account`
-  - **Modelli**: `PostVenditaStatusConfig`, collezioni `post_vendita_status_config`, `post_vendita_imports`. Cliente: aggiunti `passed_to_post_vendita`, `post_vendita_status`, `post_vendita_status_updated_at`, `codice_account`
-  - **Logica match**:
-    - Auto-match: per ogni riga del file, lookup `cliente.codice_account == row[CodiceAccount]` (clienti della commessa, indipendentemente dallo stato PV)
-    - Manual match: utente sceglie cliente da abbinare. **SOLO post_vendita_status viene aggiornato** (codice_account NON viene toccato — scelta utente)
-  - **Auto-creazione status**: se il valore in `new_status` non è già in `post_vendita_status_config` per la commessa, viene creato automaticamente (label = input utente, value normalizzato lowercase+underscore, colore default `#6b7280`, `is_default=False`)
-  - **Marcatura passed_to_post_vendita**: bulk import imposta `passed_to_post_vendita=True` su ogni cliente aggiornato (auto + manual)
-  - **ACL backoffice_commessa**:
-    - `_require_post_vendita_role`: blocca ruoli != admin/backoffice_commessa (HTTP 403)
-    - `_check_post_vendita_commessa_access`: backoffice_commessa può importare/listare SOLO le commesse in `commesse_autorizzate` (GET list filtrato auto, analyze/execute → 403 su commessa non autorizzata)
-    - CREATE/PUT/DELETE status-config: admin only
-  - **Bug fix collaterale**: `ClienteCreate` non includeva `codice_account` (silently dropped on POST). Ora aggiunto. Inoltre nuovo endpoint `PATCH /api/clienti/{id}/codice-account` per setting incrementale senza payload completo
-  - **Testing** (iteration_8.json): backend 15/15 ✓, frontend 100% (admin login → tutti i 4 tab caricano, wizard funziona Step1→Step2)
+## Backlog prioritizzato
 
-### ✅ Completato in questa sessione (27 Feb 2026)
+### P0 (in corso)
+- Verifica end-to-end Spoki appena chiave attivata
+- FASE B Workflow: cartelle, statistiche per nodo, draft/published, test mode
 
-- **🔍 Filtro Status nei Clienti: ora mostra TUTTI gli status (standard + custom + storici)**
-  - Prima: dropdown filtro Status mostrava solo l'array hardcoded `STATUS_CLIENTI` (15 valori). Status custom creati da admin o salvati in passato non apparivano
-  - Fix frontend (`ClientiManagement`): ora fetcha
-    1. Tutti i custom status attivi da `GET /api/cliente-custom-statuses?active_only=true` (across all commesse/tipologie)
-    2. Tutti i valori distinti di `status` realmente usati sui clienti via `GET /api/clienti/filter-options.status_values`
-  - Render dropdown: status standard + sezione "── Status Custom / Storici ──" con i valori non duplicati
-  - File: `/app/frontend/src/App.js` linee ~19410 (fetch) + ~20336 (render dropdown)
+### P1
+- FASE C: condition multi-branch avanzati, sistema tag UI, Go To node
+- FASE D: polish UX canvas (palette nodi colorata, minimap, animazioni)
+- Duplica configurazione Custom Fields
 
-- **🔍 Filtro Segmenti nei Clienti: ora completo**
-  - Prima: backend `clienti/filter-options` aveva `segmenti_values = ["privato", "business"]` HARDCODED. Segmenti user-created e storici non apparivano
-  - Fix backend: ora unisce 3 sorgenti
-    1. Hardcoded base `["privato", "business"]`
-    2. Valori distinti di `segmento` realmente usati sui clienti (aggregate)
-    3. `tipo` e `nome` di tutti i record in `db.segmenti`
-  - Dedup canonicalizzato per evitare duplicati maiuscolo/minuscolo
-  - File: `/app/backend/server.py` linea ~15188 + ~15376
+### P2
+- Sezioni STANDARD cliente condizionate da Commessa
+- Refactoring App.js (>29k) e server.py (>23k) in moduli
+- Preset filtri salvabili per gli utenti
 
-- **🔓 Note Cliente: visibili e modificabili da TUTTI gli utenti associati al cliente**
-  - Prima: ruoli operativi (Agente, Operatore, Store Assist, ecc.) potevano vedere/aggiungere note solo ai clienti che AVEVANO CREATO loro stessi (`cliente.created_by == user.id`)
-  - Nuova funzione `can_user_access_cliente_notes()` più permissiva: utente può vedere/aggiungere note se è
-    - Admin, OPPURE
-    - Creatore o assegnatario del cliente, OPPURE
-    - Nella stessa Sub Agenzia (diretta o autorizzata) del cliente, OPPURE
-    - Ha la commessa del cliente nelle proprie autorizzazioni
-  - Endpoint aggiornati: `POST /api/clienti/{id}/note-history` e `GET /api/clienti/{id}/note-history`
-  - **Note Back Office** continuano a richiedere admin + backoffice_commessa per scrivere (regola invariata)
-  - File: `/app/backend/server.py` linea ~1933 (nuova funzione) + linee ~17152, ~17192 (endpoint note)
-  - Test: `ale3` (BO sub agenzia non creatore) → ora accede alle note di un cliente nella sua sub agenzia ✅
-
-- **📋 Cronologia Cliente: ora mostra NOMI invece di ID**
-  - **Sintomo**: la cronologia (`/api/clienti/{id}/logs`) registrava i cambiamenti con gli ID delle entità (es. `Sub Agenzia modificato da '7c70d4b5-...' a '9b0b8890-...'`) invece dei nomi
-  - **Fix backend**: `detect_client_changes()` (in `server.py`) ora è async e risolve gli ID nei nomi tramite lookup MongoDB per: `sub_agenzia_id`, `commessa_id`, `servizio_id`, `tipologia_contratto_id`, `segmento` (UUID), `assigned_to` (user)
-  - **Esempio output post-fix**: `Sub Agenzia modificato da 'Presidio - Maximo' a 'F2F'`, `Segmento modificato da 'Privato' a 'Business'`
-  - Le voci storiche pre-fix conservano gli ID (immutabili); tutte le modifiche future mostreranno i nomi
-  - File: `/app/backend/server.py` linea ~14043 (function `detect_client_changes`) + linea ~16535 (call site con `await`)
-
-- **🔓 Backoffice Commessa può ora cambiare la Sub Agenzia del Cliente**
-  - In EditClienteModal il campo "Sub Agenzia" era sempre read-only. Ora è un `<select>` editabile per ruoli `admin`, `responsabile_commessa`, `backoffice_commessa`
-  - Le opzioni sono filtrate per mostrare solo le Sub Agenzie autorizzate sulla commessa del cliente
-  - Backend `ClienteUpdate` aggiunto campo `sub_agenzia_id: Optional[str]` per consentire l'update via PUT
-  - **Bonus fix**: il PUT cliente normalizzava la `tipologia_contratto` a lowercase con underscore (legacy, era il bug originale di `'energia_fastweb'`). Ora preserva il nome user-created come definito (es. "ENERGIA"). Aggiornato anche `tipologia_contratto_id` automaticamente quando si converte dall'UUID
-  - Test verificato via curl: PUT `sub_agenzia_id` da F2F → MAXIMO funziona ✅
-
-- **🐛 Bug fix: Tipologia contratto sbagliata salvata sui clienti**
-  - **Sintomo**: salvando un cliente con commessa "AGN ENERGIA" + servizio "TLS AGN ENERGIA" + tipologia "ENERGIA", il sistema salvava `tipologia_contratto = 'energia_fastweb'` (legacy enum di Fastweb) invece di "ENERGIA"
-  - **Root cause**: la funzione `mapTipologiaContratto` in `App.js` (linea ~22492) faceva un mapping case-insensitive verso un dizionario hardcoded di enum legacy (`'Energia' → 'energia_fastweb'`, etc.). Da quando le tipologie sono dinamiche/user-created questo mapping è obsoleto e produce dati sbagliati
-  - **Fix frontend**: il submit cliente ora salva direttamente il nome tipologia user-created (`cascadeTipologie?.find(t => t.id === selectedData.tipologia_contratto)?.nome`), senza il mapping legacy
-  - **Backfill dati**: 21 clienti corretti — es. "Alessandro Piervincenzi prova" passato da `'energia_fastweb'` a `'ENERGIA'`
-  - File: `/app/frontend/src/App.js` linea ~23694
-
-- **🐛 Bug fix: Stesso problema applicato anche al SEGMENTO**
-  - `mapSegmento` faceva mapping legacy (`'Privato' → 'privato'`). Sostituito con `cascadeSegmenti.find(s=>s.id===...).nome` per salvare il nome utente-creato direttamente
-  - **Backend filter expansion** aggiornato per essere case-insensitive su `privato`/`Privato`/`PRIVATO` e per includere anche i NOMI dei segmenti, oltre a UUID e tipo
-  - **Backfill**: 6 clienti normalizzati (segmento UUID → nome es. "Privato")
-  - Test regressione: `/app/backend/tests/test_segmento_filter_regression.py` 3/3 passati
-
-- **🛡️ Sezione Audit Permessi (Admin)**
-  - Nuova voce sidebar **"Audit Permessi"** per role admin con icona `ShieldAlert`
-  - Backend `GET /api/admin/permissions-audit` (admin-only) restituisce 4 categorie di incoerenze:
-    1. **Servizi senza commessa parent** — fixable
-    2. **Commesse orfane** (BO/Resp Sub Agenzia con commessa senza alcun servizio) — fixable
-    3. **Servizi non autorizzati nella Sub Agenzia** — solo segnalazione
-    4. **Commesse non autorizzate nella Sub Agenzia** — solo segnalazione
-  - Backend `POST /api/admin/permissions-audit/auto-fix/{user_id}` per fix automatico delle prime 2 categorie
-  - Frontend `/app/frontend/src/components/PermissionsAudit.jsx`: summary cards (utenti analizzati, incoerenze totali, ultimo controllo), categorie collassabili con tabella + bottoni "Fix" per riga e "Auto-fix tutti" per categoria
-  - Test reale: trovate **34 incoerenze** su 17 utenti (4 senza parent, 16 servizi extra, 14 commesse extra). Nessuna commessa orfana
-
-- **🐛 Bug fix: Servizio autorizzato non visibile nel wizard creazione cliente**
-  - **Root cause**: il frontend `EditUserModal` quando admin abilita un servizio (`handleServizioAutorizzatoChange`) aggiunge SOLO il servizio in `servizi_autorizzati` ma **non la commessa parent** in `commesse_autorizzate`. Risultato: il backend `/cascade/servizi-by-sub-agenzia` filtra prima per commessa autorizzata e il servizio non viene mai mostrato all'utente
-  - **Fix backend** (`PUT /api/users/{id}`): se il payload aggiorna `servizi_autorizzati`, il backend deduce le commesse parent dei servizi e le aggiunge automaticamente in `commesse_autorizzate` (union, mai rimuove). Garantisce coerenza dati indipendentemente dal client
-  - **🧹 Coerenza inversa**: per ruoli `backoffice_sub_agenzia` / `responsabile_sub_agenzia`, quando admin rimuove tutti i servizi di una commessa dall'utente, anche la commessa viene rimossa automaticamente da `commesse_autorizzate` (richiesta utente). Test verificato: utente `test` con [Fastweb, Vodafone] → rimuovo servizi Vodafone → commesse diventano [Fastweb] ✅
-  - **➕ Stessa logica applicata anche a `POST /api/users`**: in fase di creazione, se admin assegna servizi senza tickare le commesse, le commesse parent vengono aggiunte; se passa commesse orfane (senza servizi associati per ruoli BO/Resp Sub Agenzia), vengono rimosse. Verificato con 2 test case (TEST 1: solo servizio → commessa parent auto-aggiunta; TEST 2: commessa orfana → rimossa)
-  - **One-time backfill**: 3 utenti corretti — `te` (aggiunta Vodafone), `ale3`/`ale4` (aggiunta Telepass)
-  - File: `/app/backend/server.py` linee ~4704-4756 (in `update_user`)
-
-- **🔙 Rollback Auto-propagazione Servizi Sub Agenzia → Utenti**
-  - Scelta utente: gli utenti devono essere **sempre autorizzati manualmente** da admin, no auto-propagazione
-  - Rimossa propagazione automatica da `PUT /api/sub-agenzie/{id}`
-  - Rimosso endpoint `POST /api/admin/resync-sub-agenzia-users`
-  - Lo stato attuale dei dati utenti è rimasto invariato (10 utenti hanno i servizi aggiunti dal backfill precedente - l'admin gestirà manualmente la rimozione se necessario)
-
-- **Storico Note Cliente immutabile** 📝
-  - Nuova feature: storico append-only delle note Cliente e Back Office direttamente nella scheda cliente
-  - Ogni nota mostra: 📅 data/ora (formattata it-IT) + 👤 username dell'autore. No edit, no delete (nemmeno admin)
-  - UI: input textarea + pulsante "Aggiungi nota" dedicato (per ogni tipo cliente/backoffice), lista storico sotto ordinata newest-first
-  - ViewClienteModal: storico read-only (no input, no pulsante)
-  - Permessi: note Back Office solo `admin` + `backoffice_commessa` (enforced sia backend che frontend)
-  - **Backend** (`/app/backend/server.py` ~linea 16817-16900): modelli `ClienteNoteEntry`/`ClienteNoteEntryCreate`, endpoint `POST /api/clienti/{id}/note-history` e `GET /api/clienti/{id}/note-history?tipo=...`. Collezione mongo: `cliente_note_history`
-  - **Frontend**: nuovo componente `/app/frontend/src/components/ClienteNotesHistory.jsx`, integrato in Edit e View Cliente Modal
-  - **Fix**: `canEditNoteBackoffice()` in App.js ora include anche admin (prima escluso per bug)
-  - Testing (iteration_7.json): backend 13/13 ✓, frontend 100% dopo fix ✓
-
-- **Miglioramento auto-refresh Sistema Lock**
-  - Polling badge 🔒 ridotto da 30s → **10s**
-  - Refresh automatico anche su **tab focus** e **visibility change** (quando l'utente torna sulla tab)
-  - Refresh lock **agganciato** al refresh della lista clienti: ogni `fetchClienti()` e ogni auto-refresh 30s della lista ora aggiorna anche i badge
-  - Su chiusura di ViewClienteModal o EditClienteModal, il parent richiama `refreshClienteLocks()` dopo 800ms per propagare immediatamente il rilascio del lock ad altri tab
-  - File: `/app/frontend/src/components/ClienteLock.jsx` + `/app/frontend/src/App.js`
-
-- **Bug fix: Filtro Segmento (Privati/Business) non mostrava tutti i clienti**
-  - **Root cause**: il campo `segmento` nei clienti è salvato in modi misti — sia come stringa tipo (`"privato"`/`"business"`) sia come UUID del segmento (tabella `segmenti`). Il filtro backend faceva match esatto, escludendo i clienti con UUID dalla stessa categoria
-  - **Fix** (`/app/backend/server.py`): nuova funzione `_expand_segmento_filter_values()` che espande il filtro includendo anche tutti gli UUID dei segmenti con quel tipo. Applicata in 4 endpoint:
-    - `GET /api/clienti` (linea ~14238)
-    - `GET /api/clienti/export/excel` (linea ~15062)
-    - `GET /api/analytics/pivot/...` (linea ~15369)
-    - `GET /api/analytics/pivot/export-clienti` (linea ~15865)
-  - **Impatto validato**: filtro `segmento=privato` ora ritorna 18 clienti (13 "privato" + 5 UUID corrispondenti) contro i 13 precedenti
-  - Test regressione: `/app/backend/tests/test_segmento_filter_regression.py` (3/3 passati)
-
-- **Sistema Lock Anagrafica Cliente (🔒 Lucchetto)**
-  - Quando un utente apre una scheda cliente (View o Edit), il sistema acquisisce un lock esclusivo. Altri utenti non possono né visualizzare né modificare la scheda finché non viene rilasciata o scade automaticamente.
-  - Timeout: **10 minuti** di inattività (heartbeat dal frontend ogni 4 min mentre il modal è aperto)
-  - Rilascio automatico: su chiusura modal, tab close (via `fetch keepalive` DELETE), scadenza backend
-  - **Backend** (`/app/backend/server.py` linee 16568-16780): 6 endpoint `POST/DELETE/GET /api/clienti/{id}/lock`, `POST .../lock/heartbeat`, `POST .../lock/force-release` (admin-only), `GET /api/cliente-locks`. Collezione `cliente_locks`. Constante `CLIENTE_LOCK_TIMEOUT_MINUTES = 10`.
-  - **Frontend** (`/app/frontend/src/components/ClienteLock.jsx`): hook `useClienteLock(clienteId)`, componente `ClienteLockedScreen` con info utente + bottone admin "Forza sblocco", hook `useActiveClienteLocks` per badge 🔒 nella lista Clienti (polling 30s)
-  - Integrazione in `ViewClienteModal` e `EditClienteModal`: early-return con `ClienteLockedScreen` se lock detenuto da altro utente
-  - Admin può forzare il rilascio di qualsiasi lock (override manuale)
-  - Testing (iteration_6.json): backend 14/14 ✓, frontend 100% ✓ — validato con admin + lock_tester in due context browser differenti
-
-### ✅ Completato in precedenti sessioni (21 Feb 2026)
-
-- **Sezioni Custom sempre prima della sezione Note** in CreateClienteModal, EditClienteModal e ViewClienteModal
-- **Riorganizzazione campi Indirizzo Cliente in due blocchi distinti**
-  - Bloc 1 "Indirizzo Residenza": indirizzo, comune_residenza, provincia, cap
-  - Bloc 2 "Indirizzo Attivazione": indirizzo_attivazione, comune_attivazione, provincia_attivazione, cap_attivazione
-  - `CreateClienteModal`, `EditClienteModal` e `ViewClienteModal` ora mostrano la stessa struttura con UI coerente (residenza in grigio slate, attivazione in amber)
-  - `ViewClienteModal`: blocco "📍 Indirizzo Attivazione / Installazione" visibile solo se almeno uno dei 4 campi attivazione è compilato, mostra tutti e 4 i campi valorizzati
-  - Backend: `Cliente`, `ClienteCreate`, `ClienteUpdate` aggiornati con `provincia_attivazione` e `cap_attivazione` (Optional[str])
-  - `PROVINCE_ITALIANE` spostato a livello modulo in App.js per accessibilità da tutti i componenti
-  - Testing: iteration_5.json — backend 3/3 ✓, frontend 100% ✓ (8 data-testid verificati, salvataggio PUT 200)
-
-### ✅ Completato in precedenti sessioni (20 Aprile 2026)
-
-- **Custom Fields inclusi nell'Export Excel Clienti**
-  - Sia `GET /api/clienti/export/excel` sia `GET /api/analytics/pivot/export-clienti` ora aggiungono automaticamente colonne dinamiche `[Custom] {label}` per ogni custom field attivo definito in `cliente_custom_fields`
-  - Dedup per `name` (se lo stesso logical field è stato creato per più combinazioni commessa+tipologia, appare una sola colonna con la label della prima trovata)
-  - Formattazione: `list` → join con virgola, `bool` → "Sì/No"
-  - Test: campo custom "Tipologia d'uso" → 62 colonne totali nell'export, ultima colonna correttamente popolata con valore salvato in `cliente.dati_aggiuntivi`
-  - File: `/app/backend/server.py` (funzione `create_clienti_excel_report` + endpoint pivot)
-
-- **Pulizia campi sezione Energia Clienti**
-  - POD non più obbligatorio (rimossa validazione in handleSubmit, tolto `*` e messaggio rosso)
-  - Aggiunta opzione **"Nuovo Allaccio"** nel dropdown Tipologia Energia (Create + Edit modal)
-  - Rimossi campi **Codice PDR** e **REMI** dal form (Create + Edit) — backend models invariati per preservare dati storici
-  - File: `/app/frontend/src/App.js` (CreateClienteModal + EditClienteModal)
-
-- **Filtro Tipologie per Commessa nei 3 Dialog e Filtro principale**
-  - Prima: i dropdown tipologia mostravano tutte le 39 tipologie indipendentemente dalla commessa scelta.
-  - Ora: in **Filtro principale**, **Dialog Nuovo Campo**, **Dialog Nuova Sezione**, **Dialog Nuovo Status** — dopo aver selezionato la commessa, il dropdown tipologia mostra solo le tipologie associate a quella commessa (tramite `GET /api/tipologie-contratto?commessa_id=X`).
-  - In modalità create: se si cambia la commessa dopo aver selezionato una tipologia non compatibile, la tipologia viene resettata automaticamente.
-  - File: `/app/frontend/src/components/ClienteCustomFieldsManager.jsx` (nuovo helper `fetchTipologieForCommessa` + 4 state list + 4 useEffect)
-
-- **Campi Personalizzati Clienti — FASE 3 (Status Personalizzati con mappatura Analytics)**
-  - **Backend**: nuovo enum `StatusStage` (nuovo / in_lavorazione / chiuso_vinto / chiuso_perso). Modello `ClienteCustomStatus` con (name, value auto-normalizzato, color, icon, stage, order, active). CRUD su `/api/cliente-custom-statuses` (admin only). `Cliente.status` convertito da `ClienteStatus` enum a `str` per accettare valori custom. Endpoint `/api/cliente-status-options?commessa_id=X&tipologia_contratto_id=Y` ritorna lista combinata (14 standard + custom). Endpoint `/api/analytics/cliente-statuses-breakdown` aggrega clienti per status e per stage (funnel).
-  - **Frontend**: terzo Tab "Status" in `ClienteCustomFieldsManager.jsx` con Dialog create/edit (icon/color/stage), lista status con badge colore+stage. Widget "Imbuto Status Cliente" mostra 4 tiles per stage con % del totale + dettaglio per singolo status. `EditClienteModal` usa nuovo hook `useClienteStatusOptions` per popolare dropdown status dinamicamente (standard + custom per commessa+tipologia del cliente, con `⭐` sui custom).
-  - **Test**: testing agent v3 — **100% backend** (20/20), **100% frontend**. Nessun issue.
-
-- **Campi Personalizzati Clienti — FASE 2 (Sezioni personalizzabili)**
-  - **Backend**: modelli `ClienteCustomSection` / `ClienteCustomSectionCreate` / `ClienteCustomSectionUpdate` + CRUD admin su `/api/cliente-custom-sections`. Campo `section_id` opzionale aggiunto a `ClienteCustomField`. Quando una sezione viene eliminata, i campi assegnati vengono automaticamente spostati al gruppo default (section_id impostato a null). Fix PUT endpoint per permettere `section_id=null` (usa `exclude_unset`).
-  - **Frontend admin** (`ClienteCustomFieldsManager.jsx` riscritto con Tabs):
-    - Tab "Campi" e Tab "Sezioni" affiancate
-    - Dialog create/edit sezione con campi: nome, icona (emoji), ordine, attiva
-    - Dialog create/edit campo ora include dropdown "Sezione di destinazione" (filtrato per commessa+tipologia)
-    - Campi nella lista mostrano badge "📁 {nome sezione}"
-  - **Rendering nei 3 modali Cliente** (`CustomFieldsRenderer.jsx`):
-    - `useClienteCustomFields` ora ritorna anche `sections`
-    - `groupFieldsBySection()` raggruppa i campi per sezione in ordine di `order`
-    - Ogni gruppo renderizza con header "{icon} {name}" (indigo) o "📝 Campi Aggiuntivi" (amber) per il gruppo default
-  - **Test**: testing agent v3 — Backend 100% (13/13), Frontend 100%. Fix applicato per issue minor su PUT+section_id=null.
-
-  - **Campi Personalizzati Clienti — FASE 1 (configurabili per Commessa + Tipologia Contratto)**
-  - **Backend**: modelli `ClienteCustomField` / `ClienteCustomFieldCreate` / `ClienteCustomFieldUpdate` (`/app/backend/server.py` linee 556-600) + CRUD admin-only su `/api/cliente-custom-fields` (linee ~6313-6423). Validazione 9 field_type (text, textarea, number, date, email, phone, select, multi_select, checkbox). Duplicati (name+commessa+tipologia) respinti. Nome normalizzato (lowercase + replace non-alphanum con `_`).
-  - **Frontend**: nuova pagina admin in sidebar "Campi Clienti" → componente `/app/frontend/src/components/ClienteCustomFieldsManager.jsx` (CRUD UI con filtri, dialog create/edit, delete con conferma)
-  - **Rendering dinamico**: hook `useClienteCustomFields(commessa, tipologia)` + componenti `CustomFieldsSection` (form) e `CustomFieldsViewSection` (readonly) in `/app/frontend/src/components/CustomFieldsRenderer.jsx`
-  - **Integrazione nei modali** Cliente (`/app/frontend/src/App.js`):
-    - **CreateClienteModal**: sezione "Campi Aggiuntivi" dinamica, salvataggio in `dati_aggiuntivi`, validazione campi obbligatori
-    - **EditClienteModal**: stessa sezione, valori precompilati, salvataggio e validazione
-    - **ViewClienteModal**: sezione readonly
-  - **Test**: testing agent v3 — Backend 100% (16/16), Frontend 95% (admin UI + Edit verificati, Create non testabile via automazione per la complessità del cascading)
-
-- **Riorganizzazione View Cliente (Anagrafica + Indirizzo + Contatti)** — fix campi errati (`provincia_residenza` → `provincia`, `numero_civico`/`comune`/`cellulare` inesistenti → rimossi/sostituiti), nuove sezioni logiche
-- **Nuovo campo "Comune di Installazione" (`comune_attivazione`)** — aggiunto a modelli backend + Create/Edit/View Cliente, raggruppato con "Indirizzo Attivazione" in sub-block ambra
-- **Nuovo campo "Indirizzo Attivazione" (`indirizzo_attivazione`)** — aggiunto a modelli backend + Create/Edit/View Cliente
-- **Label "Telefono" rinominato in "Cellulare"** nei modali Create/Edit/View (campo DB `telefono` invariato)
-- **Copia anagrafica esistente**: estesa a tutti i campi (anagrafica completa + contatti + pagamento + documento). Mantenuti esclusi: contract-specific fields, note, file upload.
-
-### ✅ Completato in questa sessione (17 Febbraio 2026)
-- **Copia Anagrafica Esistente nel Modale Crea Cliente**: Implementata la funzionalità di pre-compilazione del form cliente partendo da un cliente esistente.
-  - UI: box ambra "Copia da anagrafica esistente" all'inizio della scheda cliente (dopo completamento filiera cascading)
-  - Ricerca debounced (300ms) con minimo 2 caratteri su `GET /api/clienti?search=X&page_size=10`
-  - Copia SOLO anagrafica base: `nome`, `cognome`, `ragione_sociale`, `indirizzo`, `comune_residenza`, `provincia`, `cap`
-  - ESCLUSI: codice_fiscale, partita_iva, telefono, email, documenti, IBAN, campi contratto, note
-  - `window.confirm` prima della sovrascrittura se campi già compilati
-  - File modificato: `/app/frontend/src/App.js` (CreateClienteModal, ~linee 22505-22600 e ~23968-24070)
-  - Test: testing agent v3 frontend — 100% passed (tutti gli step validati: login, cascading, ricerca, copia, esclusioni, conferma sovrascrittura, toast)
-  - Fix collaterale: `response.data.items` → `response.data.clienti` per allineamento con ClientiPaginatedResponse del backend
-
-### ✅ Completato in sessioni precedenti (13 Febbraio 2026)
-- **Verifica Notifiche Email Super Referente**: Confermato che la logica per le notifiche email ai Super Referenti per lead stagnanti (>7 giorni con stato "Lead Interessato") è completa e funzionante. Il sistema:
-  - Controlla ogni ora i lead non lavorati
-  - A 3+ giorni: notifica all'Agente
-  - A 7+ giorni: notifica all'Agente + Referente + Super Referente (se esiste)
-  - Endpoint admin manuale: `POST /api/admin/send-lead-reminders`
-- **Nota**: Le email non vengono inviate per problemi di blacklist IP su Aruba SMTP (problema infrastrutturale, non del codice)
-
-### ✅ Completato in sessioni precedenti
-- **Fix Email Notifica Lead**: Corretto errore `uuid4()` → `uuid.uuid4()` che bloccava le notifiche
-- Sistema email SMTP Aruba funzionante
-- **Cestino Lead**: Implementato soft delete, ripristino e eliminazione definitiva per i lead (solo Admin)
-- **Ruolo Supervisor**: Nuovo ruolo con gestione multi-unità, analytics dedicati, export lead
-- **Assegnazione Lead Avanzata**: Assegnazione diretta al referente per unità con auto-assign disabilitato
-- **Stati Lead per Unità**: Supporto stati globali e specifici per unità
-- **Permessi Aggiornati**: Agenti/Referenti possono modificare stati lead; Store_assist/Promoter_presidi bloccati da eliminazione clienti
-- **Export Excel migliorato**: Mostra nomi invece di ID per Commessa, Unit, Segmento
-- Display "Note Backoffice" nel modal cliente
-- Responsività mobile per Clienti, Lead, Users, Commesse, Sub-Agency
-- Pulsanti "Chiudi" espliciti su tutti i modali
-- Export clienti da Pivot Analytics con filtri
-- Logica upload documenti (fail se salvataggio esterno fallisce)
-- Export Excel con nomi segmento invece di ID
-- Paginazione server-side per lista Lead
-- Logica avanzata assegnazione lead (cap 30 lead non lavorati per agente)
-- Sistema notifiche email completo (assegnazione + reminder 3/7 giorni + CC manager)
-- Cestino Clienti (soft delete + restore) - Backend completato
-
-### 🔄 In Verifica
-- Sistema email notifiche lead (utente deve testare flusso completo)
-
-### 📋 Backlog (P2-P3)
-- **P2**: Refactoring critico file monolitici:
-  - `frontend/src/App.js` (~25,000 linee)
-  - `backend/server.py` (~15,000 linee)
-- **P3**: Feature modifica "preventivo" (in attesa chiarimenti utente)
-
-## Architettura Tecnica
-
-### Stack
-- **Frontend**: React + Shadcn/UI
-- **Backend**: FastAPI + Motor (MongoDB async)
-- **Database**: MongoDB
-- **WhatsApp**: whatsapp-web.js (Node.js service)
-- **Email**: SMTP Aruba (smtps.aruba.it:465)
-- **Background Jobs**: APScheduler
-
-### File Principali
-- `/app/backend/server.py` - API monolitico
-- `/app/frontend/src/App.js` - Frontend monolitico
-- `/app/backend/.env` - Credenziali SMTP e DB
-
-### Credenziali
-- Admin: `admin` / `admin123`
-- SMTP: `comunicazioni@nureal.it` / `Nureal2026!!`
-
-## API Chiave
-- `POST /api/admin/test-email` - Test configurazione email
-- `PUT /api/leads/{id}` - Trigger assegnazione su cambio stato "Lead Interessato"
-- `DELETE /api/clienti/{id}` - Soft delete cliente
-- `POST /api/clienti/{id}/restore` - Ripristino cliente
-- `GET /api/clienti/cestino` - Lista clienti eliminati
+## Test credentials
+Vedi `/app/memory/test_credentials.md`

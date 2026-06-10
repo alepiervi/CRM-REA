@@ -5045,11 +5045,12 @@ async def create_lead(lead_data: LeadCreate):
             else:
                 logging.warning(f"[CREATE-LEAD] No referente or agent found for unit {lead_obj.unit_id}. Lead {lead_obj.id} will remain unassigned.")
             
-            # Trigger Spoki welcome message (fire-and-forget)
+            # Trigger Spoki welcome message + Workflows V2 (fire-and-forget)
             try:
                 asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
+                asyncio.create_task(trigger_workflows_for_lead(lead_obj.dict(), "lead_created"))
             except Exception as _se:
-                logging.warning(f"[SPOKI] welcome trigger failed: {_se}")
+                logging.warning(f"[SPOKI/WF] trigger failed: {_se}")
 
             # Return early - skip qualification for units with auto_assign disabled
             return lead_obj
@@ -5070,11 +5071,12 @@ async def create_lead(lead_data: LeadCreate):
         # Unit has auto_assign enabled but no AI - lead remains unassigned until status changes
         logging.info(f"Lead {lead_obj.id} created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
 
-    # Trigger Spoki welcome message (fire-and-forget) — vale per tutti i flussi che cadono qui
+    # Trigger Spoki welcome message + Workflows V2 (fire-and-forget) — vale per tutti i flussi che cadono qui
     try:
         asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
+        asyncio.create_task(trigger_workflows_for_lead(lead_obj.dict(), "lead_created"))
     except Exception as _se:
-        logging.warning(f"[SPOKI] welcome trigger failed: {_se}")
+        logging.warning(f"[SPOKI/WF] trigger failed: {_se}")
 
     return lead_obj
 
@@ -5269,11 +5271,12 @@ async def create_lead_webhook_get(
         # Unit has auto_assign enabled but no AI - lead remains unassigned until status changes
         logging.info(f"[WEBHOOK GET] Lead {lead_obj.id} created with status 'Nuovo' - will be assigned when status changes to 'Lead Interessato'")
     
-    # Trigger Spoki welcome message (fire-and-forget)
+    # Trigger Spoki welcome message + Workflows V2 (fire-and-forget)
     try:
         asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
+        asyncio.create_task(trigger_workflows_for_lead(lead_obj.dict(), "lead_created"))
     except Exception as _se:
-        logging.warning(f"[SPOKI] welcome trigger failed: {_se}")
+        logging.warning(f"[SPOKI/WF] trigger failed: {_se}")
 
     # Return simple response (Cloudflare-friendly)
     return {
@@ -5419,11 +5422,12 @@ async def create_lead_webhook_post(lead_data: LeadCreate):
         else:
             logging.info(f"[WEBHOOK POST] Lead {lead_obj.id} created without unit_id - will be assigned when status changes to 'Lead Interessato'")
     
-    # Trigger Spoki welcome message (fire-and-forget)
+    # Trigger Spoki welcome message + Workflows V2 (fire-and-forget)
     try:
         asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
+        asyncio.create_task(trigger_workflows_for_lead(lead_obj.dict(), "lead_created"))
     except Exception as _se:
-        logging.warning(f"[SPOKI] welcome trigger failed: {_se}")
+        logging.warning(f"[SPOKI/WF] trigger failed: {_se}")
 
     return {
         "success": True,
@@ -11315,6 +11319,45 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
                     "description": "Create a task for a user",
                     "icon": "check-square",
                     "color": "red"
+                },
+                "send_spoki_template": {
+                    "name": "Spoki: Invia Template",
+                    "description": "Invia un template WhatsApp approvato tramite Spoki (con variabili {{nome}})",
+                    "icon": "message-circle",
+                    "color": "green",
+                    "fields": [
+                        {"name": "template_name", "type": "text", "label": "Nome template Spoki", "required": True},
+                        {"name": "language", "type": "text", "label": "Lingua", "placeholder": "it", "required": False},
+                        {"name": "variables", "type": "textarea", "label": "Variabili JSON (es. {\"nome\":\"{{lead.nome}}\"})", "required": False}
+                    ]
+                },
+                "send_spoki_message": {
+                    "name": "Spoki: Invia Messaggio",
+                    "description": "Invia messaggio WhatsApp libero (solo entro finestra 24h dopo risposta cliente)",
+                    "icon": "send",
+                    "color": "green",
+                    "fields": [
+                        {"name": "body", "type": "textarea", "label": "Testo messaggio (supporta {{lead.nome}})", "required": True}
+                    ]
+                },
+                "run_chatbot": {
+                    "name": "Chatbot AI (OpenAI)",
+                    "description": "Avvia o continua il chatbot gpt-4o-mini di qualifica lead",
+                    "icon": "bot",
+                    "color": "indigo",
+                    "fields": [
+                        {"name": "auto_send_reply", "type": "boolean", "label": "Invia automaticamente risposta su Spoki", "default": True}
+                    ]
+                },
+                "create_appointment": {
+                    "name": "Crea Appuntamento",
+                    "description": "Crea appuntamento PENDING sul calendario Unit (primo slot libero)",
+                    "icon": "calendar-plus",
+                    "color": "violet",
+                    "fields": [
+                        {"name": "duration_minutes", "type": "number", "label": "Durata (minuti)", "placeholder": "30", "required": False},
+                        {"name": "auto_propose_slot", "type": "boolean", "label": "Auto-propone prossimo slot libero", "default": True}
+                    ]
                 }
             }
         },
@@ -11340,24 +11383,45 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
                     "description": "Filter contacts based on criteria",
                     "icon": "filter",
                     "color": "blue"
+                },
+                "working_hours": {
+                    "name": "Orario Lavorativo",
+                    "description": "Branch SI se ora corrente dentro working_hours Unit, NO altrimenti",
+                    "icon": "clock-3",
+                    "color": "amber",
+                    "fields": []
                 }
             }
         },
         "delay": {
-            "name": "Delays",
+            "name": "Delays / Wait",
             "description": "Wait periods in the workflow",
             "subtypes": {
                 "wait": {
                     "name": "Wait",
                     "description": "Wait for a specified amount of time",
                     "icon": "clock",
-                    "color": "gray"
+                    "color": "gray",
+                    "fields": [
+                        {"name": "duration_value", "type": "number", "label": "Durata", "required": True},
+                        {"name": "duration_unit", "type": "select", "label": "Unità", "options": ["minutes", "hours", "days"], "default": "hours"}
+                    ]
                 },
                 "wait_until": {
                     "name": "Wait Until",
                     "description": "Wait until a specific date/time",
                     "icon": "calendar",
                     "color": "blue"
+                },
+                "wait_for_reply": {
+                    "name": "Attendi Risposta Cliente",
+                    "description": "Sospende il workflow fino alla risposta del cliente; al timeout esegue ramo TIMEOUT, alla risposta esegue ramo REPLY",
+                    "icon": "message-square-reply",
+                    "color": "indigo",
+                    "fields": [
+                        {"name": "timeout_hours", "type": "number", "label": "Timeout (ore)", "placeholder": "12", "required": True}
+                    ],
+                    "branches": ["reply", "timeout"]
                 }
             }
         }
@@ -23887,16 +23951,57 @@ async def list_post_vendita_imports(
 # Include the router in the main app (MUST be after all endpoints are defined)
 # --- Spoki / Chatbot / Calendar routes (modulari) ---
 try:
-    from spoki_routes import build_spoki_routers
+    from spoki_routes import build_spoki_routers, spoki_service as _spoki_singleton
+    import spoki_chatbot as _spoki_chatbot
+    from workflow_executor import WorkflowExecutorV2
+    workflow_executor_v2 = WorkflowExecutorV2(
+        db, spoki_service=_spoki_singleton, chatbot_module=_spoki_chatbot, calendar_module=_spoki_chatbot,
+    )
     _spoki_router, _calendar_router = build_spoki_routers(db, get_current_user, UserRole)
+    # Inietta executor V2 nel router per permettere alle route Spoki di chiamare resume_on_reply
+    _spoki_router.workflow_executor_v2 = workflow_executor_v2  # type: ignore[attr-defined]
     api_router.include_router(_spoki_router)
     api_router.include_router(_calendar_router)
-    # Esposto a livello globale per i trigger sui lead
     spoki_send_welcome_for_lead = _spoki_router.send_welcome_for_lead
-    logging.info("✅ Spoki/Chatbot/Calendar routes mounted")
+
+    async def trigger_workflows_for_lead(lead_dict, trigger_subtype="lead_created"):
+        """Trova tutti i workflow attivi della Unit con un trigger del subtype indicato e avvia V2."""
+        try:
+            unit_id = lead_dict.get("commessa_id") or lead_dict.get("unit_id")
+            wf_query = {"is_active": True}
+            if unit_id:
+                wf_query["unit_id"] = unit_id
+            async for wf in db.workflows.find(wf_query, {"_id": 0, "id": 1, "nodes": 1}):
+                has_trigger = any(
+                    (n.get("data") or {}).get("nodeType") == "triggers" and
+                    (n.get("data") or {}).get("nodeSubtype") == trigger_subtype
+                    for n in (wf.get("nodes") or [])
+                )
+                if has_trigger:
+                    asyncio.create_task(workflow_executor_v2.start(wf["id"], {"lead_id": lead_dict.get("id"), "lead": lead_dict}))
+        except Exception as e:
+            logging.warning(f"[WF-V2] trigger_workflows_for_lead error: {e}")
+
+    async def _wf_v2_timeout_loop():
+        while True:
+            try:
+                await asyncio.sleep(60)
+                n = await workflow_executor_v2.process_timeouts()
+                if n:
+                    logging.info(f"[WF-V2] processed {n} timeouts")
+            except Exception as _e:
+                logging.warning(f"[WF-V2] timeout loop: {_e}")
+
+    @app.on_event("startup")
+    async def _start_wf_v2_timeout():
+        asyncio.create_task(_wf_v2_timeout_loop())
+
+    logging.info("✅ Spoki/Chatbot/Calendar + WorkflowExecutorV2 mounted")
 except Exception as _spoki_err:
     logging.exception(f"⚠️ Spoki routes mount failed (non-fatal): {_spoki_err}")
     async def spoki_send_welcome_for_lead(lead):  # fallback no-op
+        return None
+    async def trigger_workflows_for_lead(lead_dict, trigger_subtype="lead_created"):
         return None
 
 app.include_router(api_router)

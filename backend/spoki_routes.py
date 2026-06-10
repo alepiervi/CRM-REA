@@ -309,6 +309,13 @@ def build_spoki_routers(db, get_current_user, UserRole):
                         await _bot_handle_inbound(lead, body_txt)
                     except Exception as e:
                         logger.exception(f"chatbot error lead {lead['id']}: {e}")
+                    # Resume workflows V2 in attesa (ramo 'reply')
+                    try:
+                        wf_v2 = getattr(router, "workflow_executor_v2", None)
+                        if wf_v2:
+                            await wf_v2.resume_on_reply(lead["id"], body_txt)
+                    except Exception as e:
+                        logger.warning(f"WF V2 resume error: {e}")
             except Exception as e:
                 logger.exception(f"webhook msg parse error: {e}")
         return {"received": processed}
