@@ -61,6 +61,7 @@ import { AppointmentsCalendar } from "./components/spoki/AppointmentsCalendar";
 import { LeadConversationsTab } from "./components/spoki/LeadConversationsTab";
 import { WorkflowFoldersSidebar } from "./components/workflow/WorkflowFoldersSidebar";
 import { WorkflowTestModeDialog } from "./components/workflow/WorkflowTestModeDialog";
+import { TemplatePreviewDialog } from "./components/workflow/TemplatePreviewDialog";
 import { TagsManager } from "./components/tags/TagsManager";
 
 // Lucide icons
@@ -14165,6 +14166,7 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
   const [selectedUnitForImport, setSelectedUnitForImport] = useState("");
   const [selectedFolderId, setSelectedFolderId] = useState("__all__"); // "__all__" | null (root) | folder id
   const [testModeWorkflow, setTestModeWorkflow] = useState(null);
+  const [previewTemplate, setPreviewTemplate] = useState(null);
   const { toast } = useToast();
 
   // Workflows visibili in base alla cartella selezionata
@@ -14419,6 +14421,20 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
         />
       )}
 
+      {/* Template Preview & Customize */}
+      {previewTemplate && (
+        <TemplatePreviewDialog
+          template={previewTemplate}
+          unitId={selectedUnitForImport}
+          open={!!previewTemplate}
+          onClose={() => setPreviewTemplate(null)}
+          onImported={() => {
+            toast({ title: "Template importato", description: "Workflow creato con i parametri personalizzati." });
+            fetchWorkflows();
+          }}
+        />
+      )}
+
       {/* Create Workflow Modal */}
       {showCreateModal && (
         <CreateWorkflowModal
@@ -14504,12 +14520,19 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
                       </div>
 
                       <Button
-                        onClick={() => importTemplate(template.id)}
+                        onClick={() => {
+                          if (!selectedUnitForImport) {
+                            toast({ title: "Seleziona una Unit", description: "Prima scegli la Unit dove importare il workflow", variant: "destructive" });
+                            return;
+                          }
+                          setShowTemplateModal(false);
+                          setPreviewTemplate(template);
+                        }}
                         disabled={!selectedUnitForImport || importingTemplate}
                         className="ml-4"
                         data-testid={`tpl-import-${template.id}`}
                       >
-                        {importingTemplate ? "Importando..." : "Importa"}
+                        {importingTemplate ? "Importando..." : "Preview & Importa"}
                       </Button>
                     </div>
                   </div>

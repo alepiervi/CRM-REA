@@ -23317,26 +23317,29 @@ async def get_workflow_templates(current_user: User = Depends(get_current_user))
 async def import_workflow_template(
     template_id: str,
     unit_id: str = Query(...),
+    overrides: Optional[Dict[str, Any]] = Body(None),
     current_user: User = Depends(get_current_user)
 ):
-    """Import a workflow template for a specific unit"""
-    from workflow_templates import get_lead_qualification_template, TEMPLATE_REGISTRY
+    """Import a workflow template for a specific unit (con override parametri opzionali)."""
+    from workflow_templates import get_lead_qualification_template, TEMPLATE_REGISTRY, apply_template_overrides
     
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Only admin can import templates")
     
-    # Verify unit exists
     unit = await db.units.find_one({"id": unit_id})
     if not unit:
         raise HTTPException(status_code=404, detail="Unit not found")
     
-    # Get template
     if template_id == "lead_qualification_ai":
         workflow = get_lead_qualification_template(unit_id)
     elif template_id in TEMPLATE_REGISTRY and TEMPLATE_REGISTRY[template_id] is not None:
         workflow = TEMPLATE_REGISTRY[template_id](unit_id)
     else:
         raise HTTPException(status_code=404, detail="Template not found")
+
+    # Applica overrides personalizzati dell'utente
+    if overrides:
+        workflow = apply_template_overrides(workflow, overrides)
     
     # Add created_by field (required by Workflow model)
     workflow["created_by"] = current_user.id

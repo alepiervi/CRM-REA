@@ -395,36 +395,26 @@ TEMPLATE_REGISTRY = {
 
 def get_available_templates() -> list:
     """
-    Returns list of available workflow templates
-    
-    Returns:
-        List of template metadata
+    Returns list of available workflow templates with parameter schemas
     """
     return [
         {
             "id": "lead_qualification_ai",
             "name": "Lead Qualification AI",
             "description": "Workflow completo per qualificare lead con AI Assistant via WhatsApp",
-            "trigger": "lead_created",
-            "nodes_count": 6,
-            "icon": "bot",
-            "color": "indigo",
+            "trigger": "lead_created", "nodes_count": 6, "icon": "bot", "color": "indigo",
             "features": [
-                "Auto-assegnazione a Unit",
-                "Messaggio WhatsApp benvenuto",
-                "Verifica risposta positiva",
-                "Conversazione AI Assistant",
+                "Auto-assegnazione a Unit", "Messaggio WhatsApp benvenuto",
+                "Verifica risposta positiva", "Conversazione AI Assistant",
                 "Aggiornamento automatico campi",
             ],
+            "parameters": [],
         },
         {
             "id": "spoki_welcome_chatbot_appointment",
             "name": "Spoki Welcome + Chatbot + Appuntamento",
             "description": "Lead → Welcome WhatsApp → Wait 12h → Chatbot AI → Appuntamento",
-            "trigger": "lead_created",
-            "nodes_count": 6,
-            "icon": "message-circle",
-            "color": "green",
+            "trigger": "lead_created", "nodes_count": 6, "icon": "message-circle", "color": "green",
             "features": [
                 "Template welcome Spoki con {{nome}}",
                 "Attesa risposta 12h con timeout",
@@ -432,33 +422,73 @@ def get_available_templates() -> list:
                 "Creazione appuntamento automatica su slot libero",
                 "Tag 'mai_risposto' su timeout",
             ],
+            "parameters": [
+                {"key": "welcome_template_name", "label": "Nome template Spoki di benvenuto", "type": "text", "default": "benvenuto", "applies_to": {"node_id": "a_welcome", "config_field": "template_name"}},
+                {"key": "welcome_language", "label": "Lingua template", "type": "text", "default": "it", "applies_to": {"node_id": "a_welcome", "config_field": "language"}},
+                {"key": "timeout_hours", "label": "Timeout attesa risposta (ore)", "type": "number", "default": 12, "applies_to": {"node_id": "d_wait_reply", "config_field": "timeout_hours"}},
+                {"key": "timeout_tag", "label": "Tag su timeout", "type": "text", "default": "mai_risposto", "applies_to": {"node_id": "a_tag_nonrisponde", "config_field": "tag"}},
+                {"key": "appointment_duration", "label": "Durata appuntamento (minuti)", "type": "number", "default": 30, "applies_to": {"node_id": "a_appointment", "config_field": "duration_minutes"}},
+            ],
         },
         {
             "id": "spoki_reminder_24h",
             "name": "Reminder 24h",
             "description": "Manda un reminder WhatsApp dopo 24h dalla creazione lead",
-            "trigger": "lead_created",
-            "nodes_count": 3,
-            "icon": "clock",
-            "color": "amber",
-            "features": [
-                "Wait 24h",
-                "Reminder testuale Spoki",
-                "Setup in 30 secondi",
+            "trigger": "lead_created", "nodes_count": 3, "icon": "clock", "color": "amber",
+            "features": ["Wait 24h", "Reminder testuale Spoki", "Setup in 30 secondi"],
+            "parameters": [
+                {"key": "wait_hours", "label": "Ore di attesa prima del reminder", "type": "number", "default": 24, "applies_to": {"node_id": "d_wait_24h", "config_field": "duration_value"}},
+                {"key": "reminder_body", "label": "Testo reminder ({{lead.nome}} supportato)", "type": "textarea", "default": "Ciao {{lead.nome}}! Ti ricordiamo il tuo appuntamento di domani.", "applies_to": {"node_id": "a_reminder", "config_field": "body"}},
             ],
         },
         {
             "id": "lead_routing_source",
             "name": "Lead Routing per Sorgente",
             "description": "Smista lead in entrata e aggiunge tag in base alla sorgente (sito/meta/edison)",
-            "trigger": "lead_created",
-            "nodes_count": 5,
-            "icon": "split",
-            "color": "fuchsia",
-            "features": [
-                "Switch multi-ramo su source",
-                "Tag automatico per sorgente",
-                "Estendibile con nuove sorgenti",
+            "trigger": "lead_created", "nodes_count": 5, "icon": "split", "color": "fuchsia",
+            "features": ["Switch multi-ramo su source", "Tag automatico per sorgente", "Estendibile con nuove sorgenti"],
+            "parameters": [
+                {"key": "source_field", "label": "Campo lead da valutare", "type": "text", "default": "trigger.lead.source", "applies_to": {"node_id": "c_match", "config_field": "field"}},
+                {"key": "tag_sito", "label": "Tag se sorgente = sito", "type": "text", "default": "sorgente_sito_web", "applies_to": {"node_id": "a_tag_sito", "config_field": "tag"}},
+                {"key": "tag_meta", "label": "Tag se sorgente = meta", "type": "text", "default": "sorgente_facebook", "applies_to": {"node_id": "a_tag_meta", "config_field": "tag"}},
+                {"key": "tag_edison", "label": "Tag se sorgente = edison", "type": "text", "default": "sorgente_edison", "applies_to": {"node_id": "a_tag_edison", "config_field": "tag"}},
             ],
         },
     ]
+
+
+def apply_template_overrides(workflow: dict, overrides: dict) -> dict:
+    """Applica i parametri di personalizzazione al workflow appena generato.
+
+    overrides è un dict {key: value} dove key corrisponde a parameters[*].key del template.
+    Per ogni override troviamo applies_to.node_id e settiamo config[applies_to.config_field] = value.
+    """
+    if not overrides:
+        return workflow
+    templates = {t["id"]: t for t in get_available_templates()}
+    tpl_name = (workflow.get("metadata") or {}).get("template_name")
+    tpl = templates.get(tpl_name)
+    if not tpl:
+        return workflow
+    params_by_key = {p["key"]: p for p in (tpl.get("parameters") or [])}
+    for key, val in overrides.items():
+        p = params_by_key.get(key)
+        if not p or val is None or val == "":
+            continue
+        applies = p.get("applies_to") or {}
+        target_node_id = applies.get("node_id")
+        cfg_field = applies.get("config_field")
+        if not target_node_id or not cfg_field:
+            continue
+        for n in workflow.get("nodes", []):
+            if n.get("id") == target_node_id:
+                cfg = n.setdefault("data", {}).setdefault("config", {})
+                # Type-cast for number fields
+                if p.get("type") == "number":
+                    try:
+                        val = float(val) if "." in str(val) else int(val)
+                    except Exception:
+                        pass
+                cfg[cfg_field] = val
+                break
+    return workflow
