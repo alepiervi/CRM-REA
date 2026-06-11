@@ -5098,7 +5098,6 @@ async def create_lead(lead_data: LeadCreate):
             
             # Trigger Spoki welcome message + Workflows V2 (fire-and-forget)
             try:
-                asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
                 asyncio.create_task(trigger_workflows_for_lead(lead_obj.dict(), "lead_created"))
             except Exception as _se:
                 logging.warning(f"[SPOKI/WF] trigger failed: {_se}")
@@ -5124,7 +5123,6 @@ async def create_lead(lead_data: LeadCreate):
 
     # Trigger Spoki welcome message + Workflows V2 (fire-and-forget) — vale per tutti i flussi che cadono qui
     try:
-        asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
         asyncio.create_task(trigger_workflows_for_lead(lead_obj.dict(), "lead_created"))
     except Exception as _se:
         logging.warning(f"[SPOKI/WF] trigger failed: {_se}")
@@ -5324,7 +5322,6 @@ async def create_lead_webhook_get(
     
     # Trigger Spoki welcome message + Workflows V2 (fire-and-forget)
     try:
-        asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
         asyncio.create_task(trigger_workflows_for_lead(lead_obj.dict(), "lead_created"))
     except Exception as _se:
         logging.warning(f"[SPOKI/WF] trigger failed: {_se}")
@@ -5475,7 +5472,6 @@ async def create_lead_webhook_post(lead_data: LeadCreate):
     
     # Trigger Spoki welcome message + Workflows V2 (fire-and-forget)
     try:
-        asyncio.create_task(spoki_send_welcome_for_lead(lead_obj.dict()))
         asyncio.create_task(trigger_workflows_for_lead(lead_obj.dict(), "lead_created"))
     except Exception as _se:
         logging.warning(f"[SPOKI/WF] trigger failed: {_se}")
@@ -11579,11 +11575,20 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
                 },
                 "run_chatbot": {
                     "name": "Chatbot AI (OpenAI)",
-                    "description": "Avvia o continua il chatbot gpt-4o-mini di qualifica lead",
+                    "description": "Genera la risposta del bot al messaggio del lead (usa l'Assistant OpenAI della Unit se configurato)",
                     "icon": "bot",
                     "color": "indigo",
                     "fields": [
                         {"name": "auto_send_reply", "type": "boolean", "label": "Invia automaticamente risposta su Spoki", "default": True}
+                    ]
+                },
+                "activate_chatbot": {
+                    "name": "Attiva Chatbot AI",
+                    "description": "Attiva il chatbot per questo lead: da qui in poi il bot risponde automaticamente ai messaggi WhatsApp (Assistant OpenAI della Unit)",
+                    "icon": "bot",
+                    "color": "cyan",
+                    "fields": [
+                        {"name": "first_message", "type": "textarea", "label": "Primo messaggio del bot (opzionale, supporta {{lead.nome}})", "required": False}
                     ]
                 },
                 "create_appointment": {
@@ -24347,7 +24352,8 @@ try:
     _spoki_router.workflow_executor_v2 = workflow_executor_v2  # type: ignore[attr-defined]
     api_router.include_router(_spoki_router)
     api_router.include_router(_calendar_router)
-    spoki_send_welcome_for_lead = _spoki_router.send_welcome_for_lead
+    # NOTE: il messaggio di benvenuto NON parte più automaticamente alla creazione lead:
+    # viene inviato dal workflow tramite il nodo "Spoki: Invia Template".
 
     async def trigger_workflows_for_lead(lead_dict, trigger_subtype="lead_created"):
         """Trova tutti i workflow attivi della Unit con un trigger del subtype indicato e avvia V2."""
@@ -24384,8 +24390,6 @@ try:
     logging.info("✅ Spoki/Chatbot/Calendar + WorkflowExecutorV2 mounted")
 except Exception as _spoki_err:
     logging.exception(f"⚠️ Spoki routes mount failed (non-fatal): {_spoki_err}")
-    async def spoki_send_welcome_for_lead(lead):  # fallback no-op
-        return None
     async def trigger_workflows_for_lead(lead_dict, trigger_subtype="lead_created"):
         return None
 

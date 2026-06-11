@@ -61,6 +61,8 @@ class UnitSpokiConfig(BaseModel):
     # Prompt di sistema per il chatbot (italiano)
     chatbot_system_prompt: Optional[str] = None
     chatbot_enabled: bool = True
+    # Assistant OpenAI dell'utente (asst_...) da usare al posto del chatbot interno
+    openai_assistant_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -72,6 +74,7 @@ class UnitSpokiConfigUpdate(BaseModel):
     welcome_template_variables: Optional[Dict[str, str]] = None
     chatbot_system_prompt: Optional[str] = None
     chatbot_enabled: Optional[bool] = None
+    openai_assistant_id: Optional[str] = None
 
 
 class WorkingHourSlot(BaseModel):

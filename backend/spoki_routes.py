@@ -10,6 +10,7 @@ Uso:
 from __future__ import annotations
 
 import logging
+import os
 import re
 import uuid
 from datetime import datetime, timezone
@@ -23,7 +24,8 @@ from spoki_module import (
     SpokiMessage, LeadChatbotSession,
 )
 from spoki_chatbot import (
-    chatbot_generate_reply, find_next_free_slot, find_slot_near,
+    chatbot_generate_reply, generate_unit_reply, list_openai_assistants,
+    find_next_free_slot, find_slot_near,
     DEFAULT_SYSTEM_PROMPT_IT,
 )
 
@@ -124,9 +126,12 @@ def build_spoki_routers(db, get_current_user, UserRole):
             return
         sys_prompt = (cfg or {}).get("chatbot_system_prompt") or DEFAULT_SYSTEM_PROMPT_IT
         session = await db.lead_chatbot_sessions.find_one({"lead_id": lead_id}, {"_id": 0})
-        if not session:
-            session = LeadChatbotSession(lead_id=lead_id, unit_id=unit_id).dict()
-            await db.lead_chatbot_sessions.insert_one(session)
+        # GATE: il bot risponde SOLO se attivato da un workflow (nodo "Attiva Chatbot AI")
+        if not session or not session.get("activated_by_workflow"):
+            logger.info(f"Chatbot non attivato dal workflow per lead {lead_id}: messaggio loggato senza risposta automatica")
+            return
+        if session.get("status") in ("lost", "timeout"):
+            return
         history = session.get("messages", [])
         history.append({"role": "user", "content": user_message, "ts": datetime.now(timezone.utc).isoformat()})
 
@@ -136,8 +141,8 @@ def build_spoki_routers(db, get_current_user, UserRole):
             if slot:
                 next_slot_hint = f"{slot['weekday']} {slot['date']} alle {slot['time']}"
 
-        reply = await chatbot_generate_reply(
-            lead_id=lead_id, user_message=user_message, history=history,
+        reply = await generate_unit_reply(
+            db, lead_id, cfg, user_message, history,
             system_prompt=sys_prompt, next_free_slot_hint=next_slot_hint,
         )
         bot_text = (reply.get("reply") or "").strip() or "Grazie!"
@@ -249,21 +254,36 @@ def build_spoki_routers(db, get_current_user, UserRole):
         _require_admin(current_user)
         set_doc = {k: v for k, v in payload.dict(exclude_unset=True).items() if v is not None}
         set_doc["updated_at"] = datetime.now(timezone.utc)
+        # $setOnInsert keys must NOT overlap with $set keys (MongoDB rejects conflicting paths)
+        on_insert = {
+            "id": str(uuid.uuid4()), "unit_id": unit_id,
+            "created_at": datetime.now(timezone.utc),
+            "pairing_status": SpokiPairingStatus.NOT_PAIRED.value,
+            "chatbot_enabled": True,
+        }
+        on_insert = {k: v for k, v in on_insert.items() if k not in set_doc}
         await db.unit_spoki_configs.update_one(
             {"unit_id": unit_id},
             {
                 "$set": set_doc,
-                "$setOnInsert": {
-                    "id": str(uuid.uuid4()), "unit_id": unit_id,
-                    "created_at": datetime.now(timezone.utc),
-                    "pairing_status": SpokiPairingStatus.NOT_PAIRED.value,
-                    "chatbot_enabled": True,
-                },
+                "$setOnInsert": on_insert,
             },
             upsert=True,
         )
         doc = await db.unit_spoki_configs.find_one({"unit_id": unit_id}, {"_id": 0})
         return UnitSpokiConfig(**doc)
+
+    @router.get("/openai-assistants")
+    async def get_openai_assistants(current_user=Depends(get_current_user)):
+        """Lista gli Assistant OpenAI dell'account utente (per il dropdown di config Unit)."""
+        _require_admin(current_user)
+        if not os.environ.get("OPENAI_API_KEY"):
+            return {"assistants": [], "configured": False, "warning": "OPENAI_API_KEY non configurato"}
+        try:
+            items = await list_openai_assistants()
+            return {"assistants": items, "configured": True}
+        except Exception as e:
+            return {"assistants": [], "configured": True, "error": str(e)}
 
     @router.get("/templates")
     async def list_templates(current_user=Depends(get_current_user)):

@@ -1,0 +1,41 @@
+{
+  "summary": "Tested Spoki/OpenAI chatbot + Workflow Builder integration (backend pytest 5/5 PASS + frontend UI Spoki Config). Backend tests verify: (1) GET /api/spoki/openai-assistants returns 8 real OpenAI assistants including asst_SUXVhnl5CIDM2teIyeca6aI2; (2) /api/workflow-node-types exposes new subtype 'activate_chatbot'; (3) lead creation via POST /api/webhook/lead NO LONGER auto-sends welcome template (regression check); (4) Spoki webhook gate: inbound message WITHOUT activated chatbot session is logged but bot does NOT reply (no outbound, no session created); (5) with session.activated_by_workflow=true + unit openai_assistant_id set, the OpenAI Assistant generates an outbound bot reply and persists openai_thread_id (thread_*). Frontend: admin login OK, WhatsApp Spoki sidebar opens config page, spoki-unit-select dropdown shows 2 units, spoki-assistant-select dropdown shows '— Nessuno —' + 7 real assistants (Gaia F2f NB, Giulia Reaf, Silvia agn nb, Silvia agn principale, Sofia AI ON Whatsapp, Sofia ai on principle, Giulia gpt-4o), save persists selection across re-navigation. FIXED a MongoDB conflict bug on PATCH /api/spoki/unit-configs/{unit_id} (line 257) where $set and $setOnInsert both wrote 'chatbot_enabled', causing 500 on save. Workflow Builder palette UI: backend registry validated; could not interact with pencil-edit icon to fully test palette node UI (stopped after retries to avoid loop) — but data-testid palette-node-activate_chatbot is generated dynamically from registry response which now contains the subtype.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PATCH /api/spoki/unit-configs/{unit_id}", "issue": "BEFORE FIX: $set and $setOnInsert both contained 'chatbot_enabled' → MongoDB WriteError code 40 (conflict at path). Returned 500 to UI. FIXED in this iteration by stripping overlapping keys from $setOnInsert before update_one call."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "WhatsApp Spoki Config", "issues": ["Banner 'Errore: Spoki API: 401 Unauthorized' shown at top is expected (SPOKI_API_KEY invalid per problem statement) — not a bug, but it duplicates with the yellow warning box below; consider consolidating."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_spoki_chatbot_workflow.py",
+    "/app/test_reports/pytest/pytest_spoki_chatbot.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: refactor the upsert in PATCH /api/spoki/unit-configs/{unit_id} to a single $set + $setOnInsert pattern that is robust by construction (e.g., compute $setOnInsert as a fixed dict excluding any keys also in $set — already done as the fix, but consider adding a unit test).",
+    "OPTIONAL: deduplicate the 401-Spoki warning shown both as red banner AND yellow info box on Spoki config screen."
+  ],
+  "critical_code_review_comments": [
+    "spoki_routes.py update_unit_config (line ~253) had a real MongoDB upsert bug that the previous testing iteration missed (overlapping $set/$setOnInsert keys). Add a regression unit test that PATCHes with chatbot_enabled set to True and verifies 200 on both insert and subsequent update.",
+    "server.py /api/workflow-node-types is huge inline (>11k lines context); consider moving the registry to a module-level constant or JSON file for maintainability and to enable static checks (e.g., the recent addition of 'activate_chatbot' was only discoverable via grep).",
+    "_bot_handle_inbound silently returns when no session/activated_by_workflow is False; consider also emitting an audit log entry so we can prove the gate is working in production logs (currently a single INFO line).",
+    "spoki_routes.py /webhook endpoint signature check requires SPOKI signing secret; in environments with invalid SPOKI_API_KEY, integration tests that exercise the chatbot path will only work if the signature key matches. Document this dependency in spoki_module.py."
+  ],
+  "updated_files": [
+    "/app/backend/spoki_routes.py (fixed MongoDB conflict on PATCH unit-configs)",
+    "/app/backend/tests/test_spoki_chatbot_workflow.py (new pytest suite, 5 tests)"
+  ],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "Spoki Config 100%, Workflow Builder palette validated via API only"},
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Created temporary lead+session+spoki_messages with prefix 'TESTSPOKICHAT' during tests. Cleanup hook in pytest fixture removes all test data and unsets openai_assistant_id from real units. Verified via direct mongo cleanup: 0 leftover docs.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "If retesting the Workflow Builder UI specifically, the pencil-edit icon click via coordinates did not navigate. Recommend the main agent add data-testid='workflow-edit-{id}' on the pencil icon button to allow robust selection. The dynamic palette node testids (palette-node-{subtype}) exist for any subtype in /api/workflow-node-types response and 'activate_chatbot' is confirmed in the registry. OPENAI_API_KEY is real and burns quota; tests are limited to 1 call to OpenAI Assistants and 1 actual Assistant run.",
+  "rca of the issue": "PATCH /api/spoki/unit-configs/{unit_id} upsert built $set from payload and $setOnInsert with a fixed dict that included chatbot_enabled. When the UI sent chatbot_enabled (true) in the payload, both operators targeted the same path → MongoDB WriteError code 40 → 500. Mitigation applied: subtract overlapping keys from $setOnInsert before calling update_one. Verified by repeating the UI Save flow: all four PATCH calls now return 200 and the assistant selection persists across page navigation."
+}

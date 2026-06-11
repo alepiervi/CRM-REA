@@ -25,6 +25,18 @@ export const SpokiAdminConfig = ({ units = [] }) => {
   const [pairing, setPairing] = useState(false);
   const [pairResponse, setPairResponse] = useState(null);
   const [allConfigs, setAllConfigs] = useState([]);
+  const [assistants, setAssistants] = useState([]);
+  const [assistantsError, setAssistantsError] = useState("");
+
+  const fetchAssistants = async () => {
+    try {
+      const r = await axios.get(`${API}/spoki/openai-assistants`, { headers: authHeaders() });
+      setAssistants(r.data?.assistants || []);
+      if (r.data?.error || r.data?.warning) setAssistantsError(r.data.error || r.data.warning); else setAssistantsError("");
+    } catch (e) {
+      setAssistantsError(e?.response?.data?.detail || e.message);
+    }
+  };
 
   const fetchHealth = async () => {
     try {
@@ -69,6 +81,7 @@ export const SpokiAdminConfig = ({ units = [] }) => {
     fetchHealth();
     fetchTemplates();
     fetchAllConfigs();
+    fetchAssistants();
   }, []);
 
   useEffect(() => {
@@ -86,6 +99,7 @@ export const SpokiAdminConfig = ({ units = [] }) => {
         welcome_template_variables: unitConfig.welcome_template_variables || {},
         chatbot_system_prompt: unitConfig.chatbot_system_prompt || null,
         chatbot_enabled: !!unitConfig.chatbot_enabled,
+        openai_assistant_id: unitConfig.openai_assistant_id || "",
       };
       const r = await axios.patch(`${API}/spoki/unit-configs/${selectedUnitId}`, payload, { headers: authHeaders() });
       setUnitConfig(r.data);
@@ -218,6 +232,31 @@ export const SpokiAdminConfig = ({ units = [] }) => {
                   onCheckedChange={(v) => setUnitConfig({ ...unitConfig, chatbot_enabled: v })}
                 />
                 <Label>Chatbot OpenAI attivo</Label>
+              </div>
+            </div>
+
+            <div>
+              <Label>Assistant OpenAI (bot della Unit)</Label>
+              <Select
+                value={unitConfig.openai_assistant_id || ""}
+                onValueChange={(v) => setUnitConfig({ ...unitConfig, openai_assistant_id: v === "__none__" ? "" : v })}
+              >
+                <SelectTrigger data-testid="spoki-assistant-select">
+                  <SelectValue placeholder={assistants.length ? "Scegli l'Assistant..." : "Nessun Assistant disponibile"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Nessuno (usa chatbot interno con prompt) —</SelectItem>
+                  {assistants.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name || a.id} ({a.model})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {assistantsError && <div className="text-xs text-red-600 mt-1">{assistantsError}</div>}
+              <div className="text-xs text-gray-500 mt-1">
+                Il bot risponde su WhatsApp SOLO dopo che il workflow lo ha attivato (nodo &quot;Attiva Chatbot AI&quot;).
+                Se selezioni un Assistant, il system prompt qui sotto viene ignorato (usa le istruzioni dell&apos;Assistant su OpenAI).
               </div>
             </div>
 

@@ -648,6 +648,31 @@ class WorkflowExecutorV2:
                     await self._log_spoki_msg(lead, "outbound", body=body, status="failed", sender="system", error=str(e)[:300])
                     return {"success": False, "error": str(e)}
 
+            if sub == "activate_chatbot":
+                lead_id = lead.get("id")
+                if not lead_id:
+                    return {"success": False, "error": "lead mancante"}
+                unit_id = lead.get("commessa_id") or lead.get("unit_id")
+                await self.db.lead_chatbot_sessions.update_one(
+                    {"lead_id": lead_id},
+                    {"$set": {"status": "active", "activated_by_workflow": True, "unit_id": unit_id,
+                              "updated_at": datetime.now(timezone.utc)},
+                     "$setOnInsert": {"id": str(_uuid.uuid4()), "lead_id": lead_id, "messages": [],
+                                      "qualification_score": 0, "created_at": datetime.now(timezone.utc)}},
+                    upsert=True,
+                )
+                first_msg = _render_tpl(cfg.get("first_message") or "", lead)
+                if first_msg:
+                    if ctx.get("test_mode"):
+                        await self._log_spoki_msg(lead, "outbound", body=first_msg, status="test_skipped", sender="bot")
+                    elif self.spoki and lead.get("telefono"):
+                        try:
+                            res = await self.spoki.send_session_message(to=lead["telefono"], body=first_msg)
+                            await self._log_spoki_msg(lead, "outbound", body=first_msg, status=res.get("status") or "sent", sender="bot")
+                        except Exception as e:
+                            await self._log_spoki_msg(lead, "outbound", body=first_msg, status="failed", sender="bot", error=str(e)[:300])
+                return {"success": True}
+
             if sub == "run_chatbot" and self.chatbot:
                 user_message = ctx.get("last_reply") or ""
                 if not user_message:
@@ -662,8 +687,10 @@ class WorkflowExecutorV2:
                     slot = await self.cal.find_next_free_slot(self.db, unit_id)
                     if slot:
                         slot_hint = f"{slot['weekday']} {slot['date']} alle {slot['time']}"
-                reply = await self.chatbot.chatbot_generate_reply(
-                    lead_id=lead_id, user_message=user_message, history=history,
+                unit_cfg = await self.db.unit_spoki_configs.find_one({"unit_id": unit_id}, {"_id": 0}) if unit_id else None
+                reply = await self.chatbot.generate_unit_reply(
+                    self.db, lead_id, unit_cfg, user_message, history,
+                    system_prompt=(unit_cfg or {}).get("chatbot_system_prompt"),
                     next_free_slot_hint=slot_hint,
                 )
                 bot_text = (reply.get("reply") or "").strip() or "Grazie!"
@@ -673,6 +700,7 @@ class WorkflowExecutorV2:
                     {"lead_id": lead_id},
                     {"$set": {"messages": history[-50:], "intent_detected": reply.get("intent"),
                               "qualification_score": int(reply.get("qualification_score") or 0),
+                              "activated_by_workflow": True,
                               "updated_at": datetime.now(timezone.utc)},
                      "$setOnInsert": {"lead_id": lead_id, "created_at": datetime.now(timezone.utc), "status": "active"}},
                     upsert=True,

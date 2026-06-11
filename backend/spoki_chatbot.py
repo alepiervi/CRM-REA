@@ -21,8 +21,124 @@ from datetime import datetime, timezone, timedelta, date as date_type, time
 from typing import Optional, List, Dict, Any, Tuple
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
+
+
+# =====================================================
+# OPENAI ASSISTANTS (bot dell'utente su platform.openai.com)
+# =====================================================
+
+def _openai_client() -> Optional[AsyncOpenAI]:
+    key = os.environ.get("OPENAI_API_KEY", "")
+    return AsyncOpenAI(api_key=key) if key else None
+
+
+async def list_openai_assistants() -> List[Dict[str, Any]]:
+    """Lista gli Assistant disponibili sull'account OpenAI dell'utente."""
+    client = _openai_client()
+    if not client:
+        return []
+    page = await client.beta.assistants.list(limit=100)
+    return [{"id": a.id, "name": a.name, "model": a.model} for a in page.data]
+
+
+async def assistant_generate_reply(
+    assistant_id: str, user_message: str, thread_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """Genera risposta tramite Assistant OpenAI (threads/runs). Ritorna dict compatibile
+    con chatbot_generate_reply + chiave extra `thread_id` da persistere in sessione."""
+    client = _openai_client()
+    if not client:
+        return {
+            "reply": "Grazie per il messaggio! Un operatore ti contatterà a breve.",
+            "intent": "unclear", "qualification_score": 0,
+            "user_proposed_datetime": "", "ready_to_book": False,
+            "error": "OPENAI_API_KEY non configurato",
+        }
+
+    async def _run(tid: Optional[str]) -> Dict[str, Any]:
+        if not tid:
+            thread = await client.beta.threads.create()
+            tid = thread.id
+        user_msg = await client.beta.threads.messages.create(
+            thread_id=tid, role="user", content=user_message,
+        )
+        run = await client.beta.threads.runs.create_and_poll(
+            thread_id=tid, assistant_id=assistant_id,
+        )
+        if run.status != "completed":
+            raise RuntimeError(f"Assistant run status={run.status} ({getattr(run, 'last_error', None)})")
+        msgs = await client.beta.threads.messages.list(thread_id=tid, order="asc", after=user_msg.id)
+        reply = ""
+        for m in msgs.data:
+            if m.role == "assistant":
+                for part in m.content:
+                    if part.type == "text":
+                        reply = part.text.value
+        return {"reply": reply, "thread_id": tid}
+
+    try:
+        res = await _run(thread_id)
+    except Exception as e:
+        if thread_id:
+            # thread scaduto/invalido: riprova con thread nuovo
+            logger.warning(f"Assistant thread {thread_id} fallito ({e}), retry con thread nuovo")
+            try:
+                res = await _run(None)
+            except Exception as e2:
+                logger.exception("Assistant retry fallito")
+                return {
+                    "reply": "Mi scuso, c'è un problema tecnico. Un operatore ti contatterà a breve.",
+                    "intent": "unclear", "qualification_score": 0,
+                    "user_proposed_datetime": "", "ready_to_book": False,
+                    "thread_id": thread_id, "error": str(e2),
+                }
+        else:
+            logger.exception("Assistant error")
+            return {
+                "reply": "Mi scuso, c'è un problema tecnico. Un operatore ti contatterà a breve.",
+                "intent": "unclear", "qualification_score": 0,
+                "user_proposed_datetime": "", "ready_to_book": False,
+                "thread_id": None, "error": str(e),
+            }
+    return {
+        "reply": (res.get("reply") or "").strip() or "Grazie!",
+        "intent": "unclear", "qualification_score": 0,
+        "user_proposed_datetime": "", "ready_to_book": False,
+        "thread_id": res.get("thread_id"),
+    }
+
+
+async def generate_unit_reply(
+    db,
+    lead_id: str,
+    unit_cfg: Optional[Dict[str, Any]],
+    user_message: str,
+    history: List[Dict[str, str]],
+    system_prompt: Optional[str] = None,
+    next_free_slot_hint: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Entry-point unificato: usa l'Assistant OpenAI della Unit se configurato,
+    altrimenti il chatbot interno gpt-4o-mini. Persiste openai_thread_id in sessione."""
+    assistant_id = (unit_cfg or {}).get("openai_assistant_id")
+    if assistant_id and os.environ.get("OPENAI_API_KEY"):
+        session = await db.lead_chatbot_sessions.find_one({"lead_id": lead_id}, {"_id": 0, "openai_thread_id": 1})
+        thread_id = (session or {}).get("openai_thread_id")
+        res = await assistant_generate_reply(assistant_id, user_message, thread_id)
+        new_tid = res.get("thread_id")
+        if new_tid and new_tid != thread_id:
+            await db.lead_chatbot_sessions.update_one(
+                {"lead_id": lead_id},
+                {"$set": {"openai_thread_id": new_tid}},
+                upsert=False,
+            )
+        return res
+    return await chatbot_generate_reply(
+        lead_id=lead_id, user_message=user_message, history=history,
+        system_prompt=system_prompt, next_free_slot_hint=next_free_slot_hint,
+    )
 
 
 DEFAULT_SYSTEM_PROMPT_IT = """Sei l'assistente virtuale di una Unit commerciale di Nureal.
