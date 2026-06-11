@@ -680,6 +680,8 @@ class WorkflowExecutorV2:
                 lead_id = lead.get("id")
                 # storia da chatbot session
                 session = await self.db.lead_chatbot_sessions.find_one({"lead_id": lead_id}, {"_id": 0}) or {"messages": []}
+                if session.get("bot_paused"):
+                    return {"success": True, "skipped": True, "reason": "bot_paused"}
                 history = session.get("messages") or []
                 slot_hint = None
                 unit_id = lead.get("commessa_id")

@@ -132,6 +132,9 @@ def build_spoki_routers(db, get_current_user, UserRole):
             return
         if session.get("status") in ("lost", "timeout"):
             return
+        if session.get("bot_paused"):
+            logger.info(f"Chatbot in pausa per lead {lead_id}: nessuna risposta automatica")
+            return
         history = session.get("messages", [])
         history.append({"role": "user", "content": user_message, "ts": datetime.now(timezone.utc).isoformat()})
 
@@ -403,6 +406,85 @@ def build_spoki_routers(db, get_current_user, UserRole):
         if ch:
             return int(ch) if ch.isdigit() else ch
         return {"status": "ok"}
+
+    @router.get("/conversations")
+    async def list_all_conversations(current_user=Depends(get_current_user), limit: int = 200):
+        """Lista tutte le conversazioni WhatsApp (una per lead), ordinate per ultimo messaggio."""
+        pipeline = [
+            {"$match": {"lead_id": {"$ne": None}}},
+            {"$sort": {"created_at": -1}},
+            {"$group": {"_id": "$lead_id", "last_message": {"$first": "$$ROOT"}, "messages_count": {"$sum": 1}}},
+            {"$sort": {"last_message.created_at": -1}},
+            {"$limit": limit},
+        ]
+        groups = await db.spoki_messages.aggregate(pipeline).to_list(length=limit)
+        lead_ids = [g["_id"] for g in groups]
+        leads = {l["id"]: l async for l in db.leads.find(
+            {"id": {"$in": lead_ids}},
+            {"_id": 0, "id": 1, "nome": 1, "cognome": 1, "telefono": 1, "commessa_id": 1},
+        )}
+        sessions = {s["lead_id"]: s async for s in db.lead_chatbot_sessions.find(
+            {"lead_id": {"$in": lead_ids}},
+            {"_id": 0, "lead_id": 1, "status": 1, "bot_paused": 1, "activated_by_workflow": 1, "qualification_score": 1},
+        )}
+        unit_ids = list({(leads.get(lid) or {}).get("commessa_id") for lid in lead_ids if leads.get(lid)})
+        unit_names = {c["id"]: c.get("nome") async for c in db.commesse.find(
+            {"id": {"$in": [u for u in unit_ids if u]}}, {"_id": 0, "id": 1, "nome": 1},
+        )}
+        out = []
+        for g in groups:
+            lead = leads.get(g["_id"])
+            if not lead:
+                continue
+            unit_id = lead.get("commessa_id") or ""
+            if not await _user_can_see_unit(current_user, unit_id):
+                continue
+            lm = g["last_message"]
+            out.append({
+                "lead_id": lead["id"],
+                "lead_name": f"{lead.get('nome') or ''} {lead.get('cognome') or ''}".strip() or lead.get("telefono") or lead["id"],
+                "phone": lead.get("telefono"),
+                "unit_id": unit_id,
+                "unit_label": unit_names.get(unit_id),
+                "messages_count": g["messages_count"],
+                "last_message": {
+                    "body": lm.get("body") or (f"[Template: {lm.get('template_name')}]" if lm.get("template_name") else ""),
+                    "direction": lm.get("direction"),
+                    "sender": lm.get("sender"),
+                    "status": lm.get("status"),
+                    "created_at": lm.get("created_at"),
+                },
+                "session": sessions.get(lead["id"]),
+            })
+        return {"conversations": out}
+
+    @router.post("/conversations/{lead_id}/toggle-bot")
+    async def toggle_bot_for_lead(lead_id: str, body: Dict[str, Any] = Body(...), current_user=Depends(get_current_user)):
+        """Mette in pausa / riattiva il chatbot per un singolo lead.
+
+        body: {"paused": true|false}. Riattivando (paused=false) la sessione viene anche
+        marcata activated_by_workflow=True (presa in carico manuale del bot).
+        """
+        lead = await db.leads.find_one({"id": lead_id}, {"_id": 0, "id": 1, "commessa_id": 1})
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead non trovato")
+        if not await _user_can_see_unit(current_user, lead.get("commessa_id") or ""):
+            raise HTTPException(status_code=403, detail="Accesso negato")
+        paused = bool(body.get("paused"))
+        set_doc = {"bot_paused": paused, "updated_at": datetime.now(timezone.utc)}
+        if not paused:
+            set_doc["activated_by_workflow"] = True
+            set_doc["status"] = "active"
+        await db.lead_chatbot_sessions.update_one(
+            {"lead_id": lead_id},
+            {"$set": set_doc,
+             "$setOnInsert": {"id": str(uuid.uuid4()), "lead_id": lead_id,
+                              "unit_id": lead.get("commessa_id"), "messages": [],
+                              "qualification_score": 0, "created_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+        session = await db.lead_chatbot_sessions.find_one({"lead_id": lead_id}, {"_id": 0})
+        return {"success": True, "session": session}
 
     @router.get("/conversations/{lead_id}")
     async def get_lead_conversation(lead_id: str, current_user=Depends(get_current_user)):

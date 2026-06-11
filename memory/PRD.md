@@ -65,6 +65,14 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 - Fix (testing agent): conflitto $set/$setOnInsert su PATCH /api/spoki/unit-configs (500 al salvataggio)
 - Test: pytest 5/5 (/app/backend/tests/test_spoki_chatbot_workflow.py) + UI Spoki Config verificata
 
+## Pagina "Conversazioni AI" (giugno 2026)
+- Nuova voce sidebar "Conversazioni AI" (admin + super_referente) → `components/spoki/AIConversations.jsx`
+- Lista conversazioni WhatsApp (una per lead, aggregazione spoki_messages) con badge stato bot (attivo/in pausa/non attivato), unit, ultimo messaggio; ricerca; polling 8s
+- Pannello chat: thread messaggi (Cliente/Bot AI/Operatore), invio manuale, **toggle bot per lead** (data-testid ai-conv-bot-toggle)
+- Backend: GET /api/spoki/conversations (filtrato per unit visibili), POST /api/spoki/conversations/{lead_id}/toggle-bot ({paused: bool}; riattivando marca activated_by_workflow=true → presa in carico manuale)
+- Gate aggiornato: bot non risponde se `bot_paused=true` (sia webhook inbound che nodo run_chatbot)
+- Fix: corruzione pre-esistente in App.js riga 3262 (`setFilters..filters` → sintassi rotta) che bloccava la compilazione webpack
+
 ## Bloccanti esterni
 - **Spoki API key** (`228eb...ec2a`): respinta dai server Spoki su entrambi i domini ufficiali con header documentato ("Authentication credentials were not provided"). La chiave NON è attiva lato Spoki: l'utente deve verificare in Spoki → Integrazione → API → Richiedi API Key (può richiedere approvazione) e che non si tratti della "Chiave Privata" o del webhook secret.
 - **Aruba SMTP**: IP del preview blacklistato — solo infrastrutturale

@@ -58,6 +58,7 @@ import { ClientePostVenditaSection } from "./components/ClientePostVenditaSectio
 import { MultiSelectFilter } from "./components/MultiSelectFilter";
 import { SpokiAdminConfig } from "./components/spoki/SpokiAdminConfig";
 import { AppointmentsCalendar } from "./components/spoki/AppointmentsCalendar";
+import { AIConversations } from "./components/spoki/AIConversations";
 import { LeadConversationsTab } from "./components/spoki/LeadConversationsTab";
 import { WorkflowFoldersSidebar } from "./components/workflow/WorkflowFoldersSidebar";
 import { WorkflowTestModeDialog } from "./components/workflow/WorkflowTestModeDialog";
@@ -2031,6 +2032,7 @@ const Dashboard = () => {
         { id: "ai-config", label: "Configurazione AI", icon: Settings },
         { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
         { id: "spoki-config", label: "WhatsApp Spoki", icon: MessageCircle },
+        { id: "ai-conversations", label: "Conversazioni AI", icon: Bot },
         { id: "calendar", label: "Calendario Appuntamenti", icon: Calendar },
         { id: "tags", label: "Tag Lead", icon: Tag },
         { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
@@ -2085,6 +2087,7 @@ const Dashboard = () => {
       // Super Referente: vede lead di tutti i referenti/agenti autorizzati, analytics rete
       items.push(
         { id: "leads", label: "Lead", icon: Phone },
+        { id: "ai-conversations", label: "Conversazioni AI", icon: Bot },
         { id: "calendar", label: "Calendario Appuntamenti", icon: Calendar },
         { id: "super-referente-analytics", label: "Analytics Rete", icon: TrendingUp }
       );
@@ -2127,6 +2130,8 @@ const Dashboard = () => {
           return user.role === "admin" ? <WhatsAppManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "spoki-config":
           return user.role === "admin" ? <SpokiAdminConfig units={units} /> : <div>Non autorizzato</div>;
+        case "ai-conversations":
+          return (user.role === "admin" || user.role === "super_referente") ? <AIConversations /> : <div className="p-8 text-center text-slate-600">Non autorizzato</div>;
         case "calendar":
           return (user.role === "admin" || user.role === "super_referente") ? <AppointmentsCalendar units={units} /> : <div className="p-8 text-center text-slate-600">Non autorizzato</div>;
         case "tags":
