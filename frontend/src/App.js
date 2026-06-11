@@ -1441,9 +1441,28 @@ const Dashboard = () => {
   // 🎯 MOBILE-FRIENDLY: Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // 🔔 Contatore conversazioni WhatsApp non gestite (bot in pausa/non attivato)
+  const [unhandledConvCount, setUnhandledConvCount] = useState(0);
   
   const { user, logout, setUser, showSessionWarning, timeLeft, extendSession, stopCountdown } = useAuth();
   const { toast } = useToast();
+
+  // 🔔 Polling contatore messaggi WhatsApp da gestire (sidebar "Conversazioni AI")
+  useEffect(() => {
+    if (!user || !["admin", "super_referente"].includes(user.role)) return;
+    const fetchUnhandled = async () => {
+      try {
+        const r = await axios.get(`${API}/spoki/conversations/unhandled-count`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        setUnhandledConvCount(r.data?.count || 0);
+      } catch (e) { /* silenzioso */ }
+    };
+    fetchUnhandled();
+    const t = setInterval(fetchUnhandled, 30000);
+    return () => clearInterval(t);
+  }, [user, activeTab]);
 
   // 🎯 MOBILE-FRIENDLY: Detect screen size (< 1024px = mobile/tablet)
   useEffect(() => {
@@ -2471,6 +2490,9 @@ const Dashboard = () => {
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
                   <span className="text-left">{item.label}</span>
+                  {item.id === "ai-conversations" && unhandledConvCount > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{unhandledConvCount}</span>
+                  )}
                 </button>
               ))}
             </nav>
@@ -2536,6 +2558,9 @@ const Dashboard = () => {
             >
               <item.icon className="w-4 h-4" />
               <span>{item.label}</span>
+              {item.id === "ai-conversations" && unhandledConvCount > 0 && (
+                <span data-testid="ai-conv-unhandled-badge" className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{unhandledConvCount}</span>
+              )}
             </button>
           ))}
         </nav>

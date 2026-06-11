@@ -713,6 +713,10 @@ class WorkflowExecutorV2:
                         await self._log_spoki_msg(lead, "outbound", body=bot_text, status=res.get("status") or "sent", sender="bot")
                     except Exception as e:
                         await self._log_spoki_msg(lead, "outbound", body=bot_text, status="failed", sender="bot", error=str(e)[:300])
+                # il workflow ha gestito la risposta: azzera eventuali "da gestire" del lead
+                await self.db.spoki_messages.update_many(
+                    {"lead_id": lead_id, "needs_attention": True}, {"$set": {"needs_attention": False}}
+                )
                 ctx["chatbot_last_reply"] = reply
                 # branch in base a intent: 'ready_to_book' → branch 'book', altrimenti continua
                 if reply.get("ready_to_book"):

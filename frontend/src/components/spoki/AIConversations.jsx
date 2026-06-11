@@ -104,6 +104,14 @@ export const AIConversations = () => {
     } finally { setToggling(false); }
   };
 
+  const openConversation = async (leadId) => {
+    setSelected(leadId);
+    try {
+      await axios.post(`${API}/spoki/conversations/${leadId}/mark-read`, {}, { headers: authHeaders() });
+      fetchList();
+    } catch (e) { /* non bloccante */ }
+  };
+
   const q = search.toLowerCase();
   const filtered = conversations.filter((c) =>
     !q || (c.lead_name || "").toLowerCase().includes(q) || (c.phone || "").includes(q) || (c.unit_label || "").toLowerCase().includes(q)
@@ -148,7 +156,7 @@ export const AIConversations = () => {
             {filtered.map((c) => (
               <button
                 key={c.lead_id}
-                onClick={() => setSelected(c.lead_id)}
+                onClick={() => openConversation(c.lead_id)}
                 className={`w-full text-left px-3 py-2.5 border-b hover:bg-slate-50 transition-colors ${selected === c.lead_id ? "bg-indigo-50 border-l-2 border-l-indigo-500" : ""}`}
                 data-testid={`ai-conv-item-${c.lead_id}`}
               >
@@ -164,6 +172,11 @@ export const AIConversations = () => {
                 </div>
                 <div className="flex items-center gap-1.5 mt-1">
                   {botBadge(c.session)}
+                  {c.unhandled_count > 0 && (
+                    <Badge className="bg-red-500 text-[10px]" data-testid={`ai-conv-unhandled-${c.lead_id}`}>
+                      {c.unhandled_count} da gestire
+                    </Badge>
+                  )}
                   {c.unit_label && <Badge variant="outline" className="text-[10px]">{c.unit_label}</Badge>}
                 </div>
               </button>

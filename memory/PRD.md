@@ -73,6 +73,14 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 - Gate aggiornato: bot non risponde se `bot_paused=true` (sia webhook inbound che nodo run_chatbot)
 - Fix: corruzione pre-esistente in App.js riga 3262 (`setFilters..filters` → sintassi rotta) che bloccava la compilazione webpack
 
+## Notifiche messaggi non gestiti (giugno 2026)
+- Webhook inbound: se il bot NON risponde (in pausa/non attivato/disabilitato/errore) il messaggio viene flaggato `needs_attention: true` in spoki_messages
+- GET /api/spoki/conversations/unhandled-count → numero lead con messaggi da gestire (filtrato per unit visibili) — NOTA: registrato PRIMA di /conversations/{lead_id} per evitare conflitto di route
+- POST /api/spoki/conversations/{lead_id}/mark-read → azzera i flag (chiamato all'apertura conversazione nella pagina Conversazioni AI)
+- Lista conversazioni: campo `unhandled_count` per lead + badge rosso "N da gestire"
+- Sidebar (App.js, componente Dashboard): badge rosso con contatore sulla voce "Conversazioni AI" (desktop data-testid ai-conv-unhandled-badge + mobile), polling 30s, solo admin/super_referente
+- Il nodo workflow run_chatbot azzera i needs_attention del lead dopo aver risposto
+
 ## Bloccanti esterni
 - **Spoki API key** (`228eb...ec2a`): respinta dai server Spoki su entrambi i domini ufficiali con header documentato ("Authentication credentials were not provided"). La chiave NON è attiva lato Spoki: l'utente deve verificare in Spoki → Integrazione → API → Richiedi API Key (può richiedere approvazione) e che non si tratti della "Chiave Privata" o del webhook secret.
 - **Aruba SMTP**: IP del preview blacklistato — solo infrastrutturale

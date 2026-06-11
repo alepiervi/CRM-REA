@@ -118,23 +118,24 @@ def build_spoki_routers(db, get_current_user, UserRole):
         await db.spoki_messages.insert_one(out)
         return out
 
-    async def _bot_handle_inbound(lead: Dict[str, Any], user_message: str) -> None:
+    async def _bot_handle_inbound(lead: Dict[str, Any], user_message: str) -> bool:
+        """Ritorna True se il bot ha gestito (risposto) il messaggio, False altrimenti."""
         lead_id = lead["id"]
         unit_id = lead.get("commessa_id")
         cfg = await db.unit_spoki_configs.find_one({"unit_id": unit_id}, {"_id": 0}) if unit_id else None
         if cfg and cfg.get("chatbot_enabled") is False:
-            return
+            return False
         sys_prompt = (cfg or {}).get("chatbot_system_prompt") or DEFAULT_SYSTEM_PROMPT_IT
         session = await db.lead_chatbot_sessions.find_one({"lead_id": lead_id}, {"_id": 0})
         # GATE: il bot risponde SOLO se attivato da un workflow (nodo "Attiva Chatbot AI")
         if not session or not session.get("activated_by_workflow"):
             logger.info(f"Chatbot non attivato dal workflow per lead {lead_id}: messaggio loggato senza risposta automatica")
-            return
+            return False
         if session.get("status") in ("lost", "timeout"):
-            return
+            return False
         if session.get("bot_paused"):
             logger.info(f"Chatbot in pausa per lead {lead_id}: nessuna risposta automatica")
-            return
+            return False
         history = session.get("messages", [])
         history.append({"role": "user", "content": user_message, "ts": datetime.now(timezone.utc).isoformat()})
 
@@ -209,6 +210,7 @@ def build_spoki_routers(db, get_current_user, UserRole):
             out["status"] = "failed"
             out["error"] = str(e)[:500]
         await db.spoki_messages.insert_one(out)
+        return True
 
     # ====================================
     # Endpoints SPOKI
@@ -385,10 +387,17 @@ def build_spoki_routers(db, get_current_user, UserRole):
                 await db.spoki_messages.insert_one(log)
                 processed += 1
                 if lead:
+                    handled = False
                     try:
-                        await _bot_handle_inbound(lead, body_txt)
+                        handled = bool(await _bot_handle_inbound(lead, body_txt))
                     except Exception as e:
                         logger.exception(f"chatbot error lead {lead['id']}: {e}")
+                    if not handled:
+                        # Lead ha scritto ma il bot non ha risposto (in pausa/non attivato/errore):
+                        # segnala il messaggio come "da gestire" per il contatore in sidebar
+                        await db.spoki_messages.update_one(
+                            {"id": log["id"]}, {"$set": {"needs_attention": True}}
+                        )
                     # Resume workflows V2 in attesa (ramo 'reply')
                     try:
                         wf_v2 = getattr(router, "workflow_executor_v2", None)
@@ -413,7 +422,12 @@ def build_spoki_routers(db, get_current_user, UserRole):
         pipeline = [
             {"$match": {"lead_id": {"$ne": None}}},
             {"$sort": {"created_at": -1}},
-            {"$group": {"_id": "$lead_id", "last_message": {"$first": "$$ROOT"}, "messages_count": {"$sum": 1}}},
+            {"$group": {
+                "_id": "$lead_id",
+                "last_message": {"$first": "$$ROOT"},
+                "messages_count": {"$sum": 1},
+                "unhandled_count": {"$sum": {"$cond": [{"$eq": ["$needs_attention", True]}, 1, 0]}},
+            }},
             {"$sort": {"last_message.created_at": -1}},
             {"$limit": limit},
         ]
@@ -447,6 +461,7 @@ def build_spoki_routers(db, get_current_user, UserRole):
                 "unit_id": unit_id,
                 "unit_label": unit_names.get(unit_id),
                 "messages_count": g["messages_count"],
+                "unhandled_count": g.get("unhandled_count") or 0,
                 "last_message": {
                     "body": lm.get("body") or (f"[Template: {lm.get('template_name')}]" if lm.get("template_name") else ""),
                     "direction": lm.get("direction"),
@@ -457,6 +472,33 @@ def build_spoki_routers(db, get_current_user, UserRole):
                 "session": sessions.get(lead["id"]),
             })
         return {"conversations": out}
+
+    @router.get("/conversations/unhandled-count")
+    async def conversations_unhandled_count(current_user=Depends(get_current_user)):
+        """Numero di lead con messaggi WhatsApp non gestiti (bot in pausa/non attivato)."""
+        pipeline = [
+            {"$match": {"needs_attention": True, "lead_id": {"$ne": None}}},
+            {"$group": {"_id": "$unit_id", "leads": {"$addToSet": "$lead_id"}}},
+        ]
+        total = 0
+        async for g in db.spoki_messages.aggregate(pipeline):
+            if await _user_can_see_unit(current_user, g["_id"] or ""):
+                total += len(g["leads"])
+        return {"count": total}
+
+    @router.post("/conversations/{lead_id}/mark-read")
+    async def mark_conversation_read(lead_id: str, current_user=Depends(get_current_user)):
+        """Segna come gestiti i messaggi 'da gestire' di un lead (apertura conversazione)."""
+        lead = await db.leads.find_one({"id": lead_id}, {"_id": 0, "id": 1, "commessa_id": 1})
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead non trovato")
+        if not await _user_can_see_unit(current_user, lead.get("commessa_id") or ""):
+            raise HTTPException(status_code=403, detail="Accesso negato")
+        res = await db.spoki_messages.update_many(
+            {"lead_id": lead_id, "needs_attention": True},
+            {"$set": {"needs_attention": False}},
+        )
+        return {"success": True, "cleared": res.modified_count}
 
     @router.post("/conversations/{lead_id}/toggle-bot")
     async def toggle_bot_for_lead(lead_id: str, body: Dict[str, Any] = Body(...), current_user=Depends(get_current_user)):
