@@ -55,6 +55,16 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 - Pairing: NON esiste QR via API; endpoint `/pair` ora legge i canali reali via GET `/channel/` e marca CONNECTED se il numero corrisponde
 - Test E2E webhook verificato: inbound → match lead → chatbot GPT-4o-mini risponde → log outbound
 
+## Integrazione Chatbot OpenAI Assistants + Workflow (giugno 2026)
+- **OPENAI_API_KEY** (chiave personale utente, sk-proj-...) in backend/.env — VALIDA, 7+ Assistant sull'account (Gaia, Giulia, Silvia, Sofia... uno per Unit)
+- `spoki_chatbot.py`: `assistant_generate_reply` (threads/runs Assistants API v2, retry su thread scaduto), `generate_unit_reply` (usa Assistant della Unit se configurato, altrimenti chatbot interno gpt-4o-mini), `list_openai_assistants`
+- `UnitSpokiConfig.openai_assistant_id`: assistant selezionabile per Unit da SpokiAdminConfig (dropdown data-testid spoki-assistant-select), endpoint GET /api/spoki/openai-assistants
+- Thread OpenAI persistito in `lead_chatbot_sessions.openai_thread_id` (multi-turno verificato)
+- **GATE chatbot**: il bot risponde ai messaggi WhatsApp inbound SOLO se la sessione ha `activated_by_workflow: true` — attivata dal nuovo nodo workflow **"Attiva Chatbot AI"** (actions/activate_chatbot, campo opzionale first_message) o dal nodo run_chatbot
+- **Benvenuto SOLO via workflow**: rimossi i 4 hook automatici `spoki_send_welcome_for_lead` alla creazione lead in server.py; il benvenuto parte dal nodo "Spoki: Invia Template" quando il lead scende sulla Unit autorizzata
+- Fix (testing agent): conflitto $set/$setOnInsert su PATCH /api/spoki/unit-configs (500 al salvataggio)
+- Test: pytest 5/5 (/app/backend/tests/test_spoki_chatbot_workflow.py) + UI Spoki Config verificata
+
 ## Bloccanti esterni
 - **Spoki API key** (`228eb...ec2a`): respinta dai server Spoki su entrambi i domini ufficiali con header documentato ("Authentication credentials were not provided"). La chiave NON è attiva lato Spoki: l'utente deve verificare in Spoki → Integrazione → API → Richiedi API Key (può richiedere approvazione) e che non si tratti della "Chiave Privata" o del webhook secret.
 - **Aruba SMTP**: IP del preview blacklistato — solo infrastrutturale
