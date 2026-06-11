@@ -14967,14 +14967,17 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   }, []);
 
   // Add new node to canvas
-  const addNode = (nodeType, nodeSubtype, nodeName, color) => {
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const reactFlowWrapper = React.useRef(null);
+
+  const addNode = (nodeType, nodeSubtype, nodeName, color, position = null) => {
     const id = `${nodeType}_${Date.now()}`;
     const newNode = {
       id,
       type: 'default',
-      position: { 
-        x: Math.random() * 400 + 100, 
-        y: Math.random() * 400 + 100 
+      position: position || {
+        x: Math.random() * 400 + 100,
+        y: Math.random() * 400 + 100
       },
       data: { 
         label: nodeName,
@@ -14996,6 +14999,28 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     
     setNodes((nds) => nds.concat(newNode));
   };
+
+  // Drag from palette → drop on canvas
+  const onDragStart = (event, payload) => {
+    event.dataTransfer.setData("application/reactflow-node", JSON.stringify(payload));
+    event.dataTransfer.effectAllowed = "move";
+  };
+  const onDragOver = React.useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
+  const onDrop = React.useCallback((event) => {
+    event.preventDefault();
+    if (!reactFlowInstance) return;
+    const data = event.dataTransfer.getData("application/reactflow-node");
+    if (!data) return;
+    let payload;
+    try { payload = JSON.parse(data); } catch { return; }
+    const position = reactFlowInstance.screenToFlowPosition
+      ? reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY })
+      : reactFlowInstance.project({ x: event.clientX, y: event.clientY });
+    addNode(payload.nodeType, payload.nodeSubtype, payload.nodeName, payload.color, position);
+  }, [reactFlowInstance]);
 
   // Update node configuration
   const updateNodeConfig = (nodeId, config) => {
@@ -15181,8 +15206,10 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
                       <button
                         key={subtypeKey}
                         type="button"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, { nodeType: categoryKey, nodeSubtype: subtypeKey, nodeName: subtype.name, color: subtype.color })}
                         onClick={() => addNode(categoryKey, subtypeKey, subtype.name, subtype.color)}
-                        className="w-full text-left p-2.5 rounded-lg border transition-all hover:shadow-sm hover:scale-[1.01] flex items-start gap-2"
+                        className="w-full text-left p-2.5 rounded-lg border transition-all hover:shadow-sm hover:scale-[1.01] flex items-start gap-2 cursor-grab active:cursor-grabbing"
                         style={{ background: palette.bg, borderColor: palette.border }}
                         data-testid={`palette-node-${subtypeKey}`}
                       >
@@ -15203,7 +15230,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
         </div>
         
         {/* Canvas area with React Flow */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative" ref={reactFlowWrapper}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -15211,6 +15238,9 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
+            onInit={setReactFlowInstance}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
             fitView
             style={{ width: '100%', height: '100%' }}
           >
@@ -15223,7 +15253,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
                 <div className="text-center">
                   <Workflow className="w-12 h-12 text-slate-400 mx-auto mb-2" />
                   <p className="text-slate-600 font-medium">Canvas Vuoto</p>
-                  <p className="text-slate-500 text-sm">Clicca sui nodi nella sidebar per aggiungerli</p>
+                  <p className="text-slate-500 text-sm">Trascina o clicca un nodo dalla sidebar per aggiungerlo</p>
                 </div>
               </Panel>
             )}
