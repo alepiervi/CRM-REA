@@ -10,6 +10,7 @@ Uso:
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
@@ -49,6 +50,33 @@ def build_spoki_routers(db, get_current_user, UserRole):
             return True
         return False
 
+    # ---- matching telefono (Spoki invia "+39333...", in DB può essere "333..." ecc.) ----
+    def _phone_regex(phone: str):
+        digits = re.sub(r"\D", "", phone or "")
+        if len(digits) < 8:
+            return None
+        return {"$regex": re.escape(digits[-9:]) + r"$"}
+
+    async def _find_lead_by_phone(phone: str):
+        proj = {"_id": 0, "id": 1, "commessa_id": 1, "nome": 1, "cognome": 1, "telefono": 1}
+        lead = await db.leads.find_one({"telefono": phone}, proj)
+        if lead:
+            return lead
+        rx = _phone_regex(phone)
+        if rx:
+            lead = await db.leads.find_one({"telefono": rx}, proj)
+        return lead
+
+    async def _find_cliente_by_phone(phone: str):
+        proj = {"_id": 0, "id": 1, "commessa_id": 1, "nome": 1}
+        cliente = await db.clienti.find_one({"$or": [{"telefono": phone}, {"cellulare": phone}]}, proj)
+        if cliente:
+            return cliente
+        rx = _phone_regex(phone)
+        if rx:
+            cliente = await db.clienti.find_one({"$or": [{"telefono": rx}, {"cellulare": rx}]}, proj)
+        return cliente
+
     # ---- helpers interni (richiamabili anche fuori dai router) ----
     async def send_welcome_for_lead(lead: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         if not lead.get("id") or not lead.get("telefono") or not lead.get("commessa_id"):
@@ -79,7 +107,7 @@ def build_spoki_routers(db, get_current_user, UserRole):
                     language=cfg.get("welcome_template_language") or "it",
                     variables=variables, connection_id=cfg.get("spoki_connection_id"),
                 )
-                out["spoki_message_id"] = res.get("id") or res.get("message_id")
+                out["spoki_message_id"] = res.get("uuid") or res.get("id") or res.get("message_id")
                 out["status"] = res.get("status") or "sent"
         except Exception as e:
             out["status"] = "failed"
@@ -165,7 +193,7 @@ def build_spoki_routers(db, get_current_user, UserRole):
                     to=lead["telefono"], body=bot_text,
                     connection_id=(cfg or {}).get("spoki_connection_id"),
                 )
-                out["spoki_message_id"] = res.get("id") or res.get("message_id")
+                out["spoki_message_id"] = res.get("uuid") or res.get("id") or res.get("message_id")
                 out["status"] = res.get("status") or "sent"
             else:
                 out["status"] = "skipped_no_api_key"
@@ -250,19 +278,39 @@ def build_spoki_routers(db, get_current_user, UserRole):
 
     @router.post("/unit-configs/{unit_id}/pair")
     async def pair_unit_number(unit_id: str, current_user=Depends(get_current_user)):
+        """Verifica lo stato del numero WhatsApp della Unit sui canali Spoki reali.
+
+        NOTA: il pairing (QR) si esegue dalla piattaforma Spoki. Qui controlliamo
+        se il numero configurato risulta tra i canali attivi dell'account.
+        """
         _require_admin(current_user)
         if not spoki_service.is_configured:
             raise HTTPException(status_code=400, detail="SPOKI_API_KEY non configurato")
+        cfg = await db.unit_spoki_configs.find_one({"unit_id": unit_id}, {"_id": 0})
+        wanted = re.sub(r"\D", "", (cfg or {}).get("whatsapp_number") or "")
         try:
-            res = await spoki_service.generate_pairing_qr(unit_id)
-            await db.unit_spoki_configs.update_one(
-                {"unit_id": unit_id},
-                {"$set": {"pairing_status": SpokiPairingStatus.PAIRING.value, "updated_at": datetime.now(timezone.utc)}},
-                upsert=True,
-            )
-            return {"success": True, "spoki_response": res}
+            channels = await spoki_service.list_channels()
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"Errore Spoki: {e}")
+        matched = None
+        for ch in channels:
+            ch_phone = re.sub(r"\D", "", str(ch.get("phone") or ch.get("phone_number") or ""))
+            if wanted and ch_phone and (ch_phone.endswith(wanted[-9:]) or wanted.endswith(ch_phone[-9:])):
+                matched = ch
+                break
+        if not matched and len(channels) == 1:
+            matched = channels[0]
+        new_status = SpokiPairingStatus.CONNECTED.value if matched else SpokiPairingStatus.NOT_PAIRED.value
+        await db.unit_spoki_configs.update_one(
+            {"unit_id": unit_id},
+            {"$set": {
+                "pairing_status": new_status,
+                "spoki_connection_id": str(matched.get("id")) if matched else None,
+                "updated_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+        return {"success": bool(matched), "status": new_status, "channel": matched, "channels_found": len(channels)}
 
     @router.post("/webhook")
     async def spoki_webhook(request: Request):
@@ -275,26 +323,35 @@ def build_spoki_routers(db, get_current_user, UserRole):
             payload = await request.json()
         except Exception:
             raise HTTPException(status_code=400, detail="JSON malformato")
-        msgs = payload.get("messages") or payload.get("data") or []
-        if isinstance(msgs, dict):
-            msgs = [msgs]
-        if not msgs and payload.get("from"):
+        # Formato ufficiale Spoki: {"version": 1, "event": "message.inbound", "data": {...}}
+        event = payload.get("event") or ""
+        msgs = []
+        data = payload.get("data")
+        if isinstance(data, dict):
+            msgs = [data]
+        elif isinstance(data, list):
+            msgs = data
+        elif payload.get("messages"):
+            msgs = payload["messages"] if isinstance(payload["messages"], list) else [payload["messages"]]
+        elif payload.get("from") or payload.get("from_phone"):
             msgs = [payload]
         processed = 0
         for m in msgs:
             try:
-                phone = m.get("from") or m.get("phone") or m.get("contact", {}).get("phone")
-                body_txt = m.get("body") or m.get("text") or m.get("message")
-                spoki_msg_id = m.get("id") or m.get("message_id")
+                # Ignora eventi non-inbound (es. status di consegna outbound)
+                direction = (m.get("direction") or "").lower()
+                if event and not event.startswith("message.inbound") and direction != "inbound":
+                    continue
+                contact = m.get("contact") or {}
+                phone = m.get("from_phone") or m.get("from") or m.get("phone") or contact.get("phone")
+                body_txt = m.get("text") or m.get("body") or (m.get("preview") or {}).get("body") or m.get("message")
+                spoki_msg_id = m.get("uuid") or m.get("id") or m.get("message_id")
                 if not phone or not body_txt:
                     continue
-                lead = await db.leads.find_one({"telefono": phone}, {"_id": 0, "id": 1, "commessa_id": 1, "nome": 1, "telefono": 1})
+                lead = await _find_lead_by_phone(phone)
                 cliente = None
                 if not lead:
-                    cliente = await db.clienti.find_one(
-                        {"$or": [{"telefono": phone}, {"cellulare": phone}]},
-                        {"_id": 0, "id": 1, "commessa_id": 1, "nome": 1},
-                    )
+                    cliente = await _find_cliente_by_phone(phone)
                 unit_id = (lead or cliente or {}).get("commessa_id")
                 log = SpokiMessage(
                     unit_id=unit_id, lead_id=(lead or {}).get("id"),
@@ -359,7 +416,7 @@ def build_spoki_routers(db, get_current_user, UserRole):
                     to=lead["telefono"], body=text,
                     connection_id=(cfg or {}).get("spoki_connection_id"),
                 )
-                out["spoki_message_id"] = res.get("id") or res.get("message_id")
+                out["spoki_message_id"] = res.get("uuid") or res.get("id") or res.get("message_id")
                 out["status"] = res.get("status") or "sent"
             else:
                 out["status"] = "skipped_no_api_key"

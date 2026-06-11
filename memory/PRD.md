@@ -46,8 +46,17 @@ Costruire un CRM commerciale completo per gestione lead, clienti, post-vendita, 
 - Sidebar super_referente: "Calendario Appuntamenti"
 - LeadDetailModal: tab "Conversazione WhatsApp"
 
+## Allineamento Spoki API ufficiale (giugno 2026)
+Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611004/UzBqnPvF):
+- Auth: header `X-Spoki-Api-Key`, base `https://api.spoki.com/api/1` (CONFERMATO da docs)
+- Invio template: POST `/messages/send/` con `{"type":"Template","phone":...,"template":<id numerico>,"language":"IT","custom_fields":{...}}` — il template si risolve per nome→id via `/templates/`
+- Invio free-text: `{"type":"Message","content_type":"Text","phone":...,"text":...}`
+- Webhook inbound ufficiale: `{"version":1,"event":"message.inbound","data":{from_phone,text,uuid,contact}}` — parser aggiornato + matching telefono normalizzato (ultime 9 cifre, gestisce +39 vs senza prefisso)
+- Pairing: NON esiste QR via API; endpoint `/pair` ora legge i canali reali via GET `/channel/` e marca CONNECTED se il numero corrisponde
+- Test E2E webhook verificato: inbound → match lead → chatbot GPT-4o-mini risponde → log outbound
+
 ## Bloccanti esterni
-- **Spoki API key** restituisce 401 — utente sta verificando attivazione nel pannello Spoki Partner
+- **Spoki API key** (`228eb...ec2a`): respinta dai server Spoki su entrambi i domini ufficiali con header documentato ("Authentication credentials were not provided"). La chiave NON è attiva lato Spoki: l'utente deve verificare in Spoki → Integrazione → API → Richiedi API Key (può richiedere approvazione) e che non si tratti della "Chiave Privata" o del webhook secret.
 - **Aruba SMTP**: IP del preview blacklistato — solo infrastrutturale
 
 ## Backlog prioritizzato

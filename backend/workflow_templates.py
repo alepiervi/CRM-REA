@@ -457,20 +457,27 @@ def get_available_templates() -> list:
     ]
 
 
-def apply_template_overrides(workflow: dict, overrides: dict) -> dict:
+def apply_template_overrides(workflow: dict, overrides: dict, parameters: list = None) -> dict:
     """Applica i parametri di personalizzazione al workflow appena generato.
 
     overrides è un dict {key: value} dove key corrisponde a parameters[*].key del template.
     Per ogni override troviamo applies_to.node_id e settiamo config[applies_to.config_field] = value.
+    Se `parameters` è passato esplicitamente, lo usiamo (per custom template);
+    altrimenti cerchiamo nei built-in tramite get_available_templates().
     """
     if not overrides:
         return workflow
-    templates = {t["id"]: t for t in get_available_templates()}
-    tpl_name = (workflow.get("metadata") or {}).get("template_name")
-    tpl = templates.get(tpl_name)
-    if not tpl:
-        return workflow
-    params_by_key = {p["key"]: p for p in (tpl.get("parameters") or [])}
+    params_list = parameters
+    if params_list is None:
+        templates = {t["id"]: t for t in get_available_templates()}
+        tpl_name = (workflow.get("metadata") or {}).get("template_name")
+        tpl = templates.get(tpl_name)
+        if not tpl:
+            # Fallback: cerca nei metadata del workflow stesso (custom template)
+            params_list = (workflow.get("metadata") or {}).get("parameters") or []
+        else:
+            params_list = tpl.get("parameters") or []
+    params_by_key = {p["key"]: p for p in params_list}
     for key, val in overrides.items():
         p = params_by_key.get(key)
         if not p or val is None or val == "":

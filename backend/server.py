@@ -23305,13 +23305,100 @@ async def get_offerte_by_filiera(
 # Workflow Templates Endpoints
 @api_router.get("/workflow-templates")
 async def get_workflow_templates(current_user: User = Depends(get_current_user)):
-    """Get available workflow templates"""
+    """Get available workflow templates (built-in + custom da DB)."""
     from workflow_templates import get_available_templates
     
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Only admin can view templates")
     
-    return {"templates": get_available_templates()}
+    builtin = get_available_templates()
+    # Aggiungi custom da DB (workflow_custom_templates)
+    custom = []
+    async for d in db.workflow_custom_templates.find({}, {"_id": 0}):
+        custom.append({
+            "id": d["id"],
+            "name": d.get("name") or "Custom Template",
+            "description": d.get("description") or "",
+            "trigger": d.get("trigger_type") or "lead_created",
+            "nodes_count": len(d.get("nodes") or []),
+            "icon": d.get("icon") or "workflow",
+            "color": d.get("color") or "slate",
+            "features": d.get("features") or [],
+            "parameters": d.get("parameters") or [],
+            "custom": True,
+        })
+    return {"templates": builtin + custom}
+
+
+@api_router.post("/workflows/{workflow_id}/save-as-template")
+async def save_workflow_as_template(
+    workflow_id: str,
+    payload: Dict[str, Any] = Body(...),
+    current_user: User = Depends(get_current_user),
+):
+    """Salva un workflow esistente come template custom riusabile.
+
+    Body:
+      name (str, req), description (str), icon (str), color (str),
+      expose_node_ids (list[str]): nodi i cui campi config diventeranno parameters esposti.
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    wf = await db.workflows.find_one({"id": workflow_id}, {"_id": 0})
+    if not wf:
+        raise HTTPException(status_code=404, detail="Workflow non trovato")
+    name = (payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Nome richiesto")
+
+    expose = set(payload.get("expose_node_ids") or [])
+    # Auto-derive parameters: per ogni nodo esposto, ogni campo config diventa un param
+    nodes = wf.get("nodes") or []
+    parameters: List[Dict[str, Any]] = []
+    for n in nodes:
+        nid = n.get("id")
+        if nid not in expose:
+            continue
+        node_label = (n.get("data") or {}).get("label") or nid
+        cfg = ((n.get("data") or {}).get("config") or {})
+        for k, v in cfg.items():
+            ptype = "number" if isinstance(v, (int, float)) and not isinstance(v, bool) else ("textarea" if isinstance(v, str) and len(str(v)) > 50 else "text")
+            parameters.append({
+                "key": f"{nid}__{k}",
+                "label": f"{node_label} — {k}",
+                "type": ptype,
+                "default": v,
+                "applies_to": {"node_id": nid, "config_field": k},
+            })
+
+    tpl_doc = {
+        "id": str(uuid.uuid4()),
+        "name": name,
+        "description": payload.get("description") or "",
+        "icon": payload.get("icon") or "workflow",
+        "color": payload.get("color") or "slate",
+        "features": payload.get("features") or [],
+        "trigger_type": wf.get("trigger_type") or "lead_created",
+        "nodes": nodes,
+        "edges": wf.get("edges") or [],
+        "parameters": parameters,
+        "source_workflow_id": workflow_id,
+        "created_by": current_user.id,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.workflow_custom_templates.insert_one(tpl_doc)
+    return {"success": True, "template_id": tpl_doc["id"], "parameters_count": len(parameters)}
+
+
+@api_router.delete("/workflow-templates/custom/{template_id}")
+async def delete_custom_template(template_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    res = await db.workflow_custom_templates.delete_one({"id": template_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Template custom non trovato")
+    return {"success": True}
+
 
 @api_router.post("/workflow-templates/{template_id}/import")
 async def import_workflow_template(
@@ -23335,7 +23422,25 @@ async def import_workflow_template(
     elif template_id in TEMPLATE_REGISTRY and TEMPLATE_REGISTRY[template_id] is not None:
         workflow = TEMPLATE_REGISTRY[template_id](unit_id)
     else:
-        raise HTTPException(status_code=404, detail="Template not found")
+        # Cerca tra i custom templates in DB
+        custom = await db.workflow_custom_templates.find_one({"id": template_id}, {"_id": 0})
+        if not custom:
+            raise HTTPException(status_code=404, detail="Template not found")
+        import copy as _copy
+        workflow = {
+            "id": str(uuid.uuid4()),
+            "name": custom.get("name") or "Custom Template",
+            "description": custom.get("description") or "",
+            "unit_id": unit_id,
+            "trigger_type": custom.get("trigger_type") or "lead_created",
+            "is_active": False, "is_published": False,
+            "nodes": _copy.deepcopy(custom.get("nodes") or []),
+            "edges": _copy.deepcopy(custom.get("edges") or []),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "version": 1,
+            "metadata": {"template": True, "template_name": template_id, "custom": True, "parameters": custom.get("parameters") or []},
+        }
 
     # Applica overrides personalizzati dell'utente
     if overrides:

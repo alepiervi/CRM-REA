@@ -186,7 +186,10 @@ class SpokiService:
         async with httpx.AsyncClient(timeout=timeout) as client:
             res = await client.request(method, url, headers=self._headers(), **kwargs)
         if res.status_code == 401:
-            raise RuntimeError("Spoki API: 401 Unauthorized — verificare validità della SPOKI_API_KEY")
+            raise RuntimeError(
+                "Spoki API: 401 Unauthorized — la API key non è riconosciuta da Spoki. "
+                "Verificare in piattaforma Spoki → Integrazioni → API che la chiave sia attiva/approvata."
+            )
         if res.status_code >= 400:
             try:
                 detail = res.json()
@@ -199,53 +202,80 @@ class SpokiService:
             return {"raw": res.text}
 
     async def list_templates(self) -> List[Dict[str, Any]]:
-        """Ritorna i template WhatsApp approvati sull'account Spoki."""
-        data = await self._request("GET", "/templates")
+        """Ritorna i template WhatsApp approvati sull'account Spoki. GET /api/1/templates/"""
+        data = await self._request("GET", "/templates/")
         if isinstance(data, list):
             return data
-        return data.get("items") or data.get("data") or data.get("templates") or []
+        return data.get("results") or data.get("items") or data.get("data") or data.get("templates") or []
+
+    async def _resolve_template_id(self, template: Any) -> int:
+        """Spoki richiede l'ID numerico del template. Accetta int, stringa numerica o nome."""
+        if isinstance(template, int):
+            return template
+        s = str(template).strip()
+        if s.isdigit():
+            return int(s)
+        for t in await self.list_templates():
+            if str(t.get("name") or "").strip().lower() == s.lower():
+                return int(t["id"])
+        raise RuntimeError(f"Template Spoki '{template}' non trovato sull'account")
 
     async def send_template_message(
         self,
         to: str,
-        template_name: str,
+        template_name: Any,
         language: str = "it",
         variables: Optional[Dict[str, str]] = None,
         connection_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Invia un template WhatsApp. variables: mapping nome_var → valore (es. {"nome": "Mario"})."""
+        """Invia un template WhatsApp (formato ufficiale Spoki API v1).
+
+        POST /api/1/messages/send/
+        {"type": "Template", "phone": "+39...", "template": <id>, "language": "IT", "custom_fields": {...}}
+        `template_name` può essere ID numerico o nome (risolto via /templates/).
+        `variables` → custom_fields (chiavi = codici custom field Spoki, es. NOME).
+        """
+        tpl_id = await self._resolve_template_id(template_name)
         payload: Dict[str, Any] = {
-            "to": to,
-            "type": "template",
-            "template": {
-                "name": template_name,
-                "language": language,
-                "variables": variables or {},
-            },
+            "type": "Template",
+            "phone": to,
+            "template": tpl_id,
+            "language": (language or "IT").upper(),
         }
+        if variables:
+            payload["custom_fields"] = {str(k).upper(): str(v) for k, v in variables.items()}
         if connection_id:
-            payload["connection_id"] = connection_id
-        return await self._request("POST", "/messages/send", json=payload)
+            payload["channel_id"] = connection_id
+        return await self._request("POST", "/messages/send/", json=payload)
 
     async def send_session_message(
         self, to: str, body: str, connection_id: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Invia messaggio free-text (entro la finestra 24h di Whatsapp Business)."""
-        payload: Dict[str, Any] = {"to": to, "body": body}
-        if connection_id:
-            payload["connection_id"] = connection_id
-        return await self._request("POST", "/messages/send", json=payload)
+        """Invia messaggio free-text entro la finestra 24h (formato ufficiale Spoki API v1).
 
-    async def generate_pairing_qr(self, unit_id: str) -> Dict[str, Any]:
-        """Richiede a Spoki un QR di pairing per associare un numero WhatsApp alla Unit.
-        L'endpoint esatto va confermato; struttura tipica: POST /connections + GET QR.
+        POST /api/1/messages/send/
+        {"type": "Message", "content_type": "Text", "phone": "+39...", "text": "..."}
         """
-        # Best-effort: tentativo su endpoint comuni
-        try:
-            return await self._request("POST", "/connections", json={"label": f"unit-{unit_id}"})
-        except RuntimeError as e:
-            logger.warning(f"Spoki /connections fallito ({e}), nessun QR generato.")
-            raise
+        payload: Dict[str, Any] = {
+            "type": "Message",
+            "content_type": "Text",
+            "phone": to,
+            "text": body,
+        }
+        if connection_id:
+            payload["channel_id"] = connection_id
+        return await self._request("POST", "/messages/send/", json=payload)
+
+    async def list_channels(self) -> List[Dict[str, Any]]:
+        """Lista i canali WhatsApp attivi sull'account Spoki. GET /api/1/channel/
+
+        NOTA: il pairing del numero (QR) si fa dalla piattaforma Spoki, non via API.
+        Qui possiamo solo leggere i canali già collegati e il loro stato.
+        """
+        data = await self._request("GET", "/channel/")
+        if isinstance(data, list):
+            return data
+        return data.get("results") or data.get("items") or data.get("data") or []
 
     def verify_webhook_signature(self, raw_body: bytes, signature_header: Optional[str]) -> bool:
         """Verifica firma HMAC del webhook Spoki. Header e algoritmo esatti vanno confermati."""

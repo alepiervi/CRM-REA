@@ -629,7 +629,7 @@ class WorkflowExecutorV2:
                     res = await self.spoki.send_template_message(
                         to=lead.get("telefono") or "", template_name=tpl, language=lang, variables=variables,
                     )
-                    await self._log_spoki_msg(lead, "outbound", template_name=tpl, vars=variables, body=None, status=res.get("status") or "sent", sender="system", spoki_id=res.get("id") or res.get("message_id"))
+                    await self._log_spoki_msg(lead, "outbound", template_name=tpl, vars=variables, body=None, status=res.get("status") or "sent", sender="system", spoki_id=res.get("uuid") or res.get("id") or res.get("message_id"))
                     return {"success": True}
                 except Exception as e:
                     await self._log_spoki_msg(lead, "outbound", template_name=tpl, vars=variables, body=None, status="failed", sender="system", error=str(e)[:300])
@@ -642,7 +642,7 @@ class WorkflowExecutorV2:
                     return {"success": True, "test_mode": True}
                 try:
                     res = await self.spoki.send_session_message(to=lead.get("telefono") or "", body=body)
-                    await self._log_spoki_msg(lead, "outbound", body=body, status=res.get("status") or "sent", sender="system", spoki_id=res.get("id") or res.get("message_id"))
+                    await self._log_spoki_msg(lead, "outbound", body=body, status=res.get("status") or "sent", sender="system", spoki_id=res.get("uuid") or res.get("id") or res.get("message_id"))
                     return {"success": True}
                 except Exception as e:
                     await self._log_spoki_msg(lead, "outbound", body=body, status="failed", sender="system", error=str(e)[:300])
