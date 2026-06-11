@@ -72,6 +72,10 @@ import {
   Mail, 
   Calendar, 
   FlaskConical,
+  CheckSquare,
+  GitBranch,
+  CornerDownRight,
+  MessageSquare,
   BarChart3, 
   Settings,
   Database,
@@ -2794,6 +2798,14 @@ const LeadsManagement = ({ selectedUnit, units }) => {
     fetchLeadStatuses(); // NEW: Fetch dynamic statuses
     fetchAllLeadStatusColors(); // Fetch ALL status colors for badge rendering
     fetchUsers(); // NEW: Fetch users for agent names
+    // Carica cache tag (label + colore) per render rapido dei chip nella colonna Tag
+    axios.get(`${API}/lead-tags`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+      .then(r => {
+        const cache = {};
+        (r.data || []).forEach(t => { cache[t.name] = { label: t.label || t.name, color: t.color || "#64748b" }; });
+        window.__leadTagsCache = cache;
+      })
+      .catch(() => { window.__leadTagsCache = {}; });
   }, [selectedUnit, filters]);
 
   // Auto-refresh leads every 30 seconds to show new leads from Zapier
@@ -3501,6 +3513,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                         <TableHead>Assegnato a</TableHead>
                       )}
                       <TableHead>Stato</TableHead>
+                      <TableHead>Tag</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead>Azioni</TableHead>
                     </TableRow>
@@ -3541,6 +3554,21 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                           </TableCell>
                         )}
                         <TableCell>{getStatusBadge(lead.esito)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1 max-w-[180px]" data-testid={`lead-tags-${lead.id}`}>
+                            {(lead.tags || []).slice(0, 3).map((t) => {
+                              const meta = (window.__leadTagsCache || {})[t] || { color: "#64748b", label: t };
+                              return (
+                                <span key={t} className="px-1.5 py-0.5 rounded text-[10px] font-medium border" style={{ background: `${meta.color}1a`, borderColor: meta.color, color: meta.color }}>
+                                  {meta.label || t}
+                                </span>
+                              );
+                            })}
+                            {(lead.tags || []).length > 3 && (
+                              <span className="text-[10px] text-slate-500">+{lead.tags.length - 3}</span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-1">
                             <Clock className="w-3 h-3 text-slate-400" />
@@ -14821,6 +14849,49 @@ const CreateWorkflowModal = ({ onClose, onSuccess }) => {
 };
 
 // Workflow Canvas Component with React Flow
+
+// === Palette polish FASE D ===
+const NODE_COLOR_PALETTE = {
+  green:   { bg: "#ecfdf5", border: "#a7f3d0", iconBg: "#10b981", iconColor: "#fff", textColor: "#065f46" },
+  blue:    { bg: "#eff6ff", border: "#bfdbfe", iconBg: "#3b82f6", iconColor: "#fff", textColor: "#1e3a8a" },
+  purple:  { bg: "#faf5ff", border: "#e9d5ff", iconBg: "#a855f7", iconColor: "#fff", textColor: "#581c87" },
+  orange:  { bg: "#fff7ed", border: "#fed7aa", iconBg: "#f97316", iconColor: "#fff", textColor: "#7c2d12" },
+  yellow:  { bg: "#fefce8", border: "#fef08a", iconBg: "#eab308", iconColor: "#fff", textColor: "#713f12" },
+  red:     { bg: "#fef2f2", border: "#fecaca", iconBg: "#ef4444", iconColor: "#fff", textColor: "#7f1d1d" },
+  gray:    { bg: "#f8fafc", border: "#cbd5e1", iconBg: "#64748b", iconColor: "#fff", textColor: "#1e293b" },
+  indigo:  { bg: "#eef2ff", border: "#c7d2fe", iconBg: "#6366f1", iconColor: "#fff", textColor: "#312e81" },
+  violet:  { bg: "#f5f3ff", border: "#ddd6fe", iconBg: "#8b5cf6", iconColor: "#fff", textColor: "#4c1d95" },
+  emerald: { bg: "#ecfdf5", border: "#6ee7b7", iconBg: "#059669", iconColor: "#fff", textColor: "#064e3b" },
+  rose:    { bg: "#fff1f2", border: "#fecdd3", iconBg: "#f43f5e", iconColor: "#fff", textColor: "#881337" },
+  slate:   { bg: "#f1f5f9", border: "#cbd5e1", iconBg: "#475569", iconColor: "#fff", textColor: "#0f172a" },
+  amber:   { bg: "#fffbeb", border: "#fde68a", iconBg: "#f59e0b", iconColor: "#fff", textColor: "#78350f" },
+  fuchsia: { bg: "#fdf4ff", border: "#f5d0fe", iconBg: "#d946ef", iconColor: "#fff", textColor: "#701a75" },
+};
+
+const NODE_ICONS = {
+  "message-circle": MessageCircle,
+  "send": Send,
+  "bot": Bot,
+  "calendar": Calendar,
+  "calendar-plus": Calendar,
+  "clock": Clock,
+  "clock-3": Clock,
+  "tag": Tag,
+  "filter": Filter,
+  "check-circle": CheckCircle,
+  "check-square": CheckSquare,
+  "git-branch": GitBranch,
+  "split": GitBranch,
+  "corner-down-right": CornerDownRight,
+  "message-square-reply": MessageSquare,
+  "user-plus": UserPlus,
+  "mail": Mail,
+  "smartphone": Smartphone,
+  "settings": Settings,
+  "users": Users,
+  "default": Workflow,
+};
+
 const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -14828,7 +14899,17 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   const [loading, setLoading] = useState(true);
   const [selectedNode, setSelectedNode] = useState(null);
   const [showNodeEditor, setShowNodeEditor] = useState(false);
+  const [paletteSearch, setPaletteSearch] = useState("");
+  const [nodeStats, setNodeStats] = useState({});
   const { toast } = useToast();
+
+  // Fetch statistiche per nodo
+  useEffect(() => {
+    if (!workflow?.id) return;
+    axios.get(`${API}/workflows/${workflow.id}/node-stats`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+      .then(r => setNodeStats(r.data?.node_counts || {}))
+      .catch(() => setNodeStats({}));
+  }, [workflow?.id]);
 
   // Load workflow nodes and edges when workflow is provided
   useEffect(() => {
@@ -14837,6 +14918,20 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
       setEdges(workflow.edges || []);
     }
   }, [workflow]);
+
+  // Augmenta i nodi con badge statistiche se disponibili
+  useEffect(() => {
+    if (!nodeStats || Object.keys(nodeStats).length === 0) return;
+    setNodes((prev) => prev.map((n) => {
+      const count = nodeStats[n.id];
+      if (count === undefined) return n;
+      const baseLabel = (n.data?.originalLabel) || (n.data?.label || "").replace(/\s*•\s*\d+×$/, "");
+      return {
+        ...n,
+        data: { ...n.data, originalLabel: baseLabel, label: `${baseLabel} • ${count}×` },
+      };
+    }));
+  }, [nodeStats]);
 
   // Fetch available node types from backend
   useEffect(() => {
@@ -15055,62 +15150,56 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
       </div>
       
       <div className="flex h-[calc(100%-73px)]">
-        {/* Sidebar con nodi disponibili */}
-        <div className="w-64 border-r border-slate-200 p-4 bg-slate-50 overflow-y-auto max-h-full">
-          <h3 className="font-medium text-slate-700 mb-3 sticky top-0 bg-slate-50 pb-2">Nodi Disponibili</h3>
+        {/* Sidebar con nodi disponibili — enhanced */}
+        <div className="w-72 border-r border-slate-200 p-3 bg-slate-50 overflow-y-auto max-h-full">
+          <div className="sticky top-0 bg-slate-50 pb-2 z-10 space-y-2">
+            <h3 className="font-medium text-slate-700">Nodi Disponibili</h3>
+            <Input
+              data-testid="wf-palette-search"
+              placeholder="Cerca nodo..."
+              value={paletteSearch}
+              onChange={(e) => setPaletteSearch(e.target.value)}
+              className="h-8 text-sm"
+            />
+          </div>
           
-          {Object.entries(nodeTypes).map(([categoryKey, category]) => (
-            <div key={categoryKey} className="mb-4">
-              <h4 className="text-sm font-medium text-slate-600 mb-2">{category.name}</h4>
-              <div className="space-y-2">
-                {Object.entries(category.subtypes).map(([subtypeKey, subtype]) => {
-                  const bgColorClass = `bg-${subtype.color}-50`;
-                  const borderColorClass = `border-${subtype.color}-200`;
-                  const hoverColorClass = `hover:bg-${subtype.color}-100`;
-                  const dotColorClass = `bg-${subtype.color}-500`;
-                  const textColorClass = `text-${subtype.color}-600`;
-                  
-                  return (
-                    <div
-                      key={subtypeKey}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors border ${
-                        subtype.color === 'green' ? 'bg-green-50 border-green-200 hover:bg-green-100' :
-                        subtype.color === 'blue' ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' :
-                        subtype.color === 'purple' ? 'bg-purple-50 border-purple-200 hover:bg-purple-100' :
-                        subtype.color === 'orange' ? 'bg-orange-50 border-orange-200 hover:bg-orange-100' :
-                        subtype.color === 'yellow' ? 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100' :
-                        subtype.color === 'red' ? 'bg-red-50 border-red-200 hover:bg-red-100' :
-                        'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                      }`}
-                      onClick={() => addNode(categoryKey, subtypeKey, subtype.name, subtype.color)}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${
-                          subtype.color === 'green' ? 'bg-green-500' :
-                          subtype.color === 'blue' ? 'bg-blue-500' :
-                          subtype.color === 'purple' ? 'bg-purple-500' :
-                          subtype.color === 'orange' ? 'bg-orange-500' :
-                          subtype.color === 'yellow' ? 'bg-yellow-500' :
-                          subtype.color === 'red' ? 'bg-red-500' :
-                          'bg-gray-500'
-                        }`}></div>
-                        <span className="text-sm font-medium">{subtype.name}</span>
-                      </div>
-                      <p className={`text-xs mt-1 ${
-                        subtype.color === 'green' ? 'text-green-600' :
-                        subtype.color === 'blue' ? 'text-blue-600' :
-                        subtype.color === 'purple' ? 'text-purple-600' :
-                        subtype.color === 'orange' ? 'text-orange-600' :
-                        subtype.color === 'yellow' ? 'text-yellow-600' :
-                        subtype.color === 'red' ? 'text-red-600' :
-                        'text-gray-600'
-                      }`}>{subtype.description}</p>
-                    </div>
-                  );
-                })}
+          {Object.entries(nodeTypes).map(([categoryKey, category]) => {
+            const filteredSubtypes = Object.entries(category.subtypes).filter(([k, s]) => {
+              if (!paletteSearch) return true;
+              const q = paletteSearch.toLowerCase();
+              return (s.name || "").toLowerCase().includes(q) || (s.description || "").toLowerCase().includes(q) || k.toLowerCase().includes(q);
+            });
+            if (filteredSubtypes.length === 0) return null;
+            return (
+              <div key={categoryKey} className="mb-4">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2 px-1">{category.name}</h4>
+                <div className="space-y-1.5">
+                  {filteredSubtypes.map(([subtypeKey, subtype]) => {
+                    const palette = NODE_COLOR_PALETTE[subtype.color] || NODE_COLOR_PALETTE.gray;
+                    const IconComp = NODE_ICONS[subtype.icon] || NODE_ICONS.default;
+                    return (
+                      <button
+                        key={subtypeKey}
+                        type="button"
+                        onClick={() => addNode(categoryKey, subtypeKey, subtype.name, subtype.color)}
+                        className="w-full text-left p-2.5 rounded-lg border transition-all hover:shadow-sm hover:scale-[1.01] flex items-start gap-2"
+                        style={{ background: palette.bg, borderColor: palette.border }}
+                        data-testid={`palette-node-${subtypeKey}`}
+                      >
+                        <span className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: palette.iconBg, color: palette.iconColor }}>
+                          <IconComp className="w-4 h-4" />
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="text-xs font-semibold block truncate" style={{ color: palette.textColor }}>{subtype.name}</span>
+                          <span className="text-[10px] block leading-tight mt-0.5 line-clamp-2" style={{ color: palette.textColor, opacity: 0.7 }}>{subtype.description}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         
         {/* Canvas area with React Flow */}
