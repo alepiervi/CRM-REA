@@ -59,6 +59,8 @@ import { MultiSelectFilter } from "./components/MultiSelectFilter";
 import { SpokiAdminConfig } from "./components/spoki/SpokiAdminConfig";
 import { AppointmentsCalendar } from "./components/spoki/AppointmentsCalendar";
 import { LeadConversationsTab } from "./components/spoki/LeadConversationsTab";
+import { WorkflowFoldersSidebar } from "./components/workflow/WorkflowFoldersSidebar";
+import { WorkflowTestModeDialog } from "./components/workflow/WorkflowTestModeDialog";
 
 // Lucide icons
 import { 
@@ -68,6 +70,7 @@ import {
   Phone, 
   Mail, 
   Calendar, 
+  FlaskConical,
   BarChart3, 
   Settings,
   Database,
@@ -14128,7 +14131,25 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [importingTemplate, setImportingTemplate] = useState(false);
   const [selectedUnitForImport, setSelectedUnitForImport] = useState("");
+  const [selectedFolderId, setSelectedFolderId] = useState("__all__"); // "__all__" | null (root) | folder id
+  const [testModeWorkflow, setTestModeWorkflow] = useState(null);
   const { toast } = useToast();
+
+  // Workflows visibili in base alla cartella selezionata
+  const visibleWorkflows = workflows.filter((w) => {
+    if (selectedFolderId === "__all__") return true;
+    if (selectedFolderId === null) return !w.folder_id;
+    return w.folder_id === selectedFolderId;
+  });
+
+  const handleMoveToFolder = async (workflowId, folderId) => {
+    try {
+      await axios.post(`${API}/workflows/${workflowId}/move`, { folder_id: folderId }, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+      fetchWorkflows();
+    } catch (e) {
+      toast({ title: "Errore", description: e?.response?.data?.detail || "Impossibile spostare", variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     fetchWorkflows();
@@ -14327,14 +14348,25 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
 
       {/* Content */}
       {activeView === "list" ? (
-        <WorkflowsList 
-          workflows={workflows}
-          units={units}
-          selectedUnit={selectedUnit}
-          onEdit={handleEditWorkflow}
-          onDelete={handleDeleteWorkflow}
-          onCopy={handleCopyWorkflow}
-        />
+        <div className="flex gap-4">
+          <WorkflowFoldersSidebar
+            selectedFolderId={selectedFolderId}
+            onSelectFolder={setSelectedFolderId}
+            workflows={workflows}
+          />
+          <div className="flex-1 min-w-0">
+            <WorkflowsList
+              workflows={visibleWorkflows}
+              units={units}
+              selectedUnit={selectedUnit}
+              onEdit={handleEditWorkflow}
+              onDelete={handleDeleteWorkflow}
+              onCopy={handleCopyWorkflow}
+              onMoveToFolder={handleMoveToFolder}
+              onTestRun={(w) => setTestModeWorkflow(w)}
+            />
+          </div>
+        </div>
       ) : (
         <WorkflowCanvas 
           workflow={selectedWorkflow}
@@ -14343,6 +14375,15 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
             setSelectedWorkflow(null);
           }}
           onSave={fetchWorkflows}
+        />
+      )}
+
+      {/* Test Mode Dialog */}
+      {testModeWorkflow && (
+        <WorkflowTestModeDialog
+          workflow={testModeWorkflow}
+          open={!!testModeWorkflow}
+          onClose={() => setTestModeWorkflow(null)}
         />
       )}
 
@@ -14454,9 +14495,18 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
 };
 
 // Workflow List Component
-const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCopy }) => {
+const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCopy, onMoveToFolder, onTestRun }) => {
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [workflowToCopy, setWorkflowToCopy] = useState(null);
+  const [folders, setFolders] = useState([]);
+
+  useEffect(() => {
+    axios.get(`${API}/workflow-folders`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+      .then(r => setFolders(r.data || []))
+      .catch(() => setFolders([]));
+  }, []);
+
+  const folderById = (id) => folders.find(f => f.id === id);
 
   const handleCopyClick = (workflow) => {
     setWorkflowToCopy(workflow);
@@ -14498,8 +14548,36 @@ const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCop
                     <Badge variant={workflow.is_active ? "default" : "secondary"}>
                       {workflow.is_active ? "Attivo" : "Inattivo"}
                     </Badge>
+                    {workflow.folder_id && folderById(workflow.folder_id) && (
+                      <Badge variant="outline" style={{ borderColor: folderById(workflow.folder_id).color, color: folderById(workflow.folder_id).color }}>
+                        {folderById(workflow.folder_id).emoji} {folderById(workflow.folder_id).name}
+                      </Badge>
+                    )}
                     
                     <div className="flex items-center space-x-1">
+                      {onMoveToFolder && (
+                        <select
+                          className="text-xs border rounded px-1 py-1 bg-white"
+                          value={workflow.folder_id || ""}
+                          onChange={(e) => onMoveToFolder(workflow.id, e.target.value || null)}
+                          title="Sposta in cartella"
+                          data-testid={`wf-folder-select-${workflow.id}`}
+                        >
+                          <option value="">— Senza cartella</option>
+                          {folders.map(f => <option key={f.id} value={f.id}>{f.emoji} {f.name}</option>)}
+                        </select>
+                      )}
+                      {onTestRun && (
+                        <Button
+                          onClick={() => onTestRun(workflow)}
+                          size="sm"
+                          variant="outline"
+                          title="Esegui flusso di prova"
+                          data-testid={`wf-test-${workflow.id}`}
+                        >
+                          <FlaskConical className="w-4 h-4 text-indigo-600" />
+                        </Button>
+                      )}
                       <Button
                         onClick={() => onEdit(workflow)}
                         size="sm"

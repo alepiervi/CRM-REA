@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Query, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Query, Request, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import FileResponse, StreamingResponse, Response, JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -812,6 +812,7 @@ class Workflow(BaseModel):
     name: str
     description: Optional[str] = None
     unit_id: str
+    folder_id: Optional[str] = None  # NEW: organizzazione per cartelle
     created_by: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
@@ -824,13 +825,45 @@ class Workflow(BaseModel):
     version: Optional[int] = None  # Workflow version
     metadata: Optional[dict] = None  # Additional metadata
 
+
+class WorkflowFolder(BaseModel):
+    """Cartella per organizzare i workflow (es. WhatsApp, Calendari, Nutrimento)."""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    emoji: Optional[str] = None  # es. "📅", "🤖"
+    color: Optional[str] = None  # hex, es. "#3b82f6"
+    parent_id: Optional[str] = None  # supporta annidamento
+    sort_order: int = 0
+    created_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+
+class WorkflowFolderCreate(BaseModel):
+    name: str
+    emoji: Optional[str] = None
+    color: Optional[str] = None
+    parent_id: Optional[str] = None
+    sort_order: int = 0
+
+
+class WorkflowFolderUpdate(BaseModel):
+    name: Optional[str] = None
+    emoji: Optional[str] = None
+    color: Optional[str] = None
+    parent_id: Optional[str] = None
+    sort_order: Optional[int] = None
+
+
 class WorkflowCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    folder_id: Optional[str] = None
 
 class WorkflowUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    folder_id: Optional[str] = None  # supporta spostamento tra cartelle (None = root)
     is_active: Optional[bool] = None
     is_published: Optional[bool] = None
     workflow_data: Optional[dict] = None
@@ -10643,11 +10676,134 @@ async def get_qualification_analytics(
         raise HTTPException(status_code=500, detail="Failed to get qualification analytics")
 
 # Workflow Builder endpoints (FASE 3)
+
+# === FOLDERS (FASE B) ===
+
+@api_router.get("/workflow-folders", response_model=List[WorkflowFolder])
+async def list_workflow_folders(current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    docs = await db.workflow_folders.find({}, {"_id": 0}).sort([("sort_order", 1), ("name", 1)]).to_list(length=500)
+    return docs
+
+
+@api_router.post("/workflow-folders", response_model=WorkflowFolder)
+async def create_workflow_folder(payload: WorkflowFolderCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    folder = WorkflowFolder(**payload.dict(), created_by=current_user.id)
+    await db.workflow_folders.insert_one(folder.dict())
+    return folder
+
+
+@api_router.patch("/workflow-folders/{folder_id}", response_model=WorkflowFolder)
+async def update_workflow_folder(folder_id: str, payload: WorkflowFolderUpdate, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    set_doc = {k: v for k, v in payload.dict(exclude_unset=True).items() if v is not None}
+    set_doc["updated_at"] = datetime.now(timezone.utc)
+    res = await db.workflow_folders.update_one({"id": folder_id}, {"$set": set_doc})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Cartella non trovata")
+    doc = await db.workflow_folders.find_one({"id": folder_id}, {"_id": 0})
+    return doc
+
+
+@api_router.delete("/workflow-folders/{folder_id}")
+async def delete_workflow_folder(folder_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    # I workflow nella cartella tornano in root (folder_id = None)
+    await db.workflows.update_many({"folder_id": folder_id}, {"$set": {"folder_id": None}})
+    # Anche le sotto-cartelle salgono al parent della cartella eliminata
+    deleted = await db.workflow_folders.find_one({"id": folder_id}, {"_id": 0, "parent_id": 1})
+    parent_id = (deleted or {}).get("parent_id")
+    await db.workflow_folders.update_many({"parent_id": folder_id}, {"$set": {"parent_id": parent_id}})
+    await db.workflow_folders.delete_one({"id": folder_id})
+    return {"success": True}
+
+
+@api_router.post("/workflows/{workflow_id}/move")
+async def move_workflow_to_folder(
+    workflow_id: str,
+    folder_id: Optional[str] = Body(None, embed=True),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    if folder_id:
+        exists = await db.workflow_folders.find_one({"id": folder_id})
+        if not exists:
+            raise HTTPException(status_code=404, detail="Cartella non trovata")
+    await db.workflows.update_one(
+        {"id": workflow_id},
+        {"$set": {"folder_id": folder_id, "updated_at": datetime.now(timezone.utc)}},
+    )
+    return {"success": True, "folder_id": folder_id}
+
+
+# === STATISTICHE PER NODO (FASE B) ===
+
+@api_router.get("/workflows/{workflow_id}/node-stats")
+async def get_workflow_node_stats(workflow_id: str, current_user: User = Depends(get_current_user)):
+    """Conta quante esecuzioni sono passate per ogni nodo (legge da workflow_executions_v2.history)."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    pipeline = [
+        {"$match": {"workflow_id": workflow_id}},
+        {"$unwind": "$history"},
+        {"$group": {"_id": "$history.node_id", "count": {"$sum": 1}}},
+    ]
+    counts: Dict[str, int] = {}
+    async for d in db.workflow_executions_v2.aggregate(pipeline):
+        counts[d["_id"]] = d["count"]
+    # Aggiungo anche conteggio per branch (utile per timeout vs reply)
+    branch_pipeline = [
+        {"$match": {"workflow_id": workflow_id}},
+        {"$unwind": "$history"},
+        {"$match": {"history.result.branch": {"$exists": True}}},
+        {"$group": {"_id": {"node": "$history.node_id", "branch": "$history.result.branch"}, "count": {"$sum": 1}}},
+    ]
+    branches: Dict[str, Dict[str, int]] = {}
+    async for d in db.workflow_executions_v2.aggregate(branch_pipeline):
+        nid = d["_id"]["node"]
+        br = d["_id"]["branch"]
+        branches.setdefault(nid, {})[br] = d["count"]
+    total = await db.workflow_executions_v2.count_documents({"workflow_id": workflow_id})
+    waiting = await db.workflow_executions_v2.count_documents({"workflow_id": workflow_id, "status": "waiting"})
+    return {"workflow_id": workflow_id, "total_executions": total, "waiting": waiting, "node_counts": counts, "branch_counts": branches}
+
+
+# === TEST MODE simulator (FASE B) ===
+
+class WorkflowTestRunRequest(BaseModel):
+    fake_lead: Dict[str, Any] = Field(default_factory=lambda: {"id": "test-lead-id", "nome": "Mario", "cognome": "Rossi", "telefono": "+393331234567"})
+    fake_reply: Optional[str] = None  # se valorizzato, simula risposta cliente e fa partire ramo reply
+
+
+@api_router.post("/workflows/{workflow_id}/test-run")
+async def workflow_test_run(workflow_id: str, payload: WorkflowTestRunRequest, current_user: User = Depends(get_current_user)):
+    """Esegue il workflow in modalità di prova: lead fittizio, NON invia messaggi Spoki reali."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    if "workflow_executor_v2" not in globals():
+        raise HTTPException(status_code=503, detail="Executor V2 non disponibile")
+    # Marca contesto come test_mode: il service sa che non deve fare HTTP reali
+    fake_lead = dict(payload.fake_lead)
+    fake_lead["_test_mode"] = True
+    res = await workflow_executor_v2.start(workflow_id, {"lead_id": fake_lead.get("id"), "lead": fake_lead, "test_mode": True})
+    # se in waiting e c'è fake_reply, simula la risposta
+    if payload.fake_reply and res.get("status") == "waiting":
+        await workflow_executor_v2.resume_on_reply(fake_lead["id"], payload.fake_reply)
+        res = {**res, "status": "resumed_with_reply"}
+    return res
+
+
 @api_router.get("/workflows", response_model=List[Workflow])
-async def get_workflows(
-    skip: int = Query(0, ge=0),
+async def get_workflows(    skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     unit_id: Optional[str] = Query(None),
+    folder_id: Optional[str] = Query(None, description="Filtra per cartella; usa 'root' per workflow senza cartella"),
     current_user: User = Depends(get_current_user)
 ):
     """Get workflows with filtering and pagination"""
@@ -10661,8 +10817,12 @@ async def get_workflows(
             query["unit_id"] = unit_id
         elif current_user.role != UserRole.ADMIN:
             query["unit_id"] = current_user.unit_id
-        
-        workflows = await db.workflows.find(query).skip(skip).limit(limit).to_list(length=None)
+        if folder_id == "root":
+            query["$or"] = [{"folder_id": None}, {"folder_id": {"$exists": False}}]
+        elif folder_id:
+            query["folder_id"] = folder_id
+
+        workflows = await db.workflows.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(length=None)
         return workflows
         
     except Exception as e:

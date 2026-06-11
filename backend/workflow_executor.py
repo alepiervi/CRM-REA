@@ -604,6 +604,9 @@ class WorkflowExecutorV2:
                 variables = {k: _render_tpl(str(v), lead) for k, v in (variables or {}).items()}
                 if not variables.get("nome"):
                     variables["nome"] = lead.get("nome") or "Cliente"
+                if ctx.get("test_mode"):
+                    await self._log_spoki_msg(lead, "outbound", template_name=tpl, vars=variables, body=None, status="test_skipped", sender="system")
+                    return {"success": True, "test_mode": True}
                 try:
                     res = await self.spoki.send_template_message(
                         to=lead.get("telefono") or "", template_name=tpl, language=lang, variables=variables,
@@ -616,6 +619,9 @@ class WorkflowExecutorV2:
 
             if sub == "send_spoki_message" and self.spoki:
                 body = _render_tpl(cfg.get("body") or "", lead)
+                if ctx.get("test_mode"):
+                    await self._log_spoki_msg(lead, "outbound", body=body, status="test_skipped", sender="system")
+                    return {"success": True, "test_mode": True}
                 try:
                     res = await self.spoki.send_session_message(to=lead.get("telefono") or "", body=body)
                     await self._log_spoki_msg(lead, "outbound", body=body, status=res.get("status") or "sent", sender="system", spoki_id=res.get("id") or res.get("message_id"))
