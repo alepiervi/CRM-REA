@@ -220,6 +220,179 @@ def get_lead_qualification_template(unit_id: str) -> Dict[str, Any]:
     return workflow
 
 
+def _new_id(prefix: str) -> str:
+    return f"{prefix}_{uuid.uuid4().hex[:8]}"
+
+
+def get_spoki_welcome_template(unit_id: str) -> Dict[str, Any]:
+    """Welcome WhatsApp via Spoki + Wait + Chatbot AI + Appointment."""
+    nodes = [
+        {
+            "id": "t_lead_created",
+            "type": "default",
+            "position": {"x": 350, "y": 30},
+            "data": {"label": "Lead Creato", "nodeType": "triggers", "nodeSubtype": "lead_created", "config": {}},
+            "style": {"background": "#22c55e", "color": "white", "border": "2px solid #16a34a", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "a_welcome",
+            "type": "default",
+            "position": {"x": 350, "y": 120},
+            "data": {"label": "Spoki: Invia Welcome", "nodeType": "actions", "nodeSubtype": "send_spoki_template",
+                     "config": {"template_name": "benvenuto", "language": "it", "variables": '{"nome":"{{lead.nome}}"}'}},
+            "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "d_wait_reply",
+            "type": "default",
+            "position": {"x": 350, "y": 210},
+            "data": {"label": "Attendi Risposta 12h", "nodeType": "delay", "nodeSubtype": "wait_for_reply",
+                     "config": {"timeout_hours": 12}},
+            "style": {"background": "#6366f1", "color": "white", "border": "2px solid #4f46e5", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "a_chatbot",
+            "type": "default",
+            "position": {"x": 200, "y": 320},
+            "data": {"label": "Chatbot AI", "nodeType": "actions", "nodeSubtype": "run_chatbot",
+                     "config": {"auto_send_reply": True}},
+            "style": {"background": "#6366f1", "color": "white", "border": "2px solid #4f46e5", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "a_tag_nonrisponde",
+            "type": "default",
+            "position": {"x": 500, "y": 320},
+            "data": {"label": "Tag: mai_risposto", "nodeType": "actions", "nodeSubtype": "add_tag",
+                     "config": {"tag": "mai_risposto"}},
+            "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "a_appointment",
+            "type": "default",
+            "position": {"x": 200, "y": 420},
+            "data": {"label": "Crea Appuntamento", "nodeType": "actions", "nodeSubtype": "create_appointment",
+                     "config": {"duration_minutes": 30, "auto_propose_slot": True}},
+            "style": {"background": "#8b5cf6", "color": "white", "border": "2px solid #7c3aed", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+    ]
+    edges = [
+        {"id": "e1", "source": "t_lead_created", "target": "a_welcome", "type": "smoothstep", "animated": True},
+        {"id": "e2", "source": "a_welcome", "target": "d_wait_reply", "type": "smoothstep", "animated": True},
+        {"id": "e3", "source": "d_wait_reply", "target": "a_chatbot", "sourceHandle": "reply", "type": "smoothstep", "label": "Risposta", "animated": True},
+        {"id": "e4", "source": "d_wait_reply", "target": "a_tag_nonrisponde", "sourceHandle": "timeout", "type": "smoothstep", "label": "Timeout", "animated": True},
+        {"id": "e5", "source": "a_chatbot", "target": "a_appointment", "sourceHandle": "book", "type": "smoothstep", "label": "Prenota", "animated": True},
+    ]
+    return {
+        "id": str(uuid.uuid4()), "name": "Spoki Welcome + Chatbot + Appuntamento",
+        "description": "Lead → Welcome WhatsApp → Wait 12h → Chatbot AI → Appuntamento (o tag mai_risposto su timeout)",
+        "unit_id": unit_id, "trigger_type": "lead_created",
+        "is_active": False, "is_published": False, "nodes": nodes, "edges": edges,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(), "version": 1,
+        "metadata": {"template": True, "template_name": "spoki_welcome_chatbot_appointment", "template_version": "1.0"},
+    }
+
+
+def get_spoki_reminder_template(unit_id: str) -> Dict[str, Any]:
+    """Reminder appuntamento il giorno prima."""
+    nodes = [
+        {
+            "id": "t_lead",
+            "type": "default", "position": {"x": 300, "y": 30},
+            "data": {"label": "Lead Creato", "nodeType": "triggers", "nodeSubtype": "lead_created", "config": {}},
+            "style": {"background": "#22c55e", "color": "white", "border": "2px solid #16a34a", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "d_wait_24h",
+            "type": "default", "position": {"x": 300, "y": 130},
+            "data": {"label": "Wait 24h", "nodeType": "delay", "nodeSubtype": "wait",
+                     "config": {"duration_value": 24, "duration_unit": "hours"}},
+            "style": {"background": "#9ca3af", "color": "white", "border": "2px solid #6b7280", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "a_reminder",
+            "type": "default", "position": {"x": 300, "y": 230},
+            "data": {"label": "Reminder WhatsApp", "nodeType": "actions", "nodeSubtype": "send_spoki_message",
+                     "config": {"body": "Ciao {{lead.nome}}! Ti ricordiamo il tuo appuntamento di domani."}},
+            "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+    ]
+    edges = [
+        {"id": "e1", "source": "t_lead", "target": "d_wait_24h", "type": "smoothstep", "animated": True},
+        {"id": "e2", "source": "d_wait_24h", "target": "a_reminder", "type": "smoothstep", "animated": True},
+    ]
+    return {
+        "id": str(uuid.uuid4()), "name": "Reminder Appuntamento 24h",
+        "description": "Manda reminder WhatsApp dopo 24h dalla creazione lead",
+        "unit_id": unit_id, "trigger_type": "lead_created",
+        "is_active": False, "is_published": False, "nodes": nodes, "edges": edges,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(), "version": 1,
+        "metadata": {"template": True, "template_name": "spoki_reminder_24h", "template_version": "1.0"},
+    }
+
+
+def get_lead_routing_template(unit_id: str) -> Dict[str, Any]:
+    """Routing multi-sorgente: tagga il lead in base al campo sorgente."""
+    nodes = [
+        {
+            "id": "t_lead", "type": "default", "position": {"x": 300, "y": 30},
+            "data": {"label": "Lead Creato", "nodeType": "triggers", "nodeSubtype": "lead_created", "config": {}},
+            "style": {"background": "#22c55e", "color": "white", "border": "2px solid #16a34a", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "c_match", "type": "default", "position": {"x": 300, "y": 130},
+            "data": {"label": "Switch Sorgente", "nodeType": "conditions", "nodeSubtype": "match_value",
+                     "config": {"field": "trigger.lead.source",
+                                "cases": '[{"value":"sito","label":"sito_web"},{"value":"meta","label":"facebook"},{"value":"edison","label":"edison"}]',
+                                "default_label": "default"}},
+            "style": {"background": "#d946ef", "color": "white", "border": "2px solid #c026d3", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "a_tag_sito", "type": "default", "position": {"x": 80, "y": 250},
+            "data": {"label": "Tag: sorgente_sito", "nodeType": "actions", "nodeSubtype": "add_tag",
+                     "config": {"tag": "sorgente_sito_web"}},
+            "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "a_tag_meta", "type": "default", "position": {"x": 310, "y": 250},
+            "data": {"label": "Tag: facebook", "nodeType": "actions", "nodeSubtype": "add_tag",
+                     "config": {"tag": "sorgente_facebook"}},
+            "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+        {
+            "id": "a_tag_edison", "type": "default", "position": {"x": 540, "y": 250},
+            "data": {"label": "Tag: edison", "nodeType": "actions", "nodeSubtype": "add_tag",
+                     "config": {"tag": "sorgente_edison"}},
+            "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40},
+        },
+    ]
+    edges = [
+        {"id": "e1", "source": "t_lead", "target": "c_match", "type": "smoothstep", "animated": True},
+        {"id": "e2", "source": "c_match", "target": "a_tag_sito", "sourceHandle": "sito_web", "type": "smoothstep", "label": "Sito", "animated": True},
+        {"id": "e3", "source": "c_match", "target": "a_tag_meta", "sourceHandle": "facebook", "type": "smoothstep", "label": "Meta", "animated": True},
+        {"id": "e4", "source": "c_match", "target": "a_tag_edison", "sourceHandle": "edison", "type": "smoothstep", "label": "Edison", "animated": True},
+    ]
+    return {
+        "id": str(uuid.uuid4()), "name": "Lead Routing per Sorgente",
+        "description": "Smista i lead in entrata e aggiunge tag in base a trigger.lead.source",
+        "unit_id": unit_id, "trigger_type": "lead_created",
+        "is_active": False, "is_published": False, "nodes": nodes, "edges": edges,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(), "version": 1,
+        "metadata": {"template": True, "template_name": "lead_routing_source", "template_version": "1.0"},
+    }
+
+
+# Mappa template_id → (function, metadata)
+TEMPLATE_REGISTRY = {
+    "lead_qualification_ai": None,  # gestito dalla funzione separata sopra
+    "spoki_welcome_chatbot_appointment": get_spoki_welcome_template,
+    "spoki_reminder_24h": get_spoki_reminder_template,
+    "lead_routing_source": get_lead_routing_template,
+}
+
+
 def get_available_templates() -> list:
     """
     Returns list of available workflow templates
@@ -234,12 +407,58 @@ def get_available_templates() -> list:
             "description": "Workflow completo per qualificare lead con AI Assistant via WhatsApp",
             "trigger": "lead_created",
             "nodes_count": 6,
+            "icon": "bot",
+            "color": "indigo",
             "features": [
                 "Auto-assegnazione a Unit",
                 "Messaggio WhatsApp benvenuto",
                 "Verifica risposta positiva",
                 "Conversazione AI Assistant",
-                "Aggiornamento automatico campi"
-            ]
-        }
+                "Aggiornamento automatico campi",
+            ],
+        },
+        {
+            "id": "spoki_welcome_chatbot_appointment",
+            "name": "Spoki Welcome + Chatbot + Appuntamento",
+            "description": "Lead → Welcome WhatsApp → Wait 12h → Chatbot AI → Appuntamento",
+            "trigger": "lead_created",
+            "nodes_count": 6,
+            "icon": "message-circle",
+            "color": "green",
+            "features": [
+                "Template welcome Spoki con {{nome}}",
+                "Attesa risposta 12h con timeout",
+                "Chatbot OpenAI gpt-4o-mini",
+                "Creazione appuntamento automatica su slot libero",
+                "Tag 'mai_risposto' su timeout",
+            ],
+        },
+        {
+            "id": "spoki_reminder_24h",
+            "name": "Reminder 24h",
+            "description": "Manda un reminder WhatsApp dopo 24h dalla creazione lead",
+            "trigger": "lead_created",
+            "nodes_count": 3,
+            "icon": "clock",
+            "color": "amber",
+            "features": [
+                "Wait 24h",
+                "Reminder testuale Spoki",
+                "Setup in 30 secondi",
+            ],
+        },
+        {
+            "id": "lead_routing_source",
+            "name": "Lead Routing per Sorgente",
+            "description": "Smista lead in entrata e aggiunge tag in base alla sorgente (sito/meta/edison)",
+            "trigger": "lead_created",
+            "nodes_count": 5,
+            "icon": "split",
+            "color": "fuchsia",
+            "features": [
+                "Switch multi-ramo su source",
+                "Tag automatico per sorgente",
+                "Estendibile con nuove sorgenti",
+            ],
+        },
     ]

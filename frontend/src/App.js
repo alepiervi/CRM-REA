@@ -14468,12 +14468,19 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
 
               {/* Templates List */}
               <div className="space-y-3">
-                {templates.map((template) => (
-                  <div key={template.id} className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
+                {templates.map((template) => {
+                  const palette = (typeof NODE_COLOR_PALETTE !== "undefined" ? NODE_COLOR_PALETTE : {})[template.color] || { bg: "#f8fafc", border: "#cbd5e1", iconBg: "#64748b", iconColor: "#fff", textColor: "#1e293b" };
+                  const Icon = (typeof NODE_ICONS !== "undefined" ? NODE_ICONS : {})[template.icon] || Workflow;
+                  return (
+                  <div key={template.id} className="border rounded-lg p-4 hover:shadow-md transition-all" style={{ borderColor: palette.border }} data-testid={`tpl-card-${template.id}`}>
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-lg text-slate-900">{template.name}</h3>
-                        <p className="text-sm text-slate-600 mt-1">{template.description}</p>
+                      <div className="flex items-start gap-3 flex-1">
+                        <span className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: palette.iconBg, color: palette.iconColor }}>
+                          <Icon className="w-5 h-5" />
+                        </span>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-lg" style={{ color: palette.textColor }}>{template.name}</h3>
+                          <p className="text-sm text-slate-600 mt-1">{template.description}</p>
                         
                         {/* Features */}
                         <div className="mt-3 space-y-1">
@@ -14490,8 +14497,9 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
 
                         {/* Metadata */}
                         <div className="mt-3 flex items-center space-x-4 text-xs text-slate-500">
-                          <span>🎯 Trigger: {template.trigger}</span>
-                          <span>📦 {template.nodes_count} nodi</span>
+                          <span>Trigger: {template.trigger}</span>
+                          <Badge variant="outline" className="text-xs">{template.nodes_count} nodi</Badge>
+                        </div>
                         </div>
                       </div>
 
@@ -14499,12 +14507,14 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
                         onClick={() => importTemplate(template.id)}
                         disabled={!selectedUnitForImport || importingTemplate}
                         className="ml-4"
+                        data-testid={`tpl-import-${template.id}`}
                       >
                         {importingTemplate ? "Importando..." : "Importa"}
                       </Button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
 
                 {templates.length === 0 && (
                   <div className="text-center py-8 text-slate-500">

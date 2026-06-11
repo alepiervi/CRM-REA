@@ -23320,7 +23320,7 @@ async def import_workflow_template(
     current_user: User = Depends(get_current_user)
 ):
     """Import a workflow template for a specific unit"""
-    from workflow_templates import get_lead_qualification_template
+    from workflow_templates import get_lead_qualification_template, TEMPLATE_REGISTRY
     
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Only admin can import templates")
@@ -23333,6 +23333,8 @@ async def import_workflow_template(
     # Get template
     if template_id == "lead_qualification_ai":
         workflow = get_lead_qualification_template(unit_id)
+    elif template_id in TEMPLATE_REGISTRY and TEMPLATE_REGISTRY[template_id] is not None:
+        workflow = TEMPLATE_REGISTRY[template_id](unit_id)
     else:
         raise HTTPException(status_code=404, detail="Template not found")
     
