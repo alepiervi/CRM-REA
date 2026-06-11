@@ -61,6 +61,7 @@ import { AppointmentsCalendar } from "./components/spoki/AppointmentsCalendar";
 import { LeadConversationsTab } from "./components/spoki/LeadConversationsTab";
 import { WorkflowFoldersSidebar } from "./components/workflow/WorkflowFoldersSidebar";
 import { WorkflowTestModeDialog } from "./components/workflow/WorkflowTestModeDialog";
+import { TagsManager } from "./components/tags/TagsManager";
 
 // Lucide icons
 import { 
@@ -2026,6 +2027,7 @@ const Dashboard = () => {
         { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
         { id: "spoki-config", label: "WhatsApp Spoki", icon: MessageCircle },
         { id: "calendar", label: "Calendario Appuntamenti", icon: Calendar },
+        { id: "tags", label: "Tag Lead", icon: Tag },
         { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "call-center", label: "Call Center", icon: PhoneCall },
         { id: "commesse", label: "Commesse", icon: Building },
@@ -2122,6 +2124,8 @@ const Dashboard = () => {
           return user.role === "admin" ? <SpokiAdminConfig units={units} /> : <div>Non autorizzato</div>;
         case "calendar":
           return (user.role === "admin" || user.role === "super_referente") ? <AppointmentsCalendar units={units} /> : <div className="p-8 text-center text-slate-600">Non autorizzato</div>;
+        case "tags":
+          return user.role === "admin" ? <TagsManager /> : <div className="p-8 text-center text-slate-600">Non autorizzato</div>;
         case "lead-qualification":
           return (user.role === "admin" || user.role === "referente") ? <LeadQualificationManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "call-center":

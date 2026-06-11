@@ -855,6 +855,24 @@ class WorkflowFolderUpdate(BaseModel):
     sort_order: Optional[int] = None
 
 
+class LeadTag(BaseModel):
+    """Tag riusabile per leads (es. 'sorgente_sito_web', 'cliente_vip')."""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str  # univoco (lowercase, no spazi)
+    label: Optional[str] = None  # nome visualizzato
+    color: Optional[str] = "#64748b"
+    description: Optional[str] = None
+    created_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class LeadTagCreate(BaseModel):
+    name: str
+    label: Optional[str] = None
+    color: Optional[str] = "#64748b"
+    description: Optional[str] = None
+
+
 class WorkflowCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -10742,6 +10760,65 @@ async def move_workflow_to_folder(
     return {"success": True, "folder_id": folder_id}
 
 
+# === LEAD TAGS (FASE C) ===
+
+@api_router.get("/lead-tags", response_model=List[LeadTag])
+async def list_lead_tags(current_user: User = Depends(get_current_user)):
+    docs = await db.lead_tags.find({}, {"_id": 0}).sort([("name", 1)]).to_list(length=500)
+    return docs
+
+
+@api_router.post("/lead-tags", response_model=LeadTag)
+async def create_lead_tag(payload: LeadTagCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    name = payload.name.strip().lower().replace(" ", "_")
+    existing = await db.lead_tags.find_one({"name": name})
+    if existing:
+        raise HTTPException(status_code=409, detail="Tag già esistente")
+    tag = LeadTag(name=name, label=payload.label or payload.name, color=payload.color, description=payload.description, created_by=current_user.id)
+    await db.lead_tags.insert_one(tag.dict())
+    return tag
+
+
+@api_router.delete("/lead-tags/{tag_id}")
+async def delete_lead_tag(tag_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    tag = await db.lead_tags.find_one({"id": tag_id})
+    if not tag:
+        raise HTTPException(status_code=404, detail="Tag non trovato")
+    # Rimuovi tag da tutti i lead
+    await db.leads.update_many({"tags": tag["name"]}, {"$pull": {"tags": tag["name"]}})
+    await db.lead_tags.delete_one({"id": tag_id})
+    return {"success": True}
+
+
+@api_router.get("/leads/{lead_id}/tags")
+async def get_lead_tags(lead_id: str, current_user: User = Depends(get_current_user)):
+    lead = await db.leads.find_one({"id": lead_id}, {"_id": 0, "tags": 1})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead non trovato")
+    return {"tags": lead.get("tags") or []}
+
+
+@api_router.post("/leads/{lead_id}/tags")
+async def add_lead_tag(lead_id: str, payload: Dict[str, Any] = Body(...), current_user: User = Depends(get_current_user)):
+    tag_name = (payload.get("tag") or "").strip().lower().replace(" ", "_")
+    if not tag_name:
+        raise HTTPException(status_code=400, detail="Tag richiesto")
+    res = await db.leads.update_one({"id": lead_id}, {"$addToSet": {"tags": tag_name}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Lead non trovato")
+    return {"success": True, "tag": tag_name}
+
+
+@api_router.delete("/leads/{lead_id}/tags/{tag_name}")
+async def remove_lead_tag_endpoint(lead_id: str, tag_name: str, current_user: User = Depends(get_current_user)):
+    await db.leads.update_one({"id": lead_id}, {"$pull": {"tags": tag_name}})
+    return {"success": True}
+
+
 # === STATISTICHE PER NODO (FASE B) ===
 
 @api_router.get("/workflows/{workflow_id}/node-stats")
@@ -11518,6 +11595,33 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
                         {"name": "duration_minutes", "type": "number", "label": "Durata (minuti)", "placeholder": "30", "required": False},
                         {"name": "auto_propose_slot", "type": "boolean", "label": "Auto-propone prossimo slot libero", "default": True}
                     ]
+                },
+                "add_tag": {
+                    "name": "Aggiungi Tag",
+                    "description": "Aggiunge un tag al lead (per segmentazione/sorgente)",
+                    "icon": "tag",
+                    "color": "emerald",
+                    "fields": [
+                        {"name": "tag", "type": "text", "label": "Nome tag (es. 'sorgente_sito_web')", "required": True}
+                    ]
+                },
+                "remove_tag": {
+                    "name": "Rimuovi Tag",
+                    "description": "Rimuove un tag dal lead",
+                    "icon": "tag",
+                    "color": "rose",
+                    "fields": [
+                        {"name": "tag", "type": "text", "label": "Nome tag da rimuovere", "required": True}
+                    ]
+                },
+                "go_to": {
+                    "name": "Vai a Nodo",
+                    "description": "Salta a un altro nodo nello stesso workflow (loop)",
+                    "icon": "corner-down-right",
+                    "color": "slate",
+                    "fields": [
+                        {"name": "target_node_id", "type": "text", "label": "ID nodo destinazione", "required": True}
+                    ]
                 }
             }
         },
@@ -11543,6 +11647,17 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
                     "description": "Filter contacts based on criteria",
                     "icon": "filter",
                     "color": "blue"
+                },
+                "match_value": {
+                    "name": "Switch Multi-Ramo",
+                    "description": "Valuta un campo e diramo su più valori (es. sorgente lead: Sito/Meta/Edison/None)",
+                    "icon": "split",
+                    "color": "fuchsia",
+                    "fields": [
+                        {"name": "field", "type": "text", "label": "Campo (es. trigger.lead.source)", "required": True},
+                        {"name": "cases", "type": "textarea", "label": "Casi JSON: [{\"value\":\"sito\",\"label\":\"sito_web\"}, ...]", "required": True},
+                        {"name": "default_label", "type": "text", "label": "Branch di default", "placeholder": "default", "required": False}
+                    ]
                 },
                 "working_hours": {
                     "name": "Orario Lavorativo",

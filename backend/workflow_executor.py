@@ -533,7 +533,11 @@ class WorkflowExecutorV2:
                 }})
                 return {"success": True, "status": "waiting", "execution_id": ex["id"]}
             branch = res.get("branch")
-            next_id = self._next_node(node["id"], edges, branch=branch)
+            goto = res.get("goto_node_id")
+            if goto:
+                next_id = goto
+            else:
+                next_id = self._next_node(node["id"], edges, branch=branch)
             ex["current_node_id"] = next_id
             await self.db.workflow_executions_v2.update_one({"id": ex["id"]}, {"$set": {
                 "current_node_id": next_id, "context": ex["context"],
@@ -589,6 +593,20 @@ class WorkflowExecutorV2:
                 actual = _resolve_path(ctx, field)
                 result = _compare(actual, op, value)
                 return {"success": True, "branch": "yes" if result else "no"}
+            if sub == "match_value":
+                # Multi-branch: cfg.field, cfg.cases:[{value,label}], cfg.default_label
+                field = cfg.get("field") or ""
+                actual = _resolve_path(ctx, field)
+                cases_raw = cfg.get("cases")
+                try:
+                    import json as _json
+                    cases = _json.loads(cases_raw) if isinstance(cases_raw, str) else (cases_raw or [])
+                except Exception:
+                    cases = []
+                for c in cases:
+                    if str(actual or "").lower() == str(c.get("value", "")).lower():
+                        return {"success": True, "branch": c.get("label") or str(c.get("value"))}
+                return {"success": True, "branch": cfg.get("default_label") or "default"}
             return {"success": True}
 
         if ntype == "actions":
@@ -699,6 +717,12 @@ class WorkflowExecutorV2:
                 tag = cfg.get("tag")
                 if tag and lead.get("id"):
                     await self.db.leads.update_one({"id": lead["id"]}, {"$pull": {"tags": tag}})
+                return {"success": True}
+
+            if sub == "go_to":
+                target = cfg.get("target_node_id")
+                if target:
+                    return {"success": True, "goto_node_id": target}
                 return {"success": True}
 
             if sub == "set_status":
