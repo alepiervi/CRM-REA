@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Checkbox } from "./ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useToast } from "../hooks/use-toast";
-import { Trash2, Edit2, Plus, Database, LayoutGrid, Flag } from "lucide-react";
+import { Trash2, Edit2, Plus, Database, LayoutGrid, Flag, Copy } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -100,6 +100,14 @@ export default function ClienteCustomFieldsManager() {
   const [editingStatusId, setEditingStatusId] = useState(null);
   const [statusForm, setStatusForm] = useState(emptyStatusForm);
   const [statusBreakdown, setStatusBreakdown] = useState(null);
+
+  // Duplica configurazione dialog state
+  const [dupDialogOpen, setDupDialogOpen] = useState(false);
+  const [dupForm, setDupForm] = useState({ source_commessa_id: "", source_tipologia_id: "", target_commessa_id: "", target_tipologia_id: "", mode: "merge" });
+  const [dupSourceTipologie, setDupSourceTipologie] = useState([]);
+  const [dupTargetTipologie, setDupTargetTipologie] = useState([]);
+  const [dupSourceCounts, setDupSourceCounts] = useState(null);
+  const [duplicating, setDuplicating] = useState(false);
   useEffect(() => {
     (async () => {
       try {
@@ -441,6 +449,69 @@ export default function ClienteCustomFieldsManager() {
     }
   };
 
+  // ---------- DUPLICA CONFIGURAZIONE ----------
+  useEffect(() => {
+    if (dupForm.source_commessa_id) {
+      fetchTipologieForCommessa(dupForm.source_commessa_id).then(setDupSourceTipologie);
+    } else setDupSourceTipologie([]);
+  }, [dupForm.source_commessa_id]);
+
+  useEffect(() => {
+    if (dupForm.target_commessa_id) {
+      fetchTipologieForCommessa(dupForm.target_commessa_id).then(setDupTargetTipologie);
+    } else setDupTargetTipologie([]);
+  }, [dupForm.target_commessa_id]);
+
+  // Anteprima conteggi sorgente
+  useEffect(() => {
+    const { source_commessa_id, source_tipologia_id } = dupForm;
+    if (!source_commessa_id || !source_tipologia_id) { setDupSourceCounts(null); return; }
+    (async () => {
+      try {
+        const params = { commessa_id: source_commessa_id, tipologia_contratto_id: source_tipologia_id, active_only: false };
+        const [fRes, sRes, stRes] = await Promise.all([
+          axios.get(`${API}/cliente-custom-fields`, { params, headers: authHeaders() }),
+          axios.get(`${API}/cliente-custom-sections`, { params, headers: authHeaders() }),
+          axios.get(`${API}/cliente-custom-statuses`, { params, headers: authHeaders() }),
+        ]);
+        setDupSourceCounts({ fields: fRes.data?.length || 0, sections: sRes.data?.length || 0, statuses: stRes.data?.length || 0 });
+      } catch { setDupSourceCounts(null); }
+    })();
+  }, [dupForm.source_commessa_id, dupForm.source_tipologia_id]);
+
+  const openDuplicateDialog = () => {
+    setDupForm({ source_commessa_id: filterCommessa || "", source_tipologia_id: filterTipologia || "", target_commessa_id: "", target_tipologia_id: "", mode: "merge" });
+    setDupDialogOpen(true);
+  };
+
+  const handleDuplicate = async () => {
+    const { source_commessa_id, source_tipologia_id, target_commessa_id, target_tipologia_id, mode } = dupForm;
+    if (!source_commessa_id || !source_tipologia_id || !target_commessa_id || !target_tipologia_id) {
+      toast({ title: "Campi obbligatori", description: "Seleziona commessa e tipologia sia per la sorgente che per la destinazione", variant: "destructive" });
+      return;
+    }
+    if (source_commessa_id === target_commessa_id && source_tipologia_id === target_tipologia_id) {
+      toast({ title: "Errore", description: "Sorgente e destinazione coincidono", variant: "destructive" });
+      return;
+    }
+    if (mode === "overwrite" && !window.confirm("Modalità SOVRASCRIVI: la configurazione esistente nella destinazione verrà ELIMINATA e sostituita. Continuare?")) return;
+    setDuplicating(true);
+    try {
+      const res = await axios.post(`${API}/cliente-custom-config/duplicate`, dupForm, { headers: authHeaders() });
+      const d = res.data;
+      toast({
+        title: "Configurazione duplicata ✅",
+        description: `Copiati: ${d.fields_copied} campi, ${d.sections_copied} sezioni, ${d.statuses_copied} status` +
+          (d.fields_skipped + d.sections_skipped + d.statuses_skipped > 0
+            ? ` — Saltati (già esistenti): ${d.fields_skipped} campi, ${d.sections_skipped} sezioni, ${d.statuses_skipped} status` : ""),
+      });
+      setDupDialogOpen(false);
+      loadData();
+    } catch (err) {
+      toast({ title: "Errore", description: err?.response?.data?.detail || "Duplicazione fallita", variant: "destructive" });
+    } finally { setDuplicating(false); }
+  };
+
   // ---------- HELPERS ----------
   const getCommessaName = (id) => commesse.find((c) => c.id === id)?.nome || id;
   const getTipologiaName = (id) => tipologie.find((t) => t.value === id)?.label || id;
@@ -468,8 +539,11 @@ export default function ClienteCustomFieldsManager() {
 
       {/* Filters */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Filtri</CardTitle>
+          <Button variant="outline" onClick={openDuplicateDialog} data-testid="duplicate-config-btn">
+            <Copy className="w-4 h-4 mr-2" /> Duplica configurazione
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -876,6 +950,86 @@ export default function ClienteCustomFieldsManager() {
             <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>Annulla</Button>
             <Button onClick={handleSaveStatus} className="bg-emerald-600 hover:bg-emerald-700" data-testid="save-status-btn">
               {editingStatusId ? "Salva modifiche" : "Crea status"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Duplica Configurazione */}
+      <Dialog open={dupDialogOpen} onOpenChange={setDupDialogOpen}>
+        <DialogContent className="max-w-2xl" data-testid="duplicate-config-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Copy className="w-5 h-5 text-blue-600" /> Duplica configurazione</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5">
+            <p className="text-sm text-slate-600">
+              Copia <strong>campi, sezioni e status</strong> da una combinazione Commessa + Tipologia a un&apos;altra in un click.
+            </p>
+            <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
+              <div className="font-semibold text-sm text-slate-700">📤 Sorgente (da)</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Commessa</Label>
+                  <select className="w-full p-2 border border-gray-300 rounded-lg bg-white" value={dupForm.source_commessa_id}
+                    onChange={(e) => setDupForm({ ...dupForm, source_commessa_id: e.target.value, source_tipologia_id: "" })} data-testid="dup-source-commessa">
+                    <option value="">Seleziona commessa...</option>
+                    {commesse.map((c) => (<option key={c.id} value={c.id}>{c.nome}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Tipologia Contratto</Label>
+                  <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-100" value={dupForm.source_tipologia_id} disabled={!dupForm.source_commessa_id}
+                    onChange={(e) => setDupForm({ ...dupForm, source_tipologia_id: e.target.value })} data-testid="dup-source-tipologia">
+                    <option value="">Seleziona tipologia...</option>
+                    {dupSourceTipologie.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
+                  </select>
+                </div>
+              </div>
+              {dupSourceCounts && (
+                <div className="text-xs text-slate-600" data-testid="dup-source-counts">
+                  Contenuto: <Badge variant="outline">{dupSourceCounts.fields} campi</Badge>{" "}
+                  <Badge variant="outline">{dupSourceCounts.sections} sezioni</Badge>{" "}
+                  <Badge variant="outline">{dupSourceCounts.statuses} status</Badge>
+                  {dupSourceCounts.fields + dupSourceCounts.sections + dupSourceCounts.statuses === 0 && (
+                    <span className="text-red-600 ml-2">⚠ configurazione vuota</span>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="border rounded-lg p-4 bg-blue-50/50 space-y-3">
+              <div className="font-semibold text-sm text-slate-700">📥 Destinazione (a)</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Commessa</Label>
+                  <select className="w-full p-2 border border-gray-300 rounded-lg bg-white" value={dupForm.target_commessa_id}
+                    onChange={(e) => setDupForm({ ...dupForm, target_commessa_id: e.target.value, target_tipologia_id: "" })} data-testid="dup-target-commessa">
+                    <option value="">Seleziona commessa...</option>
+                    {commesse.map((c) => (<option key={c.id} value={c.id}>{c.nome}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Tipologia Contratto</Label>
+                  <select className="w-full p-2 border border-gray-300 rounded-lg bg-white disabled:bg-slate-100" value={dupForm.target_tipologia_id} disabled={!dupForm.target_commessa_id}
+                    onChange={(e) => setDupForm({ ...dupForm, target_tipologia_id: e.target.value })} data-testid="dup-target-tipologia">
+                    <option value="">Seleziona tipologia...</option>
+                    {dupTargetTipologie.map((t) => (<option key={t.value} value={t.value}>{t.label || "(senza nome)"}</option>))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div>
+              <Label>Modalità</Label>
+              <select className="w-full p-2 border border-gray-300 rounded-lg bg-white" value={dupForm.mode}
+                onChange={(e) => setDupForm({ ...dupForm, mode: e.target.value })} data-testid="dup-mode">
+                <option value="merge">Aggiungi solo i mancanti (consigliato) — gli elementi già presenti vengono saltati</option>
+                <option value="overwrite">Sovrascrivi — elimina la configurazione esistente nella destinazione e ricopia tutto</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDupDialogOpen(false)}>Annulla</Button>
+            <Button onClick={handleDuplicate} disabled={duplicating} className="bg-blue-600 hover:bg-blue-700" data-testid="dup-confirm-btn">
+              {duplicating ? "Duplicazione..." : "Duplica configurazione"}
             </Button>
           </DialogFooter>
         </DialogContent>

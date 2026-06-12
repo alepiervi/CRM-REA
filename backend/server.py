@@ -6823,6 +6823,92 @@ async def delete_cliente_custom_section(
     return {"message": "Cliente custom section deleted, fields moved to default", "id": section_id}
 
 
+@api_router.post("/cliente-custom-config/duplicate")
+async def duplicate_cliente_custom_config(
+    payload: Dict[str, Any] = Body(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Duplica l'intera configurazione cliente (sezioni + campi + status) da una
+    combinazione (commessa, tipologia) a un'altra.
+
+    Body: {source_commessa_id, source_tipologia_id, target_commessa_id, target_tipologia_id,
+           mode: "merge" (default, salta gli esistenti) | "overwrite" (cancella e ricopia)}
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono duplicare la configurazione")
+
+    src_c = payload.get("source_commessa_id")
+    src_t = payload.get("source_tipologia_id")
+    tgt_c = payload.get("target_commessa_id")
+    tgt_t = payload.get("target_tipologia_id")
+    mode = payload.get("mode") or "merge"
+    if not all([src_c, src_t, tgt_c, tgt_t]):
+        raise HTTPException(status_code=400, detail="Sorgente e destinazione (commessa + tipologia) sono obbligatorie")
+    if (src_c, src_t) == (tgt_c, tgt_t):
+        raise HTTPException(status_code=400, detail="Sorgente e destinazione coincidono")
+    if mode not in ("merge", "overwrite"):
+        raise HTTPException(status_code=400, detail="mode deve essere 'merge' o 'overwrite'")
+
+    src_q = {"commessa_id": src_c, "tipologia_contratto_id": src_t}
+    tgt_q = {"commessa_id": tgt_c, "tipologia_contratto_id": tgt_t}
+
+    src_sections = await db.cliente_custom_sections.find(src_q, {"_id": 0}).sort("order", 1).to_list(length=None)
+    src_fields = await db.cliente_custom_fields.find(src_q, {"_id": 0}).sort("order", 1).to_list(length=None)
+    src_statuses = await db.cliente_custom_statuses.find(src_q, {"_id": 0}).sort("order", 1).to_list(length=None)
+    if not (src_sections or src_fields or src_statuses):
+        raise HTTPException(status_code=404, detail="La configurazione sorgente è vuota: niente da duplicare")
+
+    if mode == "overwrite":
+        await db.cliente_custom_sections.delete_many(tgt_q)
+        await db.cliente_custom_fields.delete_many(tgt_q)
+        await db.cliente_custom_statuses.delete_many(tgt_q)
+
+    existing_sections = {s["name"]: s["id"] async for s in db.cliente_custom_sections.find(tgt_q, {"_id": 0, "name": 1, "id": 1})}
+    existing_field_names = {f["name"] async for f in db.cliente_custom_fields.find(tgt_q, {"_id": 0, "name": 1})}
+    existing_status_values = {s["value"] async for s in db.cliente_custom_statuses.find(tgt_q, {"_id": 0, "value": 1})}
+
+    now = datetime.now(timezone.utc)
+    counts = {"sections_copied": 0, "fields_copied": 0, "statuses_copied": 0,
+              "sections_skipped": 0, "fields_skipped": 0, "statuses_skipped": 0}
+
+    # 1) Sezioni (mappa old_id -> new_id per rimappare i campi)
+    section_id_map = {}
+    for s in src_sections:
+        if s["name"] in existing_sections:
+            section_id_map[s["id"]] = existing_sections[s["name"]]
+            counts["sections_skipped"] += 1
+            continue
+        new_id = str(uuid.uuid4())
+        section_id_map[s["id"]] = new_id
+        doc = {**s, "id": new_id, "commessa_id": tgt_c, "tipologia_contratto_id": tgt_t,
+               "created_at": now, "updated_at": now, "created_by": current_user.id}
+        await db.cliente_custom_sections.insert_one(doc)
+        counts["sections_copied"] += 1
+
+    # 2) Campi (section_id rimappato)
+    for f in src_fields:
+        if f["name"] in existing_field_names:
+            counts["fields_skipped"] += 1
+            continue
+        doc = {**f, "id": str(uuid.uuid4()), "commessa_id": tgt_c, "tipologia_contratto_id": tgt_t,
+               "section_id": section_id_map.get(f.get("section_id")) if f.get("section_id") else None,
+               "created_at": now, "updated_at": now, "created_by": current_user.id}
+        await db.cliente_custom_fields.insert_one(doc)
+        counts["fields_copied"] += 1
+
+    # 3) Status
+    for st in src_statuses:
+        if st.get("value") in existing_status_values:
+            counts["statuses_skipped"] += 1
+            continue
+        doc = {**st, "id": str(uuid.uuid4()), "commessa_id": tgt_c, "tipologia_contratto_id": tgt_t,
+               "created_at": now, "updated_at": now, "created_by": current_user.id}
+        await db.cliente_custom_statuses.insert_one(doc)
+        counts["statuses_copied"] += 1
+
+    return {"success": True, "mode": mode, **counts}
+
+
 # ============================================================
 # CLIENTE CUSTOM STATUSES - CRUD (Fase 3)
 # ============================================================

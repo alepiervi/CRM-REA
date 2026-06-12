@@ -81,6 +81,13 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 - Sidebar (App.js, componente Dashboard): badge rosso con contatore sulla voce "Conversazioni AI" (desktop data-testid ai-conv-unhandled-badge + mobile), polling 30s, solo admin/super_referente
 - Il nodo workflow run_chatbot azzera i needs_attention del lead dopo aver risposto
 
+## Duplica configurazione Campi Custom Cliente (giugno 2026)
+- POST /api/cliente-custom-config/duplicate (admin): copia sezioni + campi + status da (commessa, tipologia) sorgente a destinazione
+- Modalità: "merge" (default, salta elementi già esistenti per nome/value) | "overwrite" (elimina config destinazione e ricopia)
+- section_id dei campi rimappato sulle nuove sezioni (o su sezioni esistenti omonime in merge)
+- UI: bottone "Duplica configurazione" (data-testid duplicate-config-btn) nella card Filtri di ClienteCustomFieldsManager → dialog con sorgente (pre-compilata dai filtri), anteprima conteggi, destinazione, selettore modalità, conferma con riepilogo copiati/saltati
+- Testato E2E: copia, doppia esecuzione merge (tutto skipped), overwrite, validazione sorgente==destinazione, UI con anteprima
+
 ## Bloccanti esterni
 - **Spoki API key** (`228eb...ec2a`): respinta dai server Spoki su entrambi i domini ufficiali con header documentato ("Authentication credentials were not provided"). La chiave NON è attiva lato Spoki: l'utente deve verificare in Spoki → Integrazione → API → Richiedi API Key (può richiedere approvazione) e che non si tratti della "Chiave Privata" o del webhook secret.
 - **Aruba SMTP**: IP del preview blacklistato — solo infrastrutturale
