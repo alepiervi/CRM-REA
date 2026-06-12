@@ -9,7 +9,17 @@ import uuid
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://bulk-upload-clients.preview.emergentagent.com").rstrip("/")
+def _backend_url():
+    env = os.environ.get("REACT_APP_BACKEND_URL")
+    if env:
+        return env.rstrip("/")
+    with open("/app/frontend/.env") as f:
+        for line in f:
+            if line.startswith("REACT_APP_BACKEND_URL="):
+                return line.split("=", 1)[1].strip().rstrip("/")
+    raise RuntimeError("REACT_APP_BACKEND_URL non trovato")
+
+BASE_URL = _backend_url()
 API = f"{BASE_URL}/api"
 
 # Cliente test esistente noto da contesto
