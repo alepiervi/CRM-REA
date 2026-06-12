@@ -103,6 +103,11 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 - Verificato: build produzione OK, regressione testing agent 100% (backend 10/10, frontend 0 ReferenceError su 10 sezioni), canvas workflow con palette OK
 - Aggiunti data-testid workflow-edit/copy/delete-{id} alle righe workflow (richiesta testing agent)
 
+**Code-splitting (giugno 2026):**
+- App.js: import statici delle pages sostituiti con `React.lazy` via helper `lazyNamed(loader, name)` (named exports); solo i 19 componenti realmente usati da App.js
+- `<React.Suspense fallback={<PageLoader />}>` attorno a `{renderTabContent()}`; Suspense separato per EditClienteModal (flusso Post Vendita)
+- Risultato build: main bundle 672K + 16 chunk on-demand (il maggiore 380K). Verificato: build produzione OK + navigazione 7 sezioni senza errori/ChunkLoadError
+
 **Refactoring futuro (P2):** spezzare server.py routes in /app/backend/routes/* (rischioso, fare a gruppi con regressione pytest); spezzare ClienteModals.jsx (~7k righe) in file singoli
 
 ## Bloccanti esterni

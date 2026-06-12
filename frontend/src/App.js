@@ -170,20 +170,41 @@ import {
   getClienteStatusVariant,
 } from "./lib/appUtils";
 import { AuthContext, useAuth, AuthProvider } from "./context/AuthContext";
-import { UnitsManagement, CreateUnitModal, EditUnitModal, LeadStatusManagement, CreateLeadStatusModal, EditLeadStatusModal, CustomFieldsManagement, CreateCustomFieldModal, EditCustomFieldModal } from "./pages/LeadsConfig";
-import { LeadsManagement, LeadDetailModal, CreateLeadModal } from "./pages/LeadsManagement";
-import { ClientiManagement } from "./pages/ClientiManagement";
-import { CreateClienteModal, ImportClientiModal, ViewClienteModal, EditClienteModal, ArubaDriveConfigModal, ClientDocumentsModal } from "./pages/ClienteModals";
-import { ReferenteAnalyticsView, SuperReferenteAnalyticsView, SupervisorAnalytics } from "./pages/NetworkAnalytics";
-import { ClientiCestinoManagement, LeadsCestinoManagement } from "./pages/Cestini";
-import { SubAgenzieManagement, CreateSubAgenziaModal, EditSubAgenziaModal } from "./pages/SubAgenzie";
-import { CommesseManagement, ArubaConfigModal, CreateCommessaModal, ViewCommessaModal, EditCommessaModal, CreateTipologiaContrattoModal, CreateOffertaModal } from "./pages/Commesse";
-import { CallCenterManagement, OutboundCallForm } from "./pages/CallCenter";
-import { LeadQualificationManagement, WorkflowBuilderManagement, WorkflowsList, CopyWorkflowModal, CreateWorkflowModal, WorkflowCanvas, NodeEditorModal } from "./pages/WorkflowBuilder";
-import { AIConfigurationManagement, AIConfigModal, AssistantUnitManagement, WhatsAppManagement, WhatsAppConfigModal, WhatsAppQRModal, LeadWhatsAppValidator } from "./pages/AiWhatsApp";
-import { DocumentsManagement } from "./pages/Documents";
-import { ResponsabileCommessaAnalytics, AnalyticsManagement } from "./pages/Analytics";
-import { UsersManagement, CreateUserModal, EditUserModal } from "./pages/UsersManagement";
+// ============================================================
+// CODE-SPLITTING: le pagine vengono caricate solo quando servono (React.lazy)
+// ============================================================
+const lazyNamed = (loader, name) => React.lazy(() => loader().then((m) => ({ default: m[name] })));
+
+const UnitsManagement = lazyNamed(() => import("./pages/LeadsConfig"), "UnitsManagement");
+const LeadStatusManagement = lazyNamed(() => import("./pages/LeadsConfig"), "LeadStatusManagement");
+const CustomFieldsManagement = lazyNamed(() => import("./pages/LeadsConfig"), "CustomFieldsManagement");
+const LeadsManagement = lazyNamed(() => import("./pages/LeadsManagement"), "LeadsManagement");
+const ClientiManagement = lazyNamed(() => import("./pages/ClientiManagement"), "ClientiManagement");
+const EditClienteModal = lazyNamed(() => import("./pages/ClienteModals"), "EditClienteModal");
+const ReferenteAnalyticsView = lazyNamed(() => import("./pages/NetworkAnalytics"), "ReferenteAnalyticsView");
+const SuperReferenteAnalyticsView = lazyNamed(() => import("./pages/NetworkAnalytics"), "SuperReferenteAnalyticsView");
+const SupervisorAnalytics = lazyNamed(() => import("./pages/NetworkAnalytics"), "SupervisorAnalytics");
+const ClientiCestinoManagement = lazyNamed(() => import("./pages/Cestini"), "ClientiCestinoManagement");
+const LeadsCestinoManagement = lazyNamed(() => import("./pages/Cestini"), "LeadsCestinoManagement");
+const SubAgenzieManagement = lazyNamed(() => import("./pages/SubAgenzie"), "SubAgenzieManagement");
+const CommesseManagement = lazyNamed(() => import("./pages/Commesse"), "CommesseManagement");
+const CallCenterManagement = lazyNamed(() => import("./pages/CallCenter"), "CallCenterManagement");
+const LeadQualificationManagement = lazyNamed(() => import("./pages/WorkflowBuilder"), "LeadQualificationManagement");
+const WorkflowBuilderManagement = lazyNamed(() => import("./pages/WorkflowBuilder"), "WorkflowBuilderManagement");
+const AIConfigurationManagement = lazyNamed(() => import("./pages/AiWhatsApp"), "AIConfigurationManagement");
+const WhatsAppManagement = lazyNamed(() => import("./pages/AiWhatsApp"), "WhatsAppManagement");
+const AnalyticsManagement = lazyNamed(() => import("./pages/Analytics"), "AnalyticsManagement");
+const UsersManagement = lazyNamed(() => import("./pages/UsersManagement"), "UsersManagement");
+
+// Fallback mostrato durante il caricamento lazy di una sezione
+const PageLoader = () => (
+  <div className="flex items-center justify-center py-24" data-testid="page-loader">
+    <div className="flex flex-col items-center gap-3 text-slate-500">
+      <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+      <span className="text-sm">Caricamento sezione...</span>
+    </div>
+  </div>
+);
 
 const PasswordChangeModal = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -2222,12 +2243,13 @@ const Dashboard = () => {
           WebkitOverflowScrolling: 'touch',
           minHeight: '0'
         }}>
-          {renderTabContent()}
+          <React.Suspense fallback={<PageLoader />}>{renderTabContent()}</React.Suspense>
         </main>
       </div>
 
       {/* PV Edit Modal: cliente aperto dal Post Vendita — rimane visibile sopra al tab PV senza navigare via */}
       {pvOpenedCliente && (
+        <React.Suspense fallback={null}>
         <EditClienteModal
           cliente={pvOpenedCliente}
           fromPostVendita={true}
@@ -2236,6 +2258,7 @@ const Dashboard = () => {
           commesse={commesse}
           subAgenzie={subAgenzie}
         />
+        </React.Suspense>
       )}
     </div>
   );
