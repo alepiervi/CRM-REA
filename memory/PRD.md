@@ -122,7 +122,19 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 
 **Metodo di verifica refactor (riusare nei prossimi):** snapshot route pre (`/tmp/routes_before.txt`) → diff post; pyflakes + AST name-check; pytest entrambe le suite; curl smoke sui gruppi spostati
 
-**Refactoring futuro (P3):** estrarre da server.py i blocchi rimanenti (clienti CRUD ~3k, analytics/export ~2.5k, documents/aruba ~2k, leads, users/auth, workflow v2, call center) e i service class (ArubadriveService, TwilioService...) in services.py
+## REFACTORING FASE 3 (giugno 2026) — COMPLETATO E TESTATO (pytest 133/133 + testing agent 100%)
+**Backend (server.py: 19.189 → 9.598 righe):**
+- `services.py` (~1.700): ArubadriveService, ChatBotService, TwilioService, CallCenterService, ACDService, WhatsAppService, LeadQualificationBot + istanze singleton + NextcloudClient + costanti env (ARUBA_*, TWILIO_*, UPLOAD_DIR, EMERGENT_LLM_KEY) + validate_uploaded_file/save_temporary_file/create_document_record
+- `helpers.py` (~1.200): ITALIAN_PROVINCES, normalize_province_name, provincia_matches, assign_lead_to_agent, parse_uploaded_file/validate_cliente_data/process_import_batch, create_excel_report, create_clienti_excel_report, get_user_ip, detect_client_changes, _expand_segmento_filter_values, get_hardcoded_tipologie_contratto, should_use_hardcoded_elements
+- `notifications.py` (~570): SMTP Aruba, send_email_notification, notify_agent_new_lead, reminder lead + scheduler
+- Nuovi moduli route fase 3: `routes/users_auth.py` (login/JWT/users CRUD/province), `routes/leads.py` (CRUD lead + webhook /webhook/lead E /webhook/{unit_id} + proxy lazy trigger_workflows_for_lead via sys.modules per evitare import circolare), `routes/documents.py` (upload + last_upload_debug), `routes/analytics.py` (agent/supervisor/referente + pivot + export), `routes/clienti.py` (CRUD + filtri + export + import massivo)
+- **REGRESSIONE TROVATA E FIXATA**: l'ordine di matching /webhook/lead vs /webhook/{unit_id} — i webhook parametrici sono stati spostati in leads.py DOPO /webhook/lead. Creato scan sistematico "route oscurate" (regex match per coppie metodo/path in ordine di registrazione) → 0 problemi su tutta l'app
+- Fix URL stantii in 5 file tests/ (puntavano a preview di job precedenti)
+- Verifiche: diff set 286 route VUOTO, AST name-check pulito, pytest 133/133, testing agent backend 20/20 + frontend 0 errori console
+
+**Lezioni per refactor futuri:** 1) l'ordine di registrazione route conta — usare lo scan route-oscurate; 2) i moduli route si registrano DOPO le route inline di server.py; 3) funzioni server-level richiamate dai moduli → proxy lazy sys.modules o spostamento in modulo condiviso
+
+**Refactoring residuo (P4, opzionale):** server.py ~9.6k righe contiene ancora: chat/AI config routes, whatsapp legacy, lead qualification/workflow v1+v2, call center/twilio, aruba webdav/web-automation block, commesse/sub-agenzie/servizi CRUD, startup/scheduler. Estraibili con la stessa metodologia.
 
 ## Bloccanti esterni
 - **Spoki API key** (`228eb...ec2a`): respinta dai server Spoki su entrambi i domini ufficiali con header documentato ("Authentication credentials were not provided"). La chiave NON è attiva lato Spoki: l'utente deve verificare in Spoki → Integrazione → API → Richiedi API Key (può richiedere approvazione) e che non si tratti della "Chiave Privata" o del webhook secret.
