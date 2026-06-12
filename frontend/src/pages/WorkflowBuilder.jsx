@@ -1188,6 +1188,7 @@ const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCop
                         size="sm"
                         variant="outline"
                         title="Modifica workflow"
+                        data-testid={`workflow-edit-${workflow.id}`}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -1197,6 +1198,7 @@ const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCop
                         size="sm"
                         variant="outline"
                         title="Copia in altra Unit"
+                        data-testid={`workflow-copy-${workflow.id}`}
                       >
                         <Copy className="w-4 h-4" />
                       </Button>
@@ -1206,6 +1208,7 @@ const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCop
                         size="sm"
                         variant="outline"
                         className="text-red-600 hover:text-red-700"
+                        data-testid={`workflow-delete-${workflow.id}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

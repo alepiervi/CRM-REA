@@ -88,6 +88,23 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 - UI: bottone "Duplica configurazione" (data-testid duplicate-config-btn) nella card Filtri di ClienteCustomFieldsManager → dialog con sorgente (pre-compilata dai filtri), anteprima conteggi, destinazione, selettore modalità, conferma con riepilogo copiati/saltati
 - Testato E2E: copia, doppia esecuzione merge (tutto skipped), overwrite, validazione sorgente==destinazione, UI con anteprima
 
+## REFACTORING STRUTTURALE (giugno 2026) — COMPLETATO E TESTATO
+**Backend:**
+- `/app/backend/models.py` (1.600 righe): tutti i 141 modelli Pydantic + Enum estratti da server.py (importati con `from models import *` nello stesso punto). server.py: 24.488 → 22.900 righe
+- Test regressione: `/app/backend/tests/test_refactor_regression.py` (pytest 10/10, riusabile come smoke per futuri refactor)
+
+**Frontend — App.js: 29.842 → 2.608 righe:**
+- `src/lib/appUtils.js`: getBackendURL, BACKEND_URL, API, PROVINCE_ITALIANE, formatDate, normalizeProvinceName, provinciaMatches, formatClienteStatus, getClienteStatusVariant, STATUS_CLIENTI (tutti export)
+- `src/context/AuthContext.jsx`: AuthContext, useAuth, AuthProvider (session timeout 15min)
+- `src/pages/` (14 file): UsersManagement, Analytics, Documents, AiWhatsApp, WorkflowBuilder (con NODE_COLOR_PALETTE/NODE_ICONS), CallCenter, Commesse, SubAgenzie, Cestini, NetworkAnalytics, ClienteModals (6.937 righe: Create/Import/View/EditClienteModal, ArubaDriveConfigModal, ClientDocumentsModal), ClientiManagement, LeadsManagement, LeadsConfig
+- Ogni page file ha header import condiviso (template da App.js con path "../") + named exports; App.js importa tutto
+- Cross-import: ClientiManagement→ClienteModals; SubAgenzie→LeadsConfig (CreateUnitModal/EditUnitModal)
+- In App.js restano: PasswordChangeModal, Login, DashboardStats, ResponsabileCommessaDashboard, Dashboard (shell), Containers*, App, AppWithAuth
+- Verificato: build produzione OK, regressione testing agent 100% (backend 10/10, frontend 0 ReferenceError su 10 sezioni), canvas workflow con palette OK
+- Aggiunti data-testid workflow-edit/copy/delete-{id} alle righe workflow (richiesta testing agent)
+
+**Refactoring futuro (P2):** spezzare server.py routes in /app/backend/routes/* (rischioso, fare a gruppi con regressione pytest); spezzare ClienteModals.jsx (~7k righe) in file singoli
+
 ## Bloccanti esterni
 - **Spoki API key** (`228eb...ec2a`): respinta dai server Spoki su entrambi i domini ufficiali con header documentato ("Authentication credentials were not provided"). La chiave NON è attiva lato Spoki: l'utente deve verificare in Spoki → Integrazione → API → Richiedi API Key (può richiedere approvazione) e che non si tratti della "Chiave Privata" o del webhook secret.
 - **Aruba SMTP**: IP del preview blacklistato — solo infrastrutturale
