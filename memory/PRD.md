@@ -108,7 +108,21 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 - `<React.Suspense fallback={<PageLoader />}>` attorno a `{renderTabContent()}`; Suspense separato per EditClienteModal (flusso Post Vendita)
 - Risultato build: main bundle 672K + 16 chunk on-demand (il maggiore 380K). Verificato: build produzione OK + navigazione 7 sezioni senza errori/ChunkLoadError
 
-**Refactoring futuro (P2):** spezzare server.py routes in /app/backend/routes/* (rischioso, fare a gruppi con regressione pytest); spezzare ClienteModals.jsx (~7k righe) in file singoli
+## REFACTORING FASE 2 (giugno 2026) — COMPLETATO E TESTATO (21/21)
+**Backend (server.py: 22.901 → ~19.180 righe):**
+- `database.py`: connessione MongoDB condivisa (client, db) con load_dotenv
+- `security.py`: SECRET_KEY/JWT, pwd_context, verify_password, get_password_hash, create_access_token, get_current_user + helper autorizzazioni (check_commessa_access, get_user_accessible_commesse/sub_agenzie, can_user_access/modify/delete_cliente, can_user_access_document...)
+- `audit.py`: log_client_action (condiviso server.py + routes)
+- `routes/` (8 moduli, ~3.240 righe): leads_cestino, units, lead_status, cliente_custom (+duplicate), segmenti_offerte, cliente_lock, cliente_notes (+clienti-cestino), post_vendita (+bulk import). Ogni modulo: APIRouter proprio, importa database/security/audit/models; inclusi in api_router PRIMA di app.include_router
+- Verifica: diff set route VUOTO (286 identiche pre/post), AST check nomi non risolti pulito, pytest test_refactor_regression.py 10/10 + test_refactor_fase2.py 21/21 (nuova suite del testing agent, copre tutti gli 8 moduli)
+
+**Frontend:**
+- ClienteModals.jsx (7.127 righe) → 6 file in `src/pages/clienti/` (CreateClienteModal 2.522, EditClienteModal 2.281, ViewClienteModal 757, ClientDocumentsModal 724, ImportClientiModal 469, ArubaDriveConfigModal 190) + barrel ClienteModals.jsx per compatibilità import
+- Aggiunti data-testid sulle azioni riga cliente: cliente-view/documents/history/edit/delete-btn-{id}
+
+**Metodo di verifica refactor (riusare nei prossimi):** snapshot route pre (`/tmp/routes_before.txt`) → diff post; pyflakes + AST name-check; pytest entrambe le suite; curl smoke sui gruppi spostati
+
+**Refactoring futuro (P3):** estrarre da server.py i blocchi rimanenti (clienti CRUD ~3k, analytics/export ~2.5k, documents/aruba ~2k, leads, users/auth, workflow v2, call center) e i service class (ArubadriveService, TwilioService...) in services.py
 
 ## Bloccanti esterni
 - **Spoki API key** (`228eb...ec2a`): respinta dai server Spoki su entrambi i domini ufficiali con header documentato ("Authentication credentials were not provided"). La chiave NON è attiva lato Spoki: l'utente deve verificare in Spoki → Integrazione → API → Richiedi API Key (può richiedere approvazione) e che non si tratti della "Chiave Privata" o del webhook secret.

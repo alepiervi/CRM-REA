@@ -1347,6 +1347,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                           size="sm"
                           onClick={() => handleViewCliente(cliente)}
                           title="Visualizza cliente"
+                          data-testid={`cliente-view-btn-${cliente.id}`}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -1355,6 +1356,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                           size="sm"
                           onClick={() => handleViewDocuments(cliente)}
                           title="Gestisci documenti"
+                          data-testid={`cliente-documents-btn-${cliente.id}`}
                         >
                           <FileText className="w-4 h-4" />
                         </Button>
@@ -1363,6 +1365,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                           size="sm"
                           onClick={() => handleViewClienteHistory(cliente)}
                           title="Cronologia e Log cliente"
+                          data-testid={`cliente-history-btn-${cliente.id}`}
                         >
                           <History className="w-4 h-4" />
                         </Button>
@@ -1371,6 +1374,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                           size="sm"
                           onClick={() => handleEditCliente(cliente)}
                           title="Modifica cliente"
+                          data-testid={`cliente-edit-btn-${cliente.id}`}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -1383,6 +1387,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                             }
                           }}
                           title="Elimina cliente"
+                          data-testid={`cliente-delete-btn-${cliente.id}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
