@@ -216,6 +216,62 @@ def build_spoki_routers(db, get_current_user, UserRole):
     # Endpoints SPOKI
     # ====================================
 
+    @router.get("/diagnostics")
+    async def spoki_diagnostics(current_user=Depends(get_current_user)):
+        """Diagnostica completa della connessione Spoki: testa la chiave su entrambi i
+        domini ufficiali e genera un report tecnico da inoltrare al supporto Spoki."""
+        _require_admin(current_user)
+        import httpx
+        api_key = os.environ.get("SPOKI_API_KEY", "")
+        if not api_key:
+            return {"configured": False, "report": "SPOKI_API_KEY non configurata nel backend."}
+        masked = api_key[:6] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
+        attempts = []
+        async with httpx.AsyncClient(timeout=15) as client:
+            for base in ["https://api.spoki.com/api/1", "https://app.spoki.it/api/1"]:
+                for ep in ["/templates/", "/channel/"]:
+                    try:
+                        r = await client.get(
+                            base + ep,
+                            headers={"X-Spoki-Api-Key": api_key, "Accept": "application/json"},
+                        )
+                        attempts.append({
+                            "url": base + ep, "method": "GET",
+                            "auth_header": "X-Spoki-Api-Key (come da documentazione ufficiale Spoki API v1)",
+                            "http_status": r.status_code,
+                            "response_body": r.text[:300],
+                            "server_date": r.headers.get("date"),
+                        })
+                    except Exception as e:
+                        attempts.append({"url": base + ep, "method": "GET", "error": str(e)[:200]})
+        ok = any(a.get("http_status") == 200 for a in attempts)
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        lines = [
+            "=== REPORT DIAGNOSTICO INTEGRAZIONE SPOKI API (da CRM Nureal) ===",
+            f"Data test: {now}",
+            f"API key utilizzata: {masked} (lunghezza {len(api_key)} caratteri)",
+            "Header di autenticazione: X-Spoki-Api-Key: <api_key>",
+            "Riferimento docs: https://documenter.getpostman.com/view/21611004/UzBqnPvF",
+            "",
+        ]
+        for a in attempts:
+            lines.append(f"→ {a['method']} {a['url']}")
+            if "error" in a:
+                lines.append(f"   ERRORE DI RETE: {a['error']}")
+            else:
+                lines.append(f"   HTTP {a['http_status']} — risposta: {a['response_body']}")
+            lines.append("")
+        if ok:
+            lines.append("ESITO: ✅ CONNESSIONE RIUSCITA — la chiave è attiva.")
+        else:
+            lines.append("ESITO: ❌ La chiave NON viene riconosciuta dai server Spoki su nessun dominio.")
+            lines.append("Messaggio del server Spoki: 'Authentication credentials were not provided'")
+            lines.append("(risposta tipica quando la API key non risulta attiva/abilitata lato Spoki).")
+            lines.append("")
+            lines.append("DOMANDA PER IL SUPPORTO SPOKI: la API key indicata risulta attiva e abilitata")
+            lines.append("per le chiamate API v1 (header X-Spoki-Api-Key)? Il piano dell'account include l'accesso API?")
+        return {"configured": True, "success": ok, "attempts": attempts, "report": "\n".join(lines)}
+
     @router.get("/health")
     async def spoki_health(current_user=Depends(get_current_user)):
         _require_admin(current_user)

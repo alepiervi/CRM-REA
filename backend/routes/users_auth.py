@@ -117,6 +117,13 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
     if user_data:
         # Convert ObjectId to string and return raw data to ensure all fields are present
         user_data["_id"] = str(user_data["_id"])
+        # NEW (feb 2026): per gli utenti backoffice_sub_agenzia espone il flag della propria sub agenzia
+        # `bo_sub_agenzia_can_change_status` permette al frontend di abilitare la modifica dello status cliente.
+        user_data["bo_sub_agenzia_can_change_status"] = False
+        if user_data.get("role") == UserRole.BACKOFFICE_SUB_AGENZIA and user_data.get("sub_agenzia_id"):
+            sub_doc = await db.sub_agenzie.find_one({"id": user_data["sub_agenzia_id"]})
+            if sub_doc and sub_doc.get("can_change_status"):
+                user_data["bo_sub_agenzia_can_change_status"] = True
         return user_data
     return current_user
 

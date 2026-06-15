@@ -496,6 +496,27 @@ async def get_clienti(
         print(f"❌ UNKNOWN ROLE: {current_user.role} for user {current_user.username}")
         raise HTTPException(status_code=403, detail=f"Role {current_user.role} not authorized for client access")
     
+    # NEW (feb 2026): per BACKOFFICE_COMMESSA, escludi i clienti delle sub agenzie privilegiate
+    # con tipologie "nascoste" (campo `hidden_tipologie_for_bo_commessa` su sub_agenzie).
+    # Esempio: sub agenzia X ha `hidden_tipologie_for_bo_commessa = ["TELEFONIA"]` ⇒ il BO Commessa
+    # NON vede i clienti X con tipologia_contratto == "TELEFONIA".
+    if current_user.role == UserRole.BACKOFFICE_COMMESSA:
+        privileged_subs = await db.sub_agenzie.find({
+            "hidden_tipologie_for_bo_commessa": {"$exists": True, "$ne": []}
+        }).to_list(length=None)
+        nor_conditions = []
+        for sa in privileged_subs:
+            hidden = sa.get("hidden_tipologie_for_bo_commessa") or []
+            if not hidden:
+                continue
+            nor_conditions.append({
+                "sub_agenzia_id": sa["id"],
+                "tipologia_contratto": {"$in": hidden}
+            })
+        if nor_conditions:
+            query.setdefault("$and", []).append({"$nor": nor_conditions})
+            print(f"🔒 BO_COMMESSA HIDDEN FILTER: {len(nor_conditions)} sub agenzie con tipologie nascoste")
+    
     # Filtri aggiuntivi dai parametri della query (se forniti)
     if commessa_id and commessa_id != "all":
         # Se commessa_id è specificata, aggiungiamola al filtro (se autorizzata)
@@ -1385,6 +1406,23 @@ async def export_clienti_excel(
             if date_query:
                 query["created_at"] = date_query
         
+        # NEW (feb 2026): BACKOFFICE_COMMESSA — escludi clienti delle sub agenzie con tipologie nascoste
+        if current_user.role == UserRole.BACKOFFICE_COMMESSA:
+            privileged_subs = await db.sub_agenzie.find({
+                "hidden_tipologie_for_bo_commessa": {"$exists": True, "$ne": []}
+            }).to_list(length=None)
+            nor_conditions = []
+            for sa in privileged_subs:
+                hidden = sa.get("hidden_tipologie_for_bo_commessa") or []
+                if not hidden:
+                    continue
+                nor_conditions.append({
+                    "sub_agenzia_id": sa["id"],
+                    "tipologia_contratto": {"$in": hidden}
+                })
+            if nor_conditions:
+                query.setdefault("$and", []).append({"$nor": nor_conditions})
+        
         # Get clienti with enriched data
         clienti = await db.clienti.find(query).sort("created_at", -1).to_list(length=None)
         
@@ -1605,6 +1643,13 @@ async def get_cliente(cliente_id: str, current_user: User = Depends(get_current_
             accessible_commesse = await get_user_accessible_commesse(current_user)
             if cliente.commessa_id not in accessible_commesse:
                 raise HTTPException(status_code=403, detail="Access denied to this client's commessa")
+        # NEW (feb 2026): se il cliente è di una sub agenzia privilegiata con tipologia nascosta, blocca l'accesso
+        if cliente.sub_agenzia_id:
+            sub_doc = await db.sub_agenzie.find_one({"id": cliente.sub_agenzia_id})
+            if sub_doc:
+                hidden = sub_doc.get("hidden_tipologie_for_bo_commessa") or []
+                if hidden and cliente.tipologia_contratto and cliente.tipologia_contratto in hidden:
+                    raise HTTPException(status_code=403, detail="Access denied: cliente nascosto per la tua role (tipologia riservata)")
                 
     elif current_user.role in [UserRole.RESPONSABILE_SUB_AGENZIA, UserRole.BACKOFFICE_SUB_AGENZIA]:
         # Responsabile/BackOffice Sub Agenzia: deve essere della stessa sub agenzia
@@ -1642,9 +1687,20 @@ async def update_cliente(
         if not await can_user_modify_cliente(current_user, cliente):
             raise HTTPException(status_code=403, detail="No permission to modify this cliente")
         
-        # Only ADMIN, BACKOFFICE_COMMESSA and RESPONSABILE_COMMESSA can modify status field
+        # Only ADMIN, BACKOFFICE_COMMESSA and RESPONSABILE_COMMESSA can modify status field by default.
+        # NEW (feb 2026): BACKOFFICE_SUB_AGENZIA può modificare lo status se la propria sub agenzia
+        # ha il flag `can_change_status=True` e il cliente appartiene a quella sub agenzia.
         if cliente_update.status is not None:
-            if current_user.role not in [UserRole.ADMIN, UserRole.BACKOFFICE_COMMESSA, UserRole.RESPONSABILE_COMMESSA]:
+            allowed_status_roles = [UserRole.ADMIN, UserRole.BACKOFFICE_COMMESSA, UserRole.RESPONSABILE_COMMESSA]
+            can_modify_status = current_user.role in allowed_status_roles
+            if not can_modify_status and current_user.role == UserRole.BACKOFFICE_SUB_AGENZIA:
+                # Verifica che il cliente sia della stessa sub agenzia dell'utente
+                # E che la sub agenzia abbia il privilegio attivo
+                if getattr(current_user, "sub_agenzia_id", None) and cliente.sub_agenzia_id == current_user.sub_agenzia_id:
+                    sub_doc = await db.sub_agenzie.find_one({"id": current_user.sub_agenzia_id})
+                    if sub_doc and sub_doc.get("can_change_status"):
+                        can_modify_status = True
+            if not can_modify_status:
                 # If user is not authorized, restore original status
                 cliente_update.status = cliente.status
                 logging.warning(f"User {current_user.username} (role: {current_user.role}) attempted to modify status - permission denied")

@@ -2359,26 +2359,45 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
             </CardHeader>
             <CardContent>
               <div>
-                <Label>Status {(user.role !== "admin" && user.role !== "responsabile_commessa" && user.role !== "backoffice_commessa") && <span className="text-xs text-gray-500">(Solo Admin/Responsabile/Backoffice Commessa può modificare)</span>}</Label>
-                <div className="flex items-center gap-2">
-                  <Select 
-                    value={formData.status} 
-                    onValueChange={(value) => handleChange('status', value)}
-                    disabled={user.role !== "admin" && user.role !== "responsabile_commessa" && user.role !== "backoffice_commessa"}
-                  >
-                    <SelectTrigger className={(user.role !== "admin" && user.role !== "responsabile_commessa" && user.role !== "backoffice_commessa") ? "opacity-60 cursor-not-allowed flex-1" : "flex-1"}>
-                      <SelectValue placeholder="Seleziona status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value} data-testid={`status-option-${opt.value}`}>
-                          {opt.icon ? `${opt.icon} ` : ''}{opt.name}{!opt.is_standard && ' ⭐'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <PostVenditaStatusDot cliente={cliente} size="md" />
-                </div>
+                {(() => {
+                  const baseRoles = ["admin", "responsabile_commessa", "backoffice_commessa"];
+                  const userIsBaseRole = baseRoles.includes(user.role);
+                  // NEW (feb 2026): BO Sub Agenzia con privilegio attivo, sulla propria sub agenzia
+                  const userIsPrivilegedBoSub = (
+                    user.role === "backoffice_sub_agenzia" &&
+                    user.bo_sub_agenzia_can_change_status === true &&
+                    cliente?.sub_agenzia_id &&
+                    cliente.sub_agenzia_id === user.sub_agenzia_id
+                  );
+                  const canEditStatus = userIsBaseRole || userIsPrivilegedBoSub;
+                  return (
+                    <>
+                      <Label>Status {!canEditStatus && <span className="text-xs text-gray-500">(Solo Admin/Responsabile/Backoffice Commessa o Sub Agenzia autorizzata può modificare)</span>}</Label>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={formData.status}
+                          onValueChange={(value) => handleChange('status', value)}
+                          disabled={!canEditStatus}
+                        >
+                          <SelectTrigger
+                            data-testid="cliente-status-select"
+                            className={!canEditStatus ? "opacity-60 cursor-not-allowed flex-1" : "flex-1"}
+                          >
+                            <SelectValue placeholder="Seleziona status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {statusOptions.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value} data-testid={`status-option-${opt.value}`}>
+                                {opt.icon ? `${opt.icon} ` : ''}{opt.name}{!opt.is_standard && ' ⭐'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <PostVenditaStatusDot cliente={cliente} size="md" />
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>

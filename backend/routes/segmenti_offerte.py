@@ -514,8 +514,15 @@ async def create_sub_agenzia(sub_agenzia_data: SubAgenziaCreate, current_user: U
         if not await check_commessa_access(current_user, commessa_id):
             raise HTTPException(status_code=403, detail=f"No access to commessa {commessa_id}")
     
+    # I privilegi can_change_status e hidden_tipologie_for_bo_commessa
+    # possono essere impostati solo dall'Admin. Se chi crea non è admin, vengono ignorati.
+    payload = sub_agenzia_data.dict()
+    if current_user.role != UserRole.ADMIN:
+        payload["can_change_status"] = False
+        payload["hidden_tipologie_for_bo_commessa"] = []
+    
     sub_agenzia = SubAgenzia(
-        **sub_agenzia_data.dict(),
+        **payload,
         created_by=current_user.id
     )
     await db.sub_agenzie.insert_one(sub_agenzia.dict())
@@ -601,6 +608,11 @@ async def update_sub_agenzia(
                 raise HTTPException(status_code=403, detail=f"No access to commessa {commessa_id}")
     
     update_data = {k: v for k, v in sub_agenzia_update.dict().items() if v is not None}
+    # Solo l'Admin può modificare i privilegi can_change_status e hidden_tipologie_for_bo_commessa.
+    # Se chi aggiorna non è admin, rimuoviamo silenziosamente questi campi dall'update.
+    if current_user.role != UserRole.ADMIN:
+        update_data.pop("can_change_status", None)
+        update_data.pop("hidden_tipologie_for_bo_commessa", None)
     update_data["updated_at"] = datetime.now(timezone.utc)
     
     result = await db.sub_agenzie.update_one(

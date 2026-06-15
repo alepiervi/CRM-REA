@@ -1005,6 +1005,9 @@ class SubAgenzia(BaseModel):
     responsabile_id: str  # User ID del responsabile della sub agenzia
     commesse_autorizzate: List[str] = []  # Lista di commessa_id autorizzate
     servizi_autorizzati: List[str] = []   # NEW: Lista di servizio_id autorizzati
+    # NEW (feb 2026): privilegi gestiti dall'Admin
+    can_change_status: bool = False  # Se True, gli utenti backoffice_sub_agenzia di questa sub agenzia possono modificare lo status dei clienti
+    hidden_tipologie_for_bo_commessa: List[str] = []  # Nomi/label tipologie contratto i cui clienti (di questa sub agenzia) NON sono visibili ai backoffice_commessa
     is_active: bool = True
     created_by: str  # admin o responsabile_commessa che l'ha creata
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -1016,6 +1019,8 @@ class SubAgenziaCreate(BaseModel):
     responsabile_id: str
     commesse_autorizzate: List[str] = []
     servizi_autorizzati: List[str] = []   # NEW: Lista di servizio_id autorizzati
+    can_change_status: bool = False
+    hidden_tipologie_for_bo_commessa: List[str] = []
 
 class SubAgenziaUpdate(BaseModel):
     nome: Optional[str] = None
@@ -1023,6 +1028,8 @@ class SubAgenziaUpdate(BaseModel):
     responsabile_id: Optional[str] = None
     commesse_autorizzate: Optional[List[str]] = None
     servizi_autorizzati: Optional[List[str]] = None   # NEW: Lista di servizio_id autorizzati
+    can_change_status: Optional[bool] = None
+    hidden_tipologie_for_bo_commessa: Optional[List[str]] = None
     is_active: Optional[bool] = None
 
 class ClienteStatus(str, Enum):

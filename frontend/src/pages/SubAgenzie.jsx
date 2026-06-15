@@ -746,16 +746,28 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
 // Costanti globali per filtri e dropdown
 
 const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsabili }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [formData, setFormData] = useState({
     nome: '',
     descrizione: '',
     responsabile_id: '',
     commesse_autorizzate: [],
-    servizi_autorizzati: []
+    servizi_autorizzati: [],
+    can_change_status: false,
+    hidden_tipologie_for_bo_commessa: []
   });
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showResponsabiliDropdown, setShowResponsabiliDropdown] = useState(false);
+  const [tipologieList, setTipologieList] = useState([]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    axios.get(`${API}/tipologie-contratto/all`)
+      .then((r) => setTipologieList(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setTipologieList([]));
+  }, [isAdmin]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -765,7 +777,9 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsa
       descrizione: '', 
       responsabile_id: '', 
       commesse_autorizzate: [],
-      servizi_autorizzati: []
+      servizi_autorizzati: [],
+      can_change_status: false,
+      hidden_tipologie_for_bo_commessa: []
     });
     setSearchTerm('');
   };
@@ -1000,6 +1014,82 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsa
             </div>
           </div>
 
+          {/* NEW (feb 2026): Privilegi Admin - solo per admin */}
+          {isAdmin && (
+            <div className="border border-purple-200 bg-purple-50 rounded-lg p-4 space-y-4" data-testid="sub-agenzia-privileges-section">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-base font-semibold text-purple-900">Privilegi Speciali (Admin)</Label>
+                  <p className="text-xs text-purple-700 mt-1">
+                    Configurazioni avanzate riservate all'amministratore.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between bg-white rounded p-3">
+                <div className="flex-1 pr-4">
+                  <Label htmlFor="can-change-status-create" className="font-medium">
+                    Può modificare status clienti
+                  </Label>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Se attivo, gli utenti "Backoffice Sub Agenzia" di questa sub agenzia possono modificare
+                    lo status dei clienti che gestiscono.
+                  </p>
+                </div>
+                <Switch
+                  id="can-change-status-create"
+                  data-testid="sub-agenzia-can-change-status-toggle"
+                  checked={formData.can_change_status}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_change_status: !!checked }))}
+                />
+              </div>
+
+              <div className="bg-white rounded p-3">
+                <Label className="font-medium">Tipologie nascoste al Backoffice Commessa</Label>
+                <p className="text-xs text-slate-500 mt-1 mb-2">
+                  I clienti di questa sub agenzia con queste tipologie di contratto NON saranno visibili
+                  agli utenti "Backoffice Commessa" (solo Admin e Responsabile Commessa li vedranno).
+                </p>
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-3 bg-gray-50">
+                  {tipologieList.length === 0 && (
+                    <p className="text-sm text-gray-500 italic">Nessuna tipologia disponibile</p>
+                  )}
+                  {tipologieList.map((tip) => {
+                    const tipLabel = tip.label;
+                    const isSelected = formData.hidden_tipologie_for_bo_commessa.includes(tipLabel);
+                    return (
+                      <div
+                        key={tip.value}
+                        className="flex items-center space-x-2 cursor-pointer"
+                        onClick={() => {
+                          setFormData(prev => ({
+                            ...prev,
+                            hidden_tipologie_for_bo_commessa: isSelected
+                              ? prev.hidden_tipologie_for_bo_commessa.filter(t => t !== tipLabel)
+                              : [...prev.hidden_tipologie_for_bo_commessa, tipLabel]
+                          }));
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                          className="rounded border-gray-300"
+                          data-testid={`hidden-tipologia-create-${tip.value}`}
+                        />
+                        <span className="text-sm">{tipLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Selezionate: {formData.hidden_tipologie_for_bo_commessa.length} tipologie
+                </p>
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Annulla
@@ -1017,16 +1107,28 @@ const CreateSubAgenziaModal = ({ onClose, onSuccess, commesse, servizi, responsa
 // Edit Sub Agenzia Modal Component
 
 const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi, responsabili }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [formData, setFormData] = useState({
     nome: subAgenzia?.nome || '',
     descrizione: subAgenzia?.descrizione || '',
     responsabile_id: subAgenzia?.responsabile_id || '',
     commesse_autorizzate: subAgenzia?.commesse_autorizzate || [],
-    servizi_autorizzati: subAgenzia?.servizi_autorizzati || []
+    servizi_autorizzati: subAgenzia?.servizi_autorizzati || [],
+    can_change_status: subAgenzia?.can_change_status || false,
+    hidden_tipologie_for_bo_commessa: subAgenzia?.hidden_tipologie_for_bo_commessa || []
   });
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showResponsabiliDropdown, setShowResponsabiliDropdown] = useState(false);
+  const [tipologieList, setTipologieList] = useState([]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    axios.get(`${API}/tipologie-contratto/all`)
+      .then((r) => setTipologieList(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setTipologieList([]));
+  }, [isAdmin]);
 
   // Filter responsabili based on search term
   const getFilteredResponsabili = () => {
@@ -1281,6 +1383,80 @@ const EditSubAgenziaModal = ({ subAgenzia, onClose, onSuccess, commesse, servizi
               </p>
             </div>
           </div>
+
+          {/* NEW (feb 2026): Privilegi Admin */}
+          {isAdmin && (
+            <div className="border border-purple-200 bg-purple-50 rounded-lg p-4 space-y-4" data-testid="sub-agenzia-privileges-section-edit">
+              <div>
+                <Label className="text-base font-semibold text-purple-900">Privilegi Speciali (Admin)</Label>
+                <p className="text-xs text-purple-700 mt-1">
+                  Configurazioni avanzate riservate all'amministratore.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between bg-white rounded p-3">
+                <div className="flex-1 pr-4">
+                  <Label htmlFor="can-change-status-edit" className="font-medium">
+                    Può modificare status clienti
+                  </Label>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Se attivo, gli utenti "Backoffice Sub Agenzia" di questa sub agenzia possono modificare
+                    lo status dei clienti che gestiscono.
+                  </p>
+                </div>
+                <Switch
+                  id="can-change-status-edit"
+                  data-testid="sub-agenzia-can-change-status-toggle-edit"
+                  checked={formData.can_change_status}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_change_status: !!checked }))}
+                />
+              </div>
+
+              <div className="bg-white rounded p-3">
+                <Label className="font-medium">Tipologie nascoste al Backoffice Commessa</Label>
+                <p className="text-xs text-slate-500 mt-1 mb-2">
+                  I clienti di questa sub agenzia con queste tipologie di contratto NON saranno visibili
+                  agli utenti "Backoffice Commessa" (solo Admin e Responsabile Commessa li vedranno).
+                </p>
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-3 bg-gray-50">
+                  {tipologieList.length === 0 && (
+                    <p className="text-sm text-gray-500 italic">Nessuna tipologia disponibile</p>
+                  )}
+                  {tipologieList.map((tip) => {
+                    const tipLabel = tip.label;
+                    const isSelected = formData.hidden_tipologie_for_bo_commessa.includes(tipLabel);
+                    return (
+                      <div
+                        key={tip.value}
+                        className="flex items-center space-x-2 cursor-pointer"
+                        onClick={() => {
+                          setFormData(prev => ({
+                            ...prev,
+                            hidden_tipologie_for_bo_commessa: isSelected
+                              ? prev.hidden_tipologie_for_bo_commessa.filter(t => t !== tipLabel)
+                              : [...prev.hidden_tipologie_for_bo_commessa, tipLabel]
+                          }));
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                          className="rounded border-gray-300"
+                          data-testid={`hidden-tipologia-edit-${tip.value}`}
+                        />
+                        <span className="text-sm">{tipLabel}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Selezionate: {formData.hidden_tipologie_for_bo_commessa.length} tipologie
+                </p>
+              </div>
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>

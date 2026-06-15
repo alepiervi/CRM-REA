@@ -27,6 +27,26 @@ export const SpokiAdminConfig = ({ units = [] }) => {
   const [allConfigs, setAllConfigs] = useState([]);
   const [assistants, setAssistants] = useState([]);
   const [assistantsError, setAssistantsError] = useState("");
+  const [diagnostics, setDiagnostics] = useState(null);
+  const [diagLoading, setDiagLoading] = useState(false);
+
+  const runDiagnostics = async () => {
+    setDiagLoading(true);
+    setDiagnostics(null);
+    try {
+      const r = await axios.get(`${API}/spoki/diagnostics`, { headers: authHeaders() });
+      setDiagnostics(r.data);
+    } catch (e) {
+      setDiagnostics({ report: `Errore diagnostica: ${e?.response?.data?.detail || e.message}` });
+    } finally { setDiagLoading(false); }
+  };
+
+  const copyDiagnostics = () => {
+    if (diagnostics?.report) {
+      navigator.clipboard.writeText(diagnostics.report);
+      alert("Report copiato negli appunti: incollalo nella mail/ticket per il supporto Spoki.");
+    }
+  };
 
   const fetchAssistants = async () => {
     try {
@@ -151,13 +171,41 @@ export const SpokiAdminConfig = ({ units = [] }) => {
         <Card className="border-orange-300 bg-orange-50">
           <CardContent className="p-4 flex gap-3">
             <AlertCircle className="w-5 h-5 text-orange-700 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-orange-900">
+            <div className="text-sm text-orange-900 flex-1">
               <strong>Connessione Spoki non attiva.</strong> Verifica nel pannello Spoki che l&apos;API key sia stata generata e attivata.
               <div className="mt-1 font-mono text-xs">{health.error}</div>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Diagnostica connessione per supporto Spoki */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Diagnostica connessione Spoki</CardTitle>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={runDiagnostics} disabled={diagLoading} data-testid="spoki-diagnostics-btn">
+              {diagLoading ? "Test in corso..." : "Esegui diagnostica"}
+            </Button>
+            {diagnostics?.report && (
+              <Button size="sm" onClick={copyDiagnostics} data-testid="spoki-diagnostics-copy">
+                Copia report per Spoki
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        {diagnostics?.report && (
+          <CardContent>
+            <pre className="text-xs bg-slate-900 text-slate-100 rounded-lg p-4 overflow-x-auto whitespace-pre-wrap" data-testid="spoki-diagnostics-report">
+{diagnostics.report}
+            </pre>
+            <div className="text-xs text-slate-500 mt-2">
+              Le chiamate a Spoki avvengono dal server del CRM (non dal browser): per questo gli errori non compaiono in Console/Network.
+              Copia questo report e invialo al supporto Spoki.
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       <Card>
         <CardHeader>

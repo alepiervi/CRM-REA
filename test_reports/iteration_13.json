@@ -1,0 +1,39 @@
+{
+  "summary": "E2E backend validation of Sub Agenzia Privileges feature (feb 2026) — `can_change_status` + `hidden_tipologie_for_bo_commessa`. Built /app/backend/tests/test_sub_agenzia_privileges_e2e.py with full fixture (sub agenzia + BO Commessa user + BO Sub Agenzia user + UserCommessaAuthorization + 2 clienti with tipologia_contratto 'Energia' and 'Telefonia'). Verified end-to-end: (1) admin can create sub agenzia with privileges and can update them via PUT, (2) /auth/me exposes bo_sub_agenzia_can_change_status correctly per user role and per sub agenzia state, (3) GET /api/clienti as Backoffice Commessa OMITS clienti with tipologia=Energia coming from a sub agenzia configured to hide it, but still INCLUDES the same sub agenzia's clienti with other tipologie (Telefonia), (4) GET /api/clienti/{id} on hidden cliente as BO Commessa returns 403, while a visible cliente returns 200, (5) BO Sub Agenzia of a privileged sub agenzia can PUT status on a cliente of his own sub agenzia, persistence confirmed via admin GET, (6) when admin sets can_change_status=False, the same BO Sub Agenzia's PUT silently restores the original status (and /auth/me flips to bo_sub_agenzia_can_change_status=False). All 9 tests pass (3 pre-existing schema tests + 6 new E2E tests). Found 1 medium-priority backend code-review issue: ClienteUpdate.email is `str` (required) instead of Optional — forces clients to always send email on partial updates.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/clienti/{id}", "issue": "ClienteUpdate.email is declared as `email: str` (required) in /app/backend/models.py:1331 — every partial PUT (e.g. only changing status) must include email or returns 422. Should be `Optional[str] = None` like the other update fields."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_sub_agenzia_privileges_e2e.py",
+    "/app/backend/tests/test_sub_agenzia_privileges.py",
+    "/app/test_reports/pytest/pytest_sub_agenzia_e2e.xml"
+  ],
+  "action_items": [
+    "Fix ClienteUpdate.email in /app/backend/models.py line 1331 from `email: str` to `email: Optional[str] = None` so that partial updates (e.g. status-only) don't require the email field. Current behaviour returns 422 on any PUT lacking email; UI forms likely always send full payload so impact is low, but is a real defect."
+  ],
+  "critical_code_review_comments": [
+    "Backend filter for hidden tipologie in /app/backend/routes/clienti.py:503-518 uses exact string match (case-sensitive) against `cliente.tipologia_contratto`. Confirmed working with mixed-case labels ('Energia' / 'Telefonia') because we stored the same label both in `hidden_tipologie_for_bo_commessa` and in `tipologia_contratto`. Consider documenting this case-sensitivity in the admin UI tooltip (already mentioned by main agent).",
+    "/api/auth/me at /app/backend/routes/users_auth.py:122-126 always sets `bo_sub_agenzia_can_change_status=False` first, then overrides only for BACKOFFICE_SUB_AGENZIA — good, no leakage to other roles.",
+    "/api/clienti/{id} 403 path in clienti.py:1646-1652 is reached only AFTER the commessa-access check; correct since hidden tipologie is an additional restriction on top of normal RBAC.",
+    "Update-cliente status-restore logic at clienti.py:1693-1706 silently resets `cliente_update.status = cliente.status` and logs a warning instead of returning 403 when an unauthorised role sends a status change. Test covers both branches: BO Sub Agenzia with privilege ON → status persists; BO Sub Agenzia with privilege OFF → status unchanged in DB. Behaviour is consistent.",
+    "ClienteUpdate.email required (medium): see backend_issues.minor."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_sub_agenzia_privileges_e2e.py (new — 6 E2E tests, 273 lines)"
+  ],
+  "success_rate": {"backend": "100% (9/9 tests pass: 3 schema + 6 E2E)", "frontend": "not tested (testing_type=backend only)"},
+  "test_credentials": "admin / admin123 (from /app/memory/test_credentials.md). Test users created+deleted per-run by fixture: TEST_bo_com_<random>, TEST_bo_sub_<random> with password 'Test123!Pwd'.",
+  "seed_data_creation": "Fixture creates and tears down per-module: 1 sub agenzia (TEST_sa_priv_*), 1 BACKOFFICE_COMMESSA user, 1 BACKOFFICE_SUB_AGENZIA user, 1 UserCommessaAuthorization, 2 clienti (one tipologia 'Energia', one 'Telefonia'). All deleted on fixture teardown. One leftover sub agenzia from an earlier failed run was manually cleaned via DELETE /api/sub-agenzie/{id} before the green run.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_sub_agenzia_privileges_e2e.py is the canonical E2E regression for the privileged sub agenzia feature. It requires: at least 1 commessa to exist (admin commessa[0] is used). Reuses /api/user-commessa-authorizations to grant the BO Sub Agenzia user `can_modify_clients=True` — otherwise security.py::can_user_modify_cliente returns False BEFORE the status-privilege check. If POST /users tests fail with 422 on email, note that the backend rejects RFC-reserved TLDs like .local / .test — use @nureal.it or @example.com. ClienteUpdate.email required field is the only outstanding defect; consider fixing in models.py before next iteration.",
+  "rca of the issue": "N/A — feature is correctly implemented in backend. The single defect surfaced (ClienteUpdate.email required) is unrelated to the sub agenzia privileges feature itself but was hit while testing it. RCA: in /app/backend/models.py the ClienteUpdate Pydantic model declares `email: str` instead of `email: Optional[str] = None` — likely a copy-paste from ClienteCreate. Mitigation: change the type annotation; no migration needed."
+}
