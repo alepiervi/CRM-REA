@@ -110,3 +110,51 @@ def test_responsabile_commessa_cannot_set_priv_fields():
         assert r.json()["hidden_tipologie_for_bo_commessa"] == []
     finally:
         requests.delete(f"{BACKEND_URL}/sub-agenzie/{sa_id}", headers=_h(admin_token), timeout=10)
+
+
+
+def test_audit_sub_agenzia_status_changes_endpoint_admin_ok():
+    """L'endpoint /api/audit/sub-agenzia-status-changes risponde 200 per admin e ritorna lista."""
+    admin_token = _login("admin", "admin123")
+    r = requests.get(
+        f"{BACKEND_URL}/audit/sub-agenzia-status-changes",
+        headers=_h(admin_token),
+        timeout=10,
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert isinstance(body, list)
+    # Schema: ogni elemento deve avere questi campi (se presente)
+    for row in body:
+        assert "id" in row
+        assert "cliente_id" in row
+        assert "old_status" in row
+        assert "new_status" in row
+        assert "sub_agenzia_id" in row
+        assert "timestamp" in row
+
+
+def test_audit_endpoint_filters_by_sub_agenzia_id():
+    """Filtro per sub_agenzia_id non-esistente → lista vuota (no 5xx)."""
+    admin_token = _login("admin", "admin123")
+    r = requests.get(
+        f"{BACKEND_URL}/audit/sub-agenzia-status-changes",
+        headers=_h(admin_token),
+        params={"sub_agenzia_id": "non-existent-id-xxxx"},
+        timeout=10,
+    )
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_audit_endpoint_date_range_works():
+    """Filtro date range (futuro) → lista vuota."""
+    admin_token = _login("admin", "admin123")
+    r = requests.get(
+        f"{BACKEND_URL}/audit/sub-agenzia-status-changes",
+        headers=_h(admin_token),
+        params={"date_from": "2099-01-01", "date_to": "2099-12-31"},
+        timeout=10,
+    )
+    assert r.status_code == 200
+    assert r.json() == []

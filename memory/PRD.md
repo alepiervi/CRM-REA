@@ -107,7 +107,18 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 - `CreateSubAgenziaModal` + `EditSubAgenziaModal`: nuova sezione "Privilegi Speciali (Admin)" condizionata a `user.role === 'admin'`, con Switch can_change_status + checkbox multi-select tipologie (fetch `/api/tipologie-contratto/all`). Data-testid: `sub-agenzia-privileges-section`, `sub-agenzia-can-change-status-toggle`, `hidden-tipologia-create-{id}`/`hidden-tipologia-edit-{id}`
 - `EditClienteModal` Select Status ora abilitato anche se `user.role === 'backoffice_sub_agenzia' && user.bo_sub_agenzia_can_change_status && cliente.sub_agenzia_id === user.sub_agenzia_id` (data-testid `cliente-status-select`)
 
-**Test**: `/app/backend/tests/test_sub_agenzia_privileges.py` (3 schema) + `/app/backend/tests/test_sub_agenzia_privileges_e2e.py` (6 E2E: privileges CRUD admin, /auth/me flag, list-filter BO Commessa, detail-403, update-status con e senza privilegio). Suite completa pytest 60/64 (4 skip, 0 fail).
+**Test**: `/app/backend/tests/test_sub_agenzia_privileges.py` (6 test: 3 schema + 3 endpoint audit) + `/app/backend/tests/test_sub_agenzia_privileges_e2e.py` (6 E2E del testing agent). Suite completa pytest 60/64 (4 skip, 0 fail).
+
+## Audit Status Sub Agenzie (15 feb 2026)
+Enhancement della feature privilegi sub agenzia: tracciamento dei cambi status fatti via privilegio.
+
+**Backend**:
+- `routes/clienti.py` `update_cliente`: quando il cambio status è autorizzato tramite il privilegio BO Sub Agenzia, viene loggato con `metadata.via_sub_agenzia_privilege=true` e `metadata.sub_agenzia_id`
+- Nuovo endpoint `GET /api/audit/sub-agenzia-status-changes` (Admin + Responsabile Commessa) — query su `clienti_logs` con filtri `sub_agenzia_id`, `date_from`, `date_to`. Enrichment cliente nome+tipologia + sub agenzia nome. Per Responsabile Commessa scope limitato alle sue commesse autorizzate
+
+**Frontend**:
+- Nuova pagina `pages/SubAgenziaStatusAudit.jsx`: filtri sub agenzia/date, tabella movimenti con data/cliente/tipologia/sub agenzia/old→new status/operatore, export CSV, lazy-loaded via `React.lazy`
+- Sidebar voce "Audit Status Sub Agenzie" visibile ad Admin e Responsabile Commessa
 
 
 ## REFACTORING STRUTTURALE (giugno 2026) — COMPLETATO E TESTATO

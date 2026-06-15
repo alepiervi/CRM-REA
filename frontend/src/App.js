@@ -195,6 +195,7 @@ const AIConfigurationManagement = lazyNamed(() => import("./pages/AiWhatsApp"), 
 const WhatsAppManagement = lazyNamed(() => import("./pages/AiWhatsApp"), "WhatsAppManagement");
 const AnalyticsManagement = lazyNamed(() => import("./pages/Analytics"), "AnalyticsManagement");
 const UsersManagement = lazyNamed(() => import("./pages/UsersManagement"), "UsersManagement");
+const SubAgenziaStatusAudit = lazyNamed(() => import("./pages/SubAgenziaStatusAudit"), "SubAgenziaStatusAudit");
 
 // Fallback mostrato durante il caricamento lazy di una sezione
 const PageLoader = () => (
@@ -1538,6 +1539,7 @@ const Dashboard = () => {
         { id: "call-center", label: "Call Center", icon: PhoneCall },
         { id: "commesse", label: "Commesse", icon: Building },
         { id: "sub-agenzie", label: "Unit & Sub Agenzie", icon: Store },
+        { id: "audit-sub-agenzia-status", label: "Audit Status Sub Agenzie", icon: ShieldAlert },
         { id: "clienti", label: "Clienti", icon: UserCheck },
         { id: "clienti-custom-fields", label: "Campi Clienti", icon: Database },
         { id: "post-vendita", label: "Post Vendita", icon: Package },
@@ -1554,6 +1556,7 @@ const Dashboard = () => {
       items.push(
         { id: "users", label: "Utenti", icon: Users },
         { id: "clienti", label: "Clienti", icon: UserCheck },
+        { id: "audit-sub-agenzia-status", label: "Audit Status Sub Agenzie", icon: ShieldAlert },
         { id: "analytics", label: "Analytics", icon: TrendingUp }
       );
     } else if (user.role === "backoffice_commessa") {
@@ -1621,6 +1624,10 @@ const Dashboard = () => {
           return (user.role === "admin" || user.role === "responsabile_commessa") ? <UsersManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "permissions-audit":
           return user.role === "admin" ? <PermissionsAudit /> : <div className="p-8 text-center text-slate-600">Solo gli amministratori possono accedere all'audit permessi</div>;
+        case "audit-sub-agenzia-status":
+          return (user.role === "admin" || user.role === "responsabile_commessa")
+            ? <SubAgenziaStatusAudit />
+            : <div className="p-8 text-center text-slate-600">Non autorizzato</div>;
         case "workflow-builder":
           return user.role === "admin" ? <WorkflowBuilderManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "ai-config":

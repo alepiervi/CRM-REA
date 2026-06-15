@@ -1690,6 +1690,7 @@ async def update_cliente(
         # Only ADMIN, BACKOFFICE_COMMESSA and RESPONSABILE_COMMESSA can modify status field by default.
         # NEW (feb 2026): BACKOFFICE_SUB_AGENZIA può modificare lo status se la propria sub agenzia
         # ha il flag `can_change_status=True` e il cliente appartiene a quella sub agenzia.
+        status_changed_via_sub_agenzia_privilege = False
         if cliente_update.status is not None:
             allowed_status_roles = [UserRole.ADMIN, UserRole.BACKOFFICE_COMMESSA, UserRole.RESPONSABILE_COMMESSA]
             can_modify_status = current_user.role in allowed_status_roles
@@ -1700,6 +1701,7 @@ async def update_cliente(
                     sub_doc = await db.sub_agenzie.find_one({"id": current_user.sub_agenzia_id})
                     if sub_doc and sub_doc.get("can_change_status"):
                         can_modify_status = True
+                        status_changed_via_sub_agenzia_privilege = True
             if not can_modify_status:
                 # If user is not authorized, restore original status
                 cliente_update.status = cliente.status
@@ -1770,13 +1772,23 @@ async def update_cliente(
             # Log specifico per cambio status (se presente)
             status_change = next((change for change in changes if change["field"] == "status"), None)
             if status_change:
+                status_metadata = {
+                    "old_status": status_change["old_value"],
+                    "new_status": status_change["new_value"],
+                }
+                if status_changed_via_sub_agenzia_privilege:
+                    # NEW (feb 2026): traccia esplicitamente quando il cambio è fatto da BO Sub Agenzia con privilegio.
+                    # Usato dall'endpoint /api/audit/sub-agenzia-status-changes.
+                    status_metadata["via_sub_agenzia_privilege"] = True
+                    status_metadata["sub_agenzia_id"] = current_user.sub_agenzia_id
                 await log_client_action(
                     cliente_id=cliente_id,
                     action=ClienteLogAction.STATUS_CHANGED,
                     description=f"Status cambiato da '{status_change['old_value']}' a '{status_change['new_value']}'",
                     user=current_user,
                     old_value=status_change["old_value"],
-                    new_value=status_change["new_value"]
+                    new_value=status_change["new_value"],
+                    metadata=status_metadata,
                 )
         
         cliente_doc = await db.clienti.find_one({"id": cliente_id})
@@ -1969,6 +1981,106 @@ async def get_user_display_name(
             "username": "Error",
             "role": "Error"
         }
+
+
+# ============================================================================
+# AUDIT: cambi status fatti da BO Sub Agenzia con privilegio (feb 2026)
+# ============================================================================
+@router.get("/audit/sub-agenzia-status-changes")
+async def get_sub_agenzia_status_changes_audit(
+    sub_agenzia_id: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    limit: int = Query(200, ge=1, le=1000),
+    current_user: User = Depends(get_current_user)
+):
+    """Audit dedicato ai cambi status fatti da utenti Backoffice Sub Agenzia
+    quando la loro sub agenzia ha il privilegio `can_change_status` attivo.
+
+    Accessibile a: ADMIN, RESPONSABILE_COMMESSA.
+    """
+    if current_user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA]:
+        raise HTTPException(status_code=403, detail="Solo Admin e Responsabile Commessa possono visualizzare questo audit")
+
+    query: Dict[str, Any] = {
+        "action": ClienteLogAction.STATUS_CHANGED.value,
+        "metadata.via_sub_agenzia_privilege": True,
+    }
+
+    # Filtro per sub agenzia (singola)
+    if sub_agenzia_id:
+        query["metadata.sub_agenzia_id"] = sub_agenzia_id
+
+    # Per Responsabile Commessa: filtra solo sub agenzie che includono commesse a lui autorizzate
+    if current_user.role == UserRole.RESPONSABILE_COMMESSA:
+        accessible_commesse = await get_user_accessible_commesse(current_user)
+        if not accessible_commesse:
+            return []
+        sub_docs = await db.sub_agenzie.find({
+            "commesse_autorizzate": {"$in": accessible_commesse}
+        }).to_list(length=None)
+        allowed_sub_ids = [s["id"] for s in sub_docs]
+        if not allowed_sub_ids:
+            return []
+        if sub_agenzia_id and sub_agenzia_id not in allowed_sub_ids:
+            raise HTTPException(status_code=403, detail="Sub agenzia non accessibile")
+        query["metadata.sub_agenzia_id"] = {"$in": allowed_sub_ids} if not sub_agenzia_id else sub_agenzia_id
+
+    # Filtro date
+    if date_from or date_to:
+        ts_filter = {}
+        if date_from:
+            ts_filter["$gte"] = datetime.fromisoformat(date_from).replace(
+                hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc
+            )
+        if date_to:
+            ts_filter["$lte"] = datetime.fromisoformat(date_to).replace(
+                hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc
+            )
+        query["timestamp"] = ts_filter
+
+    logs = await db.clienti_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(length=None)
+
+    # Enrichment: cliente nome+cognome, sub agenzia nome
+    cliente_ids = list({log.get("cliente_id") for log in logs if log.get("cliente_id")})
+    sub_ids = list({log.get("metadata", {}).get("sub_agenzia_id") for log in logs if log.get("metadata", {}).get("sub_agenzia_id")})
+
+    clienti_map: Dict[str, Dict[str, Any]] = {}
+    if cliente_ids:
+        async for c in db.clienti.find({"id": {"$in": cliente_ids}}, {"_id": 0, "id": 1, "nome": 1, "cognome": 1, "tipologia_contratto": 1, "sub_agenzia_id": 1}):
+            clienti_map[c["id"]] = c
+
+    sub_map: Dict[str, str] = {}
+    if sub_ids:
+        async for s in db.sub_agenzie.find({"id": {"$in": sub_ids}}, {"_id": 0, "id": 1, "nome": 1}):
+            sub_map[s["id"]] = s.get("nome", "")
+
+    out = []
+    for log in logs:
+        meta = log.get("metadata") or {}
+        cli = clienti_map.get(log.get("cliente_id")) or {}
+        sub_id = meta.get("sub_agenzia_id") or cli.get("sub_agenzia_id")
+        # Normalize timestamp to ISO string
+        ts = log.get("timestamp")
+        if hasattr(ts, "isoformat"):
+            ts = ts.isoformat()
+        out.append({
+            "id": log.get("id"),
+            "cliente_id": log.get("cliente_id"),
+            "cliente_nome": cli.get("nome", ""),
+            "cliente_cognome": cli.get("cognome", ""),
+            "tipologia_contratto": cli.get("tipologia_contratto", ""),
+            "sub_agenzia_id": sub_id,
+            "sub_agenzia_nome": sub_map.get(sub_id, ""),
+            "old_status": meta.get("old_status") or log.get("old_value"),
+            "new_status": meta.get("new_status") or log.get("new_value"),
+            "user_id": log.get("user_id"),
+            "user_name": log.get("user_name"),
+            "user_role": log.get("user_role"),
+            "timestamp": ts,
+        })
+    return out
+
 
 @router.get("/clienti/{cliente_id}/logs")
 async def get_cliente_logs(
