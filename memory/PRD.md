@@ -88,6 +88,28 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 - UI: bottone "Duplica configurazione" (data-testid duplicate-config-btn) nella card Filtri di ClienteCustomFieldsManager → dialog con sorgente (pre-compilata dai filtri), anteprima conteggi, destinazione, selettore modalità, conferma con riepilogo copiati/saltati
 - Testato E2E: copia, doppia esecuzione merge (tutto skipped), overwrite, validazione sorgente==destinazione, UI con anteprima
 
+## Privilegi Sub Agenzia (15 feb 2026) — COMPLETATO E TESTATO (9/9)
+**Requisito utente**: alcune sub agenzie devono poter consentire ai loro BO Sub Agenzia di modificare lo status clienti; per le tipologie indicate, i clienti di quella sub agenzia non sono visibili al BO Commessa (esempio: TELEFONIA nascosta, ENERGIA visibile).
+
+**Backend**:
+- `models.py`: `SubAgenzia` + `Create/Update` con 2 nuovi campi
+  - `can_change_status: bool = False` — abilita modifica status ai BO Sub Agenzia
+  - `hidden_tipologie_for_bo_commessa: List[str] = []` — label tipologie nascoste al BO Commessa
+- `routes/segmenti_offerte.py` (create/update sub-agenzie): solo Admin può impostare i 2 nuovi campi; per altri ruoli sono silenziosamente azzerati/ignorati
+- `routes/users_auth.py` `/auth/me`: arricchito con `bo_sub_agenzia_can_change_status: bool` (lookup sub_agenzia per ruolo BACKOFFICE_SUB_AGENZIA)
+- `routes/clienti.py`:
+  - `update_cliente`: BO Sub Agenzia con privilegio attivo + cliente della propria sub agenzia può modificare lo status
+  - `get_clienti` (list) + `get_clienti_export`: per BO Commessa applica `$nor` su coppie `(sub_agenzia_id, tipologia_contratto∈hidden)`
+  - `get_cliente` (detail): BO Commessa → 403 se cliente ha tipologia nascosta per la sua sub agenzia
+- Match label tipologia_contratto case-sensitive (es. "Energia"/"Telefonia") — coerente con il valore salvato nei clienti
+
+**Frontend** (`pages/SubAgenzie.jsx`, `pages/clienti/EditClienteModal.jsx`):
+- `CreateSubAgenziaModal` + `EditSubAgenziaModal`: nuova sezione "Privilegi Speciali (Admin)" condizionata a `user.role === 'admin'`, con Switch can_change_status + checkbox multi-select tipologie (fetch `/api/tipologie-contratto/all`). Data-testid: `sub-agenzia-privileges-section`, `sub-agenzia-can-change-status-toggle`, `hidden-tipologia-create-{id}`/`hidden-tipologia-edit-{id}`
+- `EditClienteModal` Select Status ora abilitato anche se `user.role === 'backoffice_sub_agenzia' && user.bo_sub_agenzia_can_change_status && cliente.sub_agenzia_id === user.sub_agenzia_id` (data-testid `cliente-status-select`)
+
+**Test**: `/app/backend/tests/test_sub_agenzia_privileges.py` (3 schema) + `/app/backend/tests/test_sub_agenzia_privileges_e2e.py` (6 E2E: privileges CRUD admin, /auth/me flag, list-filter BO Commessa, detail-403, update-status con e senza privilegio). Suite completa pytest 60/64 (4 skip, 0 fail).
+
+
 ## REFACTORING STRUTTURALE (giugno 2026) — COMPLETATO E TESTATO
 **Backend:**
 - `/app/backend/models.py` (1.600 righe): tutti i 141 modelli Pydantic + Enum estratti da server.py (importati con `from models import *` nello stesso punto). server.py: 24.488 → 22.900 righe
