@@ -1328,7 +1328,7 @@ class ClienteUpdate(BaseModel):
     comune_attivazione: Optional[str] = None  # NEW: Comune di installazione/attivazione
     provincia_attivazione: Optional[str] = None  # NEW: Provincia di attivazione
     cap_attivazione: Optional[str] = None  # NEW: CAP di attivazione
-    email: str  # Obbligatorio
+    email: Optional[str] = None  # Fix feb 2026: reso opzionale — l'EditClienteModal manda payload parziale e ClienteUpdate restituiva 422 sui PUT senza email (es. cambio status da BO Sub Agenzia)
     telefono: Optional[str] = None
     telefono2: Optional[str] = None
     partita_iva: Optional[str] = None
