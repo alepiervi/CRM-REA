@@ -291,10 +291,25 @@ async def can_user_delete_cliente(user: User, cliente: Cliente) -> bool:
 async def can_user_modify_cliente(user: User, cliente: Cliente) -> bool:
     """Check if user can modify a specific cliente"""
     
-    # NEW: Check if cliente is locked (status "inserito" or "ko") - lowercase with underscore
-    # Only ADMIN, RESPONSABILE_COMMESSA and BACKOFFICE_COMMESSA can modify locked clients
+    # NEW (feb 2026): BACKOFFICE_SUB_AGENZIA con privilegio `can_change_status` attivo sulla propria
+    # sub agenzia può modificare i clienti della sua sub agenzia (compreso il bypass del lock
+    # su status "inserito"/"ko" — il privilegio è stato concesso esplicitamente dall'Admin).
+    bo_sub_priv_ok = False
+    if (
+        user.role == UserRole.BACKOFFICE_SUB_AGENZIA
+        and getattr(user, "sub_agenzia_id", None)
+        and cliente.sub_agenzia_id
+        and cliente.sub_agenzia_id == user.sub_agenzia_id
+    ):
+        sub_doc = await db.sub_agenzie.find_one({"id": user.sub_agenzia_id})
+        if sub_doc and sub_doc.get("can_change_status"):
+            bo_sub_priv_ok = True
+    
+    # Check if cliente is locked (status "inserito" or "ko") - lowercase with underscore
+    # Only ADMIN, RESPONSABILE_COMMESSA, BACKOFFICE_COMMESSA (+ BO Sub Agenzia con privilegio)
+    # possono modificare clienti bloccati.
     if cliente.status and cliente.status.lower() in ["inserito", "ko"]:
-        if user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA]:
+        if user.role not in [UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA] and not bo_sub_priv_ok:
             return False
     
     if user.role == UserRole.ADMIN:
@@ -318,6 +333,13 @@ async def can_user_modify_cliente(user: User, cliente: Cliente) -> bool:
             "is_active": True
         })
         return authorization is not None
+    
+    # NEW (feb 2026): per BACKOFFICE_SUB_AGENZIA e RESPONSABILE_SUB_AGENZIA, prima del check
+    # legacy su user_commessa_authorizations, controlliamo il campo diretto user.sub_agenzia_id
+    # (allineato a come funziona la lista clienti e gli altri controlli RBAC).
+    if user.role in [UserRole.BACKOFFICE_SUB_AGENZIA, UserRole.RESPONSABILE_SUB_AGENZIA]:
+        if getattr(user, "sub_agenzia_id", None) and cliente.sub_agenzia_id == user.sub_agenzia_id:
+            return True
     
     # For other roles with authorizations
     authorization = await db.user_commessa_authorizations.find_one({
