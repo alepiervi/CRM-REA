@@ -8,7 +8,7 @@ import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { Switch } from "../ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { MessageCircle, RefreshCw, AlertCircle, CheckCircle, QrCode, Save } from "lucide-react";
+import { MessageCircle, RefreshCw, AlertCircle, CheckCircle, QrCode, Save, Eye, EyeOff, Key } from "lucide-react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -29,12 +29,21 @@ export const SpokiAdminConfig = ({ units = [] }) => {
   const [assistantsError, setAssistantsError] = useState("");
   const [diagnostics, setDiagnostics] = useState(null);
   const [diagLoading, setDiagLoading] = useState(false);
+  // NEW (feb 2026): gestione API key + webhook secret per-Unit
+  const [apiKeyInput, setApiKeyInput] = useState(""); // valore inserito in input (vuoto = lascia invariato)
+  const [webhookSecretInput, setWebhookSecretInput] = useState("");
+  const [revealApiKey, setRevealApiKey] = useState(false);
+  const [revealWebhookSecret, setRevealWebhookSecret] = useState(false);
 
   const runDiagnostics = async () => {
     setDiagLoading(true);
     setDiagnostics(null);
     try {
-      const r = await axios.get(`${API}/spoki/diagnostics`, { headers: authHeaders() });
+      // Se è selezionata una Unit, diagnostica mirata; altrimenti globale
+      const url = selectedUnitId
+        ? `${API}/spoki/diagnostics?unit_id=${selectedUnitId}`
+        : `${API}/spoki/diagnostics`;
+      const r = await axios.get(url, { headers: authHeaders() });
       setDiagnostics(r.data);
     } catch (e) {
       setDiagnostics({ report: `Errore diagnostica: ${e?.response?.data?.detail || e.message}` });
@@ -67,11 +76,13 @@ export const SpokiAdminConfig = ({ units = [] }) => {
     }
   };
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = async (unitId) => {
     try {
-      const r = await axios.get(`${API}/spoki/templates`, { headers: authHeaders() });
+      const u = unitId || selectedUnitId;
+      const url = u ? `${API}/spoki/templates?unit_id=${u}` : `${API}/spoki/templates`;
+      const r = await axios.get(url, { headers: authHeaders() });
       setTemplates(r.data?.templates || []);
-      if (r.data?.error) setTemplatesError(r.data.error); else setTemplatesError("");
+      if (r.data?.error || r.data?.warning) setTemplatesError(r.data.error || r.data.warning); else setTemplatesError("");
     } catch (e) {
       setTemplatesError(e?.response?.data?.detail || e.message);
     }
@@ -90,10 +101,37 @@ export const SpokiAdminConfig = ({ units = [] }) => {
     try {
       const r = await axios.get(`${API}/spoki/unit-configs/${unitId}`, { headers: authHeaders() });
       setUnitConfig(r.data);
+      // Reset input dei secrets ad ogni cambio Unit
+      setApiKeyInput("");
+      setWebhookSecretInput("");
+      setRevealApiKey(false);
+      setRevealWebhookSecret(false);
     } catch (e) {
       setUnitConfig(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const revealApiKeyHandler = async () => {
+    if (!selectedUnitId) return;
+    try {
+      const r = await axios.get(`${API}/spoki/unit-configs/${selectedUnitId}/secrets`, { headers: authHeaders() });
+      setApiKeyInput(r.data?.api_key || "");
+      setRevealApiKey(true);
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Impossibile rivelare la chiave");
+    }
+  };
+
+  const revealWebhookSecretHandler = async () => {
+    if (!selectedUnitId) return;
+    try {
+      const r = await axios.get(`${API}/spoki/unit-configs/${selectedUnitId}/secrets`, { headers: authHeaders() });
+      setWebhookSecretInput(r.data?.webhook_secret || "");
+      setRevealWebhookSecret(true);
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Impossibile rivelare il secret");
     }
   };
 
@@ -105,7 +143,10 @@ export const SpokiAdminConfig = ({ units = [] }) => {
   }, []);
 
   useEffect(() => {
-    if (selectedUnitId) fetchUnitConfig(selectedUnitId);
+    if (selectedUnitId) {
+      fetchUnitConfig(selectedUnitId);
+      fetchTemplates(selectedUnitId);
+    }
   }, [selectedUnitId]);
 
   const handleSave = async () => {
@@ -121,9 +162,23 @@ export const SpokiAdminConfig = ({ units = [] }) => {
         chatbot_enabled: !!unitConfig.chatbot_enabled,
         openai_assistant_id: unitConfig.openai_assistant_id || "",
       };
+      // NEW (feb 2026): includi api_key / webhook_secret SOLO se l'utente li ha modificati
+      // (revealApiKey=true significa che l'input è stato popolato — sia via "Mostra" sia digitato)
+      if (revealApiKey || (apiKeyInput && apiKeyInput.length > 0)) {
+        payload.api_key = apiKeyInput;
+      }
+      if (revealWebhookSecret || (webhookSecretInput && webhookSecretInput.length > 0)) {
+        payload.webhook_secret = webhookSecretInput;
+      }
       const r = await axios.patch(`${API}/spoki/unit-configs/${selectedUnitId}`, payload, { headers: authHeaders() });
       setUnitConfig(r.data);
+      setApiKeyInput("");
+      setWebhookSecretInput("");
+      setRevealApiKey(false);
+      setRevealWebhookSecret(false);
       fetchAllConfigs();
+      // Refetch dei template (potrebbero ora essere accessibili se la key è stata appena salvata)
+      fetchTemplates(selectedUnitId);
     } catch (e) {
       alert(e?.response?.data?.detail || "Errore salvataggio");
     } finally {
@@ -148,9 +203,15 @@ export const SpokiAdminConfig = ({ units = [] }) => {
 
   const statusBadge = () => {
     if (!health) return <Badge variant="secondary">…</Badge>;
+    // Health globale: aggrega quante Unit hanno la key configurata
+    if (health.scope === "global") {
+      if ((health.units_with_api_key || 0) === 0) return <Badge variant="secondary">Nessuna Unit configurata</Badge>;
+      if (health.units_with_api_key === health.units_total) return <Badge className="bg-green-600">{health.units_with_api_key}/{health.units_total} Unit attive</Badge>;
+      return <Badge className="bg-amber-500">{health.units_with_api_key}/{health.units_total} Unit configurate</Badge>;
+    }
     if (health.status === "ok") return <Badge className="bg-green-600">Connesso</Badge>;
     if (health.status === "no_api_key") return <Badge variant="secondary">Chiave non configurata</Badge>;
-    return <Badge variant="destructive">Errore: {health.error?.slice(0, 60)}</Badge>;
+    return <Badge variant="destructive">Errore: {String(health.error || "").slice(0, 60)}</Badge>;
   };
 
   return (
@@ -233,6 +294,73 @@ export const SpokiAdminConfig = ({ units = [] }) => {
             <CardTitle>Configurazione Unit</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* NEW (feb 2026): Credenziali Spoki per-Unit */}
+            <div className="border border-emerald-200 bg-emerald-50/50 rounded-lg p-4 space-y-3" data-testid="spoki-unit-credentials">
+              <div className="flex items-center gap-2">
+                <Key className="w-4 h-4 text-emerald-700" />
+                <span className="text-sm font-semibold text-emerald-900">Credenziali Spoki di questa Unit</span>
+                {unitConfig.api_key_configured ? (
+                  <Badge className="bg-green-600 ml-auto">Chiave attiva</Badge>
+                ) : (
+                  <Badge variant="secondary" className="ml-auto">Chiave mancante</Badge>
+                )}
+              </div>
+              <div className="text-xs text-emerald-900/80">
+                Ogni Unit ha la sua API key Spoki dedicata. Per ottenerla: pannello Spoki → Integrazioni → API.
+              </div>
+
+              <div>
+                <Label className="text-xs">Spoki API Key</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type={revealApiKey ? "text" : "password"}
+                    data-testid="spoki-api-key-input"
+                    value={revealApiKey || apiKeyInput ? apiKeyInput : (unitConfig.api_key_masked || "")}
+                    onChange={(e) => { setApiKeyInput(e.target.value); setRevealApiKey(true); }}
+                    placeholder={unitConfig.api_key_configured ? "(chiave salvata — clicca Mostra per modificare)" : "Incolla la API key Spoki"}
+                    className="font-mono"
+                  />
+                  {unitConfig.api_key_configured && !revealApiKey && (
+                    <Button variant="outline" size="sm" onClick={revealApiKeyHandler} data-testid="spoki-api-key-reveal">
+                      <Eye className="w-4 h-4 mr-1" /> Mostra
+                    </Button>
+                  )}
+                  {(revealApiKey || apiKeyInput) && (
+                    <Button variant="outline" size="sm" onClick={() => { setRevealApiKey(false); setApiKeyInput(""); }} data-testid="spoki-api-key-hide">
+                      <EyeOff className="w-4 h-4 mr-1" /> Nascondi
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs">Webhook Secret (X-Spoki-Signature)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type={revealWebhookSecret ? "text" : "password"}
+                    data-testid="spoki-webhook-secret-input"
+                    value={revealWebhookSecret || webhookSecretInput ? webhookSecretInput : (unitConfig.webhook_secret_masked || "")}
+                    onChange={(e) => { setWebhookSecretInput(e.target.value); setRevealWebhookSecret(true); }}
+                    placeholder={unitConfig.webhook_secret_configured ? "(secret salvato — clicca Mostra per modificare)" : "Incolla il webhook signing secret"}
+                    className="font-mono"
+                  />
+                  {unitConfig.webhook_secret_configured && !revealWebhookSecret && (
+                    <Button variant="outline" size="sm" onClick={revealWebhookSecretHandler} data-testid="spoki-webhook-secret-reveal">
+                      <Eye className="w-4 h-4 mr-1" /> Mostra
+                    </Button>
+                  )}
+                  {(revealWebhookSecret || webhookSecretInput) && (
+                    <Button variant="outline" size="sm" onClick={() => { setRevealWebhookSecret(false); setWebhookSecretInput(""); }} data-testid="spoki-webhook-secret-hide">
+                      <EyeOff className="w-4 h-4 mr-1" /> Nascondi
+                    </Button>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Usato per verificare la firma dei webhook in arrivo (HMAC SHA-256). Lascia vuoto per disabilitare il check.
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Numero WhatsApp (E.164, es. +393331234567)</Label>

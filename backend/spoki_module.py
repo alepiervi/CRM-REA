@@ -45,13 +45,15 @@ class SpokiPairingStatus(str, Enum):
 class UnitSpokiConfig(BaseModel):
     """Configurazione Spoki per singola Unit (1:1 con commessa.id o unit.id).
 
-    NOTE multi-tenancy: usiamo UNA sola API key globale (env SPOKI_API_KEY).
-    Per Unit conserviamo solo il numero WhatsApp da pairare via QR e il template
-    di benvenuto preferito.
+    NEW (feb 2026): ogni Unit ha la sua API key + webhook secret dedicati (multi-tenant).
+    La precedente env var globale SPOKI_API_KEY è stata rimossa.
     """
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     unit_id: str  # commessa_id o sub_agenzia_id o un id Unit reale
     unit_label: Optional[str] = None  # nome leggibile, popolato in fetch
+    # API credentials per-Unit (feb 2026)
+    api_key: Optional[str] = None  # Spoki API key (X-Spoki-Api-Key) di questa Unit
+    webhook_secret: Optional[str] = None  # Spoki webhook signing secret di questa Unit
     whatsapp_number: Optional[str] = None  # es. +393331234567
     pairing_status: SpokiPairingStatus = SpokiPairingStatus.NOT_PAIRED
     spoki_connection_id: Optional[str] = None  # restituito da Spoki dopo pairing
@@ -68,6 +70,8 @@ class UnitSpokiConfig(BaseModel):
 
 
 class UnitSpokiConfigUpdate(BaseModel):
+    api_key: Optional[str] = None
+    webhook_secret: Optional[str] = None
     whatsapp_number: Optional[str] = None
     welcome_template_name: Optional[str] = None
     welcome_template_language: Optional[str] = None
@@ -163,12 +167,16 @@ class SpokiMessage(BaseModel):
 # =====================================================
 
 class SpokiService:
-    """Client per Spoki API. Singola API key da env SPOKI_API_KEY."""
+    """Client per Spoki API. NEW (feb 2026): istanziato per-Unit con la sua api_key + webhook_secret.
 
-    def __init__(self, api_key: Optional[str] = None, base_url: str = SPOKI_BASE_URL):
-        self.api_key = api_key or os.environ.get("SPOKI_API_KEY", "")
+    L'env var globale SPOKI_API_KEY è stata rimossa. Usare `get_spoki_service_for_unit(db, unit_id)`
+    per ottenere un service configurato con le credenziali della specifica Unit.
+    """
+
+    def __init__(self, api_key: Optional[str] = None, base_url: str = SPOKI_BASE_URL, webhook_secret: Optional[str] = None):
+        self.api_key = api_key or ""
         self.base_url = base_url.rstrip("/")
-        self.webhook_secret = os.environ.get("SPOKI_WEBHOOK_SECRET", "")
+        self.webhook_secret = webhook_secret or ""
 
     def _headers(self) -> Dict[str, str]:
         return {
@@ -183,14 +191,14 @@ class SpokiService:
 
     async def _request(self, method: str, path: str, **kwargs) -> Dict[str, Any]:
         if not self.api_key:
-            raise RuntimeError("SPOKI_API_KEY non configurato in backend/.env")
+            raise RuntimeError("API key Spoki non configurata per questa Unit (Amministrazione → WhatsApp Spoki)")
         url = f"{self.base_url}{path}"
         timeout = kwargs.pop("timeout", 15.0)
         async with httpx.AsyncClient(timeout=timeout) as client:
             res = await client.request(method, url, headers=self._headers(), **kwargs)
         if res.status_code == 401:
             raise RuntimeError(
-                "Spoki API: 401 Unauthorized — la API key non è riconosciuta da Spoki. "
+                "Spoki API: 401 Unauthorized — la API key di questa Unit non è riconosciuta da Spoki. "
                 "Verificare in piattaforma Spoki → Integrazioni → API che la chiave sia attiva/approvata."
             )
         if res.status_code >= 400:
@@ -296,3 +304,30 @@ class SpokiService:
 
 
 # Singleton istanziato a runtime usando l'env (creato in spoki_routes.py)
+
+
+async def get_spoki_service_for_unit(db, unit_id: Optional[str]) -> Optional[SpokiService]:
+    """NEW (feb 2026): factory per-Unit. Carica le credenziali Spoki della Unit dal DB
+    e restituisce un SpokiService configurato, oppure None se la Unit non ha api_key.
+
+    Ogni Unit ha la sua coppia (api_key, webhook_secret) salvata in `unit_spoki_configs`.
+    """
+    if not unit_id:
+        return None
+    cfg = await db.unit_spoki_configs.find_one({"unit_id": unit_id}, {"_id": 0})
+    if not cfg:
+        return None
+    api_key = (cfg.get("api_key") or "").strip()
+    if not api_key:
+        return None
+    return SpokiService(api_key=api_key, webhook_secret=(cfg.get("webhook_secret") or "").strip() or None)
+
+
+def mask_secret(value: Optional[str]) -> Optional[str]:
+    """Maschera un segreto per visualizzazione UI: prime 4 + ultime 4 (es. 'bf7b...6241')."""
+    if not value:
+        return None
+    s = str(value).strip()
+    if len(s) <= 8:
+        return "***"
+    return s[:4] + "..." + s[-4:]

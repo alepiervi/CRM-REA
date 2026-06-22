@@ -22,6 +22,7 @@ from spoki_module import (
     SpokiService, UnitSpokiConfig, UnitSpokiConfigUpdate, SpokiPairingStatus,
     UnitCalendarConfig, WorkingHourSlot, Appointment, AppointmentStatus,
     SpokiMessage, LeadChatbotSession,
+    get_spoki_service_for_unit, mask_secret,
 )
 from spoki_chatbot import (
     chatbot_generate_reply, generate_unit_reply, list_openai_assistants,
@@ -30,6 +31,9 @@ from spoki_chatbot import (
 )
 
 logger = logging.getLogger(__name__)
+# NOTE (feb 2026): Il singleton globale `spoki_service` è stato DEPRECATO.
+# Ogni operazione Spoki ora usa `get_spoki_service_for_unit(db, unit_id)` con le credenziali della Unit.
+# Lo manteniamo come stub non configurato per non rompere import esterni.
 spoki_service = SpokiService()
 
 
@@ -100,11 +104,14 @@ def build_spoki_routers(db, get_current_user, UserRole):
             phone_number=lead["telefono"], template_name=cfg["welcome_template_name"],
             template_variables=variables, sender="system",
         ).dict()
+        # NEW (feb 2026): usa il service Spoki della specifica Unit
+        unit_svc = await get_spoki_service_for_unit(db, unit_id)
         try:
-            if not spoki_service.is_configured:
+            if not unit_svc:
                 out["status"] = "skipped_no_api_key"
+                out["error"] = "API key Spoki non configurata per questa Unit"
             else:
-                res = await spoki_service.send_template_message(
+                res = await unit_svc.send_template_message(
                     to=lead["telefono"], template_name=cfg["welcome_template_name"],
                     language=cfg.get("welcome_template_language") or "it",
                     variables=variables, connection_id=cfg.get("spoki_connection_id"),
@@ -196,9 +203,11 @@ def build_spoki_routers(db, get_current_user, UserRole):
             unit_id=unit_id, lead_id=lead_id, direction="outbound",
             phone_number=lead.get("telefono") or "", body=bot_text, sender="bot",
         ).dict()
+        # NEW (feb 2026): usa il service Spoki della specifica Unit
+        unit_svc = await get_spoki_service_for_unit(db, unit_id)
         try:
-            if spoki_service.is_configured and lead.get("telefono"):
-                res = await spoki_service.send_session_message(
+            if unit_svc and lead.get("telefono"):
+                res = await unit_svc.send_session_message(
                     to=lead["telefono"], body=bot_text,
                     connection_id=(cfg or {}).get("spoki_connection_id"),
                 )
@@ -217,89 +226,143 @@ def build_spoki_routers(db, get_current_user, UserRole):
     # ====================================
 
     @router.get("/diagnostics")
-    async def spoki_diagnostics(current_user=Depends(get_current_user)):
-        """Diagnostica completa della connessione Spoki: testa la chiave su entrambi i
-        domini ufficiali e genera un report tecnico da inoltrare al supporto Spoki."""
+    async def spoki_diagnostics(unit_id: Optional[str] = None, current_user=Depends(get_current_user)):
+        """Diagnostica della connessione Spoki per una specifica Unit (o per TUTTE quelle configurate
+        se `unit_id` non è fornito). Testa la chiave su entrambi i domini ufficiali."""
         _require_admin(current_user)
         import httpx
-        api_key = os.environ.get("SPOKI_API_KEY", "")
-        if not api_key:
-            return {"configured": False, "report": "SPOKI_API_KEY non configurata nel backend."}
-        masked = api_key[:6] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
-        attempts = []
-        async with httpx.AsyncClient(timeout=15) as client:
-            for base in ["https://api.spoki.com/api/1", "https://app.spoki.it/api/1"]:
-                for ep in ["/templates/", "/channel/"]:
-                    try:
-                        r = await client.get(
-                            base + ep,
-                            headers={"X-Spoki-Api-Key": api_key, "Accept": "application/json"},
-                        )
-                        attempts.append({
-                            "url": base + ep, "method": "GET",
-                            "auth_header": "X-Spoki-Api-Key (come da documentazione ufficiale Spoki API v1)",
-                            "http_status": r.status_code,
-                            "response_body": r.text[:300],
-                            "server_date": r.headers.get("date"),
-                        })
-                    except Exception as e:
-                        attempts.append({"url": base + ep, "method": "GET", "error": str(e)[:200]})
-        ok = any(a.get("http_status") == 200 for a in attempts)
+
+        # Carica le configurazioni unit da testare
+        if unit_id:
+            cfgs = await db.unit_spoki_configs.find({"unit_id": unit_id, "api_key": {"$nin": [None, ""]}}, {"_id": 0}).to_list(length=None)
+        else:
+            cfgs = await db.unit_spoki_configs.find({"api_key": {"$nin": [None, ""]}}, {"_id": 0}).to_list(length=None)
+
+        if not cfgs:
+            return {
+                "configured": False,
+                "units": [],
+                "report": "Nessuna Unit ha configurato una API key Spoki. Vai su Admin → WhatsApp Spoki e imposta la chiave per Unit."
+            }
+
+        results = []
         now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        lines = [
+        report_lines = [
             "=== REPORT DIAGNOSTICO INTEGRAZIONE SPOKI API (da CRM Nureal) ===",
             f"Data test: {now}",
-            f"API key utilizzata: {masked} (lunghezza {len(api_key)} caratteri)",
             "Header di autenticazione: X-Spoki-Api-Key: <api_key>",
             "Riferimento docs: https://documenter.getpostman.com/view/21611004/UzBqnPvF",
             "",
         ]
-        for a in attempts:
-            lines.append(f"→ {a['method']} {a['url']}")
-            if "error" in a:
-                lines.append(f"   ERRORE DI RETE: {a['error']}")
-            else:
-                lines.append(f"   HTTP {a['http_status']} — risposta: {a['response_body']}")
-            lines.append("")
-        if ok:
-            lines.append("ESITO: ✅ CONNESSIONE RIUSCITA — la chiave è attiva.")
-        else:
-            lines.append("ESITO: ❌ La chiave NON viene riconosciuta dai server Spoki su nessun dominio.")
-            lines.append("Messaggio del server Spoki: 'Authentication credentials were not provided'")
-            lines.append("(risposta tipica quando la API key non risulta attiva/abilitata lato Spoki).")
-            lines.append("")
-            lines.append("DOMANDA PER IL SUPPORTO SPOKI: la API key indicata risulta attiva e abilitata")
-            lines.append("per le chiamate API v1 (header X-Spoki-Api-Key)? Il piano dell'account include l'accesso API?")
-        return {"configured": True, "success": ok, "attempts": attempts, "report": "\n".join(lines)}
+        async with httpx.AsyncClient(timeout=15) as client:
+            for cfg in cfgs:
+                u_id = cfg.get("unit_id")
+                api_key = (cfg.get("api_key") or "").strip()
+                masked = mask_secret(api_key) or "***"
+                attempts = []
+                for base in ["https://api.spoki.com/api/1", "https://app.spoki.it/api/1"]:
+                    for ep in ["/templates/", "/channel/"]:
+                        try:
+                            r = await client.get(
+                                base + ep,
+                                headers={"X-Spoki-Api-Key": api_key, "Accept": "application/json"},
+                            )
+                            attempts.append({
+                                "url": base + ep, "method": "GET",
+                                "http_status": r.status_code,
+                                "response_body": r.text[:300],
+                                "server_date": r.headers.get("date"),
+                            })
+                        except Exception as e:
+                            attempts.append({"url": base + ep, "method": "GET", "error": str(e)[:200]})
+                ok = any(a.get("http_status") == 200 for a in attempts)
+                # Look up unit label
+                unit_doc = await db.units.find_one({"id": u_id}, {"_id": 0, "nome": 1}) if u_id else None
+                unit_label = (unit_doc or {}).get("nome") or u_id
+                results.append({
+                    "unit_id": u_id,
+                    "unit_label": unit_label,
+                    "api_key_masked": masked,
+                    "success": ok,
+                    "attempts": attempts,
+                })
+                report_lines.append(f"--- Unit: {unit_label} (id {u_id}) — key {masked} ---")
+                for a in attempts:
+                    if "error" in a:
+                        report_lines.append(f"  ERRORE DI RETE su {a['url']}: {a['error']}")
+                    else:
+                        report_lines.append(f"  GET {a['url']} → HTTP {a['http_status']}  ({a['response_body'][:120]})")
+                report_lines.append("ESITO: ✅ chiave attiva" if ok else "ESITO: ❌ chiave NON riconosciuta")
+                report_lines.append("")
+        overall_ok = all(r.get("success") for r in results) if results else False
+        return {
+            "configured": True,
+            "success": overall_ok,
+            "units": results,
+            "report": "\n".join(report_lines),
+        }
 
     @router.get("/health")
-    async def spoki_health(current_user=Depends(get_current_user)):
+    async def spoki_health(unit_id: Optional[str] = None, current_user=Depends(get_current_user)):
         _require_admin(current_user)
-        info = {
-            "api_key_configured": spoki_service.is_configured,
-            "base_url": spoki_service.base_url,
-            "webhook_secret_configured": bool(spoki_service.webhook_secret),
+        if not unit_id:
+            # Status aggregato: quante unit hanno la chiave configurata
+            total = await db.unit_spoki_configs.count_documents({})
+            with_key = await db.unit_spoki_configs.count_documents({"api_key": {"$nin": [None, ""]}})
+            return {
+                "scope": "global",
+                "units_total": total,
+                "units_with_api_key": with_key,
+                "status": "ok" if with_key > 0 else "no_api_key",
+            }
+        svc = await get_spoki_service_for_unit(db, unit_id)
+        info: Dict[str, Any] = {
+            "scope": "unit",
+            "unit_id": unit_id,
+            "api_key_configured": bool(svc),
+            "webhook_secret_configured": bool(svc and svc.webhook_secret),
         }
-        if not spoki_service.is_configured:
+        if not svc:
             info["status"] = "no_api_key"
             return info
         try:
-            await spoki_service.list_templates()
+            await svc.list_templates()
             info["status"] = "ok"
         except Exception as e:
             info["status"] = "error"
             info["error"] = str(e)
         return info
 
-    @router.get("/unit-configs", response_model=List[UnitSpokiConfig])
+    def _serialize_unit_cfg(d: Dict[str, Any]) -> Dict[str, Any]:
+        """Serializza UnitSpokiConfig per la UI senza esporre i segreti in chiaro.
+
+        - api_key e webhook_secret NON sono inclusi in chiaro nella risposta
+        - sono aggiunti `api_key_configured: bool` + `api_key_masked: str|None`
+          (e gli omologhi per webhook_secret) per UI a stato
+        """
+        out = dict(d)
+        ak = out.pop("api_key", None)
+        ws = out.pop("webhook_secret", None)
+        out["api_key_configured"] = bool(ak)
+        out["api_key_masked"] = mask_secret(ak)
+        out["webhook_secret_configured"] = bool(ws)
+        out["webhook_secret_masked"] = mask_secret(ws)
+        # Garantisci la presenza dei campi del modello UnitSpokiConfig (anche se mancanti nel doc legacy)
+        out.setdefault("chatbot_enabled", True)
+        out.setdefault("welcome_template_language", "it")
+        out.setdefault("welcome_template_variables", {})
+        out.setdefault("pairing_status", SpokiPairingStatus.NOT_PAIRED.value)
+        return out
+
+    @router.get("/unit-configs")
     async def list_unit_configs(current_user=Depends(get_current_user)):
         _require_admin(current_user)
         out = []
         async for d in db.unit_spoki_configs.find({}, {"_id": 0}):
-            out.append(UnitSpokiConfig(**d))
+            out.append(_serialize_unit_cfg(d))
         return out
 
-    @router.get("/unit-configs/{unit_id}", response_model=UnitSpokiConfig)
+    @router.get("/unit-configs/{unit_id}")
     async def get_unit_config(unit_id: str, current_user=Depends(get_current_user)):
         if not await _user_can_see_unit(current_user, unit_id):
             raise HTTPException(status_code=403, detail="Accesso negato")
@@ -307,13 +370,34 @@ def build_spoki_routers(db, get_current_user, UserRole):
         if not doc:
             cfg = UnitSpokiConfig(unit_id=unit_id, chatbot_system_prompt=DEFAULT_SYSTEM_PROMPT_IT)
             await db.unit_spoki_configs.insert_one(cfg.dict())
-            return cfg
-        return UnitSpokiConfig(**doc)
+            return _serialize_unit_cfg(cfg.dict())
+        return _serialize_unit_cfg(doc)
 
-    @router.patch("/unit-configs/{unit_id}", response_model=UnitSpokiConfig)
+    @router.get("/unit-configs/{unit_id}/secrets")
+    async def reveal_unit_secrets(unit_id: str, current_user=Depends(get_current_user)):
+        """Endpoint dedicato per rivelare api_key e webhook_secret in chiaro (Admin only).
+        Usato dal toggle 'Mostra' nell'UI; ogni richiesta è loggata."""
+        _require_admin(current_user)
+        doc = await db.unit_spoki_configs.find_one({"unit_id": unit_id}, {"_id": 0})
+        if not doc:
+            raise HTTPException(status_code=404, detail="Configurazione Unit non trovata")
+        logger.info(f"[SPOKI SECRETS REVEAL] user={current_user.username} unit_id={unit_id}")
+        return {
+            "unit_id": unit_id,
+            "api_key": doc.get("api_key") or "",
+            "webhook_secret": doc.get("webhook_secret") or "",
+        }
+
+    @router.patch("/unit-configs/{unit_id}")
     async def update_unit_config(unit_id: str, payload: UnitSpokiConfigUpdate, current_user=Depends(get_current_user)):
         _require_admin(current_user)
-        set_doc = {k: v for k, v in payload.dict(exclude_unset=True).items() if v is not None}
+        # exclude_unset=True: include solo i campi esplicitamente inviati
+        # Convenzione frontend: "" stringa vuota = cancella; campo omesso = lascia invariato
+        set_doc: Dict[str, Any] = {}
+        for k, v in payload.dict(exclude_unset=True).items():
+            if v is None:
+                continue
+            set_doc[k] = v
         set_doc["updated_at"] = datetime.now(timezone.utc)
         # $setOnInsert keys must NOT overlap with $set keys (MongoDB rejects conflicting paths)
         on_insert = {
@@ -332,7 +416,7 @@ def build_spoki_routers(db, get_current_user, UserRole):
             upsert=True,
         )
         doc = await db.unit_spoki_configs.find_one({"unit_id": unit_id}, {"_id": 0})
-        return UnitSpokiConfig(**doc)
+        return _serialize_unit_cfg(doc)
 
     @router.get("/openai-assistants")
     async def get_openai_assistants(current_user=Depends(get_current_user)):
@@ -347,30 +431,39 @@ def build_spoki_routers(db, get_current_user, UserRole):
             return {"assistants": [], "configured": True, "error": str(e)}
 
     @router.get("/templates")
-    async def list_templates(current_user=Depends(get_current_user)):
+    async def list_templates(unit_id: Optional[str] = None, current_user=Depends(get_current_user)):
+        """Lista template Spoki di una specifica Unit. Se `unit_id` non è fornito ed esiste
+        una sola Unit configurata, usa quella. Richiede api_key configurata sulla Unit."""
         _require_admin(current_user)
-        if not spoki_service.is_configured:
-            return {"templates": [], "warning": "SPOKI_API_KEY non configurato"}
+        if not unit_id:
+            # Auto-select: se esiste una sola Unit con api_key, usala
+            configured = await db.unit_spoki_configs.find({"api_key": {"$nin": [None, ""]}}, {"_id": 0, "unit_id": 1}).to_list(length=None)
+            if len(configured) == 1:
+                unit_id = configured[0]["unit_id"]
+            elif len(configured) == 0:
+                return {"templates": [], "warning": "Nessuna Unit ha una API key Spoki configurata"}
+            else:
+                return {"templates": [], "warning": "Specificare ?unit_id=... (più Unit configurate)"}
+        svc = await get_spoki_service_for_unit(db, unit_id)
+        if not svc:
+            return {"templates": [], "warning": f"API key Spoki non configurata per la Unit {unit_id}"}
         try:
-            items = await spoki_service.list_templates()
-            return {"templates": items}
+            items = await svc.list_templates()
+            return {"templates": items, "unit_id": unit_id}
         except Exception as e:
-            return {"templates": [], "error": str(e)}
+            return {"templates": [], "error": str(e), "unit_id": unit_id}
 
     @router.post("/unit-configs/{unit_id}/pair")
     async def pair_unit_number(unit_id: str, current_user=Depends(get_current_user)):
-        """Verifica lo stato del numero WhatsApp della Unit sui canali Spoki reali.
-
-        NOTA: il pairing (QR) si esegue dalla piattaforma Spoki. Qui controlliamo
-        se il numero configurato risulta tra i canali attivi dell'account.
-        """
+        """Verifica lo stato del numero WhatsApp della Unit sui canali Spoki reali (usa la key della Unit)."""
         _require_admin(current_user)
-        if not spoki_service.is_configured:
-            raise HTTPException(status_code=400, detail="SPOKI_API_KEY non configurato")
+        svc = await get_spoki_service_for_unit(db, unit_id)
+        if not svc:
+            raise HTTPException(status_code=400, detail="API key Spoki non configurata per questa Unit")
         cfg = await db.unit_spoki_configs.find_one({"unit_id": unit_id}, {"_id": 0})
         wanted = re.sub(r"\D", "", (cfg or {}).get("whatsapp_number") or "")
         try:
-            channels = await spoki_service.list_channels()
+            channels = await svc.list_channels()
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"Errore Spoki: {e}")
         matched = None
@@ -395,15 +488,44 @@ def build_spoki_routers(db, get_current_user, UserRole):
 
     @router.post("/webhook")
     async def spoki_webhook(request: Request):
+        """Webhook inbound da Spoki. NEW (feb 2026): verifica firma usando il webhook_secret
+        della Unit identificata dal lead/cliente associato al numero mittente."""
         raw = await request.body()
         sig = request.headers.get("X-Spoki-Signature") or request.headers.get("X-Hub-Signature-256")
-        if not spoki_service.verify_webhook_signature(raw, sig):
-            logger.warning("Spoki webhook: firma non valida")
-            raise HTTPException(status_code=401, detail="Invalid signature")
         try:
             payload = await request.json()
         except Exception:
             raise HTTPException(status_code=400, detail="JSON malformato")
+        # Per validare la firma serve sapere a quale Unit appartiene il messaggio.
+        # Strategia: estrai phone dal payload, trova lead/cliente, ricava unit_id, carica il service per-Unit.
+        msgs_for_sig = []
+        data0 = payload.get("data")
+        if isinstance(data0, dict):
+            msgs_for_sig = [data0]
+        elif isinstance(data0, list):
+            msgs_for_sig = data0
+        elif payload.get("messages"):
+            msgs_for_sig = payload["messages"] if isinstance(payload["messages"], list) else [payload["messages"]]
+        elif payload.get("from") or payload.get("from_phone"):
+            msgs_for_sig = [payload]
+        sender_unit_id = None
+        for m in msgs_for_sig:
+            contact = m.get("contact") or {}
+            ph = m.get("from_phone") or m.get("from") or m.get("phone") or contact.get("phone")
+            if not ph:
+                continue
+            ld = await _find_lead_by_phone(ph)
+            cl = None if ld else await _find_cliente_by_phone(ph)
+            sender_unit_id = (ld or cl or {}).get("commessa_id")
+            if sender_unit_id:
+                break
+        # Verifica firma con il webhook_secret della Unit (se identificata)
+        if sender_unit_id:
+            svc = await get_spoki_service_for_unit(db, sender_unit_id)
+            if svc and not svc.verify_webhook_signature(raw, sig):
+                logger.warning(f"Spoki webhook: firma non valida (unit {sender_unit_id})")
+                raise HTTPException(status_code=401, detail="Invalid signature")
+        # else: nessuna Unit identificata → accetta senza verifica firma (impossibile selezionare il secret)
         # Formato ufficiale Spoki: {"version": 1, "event": "message.inbound", "data": {...}}
         event = payload.get("event") or ""
         msgs = []
@@ -610,9 +732,11 @@ def build_spoki_routers(db, get_current_user, UserRole):
             unit_id=lead.get("commessa_id"), lead_id=lead_id, direction="outbound",
             phone_number=lead.get("telefono") or "", body=text, sender="admin",
         ).dict()
+        # NEW (feb 2026): usa il service Spoki della Unit del lead
+        unit_svc = await get_spoki_service_for_unit(db, lead.get("commessa_id"))
         try:
-            if spoki_service.is_configured and lead.get("telefono"):
-                res = await spoki_service.send_session_message(
+            if unit_svc and lead.get("telefono"):
+                res = await unit_svc.send_session_message(
                     to=lead["telefono"], body=text,
                     connection_id=(cfg or {}).get("spoki_connection_id"),
                 )

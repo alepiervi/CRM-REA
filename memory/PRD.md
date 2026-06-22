@@ -109,6 +109,36 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 
 **Test**: `/app/backend/tests/test_sub_agenzia_privileges.py` (6 test: 3 schema + 3 endpoint audit) + `/app/backend/tests/test_sub_agenzia_privileges_e2e.py` (6 E2E del testing agent). Suite completa pytest 60/64 (4 skip, 0 fail).
 
+## Spoki Multi-Tenant — chiave API per Unit (15 feb 2026)
+**Requisito utente**: ogni Unit deve avere la sua API Key + Webhook Secret Spoki dedicate. Rimossa la chiave globale dall'.env.
+
+**Backend**:
+- `spoki_module.py`:
+  - `UnitSpokiConfig` esteso con `api_key` + `webhook_secret` per-Unit
+  - `SpokiService.__init__(api_key, webhook_secret)` esplicito (rimosso lettura `os.environ.get('SPOKI_API_KEY')`)
+  - Nuova factory `get_spoki_service_for_unit(db, unit_id)` — carica le credenziali dal DB e ritorna un service configurato (o None se chiave mancante)
+  - Utility `mask_secret(s)` per UI (`bf7b...6241`)
+- `spoki_routes.py`: refactor di TUTTI i call sites (welcome, bot inbound, send manual, pair, templates, webhook) per usare il service per-Unit. Il webhook verifica la firma usando il webhook_secret della Unit identificata dal lead/cliente del numero mittente.
+- Endpoint nuovi/aggiornati:
+  - `GET /api/spoki/unit-configs` e `GET /api/spoki/unit-configs/{id}` — risposta serializzata che NON espone secrets in chiaro: aggiunge `api_key_configured: bool`, `api_key_masked: 'bf7b...6241'`, idem per webhook_secret
+  - `PATCH /api/spoki/unit-configs/{id}` — Admin only, accetta api_key + webhook_secret + convenzione: campo omesso = invariato; valore non vuoto = aggiorna
+  - `GET /api/spoki/unit-configs/{id}/secrets` — Admin only, ritorna i secrets in chiaro per il toggle "Mostra" dell'UI (loggato lato server)
+  - `GET /api/spoki/diagnostics?unit_id=...` — testa la chiave di una specifica Unit; senza parametro testa TUTTE le Unit con chiave configurata. Report aggregato per Unit
+  - `GET /api/spoki/health` — globale: ritorna `units_total` + `units_with_api_key`; con `?unit_id=...` testa la singola Unit
+  - `GET /api/spoki/templates?unit_id=...` — lista template per la specifica Unit
+- `.env`: rimossa `SPOKI_API_KEY` globale (più nessun codice la legge)
+
+**Frontend** (`components/spoki/SpokiAdminConfig.jsx`):
+- Nuova card "Credenziali Spoki di questa Unit" in cima alla "Configurazione Unit"
+- Input `api_key` mascherato con toggle Mostra/Nascondi (chiama `/secrets`); idem `webhook_secret`
+- Badge "Chiave attiva"/"Chiave mancante" per Unit
+- Badge globale in header "X/Y Unit configurate" (verde se tutte, ambra se parziali)
+- `fetchTemplates(unitId)` ora richiede unit_id; diagnostica mirata sulla Unit selezionata
+- `handleSave` invia api_key/webhook_secret SOLO se modificati (convenzione `revealApiKey || input non vuoto`)
+
+**Test**: 165 pytest passati (suite completa). Verifica E2E manuale: PATCH credenziali → reveal → diagnostics → templates fetch tutto OK.
+
+
 ## Audit Status Sub Agenzie (15 feb 2026)
 Enhancement della feature privilegi sub agenzia: tracciamento dei cambi status fatti via privilegio.
 
