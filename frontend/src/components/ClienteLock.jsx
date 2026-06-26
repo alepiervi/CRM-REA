@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { formatDateTimeIT } from "../lib/datetime";
 import axios from "axios";
 import { Lock, Unlock, AlertTriangle } from "lucide-react";
 
@@ -157,14 +158,7 @@ export const ClienteLockedScreen = ({ lockStatus, isAdmin, onForceRelease, onClo
   let timeString = "";
   if (lockStatus.locked_at) {
     try {
-      const d = new Date(lockStatus.locked_at);
-      timeString = d.toLocaleString("it-IT", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      timeString = formatDateTimeIT(lockStatus.locked_at);
     } catch (_) { /* noop */ }
   }
 

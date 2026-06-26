@@ -5,26 +5,14 @@ import { MessageSquarePlus, Clock, User as UserIcon, Loader2 } from "lucide-reac
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+import { formatDateTimeIT } from "../lib/datetime";
+
 const authHeaders = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const formatDate = (iso) => {
-  if (!iso) return "";
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString("it-IT", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch (_) {
-    return iso;
-  }
-};
+const formatDate = (iso) => formatDateTimeIT(iso);
 
 /**
  * Storico note (immutabile) per un cliente.

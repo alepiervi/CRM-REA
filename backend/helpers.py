@@ -6,8 +6,30 @@ import json
 import logging
 import re
 import uuid
-from datetime import datetime, timezone, timedelta, date
-from typing import List, Optional, Dict, Any
+from datetime import datetime, timezone, timedelta, date, time
+from typing import List, Optional, Dict, Any, Tuple
+
+try:
+    from zoneinfo import ZoneInfo  # Python 3.9+
+except ImportError:  # pragma: no cover
+    from backports.zoneinfo import ZoneInfo  # type: ignore
+
+# NEW (feb 2026): fuso orario di riferimento dell'app (Europa/Roma, gestisce CET/CEST)
+APP_TIMEZONE = ZoneInfo("Europe/Rome")
+
+
+def rome_date_to_utc_range(date_str: str) -> Tuple[datetime, datetime]:
+    """Converte una data Roma local (YYYY-MM-DD) nell'intervallo UTC corrispondente
+    `[00:00 Roma, 23:59:59.999999 Roma]`.
+
+    Esempio (estate, +02:00): "2026-08-15" → (2026-08-14T22:00:00Z, 2026-08-15T21:59:59.999999Z).
+    Gestisce automaticamente CET/CEST tramite zoneinfo.
+    """
+    d = datetime.fromisoformat(date_str).date()
+    start_rome = datetime.combine(d, time(0, 0, 0, 0), tzinfo=APP_TIMEZONE)
+    end_rome = datetime.combine(d, time(23, 59, 59, 999999), tzinfo=APP_TIMEZONE)
+    return start_rome.astimezone(timezone.utc), end_rome.astimezone(timezone.utc)
+
 
 import pandas as pd
 import openpyxl

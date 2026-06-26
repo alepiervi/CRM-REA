@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
 import { format } from "date-fns";
 import { it as itLocale } from "date-fns/locale";
+import { formatDateTimeIT, parseBackendDate } from "../lib/datetime";
 
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -77,7 +78,7 @@ export const SubAgenziaStatusAudit = () => {
     const header = ["Data", "Cliente", "Tipologia", "Sub Agenzia", "Vecchio status", "Nuovo status", "Operatore", "Ruolo"];
     const lines = [header.join(";")];
     for (const r of rows) {
-      const data = r.timestamp ? format(new Date(r.timestamp), "dd/MM/yyyy HH:mm", { locale: itLocale }) : "";
+      const data = r.timestamp ? formatDateTimeIT(r.timestamp) : "";
       const cliente = `${r.cliente_nome || ""} ${r.cliente_cognome || ""}`.trim();
       lines.push([
         data,
@@ -217,7 +218,7 @@ export const SubAgenziaStatusAudit = () => {
                   {rows.map((r) => (
                     <TableRow key={r.id} data-testid={`audit-row-${r.id}`}>
                       <TableCell className="text-xs whitespace-nowrap">
-                        {r.timestamp ? format(new Date(r.timestamp), "dd/MM/yyyy HH:mm", { locale: itLocale }) : "—"}
+                        {r.timestamp ? formatDateTimeIT(r.timestamp) : "—"}
                       </TableCell>
                       <TableCell className="font-medium">
                         {`${r.cliente_nome || ""} ${r.cliente_cognome || ""}`.trim() || "—"}

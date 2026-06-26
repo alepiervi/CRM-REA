@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { formatDateTimeIT } from "../lib/datetime";
 import {
   ShieldAlert,
   RefreshCw,
@@ -181,7 +182,7 @@ export const PermissionsAudit = () => {
         <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg col-span-2">
           <div className="text-xs text-slate-500 uppercase tracking-wide">Ultimo controllo</div>
           <div className="text-sm font-mono text-slate-700 mt-2">
-            {data?.checked_at ? new Date(data.checked_at).toLocaleString("it-IT") : "—"}
+            {data?.checked_at ? formatDateTimeIT(data.checked_at) : "—"}
           </div>
         </div>
       </div>

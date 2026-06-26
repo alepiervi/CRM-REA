@@ -685,20 +685,21 @@ async def get_clienti(
             query = search_conditions
     
     # NEW: Date range filter on cliente.created_at (server-side, so pagination is consistent)
+    # IMPORTANT (feb 2026): le date arrivano da UI in Europe/Rome (es. "2026-02-16" = inizio
+    # del 16 feb a Roma). Convertiamo nell'intervallo UTC corretto gestendo l'ora legale.
     if date_from or date_to:
+        from helpers import rome_date_to_utc_range
         date_filter = {}
         if date_from:
             try:
-                date_filter["$gte"] = datetime.fromisoformat(date_from).replace(
-                    hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc
-                )
+                start_utc, _ = rome_date_to_utc_range(date_from)
+                date_filter["$gte"] = start_utc
             except ValueError:
                 raise HTTPException(status_code=400, detail="Formato date_from non valido. Usa YYYY-MM-DD")
         if date_to:
             try:
-                date_filter["$lte"] = datetime.fromisoformat(date_to).replace(
-                    hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc
-                )
+                _, end_utc = rome_date_to_utc_range(date_to)
+                date_filter["$lte"] = end_utc
             except ValueError:
                 raise HTTPException(status_code=400, detail="Formato date_to non valido. Usa YYYY-MM-DD")
         if date_filter:
@@ -1392,16 +1393,16 @@ async def export_clienti_excel(
                 query["email"] = {"$regex": search_value, "$options": "i"}
         
         # NEW: Add date range filter for creation period
+        # (feb 2026) interpretazione Europe/Rome → UTC
         if date_from or date_to:
+            from helpers import rome_date_to_utc_range
             date_query = {}
             if date_from:
-                # Parse date and set to start of day (00:00:00)
-                start_date = datetime.fromisoformat(date_from).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
-                date_query["$gte"] = start_date
+                start_utc, _ = rome_date_to_utc_range(date_from)
+                date_query["$gte"] = start_utc
             if date_to:
-                # Parse date and set to end of day (23:59:59)
-                end_date = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
-                date_query["$lte"] = end_date
+                _, end_utc = rome_date_to_utc_range(date_to)
+                date_query["$lte"] = end_utc
             
             if date_query:
                 query["created_at"] = date_query
@@ -2026,17 +2027,16 @@ async def get_sub_agenzia_status_changes_audit(
             raise HTTPException(status_code=403, detail="Sub agenzia non accessibile")
         query["metadata.sub_agenzia_id"] = {"$in": allowed_sub_ids} if not sub_agenzia_id else sub_agenzia_id
 
-    # Filtro date
+    # Filtro date (feb 2026: Europe/Rome → UTC)
     if date_from or date_to:
+        from helpers import rome_date_to_utc_range
         ts_filter = {}
         if date_from:
-            ts_filter["$gte"] = datetime.fromisoformat(date_from).replace(
-                hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc
-            )
+            start_utc, _ = rome_date_to_utc_range(date_from)
+            ts_filter["$gte"] = start_utc
         if date_to:
-            ts_filter["$lte"] = datetime.fromisoformat(date_to).replace(
-                hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc
-            )
+            _, end_utc = rome_date_to_utc_range(date_to)
+            ts_filter["$lte"] = end_utc
         query["timestamp"] = ts_filter
 
     logs = await db.clienti_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(length=None)

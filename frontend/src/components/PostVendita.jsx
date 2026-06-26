@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { formatDateTimeIT } from "../lib/datetime";
 import axios from "axios";
 import {
   Package,
@@ -568,7 +569,7 @@ const ClientiTab = ({ commessaId, servizioIds = [] }) => {
                     </select>
                   </td>
                   <td className="px-3 py-2 text-xs text-slate-500">
-                    {c.post_vendita_status_updated_at ? new Date(c.post_vendita_status_updated_at).toLocaleString("it-IT") : "—"}
+                    {c.post_vendita_status_updated_at ? formatDateTimeIT(c.post_vendita_status_updated_at) : "—"}
                   </td>
                   <td className="px-3 py-2 text-right">
                     <button
@@ -1288,7 +1289,7 @@ const ImportHistoryTab = () => {
               <tr><td colSpan={6} className="px-3 py-8 text-center text-slate-400">{loading ? "Caricamento..." : "Nessun import effettuato."}</td></tr>
             ) : items.map((i) => (
               <tr key={i.id}>
-                <td className="px-3 py-2 text-xs">{new Date(i.uploaded_at).toLocaleString("it-IT")}</td>
+                <td className="px-3 py-2 text-xs">{formatDateTimeIT(i.uploaded_at)}</td>
                 <td className="px-3 py-2">{i.uploaded_by_username}</td>
                 <td className="px-3 py-2">
                   {i.new_status_label || i.new_status}

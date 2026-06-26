@@ -45,9 +45,14 @@ console.log('📡 Backend URL configured:', BACKEND_URL);
 console.log('📡 API endpoint:', API);
 
 // Helper functions
+// NEW (feb 2026): usa parseBackendDate per interpretare timestamp ISO senza tz come UTC
+import { parseBackendDate } from "./datetime";
 export const formatDate = (dateString) => {
-  const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-  return new Date(dateString).toLocaleDateString('it-IT', options);
+  if (!dateString) return "";
+  const d = parseBackendDate(dateString);
+  if (!d) return "";
+  const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Rome' };
+  return d.toLocaleDateString('it-IT', options);
 };
 
 // Helper function per normalizzare i nomi delle province (gestisce varianti come "Monza e Brianza" vs "Monza della Brianza")

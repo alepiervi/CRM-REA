@@ -168,6 +168,7 @@ import {
   formatClienteStatus,
   getClienteStatusVariant,
 } from "../lib/appUtils";
+import { formatDateTimeIT } from "../lib/datetime";
 import { AuthContext, useAuth, AuthProvider } from "../context/AuthContext";
 import { STATUS_CLIENTI } from "../lib/appUtils";
 import { CreateClienteModal, ImportClientiModal, ViewClienteModal, EditClienteModal, ClientDocumentsModal } from "./ClienteModals";
@@ -1321,7 +1322,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     </TableCell>
                     {/* Data Creazione */}
                     <TableCell>
-                      {new Date(cliente.created_at).toLocaleDateString('it-IT')}
+                      {formatDate(cliente.created_at)}
                     </TableCell>
                     {/* Nome Completo */}
                     <TableCell>
@@ -1450,7 +1451,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-3 h-3 text-slate-400" />
                     <span className="text-slate-600">
-                      {new Date(cliente.created_at).toLocaleDateString('it-IT')}
+                      {formatDate(cliente.created_at)}
                     </span>
                   </div>
                 </div>
@@ -1808,7 +1809,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                               {log.user_name}
                             </div>
                             <div>
-                              {log.timestamp_display || new Date(log.timestamp).toLocaleString('it-IT')}
+                              {log.timestamp_display || formatDateTimeIT(log.timestamp)}
                             </div>
                           </div>
                         </div>

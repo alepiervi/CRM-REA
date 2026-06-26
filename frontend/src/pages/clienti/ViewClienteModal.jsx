@@ -628,7 +628,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
               
               <div>
                 <Label className="text-sm font-medium text-slate-600">Data Creazione</Label>
-                <p className="text-sm">{new Date(cliente.created_at).toLocaleDateString('it-IT')}</p>
+                <p className="text-sm">{formatDate(cliente.created_at)}</p>
               </div>
             </CardContent>
           </Card>

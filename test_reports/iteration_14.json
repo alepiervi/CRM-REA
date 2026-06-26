@@ -1,0 +1,45 @@
+{
+  "summary": "Verified Europe/Rome timezone fix for date_from/date_to filters across clienti, leads, analytics, audit + Excel export. 17/17 tests passed including the critical mezzanotte edge case (cliente con created_at 22:30 UTC compare in filtro Roma del giorno successivo).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/analytics/supervisor/unit",
+        "issue": "Lines 204-215 of routes/analytics.py STILL use the OLD UTC-fixed logic (datetime.fromisoformat(...).replace(hour=0,...tzinfo=timezone.utc)). The review_request states '4 punti aggiornati' in analytics.py but this supervisor/unit endpoint was missed. Same Roma-vs-UTC bug remains here for supervisors filtering their unit analytics.",
+        "priority": "MEDIUM"
+      },
+      {
+        "endpoint": "/api/analytics/pivot",
+        "issue": "Returns HTTP 500 on invalid date param (data_da='not-a-date') instead of 400. Pre-existing bug, not related to the timezone fix but surfaced during testing."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_timezone_rome.py",
+    "/app/test_reports/pytest/pytest_timezone_rome.xml"
+  ],
+  "action_items": [
+    "Apply rome_date_to_utc_range also to /api/analytics/supervisor/unit (routes/analytics.py lines 204-215) — currently still using UTC-fixed logic and will misfilter Rome local dates near midnight UTC.",
+    "Optional: fix /api/analytics/pivot data_da/data_a validation to return 400 instead of 500 on bad input."
+  ],
+  "critical_code_review_comments": [
+    "/app/backend/routes/analytics.py:204-215 — supervisor/unit endpoint NOT migrated to rome_date_to_utc_range. Inconsistent with the rest of the analytics module which uses the helper (lines 80-93, 387-400, 597-612).",
+    "Helper rome_date_to_utc_range is well-defined and DST-aware (verified for CEST summer, CET winter, AND the DST-transition day 2026-03-29).",
+    "datetime.fromisoformat in helper accepts more than YYYY-MM-DD (e.g., full ISO datetimes); minor robustness concern but not security-critical."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_timezone_rome.py"
+  ],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "not tested (backend only)"},
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Insert 2 test clienti in MongoDB with id prefix TEST_TZ_ (auto-cleaned by fixture): one with created_at=2026-08-14T22:30:00Z (CEST edge case), one with created_at=2026-02-14T23:30:00Z (CET edge case). Uses common dummy commessa_id/sub_agenzia_id/created_by.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Test file /app/backend/tests/test_timezone_rome.py covers: helper unit tests (CEST/CET/DST transition), /api/clienti?date_from/date_to edge case mezzanotte Roma (PASS), /api/clienti/export/excel filtering (PASS), /api/leads date filter (PASS), /api/analytics/pivot date filter (PASS), /api/audit/sub-agenzia-status-changes regression (PASS). The seed fixture is session-scoped and auto-cleans. ONE OPEN GAP: /api/analytics/supervisor/unit still uses old UTC-fixed logic — main agent must apply rome_date_to_utc_range here too.",
+  "rca of the issue": "Timezone bug RCA: Old code used datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc), treating the user-input date as UTC midnight. Italian users in CEST (+02:00) see local midnight at 22:00 UTC of the previous day, so a cliente created at 23:30 UTC on day N actually belongs to day N+1 in Roma but was filtered as day N. Fix: rome_date_to_utc_range builds [00:00 Roma, 23:59:59.999999 Roma] using zoneinfo('Europe/Rome') and converts both bounds to UTC via astimezone(timezone.utc). DST is handled automatically by zoneinfo. Verified empirically: cliente with created_at=2026-08-14T22:30:00Z (=2026-08-15 00:30 Rome CEST) now appears ONLY when filtering date_from=2026-08-15 (not 2026-08-14)."
+}

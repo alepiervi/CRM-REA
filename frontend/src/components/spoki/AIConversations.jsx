@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { formatDateTimeIT } from "../../lib/datetime";
 import axios from "axios";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -234,7 +235,7 @@ export const AIConversations = () => {
                           {m.body || (m.template_name ? `[Template: ${m.template_name}]` : "—")}
                         </div>
                         <div className="text-[10px] opacity-50 mt-0.5">
-                          {m.created_at && new Date(m.created_at).toLocaleString("it-IT")}
+                          {m.created_at && formatDateTimeIT(m.created_at)}
                         </div>
                         {m.error && <div className="text-[10px] text-red-700 mt-1">⚠ {m.error}</div>}
                       </div>

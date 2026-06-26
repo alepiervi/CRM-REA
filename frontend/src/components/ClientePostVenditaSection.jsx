@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Package, Clock, User as UserIcon, Loader2, ArrowRight } from "lucide-react";
+import { formatDateTimeIT } from "../lib/datetime";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -10,21 +11,7 @@ const authHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const formatDate = (iso) => {
-  if (!iso) return "";
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString("it-IT", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-};
+const formatDate = (iso) => formatDateTimeIT(iso);
 
 const STAGE_META = {
   lavorazione: {

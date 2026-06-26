@@ -81,13 +81,13 @@ async def get_agent_analytics(
         date_filter = {}
         if date_from:
             try:
-                date_from_obj = datetime.fromisoformat(date_from).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+                date_from_obj, _ = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_from)
                 date_filter["$gte"] = date_from_obj
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD")
         if date_to:
             try:
-                date_to_obj = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+                _, date_to_obj = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_to)
                 date_filter["$lte"] = date_to_obj
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
@@ -388,13 +388,13 @@ async def get_referente_analytics(
         date_filter = {}
         if date_from:
             try:
-                date_from_obj = datetime.fromisoformat(date_from).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+                date_from_obj, _ = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_from)
                 date_filter["$gte"] = date_from_obj
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD")
         if date_to:
             try:
-                date_to_obj = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+                _, date_to_obj = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_to)
                 date_filter["$lte"] = date_to_obj
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
@@ -592,13 +592,30 @@ async def export_leads_excel(
             ]
         else:
             query["esito"] = status
-    if date_from:
-        query["created_at"] = {"$gte": datetime.fromisoformat(date_from)}
-    if date_to:
-        if "created_at" in query:
-            query["created_at"]["$lte"] = datetime.fromisoformat(date_to)
-        else:
-            query["created_at"] = {"$lte": datetime.fromisoformat(date_to)}
+    # Filtro date (feb 2026: Europe/Rome → UTC, accetta YYYY-MM-DD o ISO con time)
+    if date_from or date_to:
+        from helpers import rome_date_to_utc_range
+        existing = query.get("created_at") or {}
+        if date_from:
+            try:
+                if "T" in date_from:
+                    existing["$gte"] = datetime.fromisoformat(date_from)
+                else:
+                    start_utc, _ = rome_date_to_utc_range(date_from)
+                    existing["$gte"] = start_utc
+            except ValueError:
+                pass
+        if date_to:
+            try:
+                if "T" in date_to:
+                    existing["$lte"] = datetime.fromisoformat(date_to)
+                else:
+                    _, end_utc = rome_date_to_utc_range(date_to)
+                    existing["$lte"] = end_utc
+            except ValueError:
+                pass
+        if existing:
+            query["created_at"] = existing
     
     # NEW: Filter by assigned agent
     if assigned_agent_id:
