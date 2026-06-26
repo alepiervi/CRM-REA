@@ -706,6 +706,9 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
   const [selectedFolderId, setSelectedFolderId] = useState("__all__"); // "__all__" | null (root) | folder id
   const [testModeWorkflow, setTestModeWorkflow] = useState(null);
   const [previewTemplate, setPreviewTemplate] = useState(null);
+  // NEW (feb 2026): gallery filter — category + search
+  const [templateCategory, setTemplateCategory] = useState("all");
+  const [templateSearch, setTemplateSearch] = useState("");
   const { toast } = useToast();
 
   // Workflows visibili in base alla cartella selezionata
@@ -985,7 +988,7 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
       {/* Template Import Modal */}
       {showTemplateModal && (
         <Dialog open={true} onOpenChange={() => setShowTemplateModal(false)}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>📥 Importa Template Workflow</DialogTitle>
               <DialogDescription>
@@ -993,7 +996,7 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4">
+            <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
               {/* Unit Selection Dropdown */}
               <div>
                 <Label htmlFor="unit_select">Seleziona Unit *</Label>
@@ -1021,9 +1024,65 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
                 </div>
               )}
 
+              {/* NEW (feb 2026): Category Tabs + Search */}
+              <div className="space-y-2 pt-2 sticky top-0 z-10 bg-white -mt-2 pb-3 border-b border-slate-200" data-testid="template-filters">
+                <div className="flex flex-wrap items-center gap-2 justify-between">
+                  <div className="flex gap-1 flex-wrap">
+                    {[
+                      { id: "all", label: "Tutti", emoji: "📚" },
+                      { id: "acquisizione", label: "Acquisizione", emoji: "🎯" },
+                      { id: "nurturing", label: "Nurturing", emoji: "🌱" },
+                      { id: "post_vendita", label: "Post-Vendita", emoji: "🏆" },
+                    ].map((cat) => {
+                      const count = cat.id === "all"
+                        ? templates.length
+                        : templates.filter(t => t.category === cat.id).length;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => setTemplateCategory(cat.id)}
+                          data-testid={`tpl-cat-${cat.id}`}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                            templateCategory === cat.id
+                              ? "bg-indigo-600 text-white shadow-md"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          {cat.emoji} {cat.label}
+                          <span className={`ml-1 ${templateCategory === cat.id ? "text-indigo-100" : "text-slate-400"}`}>({count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="relative flex-1 max-w-xs">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
+                    <Input
+                      value={templateSearch}
+                      onChange={(e) => setTemplateSearch(e.target.value)}
+                      placeholder="Cerca template..."
+                      className="pl-8 h-8 text-sm"
+                      data-testid="tpl-search-input"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Templates List */}
               <div className="space-y-3">
-                {templates.map((template) => {
+                {(() => {
+                  const filtered = templates.filter((t) => {
+                    if (templateCategory !== "all" && t.category !== templateCategory) return false;
+                    if (templateSearch) {
+                      const q = templateSearch.toLowerCase();
+                      const hay = `${t.name} ${t.description} ${(t.features || []).join(" ")}`.toLowerCase();
+                      if (!hay.includes(q)) return false;
+                    }
+                    return true;
+                  });
+                  if (filtered.length === 0) {
+                    return <div className="text-center py-10 text-slate-500 text-sm" data-testid="tpl-empty">Nessun template corrisponde ai filtri.</div>;
+                  }
+                  return filtered.map((template) => {
                   const palette = (typeof NODE_COLOR_PALETTE !== "undefined" ? NODE_COLOR_PALETTE : {})[template.color] || { bg: "#f8fafc", border: "#cbd5e1", iconBg: "#64748b", iconColor: "#fff", textColor: "#1e293b" };
                   const Icon = (typeof NODE_ICONS !== "undefined" ? NODE_ICONS : {})[template.icon] || Workflow;
                   return (
@@ -1076,7 +1135,8 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
                     </div>
                   </div>
                   );
-                })}
+                  });
+                })()}
 
                 {templates.length === 0 && (
                   <div className="text-center py-8 text-slate-500">

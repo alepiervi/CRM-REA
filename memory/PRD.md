@@ -168,6 +168,27 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 
 **Test**: pytest `tests/test_workflow_executor_v2_phase_bc.py` (creato dal testing agent) — 17/17 PASSED. Copre: test-run no side effects, add_tag $addToSet, remove_tag $pull, go_to bypass edges, if_else con _resolve_path, match_value list e JSON-string, sourceHandle branch routing.
 
+
+## Gallery Template Workflow estesa (15 feb 2026)
+**Da 4 a 8 template** pre-configurati + categorizzazione + filtri UI.
+
+**Nuovi template** (`workflow_templates.py`):
+- **Recupero Lead Freddo** (nurturing): Wait 7gg + check status nuovo + DM recupero + tag `lead_freddo`
+- **Alert Status KO** (post_vendita): trigger su KO + email admin + tag `perdita`
+- **Upsell Post Vendita 30gg** (post_vendita): trigger su `inserito` + wait 30gg + DM upsell + tag `upsell_inviato`
+- **Tag automatico per Provincia** (acquisizione): match_value su lead.provincia → 3 rami tag zona_nord/centro/sud (8 province preconfigurate)
+
+**Categorizzazione**: ogni template ha ora `category` (acquisizione / nurturing / post_vendita). 
+
+**Frontend `WorkflowBuilder.jsx` — Template Import Modal**:
+- Barra filtri **sticky** in cima (sempre visibile durante lo scroll)
+- 4 tab categoria con conteggio dinamico: Tutti (9), Acquisizione (4), Nurturing (2), Post-Vendita (2)
+- Input search testuale (cerca su name + description + features)
+- Empty state quando i filtri non producono risultati
+- `DialogContent` reso flex-col con scroll interno per gestire +N template
+
+**Test**: 23/23 pytest passati (timezone + workflow + sub agenzia). UI testata manualmente con tutti i filtri.
+
 - Badge globale in header "X/Y Unit configurate" (verde se tutte, ambra se parziali)
 - `fetchTemplates(unitId)` ora richiede unit_id; diagnostica mirata sulla Unit selezionata
 - `handleSave` invia api_key/webhook_secret SOLO se modificati (convenzione `revealApiKey || input non vuoto`)

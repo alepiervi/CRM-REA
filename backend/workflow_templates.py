@@ -384,12 +384,169 @@ def get_lead_routing_template(unit_id: str) -> Dict[str, Any]:
     }
 
 
+def get_cold_lead_recovery_template(unit_id: str) -> Dict[str, Any]:
+    """Recupero lead freddi: aspetta 7 giorni dopo l'ultimo messaggio, manda DM, tagga."""
+    base_y = 30
+    step = 100
+    nodes = [
+        {"id": "t_lead", "type": "default", "position": {"x": 300, "y": base_y},
+         "data": {"label": "Lead Creato", "nodeType": "triggers", "nodeSubtype": "lead_created", "config": {}},
+         "style": {"background": "#22c55e", "color": "white", "border": "2px solid #16a34a", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+        {"id": "d_wait_7d", "type": "default", "position": {"x": 300, "y": base_y + step},
+         "data": {"label": "Wait 7 giorni", "nodeType": "delay", "nodeSubtype": "wait",
+                  "config": {"duration_value": 7, "duration_unit": "days"}},
+         "style": {"background": "#9ca3af", "color": "white", "border": "2px solid #6b7280", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+        {"id": "c_check", "type": "default", "position": {"x": 300, "y": base_y + step * 2},
+         "data": {"label": "Status ancora 'nuovo'?", "nodeType": "conditions", "nodeSubtype": "if_else",
+                  "config": {"field": "lead.status", "op": "equals", "value": "nuovo"}},
+         "style": {"background": "#3b82f6", "color": "white", "border": "2px solid #2563eb", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 200, "height": 40}},
+        {"id": "a_dm", "type": "default", "position": {"x": 100, "y": base_y + step * 3},
+         "data": {"label": "DM Recupero", "nodeType": "actions", "nodeSubtype": "send_spoki_message",
+                  "config": {"body": "Ciao {{lead.nome}}! Volevo sapere se hai ancora bisogno della nostra offerta. Rispondi 'SI' se vuoi che ti richiami."}},
+         "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+        {"id": "a_tag_cold", "type": "default", "position": {"x": 100, "y": base_y + step * 4},
+         "data": {"label": "Tag: lead_freddo", "nodeType": "actions", "nodeSubtype": "add_tag",
+                  "config": {"tag": "lead_freddo"}},
+         "style": {"background": "#fbbf24", "color": "white", "border": "2px solid #d97706", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+    ]
+    edges = [
+        {"id": "e1", "source": "t_lead", "target": "d_wait_7d", "type": "smoothstep", "animated": True},
+        {"id": "e2", "source": "d_wait_7d", "target": "c_check", "type": "smoothstep", "animated": True},
+        {"id": "e3", "source": "c_check", "target": "a_dm", "sourceHandle": "yes", "type": "smoothstep", "label": "Si", "animated": True},
+        {"id": "e4", "source": "a_dm", "target": "a_tag_cold", "type": "smoothstep", "animated": True},
+    ]
+    return {
+        "id": str(uuid.uuid4()), "name": "Recupero Lead Freddo",
+        "description": "Lead non lavorato in 7 giorni → DM automatico + tag",
+        "unit_id": unit_id, "trigger_type": "lead_created",
+        "is_active": False, "is_published": False, "nodes": nodes, "edges": edges,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(), "version": 1,
+        "metadata": {"template": True, "template_name": "cold_lead_recovery", "template_version": "1.0"},
+    }
+
+
+def get_ko_alert_template(unit_id: str) -> Dict[str, Any]:
+    """Alert quando un lead/cliente va in stato KO."""
+    nodes = [
+        {"id": "t_status", "type": "default", "position": {"x": 300, "y": 30},
+         "data": {"label": "Status cambia → KO", "nodeType": "triggers", "nodeSubtype": "lead_status_changed",
+                  "config": {"target_status": "ko"}},
+         "style": {"background": "#ef4444", "color": "white", "border": "2px solid #dc2626", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 200, "height": 40}},
+        {"id": "a_email_admin", "type": "default", "position": {"x": 300, "y": 130},
+         "data": {"label": "Email Admin", "nodeType": "actions", "nodeSubtype": "send_email",
+                  "config": {"to": "{{admin_email}}", "subject": "Lead KO: {{lead.nome}} {{lead.cognome}}",
+                             "body": "Il lead {{lead.nome}} {{lead.cognome}} ({{lead.telefono}}) è stato segnato come KO."}},
+         "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+        {"id": "a_tag_ko", "type": "default", "position": {"x": 300, "y": 230},
+         "data": {"label": "Tag: perdita", "nodeType": "actions", "nodeSubtype": "add_tag",
+                  "config": {"tag": "perdita"}},
+         "style": {"background": "#fbbf24", "color": "white", "border": "2px solid #d97706", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+    ]
+    edges = [
+        {"id": "e1", "source": "t_status", "target": "a_email_admin", "type": "smoothstep", "animated": True},
+        {"id": "e2", "source": "a_email_admin", "target": "a_tag_ko", "type": "smoothstep", "animated": True},
+    ]
+    return {
+        "id": str(uuid.uuid4()), "name": "Alert Status KO",
+        "description": "Notifica admin via email + tag 'perdita' quando un lead passa in KO",
+        "unit_id": unit_id, "trigger_type": "lead_status_changed",
+        "is_active": False, "is_published": False, "nodes": nodes, "edges": edges,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(), "version": 1,
+        "metadata": {"template": True, "template_name": "ko_alert", "template_version": "1.0"},
+    }
+
+
+def get_upsell_post_sale_template(unit_id: str) -> Dict[str, Any]:
+    """Upsell post-vendita: cliente inserito → 30 giorni → DM upsell."""
+    nodes = [
+        {"id": "t_status", "type": "default", "position": {"x": 300, "y": 30},
+         "data": {"label": "Status → Inserito", "nodeType": "triggers", "nodeSubtype": "lead_status_changed",
+                  "config": {"target_status": "inserito"}},
+         "style": {"background": "#22c55e", "color": "white", "border": "2px solid #16a34a", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 200, "height": 40}},
+        {"id": "d_wait", "type": "default", "position": {"x": 300, "y": 130},
+         "data": {"label": "Wait 30 giorni", "nodeType": "delay", "nodeSubtype": "wait",
+                  "config": {"duration_value": 30, "duration_unit": "days"}},
+         "style": {"background": "#9ca3af", "color": "white", "border": "2px solid #6b7280", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+        {"id": "a_upsell", "type": "default", "position": {"x": 300, "y": 230},
+         "data": {"label": "DM Upsell", "nodeType": "actions", "nodeSubtype": "send_spoki_message",
+                  "config": {"body": "Ciao {{lead.nome}}! Sono passati 30 giorni dal tuo contratto. Vuoi conoscere le nostre nuove offerte? Rispondi 'INFO' per ricevere il listino."}},
+         "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+        {"id": "a_tag_upsell", "type": "default", "position": {"x": 300, "y": 330},
+         "data": {"label": "Tag: upsell_inviato", "nodeType": "actions", "nodeSubtype": "add_tag",
+                  "config": {"tag": "upsell_inviato"}},
+         "style": {"background": "#fbbf24", "color": "white", "border": "2px solid #d97706", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+    ]
+    edges = [
+        {"id": "e1", "source": "t_status", "target": "d_wait", "type": "smoothstep", "animated": True},
+        {"id": "e2", "source": "d_wait", "target": "a_upsell", "type": "smoothstep", "animated": True},
+        {"id": "e3", "source": "a_upsell", "target": "a_tag_upsell", "type": "smoothstep", "animated": True},
+    ]
+    return {
+        "id": str(uuid.uuid4()), "name": "Upsell Post Vendita 30gg",
+        "description": "Cliente attivato → 30 giorni → invito upsell automatico",
+        "unit_id": unit_id, "trigger_type": "lead_status_changed",
+        "is_active": False, "is_published": False, "nodes": nodes, "edges": edges,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(), "version": 1,
+        "metadata": {"template": True, "template_name": "upsell_post_sale", "template_version": "1.0"},
+    }
+
+
+def get_tag_by_provincia_template(unit_id: str) -> Dict[str, Any]:
+    """Tag automatico geografico per provincia (Nord / Centro / Sud)."""
+    nodes = [
+        {"id": "t_lead", "type": "default", "position": {"x": 300, "y": 30},
+         "data": {"label": "Lead Creato", "nodeType": "triggers", "nodeSubtype": "lead_created", "config": {}},
+         "style": {"background": "#22c55e", "color": "white", "border": "2px solid #16a34a", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+        {"id": "c_match", "type": "default", "position": {"x": 300, "y": 130},
+         "data": {"label": "Switch Provincia", "nodeType": "conditions", "nodeSubtype": "match_value",
+                  "config": {"field": "lead.provincia",
+                             "cases": '[{"value":"MI","label":"nord"},{"value":"TO","label":"nord"},{"value":"VE","label":"nord"},{"value":"RM","label":"centro"},{"value":"FI","label":"centro"},{"value":"NA","label":"sud"},{"value":"BA","label":"sud"},{"value":"PA","label":"sud"}]',
+                             "default_label": "other"}},
+         "style": {"background": "#d946ef", "color": "white", "border": "2px solid #c026d3", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 200, "height": 40}},
+        {"id": "a_nord", "type": "default", "position": {"x": 80, "y": 250},
+         "data": {"label": "Tag: Nord", "nodeType": "actions", "nodeSubtype": "add_tag",
+                  "config": {"tag": "zona_nord"}},
+         "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+        {"id": "a_centro", "type": "default", "position": {"x": 310, "y": 250},
+         "data": {"label": "Tag: Centro", "nodeType": "actions", "nodeSubtype": "add_tag",
+                  "config": {"tag": "zona_centro"}},
+         "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+        {"id": "a_sud", "type": "default", "position": {"x": 540, "y": 250},
+         "data": {"label": "Tag: Sud", "nodeType": "actions", "nodeSubtype": "add_tag",
+                  "config": {"tag": "zona_sud"}},
+         "style": {"background": "#10b981", "color": "white", "border": "2px solid #059669", "borderRadius": "8px", "fontSize": "12px", "fontWeight": "bold", "width": 180, "height": 40}},
+    ]
+    edges = [
+        {"id": "e1", "source": "t_lead", "target": "c_match", "type": "smoothstep", "animated": True},
+        {"id": "e2", "source": "c_match", "target": "a_nord", "sourceHandle": "nord", "type": "smoothstep", "label": "Nord", "animated": True},
+        {"id": "e3", "source": "c_match", "target": "a_centro", "sourceHandle": "centro", "type": "smoothstep", "label": "Centro", "animated": True},
+        {"id": "e4", "source": "c_match", "target": "a_sud", "sourceHandle": "sud", "type": "smoothstep", "label": "Sud", "animated": True},
+    ]
+    return {
+        "id": str(uuid.uuid4()), "name": "Tag automatico per Provincia",
+        "description": "Smista lead per provincia e applica tag zona_nord/centro/sud",
+        "unit_id": unit_id, "trigger_type": "lead_created",
+        "is_active": False, "is_published": False, "nodes": nodes, "edges": edges,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(), "version": 1,
+        "metadata": {"template": True, "template_name": "tag_by_provincia", "template_version": "1.0"},
+    }
+
+
 # Mappa template_id → (function, metadata)
 TEMPLATE_REGISTRY = {
     "lead_qualification_ai": None,  # gestito dalla funzione separata sopra
     "spoki_welcome_chatbot_appointment": get_spoki_welcome_template,
     "spoki_reminder_24h": get_spoki_reminder_template,
     "lead_routing_source": get_lead_routing_template,
+    # NEW (feb 2026): template gallery extended
+    "cold_lead_recovery": get_cold_lead_recovery_template,
+    "ko_alert": get_ko_alert_template,
+    "upsell_post_sale": get_upsell_post_sale_template,
+    "tag_by_provincia": get_tag_by_provincia_template,
 }
 
 
@@ -402,6 +559,7 @@ def get_available_templates() -> list:
             "id": "lead_qualification_ai",
             "name": "Lead Qualification AI",
             "description": "Workflow completo per qualificare lead con AI Assistant via WhatsApp",
+            "category": "acquisizione",
             "trigger": "lead_created", "nodes_count": 6, "icon": "bot", "color": "indigo",
             "features": [
                 "Auto-assegnazione a Unit", "Messaggio WhatsApp benvenuto",
@@ -414,6 +572,7 @@ def get_available_templates() -> list:
             "id": "spoki_welcome_chatbot_appointment",
             "name": "Spoki Welcome + Chatbot + Appuntamento",
             "description": "Lead → Welcome WhatsApp → Wait 12h → Chatbot AI → Appuntamento",
+            "category": "acquisizione",
             "trigger": "lead_created", "nodes_count": 6, "icon": "message-circle", "color": "green",
             "features": [
                 "Template welcome Spoki con {{nome}}",
@@ -434,6 +593,7 @@ def get_available_templates() -> list:
             "id": "spoki_reminder_24h",
             "name": "Reminder 24h",
             "description": "Manda un reminder WhatsApp dopo 24h dalla creazione lead",
+            "category": "nurturing",
             "trigger": "lead_created", "nodes_count": 3, "icon": "clock", "color": "amber",
             "features": ["Wait 24h", "Reminder testuale Spoki", "Setup in 30 secondi"],
             "parameters": [
@@ -445,6 +605,7 @@ def get_available_templates() -> list:
             "id": "lead_routing_source",
             "name": "Lead Routing per Sorgente",
             "description": "Smista lead in entrata e aggiunge tag in base alla sorgente (sito/meta/edison)",
+            "category": "acquisizione",
             "trigger": "lead_created", "nodes_count": 5, "icon": "split", "color": "fuchsia",
             "features": ["Switch multi-ramo su source", "Tag automatico per sorgente", "Estendibile con nuove sorgenti"],
             "parameters": [
@@ -452,6 +613,56 @@ def get_available_templates() -> list:
                 {"key": "tag_sito", "label": "Tag se sorgente = sito", "type": "text", "default": "sorgente_sito_web", "applies_to": {"node_id": "a_tag_sito", "config_field": "tag"}},
                 {"key": "tag_meta", "label": "Tag se sorgente = meta", "type": "text", "default": "sorgente_facebook", "applies_to": {"node_id": "a_tag_meta", "config_field": "tag"}},
                 {"key": "tag_edison", "label": "Tag se sorgente = edison", "type": "text", "default": "sorgente_edison", "applies_to": {"node_id": "a_tag_edison", "config_field": "tag"}},
+            ],
+        },
+        {
+            "id": "cold_lead_recovery",
+            "name": "Recupero Lead Freddo",
+            "description": "Lead non lavorato in 7gg → DM automatico + tag lead_freddo",
+            "category": "nurturing",
+            "trigger": "lead_created", "nodes_count": 5, "icon": "snowflake", "color": "blue",
+            "features": ["Wait 7 giorni", "Check status nuovo", "DM recupero", "Tag lead_freddo"],
+            "parameters": [
+                {"key": "wait_days", "label": "Giorni di attesa prima del recupero", "type": "number", "default": 7, "applies_to": {"node_id": "d_wait_7d", "config_field": "duration_value"}},
+                {"key": "recovery_message", "label": "Testo DM di recupero", "type": "textarea", "default": "Ciao {{lead.nome}}! Volevo sapere se hai ancora bisogno della nostra offerta. Rispondi 'SI' se vuoi che ti richiami.", "applies_to": {"node_id": "a_dm", "config_field": "body"}},
+                {"key": "cold_tag", "label": "Tag applicato a lead freddi", "type": "text", "default": "lead_freddo", "applies_to": {"node_id": "a_tag_cold", "config_field": "tag"}},
+            ],
+        },
+        {
+            "id": "ko_alert",
+            "name": "Alert Status KO",
+            "description": "Notifica admin via email + tag 'perdita' quando un lead va in KO",
+            "category": "post_vendita",
+            "trigger": "lead_status_changed", "nodes_count": 3, "icon": "alert-triangle", "color": "red",
+            "features": ["Trigger su KO", "Email admin", "Tag automatico perdita"],
+            "parameters": [
+                {"key": "admin_email", "label": "Email admin destinataria", "type": "text", "default": "admin@example.com", "applies_to": {"node_id": "a_email_admin", "config_field": "to"}},
+                {"key": "loss_tag", "label": "Tag da applicare", "type": "text", "default": "perdita", "applies_to": {"node_id": "a_tag_ko", "config_field": "tag"}},
+            ],
+        },
+        {
+            "id": "upsell_post_sale",
+            "name": "Upsell Post Vendita 30gg",
+            "description": "Cliente inserito → 30 giorni → DM upsell automatico",
+            "category": "post_vendita",
+            "trigger": "lead_status_changed", "nodes_count": 4, "icon": "trending-up", "color": "purple",
+            "features": ["Trigger su 'inserito'", "Wait 30 giorni", "DM upsell", "Tag upsell_inviato"],
+            "parameters": [
+                {"key": "wait_days", "label": "Giorni di attesa dopo attivazione", "type": "number", "default": 30, "applies_to": {"node_id": "d_wait", "config_field": "duration_value"}},
+                {"key": "upsell_message", "label": "Testo DM upsell", "type": "textarea", "default": "Ciao {{lead.nome}}! Sono passati 30 giorni dal tuo contratto. Vuoi conoscere le nostre nuove offerte? Rispondi 'INFO' per ricevere il listino.", "applies_to": {"node_id": "a_upsell", "config_field": "body"}},
+            ],
+        },
+        {
+            "id": "tag_by_provincia",
+            "name": "Tag automatico per Provincia",
+            "description": "Smista lead per provincia e applica tag zona_nord/centro/sud",
+            "category": "acquisizione",
+            "trigger": "lead_created", "nodes_count": 5, "icon": "map-pin", "color": "teal",
+            "features": ["Switch su lead.provincia", "Tag geografico automatico", "8 province preconfigurate"],
+            "parameters": [
+                {"key": "tag_nord", "label": "Tag per provincie Nord (MI/TO/VE...)", "type": "text", "default": "zona_nord", "applies_to": {"node_id": "a_nord", "config_field": "tag"}},
+                {"key": "tag_centro", "label": "Tag per provincie Centro (RM/FI...)", "type": "text", "default": "zona_centro", "applies_to": {"node_id": "a_centro", "config_field": "tag"}},
+                {"key": "tag_sud", "label": "Tag per provincie Sud (NA/BA/PA...)", "type": "text", "default": "zona_sud", "applies_to": {"node_id": "a_sud", "config_field": "tag"}},
             ],
         },
     ]
