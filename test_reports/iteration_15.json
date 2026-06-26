@@ -1,0 +1,33 @@
+{
+  "summary": "Backend validation for Workflow Builder FASE B/C: workflow_executor V2 subtypes (add_tag, remove_tag, go_to, if_else, match_value), POST /api/workflows/{id}/test-run, lead-tags CRUD, workflow-node-types. 17/17 pytest tests PASS.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_workflow_executor_v2_phase_bc.py",
+    "/app/test_reports/pytest/pytest_workflow_v2_phase_bc.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "GET /api/workflow-node-types defines 'add_tag' and 'remove_tag' TWICE in the action.subtypes dict (server.py lines 2487-2498 in English and 2559-2575 in Italian). The second (Italian, with proper `fields`) wins by dict semantics — current behaviour is acceptable but the duplicate keys are confusing and should be removed.",
+    "WorkflowUpdate model does NOT expose `nodes`/`edges` (models.py:660-666) yet workflow_executor.start() reads `wf.get('nodes')` and `wf.get('edges')` directly from the workflow doc (workflow_executor.py:433-434). So the only way nodes/edges get persisted is via `workflow_data` from PUT /workflows/{id} OR direct DB writes — the API surface for saving a built canvas (nodes/edges) appears to be missing or relies on a non-standard route. Recommend adding `nodes` and `edges` to WorkflowUpdate or documenting the canvas-save path.",
+    "POST /api/lead-tags is open to all admins but DELETE rimuove il tag da TUTTI i leads (server.py:1743) — destructive op senza conferma. Considerare un parametro ?force=true o soft-delete.",
+    "workflow_executor.start() returns {'success': False, 'error': 'workflow not found'} silently con HTTP 200 dall'endpoint test-run. Idealmente l'endpoint dovrebbe restituire 404 quando il workflow non esiste."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_workflow_executor_v2_phase_bc.py"
+  ],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "not tested (backend only)"},
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Direct MongoDB seeding via pymongo (auto-cleanup in session fixture). Inserts: (a) workflow docs with id prefix TEST_WF_PHBC_ containing nodes/edges (trigger -> action/condition); (b) one real lead with id TEST_WF_PHBC_lead_* with pre_existing tag for add_tag/remove_tag verification; (c) tag with name 'test_wf_phbc_vip'. All cleaned at session end.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Test file /app/backend/tests/test_workflow_executor_v2_phase_bc.py covers all FASE B/C backend scenarios. Reusable for regression. Key verified behaviours: (1) /api/workflows/{id}/test-run returns 200 with execution_id and writes history (collection workflow_executions_v2) without side effects on non-existent leads; (2) add_tag uses $addToSet (idempotent), remove_tag uses $pull; (3) go_to result contains goto_node_id and _run_loop honours it skipping normal edges; (4) if_else supports equals/contains ops via _resolve_path on ctx (e.g. 'trigger.lead.nome'); (5) match_value supports both list and JSON-string cases, case-insensitive, with default_label fallback; (6) edges with sourceHandle='yes'/'no'/<label> drive branching. Tests use direct MongoDB writes for nodes/edges because WorkflowUpdate API does not expose them — see code review note.",
+  "rca of the issue": "No issues found. All FASE B/C backend functionality is working as expected."
+}

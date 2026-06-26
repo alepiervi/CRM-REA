@@ -1642,6 +1642,45 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     }
   };
 
+  // Test Run (FASE B): esegue il workflow su un lead fittizio SENZA invii reali
+  const [testRunOpen, setTestRunOpen] = useState(false);
+  const [testRunLoading, setTestRunLoading] = useState(false);
+  const [testRunResult, setTestRunResult] = useState(null);
+  const [testRunForm, setTestRunForm] = useState({
+    nome: "Mario",
+    cognome: "Rossi",
+    telefono: "+393331234567",
+    fake_reply: "",
+  });
+
+  const handleTestRun = async () => {
+    setTestRunLoading(true);
+    setTestRunResult(null);
+    try {
+      // Salva prima il workflow per usare la versione corrente
+      await axios.put(`${API}/workflows/${workflow.id}`, {
+        workflow_data: { nodes, edges, viewport: { x: 0, y: 0, zoom: 1 } }
+      }, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+      const payload = {
+        fake_lead: {
+          id: `test-lead-${Date.now()}`,
+          nome: testRunForm.nome || "Mario",
+          cognome: testRunForm.cognome || "Rossi",
+          telefono: testRunForm.telefono || "+393331234567",
+        },
+        fake_reply: testRunForm.fake_reply || null,
+      };
+      const r = await axios.post(`${API}/workflows/${workflow.id}/test-run`, payload, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setTestRunResult({ ok: true, data: r.data });
+    } catch (e) {
+      setTestRunResult({ ok: false, error: e?.response?.data?.detail || e.message });
+    } finally {
+      setTestRunLoading(false);
+    }
+  };
+
   // Publish workflow
   const handlePublish = async () => {
     try {
@@ -1704,6 +1743,16 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
           <Button variant="outline" size="sm" onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" />
             Salva
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTestRunOpen(true)}
+            data-testid="workflow-test-run-btn"
+            className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+          >
+            <FlaskConical className="w-4 h-4 mr-2" />
+            Test Run
           </Button>
           <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={handlePublish}>
             <Target className="w-4 h-4 mr-2" />
@@ -1804,6 +1853,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
         <NodeEditorModal
           node={selectedNode}
           nodeTypes={nodeTypes}
+          allNodes={nodes}
           onClose={() => {
             setShowNodeEditor(false);
             setSelectedNode(null);
@@ -1811,14 +1861,113 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
           onSave={(config) => updateNodeConfig(selectedNode.id, config)}
         />
       )}
+
+      {/* Test Run Dialog (FASE B) */}
+      <Dialog open={testRunOpen} onOpenChange={setTestRunOpen}>
+        <DialogContent className="max-w-2xl" data-testid="workflow-test-run-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FlaskConical className="w-5 h-5 text-indigo-600" />
+              Test Run del Workflow
+            </DialogTitle>
+            <DialogDescription>
+              Esegue il workflow su un lead fittizio. <strong>NON</strong> verranno inviati messaggi WhatsApp/email/SMS reali.
+              Usalo per verificare il flusso e i rami delle condizioni.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Nome lead fittizio</Label>
+              <Input value={testRunForm.nome} onChange={(e) => setTestRunForm({ ...testRunForm, nome: e.target.value })} data-testid="test-run-nome" />
+            </div>
+            <div>
+              <Label className="text-xs">Cognome</Label>
+              <Input value={testRunForm.cognome} onChange={(e) => setTestRunForm({ ...testRunForm, cognome: e.target.value })} data-testid="test-run-cognome" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Telefono</Label>
+              <Input value={testRunForm.telefono} onChange={(e) => setTestRunForm({ ...testRunForm, telefono: e.target.value })} data-testid="test-run-telefono" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Risposta simulata del lead (opzionale)</Label>
+              <Input
+                value={testRunForm.fake_reply}
+                onChange={(e) => setTestRunForm({ ...testRunForm, fake_reply: e.target.value })}
+                placeholder="Es. 'Si, sono interessato' — se il workflow ha un nodo 'Attendi Risposta'"
+                data-testid="test-run-reply"
+              />
+            </div>
+          </div>
+
+          {testRunResult && (
+            <div className={`mt-2 p-3 rounded-lg border text-sm ${testRunResult.ok ? "bg-green-50 border-green-300" : "bg-red-50 border-red-300"}`} data-testid="test-run-result">
+              <div className="font-semibold mb-2">
+                {testRunResult.ok ? "✅ Test completato" : "❌ Errore nel test"}
+              </div>
+              <pre className="text-xs bg-white/60 p-2 rounded overflow-x-auto whitespace-pre-wrap max-h-64">
+                {JSON.stringify(testRunResult.ok ? testRunResult.data : testRunResult.error, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setTestRunOpen(false); setTestRunResult(null); }}>
+              Chiudi
+            </Button>
+            <Button
+              onClick={handleTestRun}
+              disabled={testRunLoading}
+              className="bg-indigo-600 hover:bg-indigo-700"
+              data-testid="test-run-execute-btn"
+            >
+              {testRunLoading ? "Esecuzione..." : "Esegui Test"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 // Node Editor Modal Component
 
-const NodeEditorModal = ({ node, nodeTypes, onClose, onSave }) => {
+const NodeEditorModal = ({ node, nodeTypes, allNodes = [], onClose, onSave }) => {
   const [config, setConfig] = useState(node.data.config || {});
+  // NEW (FASE C feb 2026): caricamento tag esistenti per nodi add_tag / remove_tag
+  const [leadTags, setLeadTags] = useState([]);
+  const [newTagName, setNewTagName] = useState("");
+  const [creatingTag, setCreatingTag] = useState(false);
+  const subtype = node.data.nodeSubtype;
+  const isTagNode = subtype === "add_tag" || subtype === "remove_tag";
+  const isGoToNode = subtype === "go_to";
+  const isMatchValueNode = subtype === "match_value";
+  const isIfElseNode = subtype === "if_else";
+
+  useEffect(() => {
+    if (!isTagNode) return;
+    axios.get(`${API}/lead-tags`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+      .then(r => setLeadTags(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setLeadTags([]));
+  }, [isTagNode]);
+
+  const createTag = async () => {
+    const name = (newTagName || "").trim();
+    if (!name) return;
+    setCreatingTag(true);
+    try {
+      const r = await axios.post(`${API}/lead-tags`, { name, label: name }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setLeadTags(prev => [...prev, r.data]);
+      setConfig({ ...config, tag: r.data.name });
+      setNewTagName("");
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Impossibile creare il tag");
+    } finally {
+      setCreatingTag(false);
+    }
+  };
 
   const getNodeTypeInfo = () => {
     const category = nodeTypes[node.data.nodeType];
@@ -1894,7 +2043,168 @@ const NodeEditorModal = ({ node, nodeTypes, onClose, onSave }) => {
               </div>
             )}
 
-            {node.data.nodeType === 'actions' && (
+            {node.data.nodeType === 'actions' && (isTagNode) && (
+              <div className="border border-yellow-200 bg-yellow-50/50 rounded-lg p-4 space-y-3" data-testid="tag-node-config">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-yellow-700" />
+                  {subtype === "add_tag" ? "Tag da AGGIUNGERE al lead" : "Tag da RIMUOVERE dal lead"}
+                </Label>
+                <select
+                  className="w-full p-2 border border-gray-300 rounded-lg"
+                  value={config.tag || ""}
+                  onChange={(e) => setConfig({ ...config, tag: e.target.value })}
+                  data-testid="tag-node-select"
+                >
+                  <option value="">Seleziona un tag...</option>
+                  {leadTags.map(t => (
+                    <option key={t.id} value={t.name}>{t.label || t.name}</option>
+                  ))}
+                </select>
+                {subtype === "add_tag" && (
+                  <div className="flex gap-2 pt-2 border-t border-yellow-200">
+                    <Input
+                      placeholder="Crea nuovo tag (es. lead_caldo)"
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      data-testid="new-tag-name-input"
+                    />
+                    <Button
+                      type="button"
+                      onClick={createTag}
+                      disabled={!newTagName.trim() || creatingTag}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                      data-testid="create-tag-btn"
+                    >
+                      {creatingTag ? "..." : "Crea"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {node.data.nodeType === 'actions' && isGoToNode && (
+              <div className="border border-purple-200 bg-purple-50/50 rounded-lg p-4 space-y-3" data-testid="goto-node-config">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <CornerDownRight className="w-4 h-4 text-purple-700" />
+                  Salta al nodo
+                </Label>
+                <select
+                  className="w-full p-2 border border-gray-300 rounded-lg"
+                  value={config.target_node_id || ""}
+                  onChange={(e) => setConfig({ ...config, target_node_id: e.target.value })}
+                  data-testid="goto-target-select"
+                >
+                  <option value="">Seleziona il nodo target...</option>
+                  {allNodes.filter(n => n.id !== node.id).map(n => (
+                    <option key={n.id} value={n.id}>
+                      [{n.data.nodeType}/{n.data.nodeSubtype}] {n.data.label || n.id}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-purple-700/80">
+                  L'esecuzione del workflow continuerà direttamente da questo nodo, ignorando i collegamenti
+                  visivi. Utile per cicli o branch riassuntivi.
+                </p>
+              </div>
+            )}
+
+            {node.data.nodeType === 'conditions' && isIfElseNode && (
+              <div className="border border-blue-200 bg-blue-50/50 rounded-lg p-4 space-y-3" data-testid="if-else-config">
+                <Label className="text-sm font-semibold">Condizione If/Else</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label className="text-xs">Campo</Label>
+                    <Input
+                      value={config.field || ""}
+                      onChange={(e) => setConfig({ ...config, field: e.target.value })}
+                      placeholder="es. lead.status"
+                      data-testid="if-else-field"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Operatore</Label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                      value={config.op || "equals"}
+                      onChange={(e) => setConfig({ ...config, op: e.target.value })}
+                      data-testid="if-else-op"
+                    >
+                      <option value="equals">è uguale a</option>
+                      <option value="not_equals">diverso da</option>
+                      <option value="contains">contiene</option>
+                      <option value="not_contains">NON contiene</option>
+                      <option value="gt">maggiore</option>
+                      <option value="lt">minore</option>
+                      <option value="empty">è vuoto</option>
+                      <option value="not_empty">NON è vuoto</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Valore</Label>
+                    <Input
+                      value={config.value || ""}
+                      onChange={(e) => setConfig({ ...config, value: e.target.value })}
+                      placeholder="confronto"
+                      data-testid="if-else-value"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-blue-700/80">
+                  Collega 2 rami in uscita: handle <code className="bg-white px-1 rounded">yes</code> e <code className="bg-white px-1 rounded">no</code>.
+                  Esempio: campo <code>lead.tags</code> + operatore <code>contains</code> + valore <code>lead_caldo</code>.
+                </p>
+              </div>
+            )}
+
+            {node.data.nodeType === 'conditions' && isMatchValueNode && (
+              <div className="border border-indigo-200 bg-indigo-50/50 rounded-lg p-4 space-y-3" data-testid="match-value-config">
+                <Label className="text-sm font-semibold">Switch / Match Value</Label>
+                <div>
+                  <Label className="text-xs">Campo da valutare</Label>
+                  <Input
+                    value={config.field || ""}
+                    onChange={(e) => setConfig({ ...config, field: e.target.value })}
+                    placeholder="es. lead.commessa_nome"
+                    data-testid="match-value-field"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Cases (uno per riga: valore|label)</Label>
+                  <textarea
+                    className="w-full p-2 border border-gray-300 rounded-lg min-h-[100px] font-mono text-xs"
+                    value={
+                      Array.isArray(config.cases)
+                        ? config.cases.map(c => `${c.value}|${c.label || c.value}`).join("\n")
+                        : (config.cases || "")
+                    }
+                    onChange={(e) => {
+                      const lines = e.target.value.split("\n").map(l => l.trim()).filter(Boolean);
+                      const cases = lines.map(l => {
+                        const [v, lab] = l.split("|");
+                        return { value: (v || "").trim(), label: (lab || v || "").trim() };
+                      });
+                      setConfig({ ...config, cases });
+                    }}
+                    placeholder={"Energia|Energia\nTelefonia|Telefonia\nGas|Gas"}
+                    data-testid="match-value-cases"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Label ramo default (se nessun match)</Label>
+                  <Input
+                    value={config.default_label || "default"}
+                    onChange={(e) => setConfig({ ...config, default_label: e.target.value })}
+                    data-testid="match-value-default"
+                  />
+                </div>
+                <p className="text-xs text-indigo-700/80">
+                  Crea un edge in uscita per ogni "case" usando il <strong>label</strong> come <code>sourceHandle</code>.
+                  L'esecuzione seguirà il ramo il cui label matcha il valore del campo.
+                </p>
+              </div>
+            )}
+
+            {node.data.nodeType === 'actions' && !isTagNode && !isGoToNode && (
               <>
                 <div>
                   <Label htmlFor="action_type">Tipo Azione</Label>
@@ -1927,7 +2237,7 @@ const NodeEditorModal = ({ node, nodeTypes, onClose, onSave }) => {
               </>
             )}
 
-            {node.data.nodeType === 'conditions' && (
+            {node.data.nodeType === 'conditions' && !isIfElseNode && !isMatchValueNode && (
               <div>
                 <Label htmlFor="condition_expr">Espressione Condizione</Label>
                 <Input
