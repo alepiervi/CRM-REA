@@ -1816,10 +1816,16 @@ async def workflow_test_run(workflow_id: str, payload: WorkflowTestRunRequest, c
         raise HTTPException(status_code=403, detail="Solo admin")
     if "workflow_executor_v2" not in globals():
         raise HTTPException(status_code=503, detail="Executor V2 non disponibile")
+    # NEW (feb 2026): verifica esistenza workflow → 404 esplicito
+    wf_exists = await db.workflows.find_one({"id": workflow_id}, {"_id": 0, "id": 1})
+    if not wf_exists:
+        raise HTTPException(status_code=404, detail="Workflow non trovato")
     # Marca contesto come test_mode: il service sa che non deve fare HTTP reali
     fake_lead = dict(payload.fake_lead)
     fake_lead["_test_mode"] = True
     res = await workflow_executor_v2.start(workflow_id, {"lead_id": fake_lead.get("id"), "lead": fake_lead, "test_mode": True})
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error") or "Errore esecuzione test")
     # se in waiting e c'è fake_reply, simula la risposta
     if payload.fake_reply and res.get("status") == "waiting":
         await workflow_executor_v2.resume_on_reply(fake_lead["id"], payload.fake_reply)
@@ -2483,18 +2489,6 @@ async def get_workflow_node_types(current_user: User = Depends(get_current_user)
                     "description": "Assign contact to a specific user",
                     "icon": "user",
                     "color": "purple"
-                },
-                "add_tag": {
-                    "name": "Add Tag",
-                    "description": "Add a tag to the contact",
-                    "icon": "tag",
-                    "color": "yellow"
-                },
-                "remove_tag": {
-                    "name": "Remove Tag",
-                    "description": "Remove a tag from the contact",
-                    "icon": "tag",
-                    "color": "red"
                 },
                 "set_status": {
                     "name": "Set Status", 

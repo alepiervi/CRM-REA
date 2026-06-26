@@ -153,6 +153,21 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
 - Nuova card "Credenziali Spoki di questa Unit" in cima alla "Configurazione Unit"
 - Input `api_key` mascherato con toggle Mostra/Nascondi (chiama `/secrets`); idem `webhook_secret`
 - Badge "Chiave attiva"/"Chiave mancante" per Unit
+
+## Workflow Builder FASE B + C completate (15 feb 2026)
+**Stato precedente**: backend già implementava cartelle, draft/published, node-stats, test-run, add_tag/remove_tag/go_to/if_else/match_value. Mancavano UI di configurazione.
+
+**Aggiunte sessione**:
+- Frontend `WorkflowBuilder.jsx`: bottone "Test Run" nell'editor + dialog con form lead fittizio + risposta simulata + result panel
+- `NodeEditorModal` esteso con 4 UI di configurazione specifiche:
+  - **add_tag** / **remove_tag**: selettore tag esistenti (fetch `/api/lead-tags`) + bottone "Crea nuovo tag" inline
+  - **go_to**: dropdown del nodo target (lista tutti i nodi del workflow corrente, esclude se stesso)
+  - **if_else**: campo, operatore (equals/contains/gt/lt/empty/etc), valore — produce branch `yes`/`no`
+  - **match_value**: input campo + textarea cases (formato `valore|label`, uno per riga) + default_label — produce branch dinamici
+- Backend cleanup: rimossi duplicati `add_tag`/`remove_tag` (versione EN) dai workflow-node-types; `POST /api/workflows/{id}/test-run` ora ritorna `404` esplicito se workflow non esiste (+400 se executor fallisce)
+
+**Test**: pytest `tests/test_workflow_executor_v2_phase_bc.py` (creato dal testing agent) — 17/17 PASSED. Copre: test-run no side effects, add_tag $addToSet, remove_tag $pull, go_to bypass edges, if_else con _resolve_path, match_value list e JSON-string, sourceHandle branch routing.
+
 - Badge globale in header "X/Y Unit configurate" (verde se tutte, ambra se parziali)
 - `fetchTemplates(unitId)` ora richiede unit_id; diagnostica mirata sulla Unit selezionata
 - `handleSave` invia api_key/webhook_secret SOLO se modificati (convenzione `revealApiKey || input non vuoto`)
