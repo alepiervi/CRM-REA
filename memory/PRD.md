@@ -126,6 +126,27 @@ Modulo Spoki riallineato alla documentazione ufficiale (Postman collection 21611
   - `GET /api/spoki/diagnostics?unit_id=...` — testa la chiave di una specifica Unit; senza parametro testa TUTTE le Unit con chiave configurata. Report aggregato per Unit
   - `GET /api/spoki/health` — globale: ritorna `units_total` + `units_with_api_key`; con `?unit_id=...` testa la singola Unit
   - `GET /api/spoki/templates?unit_id=...` — lista template per la specifica Unit
+
+## Timezone fix Europe/Rome (15 feb 2026) — RCA + fix completo
+**Bug riportato dall'utente**:
+1. I clienti creati non comparivano subito in lista/export — apparivano "dopo qualche ora"
+2. Le note e gli altri timestamp mostravano l'ora di Londra (UTC) anziché di Roma
+
+**RCA**:
+- Backend: i filtri `date_from`/`date_to` interpretavano la data come `YYYY-MM-DDT00:00:00 UTC`. Un utente italiano alle 01:30 di notte (CEST = UTC+2) vede "oggi" ma in UTC sono ancora 23:30 del giorno prima. Risultato: i clienti creati tra mezzanotte Roma e le 02:00 Roma venivano esclusi dal filtro "oggi".
+- Frontend: Mongo storage perde la timezone info (Motor restituisce naive datetimes). FastAPI serializza come `"2026-02-15T14:30:00"` (senza `Z`). `new Date(stringa_senza_tz)` in JavaScript interpreta come **ora locale**, non UTC. Risultato: timestamp mostrati 1-2 ore in meno.
+
+**Fix backend**:
+- `helpers.py`: nuova funzione `rome_date_to_utc_range(date_str)` + `APP_TIMEZONE=ZoneInfo("Europe/Rome")` — gestisce automaticamente CET/CEST e i giorni di transizione DST
+- `routes/clienti.py` (3 punti: lista, export, audit), `routes/leads.py`, `routes/analytics.py` (4 endpoint inclusi supervisor/unit) — tutti i `datetime.fromisoformat(d).replace(tzinfo=timezone.utc)` sostituiti con `rome_date_to_utc_range(d)`
+
+**Fix frontend**:
+- `lib/datetime.js` (nuovo modulo): `parseBackendDate`, `formatDateTimeIT`, `formatDateIT`, `formatTimeIT`, `todayRomeISO`. `parseBackendDate` forza interpretazione UTC se manca marker tz nella stringa ISO
+- `lib/appUtils.js` `formatDate`: ora delega a `parseBackendDate` + `timeZone: 'Europe/Rome'`
+- Sostituiti `new Date(x).toLocaleString("it-IT")` con `formatDateTimeIT(x)` in: `ClienteNotesHistory.jsx`, `ClientePostVenditaSection.jsx`, `ClienteLock.jsx`, `PermissionsAudit.jsx`, `PostVendita.jsx`, `spoki/AIConversations.jsx`, `spoki/LeadConversationsTab.jsx`, `ClientiManagement.jsx` (log timestamp), `SubAgenziaStatusAudit.jsx`
+
+**Test**: pytest `tests/test_timezone_rome.py` (creato dal testing agent) — 17/17 PASSED inclusi edge case mezzanotte Roma CEST + CET + DST transition day 2026-03-29. Suite completa di regressione OK.
+
 - `.env`: rimossa `SPOKI_API_KEY` globale (più nessun codice la legge)
 
 **Frontend** (`components/spoki/SpokiAdminConfig.jsx`):

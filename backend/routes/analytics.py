@@ -203,13 +203,13 @@ async def get_supervisor_unit_analytics(
     date_filter = {}
     if date_from:
         try:
-            date_from_obj = datetime.fromisoformat(date_from).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+            date_from_obj, _ = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_from)
             date_filter["$gte"] = date_from_obj
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD")
     if date_to:
         try:
-            date_to_obj = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+            _, date_to_obj = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_to)
             date_filter["$lte"] = date_to_obj
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
