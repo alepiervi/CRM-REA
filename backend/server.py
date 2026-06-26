@@ -1739,10 +1739,136 @@ async def delete_lead_tag(tag_id: str, current_user: User = Depends(get_current_
     tag = await db.lead_tags.find_one({"id": tag_id})
     if not tag:
         raise HTTPException(status_code=404, detail="Tag non trovato")
-    # Rimuovi tag da tutti i lead
+    # Rimuovi tag da tutti i lead E dai clienti
     await db.leads.update_many({"tags": tag["name"]}, {"$pull": {"tags": tag["name"]}})
+    await db.clienti.update_many({"tags": tag["name"]}, {"$pull": {"tags": tag["name"]}})
     await db.lead_tags.delete_one({"id": tag_id})
     return {"success": True}
+
+
+# ============================================================================
+# NEW (feb 2026): Tag Lead Management — usage, rename, merge
+# ============================================================================
+@api_router.get("/lead-tags/usage")
+async def get_lead_tags_usage(current_user: User = Depends(get_current_user)):
+    """Ritorna l'utilizzo di ogni tag: quanti lead + clienti lo hanno applicato.
+    Include anche i tag "orfani" (usati su lead/clienti ma non più in lead_tags)."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    # Lista tag formali
+    tags_meta = await db.lead_tags.find({}, {"_id": 0}).to_list(length=None)
+    meta_by_name = {t["name"]: t for t in tags_meta}
+    # Aggrega da lead e clienti
+    pipeline = [
+        {"$unwind": {"path": "$tags", "preserveNullAndEmptyArrays": False}},
+        {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
+    ]
+    leads_counts = {x["_id"]: x["count"] async for x in db.leads.aggregate(pipeline)}
+    clienti_counts = {x["_id"]: x["count"] async for x in db.clienti.aggregate(pipeline)}
+    all_names = set(meta_by_name.keys()) | set(leads_counts.keys()) | set(clienti_counts.keys())
+    out = []
+    for name in sorted(all_names):
+        meta = meta_by_name.get(name, {})
+        lc = int(leads_counts.get(name, 0))
+        cc = int(clienti_counts.get(name, 0))
+        out.append({
+            "id": meta.get("id"),
+            "name": name,
+            "label": meta.get("label") or name,
+            "color": meta.get("color") or "#64748b",
+            "description": meta.get("description"),
+            "lead_count": lc,
+            "cliente_count": cc,
+            "total_count": lc + cc,
+            "is_orphan": name not in meta_by_name,  # usato ma non definito formalmente
+        })
+    return out
+
+
+@api_router.patch("/lead-tags/{tag_id}")
+async def update_lead_tag(tag_id: str, payload: Dict[str, Any] = Body(...), current_user: User = Depends(get_current_user)):
+    """Aggiorna un tag: label, color, description. Se viene cambiato `name` (slug),
+    propaga il rename su lead.tags e clienti.tags."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    tag = await db.lead_tags.find_one({"id": tag_id})
+    if not tag:
+        raise HTTPException(status_code=404, detail="Tag non trovato")
+    update_doc: Dict[str, Any] = {}
+    new_name = (payload.get("name") or "").strip()
+    if new_name and new_name != tag["name"]:
+        # Verifica univocità
+        exists = await db.lead_tags.find_one({"name": new_name, "id": {"$ne": tag_id}})
+        if exists:
+            raise HTTPException(status_code=400, detail=f"Esiste già un tag con nome '{new_name}'")
+        update_doc["name"] = new_name
+    for f in ("label", "color", "description"):
+        if f in payload and payload[f] is not None:
+            update_doc[f] = payload[f]
+    if not update_doc:
+        return tag
+    update_doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.lead_tags.update_one({"id": tag_id}, {"$set": update_doc})
+    # Se è cambiato il name, propaga ai lead/clienti
+    if "name" in update_doc:
+        old = tag["name"]
+        new = update_doc["name"]
+        await db.leads.update_many({"tags": old}, [{"$set": {"tags": {"$map": {"input": "$tags", "as": "t", "in": {"$cond": [{"$eq": ["$$t", old]}, new, "$$t"]}}}}}])
+        await db.clienti.update_many({"tags": old}, [{"$set": {"tags": {"$map": {"input": "$tags", "as": "t", "in": {"$cond": [{"$eq": ["$$t", old]}, new, "$$t"]}}}}}])
+    refreshed = await db.lead_tags.find_one({"id": tag_id}, {"_id": 0})
+    return refreshed
+
+
+@api_router.post("/lead-tags/merge")
+async def merge_lead_tags(payload: Dict[str, Any] = Body(...), current_user: User = Depends(get_current_user)):
+    """Unisce un tag sorgente in uno target. Tutti i lead/clienti con `source` ottengono `target`
+    al suo posto. Il tag `source` viene eliminato.
+    Body: { source_id: str, target_id: str }
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    source_id = payload.get("source_id")
+    target_id = payload.get("target_id")
+    if not source_id or not target_id or source_id == target_id:
+        raise HTTPException(status_code=400, detail="source_id e target_id devono essere validi e diversi")
+    src = await db.lead_tags.find_one({"id": source_id})
+    tgt = await db.lead_tags.find_one({"id": target_id})
+    if not src or not tgt:
+        raise HTTPException(status_code=404, detail="Tag source o target non trovato")
+    src_name, tgt_name = src["name"], tgt["name"]
+    # Sostituisci src con tgt: pull src + addToSet tgt
+    await db.leads.update_many({"tags": src_name}, {"$addToSet": {"tags": tgt_name}})
+    await db.leads.update_many({"tags": src_name}, {"$pull": {"tags": src_name}})
+    await db.clienti.update_many({"tags": src_name}, {"$addToSet": {"tags": tgt_name}})
+    await db.clienti.update_many({"tags": src_name}, {"$pull": {"tags": src_name}})
+    # Rimuovi il tag sorgente
+    await db.lead_tags.delete_one({"id": source_id})
+    return {"success": True, "merged_from": src_name, "merged_into": tgt_name}
+
+
+@api_router.post("/lead-tags/cleanup-orphans")
+async def cleanup_orphan_tags(current_user: User = Depends(get_current_user)):
+    """Crea automaticamente i tag mancanti in `lead_tags` per i tag-orfani trovati nei lead/clienti
+    (es. tag creati da workflow on-the-fly). Utile per popolare la libreria formale."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo admin")
+    existing = {t["name"] for t in await db.lead_tags.find({}, {"_id": 0, "name": 1}).to_list(length=None)}
+    pipeline = [{"$unwind": "$tags"}, {"$group": {"_id": "$tags"}}]
+    used = set()
+    async for x in db.leads.aggregate(pipeline):
+        used.add(x["_id"])
+    async for x in db.clienti.aggregate(pipeline):
+        used.add(x["_id"])
+    orphans = sorted(used - existing - {None, ""})
+    created = []
+    for name in orphans:
+        if not name:
+            continue
+        tag = LeadTag(name=name, label=name, color="#64748b", description="Auto-creato da cleanup orfani", created_by=current_user.id)
+        await db.lead_tags.insert_one(tag.dict())
+        created.append(name)
+    return {"created_count": len(created), "created_tags": created}
+
 
 
 @api_router.get("/leads/{lead_id}/tags")

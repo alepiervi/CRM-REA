@@ -1,0 +1,34 @@
+{
+  "summary": "Backend validation for Tag Lead Management (Feb 2026) — usage / rename+propagation / merge / cleanup-orphans / delete-propagates-clienti. 12/12 pytest tests PASS against the public preview URL.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lead_tags_management.py",
+    "/app/test_reports/pytest/pytest_lead_tags_management.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Route order in server.py for /lead-tags is safe ONLY because methods differ: DELETE /lead-tags/{tag_id} (1735) and PATCH /lead-tags/{tag_id} (1788) coexist with GET /lead-tags/usage (1752), POST /lead-tags/merge (1822), POST /lead-tags/cleanup-orphans (1849). If in the future someone adds GET /lead-tags/{tag_id} BEFORE /usage, the /usage endpoint will be shadowed. Recommend declaring the static-path routes (/usage, /merge, /cleanup-orphans) BEFORE the parametric /{tag_id} for safety.",
+    "PATCH /api/lead-tags/{tag_id} silently ignores the `name` field if it's an empty string after .strip() (server.py:1798-1799) — combined with `if not update_doc: return tag` (1808), a PATCH with only `{name: ''}` returns 200 with the unchanged tag. Consider 400 on explicit empty-name to surface the client error.",
+    "POST /api/lead-tags/cleanup-orphans does NOT slugify the orphan name (server.py:1864-1868). If a workflow injected a tag like 'My Tag', cleanup will store name='My Tag' which violates the slugify rule applied by POST /api/lead-tags ('my_tag'). Recommend running the same .strip().lower().replace(' ', '_') normalization, or at least filter out non-slug names.",
+    "POST /api/lead-tags/merge uses two sequential update_many calls per collection: $addToSet then $pull (server.py:1840-1843). For very large collections this is non-atomic — a crash between the two updates would leave docs without source AND without target. Acceptable for current scale but document the limitation.",
+    "PATCH update_doc['updated_at'] is stored as ISO string (server.py:1810) while the rest of the codebase tends to use datetime objects. Minor inconsistency; not blocking."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lead_tags_management.py"
+  ],
+  "success_rate": {"backend": "100% (12/12)", "frontend": "not tested (backend only request)"},
+  "test_credentials": "admin / admin123 (non-admin user created on-the-fly with username test_tagmgmt_<rand>_user, role 'agente', auto-cleaned)",
+  "seed_data_creation": "Created via fixtures (test_tagmgmt_<rand>_* prefix): 5 formal lead_tags (src, dst, other, patch, delme), 1 lead and 1 cliente in MongoDB each with tags=[src, other, patch, delme, orphan]. Orphan tag is intentionally NOT registered in lead_tags so cleanup-orphans has work to do. All seed data deleted in module teardown (lead_tags + leads + clienti + users by name regex).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Test file /app/backend/tests/test_lead_tags_management.py is module-scoped and self-cleaning. It can be re-run any time. Key behaviours verified end-to-end against the public URL https://spoki-workflow-hub.preview.emergentagent.com: (1) /usage returns formal+orphan tags with lead_count/cliente_count/total_count and is_orphan; (2) non-admin gets 403 on /usage; (3) PATCH rename propagates atomically to leads.tags AND clienti.tags via $map pipeline; (4) PATCH duplicate-name → 400; (5) merge correctly does $addToSet target + $pull source on BOTH collections then deletes source tag; (6) merge validation: same id → 400, missing id → 404; (7) cleanup-orphans creates a LeadTag for any tag present in lead/cliente.tags but not in lead_tags; (8) DELETE now also pulls from clienti.tags (regression for the previous 'leads only' behaviour). Route-shadowing risk noted in critical_code_review_comments.",
+  "rca of the issue": "No issues found. All requested Tag Lead Management endpoints are working as expected."
+}
