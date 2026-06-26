@@ -759,15 +759,19 @@ async def get_pivot_analytics(
         if convergenza is not None:
             query["convergenza"] = convergenza
         
-        # Date range filter
+        # Date range filter (feb 2026: input Europe/Rome → UTC, validazione → 400)
         if data_da or data_a:
+            from helpers import rome_date_to_utc_range
             date_query = {}
-            if data_da:
-                date_query["$gte"] = datetime.strptime(data_da, "%Y-%m-%d")
-            if data_a:
-                # Add 1 day to include the end date
-                end_date = datetime.strptime(data_a, "%Y-%m-%d") + timedelta(days=1)
-                date_query["$lt"] = end_date
+            try:
+                if data_da:
+                    start_utc, _ = rome_date_to_utc_range(data_da)
+                    date_query["$gte"] = start_utc
+                if data_a:
+                    _, end_utc = rome_date_to_utc_range(data_a)
+                    date_query["$lte"] = end_utc
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=400, detail="Formato data non valido. Usa YYYY-MM-DD")
             query["created_at"] = date_query
         
         # Get all matching clienti
@@ -894,19 +898,18 @@ async def get_pivot_analytics(
         # Comparison with previous period (same duration before data_da)
         previous_period_count = 0
         if data_da and data_a:
-            start = datetime.strptime(data_da, "%Y-%m-%d")
-            end = datetime.strptime(data_a, "%Y-%m-%d")
-            duration = (end - start).days
-            
-            prev_start = start - timedelta(days=duration)
-            prev_end = start
-            
-            prev_query = query.copy()
-            prev_query["created_at"] = {
-                "$gte": prev_start,
-                "$lt": prev_end
-            }
-            previous_period_count = await db.clienti.count_documents(prev_query)
+            try:
+                from helpers import rome_date_to_utc_range
+                start, _ = rome_date_to_utc_range(data_da)
+                _, end = rome_date_to_utc_range(data_a)
+                duration = (end - start).days
+                prev_start = start - timedelta(days=duration + 1)
+                prev_end = start
+                prev_query = query.copy()
+                prev_query["created_at"] = {"$gte": prev_start, "$lt": prev_end}
+                previous_period_count = await db.clienti.count_documents(prev_query)
+            except (ValueError, TypeError):
+                pass  # already validated above; difensivo
         
         # Calculate trend
         trend = None
@@ -949,6 +952,9 @@ async def get_pivot_analytics(
             }
         }
         
+    except HTTPException:
+        # NEW (feb 2026): lascia passare le HTTPException già strutturate (es. 400 su date invalide)
+        raise
     except Exception as e:
         logging.error(f"Error in pivot analytics: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Errore analytics pivot: {str(e)}")
