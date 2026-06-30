@@ -156,7 +156,8 @@ import {
   Filter,
   RefreshCw,
   Archive,
-  RotateCcw
+  RotateCcw,
+  Network
 } from "lucide-react";
 
 // Utilities e Auth estratti in moduli dedicati (refactoring giugno 2026)
@@ -1734,6 +1735,43 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     });
   };
 
+  // FASE D+: Auto-layout — riallinea i nodi in un albero verticale ordinato in base agli edge
+  const autoLayout = useCallback(() => {
+    if (!nodes.length) return;
+    const level = {};
+    nodes.forEach((n) => { level[n.id] = 0; });
+    // Longest-path relaxation (Bellman-Ford style, sicuro anche con cicli go_to)
+    for (let i = 0; i < nodes.length; i++) {
+      let changed = false;
+      edges.forEach((e) => {
+        if (level[e.target] !== undefined && level[e.source] !== undefined) {
+          if (level[e.target] < level[e.source] + 1) {
+            level[e.target] = level[e.source] + 1;
+            changed = true;
+          }
+        }
+      });
+      if (!changed) break;
+    }
+    const byLevel = {};
+    nodes.forEach((n) => {
+      const l = level[n.id] || 0;
+      (byLevel[l] = byLevel[l] || []).push(n);
+    });
+    const LEVEL_GAP_Y = 140, NODE_GAP_X = 260, CENTER_X = 460, START_Y = 60;
+    const newPos = {};
+    Object.keys(byLevel).map(Number).sort((a, b) => a - b).forEach((l) => {
+      const arr = byLevel[l];
+      const total = (arr.length - 1) * NODE_GAP_X;
+      arr.forEach((n, idx) => {
+        newPos[n.id] = { x: CENTER_X - total / 2 + idx * NODE_GAP_X, y: START_Y + l * LEVEL_GAP_Y };
+      });
+    });
+    setNodes((prev) => prev.map((n) => ({ ...n, position: newPos[n.id] || n.position })));
+    setTimeout(() => { try { reactFlowInstance?.fitView({ padding: 0.2, duration: 400 }); } catch (e) {} }, 80);
+    toast({ title: "Layout applicato", description: "Nodi riallineati automaticamente" });
+  }, [nodes, edges, reactFlowInstance, setNodes, toast]);
+
   // Get node background color
   const getNodeColor = (color) => {
     const colors = {
@@ -1892,6 +1930,17 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
           <Button variant="outline" size="sm" onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" />
             Salva
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={autoLayout}
+            data-testid="workflow-autolayout-btn"
+            className="border-slate-300 text-slate-700 hover:bg-slate-100"
+            title="Riallinea automaticamente i nodi"
+          >
+            <Network className="w-4 h-4 mr-2" />
+            Auto-layout
           </Button>
           <Button
             variant="outline"

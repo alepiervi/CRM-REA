@@ -301,6 +301,11 @@ Vedi `/app/memory/test_credentials.md`
 - Estesa `NODE_ICONS` con cpu→Bot, edit/edit-3→Settings, user-check→UserPlus, form-input→CheckSquare, circle→CheckCircle, message-square→MessageSquare
 - Verificato via screenshot: icone distinte per ogni nodo del template, retro-compatibile con nodi salvati
 
+### FASE D+ — Pulsante Auto-layout (30 giu 2026)
+- Nuovo pulsante "Auto-layout" (icona Network, data-testid `workflow-autolayout-btn`) in toolbar canvas accanto a "Salva"
+- `autoLayout()`: calcola il livello di ogni nodo con longest-path relaxation sugli edge (Bellman-Ford, sicuro anche con cicli go_to), raggruppa per livello e li dispone in un albero verticale centrato (LEVEL_GAP_Y=140, NODE_GAP_X=260, CENTER_X=460); poi `reactFlowInstance.fitView` con animazione + toast di conferma
+- Verificato via screenshot: nodo spostato manualmente → click Auto-layout → riallineamento ordinato e vista centrata
+
 ## Selettore Fuso Orario per Utente (30 giu 2026) — COMPLETATO E TESTATO
 **Requisito utente (P1)**: rendere il fuso orario configurabile per-utente (es. Europe/Rome vs Europe/London) per supportare sub-agenzie internazionali; prima era hardcoded su Europe/Rome.
 
