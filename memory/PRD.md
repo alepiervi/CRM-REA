@@ -279,6 +279,20 @@ Enhancement della feature privilegi sub agenzia: tracciamento dei cambi status f
 ## Test credentials
 Vedi `/app/memory/test_credentials.md`
 
+## Workflow Builder FASE D — Polish UX Canvas (30 giu 2026) — COMPLETATO
+**Requisito (backlog)**: rendere il canvas del Workflow Builder più leggibile e moderno.
+
+**Frontend** (`pages/WorkflowBuilder.jsx`, solo presentazione, nessuna modifica backend):
+- Helper `buildNodeStyle(accent)`, `branchColor(handle)`, `decorateEdge(edge)`
+- Nodi: sfondo bianco + barra accent colorata a sinistra (5px), bordo soft, ombra, label allineate a sinistra, larghezza 200, altezza auto. Colore accent derivato da `NODE_COLOR_PALETTE`; salvato in `data.accent`/`data.color`
+- Nodi/edge esistenti normalizzati al nuovo stile in fase di caricamento (retro-compatibile con workflow salvati che usavano box pieni)
+- Edge: `type=smoothstep`, animati, frecce `MarkerType.ArrowClosed`, colore per ramo (sì=verde, no=rosso, timeout=ambra, default=slate) + label del ramo (sourceHandle)
+- `onConnect` usa `decorateEdge`; `defaultEdgeOptions` + `connectionLineType/Style` smoothstep indaco
+- MiniMap colorata (`nodeColor`/`nodeStrokeColor` da `data.accent`), pannable/zoomable, card bianca
+- Background dots più chiari; empty-state ridisegnato (icona gradient indaco/violet); `hideAttribution`
+
+**Test**: verificato via screenshot su workflow reale con ramo condizionale ("Risposta Positiva? → SI → Avvia AI Assistant"); nodi/edge/minimap renderizzati correttamente, badge statistiche per nodo ancora funzionanti.
+
 ## Selettore Fuso Orario per Utente (30 giu 2026) — COMPLETATO E TESTATO
 **Requisito utente (P1)**: rendere il fuso orario configurabile per-utente (es. Europe/Rome vs Europe/London) per supportare sub-agenzie internazionali; prima era hardcoded su Europe/Rome.
 

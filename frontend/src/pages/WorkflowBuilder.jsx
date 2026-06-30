@@ -8,6 +8,8 @@ import {
   MiniMap,
   Controls,
   Background,
+  BackgroundVariant,
+  MarkerType,
   useNodesState,
   useEdgesState,
   addEdge,
@@ -209,6 +211,44 @@ const NODE_ICONS = {
   "settings": Settings,
   "users": Users,
   "default": Workflow,
+};
+
+// === FASE D: helper per styling canvas (nodi/edge) ===
+const buildNodeStyle = (accent) => ({
+  background: "#ffffff",
+  color: "#1e293b",
+  border: "1px solid #e2e8f0",
+  borderLeft: `5px solid ${accent || "#94a3b8"}`,
+  borderRadius: "12px",
+  fontSize: "12px",
+  fontWeight: 600,
+  width: 200,
+  padding: "11px 14px",
+  textAlign: "left",
+  boxShadow: "0 2px 8px rgba(15,23,42,0.08)",
+});
+
+const branchColor = (handle) => {
+  if (handle === "yes" || handle === "true") return "#10b981";
+  if (handle === "no" || handle === "false") return "#ef4444";
+  if (handle === "timeout") return "#f59e0b";
+  return "#94a3b8";
+};
+
+const decorateEdge = (edge) => {
+  const c = branchColor(edge.sourceHandle);
+  return {
+    ...edge,
+    type: edge.type || "smoothstep",
+    animated: true,
+    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: c },
+    style: { stroke: c, strokeWidth: 2, ...(edge.style || {}) },
+    label: edge.label || (edge.sourceHandle && edge.sourceHandle !== "default" ? edge.sourceHandle : undefined),
+    labelStyle: { fontSize: 10, fontWeight: 700, fill: c },
+    labelBgStyle: { fill: "#fff", fillOpacity: 0.85 },
+    labelBgPadding: [4, 2],
+    labelBgBorderRadius: 4,
+  };
 };
 
 
@@ -1509,11 +1549,19 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
       .catch(() => setNodeStats({}));
   }, [workflow?.id]);
 
-  // Load workflow nodes and edges when workflow is provided
+  // Load workflow nodes and edges when workflow is provided (FASE D: normalizza stile)
   useEffect(() => {
     if (workflow && workflow.nodes && workflow.edges) {
-      setNodes(workflow.nodes || []);
-      setEdges(workflow.edges || []);
+      const normNodes = (workflow.nodes || []).map((n) => {
+        const accent = n.data?.accent || (NODE_COLOR_PALETTE[n.data?.color]?.iconBg) || n.style?.background || "#94a3b8";
+        return {
+          ...n,
+          data: { ...n.data, accent },
+          style: buildNodeStyle(accent),
+        };
+      });
+      setNodes(normNodes);
+      setEdges((workflow.edges || []).map(decorateEdge));
     }
   }, [workflow]);
 
@@ -1552,9 +1600,9 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     }
   };
 
-  // Handle connecting nodes
+  // Handle connecting nodes (FASE D: edge animati, frecce, colore per ramo)
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
+    (params) => setEdges((eds) => addEdge(decorateEdge(params), eds)),
     [setEdges],
   );
 
@@ -1570,6 +1618,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
 
   const addNode = (nodeType, nodeSubtype, nodeName, color, position = null) => {
     const id = `${nodeType}_${Date.now()}`;
+    const accent = (NODE_COLOR_PALETTE[color]?.iconBg) || getNodeColor(color);
     const newNode = {
       id,
       type: 'default',
@@ -1581,18 +1630,11 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
         label: nodeName,
         nodeType: nodeType,
         nodeSubtype: nodeSubtype,
+        color: color,
+        accent: accent,
         config: {}  // Configuration data for the node
       },
-      style: {
-        background: getNodeColor(color),
-        color: 'white',
-        border: `2px solid ${getNodeColorDark(color)}`,
-        borderRadius: '8px',
-        fontSize: '12px',
-        fontWeight: 'bold',
-        width: 180,
-        height: 40
-      }
+      style: buildNodeStyle(accent),
     };
     
     setNodes((nds) => nds.concat(newNode));
@@ -1889,18 +1931,38 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
             onDrop={onDrop}
             onDragOver={onDragOver}
             fitView
-            style={{ width: '100%', height: '100%' }}
+            defaultEdgeOptions={{
+              type: 'smoothstep',
+              animated: true,
+              markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: '#94a3b8' },
+              style: { stroke: '#94a3b8', strokeWidth: 2 },
+            }}
+            connectionLineType="smoothstep"
+            connectionLineStyle={{ stroke: '#6366f1', strokeWidth: 2 }}
+            proOptions={{ hideAttribution: true }}
+            style={{ width: '100%', height: '100%', background: '#f8fafc' }}
           >
-            <Controls />
-            <MiniMap />
-            <Background variant="dots" gap={20} size={1} />
+            <Controls className="!shadow-md !border !border-slate-200 !rounded-lg" />
+            <MiniMap
+              pannable
+              zoomable
+              nodeColor={(n) => n.data?.accent || n.style?.background || '#94a3b8'}
+              nodeStrokeColor={(n) => n.data?.accent || '#cbd5e1'}
+              nodeStrokeWidth={3}
+              nodeBorderRadius={4}
+              maskColor="rgba(148,163,184,0.12)"
+              className="!bg-white !border !border-slate-200 !rounded-lg !shadow-md"
+            />
+            <Background variant={BackgroundVariant.Dots} gap={22} size={1.5} color="#cbd5e1" />
             
             {nodes.length === 0 && (
-              <Panel position="center" className="bg-white p-4 rounded-lg shadow-lg border border-slate-200">
+              <Panel position="center" className="bg-white/90 backdrop-blur p-6 rounded-xl shadow-lg border border-slate-200">
                 <div className="text-center">
-                  <Workflow className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                  <p className="text-slate-600 font-medium">Canvas Vuoto</p>
-                  <p className="text-slate-500 text-sm">Trascina o clicca un nodo dalla sidebar per aggiungerlo</p>
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center mx-auto mb-3 shadow-md">
+                    <Workflow className="w-7 h-7 text-white" />
+                  </div>
+                  <p className="text-slate-700 font-semibold">Canvas Vuoto</p>
+                  <p className="text-slate-500 text-sm mt-0.5">Trascina o clicca un nodo dalla sidebar per iniziare</p>
                 </div>
               </Panel>
             )}
