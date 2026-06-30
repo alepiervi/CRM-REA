@@ -1846,6 +1846,11 @@ async def merge_lead_tags(payload: Dict[str, Any] = Body(...), current_user: Use
     return {"success": True, "merged_from": src_name, "merged_into": tgt_name}
 
 
+def _slugify_tag_name(name: str) -> str:
+    """Normalizza un tag name allo stesso formato di POST /lead-tags."""
+    return (name or "").strip().lower().replace(" ", "_")
+
+
 @api_router.post("/lead-tags/cleanup-orphans")
 async def cleanup_orphan_tags(current_user: User = Depends(get_current_user)):
     """Crea automaticamente i tag mancanti in `lead_tags` per i tag-orfani trovati nei lead/clienti
@@ -1861,13 +1866,24 @@ async def cleanup_orphan_tags(current_user: User = Depends(get_current_user)):
         used.add(x["_id"])
     orphans = sorted(used - existing - {None, ""})
     created = []
-    for name in orphans:
-        if not name:
+    skipped = []
+    for original_name in orphans:
+        if not original_name:
             continue
-        tag = LeadTag(name=name, label=name, color="#64748b", description="Auto-creato da cleanup orfani", created_by=current_user.id)
+        # Slugify per coerenza con POST /lead-tags
+        slug = _slugify_tag_name(original_name)
+        if not slug:
+            skipped.append(original_name)
+            continue
+        # Se lo slug coincide con un tag già formale, salta
+        if slug in existing:
+            skipped.append(original_name)
+            continue
+        tag = LeadTag(name=slug, label=original_name, color="#64748b", description="Auto-creato da cleanup orfani", created_by=current_user.id)
         await db.lead_tags.insert_one(tag.dict())
-        created.append(name)
-    return {"created_count": len(created), "created_tags": created}
+        existing.add(slug)
+        created.append(slug)
+    return {"created_count": len(created), "created_tags": created, "skipped": skipped}
 
 
 
