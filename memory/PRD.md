@@ -332,6 +332,23 @@ Vedi `/app/memory/test_credentials.md`
 - Pulsante "?" (`workflow-help-btn`, icona HelpCircle) in toolbar per riaprire la guida in qualsiasi momento
 - Verificato via screenshot: auto-apertura al primo accesso, navigazione step, skip e riapertura da pulsante help
 
+## Workflow Builder FASE F — Versioning + Duplica (30 giu 2026) — COMPLETATO
+
+### Fix critico persistenza (prerequisito)
+- BUG preesistente: il builder LEGGE i nodi/edge dal TOP-LEVEL del documento workflow (così come l'executor), ma il salvataggio scriveva SOLO dentro `workflow_data` → le modifiche del builder non venivano persistite dove lette.
+- Fix: `WorkflowUpdate` ora accetta `nodes`/`edges`; i 3 salvataggi frontend (Salva/Test Run/Pubblica) inviano nodi/edge sia top-level sia in `workflow_data`. La validazione trigger in `update_workflow` ora controlla i nodi builder (data.nodeType trigger/triggers) con fallback alla collezione legacy.
+
+### Duplica workflow
+- `POST /api/workflows/{id}/duplicate` (admin): deep-copy dell'intero documento nella stessa Unit, nome "… (Copia)", `is_published=False`
+- Pulsante "Duplica" (icona CopyPlus verde, `workflow-duplicate-{id}`) in ogni card della lista; handler `handleDuplicateWorkflow` + refresh
+
+### Versioning (cronologia + ripristino)
+- Collezione `workflow_versions`: `{id, workflow_id, version, label, snapshot{name,description,workflow_data,nodes,edges,trigger_type,folder_id}, nodes_count, created_by, created_at}`
+- Helper `_create_workflow_version`; snapshot AUTOMATICO ad ogni pubblicazione
+- `GET /api/workflows/{id}/versions`, `POST /api/workflows/{id}/versions` (manuale), `POST /api/workflows/{id}/versions/{version_id}/restore` (salva backup pre-ripristino, ripristina in bozza)
+- Frontend: pulsante "Cronologia" (icona History) in toolbar canvas → dialog `workflow-versions-dialog` con lista versioni, "Salva versione attuale" e "Ripristina"; `applyWorkflowData` aggiorna il canvas in-place dopo il ripristino
+- Verificato via curl + screenshot: duplica (5 nodi, bozza), salva versione, lista, ripristino (riporta 5 nodi + crea backup v2 dello stato a 1 nodo), persistenza nodi top-level al salvataggio
+
 ## Selettore Fuso Orario per Utente (30 giu 2026) — COMPLETATO E TESTATO
 **Requisito utente (P1)**: rendere il fuso orario configurabile per-utente (es. Europe/Rome vs Europe/London) per supportare sub-agenzie internazionali; prima era hardcoded su Europe/Rome.
 

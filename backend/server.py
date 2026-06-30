@@ -2044,6 +2044,100 @@ async def create_workflow(
         logging.error(f"Create workflow error: {e}")
         raise HTTPException(status_code=500, detail="Failed to create workflow")
 
+# ===== Workflow Duplicate & Versioning (FASE F, giu 2026) =====
+WORKFLOW_CONTENT_FIELDS = ["name", "description", "workflow_data", "nodes", "edges", "trigger_type", "folder_id"]
+
+async def _create_workflow_version(workflow_doc: dict, label: str, user_id: str):
+    """Crea uno snapshot del contenuto del workflow nella collezione workflow_versions."""
+    snapshot = {f: workflow_doc.get(f) for f in WORKFLOW_CONTENT_FIELDS}
+    last = await db.workflow_versions.find({"workflow_id": workflow_doc["id"]}).sort("version", -1).limit(1).to_list(1)
+    next_version = (last[0]["version"] + 1) if last else 1
+    nodes_count = len(workflow_doc.get("nodes") or (workflow_doc.get("workflow_data") or {}).get("nodes") or [])
+    doc = {
+        "id": str(uuid.uuid4()),
+        "workflow_id": workflow_doc["id"],
+        "version": next_version,
+        "label": label or f"Versione {next_version}",
+        "snapshot": snapshot,
+        "nodes_count": nodes_count,
+        "created_by": user_id,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.workflow_versions.insert_one(doc)
+    return doc
+
+@api_router.post("/workflows/{workflow_id}/duplicate", response_model=Workflow)
+async def duplicate_workflow(workflow_id: str, current_user: User = Depends(get_current_user)):
+    """Duplica un workflow nella stessa Unit (admin only)."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can duplicate workflows")
+    src = await db.workflows.find_one({"id": workflow_id})
+    if not src:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    import copy as _copy
+    new_doc = _copy.deepcopy(src)
+    new_doc.pop("_id", None)
+    new_doc["id"] = str(uuid.uuid4())
+    new_doc["name"] = f"{src.get('name', 'Workflow')} (Copia)"
+    new_doc["created_by"] = current_user.id
+    new_doc["created_at"] = datetime.now(timezone.utc)
+    new_doc["updated_at"] = datetime.now(timezone.utc)
+    new_doc["is_published"] = False
+    await db.workflows.insert_one(new_doc)
+    saved = await db.workflows.find_one({"id": new_doc["id"]}, {"_id": 0})
+    return Workflow(**saved)
+
+@api_router.get("/workflows/{workflow_id}/versions")
+async def list_workflow_versions(workflow_id: str, current_user: User = Depends(get_current_user)):
+    """Elenca le versioni salvate di un workflow (admin only)."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can access workflow versions")
+    versions = await db.workflow_versions.find({"workflow_id": workflow_id}).sort("version", -1).to_list(length=200)
+    return [{
+        "id": v["id"],
+        "version": v["version"],
+        "label": v.get("label"),
+        "nodes_count": v.get("nodes_count", 0),
+        "created_at": v["created_at"].isoformat() if hasattr(v.get("created_at"), "isoformat") else v.get("created_at"),
+        "created_by": v.get("created_by"),
+    } for v in versions]
+
+@api_router.post("/workflows/{workflow_id}/versions")
+async def create_workflow_version_endpoint(workflow_id: str, payload: Dict[str, Any] = Body(default={}), current_user: User = Depends(get_current_user)):
+    """Crea manualmente uno snapshot/versione del workflow (admin only)."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can create workflow versions")
+    wf = await db.workflows.find_one({"id": workflow_id})
+    if not wf:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    v = await _create_workflow_version(wf, (payload or {}).get("label"), current_user.id)
+    return {"id": v["id"], "version": v["version"], "label": v["label"]}
+
+@api_router.post("/workflows/{workflow_id}/versions/{version_id}/restore", response_model=Workflow)
+async def restore_workflow_version(workflow_id: str, version_id: str, current_user: User = Depends(get_current_user)):
+    """Ripristina una versione precedente del workflow (admin only).
+    Salva automaticamente lo stato corrente come backup prima di ripristinare."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only admin can restore workflow versions")
+    wf = await db.workflows.find_one({"id": workflow_id})
+    if not wf:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    ver = await db.workflow_versions.find_one({"id": version_id, "workflow_id": workflow_id})
+    if not ver:
+        raise HTTPException(status_code=404, detail="Version not found")
+    # Backup dello stato corrente prima del ripristino
+    try:
+        await _create_workflow_version(wf, "Backup pre-ripristino", current_user.id)
+    except Exception as ve:
+        logging.error(f"Pre-restore backup failed: {ve}")
+    snap = ver.get("snapshot") or {}
+    update = {k: snap.get(k) for k in WORKFLOW_CONTENT_FIELDS if k in snap}
+    update["updated_at"] = datetime.now(timezone.utc)
+    update["is_published"] = False  # il ripristino torna in bozza
+    await db.workflows.update_one({"id": workflow_id}, {"$set": update})
+    saved = await db.workflows.find_one({"id": workflow_id}, {"_id": 0})
+    return Workflow(**saved)
+
 @api_router.get("/workflows/{workflow_id}", response_model=Workflow)
 async def get_workflow(
     workflow_id: str,
@@ -2095,16 +2189,24 @@ async def update_workflow(
         
         # Basic validation for publishing
         if update_data.get("is_published") and not workflow.get("is_published"):
-            # Check if workflow has at least one trigger node
-            trigger_nodes = await db.workflow_nodes.find({
-                "workflow_id": workflow_id,
-                "node_type": "trigger"
-            }).to_list(length=None)
-            
-            if not trigger_nodes:
-                raise HTTPException(
-                    status_code=400, 
-                    detail="Workflow must have at least one trigger node before publishing")
+            # Check trigger node: prima nei nodi builder (top-level/data), poi nella collezione legacy
+            incoming_nodes = update_data.get("nodes")
+            if incoming_nodes is None:
+                incoming_nodes = workflow.get("nodes") or []
+            has_trigger = any(
+                ((n.get("data") or {}).get("nodeType") in ("trigger", "triggers"))
+                or (n.get("node_type") == "trigger")
+                for n in (incoming_nodes or [])
+            )
+            if not has_trigger:
+                legacy_triggers = await db.workflow_nodes.find({
+                    "workflow_id": workflow_id,
+                    "node_type": "trigger"
+                }).to_list(length=None)
+                if not legacy_triggers:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Workflow must have at least one trigger node before publishing")
         
         await db.workflows.update_one(
             {"id": workflow_id},
@@ -2112,6 +2214,14 @@ async def update_workflow(
         )
         
         updated_workflow = await db.workflows.find_one({"id": workflow_id})
+
+        # NEW (giu 2026): snapshot automatico alla pubblicazione (versioning FASE F)
+        if update_data.get("is_published") and not workflow.get("is_published"):
+            try:
+                await _create_workflow_version(updated_workflow, "Pubblicazione", current_user.id)
+            except Exception as ve:
+                logging.error(f"Workflow version snapshot on publish failed: {ve}")
+
         return Workflow(**updated_workflow)
         
     except HTTPException:

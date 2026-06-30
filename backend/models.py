@@ -666,6 +666,8 @@ class WorkflowUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_published: Optional[bool] = None
     workflow_data: Optional[dict] = None
+    nodes: Optional[list] = None  # NEW (giu 2026): persiste i nodi top-level letti da canvas/executor
+    edges: Optional[list] = None  # NEW (giu 2026): persiste gli edge top-level
 
 class WorkflowNode(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

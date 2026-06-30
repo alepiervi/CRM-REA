@@ -161,6 +161,7 @@ import {
   Undo2,
   Redo2,
   HelpCircle,
+  CopyPlus,
   ShieldAlert as ShieldAlertIcon
 } from "lucide-react";
 
@@ -935,6 +936,21 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
     }
   };
 
+  const handleDuplicateWorkflow = async (workflow) => {
+    try {
+      const res = await axios.post(`${API}/workflows/${workflow.id}/duplicate`);
+      toast({ title: "Workflow duplicato", description: `Creato "${res.data.name}".` });
+      fetchWorkflows();
+    } catch (error) {
+      console.error("Error duplicating workflow:", error);
+      toast({
+        title: "Errore",
+        description: error.response?.data?.detail || "Errore nella duplicazione del workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteWorkflow = async (workflowId) => {
     if (!window.confirm("Sei sicuro di voler eliminare questo workflow?")) {
       return;
@@ -1029,6 +1045,7 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
               onEdit={handleEditWorkflow}
               onDelete={handleDeleteWorkflow}
               onCopy={handleCopyWorkflow}
+              onDuplicate={handleDuplicateWorkflow}
               onMoveToFolder={handleMoveToFolder}
               onTestRun={(w) => setTestModeWorkflow(w)}
             />
@@ -1251,7 +1268,7 @@ const WorkflowBuilderManagement = ({ selectedUnit, units }) => {
 
 // Workflow List Component
 
-const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCopy, onMoveToFolder, onTestRun }) => {
+const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCopy, onDuplicate, onMoveToFolder, onTestRun }) => {
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [workflowToCopy, setWorkflowToCopy] = useState(null);
   const [folders, setFolders] = useState([]);
@@ -1343,6 +1360,18 @@ const WorkflowsList = ({ workflows, units, selectedUnit, onEdit, onDelete, onCop
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
+
+                      {onDuplicate && (
+                        <Button
+                          onClick={() => onDuplicate(workflow)}
+                          size="sm"
+                          variant="outline"
+                          title="Duplica workflow"
+                          data-testid={`workflow-duplicate-${workflow.id}`}
+                        >
+                          <CopyPlus className="w-4 h-4 text-emerald-600" />
+                        </Button>
+                      )}
                       
                       <Button
                         onClick={() => handleCopyClick(workflow)}
@@ -1601,22 +1630,28 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
       .catch(() => setNodeStats({}));
   }, [workflow?.id]);
 
-  // Load workflow nodes and edges when workflow is provided (FASE D: normalizza stile + icona)
+  // Applica i dati di un workflow al canvas (FASE D: normalizza stile + icona). Riusato dal ripristino versione.
+  const applyWorkflowData = useCallback((wf) => {
+    const srcNodes = (wf?.nodes && wf.nodes.length ? wf.nodes : (wf?.workflow_data?.nodes)) || [];
+    const srcEdges = (wf?.edges && wf.edges.length ? wf.edges : (wf?.workflow_data?.edges)) || [];
+    const normNodes = srcNodes.map((n) => {
+      const accent = n.data?.accent || (NODE_COLOR_PALETTE[n.data?.color]?.iconBg) || n.style?.background || "#94a3b8";
+      const title = n.data?.title || stripCount(typeof n.data?.label === "string" ? n.data.label : "") || n.data?.nodeSubtype || "Nodo";
+      const iconKey = resolveIconKey(n, nodeTypes);
+      return {
+        ...n,
+        data: { ...n.data, accent, title, iconKey, label: makeNodeLabel(iconKey, title, undefined) },
+        style: buildNodeStyle(accent),
+      };
+    });
+    setNodes(normNodes);
+    setEdges(srcEdges.map(decorateEdge));
+  }, [nodeTypes, setNodes, setEdges]);
+
+  // Load workflow nodes and edges when workflow is provided
   useEffect(() => {
-    if (workflow && workflow.nodes && workflow.edges) {
-      const normNodes = (workflow.nodes || []).map((n) => {
-        const accent = n.data?.accent || (NODE_COLOR_PALETTE[n.data?.color]?.iconBg) || n.style?.background || "#94a3b8";
-        const title = n.data?.title || stripCount(typeof n.data?.label === "string" ? n.data.label : "") || n.data?.nodeSubtype || "Nodo";
-        const iconKey = resolveIconKey(n, nodeTypes);
-        return {
-          ...n,
-          data: { ...n.data, accent, title, iconKey, label: makeNodeLabel(iconKey, title, undefined) },
-          style: buildNodeStyle(accent),
-        };
-      });
-      setNodes(normNodes);
-      setEdges((workflow.edges || []).map(decorateEdge));
-    }
+    const hasData = workflow && ((workflow.nodes && workflow.edges) || (workflow.workflow_data?.nodes));
+    if (hasData) applyWorkflowData(workflow);
   }, [workflow]);
 
   // Rigenera le label dei nodi (icona dal catalogo + badge statistiche) quando catalogo/stat cambiano
@@ -1945,6 +1980,48 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   };
   const openTour = () => { setTourStep(0); setTourOpen(true); };
 
+  // ===== FASE F: Versioning del workflow =====
+  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [versions, setVersions] = useState([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const fetchVersions = useCallback(async () => {
+    if (!workflow?.id) return;
+    setVersionsLoading(true);
+    try {
+      const r = await axios.get(`${API}/workflows/${workflow.id}/versions`);
+      setVersions(r.data || []);
+    } catch (e) { setVersions([]); }
+    finally { setVersionsLoading(false); }
+  }, [workflow?.id]);
+  const openVersions = () => { setVersionsOpen(true); fetchVersions(); };
+  const saveVersion = async () => {
+    try {
+      const sNodes = serializeNodes(nodes);
+      await axios.put(`${API}/workflows/${workflow.id}`, {
+        nodes: sNodes, edges,
+        workflow_data: { nodes: sNodes, edges, viewport: { x: 0, y: 0, zoom: 1 } },
+      });
+      await axios.post(`${API}/workflows/${workflow.id}/versions`, {});
+      toast({ title: "Versione salvata", description: "Snapshot del workflow creato." });
+      fetchVersions();
+    } catch (e) {
+      toast({ title: "Errore", description: e.response?.data?.detail || "Impossibile salvare la versione", variant: "destructive" });
+    }
+  };
+  const restoreVersion = async (versionId) => {
+    if (!window.confirm("Ripristinare questa versione? Lo stato attuale verrà salvato automaticamente come backup.")) return;
+    try {
+      const r = await axios.post(`${API}/workflows/${workflow.id}/versions/${versionId}/restore`);
+      applyWorkflowData(r.data);
+      toast({ title: "Versione ripristinata", description: "Il canvas è stato aggiornato (in bozza)." });
+      setVersionsOpen(false);
+      fetchVersions();
+      if (onSave) onSave();
+    } catch (e) {
+      toast({ title: "Errore", description: e.response?.data?.detail || "Ripristino non riuscito", variant: "destructive" });
+    }
+  };
+
   // Get node background color
   const getNodeColor = (color) => {
     const colors = {
@@ -1976,9 +2053,12 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   // Save workflow
   const handleSave = async () => {
     try {
+      const sNodes = serializeNodes(nodes);
       const workflowData = {
+        nodes: sNodes,
+        edges: edges,
         workflow_data: {
-          nodes: serializeNodes(nodes),
+          nodes: sNodes,
           edges: edges,
           viewport: { x: 0, y: 0, zoom: 1 }
         }
@@ -2019,6 +2099,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     try {
       // Salva prima il workflow per usare la versione corrente
       await axios.put(`${API}/workflows/${workflow.id}`, {
+        nodes: serializeNodes(nodes), edges,
         workflow_data: { nodes: serializeNodes(nodes), edges, viewport: { x: 0, y: 0, zoom: 1 } }
       }, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
       const payload = {
@@ -2056,10 +2137,13 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
         return;
       }
 
+      const pubNodes = serializeNodes(nodes);
       await axios.put(`${API}/workflows/${workflow.id}`, {
         is_published: true,
+        nodes: pubNodes,
+        edges: edges,
         workflow_data: {
-          nodes: serializeNodes(nodes),
+          nodes: pubNodes,
           edges: edges,
           viewport: { x: 0, y: 0, zoom: 1 }
         }
@@ -2113,6 +2197,17 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
           <Button variant="outline" size="sm" onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" />
             Salva
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openVersions}
+            data-testid="workflow-versions-btn"
+            className="border-slate-300 text-slate-700 hover:bg-slate-100"
+            title="Cronologia versioni"
+          >
+            <History className="w-4 h-4 mr-2" />
+            Cronologia
           </Button>
           <Button
             variant="outline"
@@ -2270,6 +2365,59 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
           </ReactFlow>
         </div>
       </div>
+
+      {/* Versions Dialog (FASE F) */}
+      <Dialog open={versionsOpen} onOpenChange={setVersionsOpen}>
+        <DialogContent className="max-w-lg" data-testid="workflow-versions-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="w-5 h-5 text-indigo-600" />
+              Cronologia versioni
+            </DialogTitle>
+            <DialogDescription>
+              Ogni pubblicazione crea automaticamente una versione. Puoi salvarne una manualmente e ripristinare una versione precedente in qualsiasi momento.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex justify-end">
+            <Button size="sm" variant="outline" onClick={saveVersion} data-testid="workflow-save-version-btn">
+              <Save className="w-4 h-4 mr-2" /> Salva versione attuale
+            </Button>
+          </div>
+
+          <div className="space-y-2 max-h-80 overflow-y-auto py-1" data-testid="workflow-versions-list">
+            {versionsLoading ? (
+              <p className="text-sm text-slate-500 text-center py-6">Caricamento...</p>
+            ) : versions.length === 0 ? (
+              <div className="flex flex-col items-center py-6 text-center">
+                <History className="w-8 h-8 text-slate-300 mb-2" />
+                <p className="text-sm text-slate-500">Nessuna versione salvata. Pubblica o salva una versione per iniziare.</p>
+              </div>
+            ) : (
+              versions.map((v) => (
+                <div key={v.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50" data-testid={`workflow-version-${v.id}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-indigo-600 bg-indigo-50 rounded px-1.5 py-0.5">v{v.version}</span>
+                      <p className="text-sm font-medium text-slate-800 truncate">{v.label}</p>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {v.nodes_count} nodi · {v.created_at ? new Date(v.created_at).toLocaleString("it-IT") : ""}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => restoreVersion(v.id)} data-testid={`workflow-restore-${v.id}`}>
+                    <RotateCcw className="w-4 h-4 mr-1.5" /> Ripristina
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVersionsOpen(false)} data-testid="workflow-versions-close-btn">Chiudi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Onboarding Tour (primo accesso) */}
       <Dialog open={tourOpen} onOpenChange={(v) => { if (!v) closeTour(); }}>
