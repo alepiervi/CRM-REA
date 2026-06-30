@@ -46,12 +46,12 @@ console.log('📡 API endpoint:', API);
 
 // Helper functions
 // NEW (feb 2026): usa parseBackendDate per interpretare timestamp ISO senza tz come UTC
-import { parseBackendDate } from "./datetime";
+import { parseBackendDate, getActiveTimezone } from "./datetime";
 export const formatDate = (dateString) => {
   if (!dateString) return "";
   const d = parseBackendDate(dateString);
   if (!d) return "";
-  const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Rome' };
+  const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: getActiveTimezone() };
   return d.toLocaleDateString('it-IT', options);
 };
 

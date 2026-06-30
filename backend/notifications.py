@@ -41,11 +41,16 @@ async def send_email_notification(to_email: str, subject: str, body_html: str):
         html_part = MIMEText(body_html, 'html', 'utf-8')
         msg.attach(html_part)
         
-        # Send via SMTP SSL
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.sendmail(SMTP_FROM_EMAIL, to_email, msg.as_string())
+        # Send via SMTP SSL — eseguito in un thread con timeout per NON bloccare
+        # l'event loop (se l'SMTP è irraggiungibile il TCP timeout di default è ~130s
+        # e congelerebbe l'intero backend). Vedi IP blacklistato Aruba.
+        def _send_sync():
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context, timeout=15) as server:
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(SMTP_FROM_EMAIL, to_email, msg.as_string())
+
+        await asyncio.to_thread(_send_sync)
         
         logging.info(f"[EMAIL] Email sent successfully to {to_email}: {subject}")
         return True

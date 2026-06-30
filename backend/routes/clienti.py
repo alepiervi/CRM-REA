@@ -692,13 +692,13 @@ async def get_clienti(
         date_filter = {}
         if date_from:
             try:
-                start_utc, _ = rome_date_to_utc_range(date_from)
+                start_utc, _ = rome_date_to_utc_range(date_from, current_user.timezone)
                 date_filter["$gte"] = start_utc
             except ValueError:
                 raise HTTPException(status_code=400, detail="Formato date_from non valido. Usa YYYY-MM-DD")
         if date_to:
             try:
-                _, end_utc = rome_date_to_utc_range(date_to)
+                _, end_utc = rome_date_to_utc_range(date_to, current_user.timezone)
                 date_filter["$lte"] = end_utc
             except ValueError:
                 raise HTTPException(status_code=400, detail="Formato date_to non valido. Usa YYYY-MM-DD")
@@ -1398,10 +1398,10 @@ async def export_clienti_excel(
             from helpers import rome_date_to_utc_range
             date_query = {}
             if date_from:
-                start_utc, _ = rome_date_to_utc_range(date_from)
+                start_utc, _ = rome_date_to_utc_range(date_from, current_user.timezone)
                 date_query["$gte"] = start_utc
             if date_to:
-                _, end_utc = rome_date_to_utc_range(date_to)
+                _, end_utc = rome_date_to_utc_range(date_to, current_user.timezone)
                 date_query["$lte"] = end_utc
             
             if date_query:
@@ -2032,10 +2032,10 @@ async def get_sub_agenzia_status_changes_audit(
         from helpers import rome_date_to_utc_range
         ts_filter = {}
         if date_from:
-            start_utc, _ = rome_date_to_utc_range(date_from)
+            start_utc, _ = rome_date_to_utc_range(date_from, current_user.timezone)
             ts_filter["$gte"] = start_utc
         if date_to:
-            _, end_utc = rome_date_to_utc_range(date_to)
+            _, end_utc = rome_date_to_utc_range(date_to, current_user.timezone)
             ts_filter["$lte"] = end_utc
         query["timestamp"] = ts_filter
 

@@ -89,6 +89,7 @@ class User(BaseModel):
     password_last_changed: Optional[datetime] = None  # NEW: Track last password change for 90-day expiry
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login: Optional[datetime] = None
+    timezone: str = "Europe/Rome"  # NEW (giu 2026): fuso orario preferito dell'utente per display e filtri data
 
 class UserCreate(BaseModel):
     username: str
@@ -134,6 +135,7 @@ class UserUpdate(BaseModel):
     can_view_analytics: Optional[bool] = None
     password_change_required: Optional[bool] = None
     password_last_changed: Optional[datetime] = None  # NEW: For tracking password expiry
+    timezone: Optional[str] = None  # NEW (giu 2026): fuso orario preferito dell'utente
 
 class Token(BaseModel):
     access_token: str

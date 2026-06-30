@@ -57,6 +57,7 @@ import { PostVenditaStatusDot } from "./components/PostVenditaStatusDot";
 import { ClientePostVenditaSection } from "./components/ClientePostVenditaSection";
 import { MultiSelectFilter } from "./components/MultiSelectFilter";
 import { SpokiAdminConfig } from "./components/spoki/SpokiAdminConfig";
+import { TimezoneSettingsDialog } from "./components/settings/TimezoneSettingsDialog";
 import { AppointmentsCalendar } from "./components/spoki/AppointmentsCalendar";
 import { AIConversations } from "./components/spoki/AIConversations";
 import { LeadConversationsTab } from "./components/spoki/LeadConversationsTab";
@@ -1995,6 +1996,9 @@ const Dashboard = () => {
                   <p className="text-xs text-slate-500 capitalize">{user.role}</p>
                 </div>
               </div>
+              <div className="mb-2">
+                <TimezoneSettingsDialog />
+              </div>
               <Button
                 onClick={() => {
                   logout();
@@ -2223,15 +2227,18 @@ const Dashboard = () => {
             </div>
             
             {/* Desktop Logout Button */}
-            <Button
-              onClick={logout}
-              variant="outline"
-              size="sm"
-              className="text-slate-600 hover:text-red-600 hover:border-red-300 hidden md:flex"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Esci
-            </Button>
+            <div className="hidden md:flex items-center gap-2">
+              <TimezoneSettingsDialog />
+              <Button
+                onClick={logout}
+                variant="outline"
+                size="sm"
+                className="text-slate-600 hover:text-red-600 hover:border-red-300"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Esci
+              </Button>
+            </div>
             
             {/* Mobile User Info */}
             <div className="flex items-center space-x-2 md:hidden">

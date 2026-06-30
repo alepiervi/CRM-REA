@@ -81,13 +81,13 @@ async def get_agent_analytics(
         date_filter = {}
         if date_from:
             try:
-                date_from_obj, _ = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_from)
+                date_from_obj, _ = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_from, current_user.timezone)
                 date_filter["$gte"] = date_from_obj
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD")
         if date_to:
             try:
-                _, date_to_obj = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_to)
+                _, date_to_obj = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_to, current_user.timezone)
                 date_filter["$lte"] = date_to_obj
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
@@ -203,13 +203,13 @@ async def get_supervisor_unit_analytics(
     date_filter = {}
     if date_from:
         try:
-            date_from_obj, _ = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_from)
+            date_from_obj, _ = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_from, current_user.timezone)
             date_filter["$gte"] = date_from_obj
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD")
     if date_to:
         try:
-            _, date_to_obj = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_to)
+            _, date_to_obj = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_to, current_user.timezone)
             date_filter["$lte"] = date_to_obj
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
@@ -388,13 +388,13 @@ async def get_referente_analytics(
         date_filter = {}
         if date_from:
             try:
-                date_from_obj, _ = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_from)
+                date_from_obj, _ = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_from, current_user.timezone)
                 date_filter["$gte"] = date_from_obj
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid date_from format. Use YYYY-MM-DD")
         if date_to:
             try:
-                _, date_to_obj = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_to)
+                _, date_to_obj = __import__("helpers", fromlist=["rome_date_to_utc_range"]).rome_date_to_utc_range(date_to, current_user.timezone)
                 date_filter["$lte"] = date_to_obj
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid date_to format. Use YYYY-MM-DD")
@@ -601,7 +601,7 @@ async def export_leads_excel(
                 if "T" in date_from:
                     existing["$gte"] = datetime.fromisoformat(date_from)
                 else:
-                    start_utc, _ = rome_date_to_utc_range(date_from)
+                    start_utc, _ = rome_date_to_utc_range(date_from, current_user.timezone)
                     existing["$gte"] = start_utc
             except ValueError:
                 pass
@@ -610,7 +610,7 @@ async def export_leads_excel(
                 if "T" in date_to:
                     existing["$lte"] = datetime.fromisoformat(date_to)
                 else:
-                    _, end_utc = rome_date_to_utc_range(date_to)
+                    _, end_utc = rome_date_to_utc_range(date_to, current_user.timezone)
                     existing["$lte"] = end_utc
             except ValueError:
                 pass
@@ -765,10 +765,10 @@ async def get_pivot_analytics(
             date_query = {}
             try:
                 if data_da:
-                    start_utc, _ = rome_date_to_utc_range(data_da)
+                    start_utc, _ = rome_date_to_utc_range(data_da, current_user.timezone)
                     date_query["$gte"] = start_utc
                 if data_a:
-                    _, end_utc = rome_date_to_utc_range(data_a)
+                    _, end_utc = rome_date_to_utc_range(data_a, current_user.timezone)
                     date_query["$lte"] = end_utc
             except (ValueError, TypeError):
                 raise HTTPException(status_code=400, detail="Formato data non valido. Usa YYYY-MM-DD")
@@ -900,8 +900,8 @@ async def get_pivot_analytics(
         if data_da and data_a:
             try:
                 from helpers import rome_date_to_utc_range
-                start, _ = rome_date_to_utc_range(data_da)
-                _, end = rome_date_to_utc_range(data_a)
+                start, _ = rome_date_to_utc_range(data_da, current_user.timezone)
+                _, end = rome_date_to_utc_range(data_a, current_user.timezone)
                 duration = (end - start).days
                 prev_start = start - timedelta(days=duration + 1)
                 prev_end = start

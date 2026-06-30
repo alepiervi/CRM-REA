@@ -18,16 +18,23 @@ except ImportError:  # pragma: no cover
 APP_TIMEZONE = ZoneInfo("Europe/Rome")
 
 
-def rome_date_to_utc_range(date_str: str) -> Tuple[datetime, datetime]:
-    """Converte una data Roma local (YYYY-MM-DD) nell'intervallo UTC corrispondente
-    `[00:00 Roma, 23:59:59.999999 Roma]`.
+def rome_date_to_utc_range(date_str: str, tz_name: Optional[str] = None) -> Tuple[datetime, datetime]:
+    """Converte una data local (YYYY-MM-DD) nell'intervallo UTC corrispondente
+    `[00:00, 23:59:59.999999]` nel fuso `tz_name` (default Europe/Rome).
 
     Esempio (estate, +02:00): "2026-08-15" → (2026-08-14T22:00:00Z, 2026-08-15T21:59:59.999999Z).
-    Gestisce automaticamente CET/CEST tramite zoneinfo.
+    Gestisce automaticamente CET/CEST tramite zoneinfo. Se `tz_name` è valorizzato
+    (es. fuso scelto dall'utente), usa quel fuso al posto di Europe/Rome.
     """
+    tz = APP_TIMEZONE
+    if tz_name:
+        try:
+            tz = ZoneInfo(tz_name)
+        except Exception:
+            tz = APP_TIMEZONE
     d = datetime.fromisoformat(date_str).date()
-    start_rome = datetime.combine(d, time(0, 0, 0, 0), tzinfo=APP_TIMEZONE)
-    end_rome = datetime.combine(d, time(23, 59, 59, 999999), tzinfo=APP_TIMEZONE)
+    start_rome = datetime.combine(d, time(0, 0, 0, 0), tzinfo=tz)
+    end_rome = datetime.combine(d, time(23, 59, 59, 999999), tzinfo=tz)
     return start_rome.astimezone(timezone.utc), end_rome.astimezone(timezone.utc)
 
 

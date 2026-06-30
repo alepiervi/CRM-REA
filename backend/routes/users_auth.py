@@ -117,6 +117,8 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
     if user_data:
         # Convert ObjectId to string and return raw data to ensure all fields are present
         user_data["_id"] = str(user_data["_id"])
+        # NEW (giu 2026): assicura sempre un fuso orario (default Europe/Rome per utenti legacy)
+        user_data["timezone"] = user_data.get("timezone") or "Europe/Rome"
         # NEW (feb 2026): per gli utenti backoffice_sub_agenzia espone il flag della propria sub agenzia
         # `bo_sub_agenzia_can_change_status` permette al frontend di abilitare la modifica dello status cliente.
         user_data["bo_sub_agenzia_can_change_status"] = False
@@ -126,6 +128,20 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
                 user_data["bo_sub_agenzia_can_change_status"] = True
         return user_data
     return current_user
+
+@router.patch("/auth/me/timezone")
+async def update_my_timezone(payload: Dict[str, Any] = Body(...), current_user: User = Depends(get_current_user)):
+    """Self-service: l'utente aggiorna il proprio fuso orario preferito (IANA, es. 'Europe/Rome')."""
+    from zoneinfo import ZoneInfo
+    tz = (payload or {}).get("timezone")
+    if not tz or not isinstance(tz, str):
+        raise HTTPException(status_code=400, detail="Campo 'timezone' obbligatorio")
+    try:
+        ZoneInfo(tz)
+    except Exception:
+        raise HTTPException(status_code=400, detail=f"Fuso orario non valido: {tz}")
+    await db.users.update_one({"id": current_user.id}, {"$set": {"timezone": tz}})
+    return {"timezone": tz}
 
 @router.post("/auth/change-password")
 async def change_password(password_data: PasswordChange, current_user: User = Depends(get_current_user)):

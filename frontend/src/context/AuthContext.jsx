@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useToast } from "../hooks/use-toast";
 import { API } from "../lib/appUtils";
+import { setActiveTimezone } from "../lib/datetime";
 
 // Auth Context
 export const AuthContext = React.createContext();
@@ -154,6 +155,7 @@ export const AuthProvider = ({ children }) => {
         
         // Update user data if needed
         setUser(response.data);
+        setActiveTimezone(response.data?.timezone);
         
         showSessionWarningToast('✅ Sessione estesa per altri 15 minuti', 'default');
         
@@ -250,6 +252,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.get(`${API}/auth/me`);
       setUser(response.data);
+      setActiveTimezone(response.data?.timezone);
     } catch (error) {
       console.error("Error fetching user:", error);
       // Se il token è scaduto o non valido, rimuovi tutto e forza login
@@ -288,6 +291,7 @@ export const AuthProvider = ({ children }) => {
       
       setToken(access_token);
       setUser(userData);
+      setActiveTimezone(userData?.timezone);
       localStorage.setItem("token", access_token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
       
@@ -404,6 +408,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider 
       value={{ 
         user, 
+        setUser,
         token, 
         loading, 
         login, 

@@ -675,7 +675,7 @@ async def get_leads(
                 if "T" in date_from:
                     existing["$gte"] = datetime.fromisoformat(date_from)
                 else:
-                    start_utc, _ = rome_date_to_utc_range(date_from)
+                    start_utc, _ = rome_date_to_utc_range(date_from, current_user.timezone)
                     existing["$gte"] = start_utc
             except ValueError:
                 pass
@@ -684,7 +684,7 @@ async def get_leads(
                 if "T" in date_to:
                     existing["$lte"] = datetime.fromisoformat(date_to)
                 else:
-                    _, end_utc = rome_date_to_utc_range(date_to)
+                    _, end_utc = rome_date_to_utc_range(date_to, current_user.timezone)
                     existing["$lte"] = end_utc
             except ValueError:
                 pass

@@ -278,3 +278,22 @@ Enhancement della feature privilegi sub agenzia: tracciamento dei cambi status f
 
 ## Test credentials
 Vedi `/app/memory/test_credentials.md`
+
+## Selettore Fuso Orario per Utente (30 giu 2026) — COMPLETATO E TESTATO
+**Requisito utente (P1)**: rendere il fuso orario configurabile per-utente (es. Europe/Rome vs Europe/London) per supportare sub-agenzie internazionali; prima era hardcoded su Europe/Rome.
+
+**Backend**:
+- `models.py`: `User.timezone: str = "Europe/Rome"`; `UserUpdate.timezone: Optional[str]`
+- `helpers.py`: `rome_date_to_utc_range(date_str, tz_name=None)` ora accetta un fuso opzionale (fallback Europe/Rome); gestisce DST via zoneinfo
+- `routes/users_auth.py`: `/auth/me` ritorna sempre `timezone` (default Roma per utenti legacy); nuovo `PATCH /api/auth/me/timezone` self-service (valida IANA con ZoneInfo, 400 se non valido)
+- Tutti i call-site dei filtri data (`routes/clienti.py` 3x, `routes/leads.py` 1x, `routes/analytics.py` 8x) ora passano `current_user.timezone` a `rome_date_to_utc_range`
+
+**Frontend**:
+- `lib/datetime.js`: aggiunto `setActiveTimezone`/`getActiveTimezone` (modulo-level, default Europe/Rome); tutte le funzioni di format (`formatDateTimeIT`, `formatDateIT`, `formatTimeIT`, `todayRomeISO`) usano il fuso attivo
+- `lib/appUtils.js` `formatDate`: usa `getActiveTimezone()`
+- `context/AuthContext.jsx`: `setActiveTimezone(user.timezone)` su login/fetchCurrentUser/extendSession; esposto `setUser` nel context value
+- Nuovo `components/settings/TimezoneSettingsDialog.jsx`: dialog con Select di 14 fusi comuni (data-testid `timezone-settings-trigger`, `timezone-select-trigger`, `timezone-save-btn`); montato nell'header desktop e nel menu mobile di App.js
+
+**Fix collaterale critico** (`notifications.py`): `send_email_notification` usava `smtplib.SMTP_SSL` bloccante dentro l'event loop → con SMTP Aruba irraggiungibile (IP blacklistato) congelava l'intero backend (502/timeout). Ora gira in `asyncio.to_thread` con `timeout=15s`.
+
+**Test**: e2e curl OK (PATCH timezone Roma↔Londra, validazione 400 su fuso invalido, filtri clienti/leads/analytics-pivot 200 con fuso utente); UI dialog verificata via screenshot.
