@@ -326,6 +326,12 @@ Vedi `/app/memory/test_credentials.md`
 - Si aggiorna in tempo reale all'apertura del workflow e ad ogni modifica di nodi/edge, senza dover aprire il dialog (data-testid `workflow-validate-badge`)
 - Verificato via screenshot: nodo orfano → badge "2" ambra sul pulsante Valida
 
+### Onboarding / mini-tutorial Workflow Builder (30 giu 2026)
+- Tour a 5 step (benvenuto + palette + costruzione + validazione + test/pubblica) che si apre automaticamente al primo accesso al canvas (flag `wf_builder_tour_done` in localStorage)
+- Dialog `workflow-tour-dialog` con icona gradient per step, dots di progresso, controlli Salta/Indietro/Avanti/Inizia a costruire
+- Pulsante "?" (`workflow-help-btn`, icona HelpCircle) in toolbar per riaprire la guida in qualsiasi momento
+- Verificato via screenshot: auto-apertura al primo accesso, navigazione step, skip e riapertura da pulsante help
+
 ## Selettore Fuso Orario per Utente (30 giu 2026) — COMPLETATO E TESTATO
 **Requisito utente (P1)**: rendere il fuso orario configurabile per-utente (es. Europe/Rome vs Europe/London) per supportare sub-agenzie internazionali; prima era hardcoded su Europe/Rome.
 

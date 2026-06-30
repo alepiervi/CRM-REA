@@ -160,6 +160,7 @@ import {
   Network,
   Undo2,
   Redo2,
+  HelpCircle,
   ShieldAlert as ShieldAlertIcon
 } from "lucide-react";
 
@@ -1922,6 +1923,28 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   const liveErrorCount = liveIssues.filter((i) => i.level === "error").length;
   const liveWarnCount = liveIssues.filter((i) => i.level === "warning").length;
 
+  // ===== Onboarding / mini-tutorial (primo accesso) =====
+  const TOUR_STEPS = [
+    { icon: Workflow, title: "Benvenuto nel Workflow Builder", desc: "Crea automazioni visuali per i tuoi lead in pochi passi. Ti mostriamo come funziona in 4 step." },
+    { icon: GitBranch, title: "1. Palette dei nodi", desc: "Trascina (o clicca) i nodi dalla sidebar di sinistra: sono divisi in Trigger, Azioni, Condizioni e Attese. Ogni nodo ha un'icona e un colore dedicati." },
+    { icon: Network, title: "2. Costruisci il flusso", desc: "Collega i nodi trascinando dai puntini di connessione e clicca un nodo per configurarlo. Usa Auto-layout per riordinarli automaticamente, e Undo/Redo per tornare indietro." },
+    { icon: ShieldCheck, title: "3. Valida", desc: "Il pulsante Valida controlla errori e avvisi (nodi scollegati, trigger mancante, ecc.). Il badge sul pulsante ti segnala subito quanti problemi ci sono." },
+    { icon: Send, title: "4. Testa e Pubblica", desc: "Prova il flusso con Test Run su un lead fittizio, poi premi Pubblica per attivarlo. La pubblicazione è bloccata se ci sono errori di validazione." },
+  ];
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
+  useEffect(() => {
+    if (!localStorage.getItem("wf_builder_tour_done")) {
+      const t = setTimeout(() => setTourOpen(true), 700);
+      return () => clearTimeout(t);
+    }
+  }, []);
+  const closeTour = () => {
+    localStorage.setItem("wf_builder_tour_done", "1");
+    setTourOpen(false);
+  };
+  const openTour = () => { setTourStep(0); setTourOpen(true); };
+
   // Get node background color
   const getNodeColor = (color) => {
     const colors = {
@@ -2078,6 +2101,9 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
         </div>
         
         <div className="flex items-center space-x-2">
+          <Button variant="ghost" size="sm" onClick={openTour} data-testid="workflow-help-btn" title="Guida rapida" className="text-slate-500 hover:text-indigo-600">
+            <HelpCircle className="w-4 h-4" />
+          </Button>
           <Button variant="outline" size="sm" onClick={undo} disabled={past.length === 0} data-testid="workflow-undo-btn" title="Annulla (Ctrl+Z)">
             <Undo2 className="w-4 h-4" />
           </Button>
@@ -2244,6 +2270,56 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
           </ReactFlow>
         </div>
       </div>
+
+      {/* Onboarding Tour (primo accesso) */}
+      <Dialog open={tourOpen} onOpenChange={(v) => { if (!v) closeTour(); }}>
+        <DialogContent className="max-w-md" data-testid="workflow-tour-dialog">
+          {(() => {
+            const step = TOUR_STEPS[tourStep] || TOUR_STEPS[0];
+            const StepIcon = step.icon;
+            const isLast = tourStep === TOUR_STEPS.length - 1;
+            return (
+              <>
+                <DialogHeader>
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center mb-2 shadow-md">
+                    <StepIcon className="w-7 h-7 text-white" />
+                  </div>
+                  <DialogTitle data-testid="workflow-tour-title">{step.title}</DialogTitle>
+                  <DialogDescription className="text-sm leading-relaxed pt-1">{step.desc}</DialogDescription>
+                </DialogHeader>
+
+                <div className="flex items-center justify-center gap-1.5 py-2">
+                  {TOUR_STEPS.map((_, i) => (
+                    <span key={i} className={`h-1.5 rounded-full transition-all ${i === tourStep ? "w-6 bg-indigo-600" : "w-1.5 bg-slate-300"}`} />
+                  ))}
+                </div>
+
+                <DialogFooter className="flex sm:justify-between items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={closeTour} data-testid="workflow-tour-skip" className="text-slate-500">
+                    Salta
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    {tourStep > 0 && (
+                      <Button variant="outline" size="sm" onClick={() => setTourStep((s) => s - 1)} data-testid="workflow-tour-prev">
+                        Indietro
+                      </Button>
+                    )}
+                    {isLast ? (
+                      <Button size="sm" onClick={closeTour} data-testid="workflow-tour-finish">
+                        Inizia a costruire
+                      </Button>
+                    ) : (
+                      <Button size="sm" onClick={() => setTourStep((s) => s + 1)} data-testid="workflow-tour-next">
+                        Avanti
+                      </Button>
+                    )}
+                  </div>
+                </DialogFooter>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* Validation Dialog (FASE E) */}
       <Dialog open={validationOpen} onOpenChange={setValidationOpen}>
