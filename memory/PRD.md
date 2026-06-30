@@ -321,6 +321,11 @@ Vedi `/app/memory/test_credentials.md`
 - Pulsanti Undo (`workflow-undo-btn`) / Redo (`workflow-redo-btn`) in toolbar con stato disabled corretto; scorciatoie Ctrl/Cmd+Z (undo), Ctrl+Shift+Z / Ctrl+Y (redo)
 - Verificato via screenshot: nodo orfano aggiunto → 2 warning con highlight ambra + "Vai al nodo"; undo abilitato e funzionante
 
+### Badge live di validazione (30 giu 2026)
+- Il pulsante "Valida" mostra un badge automatico con il numero di problemi, calcolato ad ogni render (`liveIssues`/`liveErrorCount`/`liveWarnCount`): rosso col conteggio errori se presenti, altrimenti ambra col conteggio avvisi; nessun badge se il workflow è valido
+- Si aggiorna in tempo reale all'apertura del workflow e ad ogni modifica di nodi/edge, senza dover aprire il dialog (data-testid `workflow-validate-badge`)
+- Verificato via screenshot: nodo orfano → badge "2" ambra sul pulsante Valida
+
 ## Selettore Fuso Orario per Utente (30 giu 2026) — COMPLETATO E TESTATO
 **Requisito utente (P1)**: rendere il fuso orario configurabile per-utente (es. Europe/Rome vs Europe/London) per supportare sub-agenzie internazionali; prima era hardcoded su Europe/Rome.
 

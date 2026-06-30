@@ -1917,6 +1917,11 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     }
   }, [nodes, reactFlowInstance]);
 
+  // Conteggio live dei problemi (aggiornato ad ogni render → badge automatico sul pulsante Valida)
+  const liveIssues = computeValidation();
+  const liveErrorCount = liveIssues.filter((i) => i.level === "error").length;
+  const liveWarnCount = liveIssues.filter((i) => i.level === "warning").length;
+
   // Get node background color
   const getNodeColor = (color) => {
     const colors = {
@@ -2099,11 +2104,19 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
             size="sm"
             onClick={runValidation}
             data-testid="workflow-validate-btn"
-            className="border-amber-300 text-amber-700 hover:bg-amber-50"
+            className={`relative border-amber-300 hover:bg-amber-50 ${liveErrorCount > 0 ? "text-red-700 border-red-300" : "text-amber-700"}`}
             title="Verifica errori e avvisi del workflow"
           >
             <ShieldCheck className="w-4 h-4 mr-2" />
             Valida
+            {(liveErrorCount > 0 || liveWarnCount > 0) && (
+              <span
+                data-testid="workflow-validate-badge"
+                className={`absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${liveErrorCount > 0 ? "bg-red-500" : "bg-amber-500"}`}
+              >
+                {liveErrorCount > 0 ? liveErrorCount : liveWarnCount}
+              </span>
+            )}
           </Button>
           <Button
             variant="outline"
