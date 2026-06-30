@@ -306,6 +306,21 @@ Vedi `/app/memory/test_credentials.md`
 - `autoLayout()`: calcola il livello di ogni nodo con longest-path relaxation sugli edge (Bellman-Ford, sicuro anche con cicli go_to), raggruppa per livello e li dispone in un albero verticale centrato (LEVEL_GAP_Y=140, NODE_GAP_X=260, CENTER_X=460); poi `reactFlowInstance.fitView` con animazione + toast di conferma
 - Verificato via screenshot: nodo spostato manualmente → click Auto-layout → riallineamento ordinato e vista centrata
 
+## Workflow Builder FASE E (30 giu 2026) — COMPLETATO
+**Solo frontend (`WorkflowBuilder.jsx`/`WorkflowCanvas`), nessuna modifica backend.**
+
+### Validazione visuale workflow
+- Pulsante "Valida" (data-testid `workflow-validate-btn`, icona ShieldCheck) apre dialog `workflow-validation-dialog`
+- `computeValidation()` rileva: workflow vuoto (error), trigger mancante (error), trigger multipli (warning), edge verso nodi inesistenti (error), nodi non collegati (warning), nodi non raggiungibili dal trigger (warning)
+- I nodi problematici vengono evidenziati con ring rosso (error) / ambra (warning) via `highlightNodes`; ogni issue con `nodeId` ha "Vai al nodo →" che fa `fitView` sul nodo (`goToNode`)
+- `handlePublish` esegue la validazione e BLOCCA la pubblicazione se ci sono errori (i warning sono consentiti)
+
+### Undo / Redo
+- Stack `past`/`future` (cap 50) con `nodesRef`/`edgesRef`; `commitHistory()` esposto via `historyCommitRef` per evitare TDZ nelle callback
+- `commitHistory` invocato prima di: onConnect, addNode, updateNodeConfig, autoLayout, onNodeDragStart, onNodesDelete, onEdgesDelete
+- Pulsanti Undo (`workflow-undo-btn`) / Redo (`workflow-redo-btn`) in toolbar con stato disabled corretto; scorciatoie Ctrl/Cmd+Z (undo), Ctrl+Shift+Z / Ctrl+Y (redo)
+- Verificato via screenshot: nodo orfano aggiunto → 2 warning con highlight ambra + "Vai al nodo"; undo abilitato e funzionante
+
 ## Selettore Fuso Orario per Utente (30 giu 2026) — COMPLETATO E TESTATO
 **Requisito utente (P1)**: rendere il fuso orario configurabile per-utente (es. Europe/Rome vs Europe/London) per supportare sub-agenzie internazionali; prima era hardcoded su Europe/Rome.
 

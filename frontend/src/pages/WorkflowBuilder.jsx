@@ -157,7 +157,10 @@ import {
   RefreshCw,
   Archive,
   RotateCcw,
-  Network
+  Network,
+  Undo2,
+  Redo2,
+  ShieldAlert as ShieldAlertIcon
 } from "lucide-react";
 
 // Utilities e Auth estratti in moduli dedicati (refactoring giugno 2026)
@@ -1580,6 +1583,7 @@ const CreateWorkflowModal = ({ onClose, onSuccess }) => {
 const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const historyCommitRef = useRef(() => {});
   const [nodeTypes, setNodeTypes] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -1647,7 +1651,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
 
   // Handle connecting nodes (FASE D: edge animati, frecce, colore per ramo)
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(decorateEdge(params), eds)),
+    (params) => { historyCommitRef.current?.(); setEdges((eds) => addEdge(decorateEdge(params), eds)); },
     [setEdges],
   );
 
@@ -1662,6 +1666,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   const reactFlowWrapper = React.useRef(null);
 
   const addNode = (nodeType, nodeSubtype, nodeName, color, icon, position = null) => {
+    historyCommitRef.current?.();
     const id = `${nodeType}_${Date.now()}`;
     const accent = (NODE_COLOR_PALETTE[color]?.iconBg) || getNodeColor(color);
     const iconKey = icon || "default";
@@ -1712,6 +1717,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
 
   // Update node configuration
   const updateNodeConfig = (nodeId, config) => {
+    historyCommitRef.current?.();
     setNodes((nds) => 
       nds.map((node) => {
         if (node.id === nodeId) {
@@ -1738,6 +1744,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   // FASE D+: Auto-layout — riallinea i nodi in un albero verticale ordinato in base agli edge
   const autoLayout = useCallback(() => {
     if (!nodes.length) return;
+    historyCommitRef.current?.();
     const level = {};
     nodes.forEach((n) => { level[n.id] = 0; });
     // Longest-path relaxation (Bellman-Ford style, sicuro anche con cicli go_to)
@@ -1771,6 +1778,144 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     setTimeout(() => { try { reactFlowInstance?.fitView({ padding: 0.2, duration: 400 }); } catch (e) {} }, 80);
     toast({ title: "Layout applicato", description: "Nodi riallineati automaticamente" });
   }, [nodes, edges, reactFlowInstance, setNodes, toast]);
+
+  // ===== FASE E: Undo / Redo =====
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+  useEffect(() => { edgesRef.current = edges; }, [edges]);
+  const [past, setPast] = useState([]);
+  const [future, setFuture] = useState([]);
+
+  // Salva lo stato CORRENTE nello stack prima di una modifica
+  const commitHistory = useCallback(() => {
+    setPast((p) => [...p.slice(-49), { nodes: nodesRef.current, edges: edgesRef.current }]);
+    setFuture([]);
+  }, []);
+  useEffect(() => { historyCommitRef.current = commitHistory; }, [commitHistory]);
+
+  const undo = useCallback(() => {
+    setPast((p) => {
+      if (!p.length) return p;
+      const prev = p[p.length - 1];
+      setFuture((f) => [{ nodes: nodesRef.current, edges: edgesRef.current }, ...f].slice(0, 50));
+      setNodes(prev.nodes);
+      setEdges(prev.edges);
+      return p.slice(0, -1);
+    });
+  }, [setNodes, setEdges]);
+
+  const redo = useCallback(() => {
+    setFuture((f) => {
+      if (!f.length) return f;
+      const next = f[0];
+      setPast((p) => [...p.slice(-49), { nodes: nodesRef.current, edges: edgesRef.current }]);
+      setNodes(next.nodes);
+      setEdges(next.edges);
+      return f.slice(1);
+    });
+  }, [setNodes, setEdges]);
+
+  // Scorciatoie tastiera Ctrl/Cmd+Z (undo) e Ctrl+Shift+Z / Ctrl+Y (redo)
+  useEffect(() => {
+    const onKey = (e) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      const k = e.key.toLowerCase();
+      if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+      else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); redo(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undo, redo]);
+
+  // ===== FASE E: Validazione visuale del workflow =====
+  const [validationOpen, setValidationOpen] = useState(false);
+  const [validationIssues, setValidationIssues] = useState([]);
+
+  const isTriggerNode = (n) => {
+    const nt = n?.data?.nodeType;
+    return nt === "trigger" || nt === "triggers";
+  };
+
+  const computeValidation = useCallback(() => {
+    const issues = [];
+    const ids = new Set(nodes.map((n) => n.id));
+    const triggers = nodes.filter(isTriggerNode);
+
+    if (nodes.length === 0) {
+      issues.push({ level: "error", msg: "Il workflow è vuoto: aggiungi almeno un nodo Trigger." });
+      return issues;
+    }
+    if (triggers.length === 0) {
+      issues.push({ level: "error", msg: "Manca un nodo Trigger: il workflow non potrà avviarsi." });
+    }
+    if (triggers.length > 1) {
+      issues.push({ level: "warning", msg: `Ci sono ${triggers.length} nodi Trigger: di solito ne basta uno.` });
+    }
+    // Edge verso nodi inesistenti
+    edges.forEach((e) => {
+      if (!ids.has(e.source) || !ids.has(e.target)) {
+        issues.push({ level: "error", msg: "Connessione verso un nodo inesistente (rimuovila e ricollega)." });
+      }
+    });
+    // Nodi non collegati
+    const connected = new Set();
+    edges.forEach((e) => { connected.add(e.source); connected.add(e.target); });
+    nodes.forEach((n) => {
+      if (nodes.length > 1 && !connected.has(n.id)) {
+        issues.push({ level: "warning", nodeId: n.id, msg: `Nodo "${n.data?.title || n.id}" non collegato a nulla.` });
+      }
+    });
+    // Nodi non raggiungibili dal trigger
+    if (triggers.length) {
+      const adj = {};
+      edges.forEach((e) => { (adj[e.source] = adj[e.source] || []).push(e.target); });
+      const seen = new Set();
+      const stack = triggers.map((t) => t.id);
+      while (stack.length) {
+        const id = stack.pop();
+        if (seen.has(id)) continue;
+        seen.add(id);
+        (adj[id] || []).forEach((t) => stack.push(t));
+      }
+      nodes.forEach((n) => {
+        if (!seen.has(n.id) && !isTriggerNode(n)) {
+          issues.push({ level: "warning", nodeId: n.id, msg: `Nodo "${n.data?.title || n.id}" non raggiungibile dal Trigger.` });
+        }
+      });
+    }
+    return issues;
+  }, [nodes, edges]);
+
+  // Applica/rimuove l'evidenziazione (ring) sui nodi problematici
+  const highlightNodes = useCallback((issues) => {
+    const errIds = new Set(issues.filter((i) => i.nodeId && i.level === "error").map((i) => i.nodeId));
+    const warnIds = new Set(issues.filter((i) => i.nodeId && i.level === "warning").map((i) => i.nodeId));
+    setNodes((prev) => prev.map((n) => {
+      const base = { ...(n.style || {}) };
+      delete base.boxShadowRing;
+      let ring = "0 2px 8px rgba(15,23,42,0.08)";
+      if (errIds.has(n.id)) ring = "0 0 0 3px #ef4444, 0 2px 8px rgba(15,23,42,0.12)";
+      else if (warnIds.has(n.id)) ring = "0 0 0 3px #f59e0b, 0 2px 8px rgba(15,23,42,0.12)";
+      return { ...n, style: { ...base, boxShadow: ring } };
+    }));
+  }, [setNodes]);
+
+  const runValidation = useCallback(() => {
+    const issues = computeValidation();
+    setValidationIssues(issues);
+    highlightNodes(issues);
+    setValidationOpen(true);
+    return issues;
+  }, [computeValidation, highlightNodes]);
+
+  const goToNode = useCallback((nodeId) => {
+    const n = nodes.find((x) => x.id === nodeId);
+    if (n && reactFlowInstance) {
+      try { reactFlowInstance.fitView({ nodes: [{ id: nodeId }], duration: 500, padding: 0.5 }); } catch (e) {}
+    }
+  }, [nodes, reactFlowInstance]);
 
   // Get node background color
   const getNodeColor = (color) => {
@@ -1871,12 +2016,13 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   // Publish workflow
   const handlePublish = async () => {
     try {
-      // Check if workflow has at least one trigger node
-      const triggerNodes = nodes.filter(node => node.data.nodeType === 'trigger');
-      if (triggerNodes.length === 0) {
+      // FASE E: validazione pre-pubblicazione — blocca su errori, consente warning
+      const issues = runValidation();
+      const errors = issues.filter((i) => i.level === "error");
+      if (errors.length > 0) {
         toast({
-          title: "Errore",
-          description: "Il workflow deve avere almeno un nodo Trigger per essere pubblicato",
+          title: "Impossibile pubblicare",
+          description: `Il workflow ha ${errors.length} error${errors.length > 1 ? "i" : "e"} da correggere. Controlla il pannello di validazione.`,
           variant: "destructive",
         });
         return;
@@ -1927,6 +2073,12 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
         </div>
         
         <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" onClick={undo} disabled={past.length === 0} data-testid="workflow-undo-btn" title="Annulla (Ctrl+Z)">
+            <Undo2 className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={redo} disabled={future.length === 0} data-testid="workflow-redo-btn" title="Ripeti (Ctrl+Shift+Z)">
+            <Redo2 className="w-4 h-4" />
+          </Button>
           <Button variant="outline" size="sm" onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" />
             Salva
@@ -1941,6 +2093,17 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
           >
             <Network className="w-4 h-4 mr-2" />
             Auto-layout
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={runValidation}
+            data-testid="workflow-validate-btn"
+            className="border-amber-300 text-amber-700 hover:bg-amber-50"
+            title="Verifica errori e avvisi del workflow"
+          >
+            <ShieldCheck className="w-4 h-4 mr-2" />
+            Valida
           </Button>
           <Button
             variant="outline"
@@ -2023,6 +2186,9 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
+            onNodeDragStart={() => historyCommitRef.current?.()}
+            onNodesDelete={() => historyCommitRef.current?.()}
+            onEdgesDelete={() => historyCommitRef.current?.()}
             onInit={setReactFlowInstance}
             onDrop={onDrop}
             onDragOver={onDragOver}
@@ -2065,6 +2231,70 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
           </ReactFlow>
         </div>
       </div>
+
+      {/* Validation Dialog (FASE E) */}
+      <Dialog open={validationOpen} onOpenChange={setValidationOpen}>
+        <DialogContent className="max-w-lg" data-testid="workflow-validation-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-amber-600" />
+              Validazione Workflow
+            </DialogTitle>
+            <DialogDescription>
+              {(() => {
+                const errs = validationIssues.filter((i) => i.level === "error").length;
+                const warns = validationIssues.filter((i) => i.level === "warning").length;
+                if (validationIssues.length === 0) return "Nessun problema rilevato: il workflow è pronto per la pubblicazione.";
+                return `Rilevati ${errs} error${errs === 1 ? "e" : "i"} e ${warns} avvis${warns === 1 ? "o" : "i"}.`;
+              })()}
+            </DialogDescription>
+          </DialogHeader>
+
+          {validationIssues.length === 0 ? (
+            <div className="flex flex-col items-center py-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                <CheckCircle className="w-7 h-7 text-emerald-600" />
+              </div>
+              <p className="text-slate-700 font-medium">Tutto in ordine!</p>
+              <p className="text-slate-500 text-sm">Il workflow non presenta problemi.</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto py-1" data-testid="validation-issues-list">
+              {validationIssues.map((issue, idx) => (
+                <div
+                  key={idx}
+                  className={`flex items-start gap-3 p-3 rounded-lg border ${issue.level === "error" ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"}`}
+                  data-testid={`validation-issue-${idx}`}
+                >
+                  {issue.level === "error"
+                    ? <ShieldAlertIcon className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    : <ShieldAlertIcon className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm ${issue.level === "error" ? "text-red-800" : "text-amber-800"}`}>{issue.msg}</p>
+                    {issue.nodeId && (
+                      <button
+                        type="button"
+                        onClick={() => goToNode(issue.nodeId)}
+                        className="text-xs text-indigo-600 hover:underline mt-1"
+                        data-testid={`validation-goto-${idx}`}
+                      >
+                        Vai al nodo →
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setValidationOpen(false)} data-testid="validation-close-btn">Chiudi</Button>
+            <Button onClick={runValidation} data-testid="validation-recheck-btn">
+              <ShieldCheck className="w-4 h-4 mr-2" /> Ricontrolla
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Node Editor Modal */}
       {showNodeEditor && selectedNode && (
