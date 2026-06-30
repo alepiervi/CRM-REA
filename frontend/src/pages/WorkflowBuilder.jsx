@@ -206,8 +206,16 @@ const NODE_ICONS = {
   "corner-down-right": CornerDownRight,
   "message-square-reply": MessageSquare,
   "user-plus": UserPlus,
+  "user-check": UserPlus,
+  "user": Users,
   "mail": Mail,
   "smartphone": Smartphone,
+  "message-square": MessageSquare,
+  "cpu": Bot,
+  "edit": Settings,
+  "edit-3": Settings,
+  "form-input": CheckSquare,
+  "circle": CheckCircle,
   "settings": Settings,
   "users": Users,
   "default": Workflow,
@@ -250,6 +258,44 @@ const decorateEdge = (edge) => {
     labelBgBorderRadius: 4,
   };
 };
+
+// FASE D+: icona del tipo di nodo dentro al box del canvas
+const stripCount = (s) => (typeof s === "string" ? s.replace(/\s*•\s*\d+×$/, "") : s);
+
+const resolveIconKey = (node, catalog) => {
+  const stored = node?.data?.iconKey;
+  if (stored && stored !== "default") return stored;
+  const nt = node?.data?.nodeType;
+  const ns = node?.data?.nodeSubtype;
+  if (catalog?.[nt]?.subtypes?.[ns]?.icon) return catalog[nt].subtypes[ns].icon;
+  // Fallback: scan di tutte le categorie (gestisce mismatch singolare/plurale: triggers vs trigger)
+  if (ns && catalog) {
+    for (const cat of Object.values(catalog)) {
+      const ic = cat?.subtypes?.[ns]?.icon;
+      if (ic) return ic;
+    }
+  }
+  return stored || "default";
+};
+
+const makeNodeLabel = (iconKey, title, count) => {
+  const Icon = NODE_ICONS[iconKey] || NODE_ICONS.default;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
+      <Icon style={{ width: 15, height: 15, flexShrink: 0 }} />
+      <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</span>
+      {count !== undefined && count !== null && (
+        <span style={{ fontSize: 10, fontWeight: 700, background: "#eef2ff", color: "#4338ca", borderRadius: 9999, padding: "1px 6px", flexShrink: 0 }}>{count}×</span>
+      )}
+    </div>
+  );
+};
+
+// Sanifica i nodi prima del salvataggio: la label deve essere una STRINGA (no JSX) per la serializzazione
+const serializeNodes = (nodes) => (nodes || []).map((n) => ({
+  ...n,
+  data: { ...n.data, label: n.data?.title || stripCount(typeof n.data?.label === "string" ? n.data.label : "") || "Nodo" },
+}));
 
 
 
@@ -1549,14 +1595,16 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
       .catch(() => setNodeStats({}));
   }, [workflow?.id]);
 
-  // Load workflow nodes and edges when workflow is provided (FASE D: normalizza stile)
+  // Load workflow nodes and edges when workflow is provided (FASE D: normalizza stile + icona)
   useEffect(() => {
     if (workflow && workflow.nodes && workflow.edges) {
       const normNodes = (workflow.nodes || []).map((n) => {
         const accent = n.data?.accent || (NODE_COLOR_PALETTE[n.data?.color]?.iconBg) || n.style?.background || "#94a3b8";
+        const title = n.data?.title || stripCount(typeof n.data?.label === "string" ? n.data.label : "") || n.data?.nodeSubtype || "Nodo";
+        const iconKey = resolveIconKey(n, nodeTypes);
         return {
           ...n,
-          data: { ...n.data, accent },
+          data: { ...n.data, accent, title, iconKey, label: makeNodeLabel(iconKey, title, undefined) },
           style: buildNodeStyle(accent),
         };
       });
@@ -1565,19 +1613,15 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     }
   }, [workflow]);
 
-  // Augmenta i nodi con badge statistiche se disponibili
+  // Rigenera le label dei nodi (icona dal catalogo + badge statistiche) quando catalogo/stat cambiano
   useEffect(() => {
-    if (!nodeStats || Object.keys(nodeStats).length === 0) return;
     setNodes((prev) => prev.map((n) => {
-      const count = nodeStats[n.id];
-      if (count === undefined) return n;
-      const baseLabel = (n.data?.originalLabel) || (n.data?.label || "").replace(/\s*•\s*\d+×$/, "");
-      return {
-        ...n,
-        data: { ...n.data, originalLabel: baseLabel, label: `${baseLabel} • ${count}×` },
-      };
+      const iconKey = resolveIconKey(n, nodeTypes);
+      const title = n.data?.title || stripCount(typeof n.data?.label === "string" ? n.data.label : "") || "Nodo";
+      const count = nodeStats?.[n.id];
+      return { ...n, data: { ...n.data, iconKey, title, label: makeNodeLabel(iconKey, title, count) } };
     }));
-  }, [nodeStats]);
+  }, [nodeStats, nodeTypes]);
 
   // Fetch available node types from backend
   useEffect(() => {
@@ -1616,9 +1660,10 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const reactFlowWrapper = React.useRef(null);
 
-  const addNode = (nodeType, nodeSubtype, nodeName, color, position = null) => {
+  const addNode = (nodeType, nodeSubtype, nodeName, color, icon, position = null) => {
     const id = `${nodeType}_${Date.now()}`;
     const accent = (NODE_COLOR_PALETTE[color]?.iconBg) || getNodeColor(color);
+    const iconKey = icon || "default";
     const newNode = {
       id,
       type: 'default',
@@ -1627,7 +1672,9 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
         y: Math.random() * 400 + 100
       },
       data: { 
-        label: nodeName,
+        label: makeNodeLabel(iconKey, nodeName, undefined),
+        title: nodeName,
+        iconKey: iconKey,
         nodeType: nodeType,
         nodeSubtype: nodeSubtype,
         color: color,
@@ -1659,7 +1706,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     const position = reactFlowInstance.screenToFlowPosition
       ? reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY })
       : reactFlowInstance.project({ x: event.clientX, y: event.clientY });
-    addNode(payload.nodeType, payload.nodeSubtype, payload.nodeName, payload.color, position);
+    addNode(payload.nodeType, payload.nodeSubtype, payload.nodeName, payload.color, payload.icon, position);
   }, [reactFlowInstance]);
 
   // Update node configuration
@@ -1720,7 +1767,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     try {
       const workflowData = {
         workflow_data: {
-          nodes: nodes,
+          nodes: serializeNodes(nodes),
           edges: edges,
           viewport: { x: 0, y: 0, zoom: 1 }
         }
@@ -1761,7 +1808,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
     try {
       // Salva prima il workflow per usare la versione corrente
       await axios.put(`${API}/workflows/${workflow.id}`, {
-        workflow_data: { nodes, edges, viewport: { x: 0, y: 0, zoom: 1 } }
+        workflow_data: { nodes: serializeNodes(nodes), edges, viewport: { x: 0, y: 0, zoom: 1 } }
       }, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
       const payload = {
         fake_lead: {
@@ -1800,7 +1847,7 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
       await axios.put(`${API}/workflows/${workflow.id}`, {
         is_published: true,
         workflow_data: {
-          nodes: nodes,
+          nodes: serializeNodes(nodes),
           edges: edges,
           viewport: { x: 0, y: 0, zoom: 1 }
         }
@@ -1896,8 +1943,8 @@ const WorkflowCanvas = ({ workflow, onBack, onSave }) => {
                         key={subtypeKey}
                         type="button"
                         draggable
-                        onDragStart={(e) => onDragStart(e, { nodeType: categoryKey, nodeSubtype: subtypeKey, nodeName: subtype.name, color: subtype.color })}
-                        onClick={() => addNode(categoryKey, subtypeKey, subtype.name, subtype.color)}
+                        onDragStart={(e) => onDragStart(e, { nodeType: categoryKey, nodeSubtype: subtypeKey, nodeName: subtype.name, color: subtype.color, icon: subtype.icon })}
+                        onClick={() => addNode(categoryKey, subtypeKey, subtype.name, subtype.color, subtype.icon)}
                         className="w-full text-left p-2.5 rounded-lg border transition-all hover:shadow-sm hover:scale-[1.01] flex items-start gap-2 cursor-grab active:cursor-grabbing"
                         style={{ background: palette.bg, borderColor: palette.border }}
                         data-testid={`palette-node-${subtypeKey}`}

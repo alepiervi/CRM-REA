@@ -293,6 +293,14 @@ Vedi `/app/memory/test_credentials.md`
 
 **Test**: verificato via screenshot su workflow reale con ramo condizionale ("Risposta Positiva? → SI → Avvia AI Assistant"); nodi/edge/minimap renderizzati correttamente, badge statistiche per nodo ancora funzionanti.
 
+### FASE D+ — Icona del tipo di nodo nel box (30 giu 2026)
+- Ogni nodo del canvas mostra ora un'icona specifica del tipo (es. user-plus per Lead Creato, clock per Attendi, check-circle per condizione, bot per AI, settings per update) + titolo + badge statistiche in pill
+- `makeNodeLabel(iconKey, title, count)` rende la label come JSX (icona lucide + titolo troncato + pill `N×`); `data.label` resta STRINGA al salvataggio via `serializeNodes(nodes)` (evita di serializzare JSX) applicato a Salva/Test Run/Pubblica
+- `resolveIconKey(node, catalog)`: usa `data.iconKey` se reale, altrimenti risolve dal catalogo `/workflow-node-types` con fallback scan su tutte le categorie (gestisce mismatch singolare/plurale nodeType: `triggers` vs `trigger`); ignora un `default` memorizzato per ri-risolvere quando il catalogo è disponibile
+- `addNode` salva `iconKey` (da `subtype.icon`); palette passa `icon` su drag/click; effetto di rigenerazione label su `[nodeStats, nodeTypes]`
+- Estesa `NODE_ICONS` con cpu→Bot, edit/edit-3→Settings, user-check→UserPlus, form-input→CheckSquare, circle→CheckCircle, message-square→MessageSquare
+- Verificato via screenshot: icone distinte per ogni nodo del template, retro-compatibile con nodi salvati
+
 ## Selettore Fuso Orario per Utente (30 giu 2026) — COMPLETATO E TESTATO
 **Requisito utente (P1)**: rendere il fuso orario configurabile per-utente (es. Europe/Rome vs Europe/London) per supportare sub-agenzie internazionali; prima era hardcoded su Europe/Rome.
 
