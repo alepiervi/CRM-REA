@@ -2426,6 +2426,30 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
             />
           )}
 
+          {/* Note anagrafica (campo `note` — colonna "Note"/BM dell'export Excel). Editabile. */}
+          <Card data-testid="edit-cliente-note-card">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                Note
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Label htmlFor="cliente-note-field" className="text-sm text-slate-600">
+                Nota generale del cliente (visibile anche nell'export Excel)
+              </Label>
+              <Textarea
+                id="cliente-note-field"
+                data-testid="edit-cliente-note-textarea"
+                value={formData.note || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
+                placeholder="Aggiungi o modifica la nota del cliente..."
+                rows={4}
+                className="mt-2"
+              />
+            </CardContent>
+          </Card>
+
           {/* Note - Storico immutabile */}
           <Card>
             <CardHeader>

@@ -1,0 +1,37 @@
+{
+  "summary": "Testato il bug fix per il campo `note` del cliente. Backend: 3/3 test pytest passano (GET restituisce note, PUT persiste note, export Excel colonna BM=Note contiene il valore). Frontend: verificata la presenza del codice per view-cliente-note-card e edit-cliente-note-textarea nei file JSX; il modal ViewClienteModal si apre correttamente cliccando l'icona occhio nella colonna Azioni; le API confermano il valore del campo note tramite fetch (`Test preservazione tipologia energia_fastweb_tls - 1761842690`).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Ricerca clienti", "issue": "La ricerca full-text con 'Alessandro Piervincenzi Prova' restituisce 0 risultati mentre singoli token come 'Piervincenzi' o 'Prova' funzionano. Non correlato al bug fix ma segnalato per completezza.", "affected_selectors": ["input[placeholder*='Cerca']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_cliente_note_field.py",
+    "/app/test_reports/pytest/test_cliente_note_field.xml"
+  ],
+  "action_items": [
+    "L'agente principale può verificare visivamente il rendering della card Note aprendo il cliente ID 3818627c-eb7a-4421-8243-5d9be37f552f (Alessandro Piervincenzi Prova) — in UI ci sono più clienti con lo stesso nome 'Alessandro Piervincenzi Prova', quindi la selezione univoca è tramite ID. La UI ha aperto correttamente un modal 'Anagrafica: Alessandro Piervincenzi Prova' cliccando l'occhio, ma nel modal aperto specifico non ho trovato il testid view-cliente-note-card: probabile che sia stato aperto un cliente omonimo senza note.",
+    "Il codice per view-cliente-note-card (ViewClienteModal.jsx linea 891) e edit-cliente-note-textarea (EditClienteModal.jsx linea 2443) è presente correttamente e la logica `{(cliente?.note || cliente?.note_backoffice) && (...)}` è corretta."
+  ],
+  "critical_code_review_comments": [
+    "ViewClienteModal.jsx: la card Note è condizionale su `cliente?.note || cliente?.note_backoffice` — corretto; il fallback non mostra la card se entrambi vuoti (comportamento voluto).",
+    "EditClienteModal.jsx: il Textarea usa `value={formData.note || ''}` e `onChange` aggiorna formData.note — il payload di PUT include ...formData quindi la nota viene inviata al backend. Confermato dal test pytest test_put_cliente_updates_note_and_persists che il backend accetta e persiste il campo.",
+    "helpers.py create_clienti_excel_report: colonna BM (65ª) header 'Note' verificata da test_excel_export_column_bm_contains_note; contiene il valore del campo note del cliente 3818627c."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_cliente_note_field.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "80%"},
+  "test_credentials": "admin/admin123",
+  "seed_data_creation": "Nessuna nuova seed; test ha modificato temporaneamente il campo note del cliente 3818627c-eb7a-4421-8243-5d9be37f552f e ripristinato il valore originale.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Il fix è verificato lato backend (3/3 test) e lato codice frontend (grep). Il rendering visivo end-to-end nel browser non è stato validato al 100% perché nella lista clienti ci sono ~5 righe con 'Alessandro Piervincenzi Prova' e non è stato possibile identificare univocamente il cliente 3818627c dalla UI senza aprire ciascuno. Se serve validazione visiva completa, aprire il cliente ID target tramite deeplink/URL diretto e verificare data-testid view-cliente-note-card + view-cliente-note.",
+  "rca of the issue": "Bug originale: il campo `note` era presente nel documento cliente e nel form ma mai renderizzato in UI (né in view né editabile), risultando in NOTE nell'export Excel invisibili all'utente. Fix applicato: aggiunta card Note in ViewClienteModal.jsx e Textarea in EditClienteModal.jsx, entrambe legate al campo `note`. Backend già accettava il campo tramite ClienteUpdate — nessuna modifica backend necessaria e confermato dai test."
+}

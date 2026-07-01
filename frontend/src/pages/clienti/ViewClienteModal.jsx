@@ -887,6 +887,32 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           <ClientePostVenditaSection clienteId={cliente?.id} clienteSnapshot={cliente} />
         </div>
 
+        {/* Note anagrafica (campo `note` — corrisponde alla colonna "Note"/BM dell'export Excel) */}
+        {(cliente?.note || cliente?.note_backoffice) && (
+          <Card className="mt-4" data-testid="view-cliente-note-card">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                Note
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {cliente?.note && (
+                <div data-testid="view-cliente-note">
+                  <p className="text-xs font-medium text-slate-500 mb-1">Note</p>
+                  <p className="text-sm text-slate-800 whitespace-pre-wrap bg-slate-50 rounded-md p-3 border border-slate-200">{cliente.note}</p>
+                </div>
+              )}
+              {cliente?.note_backoffice && (
+                <div data-testid="view-cliente-note-backoffice">
+                  <p className="text-xs font-medium text-slate-500 mb-1">Note Back Office</p>
+                  <p className="text-sm text-slate-800 whitespace-pre-wrap bg-orange-50 rounded-md p-3 border border-orange-200">{cliente.note_backoffice}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Storico Note - immutabile, read-only in view */}
         <Card className="mt-4">
           <CardHeader>
