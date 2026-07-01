@@ -1,5 +1,14 @@
 # Nureal CRM — PRD
 
+## Bug fix — Campo `note` non visibile in anagrafica (colonna BM export) (1 lug 2026) — RISOLTO
+**Segnalazione utente**: nell'export Excel dei clienti la colonna BM contiene note NON visibili nell'anagrafica del cliente.
+**Causa**: la colonna BM (65ª = "Note") dell'export corrisponde al campo `note` del documento cliente; questo campo veniva caricato nel form ma NON era mai renderizzato (né in visualizzazione né come campo modificabile). Spesso popolato dall'import massivo.
+**Fix (solo frontend)**:
+- `ViewClienteModal.jsx`: nuova card "Note" (read-only) che mostra `cliente.note` e `cliente.note_backoffice` se presenti (data-testid `view-cliente-note-card`, `view-cliente-note`)
+- `EditClienteModal.jsx`: nuovo Textarea editabile per `note` (data-testid `edit-cliente-note-textarea`); il payload PUT include già `...formData` → la nota si salva
+- Backend già accettava il campo (ClienteUpdate.note) — nessuna modifica necessaria
+**Testing**: testing_agent iteration_17 → backend 100% (GET restituisce note, PUT persiste, export colonna BM contiene il valore); verifica visiva confermata (card "Note" mostra il valore). Test file `/app/backend/tests/test_cliente_note_field.py`.
+
 ## Problem Statement
 Costruire un CRM commerciale completo per gestione lead, clienti, post-vendita, agenti, commesse, sub-agenzie, calendario e automazioni WhatsApp via Spoki + Chatbot OpenAI.
 
