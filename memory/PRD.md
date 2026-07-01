@@ -1,6 +1,11 @@
 # Nureal CRM — PRD
 
-## Bug fix — Campo `note` non visibile in anagrafica (colonna BM export) (1 lug 2026) — RISOLTO
+## Fix ricerca clienti "Nome Cognome" (1 lug 2026) — RISOLTO
+**Problema** (segnalato dal testing agent): la ricerca full-text con nome+cognome completo (es. "Alessandro Piervincenzi") restituiva 0 risultati, mentre i singoli token funzionavano — perché la singola regex sull'intera stringa non matcha nessun campo che contenga entrambe le parole.
+**Fix** (`routes/clienti.py`, search block ~665): tokenizzazione del termine; se ci sono più token, ogni token deve matchare almeno un campo (AND tra token, OR tra i campi nome/cognome/ragione_sociale/email/telefono/CF/P.IVA), con `re.escape`. Un solo token = comportamento invariato.
+**Testing self** (curl): "Alessandro Piervincenzi" → 19 (prima 0), ordine inverso "Piervincenzi Alessandro" → 19, token inesistente "Alessandro Zxqmai" → 0 (AND corretto).
+
+
 **Segnalazione utente**: nell'export Excel dei clienti la colonna BM contiene note NON visibili nell'anagrafica del cliente.
 **Causa**: la colonna BM (65ª = "Note") dell'export corrisponde al campo `note` del documento cliente; questo campo veniva caricato nel form ma NON era mai renderizzato (né in visualizzazione né come campo modificabile). Spesso popolato dall'import massivo.
 **Fix (solo frontend)**:

@@ -664,20 +664,21 @@ async def get_clienti(
     # NEW: Search filter (name, email, phone, codice_fiscale, partita_iva)
     if search and search.strip():
         search_term = search.strip()
-        search_regex = {"$regex": search_term, "$options": "i"}
-        # Simple search with $or - add to existing query with $and if needed
-        search_conditions = {
-            "$or": [
-                {"nome": search_regex},
-                {"cognome": search_regex},
-                {"ragione_sociale": search_regex},
-                {"email": search_regex},
-                {"telefono": search_regex},
-                {"codice_fiscale": search_regex},
-                {"partita_iva": search_regex}
-            ]
-        }
-        
+        search_fields = ["nome", "cognome", "ragione_sociale", "email", "telefono", "codice_fiscale", "partita_iva"]
+
+        def _or_for_token(tok):
+            rgx = {"$regex": re.escape(tok), "$options": "i"}
+            return {"$or": [{f: rgx} for f in search_fields]}
+
+        tokens = [t for t in search_term.split() if t]
+        if len(tokens) <= 1:
+            # Un solo termine: match su qualsiasi campo
+            search_conditions = _or_for_token(search_term)
+        else:
+            # Più termini (es. "Nome Cognome"): OGNI token deve matchare almeno un campo.
+            # Così "Alessandro Piervincenzi" trova il cliente anche se nome e cognome sono su campi diversi.
+            search_conditions = {"$and": [_or_for_token(t) for t in tokens]}
+
         # Combine with existing query using $and
         if query:
             query = {"$and": [query, search_conditions]}
