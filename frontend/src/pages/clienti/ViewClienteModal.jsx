@@ -181,6 +181,20 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
   const [servizioInfo, setServizioInfo] = useState(null);  // NEW: Servizio info
   const [assignedUserInfo, setAssignedUserInfo] = useState(null);  // NEW: Assigned user info
   const [simUsersInfo, setSimUsersInfo] = useState({});  // NEW: Cache for SIM assigned users
+  const { toast } = useToast();
+  const [notesRefreshKey, setNotesRefreshKey] = useState(0);
+  const [legacyNoteHidden, setLegacyNoteHidden] = useState(false);
+  const canMigrateNotes = user?.role === 'admin' || user?.role === 'backoffice_commessa';
+  const handleMigrateNotes = async () => {
+    try {
+      const res = await axios.post(`${API}/clienti/${cliente.id}/migrate-legacy-notes`);
+      toast({ title: "Note spostate", description: res.data?.message || "Note spostate nello Storico Note." });
+      setLegacyNoteHidden(true);
+      setNotesRefreshKey((k) => k + 1);
+    } catch (e) {
+      toast({ title: "Errore", description: e.response?.data?.detail || "Impossibile spostare le note", variant: "destructive" });
+    }
+  };
   
   // NEW: Custom fields for View
   const { fields: customFields, sections: customSections } = useClienteCustomFields(
@@ -888,13 +902,28 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
         </div>
 
         {/* Note anagrafica (campo `note` — corrisponde alla colonna "Note"/BM dell'export Excel) */}
-        {(cliente?.note || cliente?.note_backoffice) && (
+        {!legacyNoteHidden && (cliente?.note || cliente?.note_backoffice) && (
           <Card className="mt-4" data-testid="view-cliente-note-card">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
-                Note
-              </CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-lg flex items-center">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Note
+                </CardTitle>
+                {canMigrateNotes && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleMigrateNotes}
+                    data-testid="migrate-legacy-notes-btn"
+                    className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                    title="Sposta questa nota nello Storico Note (unico posto)"
+                  >
+                    <Archive className="w-4 h-4 mr-1.5" />
+                    Sposta nello Storico
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {cliente?.note && (
@@ -924,6 +953,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
           <CardContent>
             <div className="space-y-4">
               <ClienteNotesHistory
+                key={`cli-${notesRefreshKey}`}
                 clienteId={cliente?.id}
                 tipo="cliente"
                 title="Note Cliente"
@@ -932,6 +962,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                 emptyMessage="Nessuna nota cliente presente."
               />
               <ClienteNotesHistory
+                key={`bo-${notesRefreshKey}`}
                 clienteId={cliente?.id}
                 tipo="backoffice"
                 title="Note Back Office"

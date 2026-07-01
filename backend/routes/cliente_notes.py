@@ -95,6 +95,63 @@ async def add_cliente_note_history(
     return entry
 
 
+@router.post("/clienti/{cliente_id}/migrate-legacy-notes")
+async def migrate_legacy_cliente_notes(
+    cliente_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Sposta il campo `note` (e `note_backoffice`) legacy nello Storico Note e svuota i campi raw.
+    Idempotente: non duplica se una entry con lo stesso contenuto esiste già."""
+    cliente_doc = await db.clienti.find_one({"id": cliente_id}, {"_id": 0})
+    if not cliente_doc:
+        raise HTTPException(status_code=404, detail="Cliente non trovato")
+    cliente_obj = Cliente(**cliente_doc)
+    if not await can_user_modify_cliente(current_user, cliente_obj):
+        raise HTTPException(status_code=403, detail="Non hai i permessi per modificare questo cliente")
+
+    migrated = []
+    set_fields = {}
+
+    note_content = (cliente_doc.get("note") or "").strip()
+    if note_content:
+        existing = await db.cliente_note_history.find_one(
+            {"cliente_id": cliente_id, "tipo": "cliente", "content": note_content}
+        )
+        if not existing:
+            entry = ClienteNoteEntry(
+                cliente_id=cliente_id, tipo="cliente", content=note_content,
+                created_by_id=current_user.id, created_by_username=current_user.username,
+            )
+            await db.cliente_note_history.insert_one(entry.dict())
+        set_fields["note"] = ""
+        migrated.append("cliente")
+
+    bo_content = (cliente_doc.get("note_backoffice") or cliente_doc.get("note_back_office") or "").strip()
+    if bo_content:
+        existing_bo = await db.cliente_note_history.find_one(
+            {"cliente_id": cliente_id, "tipo": "backoffice", "content": bo_content}
+        )
+        if not existing_bo:
+            entry = ClienteNoteEntry(
+                cliente_id=cliente_id, tipo="backoffice", content=bo_content,
+                created_by_id=current_user.id, created_by_username=current_user.username,
+            )
+            await db.cliente_note_history.insert_one(entry.dict())
+        set_fields["note_backoffice"] = ""
+        set_fields["note_back_office"] = ""
+        migrated.append("backoffice")
+
+    if set_fields:
+        set_fields["legacy_migrated_at"] = datetime.now(timezone.utc)
+        await db.clienti.update_one({"id": cliente_id}, {"$set": set_fields})
+
+    return {
+        "migrated": migrated,
+        "message": "Note spostate nello Storico Note" if migrated else "Nessuna nota da spostare",
+    }
+
+
+
 @router.get("/clienti/{cliente_id}/note-history", response_model=List[ClienteNoteEntry])
 async def get_cliente_note_history(
     cliente_id: str,

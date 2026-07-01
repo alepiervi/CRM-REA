@@ -9,6 +9,11 @@
 - Backend già accettava il campo (ClienteUpdate.note) — nessuna modifica necessaria
 **Testing**: testing_agent iteration_17 → backend 100% (GET restituisce note, PUT persiste, export colonna BM contiene il valore); verifica visiva confermata (card "Note" mostra il valore). Test file `/app/backend/tests/test_cliente_note_field.py`.
 
+## Miglioramento — Consolidamento nota anagrafica nello Storico Note (1 lug 2026)
+- Nuovo endpoint `POST /api/clienti/{id}/migrate-legacy-notes` (in `routes/cliente_notes.py`): sposta `note`→Storico (tipo cliente) e `note_backoffice`→Storico (tipo backoffice), poi svuota i campi raw. IDEMPOTENTE + de-dup (non crea doppioni se una entry con lo stesso contenuto esiste già). Richiede permesso di modifica cliente.
+- Frontend `ViewClienteModal.jsx`: pulsante "Sposta nello Storico" (icona Archive, data-testid `migrate-legacy-notes-btn`) nella card Note (admin/backoffice_commessa); dopo il click nasconde la card e ricarica lo Storico (key bump). Così le note vivono in un unico posto.
+- Testing self: curl → migrate sposta e svuota `note`, seconda chiamata "Nessuna nota da spostare", storico resta 1 entry (no doppioni); screenshot conferma pulsante nella card.
+
 ## Problem Statement
 Costruire un CRM commerciale completo per gestione lead, clienti, post-vendita, agenti, commesse, sub-agenzie, calendario e automazioni WhatsApp via Spoki + Chatbot OpenAI.
 
