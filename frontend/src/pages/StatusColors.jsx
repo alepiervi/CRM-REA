@@ -11,11 +11,14 @@ const StatusColorRow = ({ item, scope, onSaved }) => {
   const { toast } = useToast();
   const [color, setColor] = useState(item.color || "#3b82f6");
   const [saving, setSaving] = useState(false);
+  const savedColor = React.useRef(item.color || "#3b82f6");
 
   const save = async (newColor) => {
+    if (newColor === savedColor.current) return;  // evita PUT inutili se invariato
     setSaving(true);
     try {
       await axios.put(`${API}/status-colors`, { scope, key: item.key, color: newColor });
+      savedColor.current = newColor;
       onSaved && (await onSaved());
     } catch (e) {
       toast({ title: "Errore", description: e.response?.data?.detail || "Impossibile salvare il colore", variant: "destructive" });

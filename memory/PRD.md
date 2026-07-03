@@ -1,5 +1,19 @@
 # Nureal CRM — PRD
 
+## Feature — Colori Status personalizzabili (Cliente + Lead) (3 lug 2026) — COMPLETATO
+**Richiesta utente**: poter assegnare un colore a ogni Status (fissi e custom) per distinguerli visivamente. Scelte: entrambi (Cliente+Lead), solo Admin, sezione centralizzata "Colori Status".
+**Backend** (`routes/status_colors.py`, incluso in server.py):
+- `GET /api/status-colors` → mappa `{cliente:{value:color}, lead:{id/nome:colore}}` per i badge (base dai custom + override)
+- `GET /api/status-colors/catalog` (admin) → `cliente_fixed`(14 enum con default), `cliente_custom`(distinct da cliente_custom_statuses), `lead`(da lead_statuses)
+- `PUT /api/status-colors` (admin) → cliente: upsert in collezione `status_colors`; lead: aggiorna `lead_statuses.colore`. Valida hex (400) e admin (403).
+**Frontend**:
+- Nuova pagina `pages/StatusColors.jsx` (menu "Colori Status", icona Palette, admin only in App.js) con color picker per ogni status
+- `lib/statusColors.js`: mappa globale + `getClienteStatusStyle(value)` (con testo a contrasto); caricata in `AuthContext.loadStatusColors()` al login/refresh
+- Badge status cliente colorati in `ClientiManagement.jsx` (lista) e `ViewClienteModal.jsx` (dettaglio) via `style={getClienteStatusStyle(...)}` (fallback al variant se nessun colore)
+**Testing**: testing_agent iteration_18 → frontend 100% (menu admin-only, pagina 14 fissi, salvataggio PUT 200, badge aggiornati LIVE senza reload, validazione 400, auth 403); backend verificato via curl. Nota: preview senza lead/custom cliente → quelle sezioni vuote (corretto).
+
+
+
 ## Fix ricerca clienti "Nome Cognome" (1 lug 2026) — RISOLTO
 **Problema** (segnalato dal testing agent): la ricerca full-text con nome+cognome completo (es. "Alessandro Piervincenzi") restituiva 0 risultati, mentre i singoli token funzionavano — perché la singola regex sull'intera stringa non matcha nessun campo che contenga entrambe le parole.
 **Fix** (`routes/clienti.py`, search block ~665): tokenizzazione del termine; se ci sono più token, ogni token deve matchare almeno un campo (AND tra token, OR tra i campi nome/cognome/ragione_sociale/email/telefono/CF/P.IVA), con `re.escape`. Un solo token = comportamento invariato.
