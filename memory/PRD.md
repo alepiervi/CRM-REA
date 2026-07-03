@@ -1,5 +1,12 @@
 # Nureal CRM — PRD
 
+## Fix — Campo "Cerca" nei filtri avanzati Clienti con poche opzioni (3 lug 2026) — RISOLTO
+**Segnalazione utente**: il campo cerca mancava nei filtri avanzati Sub Agenzia, Assegnato, Segmento e Commesse (sezione Clienti).
+**Causa**: in `components/MultiSelectFilter.jsx` la search box era mostrata solo con `options.length > 8`; questi filtri hanno meno opzioni.
+**Fix**: soglia abbassata a `options.length > 1` → la ricerca compare in qualsiasi filtro con più di un'opzione (tutti quelli citati usano lo stesso componente).
+**Verifica**: screenshot — filtro Sub Agenzia (2 opzioni) ora mostra l'input "Cerca...".
+
+
 ## Enhancement — Ricerca nei filtri Unit/Sub Agenzie (dropdown) (3 lug 2026) — COMPLETATO
 **Richiesta utente**: aggiungere una ricerca anche nei dropdown filtro Unit/Sub Agenzia (non solo nelle tabelle).
 - Nuovo componente `components/UnitFilterSelect.jsx`: shadcn Select con input di ricerca sticky in cima (`data-testid="unit-filter-search"`, placeholder "Cerca unit o sub agenzia..."), contains-match case-insensitive su `item.nome/name`, icona per tipo (Building2/MapPin) + Badge Unit/Sub Agenzia, "Nessun risultato" quando nessun match; ricerca azzerata alla chiusura (onOpenChange).
