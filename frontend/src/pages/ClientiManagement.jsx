@@ -171,6 +171,7 @@ import {
 import { formatDateTimeIT } from "../lib/datetime";
 import { AuthContext, useAuth, AuthProvider } from "../context/AuthContext";
 import { STATUS_CLIENTI } from "../lib/appUtils";
+import { getClienteStatusStyle } from "../lib/statusColors";
 import { CreateClienteModal, ImportClientiModal, ViewClienteModal, EditClienteModal, ClientDocumentsModal } from "./ClienteModals";
 
 
@@ -1285,7 +1286,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                     {/* Stato */}
                     <TableCell>
                       <span className="inline-flex items-center">
-                        <Badge variant={getClienteStatusVariant(cliente.status)}>
+                        <Badge variant={getClienteStatusVariant(cliente.status)} style={getClienteStatusStyle(cliente.status)}>
                           {formatClienteStatus(cliente.status)}
                         </Badge>
                         <PostVenditaStatusDot cliente={cliente} />
@@ -1417,6 +1418,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
                   <span className="inline-flex items-center">
                     <Badge 
                       variant={getClienteStatusVariant(cliente.status)}
+                      style={getClienteStatusStyle(cliente.status)}
                       className="text-xs"
                     >
                       {formatClienteStatus(cliente.status)}

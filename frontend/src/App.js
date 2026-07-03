@@ -97,6 +97,7 @@ import {
   CheckCircle,
   XCircle,
   Tag,
+  Palette,
   AlertCircle,
   Menu,
   Power,
@@ -179,6 +180,7 @@ const lazyNamed = (loader, name) => React.lazy(() => loader().then((m) => ({ def
 const UnitsManagement = lazyNamed(() => import("./pages/LeadsConfig"), "UnitsManagement");
 const LeadStatusManagement = lazyNamed(() => import("./pages/LeadsConfig"), "LeadStatusManagement");
 const CustomFieldsManagement = lazyNamed(() => import("./pages/LeadsConfig"), "CustomFieldsManagement");
+const StatusColors = React.lazy(() => import("./pages/StatusColors"));
 const LeadsManagement = lazyNamed(() => import("./pages/LeadsManagement"), "LeadsManagement");
 const ClientiManagement = lazyNamed(() => import("./pages/ClientiManagement"), "ClientiManagement");
 const EditClienteModal = lazyNamed(() => import("./pages/ClienteModals"), "EditClienteModal");
@@ -1536,6 +1538,7 @@ const Dashboard = () => {
         { id: "ai-conversations", label: "Conversazioni AI", icon: Bot },
         { id: "calendar", label: "Calendario Appuntamenti", icon: Calendar },
         { id: "tags", label: "Tag Lead", icon: Tag },
+        { id: "status-colors", label: "Colori Status", icon: Palette },
         { id: "lead-qualification", label: "Qualificazione Lead", icon: Bot },
         { id: "call-center", label: "Call Center", icon: PhoneCall },
         { id: "commesse", label: "Commesse", icon: Building },
@@ -1643,6 +1646,8 @@ const Dashboard = () => {
           return (user.role === "admin" || user.role === "super_referente") ? <AppointmentsCalendar units={units} /> : <div className="p-8 text-center text-slate-600">Non autorizzato</div>;
         case "tags":
           return user.role === "admin" ? <TagsManager /> : <div className="p-8 text-center text-slate-600">Non autorizzato</div>;
+        case "status-colors":
+          return user.role === "admin" ? <StatusColors /> : <div className="p-8 text-center text-slate-600">Non autorizzato</div>;
         case "lead-qualification":
           return (user.role === "admin" || user.role === "referente") ? <LeadQualificationManagement selectedUnit={selectedUnit} units={units} /> : <div>Non autorizzato</div>;
         case "call-center":

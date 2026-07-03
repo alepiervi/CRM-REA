@@ -9764,6 +9764,7 @@ from routes.segmenti_offerte import router as segmenti_offerte_router  # Segment
 from routes.cliente_lock import router as cliente_lock_router  # Lock anagrafica cliente
 from routes.cliente_notes import router as cliente_notes_router  # Storico note cliente (append-only)
 from routes.post_vendita import router as post_vendita_router  # Modulo Post Vendita + bulk import
+from routes.status_colors import router as status_colors_router  # Colori personalizzati status cliente/lead
 api_router.include_router(leads_cestino_router)
 api_router.include_router(units_router)
 api_router.include_router(lead_status_router)
@@ -9772,6 +9773,7 @@ api_router.include_router(segmenti_offerte_router)
 api_router.include_router(cliente_lock_router)
 api_router.include_router(cliente_notes_router)
 api_router.include_router(post_vendita_router)
+api_router.include_router(status_colors_router)
 from routes.users_auth import router as users_auth_router  # Autenticazione e gestione utenti
 from routes.leads import router as leads_router  # CRUD Lead + webhook ricezione lead
 from routes.documents import router as documents_router  # Upload e gestione documenti

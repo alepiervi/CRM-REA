@@ -4,6 +4,7 @@ import axios from "axios";
 import { useToast } from "../hooks/use-toast";
 import { API } from "../lib/appUtils";
 import { setActiveTimezone } from "../lib/datetime";
+import { setStatusColorMap } from "../lib/statusColors";
 
 // Auth Context
 export const AuthContext = React.createContext();
@@ -248,11 +249,19 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  const loadStatusColors = async () => {
+    try {
+      const res = await axios.get(`${API}/status-colors`);
+      setStatusColorMap(res.data);
+    } catch (e) { /* non bloccante */ }
+  };
+
   const fetchCurrentUser = async () => {
     try {
       const response = await axios.get(`${API}/auth/me`);
       setUser(response.data);
       setActiveTimezone(response.data?.timezone);
+      loadStatusColors();
     } catch (error) {
       console.error("Error fetching user:", error);
       // Se il token è scaduto o non valido, rimuovi tutto e forza login
@@ -292,6 +301,7 @@ export const AuthProvider = ({ children }) => {
       setToken(access_token);
       setUser(userData);
       setActiveTimezone(userData?.timezone);
+      loadStatusColors();
       localStorage.setItem("token", access_token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
       

@@ -168,6 +168,7 @@ import {
   formatClienteStatus,
   getClienteStatusVariant,
 } from "../../lib/appUtils";
+import { getClienteStatusStyle } from "../../lib/statusColors";
 import { AuthContext, useAuth, AuthProvider } from "../../context/AuthContext";
 
 
@@ -618,7 +619,7 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
               <div>
                 <Label className="text-sm font-medium text-slate-600">Status</Label>
                 <span className="inline-flex items-center">
-                  <Badge variant={getClienteStatusVariant(cliente.status)}>
+                  <Badge variant={getClienteStatusVariant(cliente.status)} style={getClienteStatusStyle(cliente.status)}>
                     {formatClienteStatus(cliente.status)}
                   </Badge>
                   <PostVenditaStatusDot cliente={cliente} size="md" />
