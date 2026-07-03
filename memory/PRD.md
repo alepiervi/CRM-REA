@@ -1,5 +1,12 @@
 # Nureal CRM — PRD
 
+## Enhancement — Ricerca + ordinamento alfabetico Unit/Sub Agenzie (3 lug 2026)
+- `pages/SubAgenzie.jsx`: barra di ricerca in entrambe le tab (Unit: `unit-search-input`, Sub Agenzia: `subagenzia-search-input`) che filtra per nome/descrizione; liste ordinate alfabeticamente (localeCompare it) con lista scrollabile.
+- `App.js`: `units`, `subAgenzie` e `unitsSubAgenzie` ordinati alfabeticamente alla sorgente (in fetchUnits/fetchSubAgenzie/loadUnitsSubAgenzie), mantenendo l'eventuale voce "all" in cima → tutti i dropdown/filtri dell'app ereditano l'ordine.
+- Verificato via screenshot: ricerca filtra live, ordine alfabetico corretto.
+
+
+
 ## Feature — Colori Status personalizzabili (Cliente + Lead) (3 lug 2026) — COMPLETATO
 **Richiesta utente**: poter assegnare un colore a ogni Status (fissi e custom) per distinguerli visivamente. Scelte: entrambi (Cliente+Lead), solo Admin, sezione centralizzata "Colori Status".
 **Backend** (`routes/status_colors.py`, incluso in server.py):

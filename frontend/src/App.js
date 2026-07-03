@@ -1080,7 +1080,12 @@ const Dashboard = () => {
   const fetchUnits = async () => {
     try {
       const response = await axios.get(`${API}/units`);
-      setUnits(response.data);
+      const sorted = [...(response.data || [])].sort((a, b) => {
+        if (a.id === "all") return -1;
+        if (b.id === "all") return 1;
+        return (a.nome || a.name || "").localeCompare(b.nome || b.name || "", "it", { sensitivity: "base" });
+      });
+      setUnits(sorted);
     } catch (error) {
       console.error("Error fetching units:", error);
     } finally {
@@ -1120,8 +1125,13 @@ const Dashboard = () => {
   const fetchSubAgenzie = async () => {
     try {
       const response = await axios.get(`${API}/sub-agenzie`);
-      setSubAgenzie(response.data);
-      console.log("Sub Agenzie caricate:", response.data);
+      const sortedSub = [...(response.data || [])].sort((a, b) => {
+        if (a.id === "all") return -1;
+        if (b.id === "all") return 1;
+        return (a.nome || a.name || "").localeCompare(b.nome || b.name || "", "it", { sensitivity: "base" });
+      });
+      setSubAgenzie(sortedSub);
+      console.log("Sub Agenzie caricate:", sortedSub);
     } catch (error) {
       console.error("Error fetching sub agenzie:", error);
     }
@@ -1506,7 +1516,12 @@ const Dashboard = () => {
           console.log("🔄 Loading units/sub agenzie for commessa+servizio...");
           const response = await axios.get(`${API}/commesse/${selectedCommessa}/servizi/${selectedServizio}/units-sub-agenzie`);
           console.log("✅ Units/Sub Agenzie loaded:", response.data);
-          setUnitsSubAgenzie(response.data);
+          const sortedUS = [...(response.data || [])].sort((a, b) => {
+            if (a.id === "all") return -1;
+            if (b.id === "all") return 1;
+            return (a.nome || a.name || "").localeCompare(b.nome || b.name || "", "it", { sensitivity: "base" });
+          });
+          setUnitsSubAgenzie(sortedUS);
         } catch (error) {
           console.error("❌ Error loading units/sub agenzie:", error);
           setUnitsSubAgenzie([]);

@@ -197,6 +197,8 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
   
   const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false); // NEW: Track if commesse and servizi are loaded
+  const [unitSearch, setUnitSearch] = useState(""); // NEW: ricerca Unit
+  const [subSearch, setSubSearch] = useState(""); // NEW: ricerca Sub Agenzia
   const { toast } = useToast();
 
   useEffect(() => {
@@ -464,6 +466,18 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
           </Button>
         </div>
 
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            type="text"
+            placeholder="Cerca unit per nome o descrizione..."
+            value={unitSearch}
+            onChange={(e) => setUnitSearch(e.target.value)}
+            className="pl-9"
+            data-testid="unit-search-input"
+          />
+        </div>
+
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -475,6 +489,13 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
                 selectedCommessa === "all" || 
                 unit.commesse_autorizzate?.includes(selectedCommessa)
               )
+              .filter(unit => {
+                const q = unitSearch.trim().toLowerCase();
+                if (!q) return true;
+                return ((unit.nome || unit.name || "").toLowerCase().includes(q)) ||
+                       ((unit.description || "").toLowerCase().includes(q));
+              })
+              .sort((a, b) => (a.nome || a.name || "").localeCompare(b.nome || b.name || "", "it", { sensitivity: "base" }))
               .map((unit) => (
               <Card key={unit.id}>
                 <CardHeader className="pb-3">
@@ -596,12 +617,31 @@ const SubAgenzieManagement = ({ selectedUnit, selectedCommessa, units, commesse:
           </Button>
         </div>
 
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            type="text"
+            placeholder="Cerca sub agenzia per nome o descrizione..."
+            value={subSearch}
+            onChange={(e) => setSubSearch(e.target.value)}
+            className="pl-9"
+            data-testid="subagenzia-search-input"
+          />
+        </div>
+
         <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-1">
           {subAgenzie
             .filter(subAgenzia => 
               selectedCommessa === "all" || 
               subAgenzia.commesse_autorizzate?.includes(selectedCommessa)
             )
+            .filter(subAgenzia => {
+              const q = subSearch.trim().toLowerCase();
+              if (!q) return true;
+              return ((subAgenzia.nome || "").toLowerCase().includes(q)) ||
+                     ((subAgenzia.descrizione || "").toLowerCase().includes(q));
+            })
+            .sort((a, b) => (a.nome || "").localeCompare(b.nome || "", "it", { sensitivity: "base" }))
             .map((subAgenzia) => (
             <Card key={subAgenzia.id}>
               <CardHeader className="pb-3">
