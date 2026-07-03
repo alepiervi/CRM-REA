@@ -1,0 +1,40 @@
+{
+  "summary": "Frontend-only verification of the searchable UnitFilterSelect component (Italian CRM). Login as admin/admin123 -> cascade Commessa (Fastweb) -> Servizio (TLS) -> Tipologia (ENERGIA FASTWEB) -> Unit/Sub Agenzia dropdown appears. All 6 test scenarios passed: search input present with data-testid='unit-filter-search', contains-match filtering works (F2F filter hides Presidio), case-insensitive match works ('presi' -> Presidio - Maximo), 'Nessun risultato' shown for non-matching query, selecting a filtered item updates the trigger, and search input is cleared when dropdown is closed and reopened.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard Admin (after selecting a Sub Agenzia in the Unit filter)", "issues": ["When a Sub Agenzia (non-Unit) is selected as filter, DashboardStats card shows 'Unit: Unknown Unit'. Pre-existing behavior unrelated to the UnitFilterSelect being tested, but worth flagging: the DashboardStats title logic maps the selected ID to a Unit only, ignoring Sub Agenzia items. Not a regression from this change."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "UnitFilterSelect.jsx: the static SelectItem 'Tutte le Unit/Sub Agenzie' is ALWAYS rendered even when the search query has no matches. This is intentional (allows the user to clear the filter) but means 'Nessun risultato' appears BELOW 'Tutte le Unit/Sub Agenzie' when the search doesn't match any dynamic item. Consider hiding it too when there is an active search query, or moving the 'Nessun risultato' message ABOVE it, for clearer UX.",
+    "UnitFilterSelect.jsx: no debounce on the search input. Fine for small lists (~2-50 items) but if the units list grows large (>500) consider useDeferredValue or debounce.",
+    "UnitFilterSelect.jsx: the SelectTrigger has no data-testid. The task note mentions it intentionally, but for future automated regression tests consider adding data-testid='unit-filter-trigger' on <SelectTrigger>."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skip)", "frontend": "100%"},
+  "test_credentials": "admin/admin123 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. Used existing data: Commessa 'Fastweb' > Servizio 'TLS' > Tipologia 'ENERGIA FASTWEB' > 2 Sub Agenzie (F2F, Presidio - Maximo).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The UnitFilterSelect component in /app/frontend/src/components/UnitFilterSelect.jsx is fully working. It renders in the desktop sidebar footer (App.js line ~2163) after cascading Commessa+Servizio+Tipologia. The dropdown shows: (1) sticky search Input with data-testid='unit-filter-search' + placeholder 'Cerca unit o sub agenzia...' + Search icon, (2) static 'Tutte le Unit/Sub Agenzie' item always present, (3) dynamic Unit/Sub Agenzia items filtered via contains-match on item.nome/item.name (case-insensitive), (4) 'Nessun risultato' message when no dynamic items match. Search clears on close (onOpenChange). Selection propagates via onValueChange to setSelectedUnit in App.js. Testable via role='combobox' selectors — the 4th combobox is the Unit filter after the cascade. Available test data: Fastweb > TLS > ENERGIA FASTWEB yields F2F and Presidio - Maximo (both Sub Agenzie).",
+  "flows_verified": [
+    "Login admin/admin123: PASS",
+    "Cascade Commessa Fastweb selected: PASS",
+    "Cascade Servizio TLS selected: PASS",
+    "Cascade Tipologia ENERGIA FASTWEB selected: PASS",
+    "Unit/Sub Agenzia dropdown renders after cascade: PASS",
+    "data-testid='unit-filter-search' present at top: PASS",
+    "Search placeholder 'Cerca unit o sub agenzia...': PASS",
+    "Filter 'F2F' -> shows F2F, hides Presidio: PASS",
+    "Filter 'presi' (lowercase) -> shows Presidio - Maximo: PASS (case-insensitive contains)",
+    "Filter 'zzzzzzzzz' -> 'Nessun risultato' shown: PASS",
+    "Select filtered Presidio -> trigger reflects 'Presidio - Maximo Sub Agenzia': PASS",
+    "Reopen dropdown -> search input cleared: PASS",
+    "Reopen dropdown -> all items visible again: PASS"
+  ]
+}
