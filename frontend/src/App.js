@@ -57,6 +57,7 @@ import { PostVenditaStatusDot } from "./components/PostVenditaStatusDot";
 import { ClientePostVenditaSection } from "./components/ClientePostVenditaSection";
 import { MultiSelectFilter } from "./components/MultiSelectFilter";
 import { SpokiAdminConfig } from "./components/spoki/SpokiAdminConfig";
+import { UnitFilterSelect } from "./components/UnitFilterSelect";
 import { TimezoneSettingsDialog } from "./components/settings/TimezoneSettingsDialog";
 import { AppointmentsCalendar } from "./components/spoki/AppointmentsCalendar";
 import { AIConversations } from "./components/spoki/AIConversations";
@@ -905,6 +906,7 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedUnit, setSelectedUnit] = useState("all");
+  const [unitFilterSearch, setUnitFilterSearch] = useState(""); // NEW: ricerca dentro il filtro Unit/Sub Agenzia
   const [selectedCommessa, setSelectedCommessa] = useState("all");
   const [selectedServizio, setSelectedServizio] = useState("all");
   const [selectedTipologiaContratto, setSelectedTipologiaContratto] = useState("all");
@@ -1952,29 +1954,12 @@ const Dashboard = () => {
                       <span className="ml-1 text-xs text-green-600">({getAvailableUnitsSubAgenzie().length})</span>
                     )}
                   </Label>
-                  <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                    <SelectTrigger className="mt-1 mobile-select">
-                      <SelectValue placeholder="Seleziona unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutte le Unit/Sub Agenzie</SelectItem>
-                      {getAvailableUnitsSubAgenzie().map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          <div className="flex items-center space-x-2">
-                            {item.type === 'unit' ? (
-                              <Building2 className="w-3 h-3" />
-                            ) : (
-                              <MapPin className="w-3 h-3" />
-                            )}
-                            <span className="text-sm">{item.nome}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {item.type === 'unit' ? 'Unit' : 'Sub Agenzia'}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <UnitFilterSelect
+                    value={selectedUnit}
+                    onValueChange={setSelectedUnit}
+                    items={getAvailableUnitsSubAgenzie()}
+                    triggerClassName="mt-1 mobile-select"
+                  />
                 </div>
               )}
             </div>
@@ -2175,29 +2160,12 @@ const Dashboard = () => {
                   <span className="ml-1 text-xs text-green-600">({getAvailableUnitsSubAgenzie().length})</span>
                 )}
               </Label>
-              <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                <SelectTrigger className="mt-1 h-8 text-sm">
-                  <SelectValue placeholder="Seleziona unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le Unit/Sub Agenzie</SelectItem>
-                  {getAvailableUnitsSubAgenzie().map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      <div className="flex items-center space-x-2">
-                        {item.type === 'unit' ? (
-                          <Building2 className="w-3 h-3" />
-                        ) : (
-                          <MapPin className="w-3 h-3" />
-                        )}
-                        <span className="text-sm">{item.nome}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {item.type === 'unit' ? 'Unit' : 'Sub Agenzia'}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <UnitFilterSelect
+                value={selectedUnit}
+                onValueChange={setSelectedUnit}
+                items={getAvailableUnitsSubAgenzie()}
+                triggerClassName="mt-1 h-8 text-sm"
+              />
             </div>
           )}
         </div>
