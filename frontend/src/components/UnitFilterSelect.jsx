@@ -38,7 +38,7 @@ export const UnitFilterSelect = ({ value, onValueChange, items = [], triggerClas
             />
           </div>
         </div>
-        <SelectItem value="all">Tutte le Unit/Sub Agenzie</SelectItem>
+        {!q && <SelectItem value="all">Tutte le Unit/Sub Agenzie</SelectItem>}
         {filtered.map((item) => (
           <SelectItem key={item.id} value={item.id}>
             <div className="flex items-center space-x-2">

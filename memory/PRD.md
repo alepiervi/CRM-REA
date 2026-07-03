@@ -1,5 +1,13 @@
 # Nureal CRM — PRD
 
+## Enhancement — Ricerca nei filtri Unit/Sub Agenzie (dropdown) (3 lug 2026) — COMPLETATO
+**Richiesta utente**: aggiungere una ricerca anche nei dropdown filtro Unit/Sub Agenzia (non solo nelle tabelle).
+- Nuovo componente `components/UnitFilterSelect.jsx`: shadcn Select con input di ricerca sticky in cima (`data-testid="unit-filter-search"`, placeholder "Cerca unit o sub agenzia..."), contains-match case-insensitive su `item.nome/name`, icona per tipo (Building2/MapPin) + Badge Unit/Sub Agenzia, "Nessun risultato" quando nessun match; ricerca azzerata alla chiusura (onOpenChange).
+- Integrato in `App.js` (sidebar mobile ~1957 e desktop ~2163) al posto dei Select standard nel filtro cascata Commessa→Servizio→Tipologia→Unit.
+- UX polish: la voce statica "Tutte le Unit/Sub Agenzie" viene nascosta durante una ricerca attiva.
+- **Testing**: testing_agent iteration_19 → frontend 100% (12/12 flow: cascata, ricerca contains, case-insensitive, Nessun risultato, selezione, reset alla riapertura).
+
+
 ## Enhancement — Ricerca + ordinamento alfabetico Unit/Sub Agenzie (3 lug 2026)
 - `pages/SubAgenzie.jsx`: barra di ricerca in entrambe le tab (Unit: `unit-search-input`, Sub Agenzia: `subagenzia-search-input`) che filtra per nome/descrizione; liste ordinate alfabeticamente (localeCompare it) con lista scrollabile.
 - `App.js`: `units`, `subAgenzie` e `unitsSubAgenzie` ordinati alfabeticamente alla sorgente (in fetchUnits/fetchSubAgenzie/loadUnitsSubAgenzie), mantenendo l'eventuale voce "all" in cima → tutti i dropdown/filtri dell'app ereditano l'ordine.
