@@ -55,6 +55,7 @@ import { PassToPostVenditaButton } from "../components/PassToPostVenditaButton";
 import { PostVenditaStatusDot } from "../components/PostVenditaStatusDot";
 import { ClientePostVenditaSection } from "../components/ClientePostVenditaSection";
 import { MultiSelectFilter } from "../components/MultiSelectFilter";
+import { SearchableSelect } from "../components/SearchableSelect";
 import { SpokiAdminConfig } from "../components/spoki/SpokiAdminConfig";
 import { AppointmentsCalendar } from "../components/spoki/AppointmentsCalendar";
 import { AIConversations } from "../components/spoki/AIConversations";
@@ -705,22 +706,16 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                   <Building2 className="w-3 h-3 md:w-4 md:h-4 text-purple-500" />
                   Unit
                 </Label>
-                <Select
+                <SearchableSelect
                   value={filters.unit_id || "all"}
                   onValueChange={(value) => setFilters({ ...filters, unit_id: value === "all" ? "" : value })}
-                >
-                  <SelectTrigger className="h-9 text-sm border-slate-200 focus:border-blue-400 rounded-lg">
-                    <SelectValue placeholder="Tutte" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tutte le Unit</SelectItem>
-                    {units && units.map((unit) => (
-                      <SelectItem key={unit.id} value={unit.id}>
-                        {unit.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  pinned={[{ value: "all", label: "Tutte le Unit" }]}
+                  options={(units || []).map((unit) => ({ value: unit.id, label: unit.nome }))}
+                  placeholder="Tutte"
+                  searchPlaceholder="Cerca unit..."
+                  triggerClassName="h-9 text-sm border-slate-200 focus:border-blue-400 rounded-lg"
+                  testid="lead-filter-unit"
+                />
               </div>
             )}
             
@@ -730,22 +725,16 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 <FolderOpen className="w-3 h-3 md:w-4 md:h-4 text-amber-500" />
                 Campagna
               </Label>
-              <Select
+              <SearchableSelect
                 value={filters.campagna || "all"}
                 onValueChange={(value) => setFilters({ ...filters, campagna: value === "all" ? "" : value })}
-              >
-                <SelectTrigger className="h-9 text-sm border-slate-200 focus:border-blue-400 rounded-lg">
-                  <SelectValue placeholder="Tutte" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tutte le campagne</SelectItem>
-                  {[...new Set(leads.map(l => l.campagna).filter(c => c && c.trim()))].sort().map((campagna) => (
-                    <SelectItem key={campagna} value={campagna}>
-                      {campagna}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                pinned={[{ value: "all", label: "Tutte le campagne" }]}
+                options={[...new Set(leads.map(l => l.campagna).filter(c => c && c.trim()))].sort().map((campagna) => ({ value: campagna, label: campagna }))}
+                placeholder="Tutte"
+                searchPlaceholder="Cerca campagna..."
+                triggerClassName="h-9 text-sm border-slate-200 focus:border-blue-400 rounded-lg"
+                testid="lead-filter-campagna"
+              />
             </div>
 
             {/* Provincia */}
@@ -778,30 +767,16 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 <BarChart3 className="w-3 h-3 md:w-4 md:h-4 text-purple-500" />
                 Stato
               </Label>
-              <div className="relative">
-                <select
-                  className="w-full h-9 border border-slate-200 rounded-lg px-2 pl-8 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white appearance-none"
-                  value={filters.status}
-                  onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                >
-                  <option value="">Tutti</option>
-                  {leadStatuses.map((status) => (
-                    <option key={status.id} value={status.nome}>
-                      {status.nome}
-                    </option>
-                  ))}
-                </select>
-                {/* Color indicator */}
-                <div 
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border border-slate-300"
-                  style={{ 
-                    backgroundColor: filters.status 
-                      ? (leadStatuses.find(s => s.nome === filters.status)?.colore || '#6b7280')
-                      : '#e5e7eb'
-                  }}
-                />
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-              </div>
+              <SearchableSelect
+                value={filters.status || "all"}
+                onValueChange={(value) => setFilters({ ...filters, status: value === "all" ? "" : value })}
+                pinned={[{ value: "all", label: "Tutti" }]}
+                options={leadStatuses.map((status) => ({ value: status.nome, label: status.nome, color: status.colore || "#6b7280" }))}
+                placeholder="Tutti"
+                searchPlaceholder="Cerca stato..."
+                triggerClassName="h-9 text-sm border-slate-200 focus:border-blue-400 rounded-lg"
+                testid="lead-filter-status"
+              />
             </div>
 
             {/* Agente */}
@@ -810,19 +785,16 @@ const LeadsManagement = ({ selectedUnit, units }) => {
                 <Users className="w-3 h-3 md:w-4 md:h-4 text-blue-500" />
                 Agente
               </Label>
-              <select
-                className="w-full h-9 border border-slate-200 rounded-lg px-2 text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
-                value={filters.assigned_agent_id}
-                onChange={(e) => setFilters({ ...filters, assigned_agent_id: e.target.value })}
-              >
-                <option value="">Tutti</option>
-                <option value="unassigned">Non assegnati</option>
-                {users.filter(u => u.role === "agente").map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.username}
-                  </option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={filters.assigned_agent_id || "all"}
+                onValueChange={(value) => setFilters({ ...filters, assigned_agent_id: value === "all" ? "" : value })}
+                pinned={[{ value: "all", label: "Tutti" }, { value: "unassigned", label: "Non assegnati" }]}
+                options={users.filter(u => u.role === "agente").map((agent) => ({ value: agent.id, label: agent.username }))}
+                placeholder="Tutti"
+                searchPlaceholder="Cerca agente..."
+                triggerClassName="h-9 text-sm border-slate-200 focus:border-blue-400 rounded-lg"
+                testid="lead-filter-agente"
+              />
             </div>
 
             {/* Da Data */}

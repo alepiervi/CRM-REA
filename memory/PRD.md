@@ -1,5 +1,12 @@
 # Nureal CRM — PRD
 
+## Feature — Campo "Cerca" nei filtri avanzati Lead (3 lug 2026) — COMPLETATO
+**Richiesta utente**: aggiungere la ricerca nei filtri avanzati della sezione Lead.
+- Nuovo componente riutilizzabile `components/SearchableSelect.jsx`: shadcn Select single-value con input di ricerca sticky (`data-testid="{testid}-search"`), contains-match sulla label, opzioni `pinned` sempre visibili (es. "Tutti"), supporto colore per opzione (pallino), "Nessun risultato" se nessun match, ricerca azzerata alla chiusura.
+- `pages/LeadsManagement.jsx`: i filtri Unit, Campagna, Stato (con pallino colore preservato) e Agente ora usano `SearchableSelect` al posto dei Select/native `<select>`. Provincia e date restano input testuali/data.
+- **Verifica**: screenshot — filtro Stato mostra "Cerca stato..." con pallini colore; search presente anche in Unit/Campagna/Agente.
+
+
 ## Fix — Campo "Cerca" nei filtri avanzati Clienti con poche opzioni (3 lug 2026) — RISOLTO
 **Segnalazione utente**: il campo cerca mancava nei filtri avanzati Sub Agenzia, Assegnato, Segmento e Commesse (sezione Clienti).
 **Causa**: in `components/MultiSelectFilter.jsx` la search box era mostrata solo con `options.length > 8`; questi filtri hanno meno opzioni.
