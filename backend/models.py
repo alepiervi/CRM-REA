@@ -1132,6 +1132,7 @@ class Cliente(BaseModel):
     provincia: Optional[str] = None  # Sigla provincia
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
+    tipologia_abitazione: Optional[str] = None  # NEW: Tipologia abitazione (obbligatoria lato UI solo per servizio Presidi)
     indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
     comune_attivazione: Optional[str] = None  # NEW: Comune di installazione/attivazione
     provincia_attivazione: Optional[str] = None  # NEW: Provincia di attivazione
@@ -1238,6 +1239,7 @@ class ClienteCreate(BaseModel):
     provincia: Optional[str] = None  # Sigla provincia
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
+    tipologia_abitazione: Optional[str] = None  # NEW: Tipologia abitazione (obbligatoria lato UI solo per servizio Presidi)
     indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
     comune_attivazione: Optional[str] = None  # NEW: Comune di installazione/attivazione
     provincia_attivazione: Optional[str] = None  # NEW: Provincia di attivazione
@@ -1328,6 +1330,7 @@ class ClienteUpdate(BaseModel):
     provincia: Optional[str] = None
     cap: Optional[str] = None
     indirizzo: Optional[str] = None
+    tipologia_abitazione: Optional[str] = None  # NEW: Tipologia abitazione (obbligatoria lato UI solo per servizio Presidi)
     indirizzo_attivazione: Optional[str] = None  # NEW: Indirizzo di attivazione servizio (se diverso da residenza)
     comune_attivazione: Optional[str] = None  # NEW: Comune di installazione/attivazione
     provincia_attivazione: Optional[str] = None  # NEW: Provincia di attivazione

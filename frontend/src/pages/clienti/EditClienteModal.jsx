@@ -262,6 +262,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
     provincia: cliente?.provincia || '',
     comune_residenza: cliente?.comune_residenza || '',
     indirizzo: cliente?.indirizzo || '',
+    tipologia_abitazione: cliente?.tipologia_abitazione || '',
     indirizzo_attivazione: cliente?.indirizzo_attivazione || '',
     comune_attivazione: cliente?.comune_attivazione || '',
     provincia_attivazione: cliente?.provincia_attivazione || '',
@@ -711,6 +712,21 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
     }
   };
 
+  const isEditPresidi = () => {
+    try {
+      const servizioId = formData.servizio_id || cliente?.servizio_id;
+      const nome = (
+        servizioInfo?.nome ||
+        (Array.isArray(servizi) ? servizi.find(s => s?.id === servizioId)?.nome : '') ||
+        ''
+      ).toLowerCase();
+      return nome.includes('presid');
+    } catch (error) {
+      console.error("❌ Error in isEditPresidi:", error);
+      return false;
+    }
+  };
+
   const isEditBusinessSegment = () => {
     try {
       // Usa formData.segmento (valore corrente) invece di cliente.segmento
@@ -935,6 +951,16 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
       return;
     }
     
+    // Validazione Tipologia Abitazione obbligatoria per servizio Presidi
+    if (isEditPresidi() && (!formData.tipologia_abitazione || formData.tipologia_abitazione.trim() === '')) {
+      editToast({
+        title: "Campo obbligatorio",
+        description: "Per il servizio Presidi, la Tipologia Abitazione è obbligatoria (sezione Indirizzo Residenza).",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Mappa i campi frontend ai nomi backend
     const backendData = {
       ...formData,
@@ -1172,6 +1198,24 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
                     </div>
                   </div>
                 </div>
+                {/* Tipologia Abitazione - obbligatorio solo per servizio Presidi */}
+                {isEditPresidi() && (
+                  <div className="mt-4 md:w-1/2">
+                    <Label htmlFor="tipologia_abitazione">Tipologia Abitazione *</Label>
+                    <select
+                      id="tipologia_abitazione"
+                      value={formData.tipologia_abitazione || ''}
+                      onChange={(e) => handleChange('tipologia_abitazione', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                      data-testid="edit-cliente-tipologia-abitazione-select"
+                      required
+                    >
+                      <option value="">Seleziona tipologia abitazione...</option>
+                      <option value="Villa/Villetta">Villa/Villetta</option>
+                      <option value="Appartamento">Appartamento</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* SEZIONE INDIRIZZO ATTIVAZIONE */}

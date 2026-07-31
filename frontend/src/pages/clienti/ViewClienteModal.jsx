@@ -465,6 +465,12 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                   <p className="text-sm">{cliente.cap || 'Non specificato'}</p>
                 </div>
               </div>
+              {cliente.tipologia_abitazione && (
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Tipologia Abitazione</Label>
+                  <p className="text-sm" data-testid="view-cliente-tipologia-abitazione">{cliente.tipologia_abitazione}</p>
+                </div>
+              )}
               {(cliente.indirizzo_attivazione || cliente.comune_attivazione || cliente.provincia_attivazione || cliente.cap_attivazione) && (
                 <div className="mt-3 pt-3 border-t border-slate-200 space-y-2">
                   <Label className="text-sm font-semibold text-amber-700">📍 Indirizzo Attivazione / Installazione</Label>

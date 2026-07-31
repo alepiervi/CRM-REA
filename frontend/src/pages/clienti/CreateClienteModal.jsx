@@ -350,6 +350,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       provincia: cliente.provincia || '',
       cap: cliente.cap || '',
       indirizzo: cliente.indirizzo || '',
+      tipologia_abitazione: cliente.tipologia_abitazione || '',
       indirizzo_attivazione: cliente.indirizzo_attivazione || '',
       comune_attivazione: cliente.comune_attivazione || '',
       provincia_attivazione: cliente.provincia_attivazione || '',
@@ -426,6 +427,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     provincia: '', // Sigla provincia
     cap: '',
     indirizzo: '',
+    tipologia_abitazione: '', // Obbligatorio solo per servizio Presidi
     indirizzo_attivazione: '',
     comune_attivazione: '',
     provincia_attivazione: '',
@@ -639,6 +641,15 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     });
     
     return nome.includes('telepass');
+  };
+
+  // Funzione per verificare se il SERVIZIO selezionato è "Presidi" (match sul nome del servizio)
+  const isPresidi = () => {
+    const servizioId = selectedData.servizio_id;
+    if (!servizioId) return false;
+    const servizio = (cascadeServizi || []).find(s => s?.id === servizioId);
+    const nome = servizio?.nome?.toLowerCase() || '';
+    return nome.includes('presid');
   };
 
   // Funzioni per gestire i campi convergenza multipli
@@ -1288,6 +1299,16 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       }
     }
     
+    // Validazione Tipologia Abitazione obbligatoria per servizio Presidi
+    if (isPresidi() && (!formData.tipologia_abitazione || formData.tipologia_abitazione.trim() === '')) {
+      toast({
+        title: "Campo obbligatorio",
+        description: "Per il servizio Presidi, la Tipologia Abitazione è obbligatoria. Selezionala nella sezione Indirizzo Residenza.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // POD non è più obbligatorio per Energia (richiesta utente)
     
     // Validazione campi personalizzati obbligatori
@@ -1328,6 +1349,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       comune_residenza: formData.comune_residenza || '', // Map comune_residenza -> comune_residenza for backend
       provincia: formData.provincia,
       cap: formData.cap,
+      tipologia_abitazione: formData.tipologia_abitazione || '', // Solo per servizio Presidi
       
       // Business data
       ragione_sociale: formData.ragione_sociale || '',
@@ -1449,7 +1471,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     setFormData({
       nome: '', cognome: '', email: '', telefono: '', cellulare: '', 
       data_nascita: '', luogo_nascita: '', codice_fiscale: '', 
-      indirizzo: '', comune: '', provincia: '', cap: '', 
+      indirizzo: '', comune: '', provincia: '', cap: '', tipologia_abitazione: '',
       ragione_sociale: '', partita_iva: '', numero_ordine: '', account: '',
       tipo_documento: '', numero_documento: '', data_rilascio: '', 
       luogo_rilascio: '', scadenza_documento: '',
@@ -2025,6 +2047,24 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                   </div>
                 </div>
               </div>
+              {/* Tipologia Abitazione - obbligatorio solo per servizio Presidi */}
+              {isPresidi() && (
+                <div className="mt-4 md:w-1/2">
+                  <Label htmlFor="tipologia_abitazione">Tipologia Abitazione *</Label>
+                  <select
+                    id="tipologia_abitazione"
+                    value={formData.tipologia_abitazione}
+                    onChange={(e) => setFormData({...formData, tipologia_abitazione: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    data-testid="create-cliente-tipologia-abitazione-select"
+                    required
+                  >
+                    <option value="">Seleziona tipologia abitazione...</option>
+                    <option value="Villa/Villetta">Villa/Villetta</option>
+                    <option value="Appartamento">Appartamento</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* SEZIONE INDIRIZZO ATTIVAZIONE */}

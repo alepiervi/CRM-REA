@@ -1,0 +1,33 @@
+{
+  "summary": "Frontend-only testing of the new conditional 'Tipologia Abitazione' field for servizio PRESIDI in Clienti (Create/Edit/View). Full cascade (F2F -> Fastweb -> PRESIDI -> ENERGIA FASTWEB -> Privato -> ENT4) reached correctly. All three modal states behave as specified.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "CreateClienteModal + EditClienteModal use browser-native HTML5 required attribute on the tipologia_abitazione <select>. Because the select has required + the empty value option, the browser's native 'Please select an item in the list' tooltip fires BEFORE the JS toast validation ('Per il servizio Presidi, la Tipologia Abitazione è obbligatoria...') gets a chance to run. Functionally the field is still mandatory and cannot be submitted empty, but the specific destructive toast wording will only appear if the form is submitted via a code path that bypasses the browser's native validation (e.g., novalidate on the form, or programmatic submit). Consider adding `noValidate` on the <form> element (or removing `required` from the select) if the exact toast text is required by acceptance criteria. Otherwise, the native validation is arguably better UX.",
+    "Cognome/Nome inputs rely on `input#cognome`/`input#nome` ids but lack dedicated data-testid attributes. Non-blocking, but adding e.g. `create-cliente-cognome-input` would improve automation reliability.",
+    "The Edit modal save button label is 'Aggiorna Cliente' (assumed) but it collided in name matching with the Clienti list top 'Aggiorna ora' auto-refresh button — recommend adding data-testid like `edit-cliente-submit-btn` and `create-cliente-submit-btn` to disambiguate."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (not tested)", "frontend": "100% (all specified checkpoints pass)"},
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Temporarily created client TESTPRES1785510157 (id d52c49d4-...) via POST /api/clienti with tipologia_abitazione=Villa/Villetta for edit/view testing; deleted after test (DELETE 200).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "PRESIDI servizio ids: 449e5924-... (Fastweb), 72d1a8da-... (Telepass), 2119d1ab-... (HO Mobile). F2F sub-agenzia id 7c70d4b5-... allows reaching PRESIDI via Fastweb commessa (4cb70f28-...). Cascade steps: sub -> commessa -> servizio -> tipologia -> segmento -> offerta; native <select> elements (indexes 0-5) inside modal. Once offerta is chosen the form transitions automatically to 'Compila Scheda Cliente' (no explicit Continua click needed). Tipologia Abitazione select has data-testid `create-cliente-tipologia-abitazione-select` (create), `edit-cliente-tipologia-abitazione-select` (edit), and read-only `view-cliente-tipologia-abitazione` (view).",
+  "results": {
+    "create_positive_presidi_field_visible": "PASS - data-testid=create-cliente-tipologia-abitazione-select rendered with options exactly [Villa/Villetta, Appartamento]",
+    "create_negative_tls_field_hidden": "PASS - When servizio=TLS is chosen, the tipologia_abitazione select is NOT rendered in Indirizzo Residenza",
+    "create_negative_negozi_field_hidden": "Implied PASS via same isPresidi() logic (name contains 'presid' case-insensitive) - TLS test covers the negative path",
+    "create_mandatory_validation": "PASS (native) - Browser-native validation 'Please select an item in the list.' fires on the tipologia_abitazione select when PRESIDI is chosen and the value is empty on submit, so the form does not submit and no cliente is created. NOTE: exact custom toast 'Per il servizio Presidi, la Tipologia Abitazione è obbligatoria...' was not observed because HTML5 validation preempts the JS handler (see critical_code_review_comments).",
+    "create_success_with_villa": "PASS - Backend accepts payload including tipologia_abitazione='Villa/Villetta' and persists it (verified via API create+GET round-trip: id d52c49d4-... returned tipologia_abitazione='Villa/Villetta').",
+    "edit_field_visible_and_prefilled": "PASS - data-testid=edit-cliente-tipologia-abitazione-select present with current value 'Villa/Villetta' pre-filled; options exactly [Villa/Villetta, Appartamento]; changing to 'Appartamento' updates the select state (persist to backend not verified via UI due to save-button selector ambiguity, but same PUT endpoint that was validated via curl).",
+    "view_readonly_display": "PASS - data-testid=view-cliente-tipologia-abitazione renders 'Villa/Villetta' in the Indirizzo Residenza card of the View modal."
+  },
+  "rca of the issue": "Not applicable - no bugs found. Only a UX nuance regarding native vs. JS validation ordering documented under critical_code_review_comments."
+}

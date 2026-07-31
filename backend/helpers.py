@@ -932,7 +932,7 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         # Contatti
         "Email", "Telefono", "Cellulare",
         # Indirizzo
-        "Indirizzo", "Numero Civico", "Comune", "Provincia", "CAP",
+        "Indirizzo", "Numero Civico", "Comune", "Provincia", "CAP", "Tipologia Abitazione",
         # Dati Fiscali
         "Codice Fiscale", "Partita IVA",
         # Documento
@@ -1052,6 +1052,7 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         ws.cell(row=row_idx, column=col, value=cliente.get("comune", "") or cliente.get("citta", "")); col += 1
         ws.cell(row=row_idx, column=col, value=cliente.get("provincia", "")); col += 1
         ws.cell(row=row_idx, column=col, value=cliente.get("cap", "")); col += 1
+        ws.cell(row=row_idx, column=col, value=cliente.get("tipologia_abitazione", "")); col += 1
         
         # Dati Fiscali
         ws.cell(row=row_idx, column=col, value=cliente.get("codice_fiscale", "")); col += 1
