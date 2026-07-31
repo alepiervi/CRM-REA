@@ -1,5 +1,16 @@
 # Nureal CRM — PRD
 
+## Feature — Tipologia Abitazione obbligatoria per servizio Presidi (Clienti) (3 lug 2026) — COMPLETATO
+**Richiesta utente**: in creazione anagrafica cliente, per i clienti con servizio "Presidi", nella sezione Indirizzo Residenza deve esserci un campo "Tipologia Abitazione" (menù a tendina: "Villa/Villetta", "Appartamento") OBBLIGATORIO. Da mostrare anche in Modifica, Visualizzazione ed export Excel.
+**Scelte utente**: riconoscimento Presidi per nome servizio (contiene "presid"); campo dentro sezione esistente (Indirizzo Residenza); presente in tutti (create+edit+view+Excel).
+**Backend** (`models.py`): aggiunto `tipologia_abitazione: Optional[str]` a Cliente, ClienteCreate, ClienteUpdate. `helpers.py`: colonna "Tipologia Abitazione" nell'export Excel clienti (dopo CAP). Verificato via curl: create+GET persiste il valore.
+**Frontend**:
+- `CreateClienteModal.jsx`: helper `isPresidi()` (nome servizio contiene "presid"); campo select in 🏠 Indirizzo Residenza (`create-cliente-tipologia-abitazione-select`), visibile solo se Presidi; validazione obbligatoria in handleSubmit + attributo `required`; incluso in payload.
+- `EditClienteModal.jsx`: `isEditPresidi()` (usa servizioInfo/servizi); stesso campo (`edit-cliente-tipologia-abitazione-select`) pre-compilato; validazione.
+- `ViewClienteModal.jsx`: riga read-only `view-cliente-tipologia-abitazione` (mostrata se valorizzata).
+**Testing**: testing_agent iteration_20 → frontend 100% (campo visibile+opzioni corrette per PRESIDI, nascosto per TLS, obbligatorio, edit pre-compilato, view mostra valore). Nota UX: la validazione HTML5 nativa scatta prima del toast JS (comportamento accettabile, campo comunque obbligatorio).
+
+
 ## Feature — Campo "Cerca" nei filtri avanzati Lead (3 lug 2026) — COMPLETATO
 **Richiesta utente**: aggiungere la ricerca nei filtri avanzati della sezione Lead.
 - Nuovo componente riutilizzabile `components/SearchableSelect.jsx`: shadcn Select single-value con input di ricerca sticky (`data-testid="{testid}-search"`), contains-match sulla label, opzioni `pinned` sempre visibili (es. "Tutti"), supporto colore per opzione (pallino), "Nessun risultato" se nessun match, ricerca azzerata alla chiusura.
