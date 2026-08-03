@@ -1131,14 +1131,11 @@ const CommesseManagement = ({
                       {/* Elenco servizi SKY attivi */}
                       {(selectedCommessa?.nome || '').toLowerCase().includes('sky') && (offerta.servizi_attivi || []).length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {(offerta.servizi_attivi || []).map((sid) => {
-                            const sname = (servizi.find(s => s.id === sid)?.nome) || sid;
-                            return (
-                              <span key={sid} className="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 rounded px-1.5 py-0.5">
-                                {sname}
-                              </span>
-                            );
-                          })}
+                          {(offerta.servizi_attivi || []).map((sname, idx) => (
+                            <span key={idx} className="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 rounded px-1.5 py-0.5">
+                              {sname}
+                            </span>
+                          ))}
                         </div>
                       )}
 
@@ -2401,16 +2398,26 @@ const CreateTipologiaContrattoModal = ({ isOpen, onClose, onSubmit, servizioId }
 
 const EditOffertaServiziModal = ({ isOpen, onClose, offerta, servizi = [], onSave }) => {
   const [serviziAttivi, setServiziAttivi] = useState([]);
+  const [nuovoServizio, setNuovoServizio] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen && offerta) {
       setServiziAttivi(offerta.servizi_attivi || []);
+      setNuovoServizio('');
     }
   }, [isOpen, offerta]);
 
-  const toggle = (id) => {
-    setServiziAttivi((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const addServizio = () => {
+    const n = nuovoServizio.trim();
+    if (n && !serviziAttivi.includes(n)) {
+      setServiziAttivi((prev) => [...prev, n]);
+      setNuovoServizio('');
+    }
+  };
+
+  const removeServizio = (name) => {
+    setServiziAttivi((prev) => prev.filter((x) => x !== name));
   };
 
   const handleSave = async () => {
@@ -2428,23 +2435,33 @@ const EditOffertaServiziModal = ({ isOpen, onClose, offerta, servizi = [], onSav
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Servizi attivi — {offerta.nome}</DialogTitle>
-          <p className="text-sm text-gray-600">Seleziona i servizi (SKY) attivi per questa offerta.</p>
+          <DialogTitle>Servizi attivabili — {offerta.nome}</DialogTitle>
+          <p className="text-sm text-gray-600">Inserisci i servizi che l'operatore potrà selezionare per questa offerta.</p>
         </DialogHeader>
-        <div className="space-y-2">
-          {servizi.length === 0 ? (
-            <p className="text-sm text-slate-500">Nessun servizio disponibile per questa commessa.</p>
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Nome servizio (es. Sky Calcio)"
+              value={nuovoServizio}
+              onChange={(e) => setNuovoServizio(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addServizio(); } }}
+              data-testid="edit-offerta-servizio-input"
+            />
+            <Button type="button" onClick={addServizio} data-testid="edit-offerta-servizio-add">
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          {serviziAttivi.length === 0 ? (
+            <p className="text-sm text-slate-500">Nessun servizio inserito. Aggiungine almeno uno.</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {servizi.map((s) => (
-                <label key={s.id} className="flex items-center gap-2 bg-white rounded border border-slate-200 px-2 py-1.5 cursor-pointer">
-                  <Checkbox
-                    checked={serviziAttivi.includes(s.id)}
-                    onCheckedChange={() => toggle(s.id)}
-                    data-testid={`edit-offerta-sky-servizio-${s.id}`}
-                  />
-                  <span className="text-sm">{s.nome}</span>
-                </label>
+            <div className="space-y-1">
+              {serviziAttivi.map((name, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-slate-50 rounded border border-slate-200 px-3 py-1.5" data-testid={`edit-offerta-servizio-item-${idx}`}>
+                  <span className="text-sm">{name}</span>
+                  <Button type="button" size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500" onClick={() => removeServizio(name)} data-testid={`edit-offerta-servizio-remove-${idx}`}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
               ))}
             </div>
           )}
@@ -2469,14 +2486,21 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId, commessa, s
   });
   const [subOfferte, setSubOfferte] = useState([]);
   const [newSubOfferta, setNewSubOfferta] = useState({ nome: '', descrizione: '' });
-  const [serviziAttivi, setServiziAttivi] = useState([]);  // NEW: servizi flaggati (solo SKY)
+  const [serviziAttivi, setServiziAttivi] = useState([]);  // NEW: servizi custom inseriti dall'admin (solo SKY)
+  const [nuovoServizio, setNuovoServizio] = useState('');
 
   const isSky = (commessa?.nome || '').toLowerCase().includes('sky');
 
-  const toggleServizioAttivo = (servizioId) => {
-    setServiziAttivi((prev) =>
-      prev.includes(servizioId) ? prev.filter((id) => id !== servizioId) : [...prev, servizioId]
-    );
+  const addServizioAttivo = () => {
+    const n = nuovoServizio.trim();
+    if (n && !serviziAttivi.includes(n)) {
+      setServiziAttivi((prev) => [...prev, n]);
+      setNuovoServizio('');
+    }
+  };
+
+  const removeServizioAttivo = (name) => {
+    setServiziAttivi((prev) => prev.filter((x) => x !== name));
   };
 
   const handleSubmit = async (e) => {
@@ -2542,6 +2566,7 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId, commessa, s
     setSubOfferte([]);
     setNewSubOfferta({ nome: '', descrizione: '' });
     setServiziAttivi([]);
+    setNuovoServizio('');
     onClose();
   };
 
@@ -2561,6 +2586,7 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId, commessa, s
     setSubOfferte([]);
     setNewSubOfferta({ nome: '', descrizione: '' });
     setServiziAttivi([]);
+    setNuovoServizio('');
     onClose();
   };
 
@@ -2607,24 +2633,32 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId, commessa, s
             <Label htmlFor="is_active">Offerta attiva</Label>
           </div>
 
-          {/* NEW: Servizi attivi (solo commessa SKY) */}
+          {/* NEW: Servizi attivabili (solo commessa SKY) - inseriti manualmente dall'admin */}
           {isSky && (
             <div className="border border-blue-200 rounded-lg p-4 bg-blue-50 space-y-2" data-testid="offerta-sky-servizi-section">
-              <Label className="font-semibold text-blue-900">Servizi attivi per questa offerta (SKY)</Label>
-              <p className="text-xs text-blue-700">Seleziona con i flag i servizi che compongono questa offerta. Compariranno all'operatore in fase di anagrafica cliente.</p>
-              {servizi.length === 0 ? (
-                <p className="text-sm text-slate-500">Nessun servizio disponibile per questa commessa.</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                  {servizi.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 bg-white rounded border border-slate-200 px-2 py-1.5 cursor-pointer">
-                      <Checkbox
-                        checked={serviziAttivi.includes(s.id)}
-                        onCheckedChange={() => toggleServizioAttivo(s.id)}
-                        data-testid={`offerta-sky-servizio-${s.id}`}
-                      />
-                      <span className="text-sm">{s.nome}</span>
-                    </label>
+              <Label className="font-semibold text-blue-900">Servizi attivabili per questa offerta (SKY)</Label>
+              <p className="text-xs text-blue-700">Inserisci i servizi che l'operatore potrà selezionare per questa offerta in fase di anagrafica cliente.</p>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  placeholder="Nome servizio (es. Sky Calcio)"
+                  value={nuovoServizio}
+                  onChange={(e) => setNuovoServizio(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addServizioAttivo(); } }}
+                  data-testid="offerta-sky-servizio-input"
+                />
+                <Button type="button" onClick={addServizioAttivo} data-testid="offerta-sky-servizio-add">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              {serviziAttivi.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {serviziAttivi.map((name, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-white rounded border border-slate-200 px-3 py-1.5" data-testid={`offerta-sky-servizio-item-${idx}`}>
+                      <span className="text-sm">{name}</span>
+                      <Button type="button" size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500" onClick={() => removeServizioAttivo(name)} data-testid={`offerta-sky-servizio-remove-${idx}`}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
                   ))}
                 </div>
               )}

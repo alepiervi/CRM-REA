@@ -1176,19 +1176,16 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
                   <h4 className="font-semibold text-indigo-900 mb-1 flex items-center gap-2">📺 Servizi SKY</h4>
                   <p className="text-xs text-indigo-700 mb-3">Seleziona i servizi attivi per questo cliente.</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    {getEditSkyServiziAttivi().map((sid) => {
-                      const sname = (servizi.find(s => s.id === sid)?.nome) || sid;
-                      return (
-                        <label key={sid} className="flex items-center gap-2 bg-white rounded border border-indigo-200 px-2 py-1.5 cursor-pointer">
-                          <Checkbox
-                            checked={(formData.sky_servizi || []).includes(sid)}
-                            onCheckedChange={() => toggleEditSkyServizio(sid)}
-                            data-testid={`edit-cliente-sky-servizio-${sid}`}
-                          />
-                          <span className="text-sm">{sname}</span>
-                        </label>
-                      );
-                    })}
+                    {getEditSkyServiziAttivi().map((sname, idx) => (
+                      <label key={idx} className="flex items-center gap-2 bg-white rounded border border-indigo-200 px-2 py-1.5 cursor-pointer">
+                        <Checkbox
+                          checked={(formData.sky_servizi || []).includes(sname)}
+                          onCheckedChange={() => toggleEditSkyServizio(sname)}
+                          data-testid={`edit-cliente-sky-servizio-${idx}`}
+                        />
+                        <span className="text-sm">{sname}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
               )}

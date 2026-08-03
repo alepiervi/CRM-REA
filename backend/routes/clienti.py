@@ -1454,14 +1454,9 @@ async def export_clienti_excel(
             else:
                 base_cliente["servizio_name"] = ""
 
-            # Servizi SKY selezionati (IDs -> nomi) per l'export
-            sky_ids = cliente.get("sky_servizi") or []
-            if sky_ids:
-                sky_docs = await db["servizi"].find({"id": {"$in": sky_ids}}, {"_id": 0, "id": 1, "nome": 1}).to_list(length=None)
-                sky_map = {d["id"]: d.get("nome", "") for d in sky_docs}
-                base_cliente["sky_servizi_nomi"] = ", ".join([sky_map.get(sid, "") for sid in sky_ids if sky_map.get(sid)])
-            else:
-                base_cliente["sky_servizi_nomi"] = ""
+            # Servizi SKY selezionati (già nomi) per l'export
+            sky_vals = cliente.get("sky_servizi") or []
+            base_cliente["sky_servizi_nomi"] = ", ".join([str(v) for v in sky_vals if v])
             
             # Map tipologia contratto to display name
             tipologia = cliente.get("tipologia_contratto", "")

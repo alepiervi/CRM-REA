@@ -475,14 +475,11 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                 <div>
                   <Label className="text-sm font-medium text-slate-600">Servizi SKY</Label>
                   <div className="flex flex-wrap gap-1 mt-1" data-testid="view-cliente-sky-servizi">
-                    {cliente.sky_servizi.map((sid) => {
-                      const sname = (Array.isArray(servizi) ? servizi.find(s => s.id === sid)?.nome : null) || sid;
-                      return (
-                        <span key={sid} className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 rounded px-1.5 py-0.5">
-                          {sname}
-                        </span>
-                      );
-                    })}
+                    {cliente.sky_servizi.map((sname, idx) => (
+                      <span key={idx} className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 rounded px-1.5 py-0.5">
+                        {sname}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}

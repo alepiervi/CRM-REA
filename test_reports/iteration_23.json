@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend-only e2e verification of the REVISED string-based SKY servizi model (admin manually types custom service strings per Offerta). All 6 requested checkpoints PASS: (1) login admin/admin123, (2) ADMIN Edit-servizi modal on Fastweb SKY offer — add 'Sky Kids', remove 'Sky Calcio', save, reopen -> persisted (Sky Cinema, Sky Sport, Sky Kids); card badge = '3 servizi attivi' and chips update, (3) Nuova Offerta modal shows 'Servizi attivabili per questa offerta (SKY)' section with input + add + removable items, (4) Cliente creation shows '📺 Servizi SKY' section rendering ONLY admin-defined strings [Sky Calcio, Sky Cinema, Sky Sport] as 3 checkboxes; client created with sky_servizi=[Sky Calcio, Sky Cinema], (5) ViewClienteModal 'Servizi SKY' chips render 'Sky Calcio' + 'Sky Cinema', (6) EditClienteModal SKY section renders same 3 strings with prefill (Calcio=T, Cinema=T, Sport=F), toggled Sky Sport true, saved, reopened View -> chips = 'Sky Calcio Sky Cinema Sky Sport' (persisted, no data loss). Test client deleted and edited offer restored to original 3 services.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ViewClienteModal Servizi SKY chips", "issues": ["Chip labels concatenate in text_content (e.g. 'Sky CalcioSky Cinema') — carry-over cosmetic note from iter 21/22, non-blocking. Visual spacing is fine via flex/gap."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SKY detection still relies on commessa.nome.toLowerCase().includes('sky') heuristic; consider a persisted is_sky flag on Commessa.",
+    "EditOffertaServiziModal uses free-form text — no dedup validation (typing same name twice results in duplicate list items). Consider trim+lowercase dedup.",
+    "CreateClienteModal/EditClienteModal SKY checkbox labels wrap span text without space padding — visual is fine but text_content concatenates without separator (see design_issues)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped per request)", "frontend": "100% (6/6 SKY string-model checkpoints)"},
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Temporarily created client 'SKY764416Nom SKY764416Cog' (F2F -> Fastweb SKY -> TLS -> ENERGIA FASTWEB -> Privato -> CHIAPPETTA 1) with sky_servizi=[Sky Calcio, Sky Cinema], then updated to add Sky Sport, then DELETED (moved to Cestino Clienti). Also modified offer 538dc050 (Test Vodafone Offerta) during test (added Sky Kids / removed Sky Calcio), then RESTORED to [Sky Cinema, Sky Sport, Sky Calcio] — same set as original [Sky Calcio, Sky Cinema, Sky Sport], only ordering differs.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "REVISED SKY model verified end-to-end via UI: servizi_attivi are admin-typed strings on each Offerta (via EditOffertaServiziModal at Commesse.jsx line 2440-2475 and CreateOffertaModal SKY section at line 2638-2660). Cliente checkboxes render offerta.servizi_attivi strings and store selected strings in cliente.sky_servizi (View chips + Edit prefill both wired). Data-testids used: offerta-edit-servizi-btn-<id>, offerta-sky-servizi-count-<id>, edit-offerta-servizio-input/add, edit-offerta-servizio-item-<idx>, edit-offerta-servizio-remove-<idx>, edit-offerta-servizi-save; offerta-sky-servizi-section, offerta-sky-servizio-input/add, offerta-sky-servizio-item-<idx>; create-cliente-sky-servizi-section, create-cliente-sky-servizio-<idx>; view-cliente-sky-servizi; edit-cliente-sky-servizi-section, edit-cliente-sky-servizio-<idx>. Fastweb SKY commessa (id 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1) reachable via F2F sub-agenzia. Nuovo Cliente flow is 2-step: 6-select cascade then 'Continua → Scheda Cliente' opens the form modal (required inputs: cognome, nome, email, telefono, codice_fiscale). Delete client fires a native browser confirm dialog — auto-accept it via page.on('dialog', d=>d.accept()).",
+  "results": {
+    "1_login": "PASS",
+    "2_admin_edit_offer_servizi": "PASS — add Sky Kids + remove Sky Calcio persisted; badge '3 servizi attivi'; chips update.",
+    "3_admin_new_offer_sky_section": "PASS — offerta-sky-servizi-section present in Nuova Offerta modal; added 2 items visible with items testids.",
+    "4_client_create_sky_checkboxes": "PASS — 3 admin-defined strings shown, 2 checked, client created successfully.",
+    "5_client_view_sky_chips": "PASS — chips show 'Sky Calcio', 'Sky Cinema'.",
+    "6_client_edit_sky_prefill_and_persistence": "PASS — prefill states [T,T,F]; toggled Sport; save; View shows all three chips.",
+    "cleanup": "PASS — test client deleted; edited offer restored to original service set."
+  }
+}
