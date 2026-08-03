@@ -1,5 +1,15 @@
 # Nureal CRM — PRD
 
+## Revisione — Servizi SKY inseriti manualmente dall'admin (non dalla filiera) (3 lug 2026) — COMPLETATO
+**Chiarimento utente**: i servizi flaggabili NON devono essere quelli della filiera; l'admin li INSERISCE manualmente su ogni offerta SKY (come sotto-offerte), così l'operatore può selezionare solo quelli abilitati (niente servizi non attivi).
+**Modifiche**: `offerta.servizi_attivi` e `cliente.sky_servizi` ora sono liste di STRINGHE custom (nomi digitati dall'admin), non ID della filiera.
+- `Commesse.jsx`: CreateOffertaModal e EditOffertaServiziModal ora hanno input testo + "Aggiungi" + lista rimovibile (niente più checkbox dei servizi commessa). Card offerta mostra i nomi custom come chip.
+- `CreateClienteModal.jsx`/`EditClienteModal.jsx`: la sezione "📺 Servizi SKY" mostra come checkbox SOLO i servizi definiti dall'admin sull'offerta selezionata; salvati come stringhe in `sky_servizi`.
+- `ViewClienteModal.jsx`: chip dei nomi selezionati.
+- `routes/clienti.py`: export Excel semplificato (join diretto delle stringhe).
+**Testing**: curl (stringhe persistono + Excel "Sky Calcio, Sky Sport") + testing_agent iteration_23 → frontend 100% (6/6: admin add/remove servizi, nuova offerta, create/view/edit cliente, no data-loss). Dati di test ripristinati.
+
+
 ## Feature — Servizi flaggabili su Offerte SKY (admin + cliente + Excel) (3 lug 2026) — COMPLETATO
 **Richiesta utente**: solo per la commessa SKY, poter attivare sulle offerte dei servizi tramite flag (checkbox) nella filiera cascading; la combinazione di servizi attivi = "tipologia di offerta". I servizi devono comparire anche nel form Cliente (flaggabili dall'operatore) e nel file Excel scaricato. Vale SOLO per SKY (riconosciuta dal nome commessa che contiene "sky").
 **Backend** (`models.py`): `servizi_attivi: List[str]` su OffertaModel/Create/Update; `sky_servizi: List[str]` su Cliente/Create/Update. `routes/clienti.py`: export arricchito con `sky_servizi_nomi` (IDs→nomi). `helpers.py`: colonna Excel "Servizi SKY" (dopo Offerta). Verificato via curl: offerta.servizi_attivi persiste (create+PUT), cliente.sky_servizi persiste, Excel mostra i nomi.
