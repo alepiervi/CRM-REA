@@ -1198,6 +1198,7 @@ class Cliente(BaseModel):
     segmento_nome: Optional[str] = None  # ENRICHED: Human-readable segmento name for display
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     sub_offerta_id: Optional[str] = None  # NEW: Sotto-offerta ID (per offerte Vodafone con sotto-offerte)
+    sky_servizi: List[str] = []  # NEW: servizi SKY selezionati dall'operatore (IDs) — solo commessa SKY
     status: str = ClienteStatus.DA_INSERIRE.value  # Can be a ClienteStatus enum value OR a custom status value
     # ===== POST VENDITA FIELDS =====
     passed_to_post_vendita: bool = False  # Flag: cliente is visible in Post Vendita section
@@ -1303,6 +1304,7 @@ class ClienteCreate(BaseModel):
     segmento: Optional[str] = None  # Dynamic field - accepts any user-created segmento
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     sub_offerta_id: Optional[str] = None  # NEW: Sotto-offerta ID (per offerte con sotto-offerte)
+    sky_servizi: List[str] = []  # NEW: servizi SKY selezionati dall'operatore (IDs) — solo commessa SKY
     assigned_to: Optional[str] = None  # NEW: User assigned to this client
     dati_aggiuntivi: Dict[str, Any] = {}
     
@@ -1393,6 +1395,7 @@ class ClienteUpdate(BaseModel):
     segmento: Optional[str] = None  # Dynamic field - accepts any user-created segmento
     offerta_id: Optional[str] = None  # ADDED: Offerta ID for displaying selected offer
     sub_offerta_id: Optional[str] = None  # NEW: Sotto-offerta ID
+    sky_servizi: Optional[List[str]] = None  # NEW: servizi SKY selezionati dall'operatore (IDs) — solo commessa SKY
     status: Optional[str] = None  # Can be a ClienteStatus enum value OR a custom status value
     # ===== POST VENDITA FIELDS =====
     passed_to_post_vendita: Optional[bool] = None
@@ -1588,6 +1591,7 @@ class OffertaModel(BaseModel):
     has_sub_offerte: bool = False  # NEW: Indica se questa offerta ha sotto-offerte
     parent_offerta_id: Optional[str] = None  # NEW: ID dell'offerta principale (se è una sotto-offerta)
     is_active: bool = True
+    servizi_attivi: List[str] = []  # NEW: servizi flaggati/attivi sull'offerta (usato per commessa SKY)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
     created_by: str
@@ -1602,6 +1606,7 @@ class OffertaCreate(BaseModel):
     has_sub_offerte: bool = False  # NEW: Indica se questa offerta avrà sotto-offerte
     parent_offerta_id: Optional[str] = None  # NEW: ID offerta principale (per sotto-offerte)
     is_active: bool = True
+    servizi_attivi: List[str] = []  # NEW: servizi flaggati/attivi sull'offerta (usato per commessa SKY)
 
 class OffertaUpdate(BaseModel):
     nome: Optional[str] = None
@@ -1611,4 +1616,5 @@ class OffertaUpdate(BaseModel):
     tipologia_contratto_id: Optional[str] = None  # ADDED: Link to tipologia contratto
     has_sub_offerte: Optional[bool] = None  # NEW: Aggiorna se ha sotto-offerte
     is_active: Optional[bool] = None
+    servizi_attivi: Optional[List[str]] = None  # NEW: servizi flaggati/attivi sull'offerta (usato per commessa SKY)
 

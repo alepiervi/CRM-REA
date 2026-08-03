@@ -1,0 +1,46 @@
+{
+  "summary": "Frontend-only testing of the new SKY-only feature: (A) ADMIN Commesse offerta servizi_attivi flow, (B) Client Create with sky_servizi, (C) Client View with sky_servizi chips, (D) Client Edit sky_servizi. All ADMIN Commesse checkpoints and Create+View checkpoints PASS. Edit flow has a CRITICAL data-loss bug: EditClienteModal does NOT initialize formData.sky_servizi from cliente.sky_servizi, so previously-selected SKY services are always shown UNCHECKED and are overwritten on save.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "EditClienteModal (/app/frontend/src/pages/clienti/EditClienteModal.jsx)",
+        "issue": "CRITICAL DATA LOSS: The initial useState formData object (starting line 252) does NOT include a `sky_servizi` field. Therefore, when opening the Edit modal for an existing client that has cliente.sky_servizi=['TLS','NEGOZI'], the '📺 Servizi SKY' section (data-testid=edit-cliente-sky-servizi-section) renders correctly but ALL checkboxes appear UNCHECKED (because `formData.sky_servizi` is undefined, so `(formData.sky_servizi || []).includes(sid)` returns false for every id). If the operator saves — even without touching those checkboxes — any newly-toggled subset overwrites the persisted value (verified end-to-end: created client with TLS+NEGOZI; opened Edit modal → all 3 unchecked; toggled only PRESIDI + saved; re-opened View modal → shows only PRESIDI, TLS+NEGOZI were wiped).",
+        "selector": "[data-testid^='edit-cliente-sky-servizio-']",
+        "priority": "HIGH/CRITICAL",
+        "fix_hint": "Add `sky_servizi: cliente?.sky_servizi || [],` to the initial formData object in EditClienteModal.jsx (around lines 252-270, next to tipologia_abitazione/indirizzo fields)."
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ViewClienteModal Servizi SKY chips", "issues": ["Chips have no separator/whitespace between names — text content shows 'TLSNEGOZI' concatenated. Visually spacing looks fine (flex gap-1) but text_content() concatenates. Non-blocking, purely a11y/text-copy nuance."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "FIX EditClienteModal.jsx initial formData: add `sky_servizi: cliente?.sky_servizi || []` alongside other cliente-derived fields (line ~265). Without this fix, editing any SKY client silently deletes previously-selected sky_servizi.",
+    "Consider adding data-testid to Save button in EditClienteModal ('edit-cliente-submit-btn') and CreateClienteModal ('create-cliente-submit-btn') for reliable automation (kept generic 'Aggiorna Cliente'/'Crea Cliente' text works but is brittle)."
+  ],
+  "critical_code_review_comments": [
+    "EditClienteModal.jsx: missing sky_servizi in initial formData causes silent data loss on save (see ui_bugs above).",
+    "CreateClienteModal.jsx & EditClienteModal.jsx: `getEditSkyServiziAttivi()` falls back to offerta.servizi_attivi if formData.sky_servizi is empty — but this fallback is used only for RENDERING the list of ids to show. It is NOT used to pre-check the boxes (which read only from formData.sky_servizi). Confirm this is intended (the list of options can come from offerta, but the initial CHECKED state must come from the cliente).",
+    "Commesse.jsx CreateOffertaModal + EditOffertaServiziModal correctly detect SKY via commessa.nome.toLowerCase().includes('sky'). This is fragile — a rename removing 'sky' will silently disable the whole feature. Consider a dedicated `is_sky` flag on commessa."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "~90% (all ADMIN + create + view flows pass; edit flow has 1 critical bug)"},
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Created & then deleted client TESTSKY Cli1785762007 (email skytest_1785762007@example.com) via UI cascade F2F -> Fastweb SKY -> TLS -> ENERGIA FASTWEB -> Privato -> CHIAPPETTA 1 with sky_servizi=[TLS, NEGOZI]. Cleaned up (delete succeeded, toast 'Cliente eliminato con successo').",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Commessa 'Fastweb SKY' (id 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1) has servizi cc0648c1-...(TLS), 62f75c5b-...(NEGOZI), 449e5924-...(PRESIDI). ADMIN Commesse drill-down uses gear-icon buttons with titles: 'Gestisci servizi e tipologie' (commessa card) -> 'Gestisci tipologie contratto' (servizio card) -> 'Gestisci segmenti' (tipologia card) -> 'Gestisci offerte' (segmento card). Offer cards expose data-testid `offerta-sky-servizi-count-<id>` (badge), `offerta-edit-servizi-btn-<id>` (edit button). Edit modal exposes `edit-offerta-sky-servizio-<servizioId>` checkboxes and `edit-offerta-servizi-save` button. Nuova Offerta modal exposes `offerta-sky-servizi-section` and `offerta-sky-servizio-<servizioId>`. Client Create modal exposes `create-cliente-sky-servizi-section` and `create-cliente-sky-servizio-<sid>`. Client cascade in CreateClienteModal has 2 selects initially (sub_agenzia + commessa) and reveals 4 more (servizio, tipologia, segmento, offerta) as you pick — total 6. All native <select>. View modal exposes `view-cliente-sky-servizi`. Edit modal exposes `edit-cliente-sky-servizi-section` and `edit-cliente-sky-servizio-<sid>`.",
+  "results": {
+    "admin_commesse_badge_and_chips": "PASS - '3 servizi attivi' badge + TLS/NEGOZI/PRESIDI chips rendered on every offer card of segmento Privato under Fastweb SKY > TLS > ENERGIA FASTWEB.",
+    "admin_commesse_edit_servizi_modal": "PASS - Modal opens with 3 checkboxes pre-checked; toggling TLS off + Save → badge updates to '2 servizi attivi'; reopening modal shows TLS unchecked (persistence verified). Restored to original state after test.",
+    "admin_commesse_nuova_offerta_section": "PASS - 'Servizi attivi per questa offerta (SKY)' section (data-testid offerta-sky-servizi-section) visible with 3 checkboxes (offerta-sky-servizio-<sid>) in the Nuova Offerta modal for Fastweb SKY.",
+    "client_create_sky_section": "PASS - After cascading F2F -> Fastweb SKY -> TLS -> ENERGIA FASTWEB -> Privato -> CHIAPPETTA 1, '📺 Servizi SKY' section (create-cliente-sky-servizi-section) rendered with 3 checkboxes named TLS/NEGOZI/PRESIDI.",
+    "client_create_submit": "PASS - Client created (toast 'Cliente creato con successo'); appears in list as 'TESTSKY Cli1785762007'.",
+    "client_view_sky_chips": "PASS - View modal 'Indirizzo Residenza' card contains 'Servizi SKY' block (view-cliente-sky-servizi) showing TLS + NEGOZI chips (matches what was flagged at creation).",
+    "client_edit_sky_prefill": "FAIL - CRITICAL BUG. Edit modal opens with all 3 SKY checkboxes UNCHECKED even though cliente.sky_servizi=['TLS','NEGOZI'] (verified via View modal). formData initial state does not include sky_servizi (see EditClienteModal.jsx line 252-270). Section itself IS visible (edit-cliente-sky-servizi-section present) and checkboxes ARE rendered — only the initial checked state is wrong. Save after toggling PRESIDI wiped TLS+NEGOZI and persisted only PRESIDI (data loss)."
+  },
+  "rca of the issue": "EditClienteModal.jsx defines `const [formData, setFormData] = useState({ nome: cliente?.nome || '', ..., tipologia_abitazione: cliente?.tipologia_abitazione || '', ... })` but omits `sky_servizi: cliente?.sky_servizi || []`. The Servizi SKY checkbox rendering uses `checked={(formData.sky_servizi || []).includes(sid)}` (line 1183). Since formData.sky_servizi is undefined at open, no box is checked. When operator toggles any box, the `handleSkyServizioToggle` (line 743) uses `prev.sky_servizi || []` as base — thus starting from an empty array — and setState overwrites with only the just-toggled ids. handleSubmit then spreads formData into backendData, sending sky_servizi with the reduced array, and the PUT persists it, wiping the original persisted array. Fix is one line: `sky_servizi: cliente?.sky_servizi || [],` in the initial state around line 265."
+}

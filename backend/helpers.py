@@ -938,7 +938,7 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         # Documento
         "Tipo Documento", "Numero Documento", "Data Rilascio", "Luogo Rilascio", "Scadenza Documento",
         # Dati Organizzativi
-        "Sub Agenzia", "Commessa", "Servizio", "Tipologia Contratto", "Segmento", "Offerta",
+        "Sub Agenzia", "Commessa", "Servizio", "Tipologia Contratto", "Segmento", "Offerta", "Servizi SKY",
         # Telefonia Fastweb
         "Tecnologia", "Codice Migrazione", "Gestore", "Convergenza",
         # Energia Fastweb
@@ -1101,6 +1101,9 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
         else:
             # For fixed line rows (or no convergenza), show the cliente offerta
             ws.cell(row=row_idx, column=col, value=cliente.get("offerta_name", "")); col += 1
+        
+        # Servizi SKY selezionati (nomi)
+        ws.cell(row=row_idx, column=col, value=cliente.get("sky_servizi_nomi", "")); col += 1
         
         # Telefonia Fastweb
         ws.cell(row=row_idx, column=col, value=cliente.get("tecnologia", "")); col += 1

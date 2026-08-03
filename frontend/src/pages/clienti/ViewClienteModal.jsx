@@ -471,6 +471,21 @@ const ViewClienteModal = ({ cliente, onClose, commesse, subAgenzie, servizi }) =
                   <p className="text-sm" data-testid="view-cliente-tipologia-abitazione">{cliente.tipologia_abitazione}</p>
                 </div>
               )}
+              {Array.isArray(cliente.sky_servizi) && cliente.sky_servizi.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-slate-600">Servizi SKY</Label>
+                  <div className="flex flex-wrap gap-1 mt-1" data-testid="view-cliente-sky-servizi">
+                    {cliente.sky_servizi.map((sid) => {
+                      const sname = (Array.isArray(servizi) ? servizi.find(s => s.id === sid)?.nome : null) || sid;
+                      return (
+                        <span key={sid} className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 rounded px-1.5 py-0.5">
+                          {sname}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               {(cliente.indirizzo_attivazione || cliente.comune_attivazione || cliente.provincia_attivazione || cliente.cap_attivazione) && (
                 <div className="mt-3 pt-3 border-t border-slate-200 space-y-2">
                   <Label className="text-sm font-semibold text-amber-700">📍 Indirizzo Attivazione / Installazione</Label>

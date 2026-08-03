@@ -200,6 +200,8 @@ const CommesseManagement = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCreateTipologiaModal, setShowCreateTipologiaModal] = useState(false);
   const [showCreateOffertaModal, setShowCreateOffertaModal] = useState(false);
+  const [showEditServiziModal, setShowEditServiziModal] = useState(false);  // NEW: modale flag servizi SKY su offerta
+  const [offertaToEditServizi, setOffertaToEditServizi] = useState(null);   // NEW
   const [showViewCommessaModal, setShowViewCommessaModal] = useState(false);
   const [showEditCommessaModal, setShowEditCommessaModal] = useState(false);
   const [showArubaConfigModal, setShowArubaConfigModal] = useState(false);
@@ -1119,10 +1121,44 @@ const CommesseManagement = ({
                         <Badge variant={offerta.is_active ? "default" : "secondary"} className="text-xs">
                           {offerta.is_active ? "Attiva" : "Inattiva"}
                         </Badge>
+                        {(selectedCommessa?.nome || '').toLowerCase().includes('sky') && (
+                          <Badge variant="outline" className="text-xs" data-testid={`offerta-sky-servizi-count-${offerta.id}`}>
+                            {(offerta.servizi_attivi || []).length} servizi attivi
+                          </Badge>
+                        )}
                       </div>
 
+                      {/* Elenco servizi SKY attivi */}
+                      {(selectedCommessa?.nome || '').toLowerCase().includes('sky') && (offerta.servizi_attivi || []).length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {(offerta.servizi_attivi || []).map((sid) => {
+                            const sname = (servizi.find(s => s.id === sid)?.nome) || sid;
+                            return (
+                              <span key={sid} className="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 rounded px-1.5 py-0.5">
+                                {sname}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       {/* Pulsanti - Layout a griglia */}
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                      <div className={`grid ${(selectedCommessa?.nome || '').toLowerCase().includes('sky') ? 'grid-cols-3' : 'grid-cols-2'} gap-2 pt-2 border-t border-gray-100`}>
+                        {(selectedCommessa?.nome || '').toLowerCase().includes('sky') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setOffertaToEditServizi(offerta);
+                              setShowEditServiziModal(true);
+                            }}
+                            className="p-2 h-8 w-full text-blue-600"
+                            title="Gestisci servizi attivi"
+                            data-testid={`offerta-edit-servizi-btn-${offerta.id}`}
+                          >
+                            <Settings2 className="w-3 h-3" />
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
@@ -1185,6 +1221,23 @@ const CommesseManagement = ({
         onClose={() => setShowCreateOffertaModal(false)}
         onSubmit={createOfferta}
         segmentoId={selectedSegmento}
+        commessa={selectedCommessa}
+        servizi={servizi}
+      />
+
+      {/* Edit Servizi SKY su Offerta */}
+      <EditOffertaServiziModal
+        isOpen={showEditServiziModal}
+        onClose={() => { setShowEditServiziModal(false); setOffertaToEditServizi(null); }}
+        offerta={offertaToEditServizi}
+        servizi={servizi}
+        onSave={async (serviziAttivi) => {
+          if (offertaToEditServizi) {
+            await updateOfferta(offertaToEditServizi.id, { servizi_attivi: serviziAttivi });
+          }
+          setShowEditServiziModal(false);
+          setOffertaToEditServizi(null);
+        }}
       />
 
       {/* View Commessa Details Modal */}
@@ -2346,7 +2399,68 @@ const CreateTipologiaContrattoModal = ({ isOpen, onClose, onSubmit, servizioId }
 };
 
 
-const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
+const EditOffertaServiziModal = ({ isOpen, onClose, offerta, servizi = [], onSave }) => {
+  const [serviziAttivi, setServiziAttivi] = useState([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && offerta) {
+      setServiziAttivi(offerta.servizi_attivi || []);
+    }
+  }, [isOpen, offerta]);
+
+  const toggle = (id) => {
+    setServiziAttivi((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(serviziAttivi);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!isOpen || !offerta) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Servizi attivi — {offerta.nome}</DialogTitle>
+          <p className="text-sm text-gray-600">Seleziona i servizi (SKY) attivi per questa offerta.</p>
+        </DialogHeader>
+        <div className="space-y-2">
+          {servizi.length === 0 ? (
+            <p className="text-sm text-slate-500">Nessun servizio disponibile per questa commessa.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {servizi.map((s) => (
+                <label key={s.id} className="flex items-center gap-2 bg-white rounded border border-slate-200 px-2 py-1.5 cursor-pointer">
+                  <Checkbox
+                    checked={serviziAttivi.includes(s.id)}
+                    onCheckedChange={() => toggle(s.id)}
+                    data-testid={`edit-offerta-sky-servizio-${s.id}`}
+                  />
+                  <span className="text-sm">{s.nome}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>Annulla</Button>
+          <Button type="button" onClick={handleSave} disabled={saving} data-testid="edit-offerta-servizi-save">
+            {saving ? 'Salvataggio...' : 'Salva'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId, commessa, servizi = [] }) => {
   const [formData, setFormData] = useState({
     nome: '',
     descrizione: '',
@@ -2355,6 +2469,15 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
   });
   const [subOfferte, setSubOfferte] = useState([]);
   const [newSubOfferta, setNewSubOfferta] = useState({ nome: '', descrizione: '' });
+  const [serviziAttivi, setServiziAttivi] = useState([]);  // NEW: servizi flaggati (solo SKY)
+
+  const isSky = (commessa?.nome || '').toLowerCase().includes('sky');
+
+  const toggleServizioAttivo = (servizioId) => {
+    setServiziAttivi((prev) =>
+      prev.includes(servizioId) ? prev.filter((id) => id !== servizioId) : [...prev, servizioId]
+    );
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -2362,7 +2485,8 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
     // Submit main offerta
     const mainOfferta = { 
       ...formData, 
-      segmento_id: segmentoId 
+      segmento_id: segmentoId,
+      servizi_attivi: isSky ? serviziAttivi : []
     };
     
     try {
@@ -2417,6 +2541,7 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
     setFormData({ nome: '', descrizione: '', is_active: true, has_sub_offerte: false });
     setSubOfferte([]);
     setNewSubOfferta({ nome: '', descrizione: '' });
+    setServiziAttivi([]);
     onClose();
   };
 
@@ -2435,6 +2560,7 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
     setFormData({ nome: '', descrizione: '', is_active: true, has_sub_offerte: false });
     setSubOfferte([]);
     setNewSubOfferta({ nome: '', descrizione: '' });
+    setServiziAttivi([]);
     onClose();
   };
 
@@ -2480,6 +2606,30 @@ const CreateOffertaModal = ({ isOpen, onClose, onSubmit, segmentoId }) => {
             />
             <Label htmlFor="is_active">Offerta attiva</Label>
           </div>
+
+          {/* NEW: Servizi attivi (solo commessa SKY) */}
+          {isSky && (
+            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50 space-y-2" data-testid="offerta-sky-servizi-section">
+              <Label className="font-semibold text-blue-900">Servizi attivi per questa offerta (SKY)</Label>
+              <p className="text-xs text-blue-700">Seleziona con i flag i servizi che compongono questa offerta. Compariranno all'operatore in fase di anagrafica cliente.</p>
+              {servizi.length === 0 ? (
+                <p className="text-sm text-slate-500">Nessun servizio disponibile per questa commessa.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                  {servizi.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 bg-white rounded border border-slate-200 px-2 py-1.5 cursor-pointer">
+                      <Checkbox
+                        checked={serviziAttivi.includes(s.id)}
+                        onCheckedChange={() => toggleServizioAttivo(s.id)}
+                        data-testid={`offerta-sky-servizio-${s.id}`}
+                      />
+                      <span className="text-sm">{s.nome}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           
           {/* NEW: Checkbox for sub-offerte */}
           <div className="flex items-center space-x-2 bg-blue-50 p-3 rounded">

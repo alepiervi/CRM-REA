@@ -428,6 +428,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     cap: '',
     indirizzo: '',
     tipologia_abitazione: '', // Obbligatorio solo per servizio Presidi
+    sky_servizi: [], // Servizi SKY flaggati dall'operatore (solo commessa SKY)
     indirizzo_attivazione: '',
     comune_attivazione: '',
     provincia_attivazione: '',
@@ -650,6 +651,31 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     const servizio = (cascadeServizi || []).find(s => s?.id === servizioId);
     const nome = servizio?.nome?.toLowerCase() || '';
     return nome.includes('presid');
+  };
+
+  // NEW: rilevamento commessa SKY + servizi attivi sull'offerta selezionata
+  const isSkyCommessa = () => {
+    const commessaId = selectedData.commessa_id;
+    if (!commessaId) return false;
+    const commessa = (cascadeCommesse || []).find(c => c?.id === commessaId);
+    return (commessa?.nome || '').toLowerCase().includes('sky');
+  };
+
+  const getSelectedOfferta = () => (cascadeOfferte || []).find(o => o?.id === selectedData.offerta_id);
+
+  const getSkyServiziAttivi = () => {
+    const offerta = getSelectedOfferta();
+    return (offerta?.servizi_attivi || []);
+  };
+
+  const toggleSkyServizio = (servizioId) => {
+    setFormData(prev => {
+      const current = prev.sky_servizi || [];
+      const next = current.includes(servizioId)
+        ? current.filter(id => id !== servizioId)
+        : [...current, servizioId];
+      return { ...prev, sky_servizi: next };
+    });
   };
 
   // Funzioni per gestire i campi convergenza multipli
@@ -1419,6 +1445,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
         || selectedData.segmento,
       offerta_id: selectedData.offerta_id,
       sub_offerta_id: selectedData.sub_offerta_id || null,  // NEW: Sub-offerta ID
+      sky_servizi: isSkyCommessa() ? (formData.sky_servizi || []) : [],  // NEW: servizi SKY selezionati
       
       // Additional metadata for tracking
       selection_flow: user?.role === 'sub_agenzia' ? 'sub_agenzia_flow' : 'responsabile_flow',
@@ -1471,7 +1498,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     setFormData({
       nome: '', cognome: '', email: '', telefono: '', cellulare: '', 
       data_nascita: '', luogo_nascita: '', codice_fiscale: '', 
-      indirizzo: '', comune: '', provincia: '', cap: '', tipologia_abitazione: '',
+      indirizzo: '', comune: '', provincia: '', cap: '', tipologia_abitazione: '', sky_servizi: [],
       ragione_sociale: '', partita_iva: '', numero_ordine: '', account: '',
       tipo_documento: '', numero_documento: '', data_rilascio: '', 
       luogo_rilascio: '', scadenza_documento: '',
@@ -2004,6 +2031,29 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                 />
               </div>
             </div>
+
+            {/* SEZIONE SERVIZI SKY (flag operatore, solo commessa SKY) */}
+            {isSkyCommessa() && getSkyServiziAttivi().length > 0 && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4" data-testid="create-cliente-sky-servizi-section">
+                <h4 className="font-semibold text-indigo-900 mb-1 flex items-center gap-2">📺 Servizi SKY</h4>
+                <p className="text-xs text-indigo-700 mb-3">Seleziona i servizi attivi per questo cliente.</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  {getSkyServiziAttivi().map((sid) => {
+                    const sname = (cascadeServizi.find(s => s.id === sid)?.nome) || sid;
+                    return (
+                      <label key={sid} className="flex items-center gap-2 bg-white rounded border border-indigo-200 px-2 py-1.5 cursor-pointer">
+                        <Checkbox
+                          checked={(formData.sky_servizi || []).includes(sid)}
+                          onCheckedChange={() => toggleSkyServizio(sid)}
+                          data-testid={`create-cliente-sky-servizio-${sid}`}
+                        />
+                        <span className="text-sm">{sname}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* SEZIONE INDIRIZZO RESIDENZA */}
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">

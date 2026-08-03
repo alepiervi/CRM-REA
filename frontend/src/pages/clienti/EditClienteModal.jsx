@@ -727,6 +727,29 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
     }
   };
 
+  const isEditSkyCommessa = () => {
+    const commessaId = formData.commessa_id || cliente?.commessa_id;
+    const nome = (Array.isArray(commesse) ? commesse.find(c => c?.id === commessaId)?.nome : '') || '';
+    return nome.toLowerCase().includes('sky');
+  };
+
+  const getEditSkyServiziAttivi = () => {
+    const off = (availableOfferte || []).find(o => o?.id === formData.offerta_id);
+    const fromOfferta = off?.servizi_attivi || [];
+    // fallback: se l'offerta non è caricata, mostra almeno i servizi già selezionati
+    return fromOfferta.length ? fromOfferta : (formData.sky_servizi || []);
+  };
+
+  const toggleEditSkyServizio = (servizioId) => {
+    setFormData(prev => {
+      const current = prev.sky_servizi || [];
+      const next = current.includes(servizioId)
+        ? current.filter(id => id !== servizioId)
+        : [...current, servizioId];
+      return { ...prev, sky_servizi: next };
+    });
+  };
+
   const isEditBusinessSegment = () => {
     try {
       // Usa formData.segmento (valore corrente) invece di cliente.segmento
@@ -1146,6 +1169,29 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
               <CardTitle className="text-lg">🏠 Indirizzi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* SEZIONE SERVIZI SKY (flag operatore, solo commessa SKY) */}
+              {isEditSkyCommessa() && getEditSkyServiziAttivi().length > 0 && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4" data-testid="edit-cliente-sky-servizi-section">
+                  <h4 className="font-semibold text-indigo-900 mb-1 flex items-center gap-2">📺 Servizi SKY</h4>
+                  <p className="text-xs text-indigo-700 mb-3">Seleziona i servizi attivi per questo cliente.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    {getEditSkyServiziAttivi().map((sid) => {
+                      const sname = (servizi.find(s => s.id === sid)?.nome) || sid;
+                      return (
+                        <label key={sid} className="flex items-center gap-2 bg-white rounded border border-indigo-200 px-2 py-1.5 cursor-pointer">
+                          <Checkbox
+                            checked={(formData.sky_servizi || []).includes(sid)}
+                            onCheckedChange={() => toggleEditSkyServizio(sid)}
+                            data-testid={`edit-cliente-sky-servizio-${sid}`}
+                          />
+                          <span className="text-sm">{sname}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* SEZIONE INDIRIZZO RESIDENZA */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                 <h4 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">🏠 Indirizzo Residenza</h4>
