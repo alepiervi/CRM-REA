@@ -2109,6 +2109,7 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
                     <option value="">Seleziona tipologia abitazione...</option>
                     <option value="Villa/Villetta">Villa/Villetta</option>
                     <option value="Appartamento">Appartamento</option>
+                    <option value="-">- (dato non disponibile)</option>
                   </select>
                 </div>
               )}
