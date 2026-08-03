@@ -1,5 +1,14 @@
 # Nureal CRM — PRD
 
+## Feature — Servizi flaggabili su Offerte SKY (admin + cliente + Excel) (3 lug 2026) — COMPLETATO
+**Richiesta utente**: solo per la commessa SKY, poter attivare sulle offerte dei servizi tramite flag (checkbox) nella filiera cascading; la combinazione di servizi attivi = "tipologia di offerta". I servizi devono comparire anche nel form Cliente (flaggabili dall'operatore) e nel file Excel scaricato. Vale SOLO per SKY (riconosciuta dal nome commessa che contiene "sky").
+**Backend** (`models.py`): `servizi_attivi: List[str]` su OffertaModel/Create/Update; `sky_servizi: List[str]` su Cliente/Create/Update. `routes/clienti.py`: export arricchito con `sky_servizi_nomi` (IDs→nomi). `helpers.py`: colonna Excel "Servizi SKY" (dopo Offerta). Verificato via curl: offerta.servizi_attivi persiste (create+PUT), cliente.sky_servizi persiste, Excel mostra i nomi.
+**Frontend admin** (`Commesse.jsx`): CreateOffertaModal mostra checkbox dei servizi della commessa quando è SKY (`offerta-sky-servizi-section`, submit `servizi_attivi`); nuovo `EditOffertaServiziModal` per modificare i servizi di un'offerta esistente (`offerta-edit-servizi-btn-{id}`, `edit-offerta-servizi-save`); card offerta con badge "N servizi attivi" + chip nomi.
+**Frontend cliente**: CreateClienteModal e EditClienteModal — helper `isSkyCommessa()`/`getSkyServiziAttivi()`; sezione "📺 Servizi SKY" con checkbox dei servizi attivi sull'offerta selezionata (`create/edit-cliente-sky-servizi-section`), salvati in `sky_servizi`. ViewClienteModal mostra i nomi come chip (`view-cliente-sky-servizi`).
+**Bug risolto (data-loss)**: EditClienteModal non inizializzava `formData.sky_servizi` da `cliente.sky_servizi` → i servizi già selezionati risultavano deselezionati e venivano sovrascritti al salvataggio. Fix: aggiunto `sky_servizi: cliente?.sky_servizi || []` all'init.
+**Testing**: testing_agent iteration_21 (admin+create+view PASS) e iteration_22 (edit prefill + no-data-loss PASS al 100%). Dati di test (rename temporaneo "Fastweb"→"Fastweb SKY" + servizi_attivi) RIPRISTINATI.
+
+
 ## Feature — Tipologia Abitazione obbligatoria per servizio Presidi (Clienti) (3 lug 2026) — COMPLETATO
 **Richiesta utente**: in creazione anagrafica cliente, per i clienti con servizio "Presidi", nella sezione Indirizzo Residenza deve esserci un campo "Tipologia Abitazione" (menù a tendina: "Villa/Villetta", "Appartamento") OBBLIGATORIO. Da mostrare anche in Modifica, Visualizzazione ed export Excel.
 **Scelte utente**: riconoscimento Presidi per nome servizio (contiene "presid"); campo dentro sezione esistente (Indirizzo Residenza); presente in tutti (create+edit+view+Excel).
