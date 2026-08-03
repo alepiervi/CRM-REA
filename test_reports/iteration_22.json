@@ -1,0 +1,31 @@
+{
+  "summary": "Re-test of the CRITICAL fix from iteration_21: EditClienteModal now initializes formData.sky_servizi from cliente?.sky_servizi at line 266. Verified end-to-end via UI: PREFILL, NO-DATA-LOSS on unrelated field save, and ADD-PRESIDI preservation all PASS. Fix is confirmed working.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ViewClienteModal Servizi SKY chips", "issues": ["Chip labels concatenate in text_content (e.g., 'TLSNEGOZIPRESIDI'). Visual spacing (flex gap-1) is fine; only nuance for a11y/text-copy. Non-blocking (already reported in iteration_21)."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fix at EditClienteModal.jsx:266 is correct and minimal: `sky_servizi: cliente?.sky_servizi || [],`.",
+    "Consider persisting a dedicated `is_sky` flag on Commessa instead of `commessa.nome.toLowerCase().includes('sky')` heuristic (already noted in iteration_21). Not a blocker."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% for the 3 targeted SKY-edit checkpoints"},
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "Created client 'RETEST Sky1785762696' via cascade F2F -> Fastweb SKY -> TLS -> ENERGIA FASTWEB -> Privato -> CHIAPPETTA 1 with sky_servizi=[TLS, NEGOZI]. After all tests, deleted the client (moved to Cestino Clienti - trash count 87).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The fix at /app/frontend/src/pages/clienti/EditClienteModal.jsx line 266 (`sky_servizi: cliente?.sky_servizi || []`) resolves the previously reported CRITICAL data-loss bug. Edit modal button text is 'Salva Modifiche' (not 'Aggiorna Cliente'). Edit-row action buttons use lucide-square-pen icon (not pencil) — data-testid `edit-cliente-btn-<id>` not present on client rows. Delete buttons use lucide-trash-2. Nuovo Cliente flow: first modal is 'Selezione Prodotto/Offerta' (6-select cascade), then click 'Continua → Scheda Cliente' opens the actual form modal 'Compila Scheda Cliente' with SKY section auto-shown after full cascade.",
+  "results": {
+    "edit_prefill_after_fix": "PASS - Opening Edit modal on a client with sky_servizi=[TLS, NEGOZI] shows edit-cliente-sky-servizio-<TLS_ID>.checked=true, <NEGOZI_ID>.checked=true, <PRESIDI_ID>.checked=false.",
+    "no_data_loss_on_unrelated_save": "PASS - Changed telefono to 3339998888 in Edit modal without touching SKY checkboxes, clicked 'Salva Modifiche'; re-opened View modal → view-cliente-sky-servizi shows 'TLSNEGOZI' (both preserved, no data loss).",
+    "add_presidi_preserves_others": "PASS - Re-opened Edit (verified prefill still T,T,F), checked PRESIDI, saved; View modal shows 'TLSNEGOZIPRESIDI' (all three persisted).",
+    "cleanup": "PASS - Client deleted via Elimina button; moved to Cestino Clienti."
+  },
+  "rca of the issue": "Original bug (iteration_21): EditClienteModal's initial useState formData omitted sky_servizi, so on modal open `(formData.sky_servizi || []).includes(sid)` returned false for every id (all boxes unchecked). Any subsequent save spread formData into backendData, overwriting persisted sky_servizi with the operator's newly-toggled subset (or empty). Fix (iteration_22 verified): added `sky_servizi: cliente?.sky_servizi || [],` at line 266 of EditClienteModal.jsx alongside other cliente-derived fields. Now formData is properly hydrated from the cliente prop on modal mount, checkboxes reflect the true state, and handleSubmit sends the full array (including untouched services)."
+}

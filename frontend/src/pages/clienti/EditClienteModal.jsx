@@ -263,6 +263,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
     comune_residenza: cliente?.comune_residenza || '',
     indirizzo: cliente?.indirizzo || '',
     tipologia_abitazione: cliente?.tipologia_abitazione || '',
+    sky_servizi: cliente?.sky_servizi || [],
     indirizzo_attivazione: cliente?.indirizzo_attivazione || '',
     comune_attivazione: cliente?.comune_attivazione || '',
     provincia_attivazione: cliente?.provincia_attivazione || '',
