@@ -22,6 +22,7 @@ from security import (
     can_user_modify_cliente,
 )
 from models import *  # noqa: F401,F403
+from models import BaseModel, Cliente, ClienteLogAction, Commessa, Field, Lead, User, UserCommessaAuthorization, UserCommessaAuthorizationCreate, UserRole  # noqa: F401,F811
 from audit import log_client_action
 
 router = APIRouter()

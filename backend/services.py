@@ -28,7 +28,7 @@ from helpers import provincia_matches
 
 from database import db
 from models import *  # noqa: F401,F403
-from models import (AgentStatus, AgentCallCenter, Call, CallCreate, CallDirection, CallStatus, Cliente, Lead, Unit, User, Document, DocumentType, ChatMessage, ChatSession)  # noqa: F811
+from models import AgentCallCenter, AgentStatus, Call, CallCreate, CallDirection, CallStatus, ChatMessage, ChatSession, Cliente, Document, DocumentType, Lead, Unit, User  # noqa: F401,F811
 
 # Aruba Drive Configuration
 ARUBA_DRIVE_API_KEY = os.environ.get("ARUBA_DRIVE_API_KEY", "")

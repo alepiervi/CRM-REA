@@ -38,6 +38,7 @@ from services import (
 from notifications import notify_agent_new_lead, send_email_notification
 from audit import log_client_action
 from models import *  # noqa: F401,F403
+from models import Commessa, Servizio, Unit, User, UserRole  # noqa: F401,F811
 from models import User, UserRole, Commessa, Servizio, Unit  # noqa: F811
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment

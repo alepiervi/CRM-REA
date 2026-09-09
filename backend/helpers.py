@@ -47,7 +47,7 @@ from fastapi import HTTPException, UploadFile
 
 from database import db
 from models import *  # noqa: F401,F403
-from models import (Cliente, Lead, Commessa, Servizio, Unit, Workflow, Tecnologia, ImportConfiguration, ImportPreview, ImportResult)  # noqa: F811
+from models import Cliente, Commessa, Enum, Field, ImportConfiguration, ImportPreview, ImportResult, Lead, Servizio, Tecnologia, Unit, Workflow  # noqa: F401,F811
 
 # Italian Provinces (111 provinces)
 ITALIAN_PROVINCES = [

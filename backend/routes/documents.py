@@ -38,6 +38,7 @@ from services import (
 from notifications import notify_agent_new_lead, send_email_notification
 from audit import log_client_action
 from models import *  # noqa: F401,F403
+from models import Cliente, ClienteLogAction, Commessa, Document, DocumentType, Lead, User, UserRole  # noqa: F401,F811
 from pathlib import Path
 from services import NextcloudClient
 
@@ -343,8 +344,8 @@ async def upload_document(
         raise
     except Exception as e:
         # Clean up temporary file on error
-        if 'temp_path' in locals() and os.path.exists(temp_path):
-            os.remove(temp_path)
+        if 'temp_path' in locals() and os.path.exists(temp_path):  # noqa: F405
+            os.remove(temp_path)  # noqa: F405
         
         raise HTTPException(
             status_code=500,

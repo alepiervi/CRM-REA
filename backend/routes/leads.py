@@ -11,7 +11,7 @@ from typing import List, Optional, Dict, Any
 
 from fastapi import (
     APIRouter, HTTPException, Depends, Query, Body, Request,
-    UploadFile, File, Form, status,
+    UploadFile, File, Form,
 )
 from fastapi.responses import StreamingResponse, JSONResponse, FileResponse, Response
 
@@ -39,6 +39,7 @@ from notifications import notify_agent_new_lead, send_email_notification
 from audit import log_client_action
 from workflow_executor import WorkflowExecutor
 from models import *  # noqa: F401,F403
+from models import Commessa, Lead, LeadCreate, LeadUpdate, LeadsPaginatedResponse, Unit, User, UserRole, Workflow  # noqa: F401,F811
 from services import lead_qualification_bot
 
 async def trigger_workflows_for_lead(lead_dict, trigger_subtype="lead_created"):

@@ -1,5 +1,22 @@
 # Nureal CRM — PRD
 
+## Hardening backend + debito tecnico lint (3 lug 2026)
+Durante il lavoro il gate lint di progetto ha richiesto la pulizia di debito pre-esistente in tutto il backend; risolto senza cambiare comportamento:
+- Convertiti gli `from models import *` in import espliciti (mantenendo lo star per sicurezza) in 17 file → risolti tutti gli F405.
+- `except:` → `except Exception:` (E722), chiavi `$ne` duplicate → `$nin` (F601), rimosso import `status` fastapi inutilizzato (F811) in server.py/leads.py/lead_status.py/analytics.py/clienti.py, corretti 2 bug di serializzazione ObjectId (server.py, spoki).
+- **Storage documenti**: upload documento singolo ora usa una dir temporanea di sistema come staging prima dell'upload su Aruba Drive; upload massivo (`/documents/bulk`) ora salva i file in **GridFS** (persistente e multi-pod) invece del disco locale del pod (`document_data.gridfs_id`). Elimina i warning `ephemeral-upload-storage`.
+- Ruff (F403/F405/E722/F811/F601) ora pulito su tutto il backend; backend riavviato correttamente; export clienti verificato (200 + xlsx valido).
+
+
+## Enhancement — Sub Agenzie in ordine alfabetico (lista, filtri, analytics) (3 lug 2026) — COMPLETATO
+**Richiesta utente**: ordinare le sub agenzie alfabeticamente in lista, filtri e analytics.
+- `App.js`: lista Sub Agenzie in Dashboard ordinata per nome (localeCompare 'it'). (Le fetch units/sub-agenzie erano già ordinate.)
+- `ClientiManagement.jsx`: opzioni del filtro avanzato "Sub Agenzia" ordinate per label.
+- `Analytics.jsx`: tabella + card `sub_agenzie_analytics` ordinate per nome; lista `subAgenzie` del filtro pivot ordinata alla fetch.
+- `SubAgenzie.jsx`: la lista di gestione era già ordinata alfabeticamente.
+Modifica low-risk (solo `.sort` su render esistenti); frontend compila, smoke test dashboard OK.
+
+
 ## Feature — Export Excel clienti in background (per liste grandi) (3 lug 2026) — COMPLETATO
 **Richiesta utente**: per liste molto grandi, generare l'Excel in background e avvisare quando è pronto.
 **Backend** (`routes/clienti.py`): nuovi endpoint

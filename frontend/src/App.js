@@ -862,7 +862,7 @@ const ResponsabileCommessaDashboard = ({ selectedUnit, selectedTipologiaContratt
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Sub Agenzie delle tue Commesse</h3>
           <div className="space-y-3 max-h-64 overflow-y-auto">
-            {dashboardData.sub_agenzie.map((sa) => (
+            {[...dashboardData.sub_agenzie].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'it', { sensitivity: 'base' })).map((sa) => (
               <div key={sa.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
                 <div>
                   <p className="font-medium">{sa.nome}</p>

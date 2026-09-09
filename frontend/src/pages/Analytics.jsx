@@ -371,7 +371,7 @@ const ResponsabileCommessaAnalytics = ({ selectedUnit, selectedTipologiaContratt
                     </tr>
                   </thead>
                   <tbody>
-                    {analyticsData.sub_agenzie_analytics.map((item, index) => (
+                    {[...analyticsData.sub_agenzie_analytics].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'it', { sensitivity: 'base' })).map((item, index) => (
                       <tr key={index} className="border-b">
                         <td className="py-2">{item.nome}</td>
                         <td className="text-center py-2">{item.totale_clienti}</td>
@@ -395,7 +395,7 @@ const ResponsabileCommessaAnalytics = ({ selectedUnit, selectedTipologiaContratt
 
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
-              {analyticsData.sub_agenzie_analytics.map((item, index) => (
+              {[...analyticsData.sub_agenzie_analytics].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'it', { sensitivity: 'base' })).map((item, index) => (
                 <div key={index} className="bg-white border border-slate-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -576,7 +576,7 @@ const AnalyticsManagement = ({ selectedUnit, units }) => {
   const fetchSubAgenzie = async () => {
     try {
       const response = await axios.get(`${API}/sub-agenzie`);
-      setSubAgenzie(response.data);
+      setSubAgenzie([...(response.data || [])].sort((a, b) => (a.nome || a.name || '').localeCompare(b.nome || b.name || '', 'it', { sensitivity: 'base' })));
     } catch (error) {
       console.error("Error fetching sub agenzie:", error);
     }

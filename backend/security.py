@@ -10,6 +10,7 @@ from passlib.context import CryptContext
 
 from database import db
 from models import *  # noqa: F401,F403
+from models import Cliente, Commessa, Document, DocumentType, Lead, User, UserCommessaAuthorization, UserRole  # noqa: F401,F811
 
 # JWT and Password hashing
 SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-here-change-in-production")

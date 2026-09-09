@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any
 
 from database import db
 from models import *  # noqa: F401,F403
+from models import Lead  # noqa: F401,F811
 import uuid  # noqa: F811
 from models import Lead  # noqa: F811
 

@@ -22,6 +22,7 @@ from security import (
     can_user_modify_cliente,
 )
 from models import *  # noqa: F401,F403
+from models import Lead, User, UserRole  # noqa: F401,F811
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

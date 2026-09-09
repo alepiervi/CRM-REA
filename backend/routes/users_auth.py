@@ -38,6 +38,7 @@ from services import (
 from notifications import notify_agent_new_lead, send_email_notification
 from audit import log_client_action
 from models import *  # noqa: F401,F403
+from models import PasswordChange, Token, Unit, User, UserCreate, UserLogin, UserRole, UserUpdate  # noqa: F401,F811
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

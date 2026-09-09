@@ -22,7 +22,7 @@ from security import (
     can_user_modify_cliente,
 )
 from models import *  # noqa: F401,F403
-from models import (User, UserRole, Cliente, Document, ClienteStatus, ClienteCustomField, ClienteCustomFieldCreate, ClienteCustomFieldUpdate, ClienteCustomSection, ClienteCustomSectionCreate, ClienteCustomSectionUpdate, ClienteCustomStatus, ClienteCustomStatusCreate, ClienteCustomStatusUpdate)  # noqa: F811
+from models import Cliente, ClienteCustomField, ClienteCustomFieldCreate, ClienteCustomFieldUpdate, ClienteCustomSection, ClienteCustomSectionCreate, ClienteCustomSectionUpdate, ClienteCustomStatus, ClienteCustomStatusCreate, ClienteCustomStatusUpdate, ClienteStatus, Document, User, UserRole  # noqa: F401,F811
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

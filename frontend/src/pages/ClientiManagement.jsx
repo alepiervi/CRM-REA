@@ -1147,7 +1147,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           {/* Sub Agenzia Filter */}
           <MultiSelectFilter
             label="Sub Agenzia"
-            options={(filterOptions.sub_agenzie || []).map((s) => ({ value: s.value, label: s.label }))}
+            options={(filterOptions.sub_agenzie || []).map((s) => ({ value: s.value, label: s.label })).sort((a, b) => (a.label || '').localeCompare(b.label || '', 'it', { sensitivity: 'base' }))}
             included={clientiFilterSubAgenzia.included}
             excluded={clientiFilterSubAgenzia.excluded}
             onChange={setClientiFilterSubAgenzia}

@@ -10,7 +10,7 @@ from typing import List, Optional, Dict, Any
 
 from fastapi import (
     APIRouter, HTTPException, Depends, Query, Body, Request,
-    UploadFile, File, Form, status,
+    UploadFile, File, Form,
 )
 from fastapi.responses import StreamingResponse, JSONResponse
 
@@ -22,6 +22,7 @@ from security import (
     can_user_modify_cliente,
 )
 from models import *  # noqa: F401,F403
+from models import CustomField, CustomFieldCreate, Field, Lead, LeadStatusCreate, LeadStatusModel, LeadStatusUpdate, Unit, User, UserRole  # noqa: F401,F811
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -110,7 +111,7 @@ async def get_lead_statuses(
             pipeline = [
                 {"$match": {"is_deleted": {"$ne": True}}},
                 {"$group": {"_id": "$esito"}},
-                {"$match": {"_id": {"$ne": None, "$ne": ""}}}
+                {"$match": {"_id": {"$nin": [None, ""]}}}
             ]
             unique_esiti = await db["leads"].aggregate(pipeline).to_list(length=None)
             

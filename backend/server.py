@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Query, Request, Body
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form, Query, Request, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import FileResponse, StreamingResponse, Response, JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -54,6 +54,7 @@ from security import (
 )
 
 from models import *  # noqa: F401,F403
+from models import AIConfiguration, AIConfigurationCreate, AgentCallCenter, AgentCreate, AgentStatus, Call, CallCreate, CallDirection, CallRecording, CallStatus, Cliente, ClienteLogAction, Commessa, CommessaCreate, CommessaUpdate, Container, ContainerCreate, Document, Lead, LeadTag, LeadTagCreate, NodeConnection, NodeConnectionCreate, SegmentoArubaDriveConfig, Servizio, ServizioCreate, TipologiaContrattoCreate, TipologiaContrattoModel, Unit, User, UserRole, WhatsAppConfigurationCreate, Workflow, WorkflowCreate, WorkflowExecution, WorkflowExecutionCreate, WorkflowFolder, WorkflowFolderCreate, WorkflowFolderUpdate, WorkflowNode, WorkflowNodeCreate, WorkflowNodeUpdate, WorkflowUpdate  # noqa: F401,F811
 from audit import log_client_action
 from services import (
     ARUBA_DRIVE_API_KEY, ARUBA_DRIVE_CLIENT_ID, ARUBA_DRIVE_CLIENT_SECRET, ARUBA_DRIVE_BASE_URL,
@@ -99,7 +100,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     try:
         body = await request.body()
         print(f"📋 Request body: {body.decode('utf-8')}")
-    except:
+    except Exception:
         print("📋 Request body: [Could not decode]")
     print("=" * 80)
     
@@ -5028,12 +5029,12 @@ async def get_responsabile_commessa_dashboard(
     if date_from:
         try:
             date_filter["$gte"] = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
-        except:
+        except Exception:
             pass
     if date_to:
         try:
             date_filter["$lte"] = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
-        except:
+        except Exception:
             pass
     
     # Query clienti delle commesse autorizzate
@@ -5207,12 +5208,12 @@ async def get_responsabile_commessa_analytics(
         if date_from:
             try:
                 date_filter["$gte"] = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
-            except:
+            except Exception:
                 pass
         if date_to:
             try:
                 date_filter["$lte"] = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
-            except:
+            except Exception:
                 pass
         if date_filter:
             query["created_at"] = date_filter
@@ -5314,7 +5315,6 @@ async def export_responsabile_commessa_analytics(
         })
     
     # Create Excel content (simplified - in production use openpyxl)
-    import io
     import csv
     
     output = io.StringIO()
@@ -5691,7 +5691,6 @@ async def get_documents(
 
 # WebDAV Client (Production-ready solution)
 import aiohttp
-import asyncio
 from typing import Optional, Dict, List
 from pathlib import Path
 import logging
@@ -5732,7 +5731,6 @@ class ArubaWebDAVClient:
         
         Returns: https://{domain}/remote.php/dav/files
         """
-        import re
         from urllib.parse import urlparse
         
         # Parse URL
@@ -5886,7 +5884,7 @@ class ArubaWebDAVClient:
             sanitized_path = self._sanitize_path(remote_path)
             response = await self._make_request("HEAD", sanitized_path)
             return response.status == 200
-        except:
+        except Exception:
             return False
 
 
@@ -6000,7 +5998,7 @@ class ArubaWebAutomation:
             finally:
                 try:
                     pw.stop()
-                except:
+                except Exception:
                     pass
                 
         except Exception as pw_error:
@@ -6095,7 +6093,7 @@ class ArubaWebAutomation:
                 try:
                     await self.page.fill(selector, config["username"])
                     break
-                except:
+                except Exception:
                     continue
             
             # Fill password
@@ -6109,7 +6107,7 @@ class ArubaWebAutomation:
                 try:
                     await self.page.fill(selector, config["password"])
                     break
-                except:
+                except Exception:
                     continue
             
             # Click login button
@@ -6124,7 +6122,7 @@ class ArubaWebAutomation:
                 try:
                     await self.page.click(selector)
                     break
-                except:
+                except Exception:
                     continue
             
             # Wait for login completion (look for dashboard or file manager)
@@ -6155,7 +6153,7 @@ class ArubaWebAutomation:
                 # PRODUCTION FIX: Increased wait from 2s to 4s
                 await self.page.wait_for_timeout(4000)
                 logging.info(f"✅ Navigated to commessa folder: {commessa_name}")
-            except:
+            except Exception:
                 # If folder doesn't exist, create it
                 logging.info(f"📁 Commessa folder not found, creating: {commessa_name}")
                 if not await self.create_folder(commessa_name):
@@ -6172,7 +6170,7 @@ class ArubaWebAutomation:
                 await self.page.click(servizio_folder_selector, timeout=15000)
                 await self.page.wait_for_timeout(4000)
                 logging.info(f"✅ Navigated to servizio folder: {servizio_name}")
-            except:
+            except Exception:
                 # If folder doesn't exist, create it
                 logging.info(f"📁 Servizio folder not found, creating: {servizio_name}")
                 if not await self.create_folder(servizio_name):
@@ -6197,7 +6195,7 @@ class ArubaWebAutomation:
             try:
                 await self.page.wait_for_selector(existing_folder, timeout=3000)
                 logging.info(f"✅ Client folder already exists: {folder_name}")
-            except:
+            except Exception:
                 # Create new folder
                 await self.create_folder(folder_name)
                 logging.info(f"✅ Created client folder: {folder_name}")
@@ -6255,7 +6253,7 @@ class ArubaWebAutomation:
                             await self.page.wait_for_timeout(5000)
                             folder_created = True
                             break
-                        except:
+                        except Exception:
                             continue
                     
                     if folder_created:
@@ -6441,7 +6439,7 @@ class ArubaWebAutomation:
                     upload_started = True
                     logging.info(f"📊 Upload progress detected for {file_name}")
                     break
-                except:
+                except Exception:
                     continue
             
             # Step 2: Wait for upload to complete (progress indicator disappears)
@@ -6450,7 +6448,7 @@ class ArubaWebAutomation:
                     try:
                         await self.page.wait_for_selector(selector, state='detached', timeout=timeout * 1000)
                         logging.info(f"📈 Upload progress completed for {file_name}")
-                    except:
+                    except Exception:
                         continue
             
             # Step 3: Verify file appears in directory listing
@@ -6473,7 +6471,7 @@ class ArubaWebAutomation:
                         if file_name in element_text:
                             logging.info(f"✅ Verified {file_name} appears in directory listing")
                             return True
-                except:
+                except Exception:
                     continue
             
             # Alternative verification: check if page content changed
@@ -6519,7 +6517,7 @@ class ArubaWebAutomation:
                         await self.page.keyboard.press('Enter')
                         await self.page.wait_for_timeout(2000)
                         break
-                    except:
+                    except Exception:
                         continue
                         
         except Exception as e:
@@ -6720,7 +6718,7 @@ class ArubaWebAutomation:
                     element = await self.page.wait_for_selector(selector, timeout=2000)
                     if element:
                         return True
-                except:
+                except Exception:
                     continue
             
             return False
@@ -6751,7 +6749,7 @@ class ArubaWebAutomation:
                     await self.page.wait_for_timeout(2000)
                     logging.info(f"✅ Navigated to folder: {folder_name}")
                     return True
-                except:
+                except Exception:
                     continue
             
             logging.error(f"❌ Could not find folder: {folder_name}")
@@ -6875,8 +6873,8 @@ async def upload_to_aruba_drive(
                 detail="Nessuna configurazione Aruba Drive attiva. Configurare Aruba Drive prima di caricare documenti."
             )
         
-        # Save file locally first
-        documents_dir = Path("/app/documents")
+        # Save file to a temporary staging location (uploaded then to Aruba Drive)
+        documents_dir = Path(tempfile.gettempdir()) / "crm_doc_staging"
         documents_dir.mkdir(exist_ok=True)
         
         # Generate unique filename
@@ -7660,8 +7658,8 @@ async def upload_multiple_documents(
     """Upload multiple documents with role-based authorization"""
     
     try:
-        # Ensure documents directory exists
-        documents_dir = Path("documents")
+        # Ensure staging directory exists (system temp, not pod-local)
+        documents_dir = Path(tempfile.gettempdir()) / "crm_documents"
         documents_dir.mkdir(exist_ok=True)
         
         results = []
@@ -7694,11 +7692,11 @@ async def upload_multiple_documents(
                 # Generate unique filename
                 file_extension = Path(file.filename).suffix
                 unique_filename = f"{uuid.uuid4()}{file_extension}"
-                file_path = documents_dir / unique_filename
                 
-                # Save file
-                with open(file_path, "wb") as f:
-                    f.write(content)
+                # Save file to GridFS (persistent, multi-pod safe) instead of pod-local disk
+                from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+                _bucket = AsyncIOMotorGridFSBucket(db)
+                _grid_id = await _bucket.upload_from_stream(unique_filename, content)
                 
                 # Save document metadata
                 document_data = {
@@ -7706,7 +7704,8 @@ async def upload_multiple_documents(
                     "entity_type": entity_type,
                     "entity_id": entity_id,
                     "filename": file.filename,
-                    "file_path": str(file_path),
+                    "gridfs_id": str(_grid_id),
+                    "file_path": None,
                     "file_size": len(content),
                     "file_type": file.content_type,
                     "created_by": current_user.id,
@@ -7772,7 +7771,7 @@ async def get_active_aruba_drive_config():
     try:
         config = await db.aruba_drive_configs.find_one({"is_active": True})
         return config
-    except:
+    except Exception:
         return None
 
 # Pydantic models per configurazioni Aruba Drive
@@ -7928,7 +7927,7 @@ def sanitize_folder_name(name: str) -> str:
     
     return name if name else "Unknown"
 
-async def upload_to_aruba_drive(entity_data: dict, uploaded_files: List[dict], screenshot_path: str, aruba_config: dict) -> bool:
+async def upload_to_aruba_drive(entity_data: dict, uploaded_files: List[dict], screenshot_path: str, aruba_config: dict) -> bool:  # noqa: F811
     """Upload con browser automation su Aruba Drive"""
     
     async with async_playwright() as p:
@@ -8042,7 +8041,7 @@ async def check_folder_exists(page, folder_name: str) -> bool:
                 return True
         
         return False
-    except:
+    except Exception:
         return False
 
 async def create_new_folder(page, folder_name: str) -> bool:
