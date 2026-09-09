@@ -1,0 +1,35 @@
+{
+  "summary": "Frontend-only verification of Clienti Excel export (GET /api/clienti/export/excel) via the UI after backend hardening (bulk maps, guarded date parsing, HTTPException passthrough). Logged in as admin/admin123, navigated to Clienti, and exercised the 'Esporta Excel' button under multiple filter scenarios. Also intercepted the network response and did a direct fetch to validate the XLSX binary. All export attempts returned HTTP 200 with a valid xlsx (ZIP signature 50 4b 03 04) and Content-Type application/vnd.openxmlformats-officedocument.spreadsheetml.sheet. Success toast 'File Excel esportato con successo' displayed. No error toasts and no 500s observed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Clienti / Esporta Excel button", "issues": ["Export button lacks a data-testid attribute (uses text 'Esporta Excel'). Adding data-testid=\"clienti-export-excel-btn\" would improve testability."]}
+    ]
+  },
+  "test_scenarios_executed": [
+    {"scenario": "Export with NO filters", "result": "HTTP 200, size=38770 bytes, valid xlsx, success toast displayed"},
+    {"scenario": "Export with date filter 2020-01-01 to 2026-12-31 (all 44 clienti)", "result": "HTTP 200, size=38773 bytes, valid xlsx"},
+    {"scenario": "Export with date filter 2025-01-01 to 2026-12-31", "result": "HTTP 200, size=38771 bytes, valid xlsx"},
+    {"scenario": "Direct fetch verification of xlsx binary", "result": "HTTP 200, first 4 bytes = 50 4b 03 04 (valid ZIP/XLSX signature)"},
+    {"scenario": "Preset 'Ultimi 30 giorni' (Aug10-Sep9 2026)", "result": "No API call — frontend early-returns when clienti list is empty for that range (expected behavior, showing 'Non ci sono clienti da esportare' toast). Not a bug."}
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "OPTIONAL: Add data-testid=\"clienti-export-excel-btn\" to the Esporta Excel button in ClientiManagement.jsx (~line 947) for more robust automated testing.",
+    "OPTIONAL: The frontend early-returns when local clienti.length === 0, but that check runs against the currently loaded/paginated page, not against the full server-side filtered result. If server would return matching rows outside current page/filter cache, export would still be blocked. Consider removing this early return and letting the backend produce an empty xlsx, or querying count from server first."
+  ],
+  "critical_code_review_comments": [
+    "ClientiManagement.jsx exportClients (line ~739) uses local clienti.length === 0 as a precondition — this can incorrectly block export when server-side filters would still return rows. Prefer trusting the backend to produce the file.",
+    "File /app/frontend/src/pages/ClientiManagement.jsx is 1834 lines — should be split into smaller focused modules per code review guidelines (>700 line rule)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped per request)", "frontend": "100%"},
+  "test_credentials": "admin / admin123",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Excel export from Clienti UI is fully functional in preview: no-filter, date-only, and combined date+other filter exports all return HTTP 200 with valid xlsx and success toast. Backend hardening (bulk pre-fetch maps, guarded date parsing returning 400, HTTPException passthrough) is confirmed working end-to-end through the UI. The download uses hidden <a> click flow with responseType=blob — verified via response interception and direct fetch (ZIP signature). The 'Ultimi 30 giorni' preset produced no API call because current data has no clients in that window and the frontend early-returns; this is not a bug but is a minor UX inconsistency worth reviewing.",
+  "rca_of_the_issue": "Original production bug was likely due to (a) N+1 lookups causing timeouts on large datasets, and (b) bad date_from/date_to strings raising an unhandled ValueError that got masked as generic 500. Both fixed on backend: bulk maps replace per-row find_one calls; try/except around date parsing raises HTTPException(400); outer `except HTTPException: raise` prevents masking. Preview UI now exports reliably under all tested filter combinations."
+}

@@ -11,7 +11,7 @@ from typing import List, Optional, Dict, Any
 
 from fastapi import (
     APIRouter, HTTPException, Depends, Query, Body, Request,
-    UploadFile, File, Form, status,
+    UploadFile, File, Form,
 )
 from fastapi.responses import StreamingResponse, JSONResponse, FileResponse, Response
 
@@ -37,7 +37,11 @@ from services import (
 )
 from notifications import notify_agent_new_lead, send_email_notification
 from audit import log_client_action
-from models import *  # noqa: F401,F403
+from pydantic import ValidationError
+from models import (
+    UserRole, User, Cliente, ClienteCreate, ClienteUpdate,
+    ClientiPaginatedResponse, ClienteLogAction, ImportConfiguration, ImportResult,
+)
 import pandas as pd
 from helpers import get_hardcoded_tipologie_contratto, should_use_hardcoded_elements
 
@@ -863,7 +867,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         tipologie_pipeline = [{"$match": base_query}] if base_query else []
         tipologie_pipeline += [
             {"$group": {"_id": "$tipologia_contratto"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$match": {"_id": {"$nin": [None, ""]}}},
             {"$sort": {"_id": 1}}
         ]
         tipologie_result = await db.clienti.aggregate(tipologie_pipeline).to_list(length=None)
@@ -946,7 +950,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         status_pipeline = [{"$match": base_query}] if base_query else []
         status_pipeline += [
             {"$group": {"_id": "$status"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$match": {"_id": {"$nin": [None, ""]}}},
             {"$sort": {"_id": 1}}
         ]
         status_result = await db.clienti.aggregate(status_pipeline).to_list(length=None)
@@ -961,7 +965,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         segmenti_pipeline = [{"$match": base_query}] if base_query else []
         segmenti_pipeline += [
             {"$group": {"_id": "$segmento"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$match": {"_id": {"$nin": [None, ""]}}},
             {"$sort": {"_id": 1}}
         ]
         segmenti_from_clients_result = await db.clienti.aggregate(segmenti_pipeline).to_list(length=None)
@@ -992,7 +996,7 @@ async def get_clienti_filter_options(current_user: User = Depends(get_current_us
         sub_agenzie_pipeline = [{"$match": base_query}] if base_query else []
         sub_agenzie_pipeline += [
             {"$group": {"_id": "$sub_agenzia_id"}},
-            {"$match": {"_id": {"$ne": None, "$ne": ""}}},
+            {"$match": {"_id": {"$nin": [None, ""]}}},
             {"$sort": {"_id": 1}}
         ]
         sub_agenzie_result = await db.clienti.aggregate(sub_agenzie_pipeline).to_list(length=None)
@@ -1399,10 +1403,16 @@ async def export_clienti_excel(
             from helpers import rome_date_to_utc_range
             date_query = {}
             if date_from:
-                start_utc, _ = rome_date_to_utc_range(date_from, current_user.timezone)
+                try:
+                    start_utc, _ = rome_date_to_utc_range(date_from, current_user.timezone)
+                except (ValueError, TypeError):
+                    raise HTTPException(status_code=400, detail="Formato date_from non valido. Usa YYYY-MM-DD")
                 date_query["$gte"] = start_utc
             if date_to:
-                _, end_utc = rome_date_to_utc_range(date_to, current_user.timezone)
+                try:
+                    _, end_utc = rome_date_to_utc_range(date_to, current_user.timezone)
+                except (ValueError, TypeError):
+                    raise HTTPException(status_code=400, detail="Formato date_to non valido. Usa YYYY-MM-DD")
                 date_query["$lte"] = end_utc
             
             if date_query:
@@ -1427,7 +1437,36 @@ async def export_clienti_excel(
         
         # Get clienti with enriched data
         clienti = await db.clienti.find(query).sort("created_at", -1).to_list(length=None)
-        
+
+        # PERF: pre-fetch all related docs in bulk to avoid N+1 find_one per row,
+        # which on large exports caused slow responses / download timeouts.
+        sub_ids, comm_ids, serv_ids, off_ids, user_ids_set, seg_ids = set(), set(), set(), set(), set(), set()
+        for c in clienti:
+            if c.get("sub_agenzia_id"): sub_ids.add(c["sub_agenzia_id"])
+            if c.get("commessa_id"): comm_ids.add(c["commessa_id"])
+            if c.get("servizio_id"): serv_ids.add(c["servizio_id"])
+            if c.get("offerta_id"): off_ids.add(c["offerta_id"])
+            if c.get("segmento"): seg_ids.add(c["segmento"])
+            uid = c.get("assigned_to") or c.get("created_by")
+            if uid: user_ids_set.add(uid)
+            for sim in (c.get("convergenza_items") or []):
+                if sim.get("assigned_user_id"): user_ids_set.add(sim["assigned_user_id"])
+                os_ = sim.get("offerta_sim")
+                if os_ and len(str(os_)) > 30: off_ids.add(os_)
+
+        async def _bulk_map(coll, ids):
+            if not ids:
+                return {}
+            docs = await db[coll].find({"id": {"$in": list(ids)}}).to_list(length=None)
+            return {d["id"]: d for d in docs}
+
+        sub_map = await _bulk_map("sub_agenzie", sub_ids)
+        comm_map = await _bulk_map("commesse", comm_ids)
+        serv_map = await _bulk_map("servizi", serv_ids)
+        off_map = await _bulk_map("offerte", off_ids)
+        user_map = await _bulk_map("users", user_ids_set)
+        seg_map = await _bulk_map("segmenti", seg_ids)
+
         # Enrich data with related info and expand SIM rows
         expanded_rows = []
         for cliente in clienti:
@@ -1435,21 +1474,21 @@ async def export_clienti_excel(
             
             # Get sub agenzia name
             if cliente.get("sub_agenzia_id"):
-                sub_agenzia = await db["sub_agenzie"].find_one({"id": cliente["sub_agenzia_id"]})
+                sub_agenzia = sub_map.get(cliente["sub_agenzia_id"])
                 base_cliente["sub_agenzia_name"] = sub_agenzia.get("nome") if sub_agenzia else ""
             else:
                 base_cliente["sub_agenzia_name"] = ""
             
             # Get commessa name
             if cliente.get("commessa_id"):
-                commessa = await db["commesse"].find_one({"id": cliente["commessa_id"]})
+                commessa = comm_map.get(cliente["commessa_id"])
                 base_cliente["commessa_name"] = commessa.get("nome") if commessa else ""
             else:
                 base_cliente["commessa_name"] = ""
             
             # Get servizio name
             if cliente.get("servizio_id"):
-                servizio = await db["servizi"].find_one({"id": cliente["servizio_id"]})
+                servizio = serv_map.get(cliente["servizio_id"])
                 base_cliente["servizio_name"] = servizio.get("nome") if servizio else ""
             else:
                 base_cliente["servizio_name"] = ""
@@ -1593,6 +1632,8 @@ async def export_clienti_excel(
             filename=f"clienti_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error in clienti Excel export: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Errore nell'export Excel: {str(e)}")

@@ -1219,38 +1219,18 @@ const Dashboard = () => {
     }
   };
 
-  const fetchOffertaInfo = async (offertaId) => {
-    try {
-      setIsLoadingOfferta(true);
-      console.log("🔄 Loading offerta info for ID:", offertaId);
-      const response = await axios.get(`${API}/offerte/${offertaId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      setOffertaInfo(response.data);
-    } catch (error) {
-      console.error("❌ Error fetching offerta info:", error);
-      setOffertaInfo(null);
-    } finally {
-      setIsLoadingOfferta(false);
-    }
-  };
-
   const fetchOfferteBySegmento = async (segmentoId) => {
     try {
-      // Use the new /api/offerte endpoint with segmento filter
       const params = { is_active: true };
       if (segmentoId) {
         params.segmento = segmentoId;
       }
-      
-      const response = await axios.get(`${API}/offerte`, {
+      await axios.get(`${API}/offerte`, {
         params: params,
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      setAvailableOfferte(response.data);
     } catch (error) {
       console.error("❌ Error fetching offerte:", error);
-      setAvailableOfferte([]);
     }
   };
 

@@ -1806,7 +1806,7 @@ async def update_lead_tag(tag_id: str, payload: Dict[str, Any] = Body(...), curr
         if f in payload and payload[f] is not None:
             update_doc[f] = payload[f]
     if not update_doc:
-        return tag
+        return {k: v for k, v in tag.items() if k != "_id"}
     update_doc["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.lead_tags.update_one({"id": tag_id}, {"$set": update_doc})
     # Se è cambiato il name, propaga ai lead/clienti

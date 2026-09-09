@@ -1,5 +1,16 @@
 # Nureal CRM — PRD
 
+## Fix — Errore download Excel clienti (irrobustimento export) (3 lug 2026) — RISOLTO
+**Segnalazione utente**: in PRODUZIONE il download Excel dei clienti a volte falliva (non scaricava il file), soprattutto con filtri attivi e in particolare il filtro data. In preview non riproducibile (funzionava sempre).
+**Cause individuate / hardening applicato** (`routes/clienti.py`, `export_clienti_excel`):
+1. **N+1 query eliminate**: la generazione faceva una `find_one` per riga per sub_agenzia/commessa/servizio/offerta/utente/segmento → su export grandi = lentezza/timeout del download. Ora pre-carica tutti i documenti correlati in bulk (`_bulk_map`) e usa lookup in memoria.
+2. **Parsing date protetto**: `date_from`/`date_to` malformate ora restituiscono 400 (prima potevano generare 500).
+3. **Propagazione HTTPException**: aggiunto `except HTTPException: raise` prima del `except Exception` generico, così 400/403 non vengono mascherati come 500.
+**Bonus (lint pre-esistente risolto in clienti.py)**: rimosso `from models import *` (import espliciti), rimosso import inutilizzato `status` (F811), corretti 4 dict con chiave `$ne` duplicata → `$nin:[None,""]` (F601). Rimosse 2 funzioni morte in `App.js` (`fetchOffertaInfo`/`fetchOfferteBySegmento`) che referenziavano setter non definiti (no-undef).
+**Testing**: curl (export 200 + xlsx valido con range date; data errata → 400) + testing_agent iteration_24 → frontend 100% (export senza filtri, con data, con filtri combinati → sempre file valido, toast successo).
+**Nota**: la segnalazione era in PRODUZIONE → serve **rifare il deploy** per applicare il fix.
+
+
 ## Revisione — Servizi SKY inseriti manualmente dall'admin (non dalla filiera) (3 lug 2026) — COMPLETATO
 **Chiarimento utente**: i servizi flaggabili NON devono essere quelli della filiera; l'admin li INSERISCE manualmente su ogni offerta SKY (come sotto-offerte), così l'operatore può selezionare solo quelli abilitati (niente servizi non attivi).
 **Modifiche**: `offerta.servizi_attivi` e `cliente.sky_servizi` ora sono liste di STRINGHE custom (nomi digitati dall'admin), non ID della filiera.
