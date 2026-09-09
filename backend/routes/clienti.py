@@ -1640,6 +1640,122 @@ async def export_clienti_excel(
 
 
 # ============================================
+# BACKGROUND EXPORT (Excel) — per liste grandi
+# ============================================
+
+EXPORT_FILTER_KEYS = [
+    "sub_agenzia_id", "sub_agenzia_id_exclude", "tipologia_contratto", "tipologia_contratto_exclude",
+    "status", "status_exclude", "created_by", "created_by_exclude", "assigned_to", "assigned_to_exclude",
+    "servizio_id", "servizio_id_exclude", "segmento", "segmento_exclude",
+    "commessa_id_filter", "commessa_id_filter_exclude", "search", "search_type", "date_from", "date_to",
+]
+
+
+async def _run_clienti_export_job(job_id: str, filters: dict, user: User):
+    """Genera l'Excel in background riusando la logica sincrona e salva il file in GridFS."""
+    try:
+        await db.export_jobs.update_one({"id": job_id}, {"$set": {"status": "processing"}})
+        resp = await export_clienti_excel(**filters, current_user=user)
+        file_path = getattr(resp, "path", None)
+        if not file_path or not os.path.exists(file_path):
+            raise RuntimeError("File di export non generato")
+        with open(file_path, "rb") as fh:
+            data = fh.read()
+        from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+        bucket = AsyncIOMotorGridFSBucket(db)
+        grid_id = await bucket.upload_from_stream(f"clienti_export_{job_id}.xlsx", data)
+        await db.export_jobs.update_one({"id": job_id}, {"$set": {
+            "status": "ready",
+            "gridfs_id": str(grid_id),
+            "size": len(data),
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+        }})
+    except HTTPException as he:
+        await db.export_jobs.update_one({"id": job_id}, {"$set": {"status": "failed", "error": str(he.detail)}})
+    except Exception as e:
+        logging.error(f"[export-job {job_id}] failed: {e}")
+        await db.export_jobs.update_one({"id": job_id}, {"$set": {"status": "failed", "error": str(e)[:500]}})
+
+
+@router.post("/clienti/export/excel/start")
+async def start_clienti_export(
+    sub_agenzia_id: Optional[List[str]] = Query(None),
+    sub_agenzia_id_exclude: Optional[List[str]] = Query(None),
+    tipologia_contratto: Optional[List[str]] = Query(None),
+    tipologia_contratto_exclude: Optional[List[str]] = Query(None),
+    status: Optional[List[str]] = Query(None),
+    status_exclude: Optional[List[str]] = Query(None),
+    created_by: Optional[List[str]] = Query(None),
+    created_by_exclude: Optional[List[str]] = Query(None),
+    assigned_to: Optional[List[str]] = Query(None),
+    assigned_to_exclude: Optional[List[str]] = Query(None),
+    servizio_id: Optional[List[str]] = Query(None),
+    servizio_id_exclude: Optional[List[str]] = Query(None),
+    segmento: Optional[List[str]] = Query(None),
+    segmento_exclude: Optional[List[str]] = Query(None),
+    commessa_id_filter: Optional[List[str]] = Query(None),
+    commessa_id_filter_exclude: Optional[List[str]] = Query(None),
+    search: Optional[str] = Query(None),
+    search_type: Optional[str] = Query(None, regex="^(all|id|cognome|codice_fiscale|partita_iva|telefono|email)$"),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+):
+    """Avvia la generazione dell'Excel in background e restituisce un job_id da interrogare."""
+    filters = {k: v for k, v in locals().items() if k in EXPORT_FILTER_KEYS}
+    job_id = str(uuid.uuid4())
+    await db.export_jobs.insert_one({
+        "id": job_id,
+        "type": "clienti_excel",
+        "status": "processing",
+        "created_by": current_user.id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "gridfs_id": None,
+        "error": None,
+    })
+    asyncio.create_task(_run_clienti_export_job(job_id, filters, current_user))
+    return {"job_id": job_id, "status": "processing"}
+
+
+@router.get("/clienti/export/excel/status/{job_id}")
+async def clienti_export_status(job_id: str, current_user: User = Depends(get_current_user)):
+    job = await db.export_jobs.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job di export non trovato")
+    if job.get("created_by") != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    return {
+        "job_id": job_id,
+        "status": job.get("status"),
+        "error": job.get("error"),
+        "size": job.get("size"),
+        "ready": job.get("status") == "ready",
+    }
+
+
+@router.get("/clienti/export/excel/download/{job_id}")
+async def clienti_export_download(job_id: str, current_user: User = Depends(get_current_user)):
+    job = await db.export_jobs.find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job di export non trovato")
+    if job.get("created_by") != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Non autorizzato")
+    if job.get("status") != "ready" or not job.get("gridfs_id"):
+        raise HTTPException(status_code=409, detail="Export non ancora pronto")
+    from bson import ObjectId
+    from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+    bucket = AsyncIOMotorGridFSBucket(db)
+    stream = await bucket.open_download_stream(ObjectId(job["gridfs_id"]))
+    data = await stream.read()
+    filename = f"clienti_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return Response(
+        content=data,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ============================================
 # ANALYTICS ENDPOINTS
 # ============================================
 

@@ -47,6 +47,7 @@ from fastapi import HTTPException, UploadFile
 
 from database import db
 from models import *  # noqa: F401,F403
+from models import (Cliente, Lead, Commessa, Servizio, Unit, Workflow, Tecnologia, ImportConfiguration, ImportPreview, ImportResult)  # noqa: F811
 
 # Italian Provinces (111 provinces)
 ITALIAN_PROVINCES = [
@@ -662,7 +663,7 @@ async def create_excel_report(leads_data, custom_fields_list, filename="leads_ex
                 agent = await db.users.find_one({"id": agent_id})
                 if agent:
                     agent_name = agent.get("username", "")
-            except:
+            except Exception:
                 pass
         ws.cell(row=row, column=col, value=agent_name)
         col += 1
@@ -675,7 +676,7 @@ async def create_excel_report(leads_data, custom_fields_list, filename="leads_ex
                 else:
                     date_obj = lead["created_at"]
                 ws.cell(row=row, column=col, value=date_obj.strftime("%d/%m/%Y %H:%M"))
-            except:
+            except Exception:
                 ws.cell(row=row, column=col, value="")
         else:
             ws.cell(row=row, column=col, value="")
@@ -688,7 +689,7 @@ async def create_excel_report(leads_data, custom_fields_list, filename="leads_ex
                 else:
                     date_obj = lead["assigned_at"]
                 ws.cell(row=row, column=col, value=date_obj.strftime("%d/%m/%Y %H:%M"))
-            except:
+            except Exception:
                 ws.cell(row=row, column=col, value="")
         else:
             ws.cell(row=row, column=col, value="")
@@ -701,7 +702,7 @@ async def create_excel_report(leads_data, custom_fields_list, filename="leads_ex
                 else:
                     date_obj = lead["contacted_at"]
                 ws.cell(row=row, column=col, value=date_obj.strftime("%d/%m/%Y %H:%M"))
-            except:
+            except Exception:
                 ws.cell(row=row, column=col, value="")
         else:
             ws.cell(row=row, column=col, value="")
@@ -714,7 +715,7 @@ async def create_excel_report(leads_data, custom_fields_list, filename="leads_ex
                 else:
                     date_obj = lead["closed_at"]
                 ws.cell(row=row, column=col, value=date_obj.strftime("%d/%m/%Y %H:%M"))
-            except:
+            except Exception:
                 ws.cell(row=row, column=col, value="")
         else:
             ws.cell(row=row, column=col, value="")
@@ -736,7 +737,7 @@ async def create_excel_report(leads_data, custom_fields_list, filename="leads_ex
             try:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-            except:
+            except Exception:
                 pass
         adjusted_width = min(max_length + 2, 50)
         ws.column_dimensions[column_letter].width = adjusted_width
@@ -1209,7 +1210,7 @@ async def create_clienti_excel_report(clienti_data, filename="clienti_export", c
             try:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-            except:
+            except Exception:
                 pass
         adjusted_width = min(max_length + 2, 50)  # Max width 50
         ws.column_dimensions[column_letter].width = adjusted_width
@@ -1244,5 +1245,5 @@ async def should_use_hardcoded_elements():
     try:
         setting = await db.system_settings.find_one({"key": "hardcoded_elements_disabled"})
         return not (setting and setting.get("value", False))
-    except:
+    except Exception:
         return True  # Default to using hardcoded if check fails

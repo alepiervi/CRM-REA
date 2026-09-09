@@ -1,5 +1,15 @@
 # Nureal CRM — PRD
 
+## Feature — Export Excel clienti in background (per liste grandi) (3 lug 2026) — COMPLETATO
+**Richiesta utente**: per liste molto grandi, generare l'Excel in background e avvisare quando è pronto.
+**Backend** (`routes/clienti.py`): nuovi endpoint
+- `POST /api/clienti/export/excel/start` (stessi filtri Query dell'export sync) → crea un job in collection `export_jobs` (status processing), lancia `asyncio.create_task(_run_clienti_export_job)` e restituisce `{job_id}`. Il task riusa la logica sync (`export_clienti_excel`) e salva il file in **GridFS**.
+- `GET /api/clienti/export/excel/status/{job_id}` → stato (processing/ready/failed) con controllo proprietario/admin.
+- `GET /api/clienti/export/excel/download/{job_id}` → streaming del file xlsx da GridFS (409 se non pronto).
+**Frontend** (`ClientiManagement.jsx`): il pulsante Esporta ora avvia il job (toast "Esportazione avviata"), fa polling ogni 1.5s (max ~4 min) e, appena pronto, scarica automaticamente il file (toast "Excel pronto"). Il pulsante resta in stato loading fino al download.
+**Testing**: curl (start→processing→ready in ~2s→xlsx valido) + testing_agent iteration_25 → frontend 100% (POST start 200, status ready, download 200 xlsx, toast corretti, nessun errore).
+
+
 ## Fix — Errore download Excel clienti (irrobustimento export) (3 lug 2026) — RISOLTO
 **Segnalazione utente**: in PRODUZIONE il download Excel dei clienti a volte falliva (non scaricava il file), soprattutto con filtri attivi e in particolare il filtro data. In preview non riproducibile (funzionava sempre).
 **Cause individuate / hardening applicato** (`routes/clienti.py`, `export_clienti_excel`):

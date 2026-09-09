@@ -10,6 +10,8 @@ from typing import Optional, Dict, Any
 
 from database import db
 from models import *  # noqa: F401,F403
+import uuid  # noqa: F811
+from models import Lead  # noqa: F811
 
 # Email System - Temporarily disabled due to import issues
 # SMTP Configuration

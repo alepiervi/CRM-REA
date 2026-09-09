@@ -11,7 +11,7 @@ from typing import List, Optional, Dict, Any
 
 from fastapi import (
     APIRouter, HTTPException, Depends, Query, Body, Request,
-    UploadFile, File, Form, status,
+    UploadFile, File, Form,
 )
 from fastapi.responses import StreamingResponse, JSONResponse, FileResponse, Response
 
@@ -38,6 +38,7 @@ from services import (
 from notifications import notify_agent_new_lead, send_email_notification
 from audit import log_client_action
 from models import *  # noqa: F401,F403
+from models import User, UserRole, Commessa, Servizio, Unit  # noqa: F811
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 
@@ -1385,7 +1386,7 @@ async def export_pivot_clienti_list(
                 try:
                     if len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
-                except:
+                except Exception:
                     pass
             adjusted_width = min(max_length + 2, 50)
             ws.column_dimensions[column].width = adjusted_width

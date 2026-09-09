@@ -748,6 +748,7 @@ def build_spoki_routers(db, get_current_user, UserRole):
             out["status"] = "failed"
             out["error"] = str(e)[:500]
         await db.spoki_messages.insert_one(out)
+        out.pop("_id", None)
         return out
 
     # ====================================

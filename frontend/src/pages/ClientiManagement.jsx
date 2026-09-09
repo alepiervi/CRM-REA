@@ -781,47 +781,75 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
         }
       }
 
-      // Call backend Excel export endpoint
-      const response = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/api/clienti/export/excel?${params.toString()}`,
-        {
-          headers: { 
-            Authorization: `Bearer ${localStorage.getItem('token')}` 
-          },
-          responseType: 'blob'
-        }
-      );
+      const API_BASE = `${process.env.REACT_APP_BACKEND_URL}/api`;
+      const authHeader = { Authorization: `Bearer ${localStorage.getItem('token')}` };
 
-      // Create download link for Excel file
-      const blob = new Blob([response.data], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-      });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      
-      // Generate filename with current date
-      const filename = `clienti_export_${new Date().toISOString().split('T')[0]}.xlsx`;
-      link.setAttribute('download', filename);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // 1) Avvia il job di export in background
+      const startRes = await axios.post(
+        `${API_BASE}/clienti/export/excel/start?${params.toString()}`,
+        {},
+        { headers: authHeader }
+      );
+      const jobId = startRes.data.job_id;
 
       toast({
-        title: "Successo",
-        description: `File Excel esportato con successo: ${filename}`,
+        title: "Esportazione avviata",
+        description: "Sto generando il file Excel in background. Ti avviso quando è pronto.",
       });
+
+      // 2) Poll dello stato del job, poi download automatico
+      const filename = `clienti_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const maxAttempts = 160; // ~4 min a 1.5s
+      let attempt = 0;
+      const poll = async () => {
+        attempt += 1;
+        try {
+          const st = await axios.get(`${API_BASE}/clienti/export/excel/status/${jobId}`, { headers: authHeader });
+          if (st.data.status === 'ready') {
+            const dl = await axios.get(`${API_BASE}/clienti/export/excel/download/${jobId}`, {
+              headers: authHeader,
+              responseType: 'blob',
+            });
+            const blob = new Blob([dl.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast({ title: "Excel pronto", description: `File scaricato: ${filename}` });
+            setIsExporting(false);
+            return;
+          }
+          if (st.data.status === 'failed') {
+            toast({ title: "Errore", description: st.data.error || "Errore durante la generazione dell'Excel", variant: "destructive" });
+            setIsExporting(false);
+            return;
+          }
+          if (attempt >= maxAttempts) {
+            toast({ title: "Attenzione", description: "L'esportazione sta impiegando troppo tempo. Riprova più tardi.", variant: "destructive" });
+            setIsExporting(false);
+            return;
+          }
+          setTimeout(poll, 1500);
+        } catch (e) {
+          console.error('Polling export error:', e);
+          toast({ title: "Errore", description: "Errore nel controllo dello stato dell'export", variant: "destructive" });
+          setIsExporting(false);
+        }
+      };
+      setTimeout(poll, 1500);
 
     } catch (error) {
-      console.error('Error exporting clients to Excel:', error);
+      console.error('Error starting clients Excel export:', error);
       toast({
         title: "Errore",
-        description: "Errore durante l'esportazione Excel dei clienti",
+        description: "Errore durante l'avvio dell'esportazione Excel",
         variant: "destructive",
       });
-    } finally {
       setIsExporting(false);
     }
   };
