@@ -721,7 +721,7 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
         (Array.isArray(servizi) ? servizi.find(s => s?.id === servizioId)?.nome : '') ||
         ''
       ).toLowerCase();
-      return nome.includes('presid');
+      return nome.includes('presid') || nome.includes('negoz') || nome.includes('store');
     } catch (error) {
       console.error("❌ Error in isEditPresidi:", error);
       return false;
@@ -975,11 +975,11 @@ const EditClienteModal = ({ cliente, onClose, onSubmit, commesse, subAgenzie, fr
       return;
     }
     
-    // Validazione Tipologia Abitazione obbligatoria per servizio Presidi
+    // Validazione Tipologia Abitazione obbligatoria per servizio Presidi/Store
     if (isEditPresidi() && (!formData.tipologia_abitazione || formData.tipologia_abitazione.trim() === '')) {
       editToast({
         title: "Campo obbligatorio",
-        description: "Per il servizio Presidi, la Tipologia Abitazione è obbligatoria (sezione Indirizzo Residenza).",
+        description: "Per questo servizio la Tipologia Abitazione è obbligatoria (sezione Indirizzo Residenza).",
         variant: "destructive"
       });
       return;

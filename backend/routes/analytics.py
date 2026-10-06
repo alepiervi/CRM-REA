@@ -33,7 +33,7 @@ from helpers import (
 )
 from services import (
     UPLOAD_DIR, MAX_FILE_SIZE, ALLOWED_FILE_TYPES,
-    aruba_service, validate_uploaded_file, save_temporary_file, create_document_record,
+    aruba_service, validate_uploaded_file, create_document_record,
 )
 from notifications import notify_agent_new_lead, send_email_notification
 from audit import log_client_action

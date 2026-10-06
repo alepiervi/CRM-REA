@@ -283,19 +283,6 @@ async def validate_uploaded_file(file) -> bool:
     
     return True
 
-async def save_temporary_file(file) -> str:
-    """Save uploaded file to temporary storage"""
-    file_id = str(uuid.uuid4())
-    file_extension = os.path.splitext(file.filename)[1] if file.filename else '.pdf'
-    temp_filename = f"{file_id}{file_extension}"
-    temp_path = os.path.join(UPLOAD_DIR, temp_filename)
-    
-    async with aiofiles.open(temp_path, "wb") as temp_file:
-        content = await file.read()
-        await temp_file.write(content)
-    
-    return temp_path
-
 async def create_document_record(document_type: DocumentType, entity_id: str, file, aruba_response: Dict[str, Any], uploaded_by: str) -> Document:
     """Create database record for uploaded document"""
     # Reset file to get accurate size

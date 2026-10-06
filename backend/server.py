@@ -65,7 +65,7 @@ from services import (
     WhatsAppService, LeadQualificationBot,
     aruba_service, chatbot_service, twilio_service, call_center_service, acd_service,
     whatsapp_service, lead_qualification_bot,
-    validate_uploaded_file, save_temporary_file, create_document_record,
+    validate_uploaded_file, create_document_record,
     NextcloudClient,
 )
 from helpers import (

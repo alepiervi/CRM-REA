@@ -644,13 +644,13 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
     return nome.includes('telepass');
   };
 
-  // Funzione per verificare se il SERVIZIO selezionato è "Presidi" (match sul nome del servizio)
+  // Funzione per verificare se il SERVIZIO selezionato richiede la Tipologia Abitazione ("Presidi" o "Store")
   const isPresidi = () => {
     const servizioId = selectedData.servizio_id;
     if (!servizioId) return false;
     const servizio = (cascadeServizi || []).find(s => s?.id === servizioId);
     const nome = servizio?.nome?.toLowerCase() || '';
-    return nome.includes('presid');
+    return nome.includes('presid') || nome.includes('negoz') || nome.includes('store');
   };
 
   // NEW: rilevamento commessa SKY + servizi attivi sull'offerta selezionata
@@ -1325,11 +1325,11 @@ const CreateClienteModal = ({ isOpen, onClose, onSubmit, commesse, subAgenzie, s
       }
     }
     
-    // Validazione Tipologia Abitazione obbligatoria per servizio Presidi
+    // Validazione Tipologia Abitazione obbligatoria per servizio Presidi/Store
     if (isPresidi() && (!formData.tipologia_abitazione || formData.tipologia_abitazione.trim() === '')) {
       toast({
         title: "Campo obbligatorio",
-        description: "Per il servizio Presidi, la Tipologia Abitazione è obbligatoria. Selezionala nella sezione Indirizzo Residenza.",
+        description: "Per questo servizio la Tipologia Abitazione è obbligatoria. Selezionala nella sezione Indirizzo Residenza.",
         variant: "destructive"
       });
       return;
