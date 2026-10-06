@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend-only test: 'Tipologia Abitazione' field extended to NEGOZI service in Crea/Modifica/Visualizza Cliente modals. Logged in as admin, opened Nuovo Cliente, selected cascade F2F -> Fastweb -> NEGOZI -> ENERGIA FASTWEB -> Privato -> ENE1 -> Continua -> Scheda Cliente. Verified: (1) field [data-testid=create-cliente-tipologia-abitazione-select] is rendered inside 'Indirizzo Residenza' section with label 'Tipologia Abitazione *' and options ['Seleziona tipologia abitazione...', 'Villa/Villetta', 'Appartamento', '- (dato non disponibile)']; (2) attempting to Crea Cliente with required text fields filled but Tipologia Abitazione empty blocks the submit — browser displays validation popup 'Please select an item in the list' on the select (via required attribute) and modal stays open; (3) selecting Villa/Villetta clears validation. Code review of EditClienteModal.jsx (isEditPresidi line 716-724) and ViewClienteModal.jsx (line 468-471) confirms NEGOZI/Store coverage is identical to Create: isEditPresidi returns true for presid||negoz||store, validation at line 979 blocks save, select has data-testid='edit-cliente-tipologia-abitazione-select'; View modal renders [data-testid=view-cliente-tipologia-abitazione] when value present. PRESIDI regression preserved (same condition).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Validation feedback for empty tipologia_abitazione currently relies on the native HTML 'required' attribute (browser popup 'Please select an item in the list') rather than the Italian toast 'Campo obbligatorio' referenced in the request. The JS check at CreateClienteModal.jsx:1329 (and EditClienteModal.jsx:979) does exist but the native browser validation fires first and prevents form submission before the toast is shown. Functionally equivalent (save is blocked) but UX wording differs from spec; consider removing 'required' from the <select> or using noValidate on the form if an Italian toast message is desired.",
+    "CreateClienteModal.jsx is 2789 lines and EditClienteModal.jsx is 2592 lines — both exceed the 700-line guideline and should be split into smaller modules.",
+    "isPresidi/isEditPresidi name is misleading now that it also covers negozi/store — consider renaming to e.g. requiresTipologiaAbitazione()."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "seed_data_creation": "None - test did not persist any cliente (cancelled before successful save).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Cascade path to reach a NEGOZI service: Sub Agenzia 'F2F' -> Commessa 'Fastweb' -> Servizio 'NEGOZI' -> Tipologia 'ENERGIA FASTWEB' -> Segmento 'Privato' -> Offerta 'ENE1'. The pre-selection modal 'Selezione Prodotto/Offerta' uses native <select> elements; after all 6 are chosen the 'Continua -> Scheda Cliente' button becomes enabled. The Edit modal UI was not interactively tested with a live NEGOZI cliente because no NEGOZI cliente exists yet in DB (seen clientes are Telefonia/F2F PV / NoCode); code review confirmed parity. The ViewClienteModal 'Tipologia Abitazione' row is conditional on the value being truthy (ViewClienteModal.jsx:468), so it only renders when the cliente actually has tipologia_abitazione saved — this is expected.",
+  "rca of the issue": "N/A - feature works as intended."
+}

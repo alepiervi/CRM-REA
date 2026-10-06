@@ -57,6 +57,14 @@ Modifica low-risk (solo `.sort` su render esistenti); frontend compila, smoke te
 **Testing**: testing_agent iteration_21 (admin+create+view PASS) e iteration_22 (edit prefill + no-data-loss PASS al 100%). Dati di test (rename temporaneo "Fastweb"→"Fastweb SKY" + servizi_attivi) RIPRISTINATI.
 
 
+## Feature — Tipologia Abitazione estesa ai clienti Store/NEGOZI (12 giu 2026) — COMPLETATO
+**Richiesta utente**: mostrare il campo "Tipologia Abitazione" (già presente per Presidi) anche per i clienti del servizio "Store". Confermato dall'utente che "Store" = servizio **NEGOZI** nel DB. Campo OBBLIGATORIO.
+**Implementazione**: estesa la condizione in `isPresidi()` (CreateClienteModal.jsx) e `isEditPresidi()` (EditClienteModal.jsx) a `nome.includes('presid') || nome.includes('negoz') || nome.includes('store')`. Messaggi di validazione resi generici ("Per questo servizio..."). ViewClienteModal già mostra il valore se presente. Backend/export Excel invariati (già gestivano il campo). Testato (iteration_26.json, frontend 100%): campo compare per NEGOZI, validazione blocca il salvataggio se vuoto, PRESIDI non regredito.
+
+## Fix lint backend — rimozione storage pod-local (12 giu 2026) — COMPLETATO
+Rimossa la funzione dead-code `save_temporary_file()` in `services.py` (unica che scriveva upload su `./uploads` del pod, flaggata da `ephemeral-upload-storage`) e il relativo import da server.py, documents.py, analytics.py, clienti.py, users_auth.py, leads.py. Nessun chiamante attivo (gli upload reali passano bytes direttamente ad Aruba/Nextcloud). Backend riavviato OK.
+
+
 ## Feature — Tipologia Abitazione obbligatoria per servizio Presidi (Clienti) (3 lug 2026) — COMPLETATO
 **Richiesta utente**: in creazione anagrafica cliente, per i clienti con servizio "Presidi", nella sezione Indirizzo Residenza deve esserci un campo "Tipologia Abitazione" (menù a tendina: "Villa/Villetta", "Appartamento") OBBLIGATORIO. Da mostrare anche in Modifica, Visualizzazione ed export Excel.
 **Scelte utente**: riconoscimento Presidi per nome servizio (contiene "presid"); campo dentro sezione esistente (Indirizzo Residenza); presente in tutti (create+edit+view+Excel).
