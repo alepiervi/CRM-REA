@@ -49,11 +49,16 @@ async def _cliente_overrides() -> Dict[str, str]:
 
 @router.get("/status-colors")
 async def get_status_colors(current_user: User = Depends(get_current_user)):
-    """Mappa colori per i badge. cliente: base dai custom + override; lead: da lead_statuses."""
+    """Mappa colori per i badge. cliente: default fissi + custom + override; lead: da lead_statuses."""
     cliente_map: Dict[str, str] = {}
+    # 1) Colori di DEFAULT degli status fissi (così la lista usa gli stessi colori della gestione)
+    for key, _label, default in CLIENTE_FIXED_STATUSES:
+        cliente_map[key] = default
+    # 2) Colori degli status custom
     async for s in db.cliente_custom_statuses.find({}, {"_id": 0, "value": 1, "color": 1}):
         if s.get("value") and s.get("color"):
             cliente_map[s["value"]] = s["color"]
+    # 3) Override admin (priorità massima)
     cliente_map.update(await _cliente_overrides())
 
     lead_map: Dict[str, str] = {}

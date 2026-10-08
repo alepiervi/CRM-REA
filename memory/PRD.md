@@ -66,6 +66,11 @@ Modifica low-risk (solo `.sort` su render esistenti); frontend compila, smoke te
 **Test** (iteration_27.json): backend 4/4 (crea, update, cascade multi, fallback legacy), frontend 100%. Suite pytest: /app/backend/tests/test_store_assist_multi_subagenzie.py.
 **Aggiornamento (12 giu 2026)**: aggiunta barra di ricerca ("Cerca store...") sopra la lista checkbox degli Store, sia in Crea (data-testid='create-store-assist-search') che in Modifica (data-testid='edit-store-assist-search'); filtra la lista per nome in tempo reale. Verificata via screenshot.
 
+## Fix — Colori status nella lista Clienti (12 giu 2026) — COMPLETATO
+**Richiesta utente**: la lista clienti deve usare i colori impostati nella gestione/creazione degli status.
+**Causa**: l'endpoint `GET /api/status-colors` (usato dai badge della lista via `lib/statusColors.js`) restituiva solo i colori degli status custom + override espliciti, NON i colori di default degli status FISSI. Quindi gli status fissi lasciati al colore di default apparivano non colorati nella lista, pur essendo colorati nella pagina di gestione (catalog).
+**Fix**: in `routes/status_colors.py` -> `get_status_colors`, la mappa cliente ora parte dai colori di default di `CLIENTE_FIXED_STATUSES`, poi applica i colori custom e infine gli override admin. La lista coincide ora con la pagina Colori Status. Verificato via curl + screenshot.
+
 
 ## Feature — Tipologia Abitazione estesa ai clienti Store/NEGOZI (12 giu 2026) — COMPLETATO
 **Richiesta utente**: mostrare il campo "Tipologia Abitazione" (già presente per Presidi) anche per i clienti del servizio "Store". Confermato dall'utente che "Store" = servizio **NEGOZI** nel DB. Campo OBBLIGATORIO.
