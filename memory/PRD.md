@@ -64,6 +64,7 @@ Modifica low-risk (solo `.sort` su render esistenti); frontend compila, smoke te
 - Backend `server.py` endpoint `/api/cascade/sub-agenzie`: aggiunto `store_assist` al branch multi sub-agenzie (ritorna tutte le `sub_agenzie_autorizzate`) con fallback legacy a `sub_agenzia_id` singolo.
 - L'accesso dati clienti per store_assist usava già `sub_agenzie_autorizzate` (routes/clienti.py). create/update user già persistono il campo.
 **Test** (iteration_27.json): backend 4/4 (crea, update, cascade multi, fallback legacy), frontend 100%. Suite pytest: /app/backend/tests/test_store_assist_multi_subagenzie.py.
+**Aggiornamento (12 giu 2026)**: aggiunta barra di ricerca ("Cerca store...") sopra la lista checkbox degli Store, sia in Crea (data-testid='create-store-assist-search') che in Modifica (data-testid='edit-store-assist-search'); filtra la lista per nome in tempo reale. Verificata via screenshot.
 
 
 ## Feature — Tipologia Abitazione estesa ai clienti Store/NEGOZI (12 giu 2026) — COMPLETATO

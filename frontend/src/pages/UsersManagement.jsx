@@ -596,6 +596,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
   const [servizi, setServizi] = useState([]);
   const [serviziDisponibili, setServiziDisponibili] = useState([]); // NEW: Servizi per UNIT/SUB selezionata
   const [serviziPerCommessa, setServiziPerCommessa] = useState({}); // NEW: Servizi organizzati per commessa per responsabile_commessa
+  const [storeSearch, setStoreSearch] = useState(""); // NEW: filtro ricerca Store per store_assist
   const { toast } = useToast();
   
   // DEBUG: Monitor referentiUnit changes
@@ -1579,9 +1580,19 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             <>
               <div className="col-span-2">
                 <Label>Store (Sub Agenzie) Autorizzati *</Label>
+                <Input
+                  type="text"
+                  placeholder="Cerca store..."
+                  value={storeSearch}
+                  onChange={(e) => setStoreSearch(e.target.value)}
+                  className="mb-2"
+                  data-testid="create-store-assist-search"
+                />
                 <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50" data-testid="create-store-assist-subagenzie">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {subAgenzie.map((subAgenzia) => (
+                    {subAgenzie
+                      .filter((subAgenzia) => (subAgenzia.nome || '').toLowerCase().includes(storeSearch.toLowerCase()))
+                      .map((subAgenzia) => (
                       <div key={subAgenzia.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`subagenzia-assistant-${subAgenzia.id}`}
@@ -1743,6 +1754,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   const [serviziDisponibili, setServiziDisponibili] = useState([]); // NEW: Servizi per UNIT/SUB selezionata
   const [serviziPerCommessa, setServiziPerCommessa] = useState({}); // NEW: Servizi organizzati per commessa per responsabile_commessa
   const [referentiUnit, setReferentiUnit] = useState([]); // Referenti della Unit selezionata
+  const [storeSearch, setStoreSearch] = useState(""); // NEW: filtro ricerca Store per store_assist
   const { toast } = useToast();
   
   // DEBUG: Monitor referentiUnit changes
@@ -2705,9 +2717,19 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
             <>
               <div className="col-span-2">
                 <Label>Store (Sub Agenzie) Autorizzati *</Label>
+                <Input
+                  type="text"
+                  placeholder="Cerca store..."
+                  value={storeSearch}
+                  onChange={(e) => setStoreSearch(e.target.value)}
+                  className="mb-2"
+                  data-testid="edit-store-assist-search"
+                />
                 <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50" data-testid="edit-store-assist-subagenzie">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {subAgenzie.map((subAgenzia) => (
+                    {subAgenzie
+                      .filter((subAgenzia) => (subAgenzia.nome || '').toLowerCase().includes(storeSearch.toLowerCase()))
+                      .map((subAgenzia) => (
                       <div key={subAgenzia.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`edit-subagenzia-assistant-${subAgenzia.id}`}
