@@ -936,7 +936,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tutte le Commesse</SelectItem>
-              {commesse.map((commessa) => (
+              {[...commesse].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'it', { sensitivity: 'base' })).map((commessa) => (
                 <SelectItem key={commessa.id} value={commessa.id}>
                   {commessa.nome}
                 </SelectItem>
@@ -1204,7 +1204,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           {/* Servizi Filter */}
           <MultiSelectFilter
             label="Servizi"
-            options={(filterOptions.servizi || []).map((s) => ({ value: s.value, label: s.label }))}
+            options={(filterOptions.servizi || []).map((s) => ({ value: s.value, label: s.label })).sort((a, b) => (a.label || '').localeCompare(b.label || '', 'it', { sensitivity: 'base' }))}
             included={clientiFilterServizi.included}
             excluded={clientiFilterServizi.excluded}
             onChange={setClientiFilterServizi}
@@ -1226,7 +1226,7 @@ const ClientiManagement = ({ selectedUnit, selectedCommessa, units, commesse: co
           {/* Commesse Filter */}
           <MultiSelectFilter
             label="Commesse"
-            options={(filterOptions.commesse || []).map((c) => ({ value: c.value, label: c.label }))}
+            options={(filterOptions.commesse || []).map((c) => ({ value: c.value, label: c.label })).sort((a, b) => (a.label || '').localeCompare(b.label || '', 'it', { sensitivity: 'base' }))}
             included={clientiFilterCommesse.included}
             excluded={clientiFilterCommesse.excluded}
             onChange={setClientiFilterCommesse}
