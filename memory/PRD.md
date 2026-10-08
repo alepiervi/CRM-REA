@@ -57,6 +57,15 @@ Modifica low-risk (solo `.sort` su render esistenti); frontend compila, smoke te
 **Testing**: testing_agent iteration_21 (admin+create+view PASS) e iteration_22 (edit prefill + no-data-loss PASS al 100%). Dati di test (rename temporaneo "Fastweb"→"Fastweb SKY" + servizi_attivi) RIPRISTINATI.
 
 
+## Feature — Store Assistant multi-Store (Sub Agenzie) (12 giu 2026) — COMPLETATO
+**Richiesta utente**: un utente "Store Assistant" (role=store_assist) deve poter essere assegnato a PIÙ Store (= Sub Agenzie) con un unico account centralizzato, sia in creazione che in modifica. In creazione cliente seleziona la Sub Agenzia e prosegue con la filiera di quella sub agenzia.
+**Implementazione**:
+- Frontend `UsersManagement.jsx`: nel ruolo store_assist, sostituito il menù a tendina singolo "Sub Agenzia" con selezione multipla a checkbox su `sub_agenzie_autorizzate`, sia in CREA (data-testid='create-store-assist-subagenzie') che in MODIFICA (data-testid='edit-store-assist-subagenzie'). Commesse/servizi autorizzati restano comuni a tutti gli store. Init edit con fallback da `sub_agenzia_id` legacy.
+- Backend `server.py` endpoint `/api/cascade/sub-agenzie`: aggiunto `store_assist` al branch multi sub-agenzie (ritorna tutte le `sub_agenzie_autorizzate`) con fallback legacy a `sub_agenzia_id` singolo.
+- L'accesso dati clienti per store_assist usava già `sub_agenzie_autorizzate` (routes/clienti.py). create/update user già persistono il campo.
+**Test** (iteration_27.json): backend 4/4 (crea, update, cascade multi, fallback legacy), frontend 100%. Suite pytest: /app/backend/tests/test_store_assist_multi_subagenzie.py.
+
+
 ## Feature — Tipologia Abitazione estesa ai clienti Store/NEGOZI (12 giu 2026) — COMPLETATO
 **Richiesta utente**: mostrare il campo "Tipologia Abitazione" (già presente per Presidi) anche per i clienti del servizio "Store". Confermato dall'utente che "Store" = servizio **NEGOZI** nel DB. Campo OBBLIGATORIO.
 **Implementazione**: estesa la condizione in `isPresidi()` (CreateClienteModal.jsx) e `isEditPresidi()` (EditClienteModal.jsx) a `nome.includes('presid') || nome.includes('negoz') || nome.includes('store')`. Messaggi di validazione resi generici ("Per questo servizio..."). ViewClienteModal già mostra il valore se presente. Backend/export Excel invariati (già gestivano il campo). Testato (iteration_26.json, frontend 100%): campo compare per NEGOZI, validazione blocca il salvataggio se vuoto, PRESIDI non regredito.

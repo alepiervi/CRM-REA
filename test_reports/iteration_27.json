@@ -1,0 +1,25 @@
+{
+  "summary": "Tested Store Assistant multi sub-agenzia feature end-to-end. Backend: created pytest suite /app/backend/tests/test_store_assist_multi_subagenzie.py with 4 tests covering (1) ADMIN creates store_assist user with multiple sub_agenzie_autorizzate and GET /api/users returns the full list, (2) ADMIN updates sub_agenzie_autorizzate via PUT /api/users/{id} and persistence is verified via GET, (3) store_assist login + GET /api/cascade/sub-agenzie returns ALL authorized sub agenzie (exact set match), (4) legacy fallback: store_assist with only sub_agenzia_id (empty sub_agenzie_autorizzate) still sees its sub agenzia in cascade. ALL 4 TESTS PASS. Frontend: logged in as admin, opened 'Crea Nuovo Utente', selected role 'Store Assistant' -> block [data-testid='create-store-assist-subagenzie'] appears with checkboxes for each sub agenzia (F2F, Presidio - Maximo); selecting 2 updates counter 'Selezionati: 2 store. Un unico account potra operare su tutti gli store selezionati.' Then edited existing store_assist user 'ale10' -> block [data-testid='edit-store-assist-subagenzie'] renders with checkboxes pre-populated (1 of 2 pre-checked = Presidio - Maximo, consistent with existing assignment) and Commesse/Servizi per commessa visible. Feature works as specified in all 4 requested scenarios.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_store_assist_multi_subagenzie.py",
+    "/app/test_reports/pytest/store_assist_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "UsersManagement.jsx is 2823 lines (>700 line guideline) - should be split into smaller modules (CreateUserModal, EditUserModal, role-specific permission sections).",
+    "server.py is 9849 lines - severely exceeds the 700-line guideline; should be refactored into feature modules/routers.",
+    "The cascade/sub-agenzie legacy fallback (server.py:9139) now covers store_assist correctly but a similar fallback is NOT applied to area_manager/responsabile_presidi/promoter_presidi/responsabile_store in the same branch - if any of these roles have legacy records with only sub_agenzia_id they would see empty cascade. Consider extending the fallback for consistency (low priority since those roles were multi from the start)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_store_assist_multi_subagenzie.py"
+  ],
+  "success_rate": {"backend": "100% (4/4)", "frontend": "100%"},
+  "test_credentials": "admin/admin123; test store_assist users created with password test12345 (cleaned up by test teardown).",
+  "seed_data_creation": "Pytest fixture auto-creates and deletes TEST_sa_* and TEST_legacy_* store_assist users via /api/users and DELETE /api/users/{id}. No orphan data expected.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Multi sub-agenzia for store_assist is fully working. UI selectors: [data-testid=create-store-assist-subagenzie] and [data-testid=edit-store-assist-subagenzie] (parent block containing Radix UI checkboxes button[role=checkbox]). Role 'Store Assistant' selected via Radix Select trigger 'Seleziona ruolo'. In the local env the two existing sub agenzie are 'F2F' and 'Presidio - Maximo'. Backend tests require env var REACT_APP_BACKEND_URL (sourced from /app/frontend/.env). Email domain '.local' is REJECTED by email validator - use '@example.com' or similar public TLD for test users.",
+  "rca of the issue": "N/A - feature working as intended."
+}
