@@ -9132,9 +9132,12 @@ async def get_cascade_sub_agenzie(
                 
             sub_agenzie_docs = await db.sub_agenzie.find(query).to_list(length=None)
             
-        elif current_user.role in ["area_manager", "responsabile_presidi", "promoter_presidi", "responsabile_store"]:
-            # Area Manager, Responsabile Presidi, Promoter Presidi, Responsabile Store: see multiple assigned sub agenzie
-            user_sub_agenzie = getattr(current_user, 'sub_agenzie_autorizzate', [])
+        elif current_user.role in ["area_manager", "responsabile_presidi", "promoter_presidi", "responsabile_store", "store_assist"]:
+            # Area Manager, Responsabile Presidi, Promoter Presidi, Responsabile Store, Store Assist: see multiple assigned sub agenzie
+            user_sub_agenzie = getattr(current_user, 'sub_agenzie_autorizzate', []) or []
+            # Fallback legacy: store_assist precedentemente assegnati a una singola sub agenzia
+            if not user_sub_agenzie and current_user.sub_agenzia_id:
+                user_sub_agenzie = [current_user.sub_agenzia_id]
             if not user_sub_agenzie:
                 logging.info(f"📭 CASCADE: No sub_agenzie_autorizzate for {current_user.role}, returning empty")
                 return []

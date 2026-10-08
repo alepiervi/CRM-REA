@@ -1822,6 +1822,7 @@ const LeadsManagement = ({ selectedUnit, units }) => {
 // ============================================================================
 
 const LeadDetailModal = ({ lead, onClose, onUpdate, customFields }) => {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [esito, setEsito] = useState(lead.esito || "");
   const [note, setNote] = useState(lead.note || "");

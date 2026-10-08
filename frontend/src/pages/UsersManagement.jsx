@@ -1577,27 +1577,31 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
           {/* STORE ASSISTANT: Singola Sub Agenzia → Multi Commesse → Servizi separati per commessa */}
           {(formData.role === "store_assist") && (
             <>
-              <div>
-                <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
-                <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, sub_agenzia_id: value, commesse_autorizzate: [], servizi_autorizzati: [] }));
-                  setServiziPerCommessa({}); // Reset servizi cache
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleziona sub agenzia" />
-                  </SelectTrigger>
-                  <SelectContent>
+              <div className="col-span-2">
+                <Label>Store (Sub Agenzie) Autorizzati *</Label>
+                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50" data-testid="create-store-assist-subagenzie">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {subAgenzie.map((subAgenzia) => (
-                      <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
-                        {subAgenzia.nome}
-                      </SelectItem>
+                      <div key={subAgenzia.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`subagenzia-assistant-${subAgenzia.id}`}
+                          checked={formData.sub_agenzie_autorizzate && formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
+                          onCheckedChange={(checked) => handleSubAgenziaAutorizzataChange(subAgenzia.id, checked)}
+                        />
+                        <Label htmlFor={`subagenzia-assistant-${subAgenzia.id}`} className="text-sm font-normal cursor-pointer">
+                          {subAgenzia.nome}
+                        </Label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Selezionati: {formData.sub_agenzie_autorizzate?.length || 0} store. Un unico account potrà operare su tutti gli store selezionati.
+                </p>
               </div>
 
               {/* Commesse autorizzate (tutte le commesse disponibili) */}
-              {formData.sub_agenzia_id && (
+              {formData.sub_agenzie_autorizzate && formData.sub_agenzie_autorizzate.length > 0 && (
                 <div className="col-span-2">
                   <Label>Commesse Autorizzate *</Label>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
@@ -1721,7 +1725,9 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     // Campi per ruoli specializzati
     commesse_autorizzate: user.commesse_autorizzate || [],
     servizi_autorizzati: user.servizi_autorizzati || [],
-    sub_agenzie_autorizzate: user.sub_agenzie_autorizzate || [],
+    sub_agenzie_autorizzate: (user.sub_agenzie_autorizzate && user.sub_agenzie_autorizzate.length > 0)
+      ? user.sub_agenzie_autorizzate
+      : (user.role === "store_assist" && user.sub_agenzia_id ? [user.sub_agenzia_id] : []),
     referenti_autorizzati: user.referenti_autorizzati || [], // Per Super Referente
     can_view_analytics: user.can_view_analytics || false,
     entity_management: user.entity_management || "clienti",
@@ -2697,27 +2703,31 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
           {/* STORE ASSISTANT: Singola Sub Agenzia → Multi Commesse → Servizi separati per commessa - EDIT */}
           {(formData.role === "store_assist") && (
             <>
-              <div>
-                <Label htmlFor="sub_agenzia_id">Sub Agenzia *</Label>
-                <Select value={formData.sub_agenzia_id} onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, sub_agenzia_id: value, commesse_autorizzate: [], servizi_autorizzati: [] }));
-                  setServiziPerCommessa({}); // Reset servizi cache
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleziona sub agenzia" />
-                  </SelectTrigger>
-                  <SelectContent>
+              <div className="col-span-2">
+                <Label>Store (Sub Agenzie) Autorizzati *</Label>
+                <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50" data-testid="edit-store-assist-subagenzie">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {subAgenzie.map((subAgenzia) => (
-                      <SelectItem key={subAgenzia.id} value={subAgenzia.id}>
-                        {subAgenzia.nome}
-                      </SelectItem>
+                      <div key={subAgenzia.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`edit-subagenzia-assistant-${subAgenzia.id}`}
+                          checked={formData.sub_agenzie_autorizzate && formData.sub_agenzie_autorizzate.includes(subAgenzia.id)}
+                          onCheckedChange={(checked) => handleSubAgenziaAutorizzataChange(subAgenzia.id, checked)}
+                        />
+                        <Label htmlFor={`edit-subagenzia-assistant-${subAgenzia.id}`} className="text-sm font-normal cursor-pointer">
+                          {subAgenzia.nome}
+                        </Label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Selezionati: {formData.sub_agenzie_autorizzate?.length || 0} store. Un unico account potrà operare su tutti gli store selezionati.
+                </p>
               </div>
 
               {/* Commesse autorizzate (tutte le commesse disponibili) */}
-              {formData.sub_agenzia_id && (
+              {formData.sub_agenzie_autorizzate && formData.sub_agenzie_autorizzate.length > 0 && (
                 <div className="col-span-2">
                   <Label>Commesse Autorizzate *</Label>
                   <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-slate-50">
