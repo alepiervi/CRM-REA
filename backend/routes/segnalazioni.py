@@ -234,6 +234,10 @@ def _rome(iso: Optional[str]) -> str:
     return datetime.fromisoformat(iso).astimezone(ROME).strftime("%d/%m/%Y %H:%M") if iso else ""
 
 
+def _cell(v):
+    return f"'{v}" if isinstance(v, str) and v[:1] in ("=", "+", "-", "@") else v
+
+
 @router.get("/segnalazioni/export/excel")
 async def export_segnalazioni_excel(
     query: dict = Depends(_filters_query), current_user: User = Depends(get_current_user)
@@ -251,10 +255,10 @@ async def export_segnalazioni_excel(
         c.font = Font(bold=True, color="FFFFFF")
         c.fill = PatternFill("solid", fgColor="1E3A8A")
     for d in docs:
-        ws.append([_rome(d.get("created_at")), d.get("nome"), d.get("cognome"), d.get("telefono"), d.get("note"),
+        ws.append([_cell(v) for v in [_rome(d.get("created_at")), d.get("nome"), d.get("cognome"), d.get("telefono"), d.get("note"),
                    d.get("commessa_nome"), d.get("servizio_nome"), d.get("created_by_username"),
                    d.get("esito") or "Da lavorare", ", ".join(d.get("sotto_esiti") or []), d.get("nota_esito"),
-                   d.get("esito_by") or "", _rome(d.get("esito_at")), len(d.get("documents") or [])])
+                   d.get("esito_by") or "", _rome(d.get("esito_at")), len(d.get("documents") or [])]])
     for i, h in enumerate(headers, 1):
         ws.column_dimensions[get_column_letter(i)].width = max(14, len(h) + 4)
     ws.freeze_panes = "A2"

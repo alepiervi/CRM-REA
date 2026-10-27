@@ -1,0 +1,41 @@
+{
+  "summary": "Tested Segnalatori extensions end-to-end: admin-only Excel export, segnalatore filter, date-range calendar filter (Europe/Rome), stats dashboard per role, plus regressions (create, esito, BO sidebar badge). Backend: 19/19 new pytest + 17/17 regression from test_segnalazioni.py (upload + user creation deselected). Frontend: everything requested works for admin, BO and segnalatore. No critical bugs; only minor UX notes.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/segnalazioni/export/excel", "issue": "Cell values are not sanitized against CSV/Excel formula injection (nome/note starting with '=', '+', '-', '@'). Low risk because openpyxl writes them as strings unless they start with '='; consider prefixing with an apostrophe."},
+      {"endpoint": "/api/segnalazioni/segnalatori/list", "issue": "For admin, only role=segnalatore users are listed, so segnalazioni created by admin itself cannot be filtered by creator. Probably acceptable."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Segnalazioni load()", "issue": "load() in Segnalazioni.jsx has no try/catch: an API error (e.g. 400/500) causes an unhandled promise rejection, the loading state never resets, and no toast is shown.", "affected_selectors": ["segnalazioni-table", "segnalazioni-stats"]}
+    ],
+    "design_issues": [
+      {"screen": "Segnalatori date filter", "issues": [
+        "When only one day is picked the label says 'Dal 27/10/2026' (from...), but the filter actually applies to that single day only (date_to = from). Suggest the label '27/10/2026' or making 'from' open-ended.",
+        "In the 2-month calendar, outside days (e.g. 27 Oct shown inside the November grid) get the 'today' highlight; consider showOutsideDays={false} or styling day_outside today differently."
+      ]},
+      {"screen": "Segnalatori (segnalatore role)", "issues": ["The search placeholder mentions 'segnalatore' even for the segnalatore role, which only sees its own records."]},
+      {"screen": "Segnalatori table vs Excel", "issues": ["The UI formatDate uses the browser timezone (14:00 shown in a UTC browser) while Excel uses Europe/Rome (15:00). Consistent per design, but it can confuse users outside Italy and ignores the app's 'Fuso orario' setting."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_segnalazioni_export_stats.py", "/app/backend/tests/test_segnalazioni.py", "/app/test_reports/pytest/pytest_iter29.xml"],
+  "action_items": [
+    "Optional: wrap load() in Segnalazioni.jsx in try/catch/finally and show an error toast",
+    "Optional: fix the single-day date label ('Dal X' vs single-day filter)",
+    "Optional: sanitize Excel cells starting with '=' against formula injection"
+  ],
+  "critical_code_review_comments": [
+    "_filters_query correctly ANDs scope with filters, so a segnalatore cannot read others' data via segnalatore_id (verified)",
+    "The export endpoint checks the role after _filters_query runs; fine, because _scope_query allows admin",
+    "Date boundaries compare ISO strings; this works because every created_at is written with datetime.isoformat() in UTC (+00:00)"
+  ],
+  "updated_files": ["/app/backend/tests/test_segnalazioni_export_stats.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "TEST_ prefixed segnalazioni were created during the tests and then deleted via pymongo. Existing data (Mario TestSegn OK, Luca Contatore NR) left untouched. No passwords changed.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Login uses #username + input[type=password]; navigate with get_by_role('button', name='Segnalatori'). The date calendar is a radix popover: use [data-radix-popper-content-wrapper] get_by_role('gridcell', name='N'). The system date in this environment is 27/10/2026. The export downloads via blob (page.expect_download works). The new pytest file test_segnalazioni_export_stats.py cleans TEST_ data automatically."
+}

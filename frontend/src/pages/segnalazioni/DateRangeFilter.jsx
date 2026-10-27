@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/pop
 const fmt = (d) => format(d, "dd/MM/yyyy", { locale: it });
 
 export const DateRangeFilter = ({ value, onChange }) => {
-  const label = value?.from ? (value.to ? `${fmt(value.from)} - ${fmt(value.to)}` : `Dal ${fmt(value.from)}`) : "Data: Da - A";
+  const label = value?.from ? (value.to && value.to.getTime() !== value.from.getTime() ? `${fmt(value.from)} - ${fmt(value.to)}` : fmt(value.from)) : "Data: Da - A";
   return (
     <div className="flex items-center gap-1">
       <Popover>
@@ -20,7 +20,7 @@ export const DateRangeFilter = ({ value, onChange }) => {
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="end">
-          <Calendar mode="range" selected={value} onSelect={(r) => onChange(r || undefined)} numberOfMonths={2} locale={it} initialFocus data-testid="segnalazioni-date-calendar" />
+          <Calendar mode="range" selected={value} onSelect={(r) => onChange(r || undefined)} numberOfMonths={2} showOutsideDays={false} locale={it} initialFocus data-testid="segnalazioni-date-calendar" />
         </PopoverContent>
       </Popover>
       {value?.from && (

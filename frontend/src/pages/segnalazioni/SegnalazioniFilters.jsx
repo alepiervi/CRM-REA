@@ -8,7 +8,7 @@ export const SegnalazioniFilters = ({ filters, setFilters, options, segnalatori,
   <div className="flex flex-col lg:flex-row lg:flex-wrap gap-3">
     <div className="relative flex-1 min-w-[220px]">
       <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-      <Input className="pl-9" placeholder="Cerca nome, cognome, telefono, segnalatore..." value={filters.search}
+      <Input className="pl-9" placeholder={showSegnalatore ? "Cerca nome, cognome, telefono, segnalatore..." : "Cerca nome, cognome, telefono..."} value={filters.search}
         onChange={(e) => setFilters({ ...filters, search: e.target.value })} data-testid="segnalazioni-search-input" />
     </div>
     <Select value={filters.esito} onValueChange={(v) => setFilters({ ...filters, esito: v })}>

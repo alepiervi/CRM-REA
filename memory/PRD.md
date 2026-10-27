@@ -528,3 +528,4 @@ Vedi `/app/memory/test_credentials.md`
 - Il segnalatore vede solo le proprie segnalazioni; il BO solo quelle delle commesse/servizi autorizzati.
 - Contatore arancione "da lavorare" accanto a "Segnalatori" nel menu (BO/Resp. Commessa/Admin), endpoint `GET /api/segnalazioni/da-lavorare/count`, aggiornamento ogni 30s e subito dopo un esito.
 - Backlog: eliminazione documenti/segnalazioni, conversione della segnalazione in Cliente.
+- (giu 2026) Export Excel segnalazioni (solo Admin, rispetta i filtri), filtro Segnalatore (Admin/BO), filtro data Da-A a calendario, mini dashboard statistiche (Totale, Da lavorare, OK/KO/NR, % OK, dettaglio sotto esiti, ultime esitate) per tutti i ruoli, il segnalatore vede solo le proprie. Testato iteration_29 100%.

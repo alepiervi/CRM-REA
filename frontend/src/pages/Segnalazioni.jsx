@@ -42,15 +42,20 @@ export default function Segnalazioni() {
 
   const load = useCallback(async () => {
     const params = buildParams(filters);
-    const [list, st] = await Promise.all([
-      axios.get(`${API}/segnalazioni`, { params }),
-      axios.get(`${API}/segnalazioni/stats/summary`, { params }),
-    ]);
-    setItems(list.data);
-    setStats(st.data);
-    setLoading(false);
-    window.dispatchEvent(new Event("segnalazioni-changed"));
-  }, [filters]);
+    try {
+      const [list, st] = await Promise.all([
+        axios.get(`${API}/segnalazioni`, { params }),
+        axios.get(`${API}/segnalazioni/stats/summary`, { params }),
+      ]);
+      setItems(list.data);
+      setStats(st.data);
+      window.dispatchEvent(new Event("segnalazioni-changed"));
+    } catch (e) {
+      toast({ title: "Errore caricamento segnalazioni", description: errMsg(e, "Riprova"), variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, toast]);
 
   useEffect(() => {
     axios.get(`${API}/segnalazioni/options`).then((r) => setMeta(r.data));
