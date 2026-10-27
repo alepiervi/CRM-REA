@@ -940,6 +940,18 @@ const Dashboard = () => {
     if (user?.role === "segnalatore") setActiveTab("segnalatori");
   }, [user?.role]);
 
+  // Contatore segnalazioni da lavorare (BackOffice / Responsabile Commessa / Admin)
+  const [segnalazioniDaLavorare, setSegnalazioniDaLavorare] = useState(0);
+  useEffect(() => {
+    if (!user || !["admin", "responsabile_commessa", "backoffice_commessa"].includes(user.role)) return;
+    const fetchCount = () =>
+      axios.get(`${API}/segnalazioni/da-lavorare/count`).then((r) => setSegnalazioniDaLavorare(r.data?.count || 0)).catch(() => {});
+    fetchCount();
+    const t = setInterval(fetchCount, 30000);
+    window.addEventListener("segnalazioni-changed", fetchCount);
+    return () => { clearInterval(t); window.removeEventListener("segnalazioni-changed", fetchCount); };
+  }, [user]);
+
 
   // 🔔 Polling contatore messaggi WhatsApp da gestire (sidebar "Conversazioni AI")
   useEffect(() => {
@@ -1980,6 +1992,9 @@ const Dashboard = () => {
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
                   <span className="text-left">{item.label}</span>
+                  {item.id === "segnalatori" && segnalazioniDaLavorare > 0 && (
+                    <span data-testid="segnalazioni-da-lavorare-badge-mobile" className="ml-auto bg-orange-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{segnalazioniDaLavorare}</span>
+                  )}
                   {item.id === "ai-conversations" && unhandledConvCount > 0 && (
                     <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{unhandledConvCount}</span>
                   )}
@@ -2051,6 +2066,9 @@ const Dashboard = () => {
             >
               <item.icon className="w-4 h-4" />
               <span>{item.label}</span>
+              {item.id === "segnalatori" && segnalazioniDaLavorare > 0 && (
+                <span data-testid="segnalazioni-da-lavorare-badge" title="Segnalazioni da lavorare" className="ml-auto bg-orange-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{segnalazioniDaLavorare}</span>
+              )}
               {item.id === "ai-conversations" && unhandledConvCount > 0 && (
                 <span data-testid="ai-conv-unhandled-badge" className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{unhandledConvCount}</span>
               )}

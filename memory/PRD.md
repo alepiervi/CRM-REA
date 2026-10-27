@@ -526,4 +526,5 @@ Vedi `/app/memory/test_credentials.md`
 - Sezione "Segnalatori" (`routes/segnalazioni.py`, `pages/Segnalazioni.jsx` + `pages/segnalazioni/*`): il segnalatore inserisce Nome, Cognome, Telefono, Note, Commessa/Servizio e carica documenti/foto su Aruba Drive (cartella `<root commessa>/Segnalazioni`).
 - BackOffice Commessa / Responsabile Commessa / Admin aprono la scheda e impostano l'esito OK/KO/NR; con OK sono obbligatori i sotto esiti (multipli): OK Energy, OK Gas, OK Dual, OK Fisso, OK Fisso + Mobile, OK Mobile. Lo storico degli esiti viene salvato.
 - Il segnalatore vede solo le proprie segnalazioni; il BO solo quelle delle commesse/servizi autorizzati.
-- Backlog: eliminazione documenti/segnalazioni, notifica al BO per una nuova segnalazione, conversione della segnalazione in Cliente.
+- Contatore arancione "da lavorare" accanto a "Segnalatori" nel menu (BO/Resp. Commessa/Admin), endpoint `GET /api/segnalazioni/da-lavorare/count`, aggiornamento ogni 30s e subito dopo un esito.
+- Backlog: eliminazione documenti/segnalazioni, conversione della segnalazione in Cliente.

@@ -28,6 +28,7 @@ export default function Segnalazioni() {
     const { data } = await axios.get(`${API}/segnalazioni`, { params });
     setItems(data);
     setLoading(false);
+    window.dispatchEvent(new Event("segnalazioni-changed"));
   }, [filters]);
 
   useEffect(() => { axios.get(`${API}/segnalazioni/options`).then((r) => setMeta(r.data)); }, []);
