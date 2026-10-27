@@ -158,7 +158,8 @@ import {
   Filter,
   RefreshCw,
   Archive,
-  RotateCcw
+  RotateCcw,
+  Megaphone
 } from "lucide-react";
 
 // Utilities e Auth estratti in moduli dedicati (refactoring giugno 2026)
@@ -182,6 +183,7 @@ const UnitsManagement = lazyNamed(() => import("./pages/LeadsConfig"), "UnitsMan
 const LeadStatusManagement = lazyNamed(() => import("./pages/LeadsConfig"), "LeadStatusManagement");
 const CustomFieldsManagement = lazyNamed(() => import("./pages/LeadsConfig"), "CustomFieldsManagement");
 const StatusColors = React.lazy(() => import("./pages/StatusColors"));
+const Segnalazioni = React.lazy(() => import("./pages/Segnalazioni"));
 const LeadsManagement = lazyNamed(() => import("./pages/LeadsManagement"), "LeadsManagement");
 const ClientiManagement = lazyNamed(() => import("./pages/ClientiManagement"), "ClientiManagement");
 const EditClienteModal = lazyNamed(() => import("./pages/ClienteModals"), "EditClienteModal");
@@ -934,6 +936,11 @@ const Dashboard = () => {
   const { user, logout, setUser, showSessionWarning, timeLeft, extendSession, stopCountdown } = useAuth();
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (user?.role === "segnalatore") setActiveTab("segnalatori");
+  }, [user?.role]);
+
+
   // 🔔 Polling contatore messaggi WhatsApp da gestire (sidebar "Conversazioni AI")
   useEffect(() => {
     if (!user || !["admin", "super_referente"].includes(user.role)) return;
@@ -1521,6 +1528,13 @@ const Dashboard = () => {
       { id: "dashboard", label: "Dashboard", icon: BarChart3 }
     ];
 
+    if (user.role === "segnalatore") {
+      return [{ id: "segnalatori", label: "Segnalatori", icon: Megaphone }];
+    }
+    if (["admin", "responsabile_commessa", "backoffice_commessa"].includes(user.role)) {
+      items.push({ id: "segnalatori", label: "Segnalatori", icon: Megaphone });
+    }
+
     if (user.role === "admin") {
       items.push(
         { id: "leads", label: "Lead", icon: Phone },
@@ -1608,7 +1622,10 @@ const Dashboard = () => {
     console.log(`📺 RENDER DEBUG: About to render content for:`, activeTab);
     try {
       switch (activeTab) {
+        case "segnalatori":
+          return ["admin", "responsabile_commessa", "backoffice_commessa", "segnalatore"].includes(user.role) ? <Segnalazioni /> : <div>Non autorizzato</div>;
         case "dashboard":
+          if (user.role === "segnalatore") return <Segnalazioni />;
           if (user.role === "responsabile_commessa") {
             return <ResponsabileCommessaDashboard selectedUnit={selectedUnit} selectedTipologiaContratto={selectedTipologiaContratto} units={units} commesse={commesse} />;
           }

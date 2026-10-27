@@ -202,7 +202,8 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
             UserRole.BACKOFFICE_SUB_AGENZIA,
             UserRole.RESPONSABILE_SUB_AGENZIA,
             UserRole.AREA_MANAGER,
-            UserRole.RESPONSABILE_PRESIDI
+            UserRole.RESPONSABILE_PRESIDI,
+            UserRole.SEGNALATORE
         ]
         if user_data.role not in allowed_roles:
             raise HTTPException(status_code=403, detail=f"Cannot create user with role {user_data.role}")

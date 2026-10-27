@@ -9786,6 +9786,8 @@ api_router.include_router(leads_router)
 api_router.include_router(documents_router)
 api_router.include_router(analytics_router)
 api_router.include_router(clienti_router)
+from routes.segnalazioni import router as segnalazioni_router  # Segnalatori: segnalazioni clienti + esiti BO
+api_router.include_router(segnalazioni_router)
 
 # Include the router in the main app (MUST be after all endpoints are defined)
 # --- Spoki / Chatbot / Calendar routes (modulari) ---

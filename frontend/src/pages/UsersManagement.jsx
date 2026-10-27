@@ -322,6 +322,7 @@ const UsersManagement = ({ selectedUnit, units }) => {
       admin: "bg-red-100 text-red-800",
       referente: "bg-blue-100 text-blue-800", 
       agente: "bg-green-100 text-green-800",
+      segnalatore: "bg-orange-100 text-orange-800",
     };
 
     return (
@@ -873,7 +874,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
       // Carica i servizi per la commessa selezionata (per responsabile/backoffice commessa e ruoli store/presidi/area manager)
       if (formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" || 
           formData.role === "responsabile_store" || formData.role === "responsabile_presidi" ||
-          formData.role === "store_assist" || formData.role === "promoter_presidi" ||
+          formData.role === "store_assist" || formData.role === "promoter_presidi" || formData.role === "segnalatore" ||
           formData.role === "area_manager") {
         await fetchServiziForCommessa(commessaId);
       } else {
@@ -1011,6 +1012,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                       <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
                       <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
                       <SelectItem value="area_manager">Area Manager</SelectItem>
+                      <SelectItem value="segnalatore">Segnalatore</SelectItem>
                     </>
                   )}
                   
@@ -1026,6 +1028,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                       <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
                       <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
                       <SelectItem value="area_manager">Area Manager</SelectItem>
+                      <SelectItem value="segnalatore">Segnalatore</SelectItem>
                       <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
                     </>
                   )}
@@ -1285,7 +1288,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
           {/* Campi condizionali per ruoli specializzati - SEZIONE DUPLICATA RIMOSSA */}
 
           {/* RESPONSABILE COMMESSA e BACKOFFICE COMMESSA: Commesse (multi) → Servizi separati per commessa */}
-          {(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
+          {(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" || formData.role === "segnalatore") && (
             <>
               <div className="col-span-2">
                 <Label>Commesse Autorizzate *</Label>
@@ -1798,7 +1801,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
     if (formData.commesse_autorizzate && formData.commesse_autorizzate.length > 0) {
       if (formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" ||
           formData.role === "responsabile_store" || formData.role === "responsabile_presidi" ||
-          formData.role === "store_assist" || formData.role === "promoter_presidi") {
+          formData.role === "store_assist" || formData.role === "promoter_presidi" || formData.role === "segnalatore") {
         // Per questi ruoli, carica servizi per OGNI commessa autorizzata
         formData.commesse_autorizzate.forEach(commessaId => {
           fetchServiziForCommessaEdit(commessaId);
@@ -1844,7 +1847,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
   useEffect(() => {
     if ((formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" ||
          formData.role === "responsabile_store" || formData.role === "responsabile_presidi" ||
-         formData.role === "store_assist" || formData.role === "promoter_presidi" ||
+         formData.role === "store_assist" || formData.role === "promoter_presidi" || formData.role === "segnalatore" ||
          formData.role === "area_manager") && 
         user.commesse_autorizzate && user.commesse_autorizzate.length > 0) {
       console.log('🔄 [EDIT MODAL MOUNT] Loading servizi for existing commesse:', user.commesse_autorizzate);
@@ -2057,7 +2060,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
       // Carica i servizi per la commessa selezionata (per responsabile/backoffice commessa e ruoli store/presidi/area manager)
       if (formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" ||
           formData.role === "responsabile_store" || formData.role === "responsabile_presidi" ||
-          formData.role === "store_assist" || formData.role === "promoter_presidi" ||
+          formData.role === "store_assist" || formData.role === "promoter_presidi" || formData.role === "segnalatore" ||
           formData.role === "area_manager") {
         await fetchServiziForCommessaEdit(commessaId);
       } else {
@@ -2187,6 +2190,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                       <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
                       <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
                       <SelectItem value="area_manager">Area Manager</SelectItem>
+                      <SelectItem value="segnalatore">Segnalatore</SelectItem>
                     </>
                   )}
                   
@@ -2202,6 +2206,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                       <SelectItem value="backoffice_sub_agenzia">BackOffice Sub Agenzia</SelectItem>
                       <SelectItem value="responsabile_sub_agenzia">Responsabile Sub Agenzia</SelectItem>
                       <SelectItem value="area_manager">Area Manager</SelectItem>
+                      <SelectItem value="segnalatore">Segnalatore</SelectItem>
                       <SelectItem value="responsabile_presidi">Responsabile Presidi</SelectItem>
                     </>
                   )}
@@ -2385,7 +2390,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
              formData.role === "responsabile_sub_agenzia" || formData.role === "backoffice_sub_agenzia" ||
              formData.role === "agente_specializzato" || formData.role === "operatore" ||
              formData.role === "responsabile_store" || formData.role === "responsabile_presidi" ||
-             formData.role === "store_assist" || formData.role === "promoter_presidi") && 
+             formData.role === "store_assist" || formData.role === "promoter_presidi" || formData.role === "segnalatore") && 
            ((formData.assignment_type === "unit" && formData.unit_id) || 
             (formData.assignment_type === "sub_agenzia" && formData.sub_agenzia_id)) && (
             <div>
@@ -2482,7 +2487,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
           )}
 
           {/* Campi condizionali per ruoli specializzati - EDIT MODAL */}
-          {(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa") && (
+          {(formData.role === "responsabile_commessa" || formData.role === "backoffice_commessa" || formData.role === "segnalatore") && (
             <>
               <div className="col-span-2">
                 <Label>Commesse Autorizzate *</Label>
