@@ -53,12 +53,15 @@ def segn_id(admin):
 
 
 @pytest.fixture(scope="module")
-def created(segn):
+def created(segn, admin):
     r = requests.post(f"{API}/segnalazioni", headers=segn, json={
         "nome": "TEST_Export", "cognome": "TEST_Stats", "telefono": "3339998887",
-        "note": "pytest export", "commessa_id": FASTWEB_ID, "servizio_id": TLS_ID})
+        "note": "pytest export"})
     assert r.status_code == 200, r.text
-    yield r.json()
+    a = requests.put(f"{API}/segnalazioni/{r.json()['id']}/assegnazione", headers=admin,
+                     json={"commessa_id": FASTWEB_ID, "servizio_id": TLS_ID})
+    assert a.status_code == 200, a.text
+    yield a.json()
     try:
         from pymongo import MongoClient
         from dotenv import dotenv_values

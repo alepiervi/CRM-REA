@@ -36,9 +36,13 @@ def bo():
 def created(segn, admin):
     r = requests.post(f"{API}/segnalazioni", headers=segn, json={
         "nome": "TEST_Mario", "cognome": "TEST_Rossi", "telefono": "3331234567",
-        "note": "pytest note", "commessa_id": FASTWEB_ID, "servizio_id": TLS_ID})
+        "note": "pytest note"})
     assert r.status_code == 200, r.text
-    d = r.json()
+    # commessa/servizio now assigned by BO (iteration 30 change)
+    a = requests.put(f"{API}/segnalazioni/{r.json()['id']}/assegnazione", headers=admin,
+                     json={"commessa_id": FASTWEB_ID, "servizio_id": TLS_ID})
+    assert a.status_code == 200, a.text
+    d = a.json()
     yield d
     # cleanup via mongo (no delete endpoint)
     try:
@@ -76,9 +80,9 @@ class TestCreate:
             "nome": "", "cognome": "x", "telefono": "12", "commessa_id": FASTWEB_ID, "servizio_id": TLS_ID})
         assert r.status_code == 422
 
-    def test_create_invalid_servizio(self, segn):
-        r = requests.post(f"{API}/segnalazioni", headers=segn, json={
-            "nome": "TEST_a", "cognome": "b", "telefono": "33312345", "commessa_id": FASTWEB_ID, "servizio_id": "nope"})
+    def test_assign_invalid_servizio(self, created, admin):
+        r = requests.put(f"{API}/segnalazioni/{created['id']}/assegnazione", headers=admin,
+                         json={"commessa_id": FASTWEB_ID, "servizio_id": "nope"})
         assert r.status_code == 400
 
     def test_bo_cannot_create(self, bo):
@@ -98,7 +102,7 @@ class TestScope:
     def test_bo_sees_fastweb(self, created, bo):
         items = requests.get(f"{API}/segnalazioni", headers=bo).json()
         assert any(i["id"] == created["id"] for i in items)
-        assert all(i["commessa_id"] == FASTWEB_ID for i in items)
+        assert all(i["commessa_id"] in (FASTWEB_ID, None) for i in items)
 
     def test_admin_sees_all(self, created, admin):
         items = requests.get(f"{API}/segnalazioni", headers=admin).json()

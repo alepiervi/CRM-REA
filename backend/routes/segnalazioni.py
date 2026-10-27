@@ -283,7 +283,7 @@ async def update_assegnazione(segnalazione_id: str, data: AssegnazioneUpdate, cu
     if current_user.role not in ESITO_ROLES:
         raise HTTPException(status_code=403, detail="Solo il BackOffice Commessa può assegnare commessa e servizio")
     seg = await _get_accessible(segnalazione_id, current_user)
-    servizio = await db.servizi.find_one({"id": data.servizio_id, "commessa_id": data.commessa_id}, {"_id": 0, "nome": 1})
+    servizio = await db.servizi.find_one({"id": data.servizio_id, "commessa_id": data.commessa_id, "is_active": {"$ne": False}}, {"_id": 0, "nome": 1})
     if not servizio:
         raise HTTPException(status_code=400, detail="Servizio non valido per la commessa selezionata")
     if current_user.role != UserRole.ADMIN and (
@@ -297,7 +297,9 @@ async def update_assegnazione(segnalazione_id: str, data: AssegnazioneUpdate, cu
               "assegnato_by": current_user.username, "updated_at": datetime.now(timezone.utc).isoformat()}
     if not seg.get("aruba_commessa_id"):
         update["aruba_commessa_id"] = data.commessa_id
-    await db.segnalazioni.update_one({"id": segnalazione_id}, {"$set": update})
+    await db.segnalazioni.update_one({"id": segnalazione_id}, {"$set": update, "$push": {"assegnazione_history": {
+        "commessa_nome": update["commessa_nome"], "servizio_nome": update["servizio_nome"],
+        "by_username": current_user.username, "at": update["updated_at"]}}})
     return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0})
 
 

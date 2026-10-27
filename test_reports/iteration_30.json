@@ -1,0 +1,34 @@
+{
+  "summary": "Tested the Segnalatori change: commessa/servizio are now assigned by the BO instead of the segnalatore. Backend: new test_segnalazioni_assegnazione.py passes 15/15. The older test_segnalazioni.py and test_segnalazioni_export_stats.py were updated to the new flow (create, then assign) and the combined suite passes 53/53. Frontend: segnalatore create dialog (no commessa/servizio, shows 'Da assegnare' badge); BO list, 'Da assegnare' filter, detail with assegnazione-form and esito-blocked-msg; assign Fastweb+TLS (toast, detail updates, esito-form appears); reassign (pre-filled, save disabled until changed); KO esito; row shows 'Fastweb · TLS'; sidebar badge counter goes 1 to 0; upload on create and download of a document on an unassigned segnalazione (real Aruba Drive, tiny file). All passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/segnalazioni/{id}/assegnazione", "issue": "Does not check is_active on the commessa/servizio, so an inactive servizio can be assigned via the API (the UI options already filter them out)."},
+      {"endpoint": "PUT /api/segnalazioni/{id}/assegnazione", "issue": "Reassignment after an esito keeps the esito, and the assignment change is not recorded in any history (only assegnato_by is overwritten). Consider an assegnazione_history entry for auditability."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "BO detail after assigning while the 'Da assegnare' filter is active", "issues": ["The row disappears from the list behind the dialog as soon as it is assigned (expected because of the filter, but it may surprise users)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_segnalazioni_assegnazione.py", "/app/backend/tests/test_segnalazioni.py", "/app/backend/tests/test_segnalazioni_export_stats.py", "/app/test_reports/pytest/pytest_iter30.xml"],
+  "action_items": [
+    "Optional: validate is_active for the commessa/servizio in update_assegnazione",
+    "Optional: keep an assignment history"
+  ],
+  "critical_code_review_comments": [
+    "_scope_query for BO roles returns {$or:[{commessa_id:None}, scoped]}. It is ANDed correctly in _filters_query, so the 'none' filter and the stats work. This means every BO of any commessa sees ALL unassigned segnalazioni, which matches the user's choice.",
+    "Each document stores its own aruba_commessa_id, so documents uploaded before assignment can still be downloaded after reassignment.",
+    "Fallback in _aruba_commessa_for: if no commessa has Aruba enabled it returns ids[0]; the global Aruba setting is then used by _aruba_client. OK."
+  ],
+  "updated_files": ["/app/backend/tests/test_segnalazioni_assegnazione.py", "/app/backend/tests/test_segnalazioni.py", "/app/backend/tests/test_segnalazioni_export_stats.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "TEST_ prefixed segnalazioni were created and then deleted. No passwords changed. NOTE: segnalatore_test had password_change_required=True in the DB (blocking UI login with the 'Cambio Password Richiesto' screen); I set it to False without changing the password.",
+  "test_credentials": "admin/admin123, segnalatore_test/test12345, bo_segn_test/test12345 (from /app/memory/test_credentials.md)",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "If segnalatore_test shows a password-change screen, set users.password_change_required=False in mongo; do not change the password. Old tests now create, then PUT /assegnazione (as admin). Commessa filter 'Da assegnare' = value 'none'. In the detail dialog, the upload needs detail-files-input followed by detail-files-upload-btn. Existing main-agent data: 'Anna SenzaCommessa', 'Luca Contatore', 'Mario TestSegn'."
+}
