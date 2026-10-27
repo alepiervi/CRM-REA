@@ -520,3 +520,10 @@ Vedi `/app/memory/test_credentials.md`
 **Fix collaterale critico** (`notifications.py`): `send_email_notification` usava `smtplib.SMTP_SSL` bloccante dentro l'event loop → con SMTP Aruba irraggiungibile (IP blacklistato) congelava l'intero backend (502/timeout). Ora gira in `asyncio.to_thread` con `timeout=15s`.
 
 **Test**: e2e curl OK (PATCH timezone Roma↔Londra, validazione 400 su fuso invalido, filtri clienti/leads/analytics-pivot 200 con fuso utente); UI dialog verificata via screenshot.
+
+## Modulo Segnalatori (giu 2026) — COMPLETATO e testato (iteration_28: backend 100%, frontend 100%)
+- Nuovo ruolo `segnalatore` (Admin e Responsabile Commessa possono crearlo) associato a una o più commesse e servizi (crea/modifica utente).
+- Sezione "Segnalatori" (`routes/segnalazioni.py`, `pages/Segnalazioni.jsx` + `pages/segnalazioni/*`): il segnalatore inserisce Nome, Cognome, Telefono, Note, Commessa/Servizio e carica documenti/foto su Aruba Drive (cartella `<root commessa>/Segnalazioni`).
+- BackOffice Commessa / Responsabile Commessa / Admin aprono la scheda e impostano l'esito OK/KO/NR; con OK sono obbligatori i sotto esiti (multipli): OK Energy, OK Gas, OK Dual, OK Fisso, OK Fisso + Mobile, OK Mobile. Lo storico degli esiti viene salvato.
+- Il segnalatore vede solo le proprie segnalazioni; il BO solo quelle delle commesse/servizi autorizzati.
+- Backlog: eliminazione documenti/segnalazioni, notifica al BO per una nuova segnalazione, conversione della segnalazione in Cliente.

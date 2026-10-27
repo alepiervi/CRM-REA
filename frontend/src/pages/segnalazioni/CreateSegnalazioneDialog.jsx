@@ -58,7 +58,7 @@ export const CreateSegnalazioneDialog = ({ open, onClose, options, onCreated }) 
             <div><Label>Nome *</Label><Input required value={form.nome} onChange={set("nome")} data-testid="segnalazione-nome-input" /></div>
             <div><Label>Cognome *</Label><Input required value={form.cognome} onChange={set("cognome")} data-testid="segnalazione-cognome-input" /></div>
           </div>
-          <div><Label>Numero di Telefono *</Label><Input required type="tel" minLength={5} value={form.telefono} onChange={set("telefono")} data-testid="segnalazione-telefono-input" /></div>
+          <div><Label>Numero di Telefono *</Label><Input required type="tel" minLength={5} maxLength={20} pattern="\+?[0-9 ./\-]{5,20}" title="Solo numeri (es. 3331234567)" value={form.telefono} onChange={set("telefono")} data-testid="segnalazione-telefono-input" /></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Commessa *</Label>

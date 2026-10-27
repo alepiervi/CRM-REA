@@ -27,7 +27,7 @@ MAX_DOC_SIZE = 25 * 1024 * 1024
 class SegnalazioneCreate(BaseModel):
     nome: str = Field(min_length=1)
     cognome: str = Field(min_length=1)
-    telefono: str = Field(min_length=5)
+    telefono: str = Field(min_length=5, max_length=20, pattern=r"^\+?[0-9 ./-]{5,20}$")
     note: Optional[str] = ""
     commessa_id: str
     servizio_id: str

@@ -1,0 +1,40 @@
+{
+  "summary": "Tested the full Segnalatori feature on both backend and frontend. Backend: 19/19 pytest tests pass (options, create and validation, RBAC scope for segnalatore/BO/admin, esito OK/KO/NR, OK without sotto esiti returns 400, sotto esiti cleared on KO, history, real Aruba Drive upload and download, empty file returns 400, 404s, admin creates a segnalatore user). Frontend: admin create and edit of a Segnalatore user (Commesse Autorizzate, then per-commessa servizi) works; segnalatore login shows only the 'Segnalatori' sidebar item and the page loads directly; Fastweb/TLS are preselected; create with an attachment shows the row with 'Da lavorare' and doc count 1; the segnalatore detail has no esito-form; adding files from the detail and downloading them work. BO: esito-form, OK shows 6 sotto-esito checkboxes, save stays disabled until one is checked, multi-select save shows the badge with sotto esiti, KO/NR hide and clear sotto esiti, history lists all entries, row badge updates. Search, esito and commessa filters all work. No page errors. The mobile create dialog renders well.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/segnalazioni/{id}/documents", "issue": "No DELETE endpoint for documents or segnalazioni, so test files stay on Aruba Drive (Fastweb/Segnalazioni folder). Wrong uploads cannot be removed."},
+      {"endpoint": "/api/segnalazioni (POST)", "issue": "telefono is only checked for min_length=5. Any characters are accepted (no phone format validation)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SegnalazioneDetailDialog", "issue": "Right after 'Salva esito', the first Escape only closes the toast (Radix layer stack) and a second Escape closes the dialog. Low priority.", "selector": "[data-testid='segnalazione-detail-dialog']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Sidebar (segnalatore role)", "issues": ["The '1. SELEZIONA COMMESSA' selector at the bottom of the sidebar is shown to segnalatore users. It has no effect on the Segnalatori page and is confusing; hide it for this role."]},
+      {"screen": "UsersManagement create/edit (Segnalatore)", "issues": ["The 'Gestione Entità' (Solo Clienti) field is shown for segnalatore but is irrelevant.", "Create/edit user modal fields have no data-testid attributes (existing issue)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_segnalazioni.py", "/app/test_reports/pytest/pytest_segnalazioni.xml"],
+  "action_items": [
+    "Optional: hide the sidebar 'Seleziona Commessa' selector and the 'Gestione Entità' field for the segnalatore role",
+    "Optional: add delete for segnalazione documents (and Aruba file) for admin/BO",
+    "Add segnalatore_test and bo_segn_test credentials to /app/memory/test_credentials.md (currently missing)",
+    "Segnalatore users created from the UI get password_change_required=True: confirm this is intended for the first login"
+  ],
+  "critical_code_review_comments": [
+    "Segnalazioni.jsx load() and the options fetch have no try/catch: on an API error (e.g. 403 for a non-allowed role) loading stays true and the promise rejection is unhandled. Add error toast/state.",
+    "SegnalazioneDetailDialog load() has no error handling: a 404 leaves the dialog stuck on 'Caricamento...'.",
+    "EsitoForm keeps the previous nota_esito when switching esito (prefilled from the last esito). This may be intended, but each history entry then repeats the old nota.",
+    "The list endpoint returns the full documents array per row only to count docs. Consider a projection to a count for large lists."
+  ],
+  "updated_files": ["/app/backend/tests/test_segnalazioni.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin/admin123, segnalatore_test/test12345, bo_segn_test/test12345 (the latter two are not in /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created TEST_ segnalazioni and test_segn_* users during testing; all deleted from Mongo afterwards. Uploaded tiny test files remain on Aruba Drive (no delete API). The main agent's 'Mario TestSegn' record was left untouched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Fastweb id 4cb70f28-6278-4d0f-b2b7-65f2b783f3f1, TLS servizio cc0648c1-0df1-4530-8281-f4c940934916. The pytest cleans TEST_ segnalazioni via pymongo. The role Select in UsersManagement needs scroll_into_view on the option (force click picks the wrong option)."
+}
