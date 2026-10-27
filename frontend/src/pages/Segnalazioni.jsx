@@ -1,56 +1,102 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { format } from "date-fns";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { Plus, Paperclip, Megaphone } from "lucide-react";
+import { Plus, Paperclip, Megaphone, FileSpreadsheet } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../hooks/use-toast";
 import { EsitoBadge } from "./segnalazioni/EsitoBadge";
 import { SegnalazioniFilters } from "./segnalazioni/SegnalazioniFilters";
+import { SegnalazioniStats } from "./segnalazioni/SegnalazioniStats";
 import { CreateSegnalazioneDialog } from "./segnalazioni/CreateSegnalazioneDialog";
 import { SegnalazioneDetailDialog } from "./segnalazioni/SegnalazioneDetailDialog";
-import { API, formatDate } from "./segnalazioni/shared";
+import { API, errMsg, formatDate } from "./segnalazioni/shared";
+
+const buildParams = (f) => {
+  const p = {};
+  if (f.search) p.search = f.search;
+  if (f.esito !== "all") p.esito = f.esito;
+  if (f.commessa_id !== "all") p.commessa_id = f.commessa_id;
+  if (f.segnalatore_id !== "all") p.segnalatore_id = f.segnalatore_id;
+  if (f.range?.from) p.date_from = format(f.range.from, "yyyy-MM-dd");
+  if (f.range?.to || f.range?.from) p.date_to = format(f.range.to || f.range.from, "yyyy-MM-dd");
+  return p;
+};
 
 export default function Segnalazioni() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [items, setItems] = useState([]);
+  const [stats, setStats] = useState(null);
   const [meta, setMeta] = useState({ commesse: [], esiti: [], sotto_esiti_ok: [] });
-  const [filters, setFilters] = useState({ search: "", esito: "all", commessa_id: "all" });
+  const [segnalatori, setSegnalatori] = useState([]);
+  const [filters, setFilters] = useState({ search: "", esito: "all", commessa_id: "all", segnalatore_id: "all", range: undefined });
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [openId, setOpenId] = useState(null);
-  const canCreate = user.role === "segnalatore" || user.role === "admin";
+  const isSegnalatore = user.role === "segnalatore";
+  const canCreate = isSegnalatore || user.role === "admin";
 
   const load = useCallback(async () => {
-    const params = { search: filters.search || undefined };
-    if (filters.esito !== "all") params.esito = filters.esito;
-    if (filters.commessa_id !== "all") params.commessa_id = filters.commessa_id;
-    const { data } = await axios.get(`${API}/segnalazioni`, { params });
-    setItems(data);
+    const params = buildParams(filters);
+    const [list, st] = await Promise.all([
+      axios.get(`${API}/segnalazioni`, { params }),
+      axios.get(`${API}/segnalazioni/stats/summary`, { params }),
+    ]);
+    setItems(list.data);
+    setStats(st.data);
     setLoading(false);
     window.dispatchEvent(new Event("segnalazioni-changed"));
   }, [filters]);
 
-  useEffect(() => { axios.get(`${API}/segnalazioni/options`).then((r) => setMeta(r.data)); }, []);
+  useEffect(() => {
+    axios.get(`${API}/segnalazioni/options`).then((r) => setMeta(r.data));
+    if (!isSegnalatore) axios.get(`${API}/segnalazioni/segnalatori/list`).then((r) => setSegnalatori(r.data));
+  }, [isSegnalatore]);
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [load]);
+
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await axios.get(`${API}/segnalazioni/export/excel`, { params: buildParams(filters), responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
+      Object.assign(document.createElement("a"), { href: url, download: `segnalazioni_${format(new Date(), "yyyyMMdd_HHmm")}.xlsx` }).click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast({ title: "Errore export", description: errMsg(e, "Impossibile esportare"), variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-6" data-testid="segnalazioni-page">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2"><Megaphone className="w-6 h-6 text-blue-600" />Segnalatori</h1>
-          <p className="text-sm text-slate-500">{user.role === "segnalatore" ? "Inserisci e monitora i clienti che hai segnalato" : "Clienti segnalati da lavorare ed esitare"}</p>
+          <p className="text-sm text-slate-500">{isSegnalatore ? "Inserisci i clienti e guarda com'è andata con le tue segnalazioni" : "Clienti segnalati da lavorare ed esitare"}</p>
         </div>
-        {canCreate && (
-          <Button onClick={() => setShowCreate(true)} disabled={meta.commesse.length === 0} data-testid="new-segnalazione-btn">
-            <Plus className="w-4 h-4 mr-2" />Nuova Segnalazione
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {user.role === "admin" && (
+            <Button variant="outline" onClick={exportExcel} disabled={exporting} data-testid="segnalazioni-export-btn">
+              <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-600" />{exporting ? "Esportazione..." : "Esporta Excel"}
+            </Button>
+          )}
+          {canCreate && (
+            <Button onClick={() => setShowCreate(true)} disabled={meta.commesse.length === 0} data-testid="new-segnalazione-btn">
+              <Plus className="w-4 h-4 mr-2" />Nuova Segnalazione
+            </Button>
+          )}
+        </div>
       </div>
       {canCreate && meta.commesse.length === 0 && (
         <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3" data-testid="no-commesse-warning">Nessuna commessa/servizio associato al tuo utente. Contatta l'amministratore.</p>
       )}
-      <SegnalazioniFilters filters={filters} setFilters={setFilters} options={meta.commesse} />
+      <SegnalazioniFilters filters={filters} setFilters={setFilters} options={meta.commesse} segnalatori={segnalatori} showSegnalatore={!isSegnalatore} />
+      <SegnalazioniStats stats={stats} onOpen={setOpenId} />
       <Card>
         <CardContent className="p-0 overflow-x-auto">
           <Table data-testid="segnalazioni-table">

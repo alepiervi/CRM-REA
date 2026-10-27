@@ -1,10 +1,16 @@
 """Route: Segnalazioni — i Segnalatori inseriscono clienti segnalati, il BackOffice Commessa li esita."""
+import io
 import logging
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import List, Optional
+from zoneinfo import ZoneInfo
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+from openpyxl.utils import get_column_letter
 
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from fastapi.responses import Response
@@ -22,6 +28,7 @@ ESITI = ["OK", "KO", "NR"]
 SOTTO_ESITI_OK = ["OK Energy", "OK Gas", "OK Dual", "OK Fisso", "OK Fisso + Mobile", "OK Mobile"]
 ESITO_ROLES = {UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA}
 MAX_DOC_SIZE = 25 * 1024 * 1024
+ROME = ZoneInfo("Europe/Rome")
 
 
 class SegnalazioneCreate(BaseModel):
@@ -143,31 +150,120 @@ async def create_segnalazione(data: SegnalazioneCreate, current_user: User = Dep
     return doc
 
 
-@router.get("/segnalazioni")
-async def list_segnalazioni(
+def _day_to_utc_iso(day: str, end: bool = False) -> str:
+    try:
+        d = datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=ROME)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato data non valido (YYYY-MM-DD)")
+    if end:
+        d += timedelta(days=1)
+    return d.astimezone(timezone.utc).isoformat()
+
+
+def _filters_query(
+    current_user: User = Depends(get_current_user),
     esito: Optional[str] = None,
     commessa_id: Optional[str] = None,
     servizio_id: Optional[str] = None,
+    segnalatore_id: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     search: Optional[str] = None,
-    current_user: User = Depends(get_current_user),
-):
-    query = _scope_query(current_user)
+) -> dict:
+    f = {}
     if esito == "da_lavorare":
-        query["esito"] = None
+        f["esito"] = None
     elif esito in ESITI:
-        query["esito"] = esito
+        f["esito"] = esito
     if commessa_id:
-        if "commessa_id" in query and commessa_id not in query["commessa_id"]["$in"]:
-            return []
-        query["commessa_id"] = commessa_id
+        f["commessa_id"] = commessa_id
     if servizio_id:
-        if "servizio_id" in query and servizio_id not in query["servizio_id"]["$in"]:
-            return []
-        query["servizio_id"] = servizio_id
+        f["servizio_id"] = servizio_id
+    if segnalatore_id:
+        f["created_by"] = segnalatore_id
+    if date_from or date_to:
+        f["created_at"] = {}
+        if date_from:
+            f["created_at"]["$gte"] = _day_to_utc_iso(date_from)
+        if date_to:
+            f["created_at"]["$lt"] = _day_to_utc_iso(date_to, end=True)
     if search and search.strip():
         rx = {"$regex": re.escape(search.strip()), "$options": "i"}
-        query["$or"] = [{"nome": rx}, {"cognome": rx}, {"telefono": rx}, {"created_by_username": rx}]
+        f["$or"] = [{"nome": rx}, {"cognome": rx}, {"telefono": rx}, {"created_by_username": rx}]
+    return {"$and": [_scope_query(current_user), f]}
+
+
+@router.get("/segnalazioni")
+async def list_segnalazioni(query: dict = Depends(_filters_query)):
     return await db.segnalazioni.find(query, {"_id": 0, "esito_history": 0}).sort("created_at", -1).to_list(1000)
+
+
+@router.get("/segnalazioni/stats/summary")
+async def segnalazioni_stats(query: dict = Depends(_filters_query)):
+    docs = await db.segnalazioni.find(
+        query, {"_id": 0, "id": 1, "nome": 1, "cognome": 1, "esito": 1, "sotto_esiti": 1, "esito_at": 1, "servizio_nome": 1}
+    ).to_list(None)
+    by_esito = {e: sum(1 for d in docs if d.get("esito") == e) for e in ESITI}
+    esitate = sum(by_esito.values())
+    sotto = {s: sum(1 for d in docs if s in (d.get("sotto_esiti") or [])) for s in SOTTO_ESITI_OK}
+    recenti = sorted([d for d in docs if d.get("esito_at")], key=lambda d: d["esito_at"], reverse=True)[:5]
+    return {
+        "totale": len(docs),
+        "da_lavorare": len(docs) - esitate,
+        "esitate": esitate,
+        "per_esito": by_esito,
+        "tasso_ok": round(by_esito["OK"] * 100 / esitate, 1) if esitate else 0,
+        "sotto_esiti": sotto,
+        "ultime_esitate": recenti,
+    }
+
+
+@router.get("/segnalazioni/segnalatori/list")
+async def list_segnalatori(current_user: User = Depends(get_current_user)):
+    if current_user.role == UserRole.SEGNALATORE:
+        return []
+    if current_user.role == UserRole.ADMIN:
+        users_q = {"role": UserRole.SEGNALATORE.value}
+    else:
+        users_q = {"id": {"$in": await db.segnalazioni.distinct("created_by", _scope_query(current_user))}}
+    users = await db.users.find(users_q, {"_id": 0, "id": 1, "username": 1}).to_list(None)
+    return sorted(users, key=lambda u: u["username"].lower())
+
+
+def _rome(iso: Optional[str]) -> str:
+    return datetime.fromisoformat(iso).astimezone(ROME).strftime("%d/%m/%Y %H:%M") if iso else ""
+
+
+@router.get("/segnalazioni/export/excel")
+async def export_segnalazioni_excel(
+    query: dict = Depends(_filters_query), current_user: User = Depends(get_current_user)
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Export disponibile solo per Admin")
+    docs = await db.segnalazioni.find(query, {"_id": 0, "esito_history": 0}).sort("created_at", -1).to_list(None)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Segnalazioni"
+    headers = ["Data segnalazione", "Nome", "Cognome", "Telefono", "Note", "Commessa", "Servizio", "Segnalatore",
+               "Esito", "Sotto esiti", "Nota esito", "Esitato da", "Data esito", "N. documenti"]
+    ws.append(headers)
+    for c in ws[1]:
+        c.font = Font(bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor="1E3A8A")
+    for d in docs:
+        ws.append([_rome(d.get("created_at")), d.get("nome"), d.get("cognome"), d.get("telefono"), d.get("note"),
+                   d.get("commessa_nome"), d.get("servizio_nome"), d.get("created_by_username"),
+                   d.get("esito") or "Da lavorare", ", ".join(d.get("sotto_esiti") or []), d.get("nota_esito"),
+                   d.get("esito_by") or "", _rome(d.get("esito_at")), len(d.get("documents") or [])])
+    for i, h in enumerate(headers, 1):
+        ws.column_dimensions[get_column_letter(i)].width = max(14, len(h) + 4)
+    ws.freeze_panes = "A2"
+    buf = io.BytesIO()
+    wb.save(buf)
+    name = f"segnalazioni_{datetime.now(ROME).strftime('%Y%m%d_%H%M')}.xlsx"
+    return Response(content=buf.getvalue(),
+                    media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 @router.get("/segnalazioni/{segnalazione_id}")
