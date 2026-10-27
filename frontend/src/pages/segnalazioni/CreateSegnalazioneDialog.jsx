@@ -5,35 +5,28 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { useToast } from "../../hooks/use-toast";
 import { FilePicker } from "./FilePicker";
 import { API, errMsg, uploadDocuments } from "./shared";
 
-const EMPTY = { nome: "", cognome: "", telefono: "", note: "", commessa_id: "", servizio_id: "" };
+const EMPTY = { nome: "", cognome: "", telefono: "", note: "" };
 
-export const CreateSegnalazioneDialog = ({ open, onClose, options, onCreated }) => {
+export const CreateSegnalazioneDialog = ({ open, onClose, onCreated }) => {
   const [form, setForm] = useState(EMPTY);
   const [files, setFiles] = useState([]);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
-  const commessa = options.find((c) => c.id === form.commessa_id);
 
   useEffect(() => {
     if (!open) return;
-    const only = options.length === 1 ? options[0] : null;
-    setForm({ ...EMPTY, commessa_id: only?.id || "", servizio_id: only?.servizi.length === 1 ? only.servizi[0].id : "" });
+    setForm(EMPTY);
     setFiles([]);
-  }, [open, options]);
+  }, [open]);
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.commessa_id || !form.servizio_id) {
-      toast({ title: "Seleziona commessa e servizio", variant: "destructive" });
-      return;
-    }
     setSaving(true);
     try {
       const { data } = await axios.post(`${API}/segnalazioni`, form);
@@ -59,24 +52,9 @@ export const CreateSegnalazioneDialog = ({ open, onClose, options, onCreated }) 
             <div><Label>Cognome *</Label><Input required value={form.cognome} onChange={set("cognome")} data-testid="segnalazione-cognome-input" /></div>
           </div>
           <div><Label>Numero di Telefono *</Label><Input required type="tel" minLength={5} maxLength={20} pattern="\+?[0-9 ./\-]{5,20}" title="Solo numeri (es. 3331234567)" value={form.telefono} onChange={set("telefono")} data-testid="segnalazione-telefono-input" /></div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label>Commessa *</Label>
-              <Select value={form.commessa_id} onValueChange={(v) => setForm({ ...form, commessa_id: v, servizio_id: "" })}>
-                <SelectTrigger data-testid="segnalazione-commessa-select"><SelectValue placeholder="Seleziona commessa" /></SelectTrigger>
-                <SelectContent>{options.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Servizio *</Label>
-              <Select value={form.servizio_id} onValueChange={(v) => setForm({ ...form, servizio_id: v })} disabled={!commessa}>
-                <SelectTrigger data-testid="segnalazione-servizio-select"><SelectValue placeholder="Seleziona servizio" /></SelectTrigger>
-                <SelectContent>{(commessa?.servizi || []).map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
           <div><Label>Note</Label><Textarea rows={3} value={form.note} onChange={set("note")} data-testid="segnalazione-note-input" /></div>
           <div><Label>Documenti / Foto</Label><FilePicker files={files} onChange={setFiles} /></div>
+          <p className="text-xs text-slate-500">Commessa e servizio verranno assegnati dal BackOffice.</p>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={saving} data-testid="segnalazione-cancel-btn">Annulla</Button>
             <Button type="submit" disabled={saving} data-testid="segnalazione-submit-btn">{saving ? "Salvataggio..." : "Salva Segnalazione"}</Button>

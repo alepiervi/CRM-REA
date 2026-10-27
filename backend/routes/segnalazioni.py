@@ -36,6 +36,9 @@ class SegnalazioneCreate(BaseModel):
     cognome: str = Field(min_length=1)
     telefono: str = Field(min_length=5, max_length=20, pattern=r"^\+?[0-9 ./-]{5,20}$")
     note: Optional[str] = ""
+
+
+class AssegnazioneUpdate(BaseModel):
     commessa_id: str
     servizio_id: str
 
@@ -55,7 +58,7 @@ def _scope_query(user: User) -> dict:
         q = {"commessa_id": {"$in": user.commesse_autorizzate or []}}
         if user.servizi_autorizzati:
             q["servizio_id"] = {"$in": user.servizi_autorizzati}
-        return q
+        return {"$or": [{"commessa_id": None}, q]}
     raise HTTPException(status_code=403, detail="Accesso non consentito alle segnalazioni")
 
 
@@ -66,8 +69,16 @@ async def _get_accessible(segnalazione_id: str, user: User) -> dict:
     return doc
 
 
-async def _aruba_client(commessa_id: str) -> NextcloudClient:
-    commessa = await db.commesse.find_one({"id": commessa_id}, {"_id": 0})
+async def _aruba_commessa_for(user: User) -> Optional[str]:
+    """Prima commessa del segnalatore con Aruba Drive attivo (cartella dove salvare i documenti)."""
+    ids = user.commesse_autorizzate or []
+    found = await db.commesse.find({"id": {"$in": ids}, "aruba_drive_config.enabled": True}, {"_id": 0, "id": 1}).to_list(None)
+    enabled = {c["id"] for c in found}
+    return next((i for i in ids if i in enabled), ids[0] if ids else None)
+
+
+async def _aruba_client(commessa_id: Optional[str]) -> NextcloudClient:
+    commessa = await db.commesse.find_one({"id": commessa_id}, {"_id": 0}) if commessa_id else None
     cfg = (commessa or {}).get("aruba_drive_config") or {}
     if not cfg.get("enabled"):
         settings = await db.settings.find_one({"key": "aruba_drive_global"}, {"_id": 0})
@@ -115,15 +126,6 @@ async def count_da_lavorare(current_user: User = Depends(get_current_user)):
 async def create_segnalazione(data: SegnalazioneCreate, current_user: User = Depends(get_current_user)):
     if current_user.role not in (UserRole.SEGNALATORE, UserRole.ADMIN):
         raise HTTPException(status_code=403, detail="Solo i Segnalatori possono inserire segnalazioni")
-    servizio = await db.servizi.find_one({"id": data.servizio_id, "commessa_id": data.commessa_id}, {"_id": 0})
-    if not servizio:
-        raise HTTPException(status_code=400, detail="Servizio non valido per la commessa selezionata")
-    if current_user.role == UserRole.SEGNALATORE:
-        if data.commessa_id not in (current_user.commesse_autorizzate or []) or (
-            current_user.servizi_autorizzati and data.servizio_id not in current_user.servizi_autorizzati
-        ):
-            raise HTTPException(status_code=403, detail="Commessa o servizio non autorizzati")
-    commessa = await db.commesse.find_one({"id": data.commessa_id}, {"_id": 0, "nome": 1})
     now = datetime.now(timezone.utc).isoformat()
     doc = {
         "id": str(uuid.uuid4()),
@@ -131,10 +133,11 @@ async def create_segnalazione(data: SegnalazioneCreate, current_user: User = Dep
         "cognome": data.cognome.strip(),
         "telefono": data.telefono.strip(),
         "note": (data.note or "").strip(),
-        "commessa_id": data.commessa_id,
-        "commessa_nome": (commessa or {}).get("nome"),
-        "servizio_id": data.servizio_id,
-        "servizio_nome": servizio.get("nome"),
+        "commessa_id": None,
+        "commessa_nome": None,
+        "servizio_id": None,
+        "servizio_nome": None,
+        "aruba_commessa_id": await _aruba_commessa_for(current_user),
         "esito": None,
         "sotto_esiti": [],
         "nota_esito": "",
@@ -176,7 +179,7 @@ def _filters_query(
     elif esito in ESITI:
         f["esito"] = esito
     if commessa_id:
-        f["commessa_id"] = commessa_id
+        f["commessa_id"] = None if commessa_id == "none" else commessa_id
     if servizio_id:
         f["servizio_id"] = servizio_id
     if segnalatore_id:
@@ -275,11 +278,36 @@ async def get_segnalazione(segnalazione_id: str, current_user: User = Depends(ge
     return await _get_accessible(segnalazione_id, current_user)
 
 
+@router.put("/segnalazioni/{segnalazione_id}/assegnazione")
+async def update_assegnazione(segnalazione_id: str, data: AssegnazioneUpdate, current_user: User = Depends(get_current_user)):
+    if current_user.role not in ESITO_ROLES:
+        raise HTTPException(status_code=403, detail="Solo il BackOffice Commessa può assegnare commessa e servizio")
+    seg = await _get_accessible(segnalazione_id, current_user)
+    servizio = await db.servizi.find_one({"id": data.servizio_id, "commessa_id": data.commessa_id}, {"_id": 0, "nome": 1})
+    if not servizio:
+        raise HTTPException(status_code=400, detail="Servizio non valido per la commessa selezionata")
+    if current_user.role != UserRole.ADMIN and (
+        data.commessa_id not in (current_user.commesse_autorizzate or [])
+        or (current_user.servizi_autorizzati and data.servizio_id not in current_user.servizi_autorizzati)
+    ):
+        raise HTTPException(status_code=403, detail="Commessa o servizio non autorizzati")
+    commessa = await db.commesse.find_one({"id": data.commessa_id}, {"_id": 0, "nome": 1})
+    update = {"commessa_id": data.commessa_id, "commessa_nome": (commessa or {}).get("nome"),
+              "servizio_id": data.servizio_id, "servizio_nome": servizio.get("nome"),
+              "assegnato_by": current_user.username, "updated_at": datetime.now(timezone.utc).isoformat()}
+    if not seg.get("aruba_commessa_id"):
+        update["aruba_commessa_id"] = data.commessa_id
+    await db.segnalazioni.update_one({"id": segnalazione_id}, {"$set": update})
+    return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0})
+
+
 @router.put("/segnalazioni/{segnalazione_id}/esito")
 async def update_esito(segnalazione_id: str, data: EsitoUpdate, current_user: User = Depends(get_current_user)):
     if current_user.role not in ESITO_ROLES:
         raise HTTPException(status_code=403, detail="Solo il BackOffice Commessa può esitare le segnalazioni")
-    await _get_accessible(segnalazione_id, current_user)
+    seg = await _get_accessible(segnalazione_id, current_user)
+    if not seg.get("commessa_id") or not seg.get("servizio_id"):
+        raise HTTPException(status_code=400, detail="Assegna commessa e servizio prima di dare l'esito")
     if data.esito not in ESITI:
         raise HTTPException(status_code=400, detail="Esito non valido")
     sotto = [s for s in SOTTO_ESITI_OK if s in data.sotto_esiti] if data.esito == "OK" else []
@@ -307,7 +335,8 @@ async def upload_segnalazione_document(
         raise HTTPException(status_code=400, detail="File vuoto")
     if len(content) > MAX_DOC_SIZE:
         raise HTTPException(status_code=400, detail="File troppo grande (max 25MB)")
-    client = await _aruba_client(seg["commessa_id"])
+    aruba_commessa_id = seg.get("aruba_commessa_id") or seg.get("commessa_id")
+    client = await _aruba_client(aruba_commessa_id)
     original = file.filename or "documento"
     stem, ext = _safe(Path(original).stem) or "documento", Path(original).suffix.lower()
     prefix = "_".join(p for p in [_safe(seg["telefono"]), _safe(seg["nome"]), _safe(seg["cognome"])] if p)
@@ -322,6 +351,7 @@ async def upload_segnalazione_document(
         "cloud_path": cloud_path,
         "file_type": file.content_type or "application/octet-stream",
         "file_size": len(content),
+        "aruba_commessa_id": aruba_commessa_id,
         "uploaded_by": current_user.username,
         "uploaded_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -337,7 +367,7 @@ async def download_segnalazione_document(
     doc = next((d for d in seg.get("documents", []) if d["id"] == document_id), None)
     if not doc:
         raise HTTPException(status_code=404, detail="Documento non trovato")
-    client = await _aruba_client(seg["commessa_id"])
+    client = await _aruba_client(doc.get("aruba_commessa_id") or seg.get("aruba_commessa_id") or seg.get("commessa_id"))
     ok, content = await client.download_file(doc["filename"])
     if not ok:
         raise HTTPException(status_code=404, detail="File non trovato su Aruba Drive")

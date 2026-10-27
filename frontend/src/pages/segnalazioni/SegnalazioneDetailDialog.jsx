@@ -3,6 +3,7 @@ import axios from "axios";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { EsitoBadge } from "./EsitoBadge";
 import { EsitoForm } from "./EsitoForm";
+import { AssegnazioneForm } from "./AssegnazioneForm";
 import { DocumentsSection } from "./DocumentsSection";
 import { API, ESITO_ROLES, formatDate } from "./shared";
 
@@ -30,12 +31,15 @@ export const SegnalazioneDetailDialog = ({ id, onClose, user, meta, onChanged })
               <Field label="Nome" value={seg.nome} testId="detail-nome" />
               <Field label="Cognome" value={seg.cognome} testId="detail-cognome" />
               <Field label="Telefono" value={seg.telefono} testId="detail-telefono" />
-              <Field label="Commessa / Servizio" value={`${seg.commessa_nome || ""} · ${seg.servizio_nome || ""}`} testId="detail-commessa" />
+              <Field label="Commessa / Servizio" value={seg.commessa_id ? `${seg.commessa_nome} · ${seg.servizio_nome}` : "Da assegnare"} testId="detail-commessa" />
               <Field label="Segnalato da" value={`${seg.created_by_username} · ${formatDate(seg.created_at)}`} testId="detail-created-by" />
               <div><p className="text-xs uppercase tracking-wide text-slate-500">Esito attuale</p><EsitoBadge esito={seg.esito} sottoEsiti={seg.sotto_esiti} testId="detail-esito-badge" /></div>
             </div>
             <Field label="Note" value={seg.note} testId="detail-note" />
             {seg.nota_esito && <Field label={`Nota esito (${seg.esito_by || ""})`} value={seg.nota_esito} testId="detail-nota-esito" />}
+            {ESITO_ROLES.includes(user.role) && (
+              <AssegnazioneForm key={`a-${seg.updated_at}`} segnalazione={seg} options={meta.commesse} onSaved={refresh} />
+            )}
             {ESITO_ROLES.includes(user.role) && (
               <EsitoForm key={seg.updated_at} segnalazione={seg} esiti={meta.esiti} sottoEsitiOk={meta.sotto_esiti_ok} onSaved={refresh} />
             )}

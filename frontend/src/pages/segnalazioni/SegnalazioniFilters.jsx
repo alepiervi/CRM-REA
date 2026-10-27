@@ -25,6 +25,7 @@ export const SegnalazioniFilters = ({ filters, setFilters, options, segnalatori,
       <SelectTrigger className="lg:w-44" data-testid="segnalazioni-commessa-filter"><SelectValue /></SelectTrigger>
       <SelectContent>
         <SelectItem value="all">Tutte le commesse</SelectItem>
+        <SelectItem value="none">Da assegnare</SelectItem>
         {options.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
       </SelectContent>
     </Select>

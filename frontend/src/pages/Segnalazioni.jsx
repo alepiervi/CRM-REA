@@ -91,15 +91,12 @@ export default function Segnalazioni() {
             </Button>
           )}
           {canCreate && (
-            <Button onClick={() => setShowCreate(true)} disabled={meta.commesse.length === 0} data-testid="new-segnalazione-btn">
+            <Button onClick={() => setShowCreate(true)} data-testid="new-segnalazione-btn">
               <Plus className="w-4 h-4 mr-2" />Nuova Segnalazione
             </Button>
           )}
         </div>
       </div>
-      {canCreate && meta.commesse.length === 0 && (
-        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3" data-testid="no-commesse-warning">Nessuna commessa/servizio associato al tuo utente. Contatta l'amministratore.</p>
-      )}
       <SegnalazioniFilters filters={filters} setFilters={setFilters} options={meta.commesse} segnalatori={segnalatori} showSegnalatore={!isSegnalatore} />
       <SegnalazioniStats stats={stats} onOpen={setOpenId} />
       <Card>
@@ -116,7 +113,7 @@ export default function Segnalazioni() {
                 <TableRow key={s.id} className="cursor-pointer hover:bg-slate-50" onClick={() => setOpenId(s.id)} data-testid={`segnalazione-row-${s.id}`}>
                   <TableCell className="font-medium">{s.nome} {s.cognome}</TableCell>
                   <TableCell>{s.telefono}</TableCell>
-                  <TableCell className="text-sm">{s.commessa_nome} <span className="text-slate-400">·</span> {s.servizio_nome}</TableCell>
+                  <TableCell className="text-sm">{s.commessa_id ? <>{s.commessa_nome} <span className="text-slate-400">·</span> {s.servizio_nome}</> : <span className="text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5 text-xs" data-testid={`segnalazione-da-assegnare-${s.id}`}>Da assegnare</span>}</TableCell>
                   <TableCell className="text-sm">{s.created_by_username}</TableCell>
                   <TableCell className="text-sm whitespace-nowrap">{formatDate(s.created_at)}</TableCell>
                   <TableCell><EsitoBadge esito={s.esito} sottoEsiti={s.sotto_esiti} testId={`segnalazione-esito-${s.id}`} /></TableCell>
@@ -130,7 +127,7 @@ export default function Segnalazioni() {
           </Table>
         </CardContent>
       </Card>
-      <CreateSegnalazioneDialog open={showCreate} onClose={() => setShowCreate(false)} options={meta.commesse} onCreated={load} />
+      <CreateSegnalazioneDialog open={showCreate} onClose={() => setShowCreate(false)} onCreated={load} />
       <SegnalazioneDetailDialog id={openId} onClose={() => setOpenId(null)} user={user} meta={meta} onChanged={load} />
     </div>
   );
