@@ -289,6 +289,10 @@ def _check_in_carico(seg: dict, user: User):
         raise HTTPException(status_code=409, detail=f"Segnalazione già in carico a {seg.get('in_carico_username')}")
 
 
+def _lock_filter(segnalazione_id: str, user: User) -> dict:
+    return {"id": segnalazione_id} if user.role == UserRole.ADMIN else {"id": segnalazione_id, "in_carico_id": user.id}
+
+
 @router.post("/segnalazioni/{segnalazione_id}/presa-in-carico")
 async def prendi_in_carico(segnalazione_id: str, current_user: User = Depends(get_current_user)):
     if current_user.role not in ESITO_ROLES:
@@ -326,9 +330,11 @@ async def update_assegnazione(segnalazione_id: str, data: AssegnazioneUpdate, cu
               "assegnato_by": current_user.username, "updated_at": datetime.now(timezone.utc).isoformat()}
     if not seg.get("aruba_commessa_id"):
         update["aruba_commessa_id"] = data.commessa_id
-    await db.segnalazioni.update_one({"id": segnalazione_id}, {"$set": update, "$push": {"assegnazione_history": {
+    res = await db.segnalazioni.update_one(_lock_filter(segnalazione_id, current_user), {"$set": update, "$push": {"assegnazione_history": {
         "commessa_nome": update["commessa_nome"], "servizio_nome": update["servizio_nome"],
         "by_username": current_user.username, "at": update["updated_at"]}}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=409, detail="La segnalazione è stata presa in carico da un altro utente")
     return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0})
 
 
@@ -348,13 +354,15 @@ async def update_esito(segnalazione_id: str, data: EsitoUpdate, current_user: Us
     now = datetime.now(timezone.utc).isoformat()
     entry = {"esito": data.esito, "sotto_esiti": sotto, "nota_esito": (data.nota_esito or "").strip(),
              "by_id": current_user.id, "by_username": current_user.username, "at": now}
-    await db.segnalazioni.update_one(
-        {"id": segnalazione_id},
+    res = await db.segnalazioni.update_one(
+        _lock_filter(segnalazione_id, current_user),
         {"$set": {"esito": data.esito, "sotto_esiti": sotto, "nota_esito": entry["nota_esito"],
                   "esito_by": current_user.username, "esito_at": now, "updated_at": now,
                   "in_carico_id": None, "in_carico_username": None, "in_carico_at": None},
          "$push": {"esito_history": entry}},
     )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=409, detail="La segnalazione è stata presa in carico da un altro utente")
     return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0})
 
 

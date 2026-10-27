@@ -17,6 +17,12 @@ HEADERS = ["Data segnalazione", "Nome", "Cognome", "Telefono", "Note", "Commessa
            "Esito", "Sotto esiti", "Nota esito", "Esitato da", "Data esito", "N. documenti"]
 
 
+def _take(sid, headers):
+    """BO must take the segnalazione in carico before working it (presa in carico lock)."""
+    r = requests.post(f"{API}/segnalazioni/{sid}/presa-in-carico", headers=headers)
+    assert r.status_code == 200, r.text
+
+
 def _login(u, p):
     r = requests.post(f"{API}/auth/login", json={"username": u, "password": p})
     if r.status_code != 200:
@@ -193,6 +199,7 @@ class TestStats:
 
     def test_stats_after_esito(self, bo, segn, created):
         before = requests.get(f"{API}/segnalazioni/stats/summary", headers=segn).json()
+        _take(created['id'], bo)
         r = requests.put(f"{API}/segnalazioni/{created['id']}/esito", headers=bo,
                          json={"esito": "OK", "sotto_esiti": ["OK Energy"], "nota_esito": "pytest"})
         assert r.status_code == 200, r.text

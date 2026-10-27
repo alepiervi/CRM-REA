@@ -14,3 +14,4 @@
 ## Modulo Segnalatori (creati per test sezione Segnalatori)
 - **segnalatore_test** / `test12345` — role `segnalatore`, commessa Fastweb, servizio TLS
 - **bo_segn_test** / `test12345` — role `backoffice_commessa`, commessa Fastweb (tutti i servizi)
+- **bo_segn_test2** / `test12345` — role `backoffice_commessa`, commessa Fastweb (per test presa in carico)

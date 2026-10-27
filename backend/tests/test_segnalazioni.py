@@ -10,6 +10,12 @@ FASTWEB_ID = "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1"
 TLS_ID = "cc0648c1-0df1-4530-8281-f4c940934916"
 
 
+def _take(sid, headers):
+    """BO must take the segnalazione in carico before working it (presa in carico lock)."""
+    r = requests.post(f"{API}/segnalazioni/{sid}/presa-in-carico", headers=headers)
+    assert r.status_code == 200, r.text
+
+
 def _login(u, p):
     r = requests.post(f"{API}/auth/login", json={"username": u, "password": p})
     if r.status_code != 200:
@@ -125,21 +131,26 @@ class TestEsito:
         assert r.status_code == 403
 
     def test_ok_without_sotto_400(self, created, bo):
+        _take(created['id'], bo)
         r = requests.put(f"{API}/segnalazioni/{created['id']}/esito", headers=bo, json={"esito": "OK", "sotto_esiti": []})
         assert r.status_code == 400
+        _take(created['id'], bo)
         r = requests.put(f"{API}/segnalazioni/{created['id']}/esito", headers=bo, json={"esito": "OK", "sotto_esiti": ["bogus"]})
         assert r.status_code == 400
 
     def test_invalid_esito(self, created, bo):
+        _take(created['id'], bo)
         r = requests.put(f"{API}/segnalazioni/{created['id']}/esito", headers=bo, json={"esito": "XX"})
         assert r.status_code == 400
 
     def test_ok_then_ko_clears(self, created, bo, segn):
         sid = created["id"]
+        _take(sid, bo)
         r = requests.put(f"{API}/segnalazioni/{sid}/esito", headers=bo,
                          json={"esito": "OK", "sotto_esiti": ["OK Gas", "OK Energy"], "nota_esito": "n1"})
         assert r.status_code == 200
         assert r.json()["sotto_esiti"] == ["OK Energy", "OK Gas"]
+        _take(sid, bo)
         r = requests.put(f"{API}/segnalazioni/{sid}/esito", headers=bo, json={"esito": "KO", "sotto_esiti": ["OK Gas"]})
         assert r.status_code == 200 and r.json()["sotto_esiti"] == []
         d = requests.get(f"{API}/segnalazioni/{sid}", headers=segn).json()

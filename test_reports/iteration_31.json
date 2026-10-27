@@ -1,0 +1,36 @@
+{
+  "summary": "Tested the Segnalatori 'Presa in Carico' lock. Backend: new test_segnalazioni_presa_in_carico.py passes 8/8. It covers: a new segnalazione starts free; a BO must take it before assegnazione/esito (409 otherwise); taking is idempotent for the holder; BO2 gets 409 on take, assegnazione and esito, with the holder named in the message; the lock survives assegnazione and is released on esito, after which BO2 can take it; admin can work without taking and can take over, and BO1 then gets 409; segnalatore gets 403 on take; unknown id gives 404; unauthenticated calls are rejected. The 3 older segnalazioni test files were updated with a _take() step before BO writes. The combined suite passes 61/61. Frontend (all passed): BO1 sees the 'Nessuno sta lavorando' box with the take button and no forms; after clicking, a toast appears, the box turns green with 'La stai lavorando tu...', the forms appear and the list shows 'Tu'. BO2 sees 'In carico a bo_segn_test' in the list and in an amber box, with no button and no forms. BO1 assigns Fastweb+TLS (the lock stays) and then saves esito KO: the box returns to 'Nessuno...', the forms disappear, the list shows '-', the sidebar badge goes 1 to 0 and the stats update. Admin sees the forms and 'Prendi tu in carico' on an item held by BO1, and the takeover works (list shows 'Tu'). Segnalatore sees no 'In carico a' column and no box.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/segnalazioni/{id}/assegnazione and /esito", "issue": "Race condition: _check_in_carico reads the document and the update_one that follows has no in_carico_id condition. If an admin takes over between the check and the write, the old holder's write still goes through. Fix: add {'in_carico_id': user.id} to the update filter for non-admins and return 409 when matched_count==0."},
+      {"endpoint": "POST /api/segnalazioni/{id}/presa-in-carico", "issue": "There is no way to release the lock except saving an esito or an admin takeover. There is no 'Rilascia' action and no timeout, so a BO who takes an item and walks away blocks the other BOs indefinitely."},
+      {"endpoint": "GET /api/segnalazioni (segnalatore)", "issue": "in_carico_id/in_carico_username are returned to the segnalatore. The UI hides them, but they are exposed in the API response. Low risk."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Detail dialog (other BO)", "issues": ["The detail and list do not poll. If the holder releases the item, BO2 must reopen the dialog or reload the list to see the take button. If two BOs click 'Prendi in carico' at the same time, the loser gets a 409 toast, which is handled correctly."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_segnalazioni_presa_in_carico.py", "/app/backend/tests/test_segnalazioni.py", "/app/backend/tests/test_segnalazioni_assegnazione.py", "/app/backend/tests/test_segnalazioni_export_stats.py", "/app/test_reports/pytest/pytest_iter31.xml"],
+  "action_items": [
+    "Optional: make the lock check atomic in update_assegnazione/update_esito (add in_carico_id to the update filter)",
+    "Optional: add a 'Rilascia' button for the holder and/or a lock TTL",
+    "Optional: strip the in_carico fields from responses for the segnalatore role"
+  ],
+  "critical_code_review_comments": [
+    "The lock is acquired atomically in prendi_in_carico (conditional update_one with $or on null, missing or self). This is correct, and legacy documents without the field are handled.",
+    "An admin esito clears any BO's lock silently. This matches the user's choice that admin can always work.",
+    "A released (already esitato) segnalazione can be retaken by any BO to change the esito. This looks intended."
+  ],
+  "updated_files": ["/app/backend/tests/test_segnalazioni_presa_in_carico.py", "/app/backend/tests/test_segnalazioni.py", "/app/backend/tests/test_segnalazioni_assegnazione.py", "/app/backend/tests/test_segnalazioni_export_stats.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "TEST_-prefixed segnalazioni were created and then deleted. No passwords were changed. bo_segn_test2 had password_change_required=True in the DB; I set it to False so it could log in through the UI.",
+  "test_credentials": "admin/admin123, segnalatore_test/test12345, bo_segn_test/test12345, bo_segn_test2/test12345",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The older segnalazioni tests now call _take(sid, bo) before every BO PUT, because the esito releases the lock and a new take is needed before the next BO write. Login form uses #username/#password and the 'Accedi' button. Sidebar nav: the 'Segnalatori' button. If a test user shows the password-change screen, set password_change_required=False in mongo."
+}

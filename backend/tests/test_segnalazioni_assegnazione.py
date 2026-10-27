@@ -9,6 +9,12 @@ FASTWEB_ID = "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1"
 TLS_ID = "cc0648c1-0df1-4530-8281-f4c940934916"
 
 
+def _take(sid, headers):
+    """BO must take the segnalazione in carico before working it (presa in carico lock)."""
+    r = requests.post(f"{API}/segnalazioni/{sid}/presa-in-carico", headers=headers)
+    assert r.status_code == 200, r.text
+
+
 def _login(u, p):
     r = requests.post(f"{API}/auth/login", json={"username": u, "password": p})
     if r.status_code != 200:
@@ -78,6 +84,7 @@ class TestCreateUnassigned:
 
 class TestAssegnazione:
     def test_esito_blocked_unassigned(self, created, bo):
+        _take(created['id'], bo)
         r = requests.put(f"{API}/segnalazioni/{created['id']}/esito", headers=bo, json={"esito": "KO"})
         assert r.status_code == 400
         assert r.json()["detail"] == "Assegna commessa e servizio prima di dare l'esito"
@@ -92,6 +99,7 @@ class TestAssegnazione:
         other = next((s["id"] for c in opts if c["id"] != FASTWEB_ID for s in c["servizi"]), None)
         if not other:
             pytest.skip("no other servizio")
+        _take(created['id'], bo)
         r = requests.put(f"{API}/segnalazioni/{created['id']}/assegnazione", headers=bo,
                          json={"commessa_id": FASTWEB_ID, "servizio_id": other})
         assert r.status_code == 400
@@ -101,11 +109,13 @@ class TestAssegnazione:
         c = next((c for c in opts if c["id"] != FASTWEB_ID), None)
         if not c:
             pytest.skip("no other commessa")
+        _take(created['id'], bo)
         r = requests.put(f"{API}/segnalazioni/{created['id']}/assegnazione", headers=bo,
                          json={"commessa_id": c["id"], "servizio_id": c["servizi"][0]["id"]})
         assert r.status_code == 403
 
     def test_assign_then_esito(self, created, bo):
+        _take(created['id'], bo)
         r = requests.put(f"{API}/segnalazioni/{created['id']}/assegnazione", headers=bo,
                          json={"commessa_id": FASTWEB_ID, "servizio_id": TLS_ID})
         assert r.status_code == 200, r.text
@@ -114,6 +124,7 @@ class TestAssegnazione:
         assert d["assegnato_by"] == "bo_segn_test"
         g = requests.get(f"{API}/segnalazioni/{created['id']}", headers=bo).json()
         assert g["commessa_id"] == FASTWEB_ID and g["servizio_id"] == TLS_ID
+        _take(created['id'], bo)
         e = requests.put(f"{API}/segnalazioni/{created['id']}/esito", headers=bo,
                          json={"esito": "OK", "sotto_esiti": ["OK Fisso"]})
         assert e.status_code == 200 and e.json()["esito"] == "OK"
