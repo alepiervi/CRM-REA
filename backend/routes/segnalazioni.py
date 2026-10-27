@@ -139,6 +139,8 @@ async def create_segnalazione(data: SegnalazioneCreate, current_user: User = Dep
         "servizio_nome": None,
         "aruba_commessa_id": await _aruba_commessa_for(current_user),
         "esito": None,
+        "in_carico_id": None,
+        "in_carico_username": None,
         "sotto_esiti": [],
         "nota_esito": "",
         "esito_history": [],
@@ -278,11 +280,38 @@ async def get_segnalazione(segnalazione_id: str, current_user: User = Depends(ge
     return await _get_accessible(segnalazione_id, current_user)
 
 
+def _check_in_carico(seg: dict, user: User):
+    if user.role == UserRole.ADMIN:
+        return
+    if not seg.get("in_carico_id"):
+        raise HTTPException(status_code=409, detail="Prendi in carico la segnalazione prima di lavorarla")
+    if seg["in_carico_id"] != user.id:
+        raise HTTPException(status_code=409, detail=f"Segnalazione già in carico a {seg.get('in_carico_username')}")
+
+
+@router.post("/segnalazioni/{segnalazione_id}/presa-in-carico")
+async def prendi_in_carico(segnalazione_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role not in ESITO_ROLES:
+        raise HTTPException(status_code=403, detail="Solo il BackOffice Commessa può prendere in carico")
+    await _get_accessible(segnalazione_id, current_user)
+    now = datetime.now(timezone.utc).isoformat()
+    cond = {"id": segnalazione_id}
+    if current_user.role != UserRole.ADMIN:
+        cond["$or"] = [{"in_carico_id": None}, {"in_carico_id": {"$exists": False}}, {"in_carico_id": current_user.id}]
+    res = await db.segnalazioni.update_one(cond, {"$set": {
+        "in_carico_id": current_user.id, "in_carico_username": current_user.username, "in_carico_at": now, "updated_at": now}})
+    if res.matched_count == 0:
+        seg = await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0, "in_carico_username": 1})
+        raise HTTPException(status_code=409, detail=f"Segnalazione già in carico a {(seg or {}).get('in_carico_username')}")
+    return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0})
+
+
 @router.put("/segnalazioni/{segnalazione_id}/assegnazione")
 async def update_assegnazione(segnalazione_id: str, data: AssegnazioneUpdate, current_user: User = Depends(get_current_user)):
     if current_user.role not in ESITO_ROLES:
         raise HTTPException(status_code=403, detail="Solo il BackOffice Commessa può assegnare commessa e servizio")
     seg = await _get_accessible(segnalazione_id, current_user)
+    _check_in_carico(seg, current_user)
     servizio = await db.servizi.find_one({"id": data.servizio_id, "commessa_id": data.commessa_id, "is_active": {"$ne": False}}, {"_id": 0, "nome": 1})
     if not servizio:
         raise HTTPException(status_code=400, detail="Servizio non valido per la commessa selezionata")
@@ -308,6 +337,7 @@ async def update_esito(segnalazione_id: str, data: EsitoUpdate, current_user: Us
     if current_user.role not in ESITO_ROLES:
         raise HTTPException(status_code=403, detail="Solo il BackOffice Commessa può esitare le segnalazioni")
     seg = await _get_accessible(segnalazione_id, current_user)
+    _check_in_carico(seg, current_user)
     if not seg.get("commessa_id") or not seg.get("servizio_id"):
         raise HTTPException(status_code=400, detail="Assegna commessa e servizio prima di dare l'esito")
     if data.esito not in ESITI:
@@ -321,7 +351,8 @@ async def update_esito(segnalazione_id: str, data: EsitoUpdate, current_user: Us
     await db.segnalazioni.update_one(
         {"id": segnalazione_id},
         {"$set": {"esito": data.esito, "sotto_esiti": sotto, "nota_esito": entry["nota_esito"],
-                  "esito_by": current_user.username, "esito_at": now, "updated_at": now},
+                  "esito_by": current_user.username, "esito_at": now, "updated_at": now,
+                  "in_carico_id": None, "in_carico_username": None, "in_carico_at": None},
          "$push": {"esito_history": entry}},
     )
     return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0})

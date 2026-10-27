@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { Plus, Paperclip, Megaphone, FileSpreadsheet } from "lucide-react";
+import { Plus, Paperclip, Megaphone, FileSpreadsheet, Lock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../hooks/use-toast";
 import { EsitoBadge } from "./segnalazioni/EsitoBadge";
@@ -105,7 +105,7 @@ export default function Segnalazioni() {
             <TableHeader>
               <TableRow>
                 <TableHead>Cliente</TableHead><TableHead>Telefono</TableHead><TableHead>Commessa / Servizio</TableHead>
-                <TableHead>Segnalatore</TableHead><TableHead>Data</TableHead><TableHead>Esito</TableHead><TableHead className="text-center">Doc</TableHead>
+                <TableHead>Segnalatore</TableHead><TableHead>Data</TableHead><TableHead>Esito</TableHead>{!isSegnalatore && <TableHead>In carico a</TableHead>}<TableHead className="text-center">Doc</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -117,11 +117,16 @@ export default function Segnalazioni() {
                   <TableCell className="text-sm">{s.created_by_username}</TableCell>
                   <TableCell className="text-sm whitespace-nowrap">{formatDate(s.created_at)}</TableCell>
                   <TableCell><EsitoBadge esito={s.esito} sottoEsiti={s.sotto_esiti} testId={`segnalazione-esito-${s.id}`} /></TableCell>
+                  {!isSegnalatore && (
+                    <TableCell className="text-sm" data-testid={`segnalazione-in-carico-${s.id}`}>
+                      {s.in_carico_username ? <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs border ${s.in_carico_id === user.id ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"}`}><Lock className="w-3 h-3" />{s.in_carico_id === user.id ? "Tu" : s.in_carico_username}</span> : <span className="text-slate-400">-</span>}
+                    </TableCell>
+                  )}
                   <TableCell className="text-center text-sm text-slate-500">{s.documents?.length ? <span className="inline-flex items-center gap-1"><Paperclip className="w-3 h-3" />{s.documents.length}</span> : "-"}</TableCell>
                 </TableRow>
               ))}
               {!loading && items.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center py-10 text-slate-500" data-testid="segnalazioni-empty">Nessuna segnalazione trovata</TableCell></TableRow>
+                <TableRow><TableCell colSpan={isSegnalatore ? 7 : 8} className="text-center py-10 text-slate-500" data-testid="segnalazioni-empty">Nessuna segnalazione trovata</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

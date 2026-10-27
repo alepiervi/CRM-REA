@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../componen
 import { EsitoBadge } from "./EsitoBadge";
 import { EsitoForm } from "./EsitoForm";
 import { AssegnazioneForm } from "./AssegnazioneForm";
+import { PresaInCaricoBox } from "./PresaInCaricoBox";
 import { DocumentsSection } from "./DocumentsSection";
 import { API, ESITO_ROLES, formatDate } from "./shared";
 
@@ -20,6 +21,7 @@ export const SegnalazioneDetailDialog = ({ id, onClose, user, meta, onChanged })
 
   useEffect(() => { if (id) load(); else setSeg(null); }, [id, load]);
   const refresh = () => { load(); onChanged(); };
+  const canWork = seg && (user.role === "admin" || seg.in_carico_id === user.id);
 
   return (
     <Dialog open={!!id} onOpenChange={(o) => !o && onClose()}>
@@ -38,9 +40,12 @@ export const SegnalazioneDetailDialog = ({ id, onClose, user, meta, onChanged })
             <Field label="Note" value={seg.note} testId="detail-note" />
             {seg.nota_esito && <Field label={`Nota esito (${seg.esito_by || ""})`} value={seg.nota_esito} testId="detail-nota-esito" />}
             {ESITO_ROLES.includes(user.role) && (
+              <PresaInCaricoBox segnalazione={seg} user={user} onChanged={refresh} />
+            )}
+            {ESITO_ROLES.includes(user.role) && canWork && (
               <AssegnazioneForm key={`a-${seg.updated_at}`} segnalazione={seg} options={meta.commesse} onSaved={refresh} />
             )}
-            {ESITO_ROLES.includes(user.role) && (
+            {ESITO_ROLES.includes(user.role) && canWork && (
               <EsitoForm key={seg.updated_at} segnalazione={seg} esiti={meta.esiti} sottoEsitiOk={meta.sotto_esiti_ok} onSaved={refresh} />
             )}
             <DocumentsSection segnalazione={seg} onUploaded={refresh} />
