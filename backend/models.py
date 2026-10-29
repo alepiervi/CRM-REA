@@ -32,6 +32,7 @@ class UserRole(str, Enum):
     # Ruolo Area Manager
     AREA_MANAGER = "area_manager"
     SEGNALATORE = "segnalatore"
+    VISUALIZZATORE = "visualizzatore"
 
 class LeadStatus(str, Enum):
     NUOVO = "nuovo"

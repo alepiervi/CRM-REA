@@ -27,6 +27,8 @@ logger = logging.getLogger(__name__)
 ESITI = ["OK", "KO", "NR"]
 SOTTO_ESITI_OK = ["OK Energy", "OK Gas", "OK Dual", "OK Fisso", "OK Fisso + Mobile", "OK Mobile"]
 ESITO_ROLES = {UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA}
+FULL_VIEW_ROLES = {UserRole.ADMIN, UserRole.VISUALIZZATORE}
+COMPETENZE = ["Rea", "Andrea"]
 MAX_DOC_SIZE = 25 * 1024 * 1024
 ROME = ZoneInfo("Europe/Rome")
 
@@ -50,7 +52,7 @@ class EsitoUpdate(BaseModel):
 
 
 def _scope_query(user: User) -> dict:
-    if user.role == UserRole.ADMIN:
+    if user.role in FULL_VIEW_ROLES:
         return {}
     if user.role == UserRole.SEGNALATORE:
         return {"created_by": user.id}
@@ -100,7 +102,7 @@ async def get_segnalazioni_options(current_user: User = Depends(get_current_user
     _scope_query(current_user)
     c_query = {"is_active": {"$ne": False}}
     s_query = {"is_active": {"$ne": False}}
-    if current_user.role != UserRole.ADMIN:
+    if current_user.role not in FULL_VIEW_ROLES:
         c_query["id"] = {"$in": current_user.commesse_autorizzate or []}
         if current_user.servizi_autorizzati:
             s_query["id"] = {"$in": current_user.servizi_autorizzati}
@@ -112,7 +114,7 @@ async def get_segnalazioni_options(current_user: User = Depends(get_current_user
         srv = sorted([s for s in servizi if s["commessa_id"] == c["id"]], key=lambda x: (x.get("nome") or "").lower())
         if srv:
             result.append({"id": c["id"], "nome": c["nome"], "servizi": [{"id": s["id"], "nome": s["nome"]} for s in srv]})
-    return {"commesse": result, "esiti": ESITI, "sotto_esiti_ok": SOTTO_ESITI_OK}
+    return {"commesse": result, "esiti": ESITI, "sotto_esiti_ok": SOTTO_ESITI_OK, "competenze": COMPETENZE}
 
 
 @router.get("/segnalazioni/da-lavorare/count")
@@ -198,9 +200,16 @@ def _filters_query(
     return {"$and": [_scope_query(current_user), f]}
 
 
+def _hidden_fields(user: User) -> dict:
+    hidden = {"_id": 0, "esito_history": 0}
+    if user.role == UserRole.SEGNALATORE:
+        hidden.update({"competenze": 0, "in_carico_id": 0, "in_carico_username": 0, "in_carico_at": 0})
+    return hidden
+
+
 @router.get("/segnalazioni")
-async def list_segnalazioni(query: dict = Depends(_filters_query)):
-    return await db.segnalazioni.find(query, {"_id": 0, "esito_history": 0}).sort("created_at", -1).to_list(1000)
+async def list_segnalazioni(query: dict = Depends(_filters_query), current_user: User = Depends(get_current_user)):
+    return await db.segnalazioni.find(query, _hidden_fields(current_user)).sort("created_at", -1).to_list(1000)
 
 
 @router.get("/segnalazioni/stats/summary")
@@ -227,7 +236,7 @@ async def segnalazioni_stats(query: dict = Depends(_filters_query)):
 async def list_segnalatori(current_user: User = Depends(get_current_user)):
     if current_user.role == UserRole.SEGNALATORE:
         return []
-    if current_user.role == UserRole.ADMIN:
+    if current_user.role in FULL_VIEW_ROLES:
         users_q = {"role": UserRole.SEGNALATORE.value}
     else:
         users_q = {"id": {"$in": await db.segnalazioni.distinct("created_by", _scope_query(current_user))}}
@@ -254,7 +263,7 @@ async def export_segnalazioni_excel(
     ws = wb.active
     ws.title = "Segnalazioni"
     headers = ["Data segnalazione", "Nome", "Cognome", "Telefono", "Note", "Commessa", "Servizio", "Segnalatore",
-               "Esito", "Sotto esiti", "Nota esito", "Esitato da", "Data esito", "N. documenti"]
+               "Esito", "Sotto esiti", "Competenze", "Nota esito", "Esitato da", "Data esito", "N. documenti"]
     ws.append(headers)
     for c in ws[1]:
         c.font = Font(bold=True, color="FFFFFF")
@@ -262,7 +271,8 @@ async def export_segnalazioni_excel(
     for d in docs:
         ws.append([_cell(v) for v in [_rome(d.get("created_at")), d.get("nome"), d.get("cognome"), d.get("telefono"), d.get("note"),
                    d.get("commessa_nome"), d.get("servizio_nome"), d.get("created_by_username"),
-                   d.get("esito") or "Da lavorare", ", ".join(d.get("sotto_esiti") or []), d.get("nota_esito"),
+                   d.get("esito") or "Da lavorare", ", ".join(d.get("sotto_esiti") or []),
+                   "; ".join(f"{k}: {v}" for k, v in (d.get("competenze") or {}).items()), d.get("nota_esito"),
                    d.get("esito_by") or "", _rome(d.get("esito_at")), len(d.get("documents") or [])]])
     for i, h in enumerate(headers, 1):
         ws.column_dimensions[get_column_letter(i)].width = max(14, len(h) + 4)
@@ -277,7 +287,30 @@ async def export_segnalazioni_excel(
 
 @router.get("/segnalazioni/{segnalazione_id}")
 async def get_segnalazione(segnalazione_id: str, current_user: User = Depends(get_current_user)):
-    return await _get_accessible(segnalazione_id, current_user)
+    await _get_accessible(segnalazione_id, current_user)
+    hidden = _hidden_fields(current_user)
+    hidden.pop("esito_history")
+    return await db.segnalazioni.find_one({"id": segnalazione_id}, hidden)
+
+
+class CompetenzeUpdate(BaseModel):
+    competenze: dict = {}
+
+
+@router.put("/segnalazioni/{segnalazione_id}/competenze")
+async def update_competenze(segnalazione_id: str, data: CompetenzeUpdate, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo l'Admin può inserire le competenze")
+    seg = await _get_accessible(segnalazione_id, current_user)
+    if seg.get("esito") != "OK":
+        raise HTTPException(status_code=400, detail="Le competenze si inseriscono solo sulle segnalazioni con esito OK")
+    for k, v in data.competenze.items():
+        if k not in (seg.get("sotto_esiti") or []) or (v and v not in COMPETENZE):
+            raise HTTPException(status_code=400, detail=f"Competenza non valida per {k}")
+    competenze = {k: v for k, v in data.competenze.items() if v}
+    await db.segnalazioni.update_one({"id": segnalazione_id}, {"$set": {
+        "competenze": competenze, "competenze_by": current_user.username, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0})
 
 
 def _check_in_carico(seg: dict, user: User):
@@ -358,7 +391,8 @@ async def update_esito(segnalazione_id: str, data: EsitoUpdate, current_user: Us
         _lock_filter(segnalazione_id, current_user),
         {"$set": {"esito": data.esito, "sotto_esiti": sotto, "nota_esito": entry["nota_esito"],
                   "esito_by": current_user.username, "esito_at": now, "updated_at": now,
-                  "in_carico_id": None, "in_carico_username": None, "in_carico_at": None},
+                  "in_carico_id": None, "in_carico_username": None, "in_carico_at": None,
+                  "competenze": {k: v for k, v in (seg.get("competenze") or {}).items() if k in sotto}},
          "$push": {"esito_history": entry}},
     )
     if res.matched_count == 0:
@@ -370,6 +404,8 @@ async def update_esito(segnalazione_id: str, data: EsitoUpdate, current_user: Us
 async def upload_segnalazione_document(
     segnalazione_id: str, file: UploadFile = File(...), current_user: User = Depends(get_current_user)
 ):
+    if current_user.role == UserRole.VISUALIZZATORE:
+        raise HTTPException(status_code=403, detail="Il Visualizzatore non può caricare documenti")
     seg = await _get_accessible(segnalazione_id, current_user)
     content = await file.read()
     if not content:

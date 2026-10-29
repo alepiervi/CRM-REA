@@ -7,7 +7,7 @@ import { Download, FileText, Upload } from "lucide-react";
 import { FilePicker } from "./FilePicker";
 import { API, errMsg, formatDate, uploadDocuments } from "./shared";
 
-export const DocumentsSection = ({ segnalazione, onUploaded }) => {
+export const DocumentsSection = ({ segnalazione, onUploaded, canUpload = true }) => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
@@ -48,8 +48,8 @@ export const DocumentsSection = ({ segnalazione, onUploaded }) => {
           </li>
         ))}
       </ul>
-      <FilePicker files={files} onChange={setFiles} testId="detail-files" />
-      {files.length > 0 && (
+      {canUpload && <FilePicker files={files} onChange={setFiles} testId="detail-files" />}
+      {canUpload && files.length > 0 && (
         <Button size="sm" onClick={upload} disabled={uploading} data-testid="detail-files-upload-btn">
           <Upload className="w-4 h-4 mr-2" />{uploading ? "Caricamento..." : `Carica ${files.length} file`}
         </Button>

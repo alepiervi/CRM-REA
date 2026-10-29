@@ -937,7 +937,7 @@ const Dashboard = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user?.role === "segnalatore") setActiveTab("segnalatori");
+    if (["segnalatore", "visualizzatore"].includes(user?.role)) setActiveTab("segnalatori");
   }, [user?.role]);
 
   // Contatore segnalazioni da lavorare (BackOffice / Responsabile Commessa / Admin)
@@ -1540,7 +1540,7 @@ const Dashboard = () => {
       { id: "dashboard", label: "Dashboard", icon: BarChart3 }
     ];
 
-    if (user.role === "segnalatore") {
+    if (["segnalatore", "visualizzatore"].includes(user.role)) {
       return [{ id: "segnalatori", label: "Segnalatori", icon: Megaphone }];
     }
     if (["admin", "responsabile_commessa", "backoffice_commessa"].includes(user.role)) {
@@ -1635,9 +1635,9 @@ const Dashboard = () => {
     try {
       switch (activeTab) {
         case "segnalatori":
-          return ["admin", "responsabile_commessa", "backoffice_commessa", "segnalatore"].includes(user.role) ? <Segnalazioni /> : <div>Non autorizzato</div>;
+          return ["admin", "responsabile_commessa", "backoffice_commessa", "segnalatore", "visualizzatore"].includes(user.role) ? <Segnalazioni /> : <div>Non autorizzato</div>;
         case "dashboard":
-          if (user.role === "segnalatore") return <Segnalazioni />;
+          if (["segnalatore", "visualizzatore"].includes(user.role)) return <Segnalazioni />;
           if (user.role === "responsabile_commessa") {
             return <ResponsabileCommessaDashboard selectedUnit={selectedUnit} selectedTipologiaContratto={selectedTipologiaContratto} units={units} commesse={commesse} />;
           }
@@ -2077,7 +2077,7 @@ const Dashboard = () => {
         </nav>
 
         {/* Desktop Hierarchical Selectors - Moved here to prevent navigation interference */}
-        <div className={`p-3 border-t border-slate-200 bg-slate-50 flex-shrink-0 ${user.role === "segnalatore" ? "hidden" : ""}`}>
+        <div className={`p-3 border-t border-slate-200 bg-slate-50 flex-shrink-0 ${["segnalatore", "visualizzatore"].includes(user.role) ? "hidden" : ""}`}>
           {/* 1. SELETTORE COMMESSA */}
           <Label className="text-xs font-medium text-slate-600 uppercase tracking-wide">
             1. Seleziona Commessa

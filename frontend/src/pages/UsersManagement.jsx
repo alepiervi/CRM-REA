@@ -323,6 +323,7 @@ const UsersManagement = ({ selectedUnit, units }) => {
       referente: "bg-blue-100 text-blue-800", 
       agente: "bg-green-100 text-green-800",
       segnalatore: "bg-orange-100 text-orange-800",
+      visualizzatore: "bg-slate-200 text-slate-800",
     };
 
     return (
@@ -1013,6 +1014,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
                       <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
                       <SelectItem value="area_manager">Area Manager</SelectItem>
                       <SelectItem value="segnalatore">Segnalatore</SelectItem>
+                      <SelectItem value="visualizzatore">Visualizzatore Segnalazioni</SelectItem>
                     </>
                   )}
                   
@@ -2191,6 +2193,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
                       <SelectItem value="promoter_presidi">Promoter Presidi</SelectItem>
                       <SelectItem value="area_manager">Area Manager</SelectItem>
                       <SelectItem value="segnalatore">Segnalatore</SelectItem>
+                      <SelectItem value="visualizzatore">Visualizzatore Segnalazioni</SelectItem>
                     </>
                   )}
                   

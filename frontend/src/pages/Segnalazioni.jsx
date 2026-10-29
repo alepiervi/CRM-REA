@@ -82,7 +82,7 @@ export default function Segnalazioni() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2"><Megaphone className="w-6 h-6 text-blue-600" />Segnalatori</h1>
-          <p className="text-sm text-slate-500">{isSegnalatore ? "Inserisci i clienti e guarda com'è andata con le tue segnalazioni" : "Clienti segnalati da lavorare ed esitare"}</p>
+          <p className="text-sm text-slate-500">{isSegnalatore ? "Inserisci i clienti e guarda com'è andata con le tue segnalazioni" : user.role === "visualizzatore" ? "Consultazione delle segnalazioni (sola lettura)" : "Clienti segnalati da lavorare ed esitare"}</p>
         </div>
         <div className="flex gap-2">
           {user.role === "admin" && (

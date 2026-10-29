@@ -5,6 +5,7 @@ import { EsitoBadge } from "./EsitoBadge";
 import { EsitoForm } from "./EsitoForm";
 import { AssegnazioneForm } from "./AssegnazioneForm";
 import { PresaInCaricoBox } from "./PresaInCaricoBox";
+import { CompetenzeForm, CompetenzeView } from "./CompetenzeForm";
 import { DocumentsSection } from "./DocumentsSection";
 import { API, ESITO_ROLES, formatDate } from "./shared";
 
@@ -48,7 +49,10 @@ export const SegnalazioneDetailDialog = ({ id, onClose, user, meta, onChanged })
             {ESITO_ROLES.includes(user.role) && canWork && (
               <EsitoForm key={seg.updated_at} segnalazione={seg} esiti={meta.esiti} sottoEsitiOk={meta.sotto_esiti_ok} onSaved={refresh} />
             )}
-            <DocumentsSection segnalazione={seg} onUploaded={refresh} />
+            {seg.esito === "OK" && (user.role === "admin"
+              ? <CompetenzeForm key={`c-${seg.updated_at}`} segnalazione={seg} competenze={meta.competenze || []} onSaved={refresh} />
+              : <CompetenzeView competenze={seg.competenze} />)}
+            <DocumentsSection segnalazione={seg} onUploaded={refresh} canUpload={user.role !== "visualizzatore"} />
             {seg.esito_history?.length > 0 && (
               <div data-testid="esito-history">
                 <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Storico esiti</p>
