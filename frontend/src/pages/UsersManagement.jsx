@@ -1039,7 +1039,7 @@ const CreateUserModal = ({ onClose, onSuccess, provinces, units, referenti, sele
             </div>
 
             {/* Entity Management Configuration */}
-            <div>
+            <div className={["segnalatore", "visualizzatore"].includes(formData.role) ? "hidden" : ""}>
               <Label htmlFor="entity_management">Gestione Entità</Label>
               <Select value={formData.entity_management} onValueChange={(value) => setFormData({ ...formData, entity_management: value })}>
                 <SelectTrigger>
@@ -2219,7 +2219,7 @@ const EditUserModal = ({ user, onClose, onSuccess, provinces, units, referenti, 
           </div>
 
           {/* Entity Management Configuration */}
-          <div>
+          <div className={["segnalatore", "visualizzatore"].includes(formData.role) ? "hidden" : ""}>
             <Label htmlFor="entity_management">Gestione Entità</Label>
             <Select value={formData.entity_management} onValueChange={(value) => setFormData({ ...formData, entity_management: value })}>
               <SelectTrigger>

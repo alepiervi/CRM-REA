@@ -1,0 +1,38 @@
+{
+  "summary": "Tested Segnalatori Competenze and the new Visualizzatore role. Backend: the new test_segnalazioni_competenze_visualizzatore.py passes 16/17. The combined segnalazioni suite passes 77/78 after I updated the old export test's expected HEADERS to include the new 'Competenze' column. The one failure is that competenze_by leaks to the segnalatore. Verified in the backend: /options returns competenze ['Rea','Andrea']. Admin PUT /competenze persists; setting a value to '' removes it; an invalid value or a key not among the sotto esiti gives 400; KO and not-yet-esitato segnalazioni give 400. BO, visualizzatore and segnalatore all get 403. BO sees competenze in list and detail; the segnalatore does not get competenze or the in_carico fields. When an esito change drops a sotto esito, its competenza is removed, and KO clears all of them. The Excel export has the 'Competenze' column with 'OK Gas: Rea'. Visualizzatore sees the same set as admin, plus detail, stats, options and the segnalatori list; da-lavorare count is 0. Visualizzatore gets 403 on create, esito, assegnazione, presa-in-carico, upload and export; downloading an existing document returns 200. Admin can create a role=visualizzatore user, update it and delete it. Frontend: admin on an OK segnalazione sees competenze-form with competenza-select-0 and -1 (options '- Nessuna -', Rea, Andrea); saving shows a toast, and resetting to Nessuna works. Admin on a KO segnalazione sees neither the form nor the view. BO sees the read-only competenze-view ('OK Gas → Andrea ...') and no form. Segnalatore sees neither. Visualizzatore: sidebar shows only 'Segnalatori', the commessa selector is hidden, subtitle 'sola lettura', all 4 rows, stats and the segnalatore filter. Visualizzatore has no new-segnalazione-btn, no export button, no presa-in-carico box, no esito or assegnazione forms and no upload picker; competenze-view is visible and the download triggers 'prova.txt'. In Utenti, Create user with 'Visualizzatore Segnalazioni' created a user with role visualizzatore, and the edit dialog shows the role.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/leads", "issue": "DATA LEAK (pre-existing, also affects segnalatore): visualizzatore_test and segnalatore_test both get all leads (total 68, 50 per page) with full PII. The get_leads role filter only scopes agente, referente and super_referente; any other role falls through to unscoped. Visualizzatore must only see segnalazioni. Fix: return 403 or an empty result for SEGNALATORE/VISUALIZZATORE (ideally use a whitelist of roles).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/segnalazioni[/{id}] (segnalatore)", "issue": "_hidden_fields hides 'competenze' but not 'competenze_by', so the segnalatore can still see that competenze were set (and by whom). Add competenze_by: 0. Also consider hiding esito_by and assegnato_by if they are meant to be internal."},
+      {"endpoint": "GET /api/users, /api/commesse, /api/sub-agenzie (visualizzatore)", "issue": "These return 200 (only the user's own record or empty lists, so no leak observed). Worth checking the other generic CRM endpoints (e.g. /api/leads above, dashboard) for visualizzatore and segnalatore, which fall through role checks."},
+      {"endpoint": "PUT/GET /api/users", "issue": "Pre-existing: user responses include password_hash."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Utenti > Crea Nuovo Utente (role Visualizzatore)", "issues": ["The 'Gestione Entità' (Solo Clienti) select still shows, but it is irrelevant for this role. Hiding it would be cleaner."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_segnalazioni_competenze_visualizzatore.py", "/app/backend/tests/test_segnalazioni_export_stats.py", "/app/test_reports/pytest/pytest_iter32.xml", "/app/test_reports/pytest/pytest_iter32_all.xml"],
+  "action_items": [
+    "HIGH: Scope GET /api/leads (and any other generic CRM list endpoints) so that the visualizzatore and segnalatore roles get 403 or empty results; they currently see all leads",
+    "Add 'competenze_by': 0 to _hidden_fields for SEGNALATORE",
+    "Optional: hide 'Gestione Entità' in the user dialog for the visualizzatore and segnalatore roles"
+  ],
+  "critical_code_review_comments": [
+    "update_competenze validates keys against sotto_esiti and values against COMPETENZE. This is correct. CompetenzeUpdate.competenze is an untyped dict, so Dict[str, str] would be stricter: a non-string value such as a list currently fails with a 400 only by accident.",
+    "update_esito filters competenze by the new sotto esiti, which is correct. It reads seg['competenze'] before the atomic update, so an admin competenze save made at the same moment could be overwritten (low risk).",
+    "UI: DocumentsSection receives canUpload={role !== 'visualizzatore'} and the backend also returns 403. Both layers enforce it, which is good."
+  ],
+  "updated_files": ["/app/backend/tests/test_segnalazioni_competenze_visualizzatore.py", "/app/backend/tests/test_segnalazioni_export_stats.py (HEADERS now include 'Competenze')"],
+  "success_rate": {"backend": "94% (16/17 new; 77/78 full segnalazioni suite)", "frontend": "100%"},
+  "seed_data_creation": "TEST_COMP segnalazioni and test_vis_* users were created and then deleted. Seed segnalazione 'Mario TestSegn' competenze are now {'OK Gas': 'Rea'} (OK Mobile reset to none). visualizzatore_test had password_change_required=True; I set it to False so it could log in through the UI. No passwords were changed.",
+  "test_credentials": "admin/admin123, segnalatore_test, bo_segn_test, bo_segn_test2, visualizzatore_test (all test12345)",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Login uses #username/#password and the 'Accedi' button. In the shadcn Select inside the user dialog, do NOT force-click options in a long list: scroll_into_view first, or it picks the wrong role. Retest GET /api/leads as visualizzatore/segnalatore (it should not return leads) and check that competenze_by is hidden for the segnalatore."
+}

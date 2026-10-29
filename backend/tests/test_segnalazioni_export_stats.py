@@ -14,7 +14,7 @@ FASTWEB_ID = "4cb70f28-6278-4d0f-b2b7-65f2b783f3f1"
 TLS_ID = "cc0648c1-0df1-4530-8281-f4c940934916"
 ROME = ZoneInfo("Europe/Rome")
 HEADERS = ["Data segnalazione", "Nome", "Cognome", "Telefono", "Note", "Commessa", "Servizio", "Segnalatore",
-           "Esito", "Sotto esiti", "Nota esito", "Esitato da", "Data esito", "N. documenti"]
+           "Esito", "Sotto esiti", "Competenze", "Nota esito", "Esitato da", "Data esito", "N. documenti"]
 
 
 def _take(sid, headers):

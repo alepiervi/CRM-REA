@@ -1034,7 +1034,10 @@ const Dashboard = () => {
     }
   };
 
+  const segnalazioniOnly = ["segnalatore", "visualizzatore"].includes(user?.role);
+
   useEffect(() => {
+    if (segnalazioniOnly) return;
     fetchUnits();
     fetchCommesse();
     fetchSubAgenzie();
@@ -1073,6 +1076,7 @@ const Dashboard = () => {
 
   // Force load all tipologie on component mount
   useEffect(() => {
+    if (segnalazioniOnly) return;
     console.log('🔄 COMPONENT MOUNT: Loading all tipologie for sidebar');
     fetchTipologieContratto();
   }, []); // Run once on mount
@@ -1081,6 +1085,7 @@ const Dashboard = () => {
 
   // useEffect per ricaricare tipologie contratto quando cambiano commessa/servizio - PER TUTTI I RUOLI
   useEffect(() => {
+    if (segnalazioniOnly) return;
     if (selectedCommessa && selectedCommessa !== "all" && selectedServizio && selectedServizio !== "all") {
       console.log("🔄 USEEFFECT (ALL ROLES): Ricarico tipologie per commessa/servizio changed:", { selectedCommessa, selectedServizio, userRole: user.role });
       fetchTipologieContratto(selectedCommessa, selectedServizio);

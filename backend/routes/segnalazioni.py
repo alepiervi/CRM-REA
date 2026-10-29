@@ -201,15 +201,15 @@ def _filters_query(
 
 
 def _hidden_fields(user: User) -> dict:
-    hidden = {"_id": 0, "esito_history": 0}
+    hidden = {"esito_history": 0}
     if user.role == UserRole.SEGNALATORE:
-        hidden.update({"competenze": 0, "in_carico_id": 0, "in_carico_username": 0, "in_carico_at": 0})
+        hidden.update({"competenze": 0, "competenze_by": 0, "in_carico_id": 0, "in_carico_username": 0, "in_carico_at": 0})
     return hidden
 
 
 @router.get("/segnalazioni")
 async def list_segnalazioni(query: dict = Depends(_filters_query), current_user: User = Depends(get_current_user)):
-    return await db.segnalazioni.find(query, _hidden_fields(current_user)).sort("created_at", -1).to_list(1000)
+    return await db.segnalazioni.find(query, {"_id": 0, **_hidden_fields(current_user)}).sort("created_at", -1).to_list(1000)
 
 
 @router.get("/segnalazioni/stats/summary")
@@ -290,7 +290,7 @@ async def get_segnalazione(segnalazione_id: str, current_user: User = Depends(ge
     await _get_accessible(segnalazione_id, current_user)
     hidden = _hidden_fields(current_user)
     hidden.pop("esito_history")
-    return await db.segnalazioni.find_one({"id": segnalazione_id}, hidden)
+    return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0, **hidden})
 
 
 class CompetenzeUpdate(BaseModel):
