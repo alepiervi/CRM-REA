@@ -121,7 +121,8 @@ async def get_segnalazioni_options(current_user: User = Depends(get_current_user
 async def count_da_lavorare(current_user: User = Depends(get_current_user)):
     if current_user.role not in ESITO_ROLES:
         return {"count": 0}
-    return {"count": await db.segnalazioni.count_documents({**_scope_query(current_user), "esito": None})}
+    return {"count": await db.segnalazioni.count_documents(
+        {"$and": [_scope_query(current_user), {"esito": None}, {"in_carico_id": None}]})}
 
 
 @router.post("/segnalazioni")
