@@ -378,8 +378,6 @@ async def update_esito(segnalazione_id: str, data: EsitoUpdate, current_user: Us
         raise HTTPException(status_code=403, detail="Solo il BackOffice Commessa può esitare le segnalazioni")
     seg = await _get_accessible(segnalazione_id, current_user)
     _check_in_carico(seg, current_user)
-    if not seg.get("commessa_id") or not seg.get("servizio_id"):
-        raise HTTPException(status_code=400, detail="Assegna commessa e servizio prima di dare l'esito")
     if data.esito not in ESITI:
         raise HTTPException(status_code=400, detail="Esito non valido")
     sotto = [s for s in SOTTO_ESITI_OK if s in data.sotto_esiti] if data.esito == "OK" else []

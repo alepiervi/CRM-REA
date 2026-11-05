@@ -83,11 +83,11 @@ class TestCreateUnassigned:
 
 
 class TestAssegnazione:
-    def test_esito_blocked_unassigned(self, created, bo):
+    def test_esito_allowed_unassigned(self, created, bo):
         _take(created['id'], bo)
-        r = requests.put(f"{API}/segnalazioni/{created['id']}/esito", headers=bo, json={"esito": "KO"})
-        assert r.status_code == 400
-        assert r.json()["detail"] == "Assegna commessa e servizio prima di dare l'esito"
+        r = requests.put(f"{API}/segnalazioni/{created['id']}/esito", headers=bo, json={"esito": "NR"})
+        assert r.status_code == 200 and r.json()["esito"] == "NR" and r.json()["commessa_id"] is None
+        _take(created['id'], bo)
 
     def test_segn_403(self, created, segn):
         r = requests.put(f"{API}/segnalazioni/{created['id']}/assegnazione", headers=segn,

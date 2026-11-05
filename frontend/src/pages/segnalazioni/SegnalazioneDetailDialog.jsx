@@ -44,10 +44,10 @@ export const SegnalazioneDetailDialog = ({ id, onClose, user, meta, onChanged })
               <PresaInCaricoBox segnalazione={seg} user={user} onChanged={refresh} />
             )}
             {ESITO_ROLES.includes(user.role) && canWork && (
-              <AssegnazioneForm key={`a-${seg.updated_at}`} segnalazione={seg} options={meta.commesse} onSaved={refresh} />
+              <EsitoForm key={seg.updated_at} segnalazione={seg} esiti={meta.esiti} sottoEsitiOk={meta.sotto_esiti_ok} onSaved={refresh} />
             )}
             {ESITO_ROLES.includes(user.role) && canWork && (
-              <EsitoForm key={seg.updated_at} segnalazione={seg} esiti={meta.esiti} sottoEsitiOk={meta.sotto_esiti_ok} onSaved={refresh} />
+              <AssegnazioneForm key={`a-${seg.updated_at}`} segnalazione={seg} options={meta.commesse} onSaved={refresh} />
             )}
             {seg.esito === "OK" && (user.role === "admin"
               ? <CompetenzeForm key={`c-${seg.updated_at}`} segnalazione={seg} competenze={meta.competenze || []} onSaved={refresh} />

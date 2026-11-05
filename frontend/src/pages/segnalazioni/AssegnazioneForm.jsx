@@ -29,7 +29,7 @@ export const AssegnazioneForm = ({ segnalazione, options, onSaved }) => {
 
   return (
     <div className="space-y-3 border rounded-lg p-4 bg-blue-50/40" data-testid="assegnazione-form">
-      <Label className="font-semibold">Assegnazione commessa e servizio</Label>
+      <Label className="font-semibold">Assegnazione commessa e servizio <span className="font-normal text-slate-500">(facoltativa)</span></Label>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Select value={commessaId} onValueChange={(v) => { setCommessaId(v); setServizioId(""); }}>
           <SelectTrigger data-testid="assegnazione-commessa-select"><SelectValue placeholder="Seleziona commessa" /></SelectTrigger>
