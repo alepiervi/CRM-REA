@@ -71,12 +71,13 @@ async def _get_accessible(segnalazione_id: str, user: User) -> dict:
     return doc
 
 
-async def _aruba_commessa_for(user: User) -> Optional[str]:
-    """Prima commessa del segnalatore con Aruba Drive attivo (cartella dove salvare i documenti)."""
-    ids = user.commesse_autorizzate or []
-    found = await db.commesse.find({"id": {"$in": ids}, "aruba_drive_config.enabled": True}, {"_id": 0, "id": 1}).to_list(None)
-    enabled = {c["id"] for c in found}
-    return next((i for i in ids if i in enabled), ids[0] if ids else None)
+DOCUMENTI_COMMESSA_NOME = "Fastweb"
+
+
+async def _documenti_commessa_id() -> Optional[str]:
+    """Tutti i documenti delle segnalazioni vanno in <cartella Fastweb>/Segnalazioni."""
+    c = await db.commesse.find_one({"nome": {"$regex": f"^{DOCUMENTI_COMMESSA_NOME}$", "$options": "i"}}, {"_id": 0, "id": 1})
+    return (c or {}).get("id")
 
 
 async def _aruba_client(commessa_id: Optional[str]) -> NextcloudClient:
@@ -140,7 +141,7 @@ async def create_segnalazione(data: SegnalazioneCreate, current_user: User = Dep
         "commessa_nome": None,
         "servizio_id": None,
         "servizio_nome": None,
-        "aruba_commessa_id": await _aruba_commessa_for(current_user),
+        "aruba_commessa_id": await _documenti_commessa_id(),
         "esito": None,
         "in_carico_id": None,
         "in_carico_username": None,
@@ -411,7 +412,7 @@ async def upload_segnalazione_document(
         raise HTTPException(status_code=400, detail="File vuoto")
     if len(content) > MAX_DOC_SIZE:
         raise HTTPException(status_code=400, detail="File troppo grande (max 25MB)")
-    aruba_commessa_id = seg.get("aruba_commessa_id") or seg.get("commessa_id")
+    aruba_commessa_id = await _documenti_commessa_id()
     client = await _aruba_client(aruba_commessa_id)
     original = file.filename or "documento"
     stem, ext = _safe(Path(original).stem) or "documento", Path(original).suffix.lower()

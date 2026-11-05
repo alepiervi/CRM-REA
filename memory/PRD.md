@@ -535,3 +535,4 @@ Vedi `/app/memory/test_credentials.md`
 - (giu 2026) Sicurezza: i ruoli segnalatore/visualizzatore possono chiamare SOLO /api/segnalazioni*, /api/auth/*, /api/status-colors, /api/users/me (blocco in security.get_current_user); il frontend non carica più unit/commesse/servizi per questi ruoli.
 - (nov 2026) Badge menu Segnalatori: conta solo le segnalazioni senza esito E non prese in carico (scala subito alla presa in carico, per tutti i BO).
 - (nov 2026) Assegnazione commessa/servizio ora FACOLTATIVA: l'esito si può salvare anche senza; nella scheda l'Esito è mostrato prima dell'assegnazione.
+- (nov 2026) Documenti segnalazioni: TUTTI i nuovi documenti vanno in <cartella Aruba Fastweb>/Segnalazioni (costante DOCUMENTI_COMMESSA_NOME='Fastweb', ricerca per nome), indipendentemente dal segnalatore/commessa; i vecchi restano dove sono (download tramite aruba_commessa_id salvato sul documento).
