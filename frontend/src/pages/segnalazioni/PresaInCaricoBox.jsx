@@ -4,6 +4,7 @@ import { Button } from "../../components/ui/button";
 import { useToast } from "../../hooks/use-toast";
 import { Hand, Lock } from "lucide-react";
 import { API, errMsg, formatDate } from "./shared";
+import { AdminInCaricoControls } from "./AdminInCaricoControls";
 
 export const PresaInCaricoBox = ({ segnalazione, user, onChanged }) => {
   const [saving, setSaving] = useState(false);
@@ -25,7 +26,8 @@ export const PresaInCaricoBox = ({ segnalazione, user, onChanged }) => {
   };
 
   return (
-    <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-3 ${holder ? (mine ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200") : "bg-slate-50"}`} data-testid="presa-in-carico-box">
+    <div className={`rounded-lg border p-3 space-y-3 ${holder ? (mine ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200") : "bg-slate-50"}`} data-testid="presa-in-carico-box">
+     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <p className="text-sm flex items-center gap-2" data-testid="presa-in-carico-status">
         {holder ? <Lock className="w-4 h-4 shrink-0" /> : <Hand className="w-4 h-4 shrink-0 text-slate-500" />}
         {!holder && "Nessuno sta lavorando questa segnalazione."}
@@ -37,6 +39,8 @@ export const PresaInCaricoBox = ({ segnalazione, user, onChanged }) => {
           {saving ? "..." : holder ? "Prendi tu in carico" : "Prendi in carico"}
         </Button>
       )}
+     </div>
+      {user.role === "admin" && <AdminInCaricoControls segnalazione={segnalazione} onChanged={onChanged} />}
     </div>
   );
 };

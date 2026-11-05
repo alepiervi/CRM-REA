@@ -328,6 +328,61 @@ def _lock_filter(segnalazione_id: str, user: User) -> dict:
     return {"id": segnalazione_id} if user.role == UserRole.ADMIN else {"id": segnalazione_id, "in_carico_id": user.id}
 
 
+def _can_see(u: dict, seg: dict) -> bool:
+    if not seg.get("commessa_id"):
+        return True
+    if seg["commessa_id"] not in (u.get("commesse_autorizzate") or []):
+        return False
+    servizi = u.get("servizi_autorizzati") or []
+    return not servizi or seg.get("servizio_id") in servizi
+
+
+async def _operatori_for(seg: dict) -> list:
+    users = await db.users.find(
+        {"role": {"$in": [UserRole.BACKOFFICE_COMMESSA.value, UserRole.RESPONSABILE_COMMESSA.value]}, "is_active": {"$ne": False}},
+        {"_id": 0, "id": 1, "username": 1, "role": 1, "commesse_autorizzate": 1, "servizi_autorizzati": 1},
+    ).to_list(None)
+    return sorted([{"id": u["id"], "username": u["username"], "role": u["role"]} for u in users if _can_see(u, seg)],
+                  key=lambda u: u["username"].lower())
+
+
+class AssegnaOperatore(BaseModel):
+    user_id: str
+
+
+@router.get("/segnalazioni/{segnalazione_id}/operatori")
+async def list_operatori(segnalazione_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo l'Admin può riassegnare")
+    return await _operatori_for(await _get_accessible(segnalazione_id, current_user))
+
+
+@router.post("/segnalazioni/{segnalazione_id}/sblocca")
+async def sblocca_segnalazione(segnalazione_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo l'Admin può sbloccare")
+    await _get_accessible(segnalazione_id, current_user)
+    await db.segnalazioni.update_one({"id": segnalazione_id}, {"$set": {
+        "in_carico_id": None, "in_carico_username": None, "in_carico_at": None,
+        "updated_at": datetime.now(timezone.utc).isoformat()}})
+    return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0})
+
+
+@router.post("/segnalazioni/{segnalazione_id}/assegna-operatore")
+async def assegna_operatore(segnalazione_id: str, data: AssegnaOperatore, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Solo l'Admin può riassegnare")
+    seg = await _get_accessible(segnalazione_id, current_user)
+    target = next((u for u in await _operatori_for(seg) if u["id"] == data.user_id), None)
+    if not target:
+        raise HTTPException(status_code=400, detail="Utente non valido o non autorizzato su questa segnalazione")
+    now = datetime.now(timezone.utc).isoformat()
+    await db.segnalazioni.update_one({"id": segnalazione_id}, {"$set": {
+        "in_carico_id": target["id"], "in_carico_username": target["username"], "in_carico_at": now, "updated_at": now}})
+    return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0})
+
+
+
 @router.post("/segnalazioni/{segnalazione_id}/presa-in-carico")
 async def prendi_in_carico(segnalazione_id: str, current_user: User = Depends(get_current_user)):
     if current_user.role not in ESITO_ROLES:

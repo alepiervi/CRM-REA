@@ -536,3 +536,4 @@ Vedi `/app/memory/test_credentials.md`
 - (nov 2026) Badge menu Segnalatori: conta solo le segnalazioni senza esito E non prese in carico (scala subito alla presa in carico, per tutti i BO).
 - (nov 2026) Assegnazione commessa/servizio ora FACOLTATIVA: l'esito si può salvare anche senza; nella scheda l'Esito è mostrato prima dell'assegnazione.
 - (nov 2026) Documenti segnalazioni: TUTTI i nuovi documenti vanno in <cartella Aruba Fastweb>/Segnalazioni (costante DOCUMENTI_COMMESSA_NOME='Fastweb', ricerca per nome), indipendentemente dal segnalatore/commessa; i vecchi restano dove sono (download tramite aruba_commessa_id salvato sul documento).
+- (nov 2026) Admin: nella scheda segnalazione può SBLOCCARE (POST /api/segnalazioni/{id}/sblocca) o ASSEGNARE a un altro operatore BO/Resp. Commessa autorizzato (GET .../operatori, POST .../assegna-operatore).
