@@ -10,6 +10,7 @@ import { useToast } from "../hooks/use-toast";
 import { EsitoBadge } from "./segnalazioni/EsitoBadge";
 import { SegnalazioniFilters } from "./segnalazioni/SegnalazioniFilters";
 import { SegnalazioniStats } from "./segnalazioni/SegnalazioniStats";
+import { SegnalazioniMobileList } from "./segnalazioni/SegnalazioniMobileList";
 import { CreateSegnalazioneDialog } from "./segnalazioni/CreateSegnalazioneDialog";
 import { SegnalazioneDetailDialog } from "./segnalazioni/SegnalazioneDetailDialog";
 import { API, errMsg, formatDate } from "./segnalazioni/shared";
@@ -98,8 +99,9 @@ export default function Segnalazioni() {
         </div>
       </div>
       <SegnalazioniFilters filters={filters} setFilters={setFilters} options={meta.commesse} segnalatori={segnalatori} showSegnalatore={!isSegnalatore} />
+      <SegnalazioniMobileList items={items} loading={loading} onOpen={setOpenId} showInCarico={!isSegnalatore} userId={user.id} />
       <SegnalazioniStats stats={stats} onOpen={setOpenId} />
-      <Card>
+      <Card className="hidden md:block">
         <CardContent className="p-0 overflow-x-auto">
           <Table data-testid="segnalazioni-table">
             <TableHeader>

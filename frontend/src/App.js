@@ -2205,7 +2205,7 @@ const Dashboard = () => {
       </div>
 
       {/* 🎯 RESPONSIVE: Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* 🎯 MOBILE: Mobile Header with Hamburger */}
         <header className="bg-white border-b border-slate-200 px-4 py-3 lg:px-6 flex-shrink-0">
           <div className="flex items-center justify-between">
