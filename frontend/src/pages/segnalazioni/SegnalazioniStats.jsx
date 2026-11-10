@@ -27,9 +27,10 @@ export const SegnalazioniStats = ({ stats, onOpen }) => {
   const maxSotto = Math.max(0, ...Object.values(stats.sotto_esiti));
   return (
     <div className="space-y-4" data-testid="segnalazioni-stats">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         <Kpi label="Totale" value={stats.totale} tone="text-slate-900" testId="stat-totale" />
         <Kpi label="Da lavorare" value={stats.da_lavorare} tone="text-slate-500" testId="stat-da-lavorare" />
+        <Kpi label="In lavorazione" value={stats.per_esito["In lavorazione"] || 0} tone="text-sky-600" testId="stat-in-lavorazione" />
         <Kpi label="OK" value={stats.per_esito.OK} tone="text-emerald-600" testId="stat-ok" />
         <Kpi label="KO" value={stats.per_esito.KO} tone="text-red-600" testId="stat-ko" />
         <Kpi label="NR" value={stats.per_esito.NR} tone="text-amber-600" testId="stat-nr" />

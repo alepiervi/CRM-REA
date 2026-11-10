@@ -31,7 +31,7 @@ export const PresaInCaricoBox = ({ segnalazione, user, onChanged }) => {
       <p className="text-sm flex items-center gap-2" data-testid="presa-in-carico-status">
         {holder ? <Lock className="w-4 h-4 shrink-0" /> : <Hand className="w-4 h-4 shrink-0 text-slate-500" />}
         {!holder && "Nessuno sta lavorando questa segnalazione."}
-        {mine && <span>La stai lavorando tu dal {formatDate(segnalazione.in_carico_at)}. Si libera da sola quando salvi l'esito.</span>}
+        {mine && <span>La stai lavorando tu dal {formatDate(segnalazione.in_carico_at)}. Si libera da sola quando salvi l'esito (tranne "In lavorazione").</span>}
         {holder && !mine && <span>In carico a <b>{segnalazione.in_carico_username}</b> dal {formatDate(segnalazione.in_carico_at)}</span>}
       </p>
       {!mine && (!holder || user.role === "admin") && (

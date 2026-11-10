@@ -36,7 +36,7 @@ export const EsitoForm = ({ segnalazione, esiti, sottoEsitiOk, onSaved }) => {
       <Label className="font-semibold">Esito</Label>
       <div className="flex gap-2">
         {esiti.map((e) => (
-          <button key={e} type="button" onClick={() => setEsito(e)} data-testid={`esito-option-${e.toLowerCase()}`}
+          <button key={e} type="button" onClick={() => setEsito(e)} data-testid={`esito-option-${e.toLowerCase().replace(/\s+/g, "-")}`}
             className={`px-5 py-2 rounded-md border text-sm font-semibold transition-colors ${esito === e ? ESITO_STYLES[e] + " ring-2 ring-offset-1 ring-slate-400" : "bg-white text-slate-600 hover:bg-slate-100"}`}>
             {e}
           </button>

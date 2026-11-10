@@ -19,6 +19,7 @@ export const SegnalazioniFilters = ({ filters, setFilters, options, segnalatori,
         <SelectItem value="OK">OK</SelectItem>
         <SelectItem value="KO">KO</SelectItem>
         <SelectItem value="NR">NR</SelectItem>
+        <SelectItem value="In lavorazione">In lavorazione</SelectItem>
       </SelectContent>
     </Select>
     <Select value={filters.commessa_id} onValueChange={(v) => setFilters({ ...filters, commessa_id: v })}>

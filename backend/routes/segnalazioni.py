@@ -24,7 +24,9 @@ from services import NextcloudClient
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-ESITI = ["OK", "KO", "NR"]
+IN_LAVORAZIONE = "In lavorazione"
+ESITI = ["OK", "KO", "NR", IN_LAVORAZIONE]
+ESITI_FINALI = ["OK", "KO", "NR"]
 SOTTO_ESITI_OK = ["OK Energy", "OK Gas", "OK Dual", "OK Fisso", "OK Fisso + Mobile", "OK Mobile"]
 ESITO_ROLES = {UserRole.ADMIN, UserRole.RESPONSABILE_COMMESSA, UserRole.BACKOFFICE_COMMESSA}
 FULL_VIEW_ROLES = {UserRole.ADMIN, UserRole.VISUALIZZATORE}
@@ -220,12 +222,12 @@ async def segnalazioni_stats(query: dict = Depends(_filters_query)):
         query, {"_id": 0, "id": 1, "nome": 1, "cognome": 1, "esito": 1, "sotto_esiti": 1, "esito_at": 1, "servizio_nome": 1}
     ).to_list(None)
     by_esito = {e: sum(1 for d in docs if d.get("esito") == e) for e in ESITI}
-    esitate = sum(by_esito.values())
+    esitate = sum(by_esito[e] for e in ESITI_FINALI)
     sotto = {s: sum(1 for d in docs if s in (d.get("sotto_esiti") or [])) for s in SOTTO_ESITI_OK}
     recenti = sorted([d for d in docs if d.get("esito_at")], key=lambda d: d["esito_at"], reverse=True)[:5]
     return {
         "totale": len(docs),
-        "da_lavorare": len(docs) - esitate,
+        "da_lavorare": len(docs) - sum(by_esito.values()),
         "esitate": esitate,
         "per_esito": by_esito,
         "tasso_ok": round(by_esito["OK"] * 100 / esitate, 1) if esitate else 0,
@@ -442,14 +444,13 @@ async def update_esito(segnalazione_id: str, data: EsitoUpdate, current_user: Us
     now = datetime.now(timezone.utc).isoformat()
     entry = {"esito": data.esito, "sotto_esiti": sotto, "nota_esito": (data.nota_esito or "").strip(),
              "by_id": current_user.id, "by_username": current_user.username, "at": now}
+    update = {"esito": data.esito, "sotto_esiti": sotto, "nota_esito": entry["nota_esito"],
+              "esito_by": current_user.username, "esito_at": now, "updated_at": now,
+              "competenze": {k: v for k, v in (seg.get("competenze") or {}).items() if k in sotto}}
+    if data.esito != IN_LAVORAZIONE:
+        update.update({"in_carico_id": None, "in_carico_username": None, "in_carico_at": None})
     res = await db.segnalazioni.update_one(
-        _lock_filter(segnalazione_id, current_user),
-        {"$set": {"esito": data.esito, "sotto_esiti": sotto, "nota_esito": entry["nota_esito"],
-                  "esito_by": current_user.username, "esito_at": now, "updated_at": now,
-                  "in_carico_id": None, "in_carico_username": None, "in_carico_at": None,
-                  "competenze": {k: v for k, v in (seg.get("competenze") or {}).items() if k in sotto}},
-         "$push": {"esito_history": entry}},
-    )
+        _lock_filter(segnalazione_id, current_user), {"$set": update, "$push": {"esito_history": entry}})
     if res.matched_count == 0:
         raise HTTPException(status_code=409, detail="La segnalazione è stata presa in carico da un altro utente")
     return await db.segnalazioni.find_one({"id": segnalazione_id}, {"_id": 0})
