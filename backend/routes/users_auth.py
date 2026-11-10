@@ -15,6 +15,7 @@ from fastapi import (
 )
 from fastapi.responses import StreamingResponse, JSONResponse, FileResponse, Response
 
+from pydantic import BaseModel
 from database import db
 from security import (
     get_current_user, get_password_hash, verify_password, create_access_token,
@@ -331,7 +332,7 @@ async def create_user(user_data: UserCreate, current_user: User = Depends(get_cu
     
     return user_obj
 
-@router.get("/users", response_model=List[User])
+@router.get("/users", response_model=List[User], response_model_exclude={"__all__": {"password_hash"}})
 async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
     query = {"is_active": True}  # Only active users
     
@@ -466,6 +467,52 @@ async def get_users(unit_id: Optional[str] = None, current_user: User = Depends(
     
     print(f"✅ Returning {len(valid_users)} valid users")
     return valid_users
+
+class UsersExportRequest(BaseModel):
+    user_ids: List[str]
+
+
+@router.post("/users/export/excel")
+async def export_users_excel(data: UsersExportRequest, current_user: User = Depends(get_current_user)):
+    """Esporta in Excel gli utenti filtrati (solo tra quelli visibili all'utente)."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+    from openpyxl.utils import get_column_letter
+    wanted = set(data.user_ids)
+    users = [u for u in await get_users(None, current_user) if u.id in wanted]
+    names = {}
+    for coll in ("units", "sub_agenzie", "commesse", "servizi"):
+        async for d in db[coll].find({}, {"_id": 0, "id": 1, "nome": 1, "name": 1}):
+            names[d["id"]] = d.get("nome") or d.get("name") or ""
+    by_id = {}
+    async for d in db.users.find({}, {"_id": 0, "id": 1, "username": 1}):
+        by_id[d["id"]] = d["username"]
+    j = lambda ids: ", ".join(sorted(filter(None, (names.get(i, "") for i in (ids or [])))))  # noqa: E731
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Utenti"
+    headers = ["Username", "Email", "Ruolo", "Unit", "Unit autorizzate", "Sub Agenzia", "Sub Agenzie autorizzate",
+               "Commesse autorizzate", "Servizi autorizzati", "Referente", "Province", "Stato", "Ultimo accesso", "Creato il"]
+    ws.append(headers)
+    for c in ws[1]:
+        c.font = Font(bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor="1E3A8A")
+    fmt = lambda d: d.strftime("%d/%m/%Y %H:%M") if d else ""  # noqa: E731
+    for u in sorted(users, key=lambda x: x.username.lower()):
+        role = u.role.value if hasattr(u.role, "value") else str(u.role)
+        ws.append([u.username, u.email, role.replace("_", " ").title(), names.get(u.unit_id, ""), j(u.unit_autorizzate),
+                   names.get(u.sub_agenzia_id, ""), j(u.sub_agenzie_autorizzate), j(u.commesse_autorizzate),
+                   j(u.servizi_autorizzati), by_id.get(u.referente_id, ""), ", ".join(u.provinces or []),
+                   "Attivo" if u.is_active else "Disattivo", fmt(u.last_login), fmt(u.created_at)])
+    for i, h in enumerate(headers, 1):
+        ws.column_dimensions[get_column_letter(i)].width = max(16, len(h) + 4)
+    ws.freeze_panes = "A2"
+    buf = io.BytesIO()
+    wb.save(buf)
+    return Response(content=buf.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="utenti_{datetime.now(timezone.utc).strftime("%Y%m%d_%H%M")}.xlsx"'})
+
+
 
 @router.get("/users/referenti/{unit_id}")
 async def get_referenti_by_unit(unit_id: str, current_user: User = Depends(get_current_user)):

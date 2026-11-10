@@ -169,6 +169,7 @@ import {
   getClienteStatusVariant,
 } from "../lib/appUtils";
 import { AuthContext, useAuth, AuthProvider } from "../context/AuthContext";
+import { UsersFilters, applyUserFilters, EMPTY_USER_FILTERS } from "./users/UsersFilters";
 
 
 // ===================================================================
@@ -187,7 +188,23 @@ const UsersManagement = ({ selectedUnit, units }) => {
   const [servizi, setServizi] = useState([]);
   const [subAgenzie, setSubAgenzie] = useState([]);
   const [searchQuery, setSearchQuery] = useState(""); // NEW: Search filter
+  const [userFilters, setUserFilters] = useState(EMPTY_USER_FILTERS);
+  const [exportingUsers, setExportingUsers] = useState(false);
   const { toast } = useToast();
+
+  const exportUsers = async (list) => {
+    setExportingUsers(true);
+    try {
+      const res = await axios.post(`${API}/users/export/excel`, { user_ids: list.map((u) => u.id) }, { responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
+      Object.assign(document.createElement("a"), { href: url, download: `utenti_${new Date().toISOString().slice(0, 10)}.xlsx` }).click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast({ title: "Errore export", description: "Impossibile esportare gli utenti", variant: "destructive" });
+    } finally {
+      setExportingUsers(false);
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -333,8 +350,8 @@ const UsersManagement = ({ selectedUnit, units }) => {
     );
   };
 
-  // Filter users based on search query
-  const filteredUsers = users.filter(user => {
+  // Filter users based on search query + filtri Ruolo/Unit/Sub Agenzia/Commessa
+  const filteredUsers = applyUserFilters(users, userFilters).filter(user => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -381,10 +398,15 @@ const UsersManagement = ({ selectedUnit, units }) => {
               Cancella
             </Button>
           )}
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500" data-testid="users-count">
             {filteredUsers.length}/{users.length}
           </div>
         </div>
+      </div>
+
+      <div className="bg-white p-3 md:p-4 rounded-lg shadow-sm border">
+        <UsersFilters filters={userFilters} setFilters={setUserFilters} users={users} units={units} subAgenzie={subAgenzie}
+          commesse={commesse} onExport={() => exportUsers(filteredUsers)} exporting={exportingUsers} count={filteredUsers.length} />
       </div>
 
       <Card className="border-0 shadow-lg overflow-hidden">
